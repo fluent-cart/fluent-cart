@@ -12,7 +12,7 @@ We're reimagining what WordPress eCommerce can be: blazing-fast checkouts, zero 
 
 Legacy solutions slow down as you scale. FluentCart was built from scratch with a custom database schema, efficient queries, and modern architecture so your store stays lightning-fast – even with thousands of orders.
 
-And now? **The entire codebase is open source under GPL** – because the future of WordPress eCommerce belongs to the community ❤️
+And now? **The entire codebase is open source under GPL** – because the future of WordPress eCommerce belongs to the community ❤️ 
 
 ### ✨ Why FluentCart?
 
