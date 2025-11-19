@@ -1,0 +1,11 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ use }};
+
+class {{ class }} extends Facade {
+    protected static function getFacadeAccessor() {
+        return '{{ accessor }}';
+    }
+}

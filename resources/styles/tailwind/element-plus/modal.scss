@@ -1,0 +1,205 @@
+.el-overlay {
+    background: rgba(2, 13, 23, 0.6);
+    backdrop-filter: blur(2px);
+    .el-overlay-dialog{
+        @apply flex items-center;
+    }
+    .el-dialog{
+        @apply w-[560px] rounded p-0 dark:bg-dark-600;
+        &.fct-global-search-container {
+            @apply max-w-[600px] w-full min-h-[340px] flex flex-col;
+        }
+        &.fct-advanced-filter-dialog{
+            @apply w-[95%];
+            .el-dialog__body{
+                @apply p-0 h-full;
+            }
+        }
+        &.fct-upgrade-plan-dialog{
+            @apply w-[1120px];
+        }
+        &.fct-add-product-item-modal {
+          @apply w-[650px];
+        }
+        &__header{
+            @apply py-4 px-5 flex justify-between items-center mr-0 border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 dark:border-dark-400;
+            .el-dialog__title {
+                @apply text-base text-system-dark font-medium dark:text-gray-50;
+            }
+        }
+        &__title{
+            @apply dark:text-gray-50;
+        }
+        &__body{
+            @apply p-5;
+        }
+        &__footer{
+            @apply p-5 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400;
+            .dialog-footer{
+                @apply m-0 p-0 border-0;
+            }
+        }
+    }
+    .el-dialog__headerbtn{
+        @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5;
+        i{
+            @apply w-5 h-5;
+            svg{
+                @apply w-5 h-5;
+                
+            }
+        }
+        &:hover{
+            .el-dialog__close{
+                @apply text-dark-500 dark:text-gray-300;
+            }
+        }
+    }
+    .email-template-content{
+        @apply w-full #{!important};
+    }
+    &.fct-file-upload-dialog{
+        .el-dialog{
+            @apply w-[60%];
+        }
+    }
+
+    &.fct-bulk-delete-action-dialog {
+        .el-overlay-dialog {
+            @apply items-start;
+        }
+        .el-dialog {
+            @apply w-full max-w-[800px];
+            .el-dialog__body {
+                .fct-bulk-delete-action-dialog-content {
+                    .el-progress {
+                        .el-progress__text {
+                            @apply min-w-[inherit];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    &.fct-tax-rates-country-modal {
+        .el-overlay-dialog {
+            @apply items-start;
+        }
+        .el-dialog {
+            @apply w-[900px] max-w-full;
+        }
+    }
+    &.fct-eu-oss-override-modal {
+        .el-overlay-dialog {
+            @apply items-start;
+        }
+    }
+}
+
+.dialog-footer{
+    @apply text-right block border border-solid border-gray-divider pt-4 mt-5 border-x-0 border-b-0 -mx-5 px-5 dark:border-dark-400;
+}
+
+.fct-discount-modal {
+    .dialog-footer {
+        @apply mt-0;
+    }
+}
+.fct-discount-modal .el-select,
+.fct-order-bulk-action-modal .el-select {
+    @apply w-full;
+}
+/*===== fct-file-upload-dialog =====*/
+.fct-file-upload-dialog{
+    @apply z-[9999] #{!important};
+    .el-dialog__body{
+        @apply p-0;
+    }
+    .el-select {
+        @apply mb-5;
+    }
+    .dialog-footer{
+        @apply m-0 pb-4;
+    }
+    .fct-empty-text p{
+        @apply mt-0;
+    }
+}
+
+.el-dialog.country-heat-map-dialog{
+    @apply w-[70%] #{!important};
+}
+.fct-congrats-modal {
+    @apply overflow-hidden;
+    .el-overlay-dialog {
+        @apply overflow-hidden
+    }
+    .el-dialog__body {
+        @apply bg-transparent p-0;
+    }
+    .fct-congrats-dialog {
+        @apply max-w-[490px] w-full m-auto;
+        .el-dialog__header {
+            @apply hidden;
+        }
+
+        .fct-congrats-dialog-content {
+            @apply relative;
+            &-inner {
+                @apply flex flex-col items-center justify-center p-8 bg-white rounded dark:bg-primary-600;
+            }
+
+            .icon {
+                @apply text-2sm mb-2;
+            }
+
+            h3 {
+                @apply m-0 text-system-dark text-2sm leading-9 font-semibold mb-1 dark:text-gray-50;
+            }
+
+            p {
+                @apply text-system-mid leading-5 text-[13px] mt-0 mx-auto max-w-[300px] text-center mb-3 dark:text-gray-200;
+            }
+            .el-button {
+                @apply dark:bg-primary-400 dark:text-gray-50 dark:border-primary-400;
+                span {
+                    @apply dark:text-gray-50;
+                }
+            }
+        }
+        .fct-confetti-wrap {
+            pointer-events: none;
+        }
+    }
+}
+
+.fct-manage-address-wrap .empty-text {
+    @apply dark:text-gray-300;
+}
+.fct-custom-gutenberg-editor-dialog {
+    .el-breadcrumb__inner{
+        @apply overflow-hidden;
+    }
+    .fct-custom-gutenberg-editor-product-title {
+        @apply truncate inline-block max-w-[500px] text-system-dark cursor-pointer dark:text-gray-50;
+    }
+}
+
+.el-dialog {
+    .fct-customer-edit-modal {
+        .fct-form-group {
+            @apply w-full;
+            .label {
+                @apply flex items-center justify-between w-full;
+            }
+            .fct-create-customer-btn {
+                @apply m-0 h-auto min-h-[auto] text-xs;
+            }
+        }
+        .form-heading {
+            @apply text-base mt-5 mb-3 font-medium dark:text-gray-50;
+        }
+    }
+}

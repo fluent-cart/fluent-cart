@@ -1,0 +1,113 @@
+@config "./product-card.config.js";
+@tailwind utilities;
+
+:root {
+  // card
+  --fct-card-bg: #ffffff;
+  --fct-card-border-color: var(--fct-border-color, #d6dae1);
+  --fct-card-primary-text-color: var(--fct-primary-text-color, #2F3448);
+  --fct-card-text-color: var(--fct-secondary-text-color, #565865);
+
+  // button
+  --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
+  --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+
+  --fct-heading-color: var(--fct-primary-text-color, #2F3448);
+}
+
+/* ==== fct-product-card ==== */
+.fct-product-card {
+  @apply relative h-full p-1 bg-[var(--fct-card-bg)] grid grid-cols-1 border border-solid rounded border-[var(--fct-card-border-color)] transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
+  
+  del {
+    opacity: .5;
+  }
+
+  h1,h2,h3,h4,h5,h6 {
+    @apply mt-0 text-[var(--fct-card-primary-text-color)] px-3 pt-3 text-base font-medium mb-1;
+
+    a {
+      @apply text-[var(--fct-card-primary-text-color)] no-underline hover:underline focus:underline;
+    }
+  }
+
+  .fct-product-card-image-wrap {
+    @apply -mx-1 -mt-1 aspect-square;
+  }
+
+  img {
+    @apply rounded-tl-[7px] rounded-tr-[7px] object-cover aspect-square w-full h-full @[390px]/product-grid:group-[.list]:aspect-square group-[.list]:block group-[.list]:h-full;
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  .fct-product-card-title {
+    overflow-wrap: anywhere;
+  }
+
+  .fct-product-card-prices {
+    @apply px-3 pb-3 text-[var(--fct-card-primary-text-color)] text-base;
+  }
+
+  button {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+    box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+    @apply w-full cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] focus:text-[var(--fct-card-btn-text-color)] @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
+
+    .fluent-cart-loader {
+      @apply duration-300 pointer-events-none justify-center items-center rounded absolute inset-0 w-full h-full hidden;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+
+      svg {
+        @apply w-5 h-5 mr-2 text-gray-200 animate-spin fill-blue-600;
+      }
+    }
+  }
+
+  .fct-product-card-content{
+    @apply grid;
+  }
+  p:not(.fct-product-card-excerpt) {
+    @apply m-0;
+  }
+  .fct-product-card-excerpt{
+    @apply px-3 mb-2 text-sm;
+  }
+
+
+}
+
+.fct-product-view-button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+  box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+  @apply cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
+
+  &.group.loading {
+    .fluent-cart-loader {
+      @apply opacity-100;
+    }
+  }
+}
+
+/* ==== end fct-product-card ==== */
+.fct-product-list-container {
+  .fct-product-list-heading {
+    @apply text-[26px] mb-7.5 font-bold text-[var(--fct-heading-color)];
+  }
+}
+
+.fct-product-list {
+  @apply grid grid-cols-4 gap-6;
+  .fct-product-card a {
+    @apply no-underline;
+  }
+}
+
+@container product-grid (min-width: 540px){
+  .group.list .fct-single-product-card{
+    grid-template-areas:  'head  body' 'head footer';
+  }
+}

@@ -1,0 +1,48 @@
+.license-key-wrap{
+  @apply flex items-center gap-2.5;
+}
+.license-key-title{
+  @apply text-sm font-medium text-system-dark;
+}
+.license-key-text{
+  @apply text-sm text-system-mid font-normal;
+  span{
+    @apply capitalize;
+  }
+}
+
+.license-meta-list{
+  @apply flex items-center #{!important};
+  li {
+    @apply flex items-center gap-1 mr-3 pr-3 relative last:mr-0 last:pr-0 last:after:hidden;
+    &:after{
+      @apply absolute top-1/2 right-0 w-[1px] h-3 bg-gray-300;
+      content: "";
+      transform: translateY(-50%);
+    }
+    .meta-title{
+      @apply text-sm font-medium text-system-dark;
+    }
+    .meta-text{
+      @apply text-sm text-system-mid font-normal;
+    }
+  }
+}
+
+.license-product-wrap{
+  @apply flex items-center gap-2.5;
+  .license-product-title{
+    @apply text-sm font-medium text-system-dark;
+  }
+  .license-product-text{
+    @apply text-sm text-system-mid font-normal;
+  }
+}
+
+.fct-license-activated-status{
+  @apply bg-blue-50 rounded-[12px] p-5 relative grid gap-2.5;
+  .license-badge{
+    @apply absolute top-5 right-5;
+  }
+}
+

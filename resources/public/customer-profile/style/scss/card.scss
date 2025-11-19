@@ -1,0 +1,81 @@
+/*===== card =====*/
+.card {
+    @apply bg-[var(--fct-customer-dashboard-card-bg)] mb-7.5 mt-0 block max-h-full rounded-[12px] border border-solid border-[var(--fct-customer-dashboard-card-border-color)];
+    box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+
+    .card-header {
+        @apply flex items-center justify-between flex-wrap px-6 pt-5;
+        &.border-bottom{
+            @apply pb-5 border border-solid border-t-0 border-l-0 border-r-0 border-[var(--fct-customer-dashboard-card-border-color)];
+        }
+        &-title {
+            @apply flex items-center gap-2.5 p-0 m-0 text-lg font-semibold text-[var(--fct-customer-dashboard-card-heading-color)];
+            :not(.badge .icon).icon {
+                @apply text-system-mid h-5;
+                svg{
+                  @apply h-5 w-5;
+                }
+            }
+            &.is-small{
+                @apply text-base;
+                :not(.badge .icon).icon {
+                  svg{
+                    @apply h-4.5 w-4.5;
+                  }
+                }
+            }
+        }
+    }
+    .card-body{
+        @apply py-5 px-6;
+    }
+    .el-pagination.is-background{
+        @apply -mr-3;
+    }
+}
+
+.fct-product-info-card{
+    @apply flex items-center;
+    .media{
+        a{
+            @apply block;
+        }
+    }
+    &-inner{
+        @apply flex gap-3 items-start no-underline outline-none #{!important};
+    }
+    .product-info-content{
+        @apply flex-1;
+    }
+    .title{
+        @apply font-medium block text-sm text-[var(--fluent-cart-customer-dashboard-title-color)] no-underline leading-[22px] outline-none #{!important};
+        a{
+            @apply no-underline hover:underline;
+            color: inherit;
+        }
+    }
+    .variation-title{
+        @apply text-xs text-[var(--fluent-cart-customer-dashboard-text-color)] leading-[16px] mt-1 font-normal dark:text-gray-200 #{!important};
+    }
+    .additional-info{
+        @apply mt-2.5 grid gap-1 text-xs text-system-dark font-normal #{!important};
+        span{
+            @apply leading-[16px];
+        }
+    }
+}
+.fct-customer-single-order-table-wrap{
+    p{
+        @apply m-0;
+    }
+    .el-table {
+        .el-table__cell{
+            vertical-align: baseline;
+        }
+    }
+    .setup-fee{
+        position: absolute;
+        bottom: 16px;
+        left: 12px;
+    }
+}

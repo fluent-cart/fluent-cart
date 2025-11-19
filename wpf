@@ -1,0 +1,9 @@
+#!/usr/bin/env php
+<?php
+
+(function() {
+	Dev\Cli\Application::boot(__DIR__);
+})(
+	require __DIR__ . '/dev/globals.php',
+	require __DIR__ . '/dev/vendor/autoload.php'
+);

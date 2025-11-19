@@ -1,0 +1,95 @@
+.fct-fluid-tab {
+  @apply z-[1] relative m-0 gap-1 bg-gray-50 rounded p-1 inline-flex items-center dark:bg-dark-600;
+  &.is-disabled {
+    @apply opacity-50 cursor-not-allowed;
+    .fct-fluid-tab-item {
+      @apply cursor-not-allowed;
+    }
+  }
+
+  &.small {
+    &.is-icon {
+      @apply p-0.5;
+      .fct-fluid-tab-item {
+        @apply w-6 h-6;
+        svg {
+          @apply w-[15px] h-[15px];
+        }
+      }
+    }
+  }
+
+  &-item {
+    @apply border-0 bg-transparent cursor-pointer m-0 text-center text-xs leading-none font-medium py-1.5 px-3 text-system-light dark:text-gray-400;
+    transition: all 0.3s ease;
+
+    &.active {
+      @apply text-system-dark dark:text-gray-50;
+    }
+  }
+
+  &-active-bar {
+    @apply absolute rounded-sm z-[-1] left-0 top-0 bg-white dark:bg-dark-400;
+    box-shadow: 0 6px 10px 0 rgba(14, 18, 27, 0.06), 0 2px 4px 0 rgba(14, 18, 27, 0.03);
+    transition: left 0.3s ease, right 0.3s ease, top 0.3s ease;
+  }
+
+  &.is-icon {
+    .fct-fluid-tab-item {
+      @apply w-7 h-7 p-0 flex items-center justify-center;
+      svg {
+        @apply w-[19px] h-[19px];
+      }
+    }
+  }
+
+  &.classic-tab-style {
+    @apply bg-transparent p-0;
+    .fct-fluid-tab-active-bar {
+      @apply shadow-none bg-gray-100 dark:bg-dark-400;
+    }
+    .fct-fluid-tab-item {
+      &.fct-fluid-tab-select-wrap {
+        @apply p-0;
+      }
+      @apply text-system-mid dark:text-gray-300 text-[13px] leading-5 rounded;
+      &.active {
+        @apply text-system-dark dark:text-gray-50;
+      }
+
+      .el-select {
+        .el-select__wrapper {
+          @apply py-[9px] px-3 border-0 bg-transparent min-h-[auto] text-[13px] leading-5;
+          .el-select__placeholder {
+            @apply text-primary-500;
+          }
+        }
+        @media (max-width: 600px) {
+          &.active {
+            .el-select__wrapper {
+              @apply bg-gray-100 dark:bg-dark-400
+            }
+          }
+          .el-select__wrapper {
+            &.is-focused {
+              @apply bg-gray-100 dark:bg-dark-400;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+.el-popper {
+  &.fct-fluid-tab-select {
+    .el-select-dropdown__list {
+      .el-select-dropdown__item {
+        @apply h-auto py-[7px] px-2.5;
+        .select-desc {
+          @apply text-xs font-normal;
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,107 @@
+import {
+    ElNotification,
+    ElDatePicker,
+    ElMessageBox,
+    ElMessage,
+    ElTable,
+    ElTableColumn,
+    ElIcon,
+    ElSkeleton,
+    ElButton,
+    ElDialog,
+    ElInput,
+    ElForm,
+    ElTooltip,
+    ElFormItem,
+    ElCheckbox,
+    ElCheckboxGroup,
+    ElSwitch,
+    ElRadioGroup,
+    ElRadio,
+    ElSelect,
+    ElOption,
+    ElPopover,
+    ElBadge,
+    ElRadioButton,
+    ElProgress,
+    ElRow,
+    ElCol,
+    ElSkeletonItem,
+    ElBreadcrumb,
+    ElBreadcrumbItem,
+    ElDropdown,
+    ElDropdownMenu,
+    ElDropdownItem,
+    ElAutocomplete,
+    ElAlert,
+    ElPopconfirm,
+    ElCollapse,
+    ElCollapseItem,
+    ElSteps,
+    ElStep,
+    ElInputNumber,
+    ElText,
+    ElTag,
+    ElPagination,
+    ElTabs,
+    ElTabPane,
+    ElEmpty,
+    ElDrawer,
+    ElButtonGroup,
+    ElOptionGroup,
+} from 'element-plus';
+
+export function useElementPlusComponents(app) {
+
+    app.component(ElNotification.name, ElNotification);
+    app.component(ElDatePicker.name, ElDatePicker);
+    app.component(ElTable.name, ElTable);
+    app.component(ElTableColumn.name, ElTableColumn);
+    app.component(ElIcon.name, ElIcon);
+    app.component(ElSkeleton.name, ElSkeleton);
+    app.component(ElButton.name, ElButton);
+    app.component(ElDialog.name, ElDialog);
+    app.component(ElInput.name, ElInput);
+    app.component(ElForm.name, ElForm);
+    app.component(ElTooltip.name, ElTooltip);
+    app.component(ElFormItem.name, ElFormItem);
+    app.component(ElCheckbox.name, ElCheckbox);
+    app.component(ElCheckboxGroup.name, ElCheckboxGroup);
+    app.component(ElSwitch.name, ElSwitch);
+    app.component(ElRadioGroup.name, ElRadioGroup);
+    app.component(ElRadio.name, ElRadio);
+    app.component(ElSelect.name, ElSelect);
+    app.component(ElOption.name, ElOption);
+    app.component(ElPopover.name, ElPopover);
+    app.component(ElBadge.name, ElBadge);
+    app.component(ElRadioButton.name, ElRadioButton);
+    app.component(ElProgress.name, ElProgress);
+    app.component(ElRow.name, ElRow);
+    app.component(ElCol.name, ElCol);
+    app.component(ElSkeletonItem.name, ElSkeletonItem);
+    app.component(ElBreadcrumb.name, ElBreadcrumb);
+    app.component(ElBreadcrumbItem.name, ElBreadcrumbItem);
+    app.component(ElDropdown.name, ElDropdown);
+    app.component(ElDropdownMenu.name, ElDropdownMenu);
+    app.component(ElDropdownItem.name, ElDropdownItem);
+    app.component(ElAutocomplete.name, ElAutocomplete);
+    app.component(ElAlert.name, ElAlert);
+    app.component(ElPopconfirm.name, ElPopconfirm);
+    app.component(ElCollapse.name, ElCollapse);
+    app.component(ElCollapseItem.name, ElCollapseItem);
+    app.component(ElSteps.name, ElSteps);
+    app.component(ElStep.name, ElStep);
+    app.component(ElInputNumber.name, ElInputNumber);
+    app.component(ElText.name, ElText);
+    app.component(ElTag.name, ElTag);
+    app.component(ElPagination.name, ElPagination);
+    app.component(ElTabs.name, ElTabs);
+    app.component(ElTabPane.name, ElTabPane);
+    app.component(ElEmpty.name, ElEmpty);
+    app.component(ElDrawer.name, ElDrawer);
+    app.component(ElButtonGroup.name, ElButtonGroup);
+    app.component(ElOptionGroup.name, ElOptionGroup);
+    app.config.globalProperties.$notify = ElNotification;
+    app.config.globalProperties.$confirm = ElMessageBox.confirm;
+    app.config.globalProperties.$message = ElMessage;
+}

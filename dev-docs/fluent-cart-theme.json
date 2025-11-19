@@ -1,0 +1,190 @@
+{
+    "default-view-directory": "",
+    "cart": {
+        "buttons": {
+            "collapse": "cart/buttons/collapse.php",
+            "view-cart": "cart/buttons/view-cart.php",
+            "checkout": "cart/buttons/checkout.php",
+            "open": "cart/buttons/open.php",
+            "toggle": "cart/buttons/toggle.php"
+        },
+        "cart-content-wrapper": "cart/cart-content-wrapper.php",
+        "cart-empty-content": "cart/cart-empty-content.php",
+        "info": {
+            "cart_total_wrapper": "cart/info/cart_total_wrapper.php",
+            "total-price": "cart/info/total-price.php",
+            "total-item": "cart/info/total-item.php"
+        },
+        "list": {
+            "list": "cart/list/list.php",
+            "item": {
+                "quantity": "cart/list/item/quantity.php",
+                "title": "cart/list/item/title.php",
+                "buttons": {
+                    "decrease": "cart/list/item/buttons/decrease.php",
+                    "increase": "cart/list/item/buttons/increase.php",
+                    "delete": "cart/list/item/buttons/delete.php"
+                },
+                "qty-input": "cart/list/item/qty-input.php",
+                "price": "cart/list/item/price.php",
+                "variation-title": "cart/list/item/variation-title.php",
+                "total-price": "cart/list/item/total-price.php",
+                "wrapper": "cart/list/item/wrapper.php",
+                "additional-info": "cart/list/item/additional-info.php",
+                "image": "cart/list/item/image.php"
+            },
+            "content-wrapper": "cart/list/content-wrapper.php"
+        },
+        "cart-drawer": "cart/cart-drawer.php"
+    },
+    "shop": {
+        "filters": {
+            "responsive": {
+                "container": "shop/filters/responsive/container.php",
+                "header": "shop/filters/responsive/header.php",
+                "wrapper": "shop/filters/responsive/wrapper.php"
+            },
+            "buttons": {
+                "apply-filter": "shop/filters/buttons/apply-filter.php",
+                "reset-filter": "shop/filters/buttons/reset-filter.php",
+                "close": "shop/filters/buttons/close.php"
+            },
+            "components": {
+                "label": "shop/filters/components/label.php",
+                "collapsible-toggle-button": "shop/filters/components/collapsible-toggle-button.php",
+                "heading": "shop/filters/components/heading.php",
+                "dollar-icon": "shop/filters/components/dollar-icon.php"
+            },
+            "wrapper": "shop/filters/wrapper.php",
+            "input": "shop/filters/input.php",
+            "checkbox": "shop/filters/checkbox.php",
+            "filter-form": "shop/filters/filter-form.php"
+        },
+        "buttons": {
+            "view-product-button": "shop/buttons/view-product-button.php",
+            "add-to-cart-button": "shop/buttons/add-to-cart-button.php",
+            "grid-view": "shop/buttons/grid-view.php",
+            "filter-toggle": "shop/buttons/filter-toggle.php",
+            "list-view": "shop/buttons/list-view.php"
+        },
+        "shop": "shop/shop.php",
+        "modals": {
+            "single-product": {
+                "wrapper": "shop/modals/single-product/wrapper.php"
+            }
+        },
+        "list": {
+            "product-max-price": "shop/list/product-max-price.php",
+            "product-list": "shop/list/product-list.php",
+            "single-product": "shop/list/single-product.php",
+            "product-excerpt": "shop/list/product-excerpt.php",
+            "product-image": "shop/list/product-image.php",
+            "product-title": "shop/list/product-title.php",
+            "product-min-price": "shop/list/product-min-price.php"
+        },
+        "wrapper": "shop/wrapper.php",
+        "paginator": {
+            "per-page-selector": "shop/paginator/per-page-selector.php",
+            "items": "shop/paginator/items.php",
+            "paginator": "shop/paginator/paginator.php",
+            "info": {
+                "pagination_total": "shop/paginator/info/pagination_total.php",
+                "pagination_to": "shop/paginator/info/pagination_to.php",
+                "wrapper": "shop/paginator/info/wrapper.php",
+                "pagination_from": "shop/paginator/info/pagination_from.php"
+            },
+            "items-wrapper": "shop/paginator/items-wrapper.php"
+        },
+        "no-products": "shop/no-products.php"
+    },
+    "checkout": {
+        "order": {
+            "order-summary": "checkout/order/order-summary.php"
+        },
+        "order-summary": "checkout/order-summary.php",
+        "forms": {
+            "coupon-applied": "checkout/forms/coupon-applied.php",
+            "registration-form": "checkout/forms/registration-form.php",
+            "checkout-form": "checkout/forms/checkout-form.php",
+            "shipping-fields": "checkout/forms/shipping-fields.php",
+            "billing-fields": "checkout/forms/billing-fields.php",
+            "layouts": {
+                "title": "checkout/forms/layouts/title.php",
+                "section": "checkout/forms/layouts/section.php"
+            },
+            "coupon-list": "checkout/forms/coupon-list.php",
+            "coupon-card": "checkout/forms/coupon-card.php",
+            "coupon-fields": "checkout/forms/coupon-fields.php"
+        },
+        "buttons": {
+            "add-coupon": "checkout/buttons/add-coupon.php",
+            "checkout": "checkout/buttons/checkout.php"
+        },
+        "checkout": "checkout/checkout.php",
+        "order-receipt": "checkout/order-receipt.php",
+        "components": {
+            "info": "checkout/components/info.php",
+            "title": "checkout/components/title.php",
+            "order-notes": "checkout/components/order-notes.php",
+            "item-count": "checkout/components/item-count.php",
+            "ship-to-different": "checkout/components/ship-to-different.php",
+            "allow-create-account": "checkout/components/allow-create-account.php",
+            "text": "checkout/components/text.php"
+        },
+        "empty-cart": "checkout/empty-cart.php",
+        "list": {
+            "cart-items": {
+                "list": "checkout/list/cart-items/list.php",
+                "item": {
+                    "quantity": "checkout/list/cart-items/item/quantity.php",
+                    "title": "checkout/list/cart-items/item/title.php",
+                    "unit-price": "checkout/list/cart-items/item/unit-price.php",
+                    "price": "checkout/list/cart-items/item/price.php",
+                    "variation-title": "checkout/list/cart-items/item/variation-title.php",
+                    "delete": "checkout/list/cart-items/item/delete.php",
+                    "total-price": "checkout/list/cart-items/item/total-price.php",
+                    "wrapper": "checkout/list/cart-items/item/wrapper.php",
+                    "image": "checkout/list/cart-items/item/image.php",
+                    "payment-type": "checkout/list/cart-items/item/payment-type.php"
+                },
+                "wrapper": "checkout/list/cart-items/wrapper.php"
+            }
+        },
+        "payment-methods": {
+            "single-payment-method": "checkout/payment-methods/single-payment-method.php",
+            "single-payment-method-with-icon": "checkout/payment-methods/single-payment-method-with-icon.php",
+            "wrapper": "checkout/payment-methods/wrapper.php"
+        },
+        "order-confirmation": "checkout/order-confirmation.php",
+        "order-confirmation-error": "checkout/order-confirmation-error.php",
+        "inputs": {
+            "address-select": {
+                "form": [],
+                "address-info": {
+                    "wrapper": "checkout/inputs/address-select/address-info/wrapper.php"
+                },
+                "wrapper": "checkout/inputs/address-select/wrapper.php",
+                "input": "checkout/inputs/address-select/input.php",
+                "modal": {
+                    "buttons": {
+                        "show-add-new-modal-cancel-button": "checkout/inputs/address-select/modal/buttons/show-add-new-modal-cancel-button.php",
+                        "apply": "checkout/inputs/address-select/modal/buttons/apply.php",
+                        "address-selector": "checkout/inputs/address-select/modal/buttons/address-selector.php",
+                        "show-add-new-modal": "checkout/inputs/address-select/modal/buttons/show-add-new-modal.php",
+                        "open": "checkout/inputs/address-select/modal/buttons/open.php",
+                        "close": "checkout/inputs/address-select/modal/buttons/close.php",
+                        "show-add-new-modal-submit-button": "checkout/inputs/address-select/modal/buttons/show-add-new-modal-submit-button.php"
+                    },
+                    "body": "checkout/inputs/address-select/modal/body.php",
+                    "wrapper": "checkout/inputs/address-select/modal/wrapper.php"
+                }
+            },
+            "label": "checkout/inputs/label.php",
+            "error": "checkout/inputs/error.php",
+            "wrapper": "checkout/inputs/wrapper.php",
+            "input": "checkout/inputs/input.php",
+            "select": "checkout/inputs/select.php",
+            "checkbox": "checkout/inputs/checkbox.php"
+        }
+    }
+}

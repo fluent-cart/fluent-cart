@@ -1,0 +1,161 @@
+.el-tabs{
+    &__item{
+        @apply dark:text-gray-50;
+        &.is-active{
+            @apply text-primary-500 dark:text-gray-50;
+        }
+    }
+    &__nav-wrap{
+        &::after{
+            @apply dark:bg-dark-500;
+        }
+    }
+    &__active-bar{
+        @apply bg-primary-500 dark:bg-dark-200;
+    }
+}
+/*===== fc driver tabs =====*/
+.fct-driver-tabs{
+    @apply bg-gray-50 rounded-br rounded-bl dark:bg-dark-500;
+    .el-tabs{
+        &__nav-wrap{
+            @apply w-full;
+            &::after{
+                @apply hidden;
+            }
+        }
+        &__nav{
+            @apply w-full;
+        }
+        &__active-bar{
+            @apply hidden;
+        }
+        &__item{
+            @apply relative text-left justify-start rounded py-2 px-3 h-auto mb-1 transition-all duration-200 hover:bg-gray-50 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:text-white;
+            @apply text-left justify-start #{!important};
+            &.is-active{
+                @apply font-semibold text-system-dark bg-white dark:bg-dark-400 dark:text-gray-50;
+                box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+            }
+            .fct-driver-tabs-label{
+                @apply flex items-center gap-2.5;
+                .fct-driver-arrow-icon{
+                    @apply absolute top-[50%] right-3.5;
+                    transform: translateY(-50%);
+                    .icon svg{
+                        @apply w-2.5 h-2.5;
+                    }
+                }
+            }
+        }
+        &__header{
+            @apply w-[224px] p-5 mr-0 #{!important};
+        }
+        &__content{
+            @apply bg-white p-5 dark:bg-dark-600;
+        }
+    }
+}
+
+/*===== fc tabs =====*/
+.fct-tabs{
+    .el-tabs__header{
+        @apply -mx-5 mb-5;
+    }
+    .el-tabs__nav-wrap{
+        @apply px-7;
+        &::after{
+            @apply h-[1px] bg-gray-divider dark:bg-dark-400;
+        }
+    }
+    .el-tabs__item{
+        @apply px-[15px] h-auto pb-[15px] text-[13px] font-medium text-system-dark-light dark:text-gray-400;
+        &.is-active{
+            @apply text-dark-500 dark:text-gray-50;
+        }
+    }
+    .el-tabs__active-bar{
+        @apply rounded bg-dark-500 dark:bg-dark-100;
+    }
+    .el-tabs__nav-next,
+    .el-tabs__nav-prev{
+        @apply top-0.5;
+    }
+    + .form-section-save-action{
+        @apply mt-5;
+    }
+    .el-tabs__nav-scroll{
+        @apply overflow-x-scroll;
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;
+        &:active::-webkit-scrollbar-thumb,
+        &:focus::-webkit-scrollbar-thumb,
+        &:hover::-webkit-scrollbar-thumb {
+            @apply visible;
+        }
+        &::-webkit-scrollbar-thumb {
+            @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+        }
+        &::-webkit-scrollbar-thumb:hover {
+            @apply bg-gray-200 dark:bg-dark-500;
+        }
+        &::-webkit-scrollbar {
+            @apply h-[3px];
+        }
+    }
+    &-button{
+        .el-tabs__nav-wrap{
+            &::after{
+                @apply hidden;
+            }
+        }
+        .el-tabs__nav{
+            @apply gap-2;
+        }
+        .el-tabs__item{
+            @apply h-auto py-2 px-3 bg-transparent rounded text-xs border border-solid border-transparent leading-[1.4] text-system-mid hover:text-system-dark dark:text-gray-300 #{!important};
+            &.is-active{
+                @apply bg-white text-system-dark border-gray-outline dark:bg-dark-500 dark:text-gray-50 dark:border-dark-400 #{!important};
+            }
+        }
+        &.el-tabs--card{
+            >.el-tabs__header{
+                @apply border-0 h-auto mb-5;
+                .el-tabs__nav{
+                    @apply border-0;
+                }
+            }
+        }
+        .card{
+            @apply mb-5;
+        }
+    }
+}
+
+/*===== fc file tabs =====*/
+.fct-file-tabs{
+    .el-tabs__header{
+        @apply p-0 w-full !important;
+    }
+    .el-tabs__item.is-active{
+        @apply shadow-none dark:bg-transparent;
+    }
+    .el-tabs__active-bar{
+        @apply block;
+    }
+    .el-tabs__item{
+        @apply px-0 py-2.5 mr-6 mb-0 rounded-none hover:shadow-none hover:bg-transparent;
+    }
+    .el-tabs__content{
+        @apply pb-0 px-0 pt-2.5;
+    }
+    .el-tabs__nav-wrap:after {
+        @apply block h-[1px];
+    }
+}
+
+
+
+.fct-tabs-button.hidden-switch .el-tabs__header{
+    @apply hidden;
+}

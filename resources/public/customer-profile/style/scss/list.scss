@@ -1,0 +1,48 @@
+.fct-customer-single-order-list{
+    &-wrap{
+        @apply flex items-center gap-2 justify-between;
+    }
+    @apply grid basis-[70%] grid-cols-3 gap-5 list-none p-0 m-0 #{!important};
+    .title{
+        @apply text-sm leading-[20px] mb-1 text-system-mid font-medium;
+    }
+    .text{
+        @apply text-base font-medium text-system-dark;
+    }
+}
+
+.fct-customer-dashboard-list-content {
+    &-item{
+        @apply flex justify-between items-center gap-7.5 py-5 px-6 border border-solid border-gray-divider border-x-0 border-t-0 last:border-b-0;
+        .title{
+            @apply text-[15px] font-medium text-system-dark leading-[22px] mb-1;
+        }
+        .variation-title{
+            @apply text-sm text-system-mid leading-[20px] mb-2;
+        }
+        .text{
+            @apply text-[13px] text-system-mid font-normal leading-[18px];
+            + .fct-btn-group{
+                @apply mt-4;
+            }
+        }
+        .license-left-content{
+            @apply w-[500px];
+        }
+        .license-right-content{
+            @apply grid gap-3 relative flex-1 w-[620px];
+            &.has-bg{
+                @apply bg-gray-25 rounded p-5;
+            }
+            .license-badge{
+                @apply absolute top-5 right-5;
+            }
+        }
+    }
+}
+
+.fct-more-option-wrap{
+    .more-btn{
+        @apply bg-transparent text-system-dark w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
+    }
+}

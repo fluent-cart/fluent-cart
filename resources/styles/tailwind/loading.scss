@@ -1,0 +1,125 @@
+.fct-loading-bars{
+  position:relative;
+  width: 14px;
+  height: 15px;
+}
+
+.bar-block{
+  position:absolute;
+  width:2px;
+  height:5px;
+  @apply bg-gray-400;
+  border-radius:8px;
+  animation-name: fadeBar;
+  animation-duration:1.2s;
+  animation-iteration-count:infinite;
+  animation-direction:normal;
+}
+#bar-block-1{
+  left:0;
+  top: 6px;
+  animation-delay:0.45s;
+  transform:rotate(-90deg);
+}
+
+#bar-block-2{
+  left: 2px;
+  top: 2px;
+  animation-delay:0.6s;
+  transform:rotate(-45deg);
+}
+
+#bar-block-3{
+  left: 6px;
+  top: 0;
+  animation-delay:0.75s;
+  transform:rotate(0deg);
+}
+
+#bar-block-4{
+  right: 2px;
+  top: 2px;
+  animation-delay:0.9s;
+  transform:rotate(45deg);
+}
+
+#bar-block-5{
+  right:0;
+  top: 6px;
+  animation-delay:1.05s;
+  transform:rotate(90deg);
+}
+
+#bar-block-6{
+  right: 2px;
+  bottom: 0;
+  animation-delay:1.2s;
+  transform:rotate(135deg);
+}
+
+#bar-block-7{
+  bottom: -2px;
+  left: 6px;
+  animation-delay:1.35s;
+  transform:rotate(180deg);
+}
+
+#bar-block-8{
+  left: 2px;
+  bottom: 0;
+  animation-delay:1.5s;
+  transform:rotate(-135deg);
+}
+
+
+
+
+@keyframes fadeBar{
+  0%{
+    @apply bg-dark-500;
+  }
+
+  100%{
+    @apply bg-gray-400;
+  }
+}
+
+@-o-keyframes fadeBar{
+  0%{
+    @apply bg-dark-500;
+  }
+
+  100%{
+    @apply bg-gray-400;
+  }
+}
+
+@-ms-keyframes fadeBar{
+  0%{
+    @apply bg-dark-500;
+  }
+
+  100%{
+    @apply bg-gray-400;
+  }
+}
+
+@-webkit-keyframes fadeBar{
+  0%{
+    @apply bg-dark-500;
+  }
+
+  100%{
+    @apply bg-gray-400;
+  }
+}
+
+@-moz-keyframes fadeBar{
+  0%{
+    @apply bg-dark-500;
+  }
+
+  100%{
+    @apply bg-gray-400;
+  }
+}

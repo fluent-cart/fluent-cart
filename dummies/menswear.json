@@ -1,0 +1,1025 @@
+[
+  {
+    "categories": ["Menswear"],
+    "post_title": "Cozy Fleece Hoodie",
+    "post_excerpt": "A soft and comfortable fleece hoodie designed for warmth and style. Perfect for casual outings and layering.",
+    "post_content": "This cozy fleece hoodie offers the ultimate comfort with its plush fabric that keeps you warm during cold weather. The hooded design adds a stylish touch, while the relaxed fit ensures easy movement and a casual look. Made from high-quality materials, this hoodie is a must-have for anyone looking to stay warm and fashionable. Ideal for daily wear or layering over other outfits, it is both functional and versatile.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "400",
+      "max_price": "500"
+    },
+    "variants": [
+      {
+        "variation_title": "White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "400",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Peach",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "420",
+        "compare_price": "480",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "430",
+        "compare_price": "490",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Mustard",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "410",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Sea Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "430",
+        "compare_price": "470",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Goldenrod",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "440",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt-hoodie/sweatshirt-hoodie-6.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Classic Zipper Hoodie",
+    "post_excerpt": "A classic zipper hoodie with a modern fit, ideal for everyday casual wear and comfortable layering.",
+    "post_content": "The classic zipper hoodie combines simplicity and functionality in a perfect blend for daily use. Its sleek design, complete with a full-length zipper, makes it easy to wear and remove. Crafted from soft, durable fabric, this hoodie is a reliable choice for casual outings, gym sessions, or just lounging at home. The fitted cuffs and hem ensure a snug fit while keeping the warmth in, making it perfect for transitional seasons.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "700",
+      "max_price": "900"
+    },
+    "variants": [
+      {
+        "variation_title": "Light Pastel",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "700",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Brown",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "720",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Dark Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "740",
+        "compare_price": "890",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Light Brown",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "735",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Dark Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "790",
+        "compare_price": "890",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/aesthetic-zipper-hoodie/aesthetic-zipper-hoodie-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Modern Sweatshirt",
+    "post_excerpt": "A minimalistic yet stylish sweatshirt perfect for everyday wear, offering warmth and comfort.",
+    "post_content": "This modern sweatshirt is designed for individuals who value comfort without compromising on style. Featuring a clean and minimalistic design, it is perfect for pairing with jeans, joggers, or shorts. The soft and durable material ensures longevity, while its breathable fabric keeps you warm during chilly days. Whether you’re heading to the gym or running errands, this versatile sweatshirt fits all occasions.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "600"
+    },
+    "variants": [
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Light Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Olive",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Sea Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "510",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Teal Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "545",
+        "compare_price": "590",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "590",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/modern-sweatshirt/modern-sweatshirt-6.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Basic Men's T-Shirt",
+    "post_excerpt": "A basic men’s t-shirt made from soft fabric, ideal for casual daily wear and layering.",
+    "post_content": "This basic men’s t-shirt is crafted from premium fabric to offer maximum comfort and breathability. Its versatile design makes it ideal for everyday wear, whether you’re lounging at home, heading to the gym, or going out for a casual meetup. The lightweight material ensures you stay cool during warmer days, while the relaxed fit makes it suitable for all body types. A wardrobe essential that pairs well with any style.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/men-t-shirt/men-t-shirt-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "800",
+      "max_price": "1000"
+    },
+    "variants": [
+      {
+        "variation_title": "Forest Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "800",
+        "compare_price": "990",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-t-shirt/men-t-shirt-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "990",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-t-shirt/men-t-shirt-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Teal Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "830",
+        "compare_price": "950",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-t-shirt/men-t-shirt-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "860",
+        "compare_price": "960",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-t-shirt/men-t-shirt-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Men's Hoodie",
+    "post_excerpt": "A comfortable men's hoodie with a relaxed fit, perfect for casual wear and outdoor activities.",
+    "post_content": "This men’s hoodie offers a perfect balance of comfort and style. Its spacious design allows for easy movement, making it ideal for outdoor activities or just relaxing at home. The hood adds an extra layer of warmth for colder days, while the soft fabric ensures all-day comfort. Its simple yet modern design makes it versatile enough to pair with any outfit, making it a staple in any wardrobe.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/men-hoodie/men-hoodie-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "700"
+    },
+    "variants": [
+      {
+        "variation_title": "Dark Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-hoodie/men-hoodie-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Pale Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "640",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-hoodie/men-hoodie-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Tomato",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "560",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-hoodie/men-hoodie-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Mustard",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/men-hoodie/men-hoodie-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Classic Cap",
+    "post_excerpt": "A stylish cap made from high-quality materials, perfect for outdoor activities and casual wear.",
+    "post_content": "This classic cap features a timeless design and is crafted from high-quality fabric, making it both comfortable and durable. It’s perfect for protecting yourself from the sun or completing your casual look. The cap is adjustable, ensuring a perfect fit for all head sizes, and is versatile enough to be worn with any outfit. Ideal for outdoor activities like hiking, sports, or just relaxing at the beach.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1100",
+      "max_price": "1300"
+    },
+    "variants": [
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1100",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Peach",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1120",
+        "compare_price": "1290",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Olive",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1150",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Crimson",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1230",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Sea Green",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1150",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/mans-cap/mans-cap-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Dual-Tone Hoodie",
+    "post_excerpt": "A unique dual-tone hoodie designed for style and comfort. Perfect for those looking to stand out in casual wear.",
+    "post_content": "This dual-tone hoodie features a stylish combination of two colors, offering a fresh look for your wardrobe. Its relaxed fit and soft fabric provide all-day comfort, while the hoodie design adds an extra layer of warmth during chilly weather. Whether you're running errands or relaxing at home, this hoodie is designed to make you stand out while keeping you cozy. The durable fabric ensures longevity, making it an excellent addition to your casual collection.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1000",
+      "max_price": "1100"
+    },
+    "variants": [
+      {
+        "variation_title": "Teal & White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1020",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange & White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1030",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Light Brown & White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1070",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Beige & White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "400",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Plain White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1000",
+        "compare_price": "1050",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/hoodie-mans/hoodie-mans-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Fleece Jacket",
+    "post_excerpt": "A warm and lightweight fleece jacket, ideal for layering during colder months or outdoor activities.",
+    "post_content": "This fleece jacket offers the perfect balance of warmth and breathability. Designed for outdoor activities and colder climates, its lightweight material ensures you stay warm without feeling weighed down. The jacket features a sleek zipper closure, high collar, and elastic cuffs to keep the cold out. It’s versatile enough to be worn over a t-shirt for casual outings or layered under a heavier coat for extra warmth during harsh winters.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/fleece-jacket/fleece-jacket-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "700"
+    },
+    "variants": [
+      {
+        "variation_title": "White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "580",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/fleece-jacket/fleece-jacket-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "550",
+        "compare_price": "700",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/fleece-jacket/fleece-jacket-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Bitter Lemon",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "650",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/fleece-jacket/fleece-jacket-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Oxley",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "690",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/fleece-jacket/fleece-jacket-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Casual Classic Hoodie",
+    "post_excerpt": "A classic hoodie design that combines comfort and simplicity, perfect for everyday wear.",
+    "post_content": "This casual classic hoodie is the perfect addition to your wardrobe, offering comfort and style in one simple design. Made from high-quality fabric, it ensures warmth during cooler days and nights. The relaxed fit provides easy movement, making it ideal for casual outings, workouts, or lounging at home. Its durable construction ensures it will last through many wears, making it a reliable staple piece for any occasion.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "800",
+      "max_price": "900"
+    },
+    "variants": [
+      {
+        "variation_title": "Cadet Blue",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "800",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Mustard",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "810",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Crimson",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Peach",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "810",
+        "compare_price": "890",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/classic-hoodie/classic-hoodie-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Menswear"],
+    "post_title": "Zipper Hoodie",
+    "post_excerpt": "A stylish zipper hoodie with modern detailing, perfect for casual wear and layering during cooler months.",
+    "post_content": "This stylish zipper hoodie is designed for versatility and comfort. Featuring a full-length zipper, it is easy to layer over t-shirts or under coats during cooler months. The hood offers added warmth, while the lightweight yet durable material ensures long-lasting wear. Ideal for casual outings, gym sessions, or simply lounging around, this hoodie provides a modern twist to the classic design.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1200",
+      "max_price": "1500"
+    },
+    "variants": [
+      {
+        "variation_title": "Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1290",
+        "compare_price": "1500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Orange",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1200",
+        "compare_price": "1390",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Teal",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1350",
+        "compare_price": "1400",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Peach",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1200",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "White",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1250",
+        "compare_price": "1350",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/menswear/sweatshirt/sweatshirt-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  }
+]

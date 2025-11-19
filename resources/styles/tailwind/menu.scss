@@ -1,0 +1,396 @@
+/*=== admin menu ===*/
+.fct_menu {
+  @apply hidden m-0 items-center py-3.5 lg:flex;
+}
+
+.fct_menu_item {
+  @apply mb-0 mr-1 last:mr-0 relative;
+  a {
+    text-decoration: none;
+    @apply py-2.5 leading-none px-3 mb-0 tracking-wide font-medium cursor-pointer text-center text-sm box-border flex justify-center items-center rounded border border-solid border-transparent text-system-dark mr-1 last:mr-0 transition-none dark:text-gray-400 hover:bg-dark-25 hover:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-white focus:shadow-none;
+  }
+
+  button {
+   @apply bg-transparent py-2.5 leading-none px-3 mb-0 tracking-wide font-medium cursor-pointer text-center text-sm box-border flex justify-center items-center rounded border border-solid border-transparent text-system-dark mr-1 last:mr-0 transition-none dark:text-gray-400 hover:bg-dark-25 hover:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-white focus:shadow-none;
+    .fct_menu_down_arrow {
+      @apply relative top-[1px] pl-1;
+      svg {
+        @apply w-3 h-3;
+      }
+    }
+  }
+
+  &.active_admin_menu {
+    a {
+      @apply bg-dark-25 text-dark-500 dark:bg-dark-600 dark:text-white;
+    }
+  }
+  &:hover {
+    > .fct_menu_child {
+      @apply opacity-100 visible;
+    }
+  }
+  .fct_menu_child {
+    box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
+    @apply z-10 absolute left-0 w-[150px] bg-white dark:bg-dark-700 p-2 rounded opacity-0 invisible;
+    &_item {
+      @apply mb-0;
+      a {
+        @apply items-start justify-start;
+      }
+    }
+  }
+  &.has-child {
+    &:hover {
+      > a {
+        .fct_menu_down_arrow {
+          @apply rotate-180;
+        }
+      }
+    }
+    > a {
+      @apply inline-flex items-center gap-1;
+      .fct_menu_down_arrow {
+        transition: .3s;
+        @apply w-3 h-2.5 block;
+      }
+    }
+  }
+}
+
+.fct_admin_menu_wrap {
+  @apply block relative bg-white dark:bg-dark-700;
+}
+
+.fct_admin_menu_row {
+  @apply flex justify-between px-7.5 items-center;
+}
+
+.fct_admin_menu {
+  @apply flex items-center;
+}
+
+.fct_admin_menu_help {
+  @apply -mr-5 hidden;
+}
+
+.fct_admin_menu_help_link {
+  @apply py-3 px-5 text-system-dark text-[15px] font-medium rounded focus:shadow-none focus:outline-none hover:text-system-dark hover:bg-gray-25 dark:text-gray-50 dark:hover:text-gray-50 dark:hover:bg-dark-600;
+}
+
+.fct_admin_logo_wrap {
+  @apply flex items-center;
+  a {
+    @apply h-[32px] text-system-dark outline-none focus:shadow-none dark:text-white;
+    img {
+      @apply w-full h-full;
+    }
+  }
+}
+
+.fct_admin_menu_actions {
+  @apply flex items-center gap-1 relative;
+}
+
+.fct_admin_menu_button_wrap {
+  @apply flex justify-center items-center gap-1.5;
+}
+.fct_admin_settings_btn{
+  @apply flex items-center justify-center w-7 h-9 text-system-dark focus:shadow-none focus:outline-none focus:text-system-dark dark:focus:text-gray-300 dark:text-gray-300;
+  svg{
+    @apply w-[15px] h-[15px];
+  }
+  &:hover {
+    @apply text-system-dark dark:text-gray-300;
+  }
+}
+
+.logo-dark-fill {
+  fill: #2C2C2C;
+}
+
+.dark .logo-dark-fill {
+  fill: white;
+}
+
+// Screen Meta
+#ehe-admin-cb,
+#wf-extended-protection-notice,
+.fs-notice,
+.notice:not(.fluent-cart), .error:not(.fluent-cart), #ehp-admin-cb {
+  display: none !important;
+}
+
+/* product header */
+.fct-admin-product {
+  &-header {
+    @apply flex items-center justify-between max-w-[1260px] 3xl:max-w-[1600px] mx-auto mt-0 mb-7.5;
+  }
+
+  &-info {
+    @apply flex items-center mb-1.5;
+    .back-arrow {
+      @apply text-system-dark mr-1 w-6 h-6 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 dark:text-gray-50 dark:hover:bg-dark-600;
+    }
+
+    .product-name {
+      @apply max-w-[700px] whitespace-nowrap overflow-hidden text-ellipsis text-sm font-semibold text-system-dark mr-3 dark:text-gray-50;
+    }
+
+    .product-id {
+      @apply text-xs font-medium text-system-dark mr-3 dark:text-gray-50;
+    }
+  }
+
+  &-menu {
+    @apply flex p-0 m-0 list-none items-center gap-[14px];
+    li {
+      @apply p-0 mb-0 relative before:hidden;
+      a {
+        @apply block relative text-xs font-medium text-system-mid hover:text-system-dark focus:shadow-none dark:text-gray-300 pb-0.5;
+        &:after {
+          @apply absolute bottom-[-2px] right-0 w-full h-[1.5px] bg-primary-500 rounded-xs duration-200 transition-all opacity-0 dark:bg-gray-50;
+          content: "";
+          transform: scale(0.5);
+        }
+      }
+
+      &.active-menu {
+        a {
+          @apply text-system-dark dark:text-gray-50;
+          &:after {
+            @apply opacity-100;
+            transform: scale(1);
+          }
+        }
+      }
+
+      &:before {
+        @apply absolute top-2/4 left-0 w-[5px] h-[5px] bg-gray-500 rounded-full;
+        content: "";
+        transform: translateY(-50%);
+      }
+
+      &.is-hidden {
+        @apply hidden;
+      }
+    }
+  }
+}
+
+
+/*=== theme button ===*/
+.fc_theme_button_wrap {
+  @apply flex justify-center items-center gap-5;
+}
+
+.fct-mobile-menu-container {
+  @apply flex items-center lg:hidden;
+}
+
+.theme-dropdown > li.active {
+  @apply bg-gray-100 dark:bg-dark-500;
+}
+
+.fct-theme-button-container {
+  .theme-selected-button {
+    @apply flex cursor-pointer items-center justify-center w-9 h-9;
+  }
+
+  .theme-icon {
+    @apply flex-shrink-0 w-9 h-9 flex items-center cursor-pointer justify-center text-system-mid rounded-md dark:text-gray-300;
+    .icon {
+      @apply justify-center;
+    }
+
+    &.active {
+      @apply bg-white dark:bg-dark-400;
+    }
+  }
+
+  svg {
+    @apply w-4.5 h-4.5;
+  }
+
+  &.active {
+    &:before {
+      @apply opacity-100;
+    }
+  }
+
+  &::before {
+    content: '';
+    transition: opacity 0.3s ease-in-out;
+    @apply w-full h-full rounded-tr-md rounded-br-md absolute top-0 left-0 bg-gray-50 dark:bg-dark-500 opacity-0 z-[-1];
+  }
+}
+
+.theme-dropdown-buttons {
+  @apply flex items-center right-[36px] rounded-tl-md rounded-bl-md absolute top-1/2 translate-y-[-50%] w-0 overflow-hidden border-0 border-r-[1px] border-solid border-transparent transition-[width,opacity] duration-300 opacity-0;
+  &.active {
+    @apply w-[72px] opacity-100 border-gray-100 dark:border-dark-600;
+    &:before {
+      @apply opacity-100;
+    }
+  }
+
+  &::before {
+    content: '';
+    transition: opacity 0.3s ease-in-out;
+    @apply w-full h-full rounded-tl-md rounded-bl-md absolute top-0 left-0 bg-gray-50 dark:bg-dark-500 opacity-0 z-[-1];
+  }
+}
+
+//
+#wpbody-content {
+  #fct_admin_menu_holder {
+    .fct_admin_menu_wrap {
+      @apply fixed top-8 w-[calc(100%-160px)] z-[2000] right-0 transition-all duration-300 ease-in-out;
+      box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
+      &.is-shadowless{
+        box-shadow: none;
+      }
+      &.border-bottom {
+        @apply border-[1px] border-solid border-gray-divider dark:border-dark-400 border-x-0 border-t-0;
+      }
+    }
+  }
+}
+
+.dark {
+  #wpbody-content {
+    #fct_admin_menu_holder {
+      .fct_admin_menu_wrap {
+        box-shadow: 0 0 4px rgba(8, 11, 16, 0.60);
+      }
+    }
+  }
+}
+
+.folded {
+  #wpbody-content {
+    #fct_admin_menu_holder {
+      .fct_admin_menu_wrap {
+        @apply w-[calc(100%-36px)];
+      }
+    }
+  }
+}
+
+
+// offcanvas
+.menu-toggle-button {
+  @apply cursor-pointer text-system-dark w-7.5 h-7.5 flex items-center justify-center dark:text-gray-50;
+  svg {
+    @apply w-5 h-5;
+  }
+}
+
+.fct-offcanvas-menu {
+  transition: .3s;
+  overflow-x: hidden;
+  @apply absolute -top-2.5 right-[-10px] bg-white invisible opacity-0 pl-3 pr-7.5 pb-3 pt-[50px] z-[9999] h-screen w-0 dark:bg-dark-500;
+  .fct-offcanvas-menu-close {
+    @apply absolute border-0 bg-gray-50 top-2.5 left-3 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer dark:bg-dark-600 dark:text-gray-50 hover:bg-gray-100 dark:hover:bg-dark-600;
+    svg {
+      @apply w-4 h-4;
+    }
+  }
+  &.open {
+    @apply opacity-100 w-[270px] visible;
+  }
+}
+
+.fct-offcanvas-menu-overlay {
+  @apply fixed top-0 left-0 w-full h-full bg-[#020D174D] z-[9998] hidden;
+  backdrop-filter: blur(2px);
+  &.active {
+    @apply block;
+  }
+}
+
+.fct-offcanvas-menu-list {
+  @apply flex flex-col gap-1 max-h-[calc(100%-50px)] overflow-y-scroll;
+  .fct-offcanvas-menu-label {
+    @apply font-medium cursor-pointer text-sm leading-[20px] py-2 px-3 rounded text-system-mid dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-400;
+    .fct-offcanvas-menu-arrow {
+      svg {
+        @apply w-3 h-3 inline-flex items-center justify-center transition-transform;
+      }
+    }
+    a {
+      @apply text-primary-500 dark:text-gray-300 no-underline focus:outline-none focus:shadow-none;
+    }
+  }
+
+  .fct-offcanvas-menu-item {
+    &.active {
+      .fct-offcanvas-menu-label {
+        @apply bg-gray-50 text-system-dark dark:text-gray-50 dark:bg-dark-400;
+      }
+    }
+
+    &.has-children {
+      .fct-offcanvas-menu-label {
+        @apply flex justify-between items-center;
+      }
+    }
+    &.children-open {
+      .fct-offcanvas-menu-label {
+        .fct-offcanvas-menu-arrow {
+          svg {
+            @apply rotate-180;
+          }
+        }
+      }
+    }
+  }
+
+  .fct-offcanvas-menu-children {
+    @apply flex flex-col pl-4 hidden bg-white dark:bg-dark-500;
+    &.active {
+      @apply block mt-1 mb-1;
+    }
+
+    .fct-offcanvas-menu-item {
+      .fct-offcanvas-menu-label {
+        @apply font-normal;
+      }
+      &.active {
+        .fct-offcanvas-menu-label {
+          @apply bg-gray-50 text-system-dark dark:text-gray-50 dark:bg-dark-400;
+        }
+      }
+    }
+  }
+
+}
+
+
+
+@media (max-width: 960px) {
+  body.auto-fold {
+    #wpbody-content {
+      #fct_admin_menu_holder {
+        .fct_admin_menu_wrap {
+          @apply w-[calc(100%-36px)];
+        }
+      }
+    }
+  }
+}
+@media (max-width: 782px) {
+  body.auto-fold {
+    #wpbody-content {
+      #fct_admin_menu_holder {
+        .fct_admin_menu_wrap {
+          @apply w-full top-11.5;
+          &.scroll-header {
+            top: 0;
+          }
+        }
+      }
+    }
+  }
+}
+

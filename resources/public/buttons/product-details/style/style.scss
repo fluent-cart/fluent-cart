@@ -1,0 +1,18 @@
+@config "./style.config.js";
+@tailwind utilities;
+
+:root {
+
+}
+
+.fluent-cart-product-details-button {
+  --fluent-cart-product-details-button-background: var(--fluent-cart-primary-color, theme('colors.primary.500'));
+  --fluent-cart-product-details-button-text-color: theme('colors.white');
+  --fluent-cart-product-details-button-border-color: var(--fluent-cart-product-details-button-background);
+
+  @apply border border-solid border-[var(--fluent-cart-product-details-button-text-color)] py-3 px-5 text-base font-semibold rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fluent-cart-product-details-button-text-color)] max-h-10 hover:bg-[var(--fluent-cart-product-details-button-background)] hover:border-[var(--fluent-cart-product-details-button-text-color)] hover:text-[var(--fluent-cart-product-details-button-text-color)];
+
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fluent-cart-product-details-button-background);
+
+  box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./resources/admin/*"]
+    }
+  },
+  "include": [
+    "resources/**/*.js",
+    "resources/**/*.jsx",
+    "resources/**/*.ts",
+    "resources/**/*.tsx",
+    "resources/**/*.vue"
+  ],
+  "exclude": [
+    "node_modules",
+    "resources/**/dist",
+    "resources/**/build",
+    "resources/**/*.min.js"
+  ]
+}

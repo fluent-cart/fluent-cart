@@ -1,0 +1,161 @@
+/*===== icon button ====*/
+.icon-button{
+    @apply p-0 w-9 h-9 bg-white flex relative items-center justify-center flex-shrink-0 rounded border border-solid border-gray-outline text-system-mid transition-none focus:shadow-none focus:bg-gray-25 focus:text-system-mid focus:border-gray-outline dark:border-dark-400 dark:bg-dark-600 dark:text-white dark:hover:bg-dark-600 dark:focus:border-dark-400 dark:focus:bg-dark-600 dark:focus:text-white;
+    .el-icon{
+        @apply w-auto;
+    }
+    .icon{
+        @apply flex items-center justify-center;
+    }
+    svg{
+        @apply h-4 w-4;
+    }
+    &.tiny{
+        @apply w-6 h-6 rounded-xs;
+        svg{
+            @apply h-3 w-3;
+        }
+    }
+    &.x-small{
+        @apply w-7 h-7 rounded-sm;
+        svg{
+            @apply h-[15px] w-[15px];
+            &.cross{
+                @apply h-3 w-3;
+            }
+        }
+    }
+    &.small{
+        @apply w-7 h-7 rounded-sm; // 28px
+        svg{
+            @apply h-[15px] w-[15px];
+        }
+    }
+    &.medium{
+        @apply w-8 h-8; // 32px
+        svg{
+            @apply h-4 w-4;
+        }
+    }
+    &.large{
+        @apply w-12 h-12;
+        svg{
+            @apply h-5.5 w-5.5;
+        }
+    }
+    &.is-circle{
+        @apply rounded-[9999px];
+    }
+    &.success{
+        &[soft]{
+            @apply bg-success-50 border-success-50 text-success-500 dark:bg-dark-600 dark:border-dark-600 dark:text-white;
+        }
+    }
+    &.warning{
+        &[soft]{
+            @apply bg-warning-50 text-system-dark border-warning-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
+        }
+    }
+    &.primary{
+        @apply bg-primary-500 text-white border-primary-500 hover:bg-dark-600 hover:border-dark-600;
+        &[soft]{
+            @apply bg-primary-50 text-primary-500 border-primary-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
+        }
+        .icon {
+            @apply text-white;
+        }
+    }
+    &.blue{
+        @apply bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600;
+        &[soft]{
+            @apply bg-blue-50 text-system-dark border-blue-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
+        }
+    }
+    &.secondary{
+        &[soft]{
+            @apply bg-secondary-50 text-system-dark border-secondary-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
+        }
+    }
+    &.danger{
+        @apply bg-red-500 border-red-500 text-white hover:border-red-500 hover:bg-red-500 hover:text-white;
+        &[soft]{
+            @apply bg-red-50 text-red-500 border-red-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
+        }
+        &[outline]{
+            @apply bg-red-50 border-red-500 text-red-500;
+        }
+        &.is-disabled,
+        &:disabled{
+            @apply bg-red-100 border-red-200 cursor-not-allowed text-red-300 hover:bg-red-100 hover:border-red-200;
+        }
+    }
+    &.info{
+        &[soft]{
+            @apply bg-gray-50 text-system-mid border-gray-50;
+        }
+        &[outline]{
+            @apply bg-gray-neutral border-gray-outline text-system-mid dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
+        }
+    }
+    &.transparent{
+        @apply bg-transparent dark:hover:bg-dark-600;
+    }
+    &.white{
+        @apply bg-white dark:bg-dark-600;
+    }
+    &.dark{
+        @apply bg-dark-500 border-dark-500 text-white hover:border-dark-500 hover:bg-dark-500 hover:text-white;
+    }
+    &.hover{
+        &-primary{
+            @apply hover:border-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:hover:text-gray-50;
+        }
+        &-danger{
+            @apply hover:border-red-500 hover:bg-red-25 hover:text-red-500;
+        }
+        &-info{
+            @apply hover:border-gray-500 hover:bg-gray-25 dark:hover:border-dark-300 dark:hover:bg-dark-500;
+        }
+    }
+    &.is-disabled,
+    &:disabled{
+        @apply opacity-50 bg-gray-100 border-gray-200 cursor-not-allowed text-gray-300 hover:bg-gray-100 hover:border-gray-200 dark:bg-dark-400 dark:border-dark-400 dark:text-gray-500;
+    }
+    &.border-none{
+        @apply border-0;
+    }
+    &.ghost{
+        @apply bg-transparent border-0 opacity-100 hover:bg-gray-100 dark:hover:bg-dark-400;
+    }
+    &.active{
+        @apply border-primary-500 text-primary-500 dark:border-dark-200 dark:text-gray-25;
+        .icon{
+            @apply text-primary-500 dark:text-gray-25;
+        }
+    }
+}
+
+button.icon-button {
+    &:focus{
+        outline-width: 0;
+        outline-style: none;
+    }
+}
+
+button.icon-button,
+a.icon-button {
+    @apply cursor-pointer hover:bg-gray-50 text-inherit dark:hover:bg-dark-600 dark:text-white;
+    &.danger{
+        @apply dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white;
+        .icon {
+            @apply text-white;
+        }
+    }
+    &.is-disabled,
+    &:disabled{
+        @apply dark:hover:bg-dark-400 dark:hover:border-dark-400;
+    }
+    .icon {
+        @apply text-system-mid dark:text-gray-300;
+    }
+}

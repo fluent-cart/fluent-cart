@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./product-card-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.fluent-cart-product-card-block-editor {
+  @apply bg-white rounded border border-solid border-gray-outline p-5;
+  .fluent-cart-product-card-block-editor-header{
+    @apply mt-0 mb-5 pb-5 border border-t-0 border-x-0 flex items-center justify-between border-solid border-gray-outline;
+  }
+  .fluent-cart-product-card-block-editor-title{
+    @apply m-0 text-lg font-medium;
+  }
+  .fct-input{
+    @apply text-sm w-full bg-white shadow-none rounded border border-solid border-gray-outline py-2 px-3.5 m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 focus:outline-none focus:shadow-none;
+  }
+  .product-clear-button {
+    @apply text-sm font-medium bg-neutral-50 border border-solid border-gray-outline rounded cursor-pointer block py-1.5 px-3 hover:bg-neutral-400;
+  }
+}
+
+.fct-product-card{
+  @apply relative bg-[var(--product-card-bg)] grid grid-cols-1 border border-solid rounded border-[var(--product-card-border-color)] transition-all duration-200 p-1;
+  grid-template-areas: 'head' 'body' 'footer';
+  button {
+    @apply text-[var(--button-color)] border-0 flex w-full items-center justify-center relative rounded text-sm font-medium cursor-pointer leading-none py-3 px-4 transition-all focus:outline-none max-h-9 min-h-9 m-0 no-underline gap-1.5 #{!important};
+
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--button-bg) !important;
+    box-shadow: inset 0px 0.5px 0.5px 0.5px  rgba(255, 255, 255, 0.1);
+  }
+  &-head {
+    grid-area: head;
+    .fct-product-card-image {
+      @apply object-cover aspect-square w-full h-full rounded-sm border border-solid border-t-0 border-l-0 border-r-0 border-[#f5f6f7];
+    }
+  }
+
+  &-body {
+    @apply overflow-hidden px-4 pb-4 pt-5;
+    .out_of_stock_text {
+      @apply py-3 px-4 border border-solid border-red-100 bg-red-50 text-red-500 rounded-xs w-full leading-none block text-center text-sm font-semibold;
+    }
+    grid-area: body;
+  }
+
+  &-title {
+    @apply leading-[18px] mt-0 mb-1.5 pb-0 normal-case font-medium text-[15px] text-[var(--product-card-title-color)] hover:text-[var(--product-card-title-hover-color)] #{!important};
+    display: inline-block; /* For Chrome, Safari, Edge */
+    -webkit-box-orient: vertical; /* Needed for -webkit-line-clamp */
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    overflow: hidden;
+    line-height: 1.2em; /* Optional: adjust to your design */
+    max-height: 2.4em; /* Fallback for all browsers */
+  }
+
+  &-price-wrap {
+    @apply text-base font-semibold text-[var(--product-card-price-color)];
+    .fct-product-card-max-price{
+      @apply text-sm line-through opacity-70;
+    }
+    &.is-price-range{
+      @apply gap-1.5;
+      .fct-product-card-max-price{
+        @apply text-base opacity-100;
+        text-decoration-line: none;
+      }
+    }
+  }
+  &-excerpt{
+    @apply hidden mt-2 mb-2.5 text-[15px] text-[var(--product-card-text-color)] leading-[24px] group-[.list]:block;
+  }
+  &-footer{
+    @apply px-4 pb-4 mt-auto;
+    grid-area: footer;
+  }
+  &:hover {
+    box-shadow: 0 16px 48px -4px rgba(27, 37, 51, 0.08);
+  }
+}
+
+.fct-inspector-control-wrap--product-card {
+  @apply relative z-[2];
+  .fct-custom-select-wrap{
+    @apply max-w-[140px];
+  }
+  .fct-inspector-control-row{
+    @apply items-center;
+  }
+}
+.components-panel__header.editor-sidebar__panel-tabs{
+  z-index: 0;
+}

@@ -1,0 +1,45 @@
+.el-tag{
+  @apply font-medium capitalize rounded-sm;
+  .icon{
+    @apply h-[13px];
+    svg{
+      @apply w-[13px] h-[13px];
+    }
+  }
+  &.el-tag--success{
+    @apply bg-success-25 text-success-500 border-success-500;
+  }
+  &.el-tag--primary{
+    @apply bg-primary-25 text-primary-500 border-primary-500;
+  }
+  &.el-tag--info{
+    @apply bg-gray-25 text-gray-800 border-gray-500;
+  }
+  &.el-tag--warning{
+    @apply bg-warning-25 text-warning-500 border-warning-500;
+  }
+  &.el-tag--danger{
+    @apply bg-red-25 text-red-500 border-red-500;
+  }
+}
+.el-tag--dark{
+  &.el-tag--success{
+    @apply bg-success-200 text-system-dark border-success-200;
+  }
+  &.el-tag--primary{
+    @apply bg-primary-200 text-system-dark border-primary-200;
+  }
+  &.el-tag--info{
+    @apply bg-gray-200 text-system-dark border-gray-200;
+  }
+  &.el-tag--warning{
+    @apply bg-warning-200 text-system-dark border-warning-200;
+  }
+  &.el-tag--danger{
+    @apply bg-red-200 text-system-dark border-red-200;
+  }
+}
+
+.el-tag__content{
+  @apply flex items-center gap-1;
+}

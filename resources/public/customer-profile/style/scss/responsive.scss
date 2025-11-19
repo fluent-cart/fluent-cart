@@ -1,0 +1,37 @@
+.order-content-only-mobile,
+.subscription-only-mobile,
+.license-only-mobile {
+  @apply hidden;
+}
+
+.order-content-only-desktop,
+.subscription-only-desktop,
+.license-only-desktop {
+  @apply block;
+}
+
+@media (max-width: 575px) {
+  .order-content-only-mobile,
+  .subscription-only-mobile,
+  .license-only-mobile {
+    @apply block;
+  }
+  .order-content-only-desktop,
+  .subscription-only-desktop,
+  .license-only-desktop {
+    @apply hidden;
+  }
+  .fct-collapsible-search-wrap .el-input {
+    @apply w-auto !important;
+  }
+  .el-overlay .el-dialog {
+    @apply w-[90%];
+  }
+  .fct-customer-dashboard-content-table-item {
+    @apply gap-6 !important;
+  }
+  .fct-license-key-wrap .license-key{
+    @apply text-xs px-2 py-1.5 !important;
+  }
+}
+

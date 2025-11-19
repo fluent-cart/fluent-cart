@@ -1,0 +1,363 @@
+@config "./select.config.js";
+.fct-custom-searchable-select {
+    @apply relative w-full box-border;
+    * {
+        @apply box-border;
+    }
+    &-container {
+        @apply relative bg-white rounded-none transition-all duration-[300ms] border-[0.5px] border-solid border-gray-200;
+        .select {
+            &-input {
+                @apply w-full py-3 pr-10 pl-4 text-sm border-none outline-none bg-transparent pointer-events-none;
+                &:focus {
+                    @apply cursor-text;
+                }
+            }
+            &-arrow {
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 4px solid;
+                @apply absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-primary-200 transition-transform duration-300 ease-in-out pointer-events-none;
+            }
+            &-option {
+                transition: background-color 0.2s ease;
+                @apply bg-white rounded px-3 py-[5px] font-medium text-system-dark cursor-pointer text-base;
+                &:last-child {
+                    border-bottom: none;
+                }
+                &:hover {
+                    @apply bg-gray-50;
+                }
+                &.highlighted {
+                    @apply bg-gray-100;
+                }
+                &.selected {
+                    @apply bg-gray-50;
+                }
+                &.no-options {
+                    @apply text-center text-gray-400 cursor-default italic;
+                    &:hover {
+                        @apply bg-transparent;
+                    }
+                }
+            }
+            &-dropdown {
+                transform: translateY(-10px);
+                box-shadow: 0px 0px 12px rgba(0,0,0,0.12);
+                @apply absolute top-full left-0 right-0 max-h-[200px] z-[1000] opacity-0 invisible bg-white overflow-x-hidden rounded box-border p-2.5 border-[1px] border-solid border-gray-outline transition-all duration-300;
+                * {
+                    @apply box-border;
+                }
+
+                &::-webkit-scrollbar {
+                    @apply w-1.5;
+                }
+                &::-webkit-scrollbar-thumb {
+                    @apply bg-gray-200 rounded;
+                }
+                &::-webkit-scrollbar-track {
+                    @apply bg-transparent;
+                }
+            }
+        }
+        &.open {
+            .select-arrow {
+                transform: translateY(-50%) rotate(180deg);
+            }
+            .select-dropdown {
+                transform: translateY(0);
+                @apply visible opacity-100;
+            }
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 35px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            &:hover {
+                background: #f0f0f0;
+                color: #333;
+            }
+        }
+        &.has-value {
+            .select-input {
+                @apply pt-5 pb-1;
+            }
+            .clear-btn {
+                @apply flex;
+            }
+        }
+    }
+    &.disabled {
+        .fct-custom-searchable-select-container {
+            @apply pointer-events-none opacity-50;
+        }
+    }
+}
+.fluent-cart-checkout-page-input-group-body {
+    #billing_country_wrapper {
+        .fct-nice-select {
+            &.fluent-cart-checkout-page-form-select {
+                @apply rounded-tl rounded-tr;
+            }
+        }
+    }
+}
+#billing_country_wrapper {
+    select {
+        padding-top: 10px;
+        opacity: 1;
+        border-radius: 8px 8px 0 0;
+        height: 38px;
+        min-height: 38px;
+        &#billing_country {
+            //display: none;
+        }
+    }
+    .hidden-select {
+        @apply hidden;
+    }
+    .fct-nice-select {
+        @apply border-t-[1px] rounded-none;
+    }
+}
+#billing_state_wrapper {
+    .hidden-select {
+        @apply hidden;
+    }
+    select {
+        padding-top: 10px;
+        opacity: 1;
+        height: 38px;
+        min-height: 38px;
+        &#billing_state {
+            //display: none;
+        }
+    }
+}
+
+#shipping_country_wrapper {
+    .hidden-select {
+        @apply hidden;
+    }
+    select {
+        @apply opacity-100 pt-2.5;
+        #shipping_country {
+            //display: none;
+        }
+    }
+    .fct-nice-select {
+        @apply border-t-[1px] rounded-none;
+    }
+}
+#shipping_state_wrapper {
+    .hidden-select {
+        @apply hidden;
+    }
+    select {
+        padding-top: 10px;
+        opacity: 1;
+        #shipping_state {
+            //display: none;
+        }
+    }
+}
+
+.fct-nice-select {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: all .2s ease-in-out;
+    @apply w-full h-9.5 pl-4.5 pr-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-input-text-color)] bg-[var(--fct-input-bg-color)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
+
+    &:after {
+        content: "";
+        border-bottom: 1.5px solid #43485a;
+        border-right: 1.5px solid #43485a;
+        transform-origin: 66% 66%;
+        transform: rotate(45deg);
+        transition: all 0.15s ease-in-out;
+        @apply block w-[5px] h-[5px] mt-[-4px] pointer-events-none absolute right-4 top-1/2;
+    }
+    .fct-nice-select-dropdown {
+        @apply w-full;
+    }
+
+    .empty-value {
+        @apply text-[var(--checkout-placeholder-color)]
+    }
+
+    &.open {
+        &:after {
+            transform: rotate(-135deg);
+        }
+        .fct-nice-select-dropdown {
+            @apply block pointer-events-auto;
+        }
+    }
+    &.disabled {
+        &:after {
+            border-color: #ccc;
+        }
+    }
+    &.wide {
+        @apply w-full;
+        .fct-nice-select-dropdown {
+            @apply left-0 right-0 #{!important};
+        }
+    }
+    &.right {
+        @apply float-right;
+        .fct-nice-select-dropdown {
+            @apply left-auto right-0;
+        }
+    }
+    &.small {
+        @apply text-xs h-9 h-8.5;
+        &:after {
+            @apply w-1 h-1;
+        }
+        .option {
+            @apply leading-[34px] min-h-8.5;
+        }
+    }
+
+    .has-multiple {
+        white-space: inherit;
+        @apply h-auto py-[7px] px-3 min-h-9 leading-[22px];
+        span {
+            &.current {
+                @apply border-[1px] border-solid border-[var(--fct-checkout-input-border-color)] bg-[#eee] py-0 px-2.5 rounded-[3px] inline-block leading-[24px] text-sm mb-[3px] mr-[3px];
+            }
+        }
+        .multiple-options {
+            @apply block leading-[24px] p-0;
+        }
+    }
+
+    &-search {
+        @apply border-b-[1px] border-solid border-[var(--fct-checkout-input-border-color)];
+        @apply border-t-0 border-x-0 !important;
+        &-box {
+            @apply w-full p-0 top-0 sticky box-border rounded-none z-[2];
+        }
+    }
+    &-dropdown {
+        @apply bg-[var(--fct-select-dropdown-bg)] rounded shadow-[0px_16px_32px_-4px_rgba(27,37,51,0.2)] pointer-events-none absolute top-0 left-0 z-[9] hidden max-h-[230px] overflow-x-hidden;
+        &::-webkit-scrollbar {
+            @apply w-1.5;
+        }
+        &::-webkit-scrollbar-track {
+            @apply bg-transparent rounded-[10px];
+        }
+        &::-webkit-scrollbar-thumb {
+            @apply bg-[#ddd] rounded-[10px];
+        }
+    }
+
+    .list {
+        @apply rounded-[5px] box-border p-0 m-0 text-[var(--fct-secondary-text-color)];
+        &:hover {
+            .option {
+                &:not(:hover) {
+                    background-color: rgba(0, 0, 0, 0) !important
+                }
+            }
+        }
+        &::-webkit-scrollbar {
+            @apply w-0;
+        }
+    }
+
+    .option {
+        @apply cursor-pointer font-normal leading-[40px] list-none outline-none pl-4.5 pr-[29px] text-left transition-all duration-200;
+        &.selected.focus,
+        &.focus,
+        &:hover {
+            @apply bg-[var(--fct-select-option-hover-bg)];
+        }
+        &.selected {
+            @apply font-bold;
+        }
+        &.disabled {
+            @apply text-[#999] cursor-default bg-black;
+        }
+    }
+    .extra {
+        @apply float-right;
+    }
+    .optgroup {
+        @apply font-bold;
+    }
+}
+
+#shipping_state_wrapper,
+#billing_state_wrapper {
+    &[data-loading="loading"] {
+        .fct-nice-select {
+            @apply pointer-events-none;
+            &:before {
+                content: 'Loading...';
+                @apply absolute top-0 left-0 w-full h-full bg-white pl-4.5 pr-7.5 text-[#acb5c2];
+            }
+        }
+    }
+}
+
+
+.no-csspointerevents {
+    .fct-nice-select {
+        .fct-nice-select-dropdown {
+            @apply hidden;
+        }
+        &.open {
+            .fct-nice-select-dropdown {
+                @apply block;
+            }
+        }
+    }
+}
+
+.hidden-select {
+    @apply opacity-0 w-0 p-0 h-0 text-[0px] min-h-[auto];
+}
+
+.select-selection-list {
+    @apply list-none p-0 m-0;
+    .select-selection {
+        @apply bg-[#e4e4e4]
+        border-[1px] border-[#aaa]
+        rounded-xs
+        box-border
+        inline-block
+        ml-[5px]
+        mt-[5px]
+        py-[2px]
+        px-[5px]
+        relative
+        max-w-full
+        overflow-hidden
+        text-ellipsis
+        align-bottom
+        whitespace-nowrap;
+    }
+
+    button {
+        &.remove-select-selection {
+            @apply h-[15px] w-[15px] leading-[15px] p-0 bg-[#bd2919] rounded-[20%];
+        }
+    }
+}
+

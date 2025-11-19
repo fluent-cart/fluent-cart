@@ -1,0 +1,85 @@
+.fct-tab-wrapper{
+  @apply w-full flex gap-7 box-border;
+  * {
+    @apply box-border;
+  }
+}
+
+.fct-tab-item{
+  &-wrapper{
+    @apply w-[280px] flex-shrink-0 h-max bg-white rounded p-4 dark:bg-dark-700;
+  }
+  &-inner{
+    @apply pb-6;
+  }
+  @apply mb-1;
+  &:last-child{
+    @apply mb-0;
+  }
+  &-active{
+    > .fct-tab-link{
+      @apply bg-primary-25 text-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:bg-dark-500 dark:text-white dark:hover:bg-dark-500;
+      .tab-icon-right{
+        @apply opacity-100 right-3;
+      }
+      &::before{
+        @apply w-1;
+      }
+    }
+  }
+
+  .fct-settings-menu-child-wrap {
+    @apply relative pl-6.5 my-1;
+    &::before {
+      content: '';
+      @apply absolute left-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+    }
+    .tab-item {
+      .fct-tab-link {
+        &::before {
+          content: "";
+          @apply absolute top-2 left-[-8px] w-0 h-[84%] h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
+        }
+        &.router-link-exact-active {
+          @apply bg-white font-semibold dark:bg-transparent;
+
+          &::before{
+            @apply w-0.5;
+          }
+        }
+      }
+      &-active {
+        .fct-tab-link {
+          @apply bg-white font-semibold dark:bg-transparent;
+          &::before {
+            @apply w-0.5;
+          }
+        }
+      }
+    }
+  }
+}
+
+.fct-tab-link{
+  @apply relative rounded cursor-pointer py-2 px-3 outline-none gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
+  .icon:not(.tab-icon-right) {
+    svg{
+      @apply w-4.5 h-4.5;
+    }
+  }
+  .tab-icon-right{
+    @apply absolute top-[50%] right-4 opacity-0 duration-300 transition-all;
+    transform: translateY(-50%);
+    svg{
+      @apply w-2.5 h-2.5;
+    }
+  }
+  &::before{
+    //@apply absolute top-[2.5px] -left-4 w-0 h-[84%] bg-primary-500 rounded-tr rounded-br duration-100 transition-all;
+    //content: "";
+  }
+}
+
+.fct-tab-content{
+  @apply flex-1;
+}

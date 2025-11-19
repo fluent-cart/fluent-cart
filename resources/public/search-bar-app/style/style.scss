@@ -1,0 +1,56 @@
+@config "./style.config.js";
+@tailwind utilities;
+
+:root {
+
+}
+
+.fluent-cart-search-bar-app-wrapper {
+	@apply relative;
+	.fluent-cart-search-bar-app-wrapper-header-wrap {
+		@apply flex gap-2 items-center;
+		.fluent-cart-search-bar-app-wrapper-select-container {
+			@apply max-w-180;
+			select {
+				@apply w-full !mr-0 !shadow-none outline-none h-[48px] leading-none;
+			}
+		}
+		.fluent-cart-search-bar-app-input-wrap {
+			@apply w-full flex relative h-[48px];
+			.fluent-cart-search-bar-app-input-clear,
+			.fluent-cart-search-bar-app-input-search {
+				@apply text-system-mid w-10 absolute top-0 left-0 h-full flex items-center justify-center;
+			}
+			.fluent-cart-search-bar-app-input-clear {
+				@apply left-auto right-0 cursor-pointer transform-none;
+			}
+			input {
+				@apply text-sm w-full bg-white shadow-none outline-none rounded border border-solid border-gray-outline py-2 px-[36px] m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};
+			}
+		}
+	}
+
+	.fluent-cart-search-bar-app-wrapper-result-wrap {
+		@apply mt-1.5 bg-white p-5 rounded-[12px];
+		box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.1);
+		h5 {
+			@apply text-lg font-semibold mb-3;
+		}
+		.fluent-cart-search-bar-app-list-wrapper {
+			@apply m-0 p-0 list-none;
+			li {
+				@apply mb-1.5;
+				&:last-child {
+					@apply mb-0;
+				}
+				a {
+					@apply flex gap-2 no-underline text-sm text-system-dark font-semibold relative hover:text-primary-500 hover:underline !important;
+					&:before {
+						content: '';
+						@apply w-[4px] h-[4px] rounded-full block bg-neutral-1200 mt-[10px];
+					}
+				}
+			}
+		}
+	}
+}

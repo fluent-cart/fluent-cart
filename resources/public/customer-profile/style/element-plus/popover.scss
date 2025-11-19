@@ -1,0 +1,15 @@
+.el-popconfirm{
+  .el-popconfirm__action{
+    @apply mt-3.5;
+  }
+  .el-button--small{
+    @apply min-h-7 px-2.5 text-xs #{!important};
+  }
+  .el-button+.el-button {
+    margin-left: 6px;
+  }
+}
+
+.el-popper.fct-tooltip-long{
+  @apply max-w-[400px];
+}

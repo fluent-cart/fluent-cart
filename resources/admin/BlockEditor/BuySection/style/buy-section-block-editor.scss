@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./buy-section-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+
+/*======== TAB =========*/
+.fct-product-tab-nav {
+  @apply flex gap-5 mb-5 border border-solid border-gray-outline border-x-0 border-t-0 relative;
+  .tab-active-bar {
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-dark-500;
+    transition: left 300ms ease, width 300ms ease;
+  }
+}
+
+.fct-product-tab-nav-item {
+  @apply capitalize text-sm text-system-mid font-medium cursor-pointer pb-2.5 px-1 relative transition-all duration-200;
+  &.active {
+    @apply text-dark-500 font-semibold border-b-2 border-x-0 border-t-0 border-solid border-dark-500;
+  }
+}
+
+/*=== variant item ===*/
+.fct-product-variants {
+  @apply flex flex-wrap gap-4 mb-5;
+}
+
+.fct-product-variant-item {
+  @apply flex flex-col justify-between cursor-pointer border border-solid border-gray-outline py-2 px-2.5 rounded transition duration-200 relative;
+  .fct-product-variant-image{
+    @apply w-8 h-8 flex-shrink-0;
+    img{
+      @apply w-full h-full object-cover rounded-xs;
+    }
+  }
+
+  .fct-product-variant-title {
+    @apply leading-[20px] text-sm font-medium text-system-dark;
+  }
+
+  .variant-content{
+      @apply flex items-center gap-3;
+  }
+
+  .additional-info{
+    @apply text-sm;
+  }
+
+  .fct-product-variant-price {
+    @apply absolute top-1/2 right-4 inline-flex flex-shrink-0 items-center gap-1 text-base font-semibold leading-[1.2] text-system-dark;
+    transform: translateY(-50%);
+    .fct-product-variant-compare-price {
+      @apply text-[13px] text-system-mid font-normal;
+    }
+  }
+
+  &.selected {
+    @apply border-dark-500;
+    box-shadow: 0px 0px 0px 2px #fff, 0px 0px 0px 4px rgba(71, 108, 255, 0.10);
+    .fct-product-variant-title {
+      @apply text-system-dark;
+    }
+    &.fct_variation_view_type_text{
+      .fct-product-variant-payment-type{
+        @apply grid-rows-[1fr] pt-1;
+      }
+    }
+  }
+}
+
+/*=== item price ===*/
+.fct-product-item-price{
+  @apply text-lg font-semibold text-system-dark mt-5;
+}
+
+/*=== quantity ===*/
+.fct-product-quantity-container {
+  @apply mt-3;
+  .quantity-title{
+    @apply text-base font-semibold mt-0 mb-2.5 text-system-dark;
+  }
+}
+
+.fct-product-quantity {
+  @apply inline-flex items-center bg-gray-100 rounded overflow-hidden;
+  .fct-quantity-decrease-button,
+  .fct-quantity-increase-button {
+    @apply flex items-center justify-center m-0 w-7.5 h-9 flex-shrink-0 max-h-[inherit] p-0 shadow-none border-0 rounded-none bg-gray-100 text-system-dark cursor-pointer;
+    svg{
+      @apply w-3.5 h-3.5;
+    }
+    &:focus{
+      outline-width: 0;
+      outline-style: none;
+    }
+    &:disabled{
+      @apply opacity-50 cursor-not-allowed;
+    }
+  }
+
+  .fct-quantity-input{
+      @apply font-semibold text-system-dark bg-transparent max-w-9 max-h-9 text-center p-0 m-0 border-0 outline-none shadow-none focus:shadow-none focus:outline-none;
+      &:disabled{
+        @apply opacity-50 cursor-not-allowed;
+      }
+  }
+}
+
+/*=== buttons ===*/
+.fct-product-buttons-wrap {
+  @apply grid grid-cols-2 gap-3 mt-7.5;
+}
+
+.fluent-cart-direct-checkout-button {
+  * {
+    @apply text-white;
+  }
+
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #253241;
+  box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+  @apply relative border border-solid py-3 px-5 text-sm font-medium rounded text-center cursor-pointer leading-none flex items-center justify-center gap-2 max-h-10 text-white border-primary-500;
+
+  @apply no-underline !important;
+
+  &:hover {
+     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #253241;
+     box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+     color: #fff;
+  }
+}
+
+.fluent-cart-add-to-cart-button {
+  @apply bg-white border border-solid border-gray-outline relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-system-dark max-h-10 hover:text-system-dark hover:border-gray-outline hover:bg-gray-50 transition duration-150 ease-in-out;
+  &:focus {
+    @apply text-system-dark;
+  }
+  .text{
+    @apply pointer-events-none;
+  }
+}
+
+// empty
+
+.fluent-cart-empty-message {
+  @apply text-center p-10 text-system-mid;
+}

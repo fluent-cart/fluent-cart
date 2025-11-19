@@ -1,0 +1,231 @@
+.fct-integration{
+    &-search{
+        @apply w-full md:w-[300px];
+    }
+    &-content{
+        &-head{
+            @apply flex gap-3 items-center;
+        }
+        .fct-empty-text{
+            @apply p-5;
+        }
+    }
+    &-header{
+        @apply pb-6;
+        h3{
+            @apply mt-0 mb-2 font-bold text-xl text-system-dark dark:text-gray-50;
+        }
+        p{
+            @apply my-0 text-base dark:text-gray-300;
+        }
+    }
+    &-card{
+        @apply border relative border-solid border-gray-divider border-t-0 border-x-0 py-5 last:border-b-0 last:pb-0 last:mb-0 dark:border-dark-400;
+        .title{
+            @apply mt-0 mb-1 font-medium text-base text-system-dark dark:text-gray-50;
+        }
+        .desc{
+            @apply text-sm text-system-mid my-0 dark:text-gray-300;
+        }
+        &-content{
+            &-inner{
+                @apply flex gap-3;
+            }
+        }
+        &-logo{
+            @apply flex-shrink-0 w-12 h-12 border border-solid border-gray-divider rounded-full flex items-center justify-center dark:border-dark-400;
+            img{
+                @apply h-7;
+            }
+        }
+        .addon-setting-btn{
+            @apply absolute top-6.5 right-0;
+        }
+    }
+    &-setting{
+        &-body{
+            &-inner{
+                @apply bg-gray-25 p-4 rounded dark:bg-dark-600;
+                .el-form-item{
+                    @apply last:mb-0;
+                }
+            }
+            &-footer{
+                @apply mt-5 text-right;
+            }
+        }
+        &-head{
+            @apply mb-6;
+            .title{
+                @apply text-base text-system-dark dark:text-gray-50 my-0;
+            }
+            .desc{
+                @apply m-0 text-sm dark:text-gray-300;
+                a{
+                    @apply text-primary-500 dark:text-gray-300;
+                    @apply dark:underline hover:underline focus:shadow-none #{!important};
+                }
+            }
+        }
+    }
+    &-logo-wrap{
+        @apply flex items-center gap-1.5;
+        img{
+            @apply h-7;
+        }
+    }
+    &-table-footer{
+        @apply text-center flex items-center gap-5 justify-center py-3.5 px-5 border border-solid border-gray-divider border-l-0 border-r-0 border-b-0 dark:border-dark-400;
+        a{
+            @apply text-primary-500 focus:shadow-none dark:text-gray-300;
+            @apply hover:underline #{!important};
+        }
+    }
+    &-filter{
+        @apply flex items-center gap-3 justify-between py-5 mt-5 border border-solid border-gray-divider border-x-0 dark:border-dark-500;
+    }
+}
+
+.fct-add-integration{
+    .el-form-item__content{
+        @apply block;
+    }
+}
+
+// success integration
+.integration_success_state{
+    @apply bg-gray-25 flex items-center justify-between rounded p-4 dark:bg-dark-600;
+    p{
+        @apply m-0 text-sm text-system-mid dark:text-gray-300;
+    }
+}
+
+.fluent_cart_chained_filter{
+    @apply w-full gap-2.5 grid;
+}
+.fluent_cart_field_routing{
+    @apply w-full;
+}
+.el-checkbox + .fluent_cart_routing_fields{
+    @apply mt-2.5;
+}
+.fluent_cart_routing_table{
+    @apply w-full;
+    td{
+        @apply py-0.5 px-1;
+    }
+    .action-btns {
+        @apply flex gap-1;
+    }
+}
+
+// .dropdown_label_repeater td
+.dropdown_label_repeater {
+    @apply bg-white border border-solid border-gray-divider rounded dark:bg-dark-600 dark:border-dark-400;
+    table{
+        @apply w-full border-collapse;
+    }
+    th{
+        @apply px-4 text-sm py-2 bg-gray-50 font-medium text-system-dark dark:text-gray-50 dark:bg-dark-500;
+    }
+    td {
+        @apply px-4 py-3 border border-solid border-x-0 border-t-0 border-gray-divider dark:border-dark-400;
+    }
+    tr {
+        th:first-child {
+            @apply rounded-tl-[7px];
+        }
+        th:last-child {
+            @apply rounded-tr-[7px];
+        }
+        td:last-child {
+            @apply pl-0;
+        }
+        &:last-child td{
+            @apply border-b-0;
+        }
+    }
+    .action-btns {
+        @apply flex gap-1 items-center;
+    }
+    &_footer{
+        @apply flex items-center gap-3 justify-between py-2 px-5 border border-solid border-gray-divider border-b-0 border-x-0 dark:border-dark-400;
+        .el-button.is-text{
+            @apply min-h-6;
+        }
+    }
+}
+
+.fct-product-route-wrap {
+    .fct-add-integration{
+        @apply max-w-[1140px] mx-auto pt-0 !important;
+    }
+}
+// fc setting row
+.fct-setting-form-row{
+    @apply flex gap-7.5 antialiased border border-solid border-gray-divider border-x-0 border-t-0 last:border-b-0 mb-5 pb-5 last:mb-0 last:pb-0 dark:border-dark-400;
+    .fct-setting-form-content{
+        @apply w-[300px];
+    }
+    .fct-setting-form-fields{
+        @apply flex-1;
+    }
+    .fct-inline-tip{
+        @apply mb-0 mt-1 text-xs text-system-mid font-normal dark:text-gray-300;
+    }
+    .fct-inline-error{
+        @apply text-red-500 my-1;
+    }
+    &.other_fields{
+        @apply flex-col gap-2;
+    }
+    &.tags {
+        @apply flex-col gap-2;
+    }
+}
+
+.fct-webhook-multiple-fields{
+    @apply mt-2.5;
+    table{
+        @apply w-full border-collapse text-left;
+    }
+    th{
+        @apply text-[13px] font-medium text-system-dark dark:text-gray-50 dark:bg-transparent;
+    }
+    td {
+        @apply pl-2 py-1 text-system-mid dark:text-gray-300;
+    }
+    td:first-child{
+        @apply pl-0;
+    }
+    .action-btns {
+        @apply flex gap-1 items-center;
+    }
+}
+
+.fct-integration-table-content{
+    @apply antialiased;
+    .title{
+        @apply mb-1 font-medium text-sm text-system-dark dark:text-gray-50;
+    }
+    .text{
+        @apply text-[13px] text-system-mid dark:text-gray-300;
+    }
+}
+.fct-event-triggers{
+    @apply flex items-center gap-1.5 flex-wrap;
+    .icon svg{
+        @apply w-3 h-3;
+    }
+    .el-tag__content{
+        @apply flex items-center gap-1;
+    }
+}
+@media (max-width: 768px) {
+    .dropdown_label_repeater{
+        @apply overflow-x-scroll;
+        table{
+            @apply w-[750px] !important;
+        }
+    }
+}

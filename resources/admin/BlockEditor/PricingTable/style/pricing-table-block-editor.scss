@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./pricing-table-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+table.fixed {
+    @apply relative;
+}
+
+// skeleton
+.fct-skeleton-container{
+    @apply w-full;
+}
+.skeleton{
+    @apply h-5 mb-4.5 rounded-xs last:mb-0;
+}
+.skeleton-item {
+    background-color: #f6f7f8;
+    background-image: linear-gradient(
+        to right,
+        #f6f7f8 0%,
+        #edeef1 20%,
+        #f6f7f8 40%,
+        #f6f7f8 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: infinite;
+    animation-name: placeholderShimmer;
+    animation-timing-function: linear;
+}
+
+@keyframes placeholderShimmer {
+    0% {
+        background-position: -468px 0;
+    }
+    100% {
+        background-position: 468px 0;
+    }
+}
+
+// block editor
+.fluent-cart-pricing-table-block-editor{
+    @apply w-[562px] m-auto rounded bg-white p-8 border border-solid border-[#ebebeb] antialiased;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: rgba(149, 157, 165, 0.1) 0px 8px 24px;
+    .fct-input{
+        @apply text-sm w-full bg-white shadow-none rounded border border-solid border-gray-outline py-2 px-3.5 m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};
+    }
+    textarea{
+        @apply h-[120px] min-h-10 border border-solid border-gray-outline rounded pt-2 px-3 pb-3 w-full text-sm font-normal text-system-dark placeholder:text-system-light placeholder:text-sm focus:shadow-none focus:border-primary-500 focus:outline-none;
+    }
+    .hint-text{
+        @apply mt-1 text-xs text-system-mid font-normal leading-[16px];
+        strong{
+            @apply text-system-dark;
+        }
+    }
+    &-head{
+        @apply mb-6;
+    }
+}
+
+// selected product
+.fct-active-product-select-container{
+    @apply mb-6;
+}
+
+.fct-selected-product{
+    @apply relative flex border border-solid border-gray-divider border-x-0 border-t-0 pb-3 mb-3 last:mb-0 last:pb-0 last:border-0;
+    &-toggle{
+        @apply w-5 h-5.5 relative top-2.5 flex-shrink-0 mr-2 text-system-light cursor-pointer;
+        .icon{
+            @apply flex items-center text-system-light;
+            transition: 0.3s ease-in-out;
+        }
+        &.is-expanded{
+            .icon{
+                @apply rotate-90;
+            }
+        }
+    }
+    .product-title{
+        @apply mb-1 text-sm font-medium text-system-dark leading-[20px] truncate max-w-[calc(100%-90px)];
+    }
+    .product-id{
+        @apply text-xs font-normal text-system-mid leading-[16px];
+    }
+    .fct-inspector-control-hint {
+        @apply text-xs leading-tight;
+    }
+    .product-textarea{
+        @apply grid grid-rows-[0fr];
+        transition: 0.3s ease-in-out;
+        &-inner{
+            @apply overflow-hidden;
+            .product-url-params-inner {
+                @apply mt-4;
+                .product-title {
+
+                }
+                input {
+                    @apply min-h-10 border border-solid border-gray-outline rounded pt-2 px-3 pb-3 w-full text-sm font-normal text-system-dark placeholder:text-system-light placeholder:text-sm focus:shadow-none focus:border-primary-500 focus:outline-none;
+                }
+            }
+        }
+        &.is-expanded {
+            @apply grid-rows-[1fr] pt-2;
+        }
+    }
+    &-contents{
+        @apply w-full;
+    }
+    .product-delete-icon{
+        @apply cursor-pointer absolute top-1.5 right-0 text-system-mid duration-200 transition w-7 h-7 inline-flex items-center justify-center hover:text-red-500;
+    }
+}
+
+// tab
+.fct-tab-header{
+    @apply mb-5 border border-solid border-gray-divider border-t-0 border-x-0;
+    .components-button{
+        @apply bg-white h-9 relative shadow-none border-0 rounded-none text-system-mid text-sm capitalize font-medium leading-[16px] px-1 mr-6 last:mr-0 cursor-pointer;
+        &:after{
+            @apply absolute bottom-[-1px] left-0 w-full h-0.5 bg-primary-500 opacity-0 duration-200 transition;
+            content: "";
+            transform: scale(0.8);
+        }
+        &.is-primary{
+            @apply text-primary-500 bg-white focus:outline-none focus:shadow-none #{!important};
+            &:after{
+                @apply opacity-100;
+                transform: scale(1);
+            }
+        }
+        &:active {
+            outline: none;
+        }
+        &:focus:not(:disabled){
+            @apply shadow-none;
+        }
+        &:hover:not(:disabled){
+            @apply bg-white text-primary-500;
+        }
+    }
+}
+
+// empty block
+.fct-pricing-block-editor-empty-block{
+    @apply text-center pt-2.5;
+    p{
+        @apply text-system-dark-light text-sm m-0 leading-[20px] font-normal #{!important};
+    }
+}
+
+
+.fct-shop-filter-inspector-control-wrap {
+    .fct-inspector-control-body {
+        @apply p-4;
+    }
+}
+

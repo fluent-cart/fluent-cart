@@ -1,0 +1,37 @@
+code{
+  @apply bg-gray-100 rounded-xs py-1.5 px-2 m-0 text-xs text-system-dark;
+}
+
+.copyable-content{
+  @apply inline-block relative pl-7 cursor-copy leading-[1.2];
+  &::after{
+    @apply absolute top-[7px] left-2 w-[13px] h-[14px];
+    content: "";
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none"%3E%3Cpath d="M4.875 8.625C4.875 7.09294 4.875 6.3269 5.35095 5.85095C5.8269 5.375 6.59294 5.375 8.125 5.375L8.66667 5.375C10.1987 5.375 10.9648 5.375 11.4407 5.85095C11.9167 6.3269 11.9167 7.09294 11.9167 8.625V9.16667C11.9167 10.6987 11.9167 11.4648 11.4407 11.9407C10.9648 12.4167 10.1987 12.4167 8.66667 12.4167H8.125C6.59293 12.4167 5.8269 12.4167 5.35095 11.9407C4.875 11.4648 4.875 10.6987 4.875 9.16667L4.875 8.625Z" stroke="%23565865" stroke-linecap="round" stroke-linejoin="round"%3E%3C/path%3E%3Cpath d="M9.20818 5.37467C9.20692 3.77292 9.18266 2.94325 8.71644 2.37516C8.62641 2.26545 8.52581 2.16485 8.41611 2.07482C7.81683 1.58301 6.92647 1.58301 5.14575 1.58301C3.36503 1.58301 2.47467 1.58301 1.8754 2.07482C1.76569 2.16485 1.6651 2.26545 1.57506 2.37516C1.08325 2.97443 1.08325 3.86479 1.08325 5.64551C1.08325 7.42623 1.08325 8.31659 1.57506 8.91586C1.6651 9.02557 1.76569 9.12616 1.8754 9.2162C2.44349 9.68242 3.27316 9.70668 4.87492 9.70794" stroke="%23565865" stroke-linecap="round" stroke-linejoin="round"%3E%3C/path%3E%3C/svg%3E');
+  }
+}
+
+.fct-copy-advanced{
+  @apply relative flex items-center;
+  input{
+    @apply py-0 border border-solid border-gray-outline rounded-tl rounded-bl rounded-tr-none rounded-br-none bg-white shadow-none outline-none px-3 m-0 text-sm truncate text-system-dark min-h-9.5 #{!important};
+    width: calc(100% - 70px);
+    &::-webkit-input-placeholder{
+      @apply text-system-light text-sm opacity-50;
+    }
+  }
+  .copy-tooltip{
+    @apply absolute -top-[60%] left-1/2 z-[2] bg-success-500 block rounded text-white py-1.5 px-2 text-xs font-normal opacity-0 transition-all duration-200 leading-3;
+    transform: translateX(-50%);
+    &.active{
+      @apply opacity-100 -top-[80%];
+      transform: translateX(-50%);
+    }
+  }
+  .fct-copy-btn{
+    @apply text-system-dark text-sm font-medium rounded-tl-none rounded-bl-none min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br h-full hover:bg-gray-100 #{!important};
+    &:disabled{
+      @apply pointer-events-none bg-gray-neutral text-system-light;
+    }
+  }
+}

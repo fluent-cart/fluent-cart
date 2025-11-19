@@ -1,0 +1,117 @@
+.el-drawer{
+  @apply dark:bg-dark-600;
+  &__title{
+    @apply text-base font-semibold text-system-dark dark:text-gray-50;
+  }
+  &__header{
+    @apply mb-0 border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 pb-5 dark:text-gray-50 dark:border-dark-400;
+    .fct-label-hint {
+      .label{
+        @apply text-base;
+      }
+    }
+  }
+  &__body{
+    .fct-choice{
+      @apply top-1;
+    }
+    .card{
+      @apply mb-0;
+      .card-header{
+        @apply p-0 border-0 mb-5;
+      }
+      .card-header-title{
+        @apply hidden;
+      }
+      .card-body{
+        @apply p-0;
+      }
+      .card-header-actions{
+        >div{
+          @apply flex items-center gap-2.5;
+        }
+        .fct-admin-input-wrapper{
+          @apply w-[140px];
+        }
+      }
+    }
+  }
+  &__footer{
+    @apply bg-gray-25 pt-5 dark:border-x-0 dark:border-b-0 dark:border dark:border-solid dark:border-dark-400 dark:bg-dark-600;
+  }
+  .fct-product-pricing-form-wrap{
+    .fct-attachments-wrap{
+      @apply w-full;
+    }
+  }
+  &.admin-bar-enable{
+    .el-drawer__header{
+      @apply pt-12.5;
+    }
+  }
+
+  &.fct-shipping-method-drawer {
+    .el-drawer__footer {
+      @apply pt-0 border-t-0;
+      .dialog-footer {
+        @apply mt-0;
+      }
+    }
+  }
+  .el-form {
+    .el-form-item {
+      .form-help-text {
+        @apply mt-2 dark:text-gray-300;
+      }
+    }
+  }
+  &.fct-shipping-class-drawer {
+    .el-drawer__body {
+      .el-form {
+        &-item {
+          .el-input-number {
+            @apply w-full max-w-[150px];
+          }
+        }
+      }
+    }
+    .el-drawer__footer {
+      @apply pt-0 border-t-0;
+      .dialog-footer {
+        @apply mt-0;
+      }
+    }
+  }
+}
+
+.admin-bar {
+  .el-drawer__header{
+    @apply pt-12.5;
+  }
+}
+
+.fct-variant-drawer{
+  .el-drawer__body{
+    @apply overflow-hidden pb-0;
+  }
+  .el-form{
+    @apply max-h-[calc(100vh-205px)] overflow-y-scroll overflow-x-hidden;
+    &:active::-webkit-scrollbar-thumb,
+    &:focus::-webkit-scrollbar-thumb,
+    &:hover::-webkit-scrollbar-thumb {
+      @apply visible;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      @apply bg-gray-200 dark:bg-dark-500;
+    }
+    &::-webkit-scrollbar {
+      @apply h-[3px] w-[3px];
+    }
+  }
+  .dialog-footer{
+    @apply absolute bottom-0 left-0 right-0 -mx-5 bg-gray-neutral p-5 dark:bg-dark-600 dark:border dark:border-solid dark:border-dark-400 dark:border-x-0 dark:border-b-0;
+  }
+}

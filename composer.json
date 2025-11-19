@@ -1,0 +1,85 @@
+{
+  "name": "wpfluent/wpfluent",
+  "type": "project",
+  "description": "The WPGlue Framework for WordPress.",
+  "keywords": [
+    "WordPress",
+    "framework",
+    "WPFluent"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sheikh Heera",
+      "email": "heera.sheikh77@gmail.com"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/wpfluent/framework"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/wpfluent/web-routing"
+    }
+  ],
+  "require": {
+    "ext-json": "*",
+    "ext-simplexml": "*",
+    "woocommerce/action-scheduler": "^3.9",
+    "wpfluent/framework": "^2.11.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "FluentCart\\App\\": "app/",
+      "FluentCart\\Dev\\": "dev/",
+      "FluentCart\\Api\\": "api/"
+    },
+    "classmap": [
+      "database/"
+    ],
+    "files": [
+      "boot/globals.php"
+    ],
+    "exclude-from-classmap": [
+      "/dev/",
+      "/vendor/fakerphp/",
+      "/app/Services/Libs/Emogrifier/scoped-vendor",
+      "/app/Services/Libs/Spout"
+    ]
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "2.0.x-dev"
+    },
+    "wpfluent": {
+      "namespace": {
+        "current": "FluentCart"
+      },
+      "excludes": [
+        "*"
+      ]
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "FluentCart\\Dev\\ComposerScript::run"
+    ],
+    "post-update-cmd": [
+      "FluentCart\\Dev\\ComposerScript::run"
+    ]
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "platform": {
+      "php": "7.4"
+    }
+  },
+  "require-dev": {
+    "fakerphp/faker": "1.23"
+  }
+}

@@ -1,0 +1,25 @@
+.form-section{
+    @apply mb-5;
+    &.no-padding .fct-card-body{
+        @apply p-0;
+    }
+}
+
+.form-section-save-action{
+    @apply text-right mt-2.5;
+}
+
+.form-error-wrap{
+    @apply mt-5;
+    p {
+        @apply text-red-500 mt-0 mb-1;
+    }
+}
+
+.form-error-text{
+    @apply text-red-500 mt-0 mb-1 dark:text-red-500;
+}
+
+.form-note{
+    @apply dark:text-gray-300;
+}

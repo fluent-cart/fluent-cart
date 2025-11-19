@@ -1,0 +1,15 @@
+* {
+  box-sizing: border-box;
+}
+h1,h2,h3,h4,h5,h6{
+  @apply text-system-dark dark:text-gray-50;
+}
+p {
+  @apply text-system-mid dark:text-gray-300;
+}
+ul,ol{
+  @apply p-0 m-0 list-none;
+}
+p, span{
+  @apply dark:text-gray-300;
+}

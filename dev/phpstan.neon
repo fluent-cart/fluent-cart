@@ -1,0 +1,16 @@
+parameters:
+    level: 2
+
+    # Ignore WordPress dynamic things
+    ignoreErrors:
+        # Unsafe static usage (like new static() in dynamic factories)
+        - '#Unsafe usage of new static\(\)#'
+
+        # Dynamic or magic method calls (like __callStatic)
+        - '#Call to an undefined static method .*#'
+        - '#Call to an undefined method .*#'
+        - '#Method .* should return .* but return statement is missing#'
+        - '#@param .* contains generic type .* but class .* is not generic#'
+
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon

@@ -1,0 +1,99 @@
+
+
+
+.fct-order-bump-price-box {
+  @apply border-[1px] border-solid border-gray-divider rounded w-full p-3 relative flex items-center justify-between gap-3;
+  &-image {
+    @apply w-[58px] h-[58px] flex-shrink-0 rounded-xs border-[1px] border-solid border-gray-divider;
+    img {
+      @apply w-full h-full object-cover rounded-xs;
+    }
+  }
+  &-title {
+    @apply text-sm font-medium text-system-dark dark:text-gray-50 m-0 mb-0.5;
+  }
+  &-price {
+    @apply text-xs font-medium text-system-mid dark:text-gray-50 m-0;
+  }
+  &-content {
+    @apply flex-1;
+  }
+  &-wrap {
+    h3 {
+      @apply m-0 text-sm leading-none font-medium mb-2;
+    }
+    .fct-order-bump-price-items {
+      @apply border-[1px] border-solid border-gray-divider rounded;
+      .fct-order-bump-price-box {
+        @apply rounded-none border-0 border-[1px] border-solid border-gray-divider border-x-0 border-t-0;
+        &:last-child {
+          @apply border-b-0;
+        }
+      }
+    }
+  }
+}
+
+// Condition Group
+.fct_bump_conditions {
+  .fct_bump_condition {
+    &_groups {
+
+    }
+    &_group {
+      @apply p-4 border-[1px] border-solid border-gray-divider dark:border-dark-400 rounded;
+      &:last-child {
+
+      }
+      .fct_add_condition_btn {
+        @apply bg-transparent text-system-dark w-full justify-start border-0 p-0 h-auto min-h-[auto];
+      }
+      &_wrap {
+        .fct_bump_condition_group_or_separator {
+          @apply flex items-center justify-center py-2.5 text-gray-500 relative;
+          &::after,
+          &::before {
+            content: '';
+            @apply absolute top-1/2 w-full h-[1px] bg-gray-divider dark:bg-dark-400;
+            transform: translateY(-50%);
+          }
+          span {
+            @apply z-10 px-3 bg-white dark:bg-primary-700;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+.el-overlay {
+  &.fct-create-new-order-bump-modal {
+    .el-form {
+      .el-form-item {
+        .el-select {
+          .el-tag__content {
+            @apply truncate max-w-[400px];
+          }
+        }
+      }
+    }
+  }
+}
+
+.el-popper {
+  &.fct-create-new-order-bump-modal-popover {
+    @apply max-w-[520px];
+
+    .el-tree {
+      .el-tree-node__content {
+        @apply h-auto;
+        .el-select-dropdown__item {
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          @apply h-auto;
+        }
+      }
+    }
+  }
+}

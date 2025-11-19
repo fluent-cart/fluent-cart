@@ -1,0 +1,272 @@
+.fct-query-builder{
+  @apply flex;
+}
+
+.fct-query-builder-sidebar{
+  @apply w-[360px] bg-white rounded-bl border border-solid border-gray-divider border-t-0 border-l-0 border-b-0 dark:border-dark-400 dark:bg-dark-500;
+}
+
+.fct-query-builder-main{
+  @apply flex-1 p-3.5;
+}
+
+.fct-query-builder-sidebar-heading{
+  @apply py-2 px-3 text-xs font-normal text-system-light bg-gray-25 leading-[16px] uppercase my-0 dark:bg-dark-400;
+}
+
+.fct-query-builder-draggable-list{
+  @apply p-0 m-0;
+  .item{
+    @apply m-0 py-2 px-5 border border-solid border-gray-divider border-x-0 border-t-0 text-[13px] leading-[20px] text-system-dark font-normal cursor-grab last:border-b-0 dark:bg-dark-500 dark:border-dark-400 dark:text-gray-300;
+  }
+}
+.fct-condition-builder-options{
+  @apply w-full flex pl-10;
+  .condition-container{
+    @apply pr-3 py-3;
+    .delete-icon{
+      @apply right-0 bg-gray-50 h-full rounded-tr rounded-br border border-solid border-gray-outline border-y-0 border-r-0 hover:bg-gray-50 dark:bg-dark-400 dark:text-gray-50 dark:border-dark-400;
+    }
+  }
+  .logic-container{
+    @apply left-2;
+  }
+  .icon-button{
+    @apply relative;
+  }
+  .el-select__wrapper{
+    @apply border-y-0 rounded-none ml-[-1px];
+    &.is-focused{
+      @apply border-gray-outline;
+    }
+  }
+  .el-input__wrapper{
+    @apply border-0;
+  }
+  .logic-container{
+    .el-select__wrapper{
+      @apply border rounded ml-0;
+      &.is-focused{
+        @apply border-primary-500;
+      }
+    }
+  }
+  &-container{
+    @apply flex items-center border border-solid border-gray-outline rounded relative dark:border-dark-400;
+    .drag-icon{
+      @apply bg-gray-50 w-10 rounded-tl rounded-bl justify-center items-center inline-flex cursor-grab absolute left-0 h-full border border-solid border-gray-outline border-y-0 border-l-0 dark:bg-dark-400 dark:border-dark-400;
+    }
+    .delete-icon{
+      @apply absolute top-0 right-2 bg-transparent rounded-none border-0 hover:bg-transparent hover:text-red-500 dark:hover:bg-transparent;
+    }
+  }
+}
+
+.fct-drop-here-area{
+  @apply pointer-events-none absolute h-[50px] top-2 left-2 w-full text-system-mid text-[13px] dark:text-gray-300;
+}
+
+
+.logic-container {
+  @apply absolute top-1/2 left-0 w-[80px];
+}
+.fct-item-type{
+  @apply flex items-center gap-2 text-sm text-system-dark capitalize pt-2.5 pl-2.5 dark:text-gray-50;
+  svg{
+    @apply text-system-mid dark:text-gray-50;
+  }
+}
+
+.fct-advance-filters-wrap{
+  .el-overlay{
+    @apply z-[9999] #{!important};
+  }
+}
+.el-popper.logic-container-popover,
+.el-popper.operator-popover{
+  @apply z-[9999] #{!important};
+}
+
+.el-popper.operator-popover{
+  .el-popper__arrow{
+    @apply left-5 #{!important};
+  }
+}
+
+.relation-builder-title-wrap{
+  @apply relative top-0 bg-gray-25 left-0 text-xs text-system-dark rounded-tr dark:bg-dark-500 dark:text-gray-50;
+  span{
+    @apply pl-2 block pt-1;
+  }
+}
+
+.fct-query-preview-title{
+  @apply text-center relative my-7 h-[1px] bg-gray-100 dark:bg-dark-400;
+  span{
+    @apply absolute z-10 rounded px-2 py-1 top-1/2 left-1/2 bg-white text-[15px] leading-[24px] text-system-dark dark:text-gray-50 dark:bg-dark-500;
+    transform: translate(-50%, -50%);
+  }
+}
+.preview-box:not(.preview-box .preview-box) {
+  @apply border border-solid border-gray-outline w-full p-5 rounded dark:border-dark-400;
+}
+.preview-box{
+  @apply box-border flex-wrap;
+  .el-select{
+    @apply w-[92px];
+  }
+  .el-select__wrapper {
+    @apply border-0 p-0 min-h-5 rounded-none focus:border-0;
+  }
+  .el-select__selection{
+    @apply p-0 cursor-pointer;
+  }
+  .el-select__input{
+    @apply min-w-[50px] cursor-pointer min-h-5 leading-none h-5 w-full m-0 #{!important};
+  }
+  .el-select__suffix{
+    @apply hidden;
+  }
+  .el-select__selected-item.el-select__placeholder{
+    width: fit-content;
+  }
+}
+.fct-query-operator{
+  @apply relative;
+  .el-select__wrapper{
+    .el-select__placeholder{
+      @apply text-success-500 dark:text-success-500;
+    }
+  }
+  &.is-empty{
+    .el-select__wrapper{
+      .el-select__placeholder{
+        @apply opacity-50;
+      }
+    }
+  }
+}
+.fct-query-column{
+  @apply relative;
+  .el-select__wrapper{
+    .el-select__placeholder{
+      @apply text-blue-500 dark:text-blue-500;
+    }
+  }
+  &.is-empty{
+    .el-select__wrapper{
+      .el-select__placeholder{
+        @apply opacity-50;
+      }
+    }
+  }
+}
+
+.fct-apply-filter-footer{
+  @apply text-right pt-7.5;
+}
+
+.fct-add-condition{
+  &-button{
+    @apply mb-2 inline-flex items-center gap-1 cursor-pointer text-sm text-system-dark py-2 px-3 dark:text-gray-50;
+  }
+}
+
+.arc {
+  @apply ml-[100px] m-0 relative;
+}
+
+
+.condition-container {
+  --after-height: 0px;
+  @apply w-full m-0 flex flex-col gap-[12px];
+}
+
+.arc::after {
+  content: '';
+  border-color: #D6DAE1;
+  height: var(--after-height, 0);
+  box-sizing: border-box;
+  left: -60px;
+  background: transparent;
+  top: 0;
+  width: 10px;
+  border-left: 1px solid #D6DAE1;
+  @apply absolute;
+}
+
+.arc.is-first::after{
+  top: 50%;
+  border-top-left-radius: 10px;
+}
+
+.arc.is-last::after{
+  border-bottom-left-radius: 10px;
+  top: unset;
+  bottom: 50%;
+
+}
+
+.arc.is-first.is-two::after{
+  border-bottom-left-radius: 10px;
+}
+.arc.is-last.is-two::after{
+  border-top-left-radius: 10px;
+}
+
+
+
+.arc::before {
+  content: '';
+  position: absolute;
+  opacity: 1;
+  height: 50%;
+  width: 60px;
+  left: -60px;
+  top: 50%;
+  background: transparent;
+  box-sizing: border-box;
+
+}
+
+.arc.arc-down::before {
+  border-top: 1px solid #D6DAE1;
+  border-top-left-radius: 10px;
+  border-left: 1px solid #D6DAE1;
+}
+
+.arc.arc-up::before {
+  top: 0;
+  border-bottom: 1px solid #D6DAE1;
+  border-bottom-left-radius: 10px;
+  border-left: 1px solid #D6DAE1;
+}
+
+.arc.arc-straight::before{
+  border-bottom: 1px solid #D6DAE1;
+  height: 1px;
+}
+
+
+.arc.is-single::after{
+  opacity: 0;
+}
+
+.dark {
+  .arc.arc-up:before {
+    @apply border-l-dark-400 border-b-dark-400;
+  }
+  .arc.arc-straight::before{
+    @apply border-b-dark-400;
+  }
+  .arc.arc-down::before {
+    @apply border-l-dark-400 border-t-dark-400;
+  }
+  .arc::after {
+    @apply border-l-dark-400 border-dark-400;
+  }
+}
+
+.fct-query-column .el-select, .fct-query-operator .el-select{
+  @apply absolute left-0 w-full;
+}

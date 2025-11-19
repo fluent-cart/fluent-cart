@@ -1,0 +1,434 @@
+// order stats
+.fct-order-stats {
+  &-row {
+    @apply grid md:grid-cols-2 xl:grid-cols-4 gap-4;
+    .fct-order-stats-col {
+      &:nth-child(2) {
+        .fct-order-stats-card {
+          .fct-order-stats-card-head {
+            .icon-button {
+             .icon {
+                @apply text-report-coral dark:text-white;
+              }
+            }
+          }
+        }
+      }
+      &:nth-child(3) {
+        .fct-order-stats-card {
+          .fct-order-stats-card-head {
+            .icon-button {
+             .icon {
+                @apply text-report-medium_slate_blue dark:text-white;
+              }
+            }
+          }
+        }
+      }
+      &:nth-child(4) {
+        .fct-order-stats-card {
+          .fct-order-stats-card-head {
+            .icon-button {
+             .icon {
+                @apply text-report-hot_pink dark:text-white;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &-col {
+    @apply mb-0;
+  }
+
+  &-card {
+    @apply bg-gray-25 rounded p-4 dark:bg-primary-600 min-h-[100px];
+    &-head {
+      @apply flex items-center gap-3 flex-1 mb-3;
+      &-content {
+        @apply flex flex-col;
+        .value {
+          @apply text-lg leading-6 font-semibold text-system-dark dark:text-gray-50;
+        }
+
+        .text {
+          @apply text-xs leading-4 block font-medium text-system-mid dark:text-gray-300;
+        }
+
+        .el-skeleton__p.is-first {
+          @apply w-4/5;
+        }
+      }
+      .icon-button {
+        @apply rounded-[10px] bg-white dark:bg-primary-500 border-0 #{!important};
+        box-shadow: 0px 1px 2px 0px #3333330A, 
+                    0px 2px 4px 0px #3333330A,
+                    0px 4px 8px -2px #3333330F,
+                    0px 0px 0px 1px #3333330A,
+                    0px -1px 1px -0.5px #3333330F inset;
+        &.large {
+          @apply w-10 h-10;
+        }
+        .icon {
+          @apply text-report-royal_blue dark:text-white;
+        }
+      }
+    }
+
+    &-body {
+      &-chart {
+        @apply max-h-[60px] max-w-[100px];
+      }
+
+      .el-skeleton__p.is-first {
+        @apply w-full;
+      }
+    }
+  }
+}
+
+// change wrap
+.change {
+  &-wrap {
+    @apply flex items-center gap-2.5 font-medium;
+    .change {
+      @apply font-semibold inline-flex gap-1 leading-none text-xs;
+      .icon svg {
+        @apply w-2 h-2;
+      }
+
+      &.danger {
+        @apply text-red-500;
+      }
+
+      &.success {
+        @apply text-success-500;
+        .icon {
+          @apply rotate-180;
+        }
+      }
+      &.warning {
+        @apply text-warning-500;
+      }
+
+      &-title {
+        @apply text-xs text-system-mid leading-4 font-normal dark:text-gray-300;
+      }
+    }
+  }
+}
+
+// order collapse
+.order-stats-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.2s ease-in-out;
+}
+
+.order-stats-collapsed {
+  grid-template-rows: 0fr;
+}
+
+.card {
+  .card-header.border-bottom.order-stats-collapse-header-active {
+    @apply border-b-0;
+  }
+}
+
+.toggle-stats-button {
+  @apply cursor-pointer hover:bg-gray-50;
+  svg {
+    @apply h-4 transition-transform duration-300;
+  }
+
+  &.active {
+    svg {
+      @apply -rotate-180;
+    }
+  }
+}
+
+.fct-order-stats-row {
+  @apply overflow-hidden;
+  .fct-order-stats-card {
+    &-body {
+      .change-wrap {
+        .change {
+          .icon {
+            @apply transform-none;
+          }
+        }
+      }
+    }
+  }
+}
+
+// create order
+.fct-create-order,
+.fct-single-order,
+.fct-single-subscription {
+  @apply flex w-full gap-7.5 justify-between;
+  @media (max-width: 1359px) {
+    @apply flex-wrap;
+  }
+}
+
+.fct-create-order-main,
+.fct-single-order-main,
+.fct-single-subscription-main {
+  @apply w-[900px] 3xl:w-[1230px];
+  @media (max-width: 1359px) {
+    @apply w-full;
+  }
+}
+
+.fct-create-order-aside,
+.fct-single-order-aside,
+.fct-single-subscription-aside {
+  @apply w-[330px];
+}
+
+.fct-address-copy-wrap {
+  @apply flex items-start justify-between gap-5;
+  .text {
+    @apply flex-1;
+    span {
+      @apply flex;
+    }
+  }
+
+  .fct-copy-wrap {
+    @apply opacity-0 invisible transition-all duration-100;
+  }
+
+  &:hover {
+    .fct-copy-wrap {
+      @apply opacity-100 visible;
+    }
+  }
+}
+
+// ordered product
+.fct-media-content-list {
+  &-wrapper {
+    @apply border border-solid border-gray-divider rounded dark:border-dark-400;
+  }
+
+  &-header {
+    @apply p-5 border border-solid border-gray-divider border-t-0 border-x-0 dark:border-dark-400;
+    .title {
+      @apply text-sm font-semibold text-system-dark mt-0 mb-1 dark:text-gray-50;
+    }
+
+    .text {
+      @apply m-0 text-sm text-system-mid dark:text-gray-300;
+    }
+  }
+
+  &-item {
+    @apply gap-3 flex items-start py-4 px-5 border border-solid border-gray-divider border-t-0 border-x-0 last:border-b-0 dark:border-dark-400;
+    .link.hover\:no-underline:hover {
+      text-decoration-line: none !important;
+    }
+    &:last-child {
+      @apply pb-0;
+    }
+
+    .link.no-underline {
+      text-decoration-line: none !important;
+    }
+
+    .link {
+      @apply inline-block h-full w-full text-system-dark text-sm font-medium dark:text-gray-50;
+      @apply hover:underline focus:shadow-none focus:outline-none #{!important};
+    }
+
+    .product-thumbnail {
+      @apply w-[46px] h-[46px] flex-shrink-0;
+      img {
+        @apply rounded h-full object-contain;
+      }
+    }
+
+    .product-title {
+      @apply mb-0.5;
+    }
+
+    .product-variation-title {
+      @apply text-[13px] text-system-mid leading-[20px] mb-2 font-normal dark:text-gray-300;
+    }
+
+    .product-subscription-info {
+      @apply grid gap-1.5;
+      span {
+        @apply block leading-[17px];
+      }
+    }
+
+    .product-details {
+      @apply flex-1 self-center;
+      &-quantity {
+        @apply flex gap-1.5 items-center;
+        span {
+          @apply text-system-dark text-sm dark:text-gray-50;
+        }
+
+        .del {
+          @apply line-through pr-1 text-system-dark-light;
+        }
+      }
+
+      &-content-row {
+        @apply flex w-full gap-7.5;
+      }
+
+      &-content {
+        &-first {
+          @apply flex-1;
+          .product-details-quantity {
+            @apply pt-1 pb-2;
+            .del {
+              @apply pr-0 pl-1;
+            }
+          }
+        }
+
+        &-second {
+          .product-details-quantity {
+            @apply justify-end;
+          }
+        }
+
+        &-third {
+          @apply text-right flex flex-col justify-between;
+          span {
+            @apply text-system-dark text-sm dark:text-gray-50;
+          }
+        }
+      }
+
+      &-action-row {
+        @apply flex gap-2.5 items-center;
+        a {
+          @apply text-dark-500 text-xs font-medium shadow-none outline-none dark:text-gray-300;
+          @apply hover:underline #{!important};
+        }
+      }
+    }
+  }
+}
+
+.fct-adjust-quantity-modal-content {
+  .title {
+    @apply mb-5.5 text-sm text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-transaction-status {
+  @apply w-2.5 h-1 rounded-[3px] inline-block;
+  &.paid {
+    @apply bg-success-500;
+  }
+
+  &.pending {
+    @apply bg-warning-500;
+  }
+
+  &-list {
+    @apply flex gap-1;
+  }
+}
+
+.fct-subscription-plan-wrap {
+  p {
+    @apply m-0;
+    + p {
+      @apply mt-2;
+    }
+  }
+}
+
+.fct-subs-status-wrap {
+  @apply flex items-center gap-1 justify-between mb-4;
+}
+
+
+// Responsive
+@media (max-width: 600px) {
+  .fct-order-stats-wrap {
+    .card {
+      .card-header {
+        @apply flex-col gap-y-2 items-start;
+        &-actions {
+          @apply w-full;
+          .fct-order-stats-actions {
+            @apply w-full;
+          }
+        }
+      }
+    }
+    .fct-fluid-tab {
+      @apply grid w-full grid-cols-3;
+    }
+  }
+}
+
+.refund-item{
+  @apply h-auto;
+  .refund-item-info{
+    @apply flex justify-between h-auto w-full items-center;
+    p {
+      @apply text-system-dark dark:text-gray-50;
+      span {
+        @apply block text-system-mid dark:text-gray-300;
+      }
+    }
+    .right {
+      @apply flex items-end flex-col gap-1;
+      .light {
+        @apply text-xs text-system-mid dark:text-gray-300;
+      }
+    }
+  }
+}
+
+.fct-status-group{
+  @apply inline-flex items-center gap-1.5 flex-wrap;
+  .img{
+    @apply inline-flex items-center justify-center border border-solid border-gray-divider dark:border-dark-400 rounded-xs w-7 h-[21px];
+    img{
+      @apply w-3;
+    }
+  }
+}
+
+.dark{
+  .fct-status-group{
+    .img{
+      &.offline_payment{
+       img{
+         filter: invert(1);
+       }
+      }
+    }
+  }
+}
+
+.fct-refund-note-item {
+  @apply flex items-center gap-2 mb-3.5 last:mb-0;
+  .message {
+    @apply text-system-dark text-sm dark:text-gray-50;
+  }
+}
+
+.product-details-price-mobile,
+.bulk-action-only-mobile,
+.fct-transaction-details-mobile-wrap,
+.fct-orders-table-mobile-wrap.show-on-mobile,
+.icon-button.icon-button-show-on-mobile,
+.fct-subscriptions-table-mobile-wrap.show-on-mobile{
+  @apply hidden;
+}
+

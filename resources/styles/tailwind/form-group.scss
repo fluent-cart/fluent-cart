@@ -1,0 +1,49 @@
+.fct-form-group{
+    @apply relative grid;
+    label,
+    .label {
+        @apply w-max inline-block font-medium text-system-dark mb-2 text-sm dark:text-gray-50;
+        &.required{
+            @apply relative;
+            &:after{
+                @apply absolute top-0.5 -right-3.5 text-sm text-red-500;
+                content: "*";
+            }
+        }
+    }
+    p {
+        @apply m-0;
+    }
+    .el-checkbox{
+        @apply inline-flex items-center;
+    }
+    &-icon{
+        @apply absolute top-0 left-0 z-10 h-full pl-3 flex items-center text-system-mid dark:text-gray-300;
+        + .el-input,
+        + .el-autocomplete {
+            .el-input__wrapper{
+                @apply pl-8.5;
+            }
+        }
+        svg{
+            @apply w-4 h-4;
+        }
+        &.right{
+            @apply left-[auto] right-0 pl-0 pr-3;
+            + .el-input,
+            + .el-autocomplete {
+                .el-input__wrapper{
+                    @apply pl-3 pr-8.5;
+                }
+            }
+        }
+    }
+}
+
+.fct-form-row{
+    @apply grid;
+}
+
+.fct-form-row.col-5{
+    @apply grid-cols-5 gap-5;
+}

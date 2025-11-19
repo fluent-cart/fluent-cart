@@ -1,0 +1,191 @@
+// table border
+.fct-table-border{
+  @apply w-full border-spacing-0 border border-solid border-gray-divider rounded overflow-hidden text-system-dark dark:border-dark-400 dark:text-gray-300;
+  >thead>tr th{
+    @apply text-left font-normal;
+  }
+  tr {
+    th,
+    td{
+      @apply py-2 px-5 text-sm;
+    }
+  }
+  >thead>tr th,
+  >tfoot>tr:not(:last-child)>th,
+  >tfoot>tr:not(:last-child)>td,
+  >tfoot:not(:last-child) {
+    @apply border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 dark:border-dark-400;
+  }
+  tbody>tr:first-child>td{
+    @apply pt-3.5;
+  }
+  tbody {
+    tr {
+      td:nth-child(2){
+        @apply text-xs;
+      }
+      &:first-child td{
+        @apply text-system-dark dark:text-gray-300;
+      }
+      &.payment-tr {
+        &:last-child td{
+          @apply pb-3.5;
+        }
+        &.total-refund-owed-tr {
+          @apply bg-yellow-50 dark:bg-primary-400;
+          td {
+            @apply pt-2.5 pb-2.5;
+          }
+        }
+      }
+      td:last-child{
+        @apply text-right;
+      }
+    }
+    .total-amount-tr{
+      td{
+        @apply text-system-dark dark:text-gray-300 font-semibold text-[15px] border border-solid border-x-0 border-t-0 border-gray-divider pb-4 dark:border-dark-400 #{!important};
+      }
+    }
+    .payment-tr{
+      td{
+        @apply text-system-dark dark:text-gray-300 #{!important};
+      }
+    }
+  }
+  a{
+    @apply inline-flex items-center gap-1 text-blue-500 hover:underline focus:shadow-none #{!important};
+  }
+  tfoot{
+    tr{
+      td{
+        @apply font-semibold text-[15px] pb-3.5;
+      }
+      td:last-child{
+        @apply text-right;
+      }
+    }
+  }
+}
+
+.fct-table-transparent-header{
+  .el-table {
+    th.el-table__cell{
+      @apply bg-transparent;
+    }
+    td.el-table__cell,
+    th.el-table__cell.is-leaf{
+      @apply border-t-0;
+    }
+    thead {
+      .el-table__cell{
+        .cell{
+          @apply pt-1;
+        }
+      }
+    }
+  }
+}
+
+.fct-table-draggable {
+  .fct-drag-handle {
+    @apply w-7.5 h-7.5 justify-center items-center inline-flex cursor-grab text-system-mid dark:text-gray-500;
+    svg{
+      @apply w-5 h-5;
+    }
+  }
+
+  .fct-product-pricing-table-item {
+    @apply relative;
+  }
+
+  .fct-variant-badge {
+    @apply absolute -top-2 right-1.5 bg-white border border-solid border-gray-outline text-primary-500 rounded-xs dark:bg-primary-700 dark:text-gray-50 dark:border-primary-500
+  }
+
+  table{
+    @apply w-full border-collapse text-sm text-system-dark text-left font-medium dark:text-gray-50;
+    thead {
+      th{
+        @apply bg-gray-25 font-medium py-3 dark:bg-dark-600;
+        &:first-child{
+          @apply pl-6;
+        }
+        &:last-child{
+          @apply pr-6;
+        }
+      }
+    }
+    th,
+    td{
+      @apply px-2 border border-x-0 border-solid border-t-0 border-gray-divider dark:border-dark-500;
+    }
+    td{
+      @apply py-4;
+      &:first-child{
+        @apply pl-6;
+      }
+      &:last-child{
+        @apply pr-6;
+      }
+    }
+    tr{
+      @apply transition-all duration-150 hover:bg-gray-25 dark:hover:bg-dark-600;
+      &:last-child td{
+        @apply border-b-0;
+      }
+    }
+    .is-right{
+      @apply text-right;
+      .fct-btn-group{
+        @apply justify-end -mr-2.5;
+      }
+    }
+  }
+}
+
+.fct-table-wrapper{
+  .fct-card-body{
+    @apply px-0 pb-0;
+  }
+  .fct-card-header{
+    @apply block;
+    &-top{
+      @apply flex items-start flex-wrap gap-2.5 justify-between;
+    }
+  }
+}
+
+// fct-upgrade-variation-table
+.el-dialog__body{
+  .fct-upgrade-variation-table{
+    @apply mt-[-21px] -mb-5 -mx-5;
+  }
+}
+
+.fct-upgrade-variation-table{
+  @apply rounded overflow-hidden;
+  table{
+    @apply m-0;
+  }
+  .el-table .cell{
+    @apply px-4;
+  }
+  .el-table td.el-table__cell{
+    @apply py-3 !important;
+  }
+  .el-table td.el-table__cell, .el-table th.el-table__cell.is-leaf{
+    @apply border-gray-divider !important;
+  }
+  .upgrade-title{
+    @apply text-sm text-system-dark flex items-center gap-1 dark:text-gray-50;
+  }
+}
+
+
+.mark-read-unread-wrap {
+  @apply inline-flex items-center gap-1.5;
+  span {
+    @apply text-system-mid cursor-pointer w-5 h-5 flex items-center justify-center text-sm dark:text-gray-300;
+  }
+}

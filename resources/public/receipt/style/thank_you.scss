@@ -1,0 +1,218 @@
+@config "./thank_you.js";
+@tailwind utilities;
+
+
+.fct-thank-you-page {
+  &-inner {
+    padding: 10px;
+    border-radius: 5px;
+  }
+  &-content {
+    @apply max-w-[620px] my-0 mx-auto p-0 w-full;
+  }
+  &-header {
+    @apply mb-2.5 p-7.5 rounded-xs text-center;
+    &-icon {
+      @apply w-[80px] h-[80px] rounded-[50%] inline-flex items-center justify-center mb-5;
+      svg {
+        @apply w-[40px] h-[40px] text-white;
+      }
+    }
+    &-title {
+      @apply text-[2em] leading-[1] m-0 font-bold;
+    }
+  }
+
+  &-body {
+    @apply bg-white rounded border-[1px] border-solid border-[#e7eaee];
+    &-inner {
+      @apply p-5;
+    }
+    &-content {
+      @apply overflow-x-hidden;
+      &-inner {
+        @apply bg-white p-0;
+        .no-print {
+          @apply mb-4 text-left p-0;
+          &-title {
+            @apply text-[24px] font-semibold leading-[1.2] m-0 mb-[4px] text-system-dark;
+          }
+          p {
+            @apply text-sm m-0 text-system-mid;
+          }
+        }
+        .fct_invoice_tax_content {
+          @apply text-right;
+          p {
+            @apply font-semibold text-sm m-0 mb-3;
+          }
+        }
+      }
+    }
+  }
+  &-order-items {
+    &-header {
+      @apply flex justify-between bg-[rgb(249,250,251)] py-0 px-4;
+      &-row {
+        @apply text-xs font-semibold text-[rgb(55,65,81)] uppercase leading-[24px] m-0 text-left;
+        &:last-child {
+          @apply text-right w-[200px];
+        }
+      }
+    }
+    &-body {
+      .fct-thank-you-page-order-items {
+        &-list {
+          @apply flex items-start justify-between py-2 px-4;
+          &-quantity {
+            @apply text-[15px] text-[#2F3448] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
+            span {
+              @apply text-xs font-normal text-[rgb(75,85,99)];
+            }
+          }
+          &-variant-title {
+            @apply m-0 text-sm text-gray-800 font-normal leading-[15px];
+          }
+          &-payment-info {
+            @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 mt-[3px];
+          }
+          &-price {
+            @apply w-[200px] text-right;
+            &-inner {
+              @apply text-sm font-bold text-[rgb(17,24,39)] m-0 leading-[24px];
+            }
+          }
+        }
+        &-total {
+          @apply bg-[rgb(249,250,251)] p-4 rounded m-0 w-full max-w-[290px] ml-auto;
+          &-discount,
+          &-shipping,
+          &-tax,
+          &-shipping-tax,
+          &-refund,
+          &-total,
+          &-payment-method,
+          &-subtotal {
+            @apply flex items-center justify-between;
+          }
+          &-label {
+            @apply text-sm text-[rgb(55,65,81)] leading-[24px] m-0;
+          }
+          &-value {
+            @apply uppercase text-[13px] text-[rgb(55,65,81)] m-0 leading-[24px] text-right;
+          }
+          &-total {
+            .fct-thank-you-page-order-items-total-label {
+              @apply text-base font-bold;
+            }
+            .fct-thank-you-page-order-items-total-value {
+              @apply text-sm;
+            }
+          }
+        }
+      }
+    }
+    &-addresses {
+      @apply grid gap-5 mt-5 grid-cols-[repeat(auto-fit,minmax(200px,1fr))];
+      .fct-thank-you-page-order-items {
+        &-addresses-ship-to,
+        &-addresses-bill-to {
+          @apply text-sm rounded-[5px];
+          h5 {
+            @apply font-bold text-sm m-0 mb-2.5 text-[#495057] border-x-0 border-t-0 border-[1px] border-solid border-[#dee2e6] pb-[5px];
+          }
+          &-address {
+            @apply mb-[3px];
+          }
+          &-email {
+            @apply mb-2.5;
+          }
+          &-name {
+            @apply mb-2.5;
+          }
+        }
+      }
+    }
+    &-subscriptions,
+    &-licenses,
+    &-downloads {
+      td,th,table {
+        border: none;
+      }
+      &-table {
+        border-spacing: 0;
+        border: none;
+        @apply w-full overflow-hidden mb-0 p-0 pl-2.5;
+        th {
+          border: none;
+          @apply border-0;
+        }
+        tbody {
+          tr {
+            td {
+              border: none;
+              @apply leading-none p-0;
+              &.fct-thank-you-page-order-items-subscriptions,
+              &.fct-thank-you-page-order-items-licenses,
+              &.fct-thank-you-page-order-items-downloads {
+                &-table-file {
+                  p {
+                    @apply m-0 text-sm;
+                    span {
+                      @apply text-[#666] text-xs;
+                    }
+                  }
+                }
+                &-button {
+                  @apply w-[20%] text-right border-0 py-[1px] px-0 align-middle;
+                  a {
+                    @apply inline-block text-sm text-system-dark leading-none;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      .fct-thank-you-page-order-items {
+        &-subscriptions-heading,
+        &-licenses-heading,
+        &-downloads-heading {
+          @apply text-base font-semibold text-[rgb(44,62,80)] m-0 mt-4 leading-[24px];
+        }
+      }
+    }
+    
+    &-licenses,
+    &-downloads,
+    &-subscriptions {
+      &-table {
+        @apply pt-2;
+      }
+      &-billing-infos {
+        @apply text-right text-sm;
+        &-next-billing {
+          @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 !mt-[3px];
+        }
+      }
+    }
+  }
+  .fct-thank-you-page-order-items-downloads-notice {
+    @apply bg-[rgb(239,246,255)] p-3 rounded-[6px] mb-5 border-[1px] border-solid border-[rgb(191,219,254)];
+    &-title {
+      @apply text-sm font-semibold text-[rgb(30,58,138)] leading-[24px] m-0 mb-[6px];
+    }
+    &-content {
+      @apply text-[13px] text-[rgb(30,64,175)] mb-0 leading-[1.2] m-0;
+    }
+  }
+  &-footer {
+    @apply text-center mt-2.5 flex items-center justify-center gap-2.5;
+    .fct-thank-you-page-view-order-button {
+      @apply bg-[var(--fluent-cart-primary-color,#253241)] text-white py-[7px] px-5 rounded border-0 text-base font-medium inline-block no-underline;
+    }
+    .fct-thank-you-page-download-receipt-button {
+      @apply bg-[var(--fluent-cart-primary-color,#253241)] text-sm text-system-dark bg-transparent font-semibold inline-block;
+    }
+  }
+}

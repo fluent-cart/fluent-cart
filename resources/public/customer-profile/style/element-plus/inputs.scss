@@ -1,0 +1,107 @@
+// select
+.el-select {
+    @apply w-full;
+    &__wrapper{
+        @apply min-h-[38px] py-[3px] px-3 rounded border-gray-outline;
+        &.is-focused{
+            @apply border border-solid border-gray-outline shadow-none;
+        }
+    }
+    &__selection{
+        @apply pl-[3px];
+    }
+    input {
+        @apply bg-transparent;
+    }
+    &-dropdown__item {
+        @apply flex items-center px-3;
+        &.selected{
+            @apply text-primary-500 dark:text-gray-200;
+        }
+    }
+    &.is-focus .el-input__wrapper {
+        @apply shadow-none;
+    }
+    .el-input.is-focus .el-input__wrapper,
+    .el-input__wrapper.is-focus {
+        @apply shadow-none #{!important};
+    }
+    &:focus:not(.el-select--disabled) .el-input__wrapper,
+    &:hover:not(.el-select--disabled) .el-input__wrapper{
+        @apply shadow-none;
+    }
+    &__input{
+        @apply p-0 border-0 #{!important};
+    }
+}
+
+
+/*===== checkbox =====*/
+.el-checkbox {
+    .el-checkbox__inner{
+        @apply border-gray-outline rounded-xs w-4 h-4;
+        &::after{
+            @apply top-0.5 left-[5px] border-[1.5px];
+        }
+    }
+    .el-checkbox__input{
+        &.is-checked,
+        &.is-indeterminate {
+            .el-checkbox__inner{
+                @apply bg-primary-500 border-primary-500;
+            }
+        }
+        &.is-indeterminate .el-checkbox__inner{
+            &::before{
+                @apply top-1.5 h-[3px];
+            }
+        }
+    }
+}
+
+// input
+.el-input{
+    &__wrapper{
+        @apply py-1 px-4 rounded border border-solid border-gray-outline shadow-none #{!important};
+        &.is-focus{
+            @apply shadow-none border-primary-500 #{!important};
+        }
+        .icon{
+            @apply inline-flex items-center;
+        }
+        input {
+            @apply outline-none shadow-none #{!important};
+        }
+    }
+    &__inner{
+        @apply p-0 border-0 bg-transparent #{!important};
+    }
+    &--medium{
+        .el-input__wrapper{
+            @apply min-h-[38px];
+        }
+    }
+}
+
+// label
+.el-form-item__label{
+    @apply text-system-dark font-medium;
+}
+.el-form-item.is-error .el-input__wrapper{
+    @apply border-red-500 #{!important};
+}
+
+input[type=email]:focus,
+input[type=password]:focus,
+input[type=reset]:focus,
+input[type=search]:focus,
+input[type=tel]:focus,
+input[type=text]:focus,
+input[type=url]:focus,
+select:focus,
+textarea:focus {
+    @apply bg-transparent #{!important};
+}
+.el-input--small .el-input__inner{
+    @apply h-[22px] !important;
+}

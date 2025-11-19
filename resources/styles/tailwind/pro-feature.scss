@@ -1,0 +1,18 @@
+.fct-pro-feature-content {
+  @apply flex flex-col items-center justify-center text-center;
+  .fct-pro-feature-icon{
+    @apply w-12 h-12 mb-3 rounded bg-[#FFFAEB] text-[#F6B51E] flex items-center justify-center;
+    svg{
+      @apply w-5 h-5;
+    }
+  }
+  .fct-pro-feature-title{
+    @apply text-lg font-semibold leading-[28px] mb-1 mt-0 text-system-dark dark:text-gray-50;
+  }
+  .fct-pro-feature-text{
+    @apply text-system-mid text-sm leading-[20px] m-0 dark:text-gray-300;
+  }
+  .el-button{
+    @apply mt-5 min-w-[180px];
+  }
+}

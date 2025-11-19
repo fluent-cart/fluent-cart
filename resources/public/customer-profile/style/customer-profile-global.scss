@@ -1,0 +1,179 @@
+@config "./customer-profile.config.js";
+
+@tailwind utilities;
+@import "./scss/nav.scss";
+
+:root {
+  --fct-customer-dashboard-primary-text-color: var(--fct-primary-text-color, theme('colors.primary.500'));
+  --fct-customer-dashboard-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+
+  // text colors
+  --fct-customer-dashboard-title-color: var(--fct-customer-dashboard-primary-text-color);
+  --fct-customer-dashboard-sub-title-color: var(--fct-customer-dashboard-secondary-text-color);
+  --fct-customer-dashboard-text-color: var(--fct-customer-dashboard-secondary-text-color);
+
+  // border colors
+  --fct-customer-dashboard-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+  --fct-customer-dashboard-divider-color: var(--fct-divider-color, theme('colors.gray.outline'));
+
+
+  // button
+  --fct-customer-dashboard-btn-bg-color: var(--fct-customer-dashboard-primary-text-color);
+  --fct-customer-dashboard-btn-border-color: var(--fct-customer-dashboard-btn-bg-color);
+  --fct-customer-dashboard-btn-text-color: theme('colors.white');
+
+  // nav
+  --fct-customer-dashboard-nav-text-color: theme('colors.system.mid');
+  --fct-customer-dashboard-nav-active-text-color: theme('colors.primary.500');
+  --fct-customer-dashboard-nav-active-bg-color: theme('colors.gray.50');
+  --fct-customer-dashboard-nav-active-bar-color: theme('colors.primary.500');
+
+  // paginator
+  --fct-customer-dashboard-paginator-text-color: var(--fct-customer-dashboard-text-color);
+
+  // logout button bg
+  --fct-customer-dashboard-logout-btn-bg-color: theme('colors.red.50');
+  --fct-customer-dashboard-logout-btn-text-color: theme('colors.red.500');
+  --fct-customer-dashboard-logout-btn-hover-bg-color: theme('colors.red.100');
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+* {
+  @apply box-border;
+}
+.fct_customer_profile_wrap {
+  @apply max-w-[1200px] !important;
+}
+.fct-customer-root-container {
+  ul {
+    @apply list-none p-0 m-0;
+  }
+  button:hover,
+  button:focus,
+  button:active,
+  .button:hover,
+  .button:focus,
+  .button:active {
+    @apply shadow-none !important;
+  }
+}
+
+.fluent-cart-customer-profile-app {
+  .fct-license-key-wrap {
+    .fct-copy-wrap {
+      .el-button {
+        @apply bg-gray-25 rounded text-gray-25 text-system-mid text-xs leading-4 py-[5px] px-2.5 #{!important};
+        &:hover {
+          @apply shadow-none;
+        }
+        .icon {
+          svg {
+            @apply block;
+          }
+        }
+      }
+    }
+  }
+}
+
+.fluent-cart-customer-profile-app {
+  &:not(.el-dialog) {
+    &:not(.el-popper) {
+      &:not(.el-popover) {
+        @apply flex border-[1px] border-solid border-[var(--fct-customer-dashboard-border-color)] rounded;
+        @media (max-width: 1159px) {
+          .grid-cols-5 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+          }
+          .col-span-2,
+          .col-span-3 {
+            grid-column: span 1 / span 1;
+          }
+          .fct-purchase-history-route-wrap {
+            .grid-cols-5 {
+              > .col-span-3 {
+                order: 2;
+              }
+            }
+          }
+        }
+        @media (max-width: 806px) {
+          @apply flex-col border-0;
+        }
+      }
+    }
+
+    .el-button {
+      &.is-text {
+        &.update-payment-details,
+        &.cancel-auto-renew{
+          @apply p-0 underline font-normal leading-5 #{!important};
+        }
+
+      }
+    }
+  }
+  &.el-message-box{
+    @apply inline-block !important;
+  }
+}
+
+// .fct-customer-dashboard-customer-info
+.fct-customer-dashboard-customer-info {
+  @apply relative flex items-center gap-3 py-3 pl-5 pr-3 border-0 border-b-[1px] border-solid border-gray-divider;
+  @media (max-width: 806px) {
+    @apply hidden;
+  }
+  img {
+    @apply block object-cover w-10 h-10 rounded-full flex-none !important;
+  }
+  &-content {
+    h3 {
+      @apply m-0 mb-1 text-sm leading-5 font-medium text-[var(--fct-customer-dashboard-title-color)] !important;
+    }
+    p {
+      @apply m-0 text-xs leading-4 text-[var(--fct-customer-dashboard-text-color)] !important;
+    }
+
+  }
+}
+
+.fct-customer-dashboard-app-container {
+  .fct-customer-dashboard-main-content {
+    min-height: 600px;
+    @apply relative overflow-hidden p-5 w-full;
+    @media (max-width: 806px) {
+      @apply p-0;
+    }
+  }
+  .el-pagination {
+    .el-pager {
+      @apply m-0 p-0;
+    }
+  }
+}
+
+
+#fct-customer-logout-button {
+  a {
+    @apply outline-none no-underline;
+  }
+}
+
+.fct-customer-logout-btn {
+  @apply text-system-mid p-2.5 leading-none no-underline rounded gap-1.5 flex items-center justify-center text-sm font-medium bg-[var(--fct-customer-dashboard-logout-btn-bg-color)] text-[var(--fct-customer-dashboard-logout-btn-text-color)] hover:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] hover:text-[var(--fct-customer-dashboard-logout-btn-text-color)] focus:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] focus:text-[var(--fct-customer-dashboard-logout-btn-text-color)];
+  svg{
+    @apply w-4 h-4;
+  }
+}
+

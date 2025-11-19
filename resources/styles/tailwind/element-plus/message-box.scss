@@ -1,0 +1,71 @@
+.el-message-box{
+    @apply rounded p-0 dark:bg-dark-600 dark:border-dark-600;
+    &__content{
+        @apply p-5;
+    }
+    &__header{
+        @apply pt-4 pb-0 px-5;
+        &.show-close{
+            @apply pr-3;
+        }
+    }
+    &__title{
+        @apply text-base text-system-dark font-medium dark:text-gray-50;
+    }
+    &__message {
+        p{
+            @apply text-sm leading-[20px] text-system-mid dark:text-gray-300;
+        }
+    }
+    &__btns{
+        @apply p-5 border border-solid border-gray-divider border-b-0 border-x-0 dark:border-dark-400;
+    }
+    &__headerbtn{
+        @apply w-7.5 h-7.5 top-5 right-5 hidden items-center justify-center bg-gray-50 rounded-full transition-all dark:bg-dark-500 dark:text-gray-50 dark:hover:text-gray-50;
+        svg path{
+            @apply stroke-[12] dark:stroke-white;
+        }
+        .el-message-box__close{
+            @apply text-system-mid dark:text-gray-300;
+        }
+    }
+    &__container{
+        @apply gap-4;
+    }
+    &__status {
+        @apply w-10 h-10 flex-shrink-0 rounded;
+        + .el-message-box__message{
+            @apply pr-0;
+        }
+        &.el-message-box-icon--warning{
+            @apply bg-warning-25 dark:bg-warning-800 dark:text-gray-50;
+        }
+        &.el-message-box-icon--error{
+            @apply bg-red-25 dark:bg-red-800 dark:text-gray-50;
+        }
+    }
+    .fct-term-message-box-switch-wrap{
+        @apply flex items-center gap-3 mt-3.5;
+    }
+    &.fluent-cart-pro-cta {
+        .el-message-box__header {
+            @apply border-[1px] border-solid border-gray-divider dark:border-dark-400 border-x-0 border-t-0 pb-3;
+        }
+        .el-message-box__message {
+            @apply w-full;
+        }
+        .fct-feature-list  {
+            @apply my-2;
+        }
+        .el-message-box__btns {
+            @apply hidden;
+        }
+        .fct-feature-list-footer {
+            @apply flex justify-end border-[1px] border-solid border-gray-divider dark:border-dark-400 border-x-0 border-b-0 pt-5 mt-5 mx-[-20px] px-5;
+        }
+    }
+}
+
+.el-message.fct-file-upload-message{
+    @apply z-[99999] #{!important};
+}

@@ -1,0 +1,56 @@
+.el-select-dropdown__list{
+    @apply p-3 #{!important};
+    .el-select-dropdown__item{
+        @apply rounded text-system-mid px-2.5 text-[13px] h-7.5 #{!important};
+        &.is-selected{
+            @apply text-primary-500 font-medium #{!important};
+        }
+        &.is-hovering{
+            @apply bg-primary-25 dark:bg-dark-600 #{!important};
+        }
+    }
+}
+.el-select__popper.el-popper{
+    @apply border-gray-outline #{!important};
+}
+.el-popper{
+    @apply rounded #{!important};
+}
+.el-dropdown-menu{
+    @apply dark:bg-primary-500;
+}
+.el-dropdown__popper{
+    &.fct-dropdown{
+        @apply min-w-[160px] rounded border-0;
+        box-shadow: 0px -4px 16px -12px rgba(14, 18, 27, 0.10), 0px 16px 32px 0px rgba(14, 18, 27, 0.10);
+        .el-dropdown-menu{
+            @apply p-2 rounded #{!important};
+            &__item{
+                @apply gap-2 text-system-dark relative rounded-sm hover:bg-gray-50 mb-0 p-2 last:mb-0 focus:bg-gray-50 focus:text-system-dark;
+                &.active{
+                    @apply text-dark-500;
+                }
+                &.item-destructive{
+                    @apply text-red-500 focus:bg-red-25 focus:text-red-500 hover:bg-red-25;
+                }
+                &.item-link{
+                    @apply p-0 rounded-none bg-transparent cursor-default;
+                    a {
+                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-system-dark relative rounded-sm focus:outline-none focus:shadow-none hover:bg-gray-50 mb-0 last:mb-0 focus:bg-gray-50 focus:text-system-dark;
+                        .icon{
+                            svg{
+                                @apply w-4 h-4;
+                            }
+                        }
+                    }
+                }
+                .el-icon{
+                    @apply mr-0;
+                }
+            }
+        }
+        .el-popper__arrow{
+            @apply hidden;
+        }
+    }
+}

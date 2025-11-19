@@ -1,0 +1,322 @@
+[
+  {
+    "post_title": "Men's Classic White T-Shirt",
+    "post_excerpt": "Stay cool and comfortable with our men's classic white t-shirt. Made from premium cotton, it's perfect for everyday wear, offering both style and comfort.",
+    "post_content": "Our men's classic white t-shirt is crafted from high-quality cotton, providing breathability and comfort. It's designed with a relaxed fit and is perfect for any casual occasion. Pair it with jeans, shorts, or layer it under a jacket for a versatile look.",
+    "gallery": [
+      "https://pyxis.nymag.com/v1/imgs/7c9/5bf/b6ec34ebd99004151af313b5daa34e06c1-jcrew-broken-in-tee-white.rsquare.w600.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "1200",
+      "max_price": "1200"
+    },
+    "variants": [
+      {
+        "variation_title": "Men's Classic White T-Shirt - Medium",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1200",
+        "compare_price": "1500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Women's Floral Summer Dress",
+    "post_excerpt": "Embrace the summer vibes with our women's floral dress. This light and airy dress is perfect for sunny days, offering a flattering fit and beautiful floral patterns.",
+    "post_content": "Our women's floral summer dress is designed to keep you cool and stylish during warm days. The soft fabric ensures comfort, while the floral pattern adds a touch of elegance. Perfect for beach outings, garden parties, or casual daywear.",
+    "gallery": [
+      "https://img1.shopcider.com/product/1671792028000-esZfZR.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "2500",
+      "max_price": "2500"
+    },
+    "variants": [
+      {
+        "variation_title": "Women's Floral Summer Dress - Small",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "50",
+        "available": "50",
+        "item_price": "2500",
+        "compare_price": "2800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Men's Slim Fit Jeans",
+    "post_excerpt": "Get the perfect casual look with our men's slim fit jeans. Designed for style and comfort, these jeans offer a modern fit that's perfect for everyday wear.",
+    "post_content": "Our men's slim fit jeans are made from durable denim fabric with a hint of stretch for added comfort. The modern slim fit ensures a stylish look, whether you're dressing up for a night out or keeping it casual during the day.",
+    "gallery": [
+      "https://media.gq.com/photos/65d7c1d29178e88a0ceebdc0/3:4/w_748%2Cc_limit/layer_3.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "3500",
+      "max_price": "3500"
+    },
+    "variants": [
+      {
+        "variation_title": "Men's Slim Fit Jeans - 32 Waist",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "80",
+        "available": "80",
+        "item_price": "3500",
+        "compare_price": "3800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Women's Cozy Knit Sweater",
+    "post_excerpt": "Stay warm and stylish with our women's cozy knit sweater. Crafted from soft wool blend, this sweater offers comfort and elegance, perfect for chilly days.",
+    "post_content": "Our women's cozy knit sweater is designed with both style and comfort in mind. Made from a soft wool blend, it's perfect for layering during cooler months. The elegant knit pattern adds a touch of sophistication to any outfit.",
+    "gallery": [
+      "https://oldnavy.gap.com/webcontent/0053/970/078/cn53970078.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "2800",
+      "max_price": "2800"
+    },
+    "variants": [
+      {
+        "variation_title": "Women's Cozy Knit Sweater - Medium",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "60",
+        "available": "60",
+        "item_price": "2800",
+        "compare_price": "3200",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Men's Leather Jacket",
+    "post_excerpt": "Elevate your style with our men's leather jacket. Made from premium leather, this jacket offers a sleek look and a comfortable fit, perfect for any occasion.",
+    "post_content": "Our men's leather jacket is crafted from high-quality leather, providing durability and style. The sleek design and comfortable fit make it a versatile piece for both casual and formal occasions. Whether you're going for a rugged or refined look, this jacket has you covered.",
+    "gallery": [
+      "https://m.media-amazon.com/images/I/51wLj0UlubL._AC_UY1000_.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "6500",
+      "max_price": "6500"
+    },
+    "variants": [
+      {
+        "variation_title": "Men's Leather Jacket - Large",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "40",
+        "available": "40",
+        "item_price": "6500",
+        "compare_price": "7000",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Women's High-Waisted Leggings",
+    "post_excerpt": "Achieve both comfort and style with our women's high-waisted leggings. Perfect for workouts or casual wear, these leggings offer a flattering fit and soft, stretchable fabric.",
+    "post_content": "Our women's high-waisted leggings are designed to offer both comfort and style. The soft, stretchable fabric ensures a perfect fit, making them ideal for workouts, yoga, or lounging. The high waist provides support and a flattering silhouette.",
+    "gallery": [
+      "https://ng.jumia.is/unsafe/fit-in/500x500/filters:fill(white)/product/39/9981482/1.jpg?7801"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "1800",
+      "max_price": "1800"
+    },
+    "variants": [
+      {
+        "variation_title": "Women's High-Waisted Leggings - Medium",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1800",
+        "compare_price": "2000",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Unisex Hoodie",
+    "post_excerpt": "Stay cozy and stylish with our unisex hoodie. Made from soft fleece, it's perfect for layering and features a comfortable, relaxed fit that works for everyone.",
+    "post_content": "Our unisex hoodie is designed to offer ultimate comfort. Made from soft fleece, it provides warmth while maintaining a casual style. The relaxed fit and adjustable hood make it a go-to choice for any laid-back occasion.",
+    "gallery": [
+      "https://static.wixstatic.com/media/ebbe72_2f91bbbc436d47519d0a9a07f0a7e8bc~mv2_d_1654_1654_s_2.jpg/v1/fill/w_520,h_520,al_c,q_80,usm_0.66_1.00_0.01,enc_auto/ebbe72_2f91bbbc436d47519d0a9a07f0a7e8bc~mv2_d_1654_1654_s_2.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "3000",
+      "max_price": "3000"
+    },
+    "variants": [
+      {
+        "variation_title": "Unisex Hoodie - Large",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "70",
+        "available": "70",
+        "item_price": "3000",
+        "compare_price": "3500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Men's Athletic Shorts",
+    "post_excerpt": "Get ready for your workout with our men's athletic shorts. Designed for performance and comfort, these shorts are perfect for running, gym sessions, or casual wear.",
+    "post_content": "Our men's athletic shorts are made from moisture-wicking fabric to keep you dry and comfortable during intense workouts. The elastic waistband ensures a secure fit, and the lightweight material allows for maximum movement. Whether you're hitting the gym or just lounging, these shorts offer the perfect blend of style and functionality.",
+    "gallery": [
+      "https://media.karousell.com/media/photos/products/2024/3/12/essentials_men_shorts_1710243344_8fe169db_progressive.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "2000",
+      "max_price": "2000"
+    },
+    "variants": [
+      {
+        "variation_title": "Men's Athletic Shorts - Large",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "90",
+        "available": "90",
+        "item_price": "2000",
+        "compare_price": "2300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Women's Satin Nightgown",
+    "post_excerpt": "Experience luxury and comfort with our women's satin nightgown. Made from smooth satin fabric, this nightgown offers a relaxed fit and elegant design, perfect for a restful night's sleep.",
+    "post_content": "Our women's satin nightgown is designed for both comfort and elegance. The smooth satin fabric feels soft against your skin, while the relaxed fit ensures a comfortable night's sleep. The elegant design adds a touch of luxury to your nightwear collection.",
+    "gallery": [
+      "https://cdn11.bigcommerce.com/s-xpcbzfctks/images/stencil/500x659/products/1708/11534/Slipdress_midi_mannequin__83659__30069.1649856778.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "3200",
+      "max_price": "3200"
+    },
+    "variants": [
+      {
+        "variation_title": "Women's Satin Nightgown - Medium",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "60",
+        "available": "60",
+        "item_price": "3200",
+        "compare_price": "3500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Unisex Baseball Cap",
+    "post_excerpt": "Complete your casual look with our unisex baseball cap. This classic cap offers a comfortable fit and comes in a variety of colors to suit any style.",
+    "post_content": "Our unisex baseball cap is the perfect accessory for any casual outfit. Made from durable cotton, it features an adjustable strap for a custom fit and comes in multiple colors to match your style. Whether you're shielding yourself from the sun or adding a sporty touch to your look, this cap has you covered.",
+    "gallery": [
+      "https://img.freepik.com/premium-photo/blank-beige-unisex-baseball-hat-mockup-minimalistic-background_916626-6385.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "1500",
+      "max_price": "1500"
+    },
+    "variants": [
+      {
+        "variation_title": "Unisex Baseball Cap - Black",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "150",
+        "available": "150",
+        "item_price": "1500",
+        "compare_price": "1800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  }
+]

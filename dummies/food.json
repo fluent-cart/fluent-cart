@@ -1,0 +1,323 @@
+[
+  {
+    "categories": ["Apple Watch", "Mans Watch"],
+    "post_title": "Crispy Veggie Chips",
+    "post_excerpt": "Satisfy your snack cravings with our crispy veggie chips made from farm-fresh vegetables. These light, crunchy chips are a healthy alternative to regular snacks, offering a blend of natural flavors in every bite.",
+    "post_content": "Our crispy veggie chips are made from the freshest farm-grown vegetables, lightly seasoned and baked to perfection. They're a healthier alternative to traditional snacks, providing a delicious crunch with natural flavors. Great for guilt-free snacking!",
+    "gallery": [
+      "https://thebigmansworld.com/wp-content/uploads/2022/04/veggie-chips-recipe.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "300",
+      "max_price": "300"
+    },
+    "variants": [
+      {
+        "variation_title": "Crispy Veggie Chips - 150g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "500",
+        "available": "500",
+        "item_price": "300",
+        "compare_price": "350",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Organic Almond Butter",
+    "post_excerpt": "Enjoy the creamy and nutty goodness of our organic almond butter. Made from 100% roasted almonds, it's a nutritious spread packed with healthy fats and protein, perfect for smoothies, toast, or snacking.",
+    "post_content": "Our organic almond butter is made from 100% roasted almonds, without any additives or preservatives. Rich in healthy fats and protein, this creamy spread is perfect for adding nutrition to your smoothies, toast, or enjoying as a snack.",
+    "gallery": [
+      "https://karmalize.me/cdn/shop/products/886c8771c0f3c80102408a58442c18d4.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "850",
+      "max_price": "850"
+    },
+    "variants": [
+      {
+        "variation_title": "Organic Almond Butter - 500g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "200",
+        "available": "200",
+        "item_price": "850",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Gluten-Free Granola",
+    "post_excerpt": "Start your day with our gluten-free granola, a delicious blend of oats, nuts, and seeds. Packed with fiber and nutrients, this crunchy treat is perfect with yogurt, milk, or as a healthy snack.",
+    "post_content": "Our gluten-free granola is a nutritious blend of oats, nuts, and seeds, providing a crunchy and satisfying start to your day. Packed with fiber and essential nutrients, it's perfect to enjoy with yogurt, milk, or as a healthy snack on its own.",
+    "gallery": [
+      "https://www.udisglutenfree.com/sites/g/files/qyyrlu706/files/images/products/original-granola-54318.png"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "450",
+      "max_price": "450"
+    },
+    "variants": [
+      {
+        "variation_title": "Gluten-Free Granola - 250g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "300",
+        "available": "300",
+        "item_price": "450",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Dark Chocolate Almonds",
+    "post_excerpt": "Indulge in our premium dark chocolate almonds. Each almond is coated with rich, velvety dark chocolate, offering a perfect balance of sweetness and crunch. A decadent snack for any time of the day.",
+    "post_content": "Our dark chocolate almonds are a delightful combination of crunchy almonds and smooth, velvety dark chocolate. Each almond is carefully coated in rich dark chocolate, providing a perfect balance of sweet and nutty flavors. A luxurious treat for any time of the day.",
+    "gallery": [
+      "https://media.bluediamond.com/uploads/2022/12/09110408/snack-almonds-classic-dark-chocolate.png"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "600",
+      "max_price": "600"
+    },
+    "variants": [
+      {
+        "variation_title": "Dark Chocolate Almonds - 200g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "150",
+        "available": "150",
+        "item_price": "600",
+        "compare_price": "650",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Organic Green Tea",
+    "post_excerpt": "Refresh your senses with our organic green tea, made from hand-picked leaves. Rich in antioxidants, this tea offers a clean and smooth flavor, perfect for starting your day or enjoying a relaxing moment.",
+    "post_content": "Our organic green tea is made from the finest hand-picked leaves, offering a refreshing and clean flavor. Rich in antioxidants, it promotes wellness and is perfect for starting your day or enjoying a relaxing moment. Brew a cup and feel rejuvenated.",
+    "gallery": [
+      "https://m.media-amazon.com/images/I/61w6AjurghL._AC_UF894,1000_QL80_.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "400",
+      "max_price": "400"
+    },
+    "variants": [
+      {
+        "variation_title": "Organic Green Tea - 100g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "250",
+        "available": "250",
+        "item_price": "400",
+        "compare_price": "450",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Honey Roasted Peanuts",
+    "post_excerpt": "Our honey roasted peanuts are a sweet and salty treat, perfect for snacking. Made with premium peanuts and coated in a light honey glaze, they offer a delightful crunch in every bite.",
+    "post_content": "Enjoy the perfect balance of sweet and salty with our honey roasted peanuts. These premium peanuts are roasted to perfection and coated with a light honey glaze, offering a delicious crunch in every bite. Ideal for snacking any time of the day.",
+    "gallery": [
+      "https://www.fritolay.com/sites/fritolay.com/files/2021-04/munchies-honey-roasted-peanuts.png"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "350",
+      "max_price": "350"
+    },
+    "variants": [
+      {
+        "variation_title": "Honey Roasted Peanuts - 200g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "400",
+        "available": "400",
+        "item_price": "350",
+        "compare_price": "380",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Quinoa & Chia Seed Crackers",
+    "post_excerpt": "Try our quinoa and chia seed crackers, a healthy and crunchy snack option. Packed with protein, fiber, and Omega-3, these crackers are perfect on their own or paired with your favorite dip.",
+    "post_content": "Our quinoa and chia seed crackers are the perfect healthy snack option. Made with whole grains and seeds, they're packed with protein, fiber, and Omega-3. Enjoy them on their own or pair them with your favorite dip for a nutritious treat.",
+    "gallery": [
+      "https://www.throughthefibrofog.com/wp-content/uploads/2022/02/quinoa-crackers-on-a-baking-tray.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "500"
+    },
+    "variants": [
+      {
+        "variation_title": "Quinoa & Chia Seed Crackers - 150g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "300",
+        "available": "300",
+        "item_price": "500",
+        "compare_price": "550",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Dried Mango Slices",
+    "post_excerpt": "Taste the tropical sweetness of our dried mango slices. Naturally sweet and chewy, these mango slices are a delicious and healthy snack, free from added sugars and preservatives.",
+    "post_content": "Our dried mango slices are naturally sweet and chewy, providing a burst of tropical flavor in every bite. They're free from added sugars and preservatives, making them a healthy and delicious snack option for any time of the day.",
+    "gallery": [
+      "https://images-cdn.ubuy.co.in/63ed21edb491c5298449a2e9-freeze-dried-mango-slices-3oz-good.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "450",
+      "max_price": "450"
+    },
+    "variants": [
+      {
+        "variation_title": "Dried Mango Slices - 100g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "200",
+        "available": "200",
+        "item_price": "450",
+        "compare_price": "480",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Coconut Water",
+    "post_excerpt": "Stay hydrated with our refreshing coconut water. Sourced from fresh coconuts, this all-natural drink is packed with electrolytes and essential nutrients to keep you energized and refreshed.",
+    "post_content": "Our coconut water is sourced from the freshest coconuts, offering a natural and refreshing way to stay hydrated. Packed with electrolytes and essential nutrients, it's the perfect drink for recharging after a workout or staying cool on a hot day.",
+    "gallery": [
+      "https://cocobella.com.au/wp-content/uploads/2023/02/Coconut_Water_Feature_img3.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "250",
+      "max_price": "250"
+    },
+    "variants": [
+      {
+        "variation_title": "Coconut Water - 330ml",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "500",
+        "available": "500",
+        "item_price": "250",
+        "compare_price": "280",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "post_title": "Turmeric Ginger Tea",
+    "post_excerpt": "Soothe your senses with our turmeric ginger tea. A blend of earthy turmeric and spicy ginger, this herbal tea is perfect for promoting wellness and relaxation. Enjoy a cup of natural goodness.",
+    "post_content": "Our turmeric ginger tea is a soothing blend of earthy turmeric and spicy ginger, known for their anti-inflammatory and antioxidant properties. This herbal tea promotes wellness and relaxation, making it the perfect beverage for a calming break during the day.",
+    "gallery": [
+      "https://govita.com.au/cdn/shop/products/801541514670_1.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple",
+      "stock_availability": "in-stock",
+      "min_price": "400",
+      "max_price": "400"
+    },
+    "variants": [
+      {
+        "variation_title": "Turmeric Ginger Tea - 100g",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "150",
+        "available": "150",
+        "item_price": "400",
+        "compare_price": "450",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  }
+]

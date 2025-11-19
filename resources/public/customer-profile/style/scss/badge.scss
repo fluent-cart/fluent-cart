@@ -1,0 +1,30 @@
+.badge{
+    @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-[1.1] font-medium py-1 px-2 rounded-[6px] whitespace-nowrap relative;
+    &.success{
+        @apply bg-success-100 text-success-800;
+    }
+    &.warning{
+        @apply bg-warning-100 text-warning-800;
+    }
+    &.danger{
+        @apply bg-red-100 text-red-800;
+    }
+    &.primary{
+        @apply bg-dark-100 text-dark-800;
+    }
+    &.blue{
+        @apply bg-blue-100 text-blue-800;
+    }
+    &.info{
+        @apply bg-gray-100 text-system-dark;
+    }
+    .icon{
+        @apply h-3.5;
+        svg{
+            @apply w-3.5 h-3.5;
+        }
+    }
+    &.small{
+        @apply py-1 px-2;
+    }
+}

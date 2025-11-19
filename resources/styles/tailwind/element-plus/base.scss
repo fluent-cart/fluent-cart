@@ -1,0 +1,108 @@
+@import '../../../../node_modules/element-plus/theme-chalk/base.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-badge.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-button.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-button-group.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-input.css';
+
+@import '../../../../node_modules/element-plus/theme-chalk/el-table.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-popover.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-loading.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-message.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-upload.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-message-box.css';
+/*@import '../../../../node_modules/element-plus/theme-chalk/el-tooltip.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-pagination.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-collapse.css';
+// @import '../../../../node_modules/element-plus/theme-chalk/el-collapse-item.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-dialog.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-aside.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-main.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-container.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-menu.css';
+/*@import '../../../../node_modules/element-plus/theme-chalk/el-menu-item.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-header.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-color-picker.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-form.css';
+/*@import '../../../../node_modules/element-plus/theme-chalk/el-form-item.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-radio-group.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-radio.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-switch.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-radio-button.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-tabs.css';
+/*@import '../../../../node_modules/element-plus/theme-chalk/el-tab-pane.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-steps.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-step.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-alert.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-option.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-option-group.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-row.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-col.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-collapse.css';
+/*@import '../../../../node_modules/element-plus/theme-chalk/el-collapse-item.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-transfer.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-date-picker.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-popover.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-popper.css';
+
+@import '../../../../node_modules/element-plus/theme-chalk/el-slider.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-card.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-input-number.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-rate.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-progress.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-button-group.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-dropdown.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-badge.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-tag.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-select.css';
+
+@import '../../../../node_modules/element-plus/theme-chalk/el-check-tag.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-checkbox-button.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-checkbox-group.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-checkbox.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-notification.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-skeleton.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-skeleton-item.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-breadcrumb.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-overlay.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-scrollbar.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-drawer.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-empty.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-autocomplete.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-tree.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-tree-select.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-badge.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-cascader.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-cascader-panel.css';
+
+@import '../../../../node_modules/element-plus/theme-chalk/el-link.css';
+
+:root {
+    --table-header-bg: theme('colors.neutral.50');
+    --table-cell-bg-lighter: theme('colors.bg-neutral-lite');;
+
+    --el-color-success: theme('colors.success.500');
+    --el-color-primary: theme('colors.primary.500');
+
+    --el-text-color-secondary: theme('colors.neutral.1100');
+    --el-text-color-regular : theme('colors.neutral.1200');
+    --el-color-warning: theme('colors.orange.400');
+
+}
+
+*[class^='el-'], *[class*='el-']{
+    font-family: 'Inter', sans-serif;
+    @apply leading-[1.25rem];
+}
+
+.single_address {
+    h4{
+      @apply m-0 mb-2 uppercase text-system-dark dark:text-gray-50;
+    }
+    p{
+        @apply m-0 mb-1 text-sm dark:text-gray-300;
+    }
+}
+
+hr{
+    @apply border-b-0 dark:border-dark-500;
+}

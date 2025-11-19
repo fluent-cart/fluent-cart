@@ -1,0 +1,46 @@
+@config "./style.config.js";
+@tailwind utilities;
+
+:root {
+  --fct-add-to-cart-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+  --fct-add-to-cart-btn-hover-bg-color: var(--fct-secondary-btn-hover-bg-color, #f5f6f7);
+  --fct-add-to-cart-btn-text-color: var(--fct-secondary-btn-text-color, #2f3448);
+  --fct-add-to-cart-btn-border-color: var(--fct-secondary-btn-border-color, #d6dae1);
+}
+
+.fluent-cart-add-to-cart-button {
+  @apply bg-[var(--fct-add-to-cart-btn-bg-color)] border border-solid border-[var(--fct-add-to-cart-btn-border-color)] relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fct-add-to-cart-btn-text-color)] hover:text-[var(--fct-add-to-cart-btn-text-color)] hover:border-[var(--fct-add-to-cart-btn-border-color)] hover:bg-[var(--fct-add-to-cart-btn-hover-bg-color)] transition duration-150 ease-in-out;
+  &:focus {
+    @apply text-[var(--fct-add-to-cart-btn-text-color)];
+  }
+
+  .fluent-cart-loader {
+    @apply duration-300 pointer-events-none justify-center items-center bg-gray-100 rounded absolute inset-0 w-full h-full hidden;
+    svg {
+      @apply w-5 h-5 mr-2 text-gray-200 animate-spin fill-blue-600;
+    }
+  }
+
+  .text{
+    @apply pointer-events-none;
+  }
+
+  &:disabled{
+    @apply opacity-50 cursor-not-allowed;
+  }
+  &.disabled{
+    @apply opacity-50 cursor-not-allowed;
+  }
+  &.is-hidden{
+    @apply hidden;
+  }
+
+  &.out-of-stock{
+    @apply flex border-red-500 bg-red-500 text-white cursor-not-allowed;
+  }
+  &.fct-loading {
+    .fluent-cart-loader {
+      @apply flex;
+    }
+  }
+}

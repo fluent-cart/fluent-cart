@@ -1,0 +1,232 @@
+.fct-global-search-container {
+  .el-dialog__header{
+    @apply py-2.5;
+  }
+  .el-dialog__body{
+    @apply p-2.5 flex-1 flex flex-col;
+    .recent-search-title {
+      @apply block text-system-mid text-xs px-3 font-medium mb-2 leading-4 dark:text-gray-400;
+    }
+  }
+  .el-input {
+    &.is-disabled {
+      .el-input__wrapper{
+        @apply bg-transparent #{!important};
+        .el-input__inner {
+          @apply text-neutral-1200;
+        }
+      }
+    }
+  }
+  .el-input__wrapper{
+    @apply border-0 rounded-none p-0 min-h-[30px];
+  }
+  .el-input__inner{
+    @apply m-0;
+  }
+  .dialog-footer.is-border{
+    @apply mx-[-10px] pl-5 pb-2.5;
+  }
+  .dialog-footer {
+    @apply mt-auto;
+  }
+  .fct-global-search-input-container {
+    @apply relative flex items-center gap-2 w-full pl-6;
+    .search-icon {
+      @apply w-4 h-4 absolute left-0 z-10 text-system-dark dark:text-white;
+    }
+    .searched-item {
+      @apply flex items-center bg-gray-100 dark:bg-primary-500 rounded-xs text-system-dark dark:text-gray-50 text-xs leading-4 gap-[2px] py-0.5 px-2;
+    }
+    .searched-item-remove {
+      @apply w-3 h-3 cursor-pointer ml-1;
+    }
+  }
+}
+
+.fct-global-searching-for {
+  @apply border-0 border-b-[1px] border-solid border-gray-divider dark:border-primary-400 pb-3 mb-3 px-5 mx-[-10px];
+  &-label {
+    @apply block w-full text-system-mid font-medium text-xs leading-4 mb-2 dark:text-system-light;
+  }
+}
+
+.fct-global-searching-suggestion {
+  @apply bg-gray-100 dark:bg-primary-400 dark:text-gray-100 leading-4 text-xs text-system-mid font-medium px-2 py-0.5 rounded-xs cursor-pointer;
+  &.active {
+    @apply bg-primary-500 text-white dark:bg-gray-200 dark:text-system-dark;
+  }
+  &-list {
+    @apply flex gap-2 flex-wrap;
+  }
+}
+
+.fct-global-search-result-list {
+  @apply p-0 m-0 list-none max-h-[200px] overflow-y-scroll;
+  &:active::-webkit-scrollbar-thumb,
+  &:focus::-webkit-scrollbar-thumb,
+  &:hover::-webkit-scrollbar-thumb {
+    @apply visible;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-sm invisible dark:bg-dark-500;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-300 dark:bg-dark-400;
+  }
+
+  &::-webkit-scrollbar {
+    @apply h-1 w-1;
+  }
+
+  .navigable-content {
+    @apply w-full;
+  }
+  li {
+    @apply relative mb-0 p-3 text-sm text-system-mid font-normal leading-[20px] rounded duration-100 transition-all duration-[300ms] ease-in-out cursor-pointer flex items-center justify-between last:mb-0 hover:bg-gray-50 hover:text-system-dark dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 outline-none;
+    &.selected {
+      @apply bg-gray-50 text-system-dark dark:bg-dark-500 dark:text-gray-50 outline-none;
+      .action-icon {
+        @apply opacity-100 visible ;
+      }
+    }
+    .circle {
+      @apply block w-0.5 h-0.5 rounded-full bg-system-light;
+    }
+  }
+
+  .action-icon {
+    @apply flex items-center justify-center w-7 h-6 text-white text-sm rounded-xs border border-solid border-primary-100 opacity-0 invisible bg-primary-100 dark:bg-dark-300 dark:border-dark-200 dark:text-gray-50 absolute right-3 transition-all duration-[300ms] ease-in-out;
+    svg {
+      @apply w-3 h-3;
+    }
+  }
+}
+
+/* Customer */
+.fct-global-search-customer-wrap {
+  @apply w-full flex items-center justify-between;
+  .fct-customer-avatar {
+    @apply block;
+  }
+  .fct-customer-name {
+    @apply text-system-dark text-sm leading-5;
+  }
+  .fct-customer-email {
+    @apply flex items-center gap-1.5 text-system-mid text-sm leading-4 mt-1;
+  }
+
+  .date {
+    @apply block text-xs leading-4;
+  }
+}
+
+/* Order */
+.fct-global-search-order-wrap {
+  @apply flex items-center justify-between;
+}
+
+.fct-global-search-order-header-meta {
+  @apply flex items-center gap-1.5 text-system-mid leading-4 text-xs;
+}
+
+.fct-global-search-order-id {
+  @apply text-system-dark dark:text-gray-50 text-sm leading-5 flex items-center gap-1.5 mb-1;
+  .items {
+    @apply block text-system-mid dark:text-gray-500;
+  }
+}
+
+.fct-global-search-order-status-wrapper {
+  @apply flex items-center gap-1.5;
+  img {
+    @apply border border-solid border-gray-divider dark:border-dark-400 rounded-xs py-1 px-2 h-[21px];
+  }
+}
+
+/* Coupon */
+.fct-global-search-coupon-wrap {
+  @apply grid grid-cols-3 gap-2 w-full;
+  .amount {
+    @apply text-right;
+  }
+}
+
+/* Product */
+.fct-global-search-product-wrap {
+  @apply w-full flex items-center justify-between;
+  .price-and-status {
+    @apply flex items-end gap-1.5 flex-col w-[130px] text-end;
+  }
+  .type {
+    //@apply w-[120px]
+  }
+  .fct-product-info-card {
+    @apply w-[240px] flex-none #{!important};
+  }
+}
+
+.fct-global-search-product-left-info {
+  @apply flex items-center justify-end;
+}
+
+.fct-global-remote-result-container {
+  @apply p-0;
+}
+
+.fct-global-remote-result-label {
+  @apply flex items-center justify-between w-full text-system-mid font-medium text-xs leading-4 mb-2 dark:text-system-light px-3;
+  .view-all {
+    @apply cursor-pointer hover:underline;
+  }
+  .text {
+    @apply text-system-mid dark:text-gray-300 block;
+  }
+}
+
+.fct-global-search-result-not-found{
+  @apply text-system-light text-sm font-normal text-center flex items-center justify-center flex-col gap-2 pb-7.5;
+}
+
+.fct-search-commands{
+  @apply flex items-center p-0 m-0 list-none gap-5;
+  li{
+    @apply flex items-center m-0 gap-1.5;
+  }
+  .command-key{
+    @apply w-5 h-5 border border-solid border-gray-outline rounded-xs flex items-center justify-center bg-gray-25 dark:bg-dark-500 dark:border-dark-400;
+    svg{
+      @apply w-4 h-4 text-system-dark-light dark:text-gray-50;
+      &.enter{
+        @apply w-5 h-5;
+      }
+    }
+  }
+  .label{
+    @apply text-xs text-system-dark-light dark:text-gray-50;
+  }
+}
+
+.fct-global-search-input-wrap{
+  .fct-setting-search-button{
+    @apply border-0 p-2 rounded bg-gray-50 cursor-pointer leading-none flex items-center justify-center text-system-mid gap-2 hover:bg-primary-25 dark:bg-dark-600 dark:hover:bg-dark-500 dark:text-gray-300;
+    .icon {
+      svg{
+        @apply w-4 h-4;
+      }
+    }
+  }
+}
+
+.fct-global-search-tooltip-content{
+  @apply flex items-center gap-1.5 leading-none;
+}
+
+.fct-global-search-button-keys{
+  @apply inline-flex items-center gap-0.5 text-system-light;
+  .fct-global-search-button-key{
+    @apply bg-transparent p-0 m-0 font-medium text-xs first:text-[17px];
+  }
+}

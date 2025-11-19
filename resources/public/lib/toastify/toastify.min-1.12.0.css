@@ -1,0 +1,108 @@
+/**
+ * Minified by jsDelivr using clean-css v5.3.0.
+ * Original file: /npm/toastify-js@1.12.0/src/toastify.css
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+/*!
+ * Toastify js 1.12.0
+ * https://github.com/apvarun/toastify-js
+ * @license MIT licensed
+ *
+ * Copyright (C) 2018 Varun A P
+ */
+.toastify {
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, .12);
+    background: white;
+    position: fixed;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+    cursor: pointer;
+    text-decoration: none;
+    max-width: calc(50% - 20px);
+    z-index: 2147483647;
+    padding: 12px 13px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #606266;
+}
+.toastify.has-toastify-icon {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+.toastify.has-toastify-icon .toastify-icon {
+    width: 21px;
+    height: 21px;
+}
+.toastify.has-toastify-icon .toastify-icon.success svg path {
+    fill: #67c23a;
+}
+.toastify.has-toastify-icon .toastify-icon.error svg path{
+    fill: #f56c6c;
+}
+.toastify.has-toastify-icon .toastify-icon.warning svg path{
+    fill: #e6a23c;
+}
+.toastify.has-toastify-icon .toastify-icon.info svg path{
+    fill: #909399;
+}
+.toastify .warn {
+    display: block;
+    top: 0;
+}
+.toastify.on {
+    opacity: 1;
+}
+.toast-close {
+    background: 0 0;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    opacity: 0.4;
+    padding: 0 5px;
+}
+.toastify-right {
+    right: 15px;
+}
+.toastify-left {
+    left: 15px;
+}
+.toastify-top {
+    top: -150px;
+}
+.toastify-bottom {
+    bottom: -150px;
+}
+.toastify-rounded {
+    border-radius: 25px;
+}
+.toastify-avatar {
+    width: 1.5em;
+    height: 1.5em;
+    margin: -7px 5px;
+    border-radius: 2px;
+}
+.toastify-center {
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    max-width: fit-content;
+    max-width: -moz-fit-content;
+}
+@media only screen and (max-width: 360px) {
+    .toastify-left,
+    .toastify-right {
+        margin-left: auto;
+        margin-right: auto;
+        left: 0;
+        right: 0;
+        max-width: fit-content;
+    }
+}

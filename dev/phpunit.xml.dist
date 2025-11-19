@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<phpunit
+	colors="true"
+	cacheResult ="false"
+	backupGlobals="false"
+	stopOnFailure="true"
+	bootstrap="test/inc/bootstrap.php"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	>
+	<testsuites>
+		<testsuite name="wpftest">
+			<directory suffix=".php">./test/tests</directory>
+		</testsuite>
+	</testsuites>
+	<php>
+		<env name="ENV" value="testing"/>
+        <ini name="display_errors" value="On" />
+        <ini name="display_startup_errors" value="On" />
+    </php>
+    <logging>
+        <log type="testdox-text" target="php://stdout"/>
+    </logging>
+</phpunit>

@@ -1,0 +1,93 @@
+.fct-file-upload{
+    &-rename{
+        @apply flex items-end gap-5 border border-solid border-gray-outline rounded p-5 dark:border-dark-400;
+        .fct-form-group{
+            @apply flex-1;
+        }
+        .fct-file-upload-rename-actions {
+            @apply mb-5;
+        }
+    }
+    &-progress{
+        @apply flex gap-2.5 relative border border-solid border-gray-outline rounded p-5 dark:border-dark-400;
+        .upload-progress-body{
+            @apply flex-1;
+        }
+        .fct-file-upload-progress-cancel{
+            @apply absolute top-4 right-4 cursor-pointer w-6 h-6 inline-flex items-center justify-center rounded hover:text-system-dark hover:bg-gray-50 dark:hover:bg-dark-600 dark:hover:text-gray-50 dark:text-white;
+            .icon {
+                @apply w-3 h-3;
+            }
+        }
+        .el-progress{
+            @apply mr-7.5 flex-col;
+            .el-progress{
+                &-bar{
+                    @apply w-full;
+                    &__outer{
+                        @apply bg-gray-100 dark:bg-dark-500;
+                    }
+                    &__inner{
+                        @apply bg-primary-500;
+                    }
+                }
+                &__text{
+                    @apply w-full text-right text-system-mid ml-0 mt-2.5 dark:text-gray-300;
+                    @apply text-[13px] #{!important};
+                }
+            }
+        }
+    }
+    &-name{
+        @apply mb-2.5 font-semibold text-system-dark dark:text-gray-50;
+    }
+    &-text{
+        @apply flex justify-between gap-2.5;
+    }
+    &-list{
+        .fct-file-search-input {
+            @apply rounded mb-2;
+        }
+        .el-table{
+            @apply border border-solid border-gray-divider rounded dark:border-dark-400;
+            th.el-table__cell{
+                @apply bg-gray-neutral dark:bg-dark-600;
+                &.is-leaf{
+                    @apply border-t-0;
+                }
+            }
+            tbody{
+                .el-table__row {
+                    &:last-child{
+                        td.el-table__cell, 
+                        th.el-table__cell.is-leaf{
+                            @apply border-b-0;
+                        }
+                    }
+                }
+            }
+        }
+        .el-table__body-wrapper {
+            @apply max-h-[284px] overflow-x-hidden overflow-y-auto;
+        }
+        &-empty{
+            @apply text-xs text-center text-system-mid;
+        }
+    }
+    &-search-wrap {
+        @apply mb-4;
+    }
+}
+.fct-file-uploader{
+    .icon-button{
+        @apply mx-auto mb-3;
+    }
+}
+
+.empty-driver-text{
+    @apply text-sm m-5 p-5 text-system-mid text-center block;
+    a{
+        @apply text-primary-500 dark:text-gray-50;
+    }
+}
+

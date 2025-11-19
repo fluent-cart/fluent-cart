@@ -1,0 +1,12 @@
+.el-breadcrumb__inner{
+  @apply text-system-dark font-medium #{!important};
+}
+.el-breadcrumb__inner a,
+.el-breadcrumb__inner.is-link{
+  @apply text-system-dark-light font-semibold #{!important};
+}
+
+.el-breadcrumb__inner a:hover,
+.el-breadcrumb__inner.is-link:hover{
+  @apply text-primary-500 #{!important};
+}

@@ -1,0 +1,993 @@
+[
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Stylish white and blue sneakers",
+    "post_excerpt": "Stylish white and blue sneakers that effortlessly blend comfort and fashion.",
+    "post_content": "Step up your sneaker game with these stylish white and blue sneakers that effortlessly blend comfort and fashion. Designed with a sleek silhouette, these kicks feature a crisp white base that’s accented by vibrant blue details, making them perfect for any casual outing or workout session. The lightweight material ensures breathability, while the cushioned insole provides all-day comfort, whether you're hitting the gym or just hanging out with friends. The rubber outsole offers excellent traction, making these sneakers not only trendy but also practical for various activities. Pair them with your favorite jeans or athletic wear, and you’ll be ready to take on the day in style!",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "400",
+      "max_price": "500"
+    },
+    "variants": [
+      {
+        "variation_title": "Stripe 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "400",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "420",
+        "compare_price": "480",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "430",
+        "compare_price": "490",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "410",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 5",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "430",
+        "compare_price": "470",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 6",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "440",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/blue-striped-shoes/blue-striped-shoes-6.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Air Max Essential",
+    "post_excerpt": "The Air Max Essential in a fresh white and green colorway that effortlessly blends style and comfort.",
+    "post_content": "Step up your sneaker game with the Air Max Essential in a fresh white and green colorway that effortlessly blends style and comfort. These kicks feature a sleek, minimalist design that showcases the iconic Air Max cushioning, providing you with that legendary bounce and support with every step. The breathable mesh upper ensures your feet stay cool, while the durable rubber outsole offers excellent traction for both urban adventures and casual strolls. Whether you're hitting the gym, running errands, or just hanging out with friends, these sneakers are the perfect blend of sporty and chic, making them a must-have addition to your footwear collection. Plus, the vibrant green accents add a pop of color that makes these shoes stand out without being too flashy, allowing you to express your unique style effortlessly.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/green-yellow-striped-sneakers/green-yellow-striped-sneakers-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "700",
+      "max_price": "900"
+    },
+    "variants": [
+      {
+        "variation_title": "Stripe 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "700",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/green-yellow-striped-sneakers/green-yellow-striped-sneakers-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "700",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/green-yellow-striped-sneakers/green-yellow-striped-sneakers-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "720",
+        "compare_price": "800",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/green-yellow-striped-sneakers/green-yellow-striped-sneakers-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "740",
+        "compare_price": "890",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/green-yellow-striped-sneakers/green-yellow-striped-sneakers-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Stylish white and black sneakers",
+    "post_excerpt": "Striking contrast between the crisp white upper and bold black accents",
+    "post_content": "These stylish white and black sneakers are the perfect blend of comfort and flair, designed to elevate your casual wardrobe. Featuring a sleek silhouette, the sneakers boast a striking contrast between the crisp white upper and bold black accents, making them a versatile choice for any outfit. The standout buckle detail not only adds a unique touch but also ensures a secure fit, allowing you to move with confidence whether you're hitting the streets or hanging out with friends. With a cushioned insole and durable outsole, these sneakers promise all-day comfort and support, making them an essential addition to your footwear collection. Whether you're dressing up for a night out or keeping it laid-back on the weekends, these sneakers are sure to turn heads and keep you looking effortlessly cool.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/modern-black-white-shoes/modern-black-white-shoes-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "600"
+    },
+    "variants": [
+      {
+        "variation_title": "Classy",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/modern-black-white-shoes/modern-black-white-shoes-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Simple",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/modern-black-white-shoes/modern-black-white-shoes-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Modern",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/modern-black-white-shoes/modern-black-white-shoes-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Gorgeous",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "510",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/modern-black-white-shoes/modern-black-white-shoes-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Purple Air Max trainers",
+    "post_excerpt": "Air Max trainers in a fresh white and purple colorway that effortlessly combines style and comfort.",
+    "post_content": "Step up your sneaker game with the Air Max trainers in a fresh white and purple colorway that effortlessly combines style and comfort. These trainers feature a sleek, breathable upper that keeps your feet cool while you’re on the move, and the iconic Air Max cushioning provides that plush feel with every step. The vibrant purple accents pop against the clean white base, making these kicks perfect for both casual outings and workouts. With a durable rubber outsole for traction and a modern silhouette, the Nike Air Max trainers are not just footwear; they’re a statement piece that will elevate any outfit. Whether you’re hitting the gym or just hanging out with friends, these trainers are designed to keep you looking and feeling great all day long.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "800",
+      "max_price": "1000"
+    },
+    "variants": [
+      {
+        "variation_title": "Simple",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "800",
+        "compare_price": "990",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Classy",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "990",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Outdoor",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "830",
+        "compare_price": "950",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Outdoor",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "860",
+        "compare_price": "960",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Mix",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "850",
+        "compare_price": "980",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/purple-striped-shoes/purple-striped-shoes-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Elegant Running Shoe",
+    "post_excerpt": "Running shoe, designed to turn heads while delivering top-notch performance.",
+    "post_content": "Step up your running game with the vibrant running shoe, designed to turn heads while delivering top-notch performance. This eye-catching shoe features a bold red upper that not only adds a pop of color to your workout gear but also ensures you stand out on the track or trail. The sleek white accents provide a fresh contrast, enhancing the shoe's sporty aesthetic. Crafted with lightweight materials, it offers breathability and comfort, making those long runs feel effortless. The cushioned sole provides excellent support and shock absorption, allowing you to push your limits without compromising on comfort. Whether you're hitting the pavement or just hanging out with friends, these adidas running shoes are the perfect blend of style and functionality.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "700"
+    },
+    "variants": [
+      {
+        "variation_title": "Version 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "640",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "560",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 5",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "510",
+        "compare_price": "600",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-athletic-shoe/red-athletic-shoe-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Red Black Stripped Sneakers",
+    "post_excerpt": "A stylish pair of white sneakers featuring eye-catching red accents.",
+    "post_content": "A stylish pair of white sneakers featuring eye-catching red accents. Perfect for both casual outings and sporty adventures, these kicks combine comfort and flair effortlessly. The sleek white canvas provides a fresh, clean look, while the vibrant red details add a pop of color that makes them stand out in any crowd. Designed with a cushioned insole and a durable rubber outsole, these sneakers ensure all-day comfort and support, whether you're hitting the streets or just hanging out with friends. With their versatile design, you can easily pair them with jeans, shorts, or even a casual dress, making them a must-have addition to your footwear collection. Get ready to turn heads and step out in style!",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/red-black-striped-shoes/red-black-striped-shoes-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1100",
+      "max_price": "1300"
+    },
+    "variants": [
+      {
+        "variation_title": "Stripe 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1100",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-black-striped-shoes/red-black-striped-shoes-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1120",
+        "compare_price": "1290",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-black-striped-shoes/red-black-striped-shoes-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1150",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-black-striped-shoes/red-black-striped-shoes-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1230",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-black-striped-shoes/red-black-striped-shoes-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Air Max 97",
+    "post_excerpt": "Striking white and red shoes that effortlessly combines style and comfort.",
+    "post_content": "Air Max 97 in a striking white and red colorway that effortlessly combines style and comfort. These iconic sneakers feature a sleek, streamlined silhouette that pays homage to the original 1997 design, while the signature Air Max cushioning provides unbeatable support for all-day wear. The upper is crafted from a mix of premium materials, ensuring durability and a snug fit, while the bold red accents pop against the crisp white base, making these kicks a standout choice for any outfit. Whether you're hitting the streets or just hanging out with friends, the Nike Air Max 97 will keep you looking fresh and feeling great. Don't miss out on the chance to elevate your footwear collection with this timeless classic!",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1000",
+      "max_price": "1100"
+    },
+    "variants": [
+      {
+        "variation_title": "Stripe 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1020",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1030",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1070",
+        "compare_price": "1100",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "400",
+        "compare_price": "500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Stripe 5",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1000",
+        "compare_price": "1050",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-5.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ,
+      {
+        "variation_title": "Stripe 6",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "999",
+        "compare_price": "1050",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-6.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ,
+      {
+        "variation_title": "Stripe 7",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1000",
+        "compare_price": "1050",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-blue-striped-shoes/red-blue-striped-shoes-7.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Grey and Red sneakers",
+    "post_excerpt": "Grey and Red sneakers, featuring a sleek grey upper that’s both breathable and durable",
+    "post_content": "These stylish grey and red sneakers are the perfect blend of comfort and flair, designed for those who want to make a statement while staying active. Featuring a sleek grey upper that’s both breathable and durable, these shoes are accented with vibrant red straps that not only add a pop of color but also provide a secure fit. The cushioned insole ensures all-day comfort, whether you're hitting the gym, running errands, or just hanging out with friends. The lightweight construction makes them easy to wear for extended periods, while the rubber outsole offers excellent traction for various surfaces. With their modern design and functional features, these sneakers are a must-have for anyone looking to elevate their footwear game.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/red-high-top-sneakers/red-high-top-sneakers-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "500",
+      "max_price": "700"
+    },
+    "variants": [
+      {
+        "variation_title": "Ultra Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "500",
+        "compare_price": "580",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-high-top-sneakers/red-high-top-sneakers-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Semi Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "550",
+        "compare_price": "700",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-high-top-sneakers/red-high-top-sneakers-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Bitter Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "540",
+        "compare_price": "650",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-high-top-sneakers/red-high-top-sneakers-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Cosy Red",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "570",
+        "compare_price": "690",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/red-high-top-sneakers/red-high-top-sneakers-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Sleek black and white Sneakers",
+    "post_excerpt": "Featuring sleek black and white detailing, these kicks are perfect for any casual outing.",
+    "post_content": "This stylish pair of white sneakers effortlessly blend comfort and chic design. Featuring sleek black and white detailing, these kicks are perfect for any casual outing or a day out with friends. The crisp white base provides a fresh look, while the contrasting accents add a touch of flair that makes them stand out. Crafted with high-quality materials, they promise durability and support for all-day wear, whether you're hitting the streets or lounging at home. With a versatile design, these sneakers can easily be paired with jeans, shorts, or even a casual dress, making them a must-have addition to your wardrobe. Get ready to turn heads and step out in style!",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/white-black-sneakers/white-black-sneakers-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "800",
+      "max_price": "900"
+    },
+    "variants": [
+      {
+        "variation_title": "Modern",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "800",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-black-sneakers/white-black-sneakers-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Classy",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-black-sneakers/white-black-sneakers-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Outdoor",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "810",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-black-sneakers/white-black-sneakers-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Semi Classic",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "840",
+        "compare_price": "900",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-black-sneakers/white-black-sneakers-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  },
+  {
+    "categories": ["Mens Shoes"],
+    "post_title": "Air Max 1 running shoe",
+    "post_excerpt": "White and red classic sneaker that effortlessly combines style and comfort, making it a must-have.",
+    "post_content": "The Air Max 1 running shoe in white and red is a classic sneaker that effortlessly combines style and comfort, making it a must-have for both athletes and casual wearers alike. With its iconic silhouette, this shoe features a sleek white upper that is complemented by bold red accents, giving it a fresh and vibrant look. The Air Max cushioning technology provides exceptional support and comfort, ensuring that every step feels light and bouncy, whether you're hitting the pavement for a run or just hanging out with friends. The durable rubber outsole offers excellent traction, making it perfect for various terrains. Plus, the breathable materials keep your feet cool and comfortable throughout the day. Whether you're a sneakerhead or just looking for a reliable pair of shoes, the Nike Air Max 1 in white and red is sure to elevate your footwear game.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/mens-shoes/white-navy-athletic-shoe/white-navy-athletic-shoe-1.jpeg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "simple_variations",
+      "stock_availability": "in-stock",
+      "min_price": "1200",
+      "max_price": "1500"
+    },
+    "variants": [
+      {
+        "variation_title": "Version 1",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1290",
+        "compare_price": "1500",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-navy-athletic-shoe/white-navy-athletic-shoe-1.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 2",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1200",
+        "compare_price": "1390",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-navy-athletic-shoe/white-navy-athletic-shoe-2.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 3",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1350",
+        "compare_price": "1400",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-navy-athletic-shoe/white-navy-athletic-shoe-3.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      },
+      {
+        "variation_title": "Version 4",
+        "stock_status": "in-stock",
+        "payment_type": "onetime",
+        "total_stock": "100",
+        "available": "100",
+        "item_price": "1200",
+        "compare_price": "1300",
+        "fulfillment_type": "physical",
+        "manage_stock": "1",
+        "images": [
+          "https://fcimage.sirv.com/products/mens-shoes/white-navy-athletic-shoe/white-navy-athletic-shoe-4.jpeg"
+        ],
+        "other_info": {
+          "payment_type": "onetime"
+        }
+      }
+    ]
+  }
+]

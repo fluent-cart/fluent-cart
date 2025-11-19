@@ -1,0 +1,8 @@
+.el-progress-bar{
+  &__inner{
+    @apply bg-blue-500;
+  }
+  &__outer{
+    @apply bg-gray-50 dark:bg-dark-500;
+  }
+}

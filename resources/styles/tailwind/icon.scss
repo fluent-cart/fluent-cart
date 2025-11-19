@@ -1,0 +1,27 @@
+.icon-element{
+    @apply flex shrink-0 items-center text-system-dark justify-center w-[54px] h-[54px] bg-dark-100 group-[.active]:bg-white dark:bg-dark-700 rounded-[6px] border border-solid border-transparent dark:border-gray-600 dark:group-[.active]:bg-dark-100 dark:group-[.active]:border-gray-100 dark:group-[.active]:text-system-dark;
+    .icon svg{
+        @apply w-[26px] h-[26px];
+    }
+    &.warning-soft{
+        @apply bg-warning-100;
+    }
+    &.success-soft{
+        @apply bg-success-100;
+    }
+    &.primary-soft{
+        @apply bg-primary-100;
+    }
+    &.red-soft{
+        @apply bg-red-100;
+    }
+}
+.icon{
+    @apply flex items-center;
+    .light-icon {
+        @apply block dark:hidden;
+    }
+    .dark-icon {
+        @apply hidden dark:block;
+    }
+}

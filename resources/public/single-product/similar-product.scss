@@ -1,0 +1,71 @@
+@config "./single-product.config.js";
+@tailwind utilities;
+
+/* product */
+
+.fct-similar-product-list-container {
+    width: 100%;
+    display: block;
+    @apply @container/similar-product;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+}
+
+/*==== product modal =====*/
+.fct-product-modal {
+    @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5;
+}
+
+.fct-product-modal-overlay {
+  @apply bg-system-dark opacity-50 absolute top-0 left-0 w-full h-full;
+}
+
+.fct-product-modal-close {
+  @apply absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-gray-50 bg-transparent p-0 border-0;
+  svg {
+    @apply w-3 h-3;
+  }
+  &.hovered {
+    @apply bg-gray-50;
+  }
+}
+
+.fct-product-modal-body {
+  @apply relative bg-white w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 rounded overflow-x-hidden;
+  &:active::-webkit-scrollbar-thumb,
+  &:focus::-webkit-scrollbar-thumb,
+  &:hover::-webkit-scrollbar-thumb {
+    @apply visible;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-sm;
+  }
+  &::-webkit-scrollbar {
+    @apply h-1 w-2;
+  }
+  .fluent-cart-single-product-page-row{
+    @apply gap-8;
+  }
+  .fluent-cart-similar-product-list{
+    @apply gap-5;
+  }
+  .fluent-cart-single-product-page-product-variant-title{
+    @apply max-w-[200px];
+  }
+}
+
+.fluent-cart-similar-product-list {
+    .fluent-cart-single-product-card {
+        &.single-product-card {
+            @apply max-w-full w-full #{!important};
+        }
+    }
+}

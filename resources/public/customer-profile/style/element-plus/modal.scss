@@ -1,0 +1,86 @@
+.el-overlay {
+  background: rgba(2, 13, 23, 0.6);
+  backdrop-filter: blur(2px);
+  &.fct-activated-sites-modal{
+    .el-dialog{
+        @apply w-[600px];
+    }
+  }
+  .el-overlay-dialog{
+    @apply flex items-center;
+  }
+  .el-dialog{
+    @apply w-[560px] rounded p-0;
+    &.fct-upgrade-plan-dialog{
+      @apply w-[700px];
+      .el-dialog__body {
+        @apply p-0
+      }
+    }
+    &__header{
+      @apply py-3.5 px-5 flex justify-between items-center mr-0 border border-solid border-gray-divider border-t-0 border-x-0;
+      .el-dialog__title {
+        @apply text-base text-system-dark font-semibold;
+      }
+    }
+    &__body{
+      @apply p-5;
+    }
+    &__footer{
+      @apply p-5 border border-solid border-gray-divider border-b-0 border-x-0;
+    }
+    .fct-table-style-two{
+      @apply mx-[-20px] mt-[-21px] mb-[-20px];
+    }
+  }
+  .el-dialog__headerbtn{
+    @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5 hover:bg-white hover:text-system-dark;
+    i{
+      @apply w-5 h-5;
+      svg{
+        @apply w-5 h-5;
+      }
+    }
+    &:hover{
+      .el-dialog__close{
+        @apply text-dark-500;
+      }
+    }
+  }
+  &.fct-transaction-billing-address-modal {
+    .el-overlay-dialog {
+      @apply items-start;
+      .fct-compact-form {
+        .fct-global-address-component {
+          .fct-global-address-component-row {
+            .postcode,
+            .city {
+              .el-input {
+                .el-input__wrapper {
+                  border-bottom-width: 0.5px !important;
+                  @apply rounded-none #{!important};
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .el-overlay {
+    .el-dialog{
+      &.fct-upgrade-plan-dialog{
+        @apply w-[90%];
+      }
+    }
+  }
+}
+
+.el-message-box.fluent-cart-pro-cta{
+  .el-message-box__btns{
+    @apply hidden;
+  }
+}

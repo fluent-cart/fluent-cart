@@ -1,0 +1,342 @@
+@import "base.css";
+@import "reset.scss";
+@import "./element-plus/base.scss";
+@import "./element-plus/button.scss";
+@import "./element-plus/collapsible.scss";
+@import "./element-plus/modal.scss";
+@import "./element-plus/inputs.scss";
+@import "./element-plus/pagination.scss";
+@import "./element-plus/table.scss";
+@import "./element-plus/popover.scss";
+@import "./element-plus/notification.scss";
+@import "./element-plus/timeline.scss";
+@import "./element-plus/alert.scss";
+@import "./element-plus/breadcrumb.scss";
+@import "./element-plus/tag.scss";
+@import "./element-plus/message-box.scss";
+@import "./element-plus/tab.scss";
+@import "./element-plus/upload.scss";
+@import "./element-plus/date.scss";
+@import "./element-plus/dropdown.scss";
+@import "./element-plus/drawer.scss";
+@import "./element-plus/badge.scss";
+@import "./element-plus/progress.scss";
+@import "./element-plus/cascader.scss";
+
+@import "form-group.scss";
+@import "filter.scss";
+@import "product.scss";
+@import "card.scss";
+@import "order.scss";
+@import "step.scss";
+@import "icon.scss";
+@import "chart.scss";
+@import "heading.scss";
+@import "header.scss";
+@import "setting.scss";
+@import "tab.scss";
+@import "integration.scss";
+@import "attachments.scss";
+@import "onboarding.scss";
+@import "sidebar.scss";
+@import "licenses.scss";
+@import "icon-button.scss";
+@import "form.scss";
+@import "fileupload.scss";
+@import "coupon.scss";
+@import "table.scss";
+@import "number-input.scss";
+@import "input.scss";
+@import "copy-to-clipboard.scss";
+@import "menu.scss";
+@import "save-bar.scss";
+@import "table.scss";
+@import "term.scss";
+@import "wp-fluent-media-modal.scss";
+@import "wp-editor.scss";
+@import "alert.scss";
+@import "list.scss";
+@import "role.scss";
+@import "report.scss";
+@import "loading.scss";
+@import "badge.scss";
+@import "tag.scss";
+@import "query-builder.scss";
+@import "global-search.scss";
+@import "subscription.scss";
+@import "activity.scss";
+@import "dashboard-recent-activities.scss";
+@import "current-user-info.scss";
+@import "dashboard-stat-widget.scss";
+@import "fluid-tab.scss";
+@import "not-found.scss";
+@import "address.scss";
+@import "search-guide.scss";
+@import "tax.scss";
+@import "order-bump.scss";
+@import "pro-feature.scss";
+
+@import "responsive.scss";
+
+@config "./admin-tailwind.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.show-on-mobile {
+    @apply hidden;
+}
+
+#fct_admin_app_wrapper {
+    @apply -ml-5 flex flex-col gap-7.5 min-h-screen w-[calc(100%+20px)];
+}
+
+.fct-disabled{
+    @apply opacity-[0.6] pointer-events-none;
+}
+.fct-btn-group{
+    @apply flex items-center p-0 m-0 list-none;
+}
+.fct-btn-group .el-button+.el-button {
+   @apply ml-2.5;
+}
+.fct-btn-group > *{
+    @apply ml-2.5 first:ml-0;
+}
+.fct-btn-group.sm .el-button+.el-button,
+.fct-btn-group.sm > * {
+    @apply ml-2 first:ml-0;
+}
+.error{
+    @apply text-red-500 block;
+}
+.el-input + .error{
+    @apply mt-2;
+}
+
+#fluent_cart_plugin_app {
+    @apply w-full px-7.5 box-border pb-7 pt-[54px];
+}
+@media (max-width: 782px) {
+    #fluent_cart_plugin_app {
+        @apply pt-11;
+    }
+}
+
+#fluent_cart_plugin_app > .fl_app.wrap {
+    @apply m-0;
+}
+
+
+.grid-border {
+    @apply [&>div]:border-t-0 [&>div]:border-l-0 [&>div]:border-r-0 [&>div]:border-b-[.5px] [&>div:last-child]:border-b-0 sm:[&>div:nth-child(n+3)]:border-t-[.5px] sm:[&>div]:border-b-0 sm:[&>div:nth-child(odd)]:border-r-[.5px] lg:sm:[&>div:nth-child(n+3)]:border-t-0 lg:[&>div]:border-l-0 lg:[&>div]:border-b-0 lg:[&>div]:!border-r-[.5px] lg:[&>div:last-child]:border-r-0
+}
+
+.el-input__inner {
+    @apply p-0 border-0 rounded-none shadow-none !important;
+}
+
+.el-input__inner:focus {
+    @apply shadow-none border-primary-500 !important;
+}
+
+.text-note {
+    @apply text-system-mid dark:text-gray-300;
+}
+
+
+.fct-page-loader-header .el-skeleton.is-animated .el-skeleton__item {
+    --el-skeleton-color: theme('colors.neutral.600');
+    --el-skeleton-to-color: theme('colors.neutral.800');
+}
+
+.dark .el-skeleton.is-animated .el-skeleton__item {
+    --el-skeleton-color: theme('colors.dark.600');
+    --el-skeleton-to-color: #283643;
+}
+
+.dark .el-loading-mask {
+    --el-mask-color: theme('colors.dark.600');
+    @apply opacity-80 rounded-sm;
+}
+.dark .el-loading-spinner .path {
+    @apply stroke-gray-500;
+}
+.el-message.is-center.invalid-date {
+    @apply top-2/4 !important;
+}
+
+.lead-text {
+    @apply text-sm font-medium leading-6 text-system-dark dark:text-gray-50;
+}
+.sub-text {
+    @apply text-xs leading-none text-system-mid dark:text-gray-300;
+}
+.fct-label-hint{
+    @apply inline-flex items-center gap-0.5;
+}
+.fct-label-hint .label{
+    @apply text-sm text-system-dark font-medium dark:text-gray-300;
+}
+.fct-label-hint .icon{
+    @apply cursor-pointer;
+}
+.fct-label-hint .icon svg{
+    @apply w-4.5 h-4.5 text-system-light dark:text-gray-500;
+}
+.fct-label-hint-popover{
+    @apply max-w-[280px];
+}
+.is-wp-product-wrap{
+    @apply border border-solid border-gray-outline rounded-md p-4 dark:border-dark-400;
+}
+.is-wp-product-wrap .el-switch__label.is-active{
+    @apply text-system-dark dark:text-gray-50;
+}
+.fct-label-hint.is-required .label:after {
+    @apply text-red-400 ml-1;
+    content: "*";
+}
+/* fluent-cart-admin-validation-error */
+.is-error .el-input__wrapper{
+    @apply border-red-500;
+}
+.el-input + .fluent-cart-admin-validation-error-wrapper{
+    @apply mt-1;
+}
+.fluent-cart-admin-validation-error{
+    @apply !text-red-500;
+}
+
+/*==== empty text =====*/
+.fct-empty-text{
+    @apply p-10 text-center;
+}
+.fct-empty-text p{
+    @apply my-0 text-system-dark-light dark:text-gray-300;
+}
+.fct-empty-text .icon{
+    @apply justify-center;
+}
+.fct-addon-empty-state .icon {
+    @apply w-[200px];
+}
+.fct-action-link-btn{
+    @apply inline-flex items-center gap-1 cursor-pointer text-system-dark dark:text-gray-50;
+}
+.fct-action-link-btn .icon svg{
+    @apply w-3.5 h-3.5;
+}
+
+.el-badge__content--primary {
+   @apply bg-primary-500 dark:border-dark-800;
+}
+
+/*===== form note =====*/
+.form-note p {
+    @apply flex-wrap my-0 text-xs flex items-center gap-2 text-system-dark-light;
+}
+.form-note p .icon svg{
+    @apply w-3.5 h-3.5;
+}
+.form-note-tooltip .icon svg{
+    @apply opacity-50;
+}
+.el-input + .form-note,
+.el-textarea + .form-note,
+.el-select + .form-note{
+    @apply mt-2;
+}
+
+code{
+    @apply bg-gray-divider rounded-xs py-1 px-1.5 m-0 text-xs text-system-mid dark:text-gray-300 dark:bg-dark-600;
+}
+.el-color-picker:hover:not(.is-disabled,.is-focused) .el-color-picker__trigger{
+    @apply dark:border-dark-300;
+}
+.el-color-picker__trigger{
+    @apply dark:border-dark-400;
+}
+.fct-admin-input-wrapper label{
+    @apply text-sm mb-0 text-system-dark dark:text-gray-300 font-semibold;
+}
+.fct-admin-input-wrapper-inline{
+    @apply flex items-center gap-2 w-full;
+}
+.vel-btns-wrapper .btn__close, .vel-btns-wrapper .btn__next, .vel-btns-wrapper .btn__prev{
+    @apply opacity-100;
+}
+.vel-btns-wrapper .btn__close{
+    @apply top-10;
+}
+.vel-btns-wrapper .btn__prev,
+.vel-btns-wrapper .btn__next{
+    @apply w-10 h-10 bg-dark-100 rounded-full text-system-dark text-base flex items-center justify-center hover:bg-white;
+}
+
+/*=== fct-status ===*/
+.fct-status{
+    @apply text-xs font-medium capitalize bg-gray-200 leading-normal text-system-dark inline-flex items-center gap-1.5 py-[3px] px-2 rounded;
+    .icon{
+        @apply w-2 h-2 rounded-[3px] bg-gray-800;
+    }
+    &.fulfillment{
+        @apply bg-warning-200 text-system-dark;
+        .icon{
+            @apply border border-solid border-system-dark bg-transparent;
+        }
+    }
+    &.active{
+        @apply bg-success-200;
+        .icon{
+            @apply bg-dark-500;
+        }
+    }
+}
+.el-button.fct-show-more-button{
+    @apply mt-4 text-system-mid w-full py-4.5 h-auto border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400 dark:bg-transparent !important;
+}
+.el-button.fct-show-more-button svg{
+    @apply w-3 h-3 !important;
+}
+.fct-layout-width{
+    @apply max-w-[1260px] 3xl:max-w-[1600px] mx-auto;
+}
+
+.fct-dummy-product-content {
+    .title {
+        @apply text-base text-system-dark font-semibold mb-1.5 dark:text-gray-50;
+    }
+    .text{
+        @apply text-[13px] flex items-center justify-between text-system-mid mb-2.5 dark:text-gray-300;
+    }
+}
+.fct-dummy-product-loading{
+    @apply flex items-center gap-2;
+}
+
+.underline-link-button{
+    @apply min-h-[auto] flex items-center gap-0.5 text-primary-500 underline focus:outline-none focus:shadow-none dark:text-gray-50 !important;
+}
+
+/*beta version menu*/
+a.fluent_cart_beta {
+    color: #cbcb3f !important;
+}
+
+.fct-upgrade-path-drawer-content {
+    @apply grid gap-5;
+}
+
+.fct-upgrade-path-drawer-content .text{
+    @apply text-sm text-system-mid dark:text-gray-300;
+}
+
+
+@media (max-width: 1024px) {
+    #fct_admin_app_wrapper {
+        @apply m-0 w-full;
+        #fluent_cart_plugin_app {
+            @apply pl-2.5 pr-5;
+        }
+    }
+}

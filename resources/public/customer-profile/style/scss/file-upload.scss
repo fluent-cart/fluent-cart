@@ -1,0 +1,15 @@
+.fct-customer-dashboard-file-uploader{
+  @apply flex gap-5 items-center;
+  &-img{
+    @apply w-14 h-14 border-solid border border-gray-divider rounded-full overflow-hidden;
+    img{
+      @apply w-full h-full;
+    }
+  }
+  .el-upload--picture-card{
+    @apply bg-transparent p-0 border-0 rounded-none w-auto h-auto;
+  }
+  .el-upload-list--picture-card .el-upload-list__item{
+    @apply w-[58px] h-[58px] mb-0 mr-0 border-solid border border-gray-divider rounded-full;
+  }
+}

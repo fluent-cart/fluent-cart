@@ -1,0 +1,103 @@
+.pagination-wrap{
+    @apply flex justify-between items-center flex-wrap pl-6 pr-4 py-6 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400 gap-y-2;
+    .pager-wrap {
+        @apply flex-wrap gap-1.5;
+    }
+}
+.pager-wrap{
+    @apply flex gap-2.5 items-center;
+    .text{
+        @apply text-sm text-system-mid dark:text-gray-300;
+    }
+}
+
+.el-pagination{
+    .el-select {
+        @apply min-w-[108px] w-auto;
+        .el-input {
+           @apply w-auto;
+        }
+        .el-input__wrapper,
+        &__wrapper {
+            @apply px-1.5 min-h-[32px] bg-gray-neutral shadow-none justify-start focus:shadow-none dark:bg-dark-500;
+            .el-icon{
+                svg{
+                    @apply stroke-[50px];
+                    path{
+                        @apply stroke-dark-200;
+                    }
+                }
+            }
+        }
+        &__placeholder{
+            @apply text-system-mid;
+            &.is-transparent{
+                @apply text-system-mid;
+            }
+        }
+    }
+    .el-input{
+        &__inner {
+            @apply text-left w-[90px] m-0 font-medium text-system-mid;
+            @apply dark:text-gray-300 #{!important};
+        }
+        &__suffix-inner{
+            .el-icon{
+                @apply text-system-dark dark:text-gray-300;
+            }
+            >:first-child {
+                @apply ml-0;
+            }
+        }
+    }
+    button{
+        @apply min-h-[32px] min-w-[32px] pt-0.5 h-auto text-system-mid dark:text-gray-300;
+        &:disabled{
+            @apply text-system-light hover:text-system-light #{!important};
+        }
+    }
+    &.is-background{
+        @apply bg-transparent;
+        .btn-next, 
+        .btn-prev {
+            @apply m-0 bg-transparent hover:text-dark-500 dark:hover:text-gray-300;
+            &:disabled{
+                @apply bg-transparent;
+            }
+            svg{
+                @apply w-4 h-4;
+            }
+            .el-icon{
+                @apply h-auto leading-none;
+            }
+        }
+        .el-pager {
+            li {
+                @apply relative m-0 bg-white border border-solid border-gray-outline min-h-[32px] min-w-[32px] py-0 px-2 h-auto rounded text-sm font-medium leading-5 transition-all duration-200 text-system-mid hover:bg-gray-50 hover:text-system-dark dark:text-gray-50 dark:hover:bg-dark-600 dark:hover:text-gray-50 dark:bg-transparent dark:border-dark-400;
+                &.is-active{
+                    @apply text-white bg-primary-500 border-primary-500 hover:bg-primary-500 hover:border-primary-500;
+                }
+
+                &.number {
+                    &:hover:before {
+                        @apply bg-gray-50 text-system-dark dark:text-gray-50 dark:bg-dark-600 dark:text-gray-50;
+                    }
+                    &.is-active {
+                        &:before {
+                            @apply text-white bg-primary-500 dark:bg-dark-500 border-primary-500 hover:bg-primary-500 hover:border-primary-500;
+                        }
+                    }
+
+                    &::before {
+                        content: var(--translated-number);
+                        @apply absolute flex items-center justify-center left-0 top-0 w-full h-full bg-white dark:bg-primary-700 rounded;
+                    }
+                }
+            }
+        }
+    }
+    .el-pager {
+        @apply flex-wrap gap-1.5;
+    }
+}
+

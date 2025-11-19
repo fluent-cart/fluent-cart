@@ -1,0 +1,47 @@
+.fct-single-subscription-details{
+  @apply m-0 p-0 list-none grid grid-cols-3 gap-7.5;
+  li{
+    @apply m-0;
+  }
+  &-label{
+    @apply text-xs font-medium text-system-mid mb-1 dark:text-gray-300;
+  }
+  &-value{
+    @apply text-sm font-medium text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-single-subscription-pricing-addi-info{
+  @apply grid gap-1;
+  .title{
+    @apply mb-0.5 block text-sm text-system-dark font-medium dark:text-gray-50;
+  }
+  .text{
+    @apply text-[13px] text-system-dark leading-[16px] font-normal dark:text-gray-300;
+  }
+}
+.fct-single-subscription-pricing {
+  &-table-trial{
+    @apply px-4 py-3 border border-solid border-gray-divider border-x-0 border-b-0 flex items-center justify-end gap-14 dark:border-dark-400;
+  }
+  &-table {
+    @apply mb-6;
+    p {
+      @apply text-system-mid text-xs m-0 mb-1;
+    }
+    h3 {
+      @apply m-0 text-system-dark text-sm leading-5 font-medium;
+    }
+  }
+}
+.fct-single-subscription-history-table{
+  .el-tabs__header.is-top{
+    @apply mb-0;
+  }
+  .el-tabs--top .el-tabs__item.is-top:nth-child(2){
+    @apply pl-5;
+  }
+  .el-tabs__item{
+    @apply h-[50px];
+  }
+}

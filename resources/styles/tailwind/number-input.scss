@@ -1,0 +1,39 @@
+.fct-number-input {
+    @apply h-10 flex flex-1 justify-between items-center border border-solid border-gray-outline rounded dark:border-dark-400;
+    button {
+        @apply flex justify-center items-center bg-gray-100 border-0 h-4 w-6 p-1 text-xs text-system-mid font-medium cursor-pointer hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-50 dark:hover:bg-dark-500;
+        &.decrement-btn{
+            @apply rounded-bl-[4px] rounded-br-[4px];
+        }
+        &.increment-btn{
+            @apply rounded-tr-[4px] rounded-tl-[4px] border border-solid border-gray-200 border-t-0 border-l-0 border-r-0 dark:border-dark-500;
+        }
+        svg{
+            @apply w-[9px] h-[9px];
+        }
+        &[disabled] {
+            @apply opacity-50 cursor-not-allowed;
+        }
+    }
+    input {
+        @apply rounded-tl rounded-bl border-0 bg-transparent w-full text-left py-0 pr-1 pl-3 m-0 focus:outline-none focus:shadow-none text-[13px] text-system-dark font-normal dark:bg-transparent dark:text-gray-50;
+
+        // Hide Arrows From Input Number
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+            @apply m-0;
+        }
+        &[type=number] {
+            -moz-appearance: textfield;
+        }
+    }
+    &-buttons{
+        @apply p-1 opacity-0 invisible transition-all duration-100;
+    }
+    &:hover{
+        .fct-number-input-buttons{
+            @apply opacity-100 visible;
+        }
+    }
+}

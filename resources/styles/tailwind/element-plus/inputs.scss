@@ -1,0 +1,646 @@
+.el-form {
+    .required {
+        .el-form-item__label{
+            @apply relative inline-block pl-1.5;
+            &::before{
+                content: "*";
+                @apply absolute top-0 -left-2 text-red-500;
+            }
+        }
+    }
+    &-item__label {
+        @apply inline-block text-system-dark font-medium dark:text-gray-50 #{!important};
+        svg{
+            @apply text-system-mid;
+        }
+    }
+    &-item.is-error .el-input__wrapper {
+       @apply shadow-none border-red-500 hover:shadow-none !important;
+    }
+    &--label-top{
+        .el-form-item{
+            @apply grid;
+        }
+    }
+}
+
+// select
+.el-select {
+    @apply w-full;
+    &__wrapper{
+        @apply transition-none min-h-9 py-[2px] px-3 rounded border border-solid border-gray-outline shadow-none hover:shadow-none dark:border-dark-400 dark:bg-dark-600;
+        &.is-hovering,
+        &.is-focused {
+            @apply shadow-none #{!important};
+        }
+        &.is-focused{
+            @apply border-primary-500 dark:border-gray-300;
+        }
+        .el-select__selected-item.el-select__placeholder{
+            @apply dark:text-gray-300;
+        }
+        &.is-disabled{
+            @apply shadow-none;
+        }
+    }
+    &__selection{
+        @apply pl-[3px];
+        .el-select__selected-item{
+            .el-select__input{
+                @apply dark:text-gray-300;
+            }
+        }
+    }
+    input {
+        @apply border-0 p-0 bg-transparent shadow-none focus:shadow-none focus:outline-none focus:border-0;
+    }
+    &-dropdown__item {
+        @apply flex items-center px-3;
+        &.selected{
+            @apply text-system-dark dark:text-gray-200;
+        }
+    }
+    &.is-focus .el-input__wrapper {
+        @apply shadow-none;
+    }
+    .el-input.is-focus .el-input__wrapper,
+    .el-input__wrapper.is-focus {
+        @apply shadow-none #{!important};
+    }
+    &:focus:not(.el-select--disabled) .el-input__wrapper,
+    &:hover:not(.el-select--disabled) .el-input__wrapper{
+        @apply shadow-none;
+    }
+    &--x-small {
+        .el-select__wrapper {
+            @apply px-2 text-xs h-7 rounded-sm min-h-[auto]; // 28px
+        }
+    }
+    &--small {
+        .el-select__wrapper{
+            @apply px-2.5 min-h-8; // 32px
+        }
+        .el-select__input{
+            @apply min-h-6.5;
+        }
+    }
+    &--large {
+        .el-select__wrapper {
+            @apply min-h-10; // 40px
+        }
+    }
+}
+
+/*Globals*/
+.el-input{
+    &__wrapper{
+        @apply rounded h-auto min-h-9 text-sm py-[7px] px-3 hover:shadow-none shadow-none border border-solid border-gray-outline dark:border-dark-400 dark:bg-dark-600;
+        &.is-focus{
+            @apply shadow-none border-primary-500 dark:border-gray-200;
+        }
+        .icon {
+            svg{
+                @apply w-4 h-4;
+            }
+        }
+    }
+    &__inner{
+        @apply h-auto min-h-[auto] leading-none bg-transparent text-system-dark dark:text-gray-50 dark:bg-transparent #{!important};
+        &::placeholder{
+            @apply text-gray-400 text-[13px] font-light #{!important};
+        }
+    }
+    &--x-small {
+        .el-input__wrapper {
+            @apply py-[3px] px-2 text-xs rounded-sm min-h-7;
+        }
+        .el-input-group__append{
+            @apply h-[28px] px-2.5 #{!important};
+        }
+        .el-input-group__prepend{
+            @apply h-[28px] px-2.5 #{!important};
+        }
+    }
+    &--small {
+        .el-input__wrapper{
+            @apply px-2.5 min-h-8; // 32px
+        }
+        .el-input-group__append{
+            @apply h-9 #{!important};
+        }
+        .el-input-group__prepend{
+            @apply h-9 #{!important};
+        }
+    }
+    &--medium {
+        .el-input__wrapper{
+            @apply py-2 min-h-9.5;
+        }
+    }
+    &--large {
+        .el-input__wrapper{
+            @apply py-[13px] px-4 text-base min-h-12;
+        }
+        .el-input-group__append{
+            @apply h-full;
+        }
+    }
+    &-number{
+        @apply w-[104px];
+        .el-input__wrapper {
+            @apply p-0;
+        }
+        &__decrease{
+            @apply rounded-tl rounded-bl;
+        }
+        &__increase{
+            @apply rounded-tr rounded-br;
+        }
+        &__decrease,
+        &__increase{
+            @apply bg-gray-25 text-system-mid hover:text-system-dark dark:text-gray-300 dark:bg-dark-600;
+            @apply dark:border-dark-400 #{!important};
+        }
+        .el-input.is-disabled .el-input__wrapper{
+            @apply bg-gray-25 border-gray-divider dark:border-dark-400 dark:bg-dark-600;
+        }
+    }
+    &.is-disabled {
+        .el-input__wrapper{
+            @apply shadow-none bg-gray-50 border-gray-outline dark:bg-primary-500 dark:border-dark-400 #{!important};
+        }
+    }
+    &__prefix{
+        @apply text-system-light;
+        .icon{
+            @apply text-system-mid dark:text-gray-300;
+        }
+    }
+    &__count{
+        @apply dark:bg-dark-600;
+    }
+}
+
+.el-input-number__decrease:hover~.el-input:not(.is-disabled) .el-input__wrapper, 
+.el-input-number__increase:hover~.el-input:not(.is-disabled) .el-input__wrapper{
+    @apply shadow-none;
+}
+.dark {
+    .el-select{
+        &__popper{
+            --el-bg-color-overlay: theme('colors.gray.700');
+            --el-text-color-regular: theme('colors.neutral.200');
+            --el-fill-color-light: theme('colors.gray.800');
+            --el-border-color-light: theme('colors.gray.700');
+        }
+    }
+    .el-input__wrapper{
+        // --el-input-border-color: theme('colors.dark.600');
+        // --el-input-focus-border-color: theme('colors.dark.500');
+        // --el-input-hover-border-color: theme('colors.dark.600');
+    }
+}
+
+// checkbox
+.el-checkbox{
+    @apply h-auto;
+    white-space: normal;
+    &__input{
+        &.is-indeterminate{
+            .el-checkbox__inner{
+                @apply bg-primary-500 border-primary-500;
+                &::before{
+                    @apply top-[6px];
+                }
+            }
+        }
+        &.is-checked {
+            + .el-checkbox__label{
+                @apply text-system-dark dark:text-gray-50;
+            }
+            .el-checkbox__inner {
+                @apply bg-primary-500 border-primary-500 dark:border-dark-400 dark:bg-dark-400;
+            }
+        }
+        &.is-disabled {
+            .el-checkbox__inner{
+                @apply dark:bg-dark-400 dark:border-dark-400;
+            }
+        }
+    }
+    &__inner{
+        @apply rounded-xs w-4 h-4 border-gray-outline transition-none hover:border-primary-500 dark:bg-dark-600 dark:border-dark-400;
+        &::after{
+            @apply border-[1.5px];
+        }
+    }
+    &__original{
+        @apply opacity-0 #{!important};
+    }
+}
+
+// switch
+.el-switch{
+    &__label{
+        @apply dark:text-gray-300;
+        &.is-active{
+            @apply text-system-dark dark:text-gray-50;
+        }
+    }
+    &__core{
+        @apply min-w-[36px] bg-gray-200 dark:bg-dark-600 dark:border-dark-400;
+        .el-switch__action{
+            @apply dark:bg-dark-200;
+        }
+    }
+    &.is-checked {
+        .el-switch__core {
+            @apply bg-primary-500 border-primary-500;
+            .el-switch__action{
+                @apply dark:bg-white;
+            }
+        }
+    }
+    &--small{
+        .el-switch__label,
+        .el-switch__label *{
+            @apply text-[13px] leading-[1.2];
+        }
+    }
+}
+
+.el-form-item__label,
+.el-checkbox__label,
+.el-radio__label {
+    @apply dark:text-gray-50;
+}
+
+.el-textarea{
+    &__inner{
+        @apply h-[100px] shadow-none dark:bg-transparent border border-solid border-gray-outline rounded py-2.5 px-4 dark:border-dark-400 dark:text-gray-300 focus:border-primary-500 focus:shadow-none hover:shadow-none;
+        &.is-focus{
+            @apply border-primary-500 dark:border-gray-200;
+        }
+    }
+}
+
+// radio
+.el-radio{
+    @apply h-auto mr-5 last:mr-0;
+    &.is-bordered{
+        @apply py-[9px] px-3 rounded mr-0 border-gray-outline last:mr-0 dark:border-dark-400;
+        &[dashed]{
+            @apply border-dashed border-gray-400 dark:border-dark-300;
+        }
+        &.is-checked{
+            @apply border-primary-500 dark:border-dark-300;
+            .el-radio__inner{
+                @apply dark:border-dark-50;
+                &::after{
+                    @apply dark:bg-dark-50;
+                }
+            }
+        }
+        &.el-radio{
+            &--small{
+                @apply h-auto py-[7px] px-3 rounded;
+                .el-radio__inner::after{
+                    @apply w-1.5 h-1.5;
+                }
+                .el-radio__label{
+                    @apply text-[13px];
+                }
+            }
+            &--medium{
+                @apply h-auto py-2;
+            }
+            &--large{
+                @apply h-auto py-[13px] rounded px-4;
+            }
+        }
+    }
+    &__inner{
+        @apply border-[1.5px] w-4 h-4 border-gray-outline dark:bg-transparent dark:border-dark-300;
+        &::after{
+           @apply w-2 h-2 opacity-0;
+           transform: translate(-50%,-50%) scale(0.7);
+        }
+    }
+    &__input{
+        .el-radio__label{
+            @apply text-system-dark dark:text-gray-50;
+        }
+        &.is-checked {
+            .el-radio__inner{
+                @apply bg-white border-primary-500 dark:bg-dark-600 dark:border-dark-200;
+                &::after{
+                    @apply bg-primary-500 opacity-100 dark:bg-dark-200;
+                    transform: translate(-50%,-50%) scale(1);
+                }
+            }
+            + .el-radio__label{
+                @apply text-system-dark dark:text-gray-50;
+            }
+        }
+    }
+    &-button{
+        &__inner{
+            @apply hover:text-primary-500;
+        }
+        &:first-child {
+            .el-radio-button__inner{
+                @apply rounded-tl rounded-bl;
+            }
+        }
+        &:last-child {
+            .el-radio-button__inner{
+                @apply rounded-tr rounded-br;
+            }
+        }
+        &__original-radio{
+            &:checked{
+                + .el-radio-button__inner{
+                    @apply bg-primary-500 border-primary-500;
+                }
+            }
+        }
+    }
+}
+
+// input disabled
+.el-input.is-disabled {
+    .el-input__wrapper{
+        @apply shadow-none;
+    }
+    .el-input__inner {
+     @apply bg-transparent;       
+    }
+}
+// input date
+.el-range-editor{
+    &.el-input{
+        @apply h-auto w-full;
+        &__wrapper{
+            @apply shadow-none w-[270px] h-auto hover:shadow-none focus:shadow-none;
+        }
+    }
+    .el-range-input{
+        @apply dark:text-gray-50;
+    }
+    &--small{
+        &.el-input__wrapper {
+            @apply min-h-9;
+        }
+    }
+    &--medium{
+        &.el-input__wrapper {
+            @apply min-h-9.5;
+        }
+    }
+}
+
+.fct-input-number-wrap{
+    @apply grid items-center gap-2.5;
+    span{
+        @apply text-system-mid text-xs dark:text-gray-400;
+    }
+}
+
+// input gray
+.fct-input-gray{
+    .el-input__wrapper{
+        @apply bg-gray-25 dark:bg-dark-600;
+    }
+}
+
+// input group
+.el-input-group{
+    .el-button{
+        @apply bg-[inherit] border-0 rounded-none hover:bg-[inherit] dark:bg-[inherit] dark:border-[inherit] dark:hover:bg-[inherit] dark:hover:border-[inhert] #{!important};
+    }
+    .el-input-group{
+        &__prepend{
+            @apply h-10 bg-gray-neutral border border-solid border-gray-outline border-r-0 rounded-tl rounded-bl shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
+        }
+        &__append{
+            @apply h-10 bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
+        }
+        &__prepend{
+            @apply bg-gray-neutral border border-solid border-gray-outline border-r-0 rounded-tl rounded-bl shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
+        }
+    }
+    &.el-input-group--prepend {
+        .el-input-group__prepend .el-select {
+            @apply w-[90px];
+            .el-select__wrapper{
+                @apply shadow-none border-0 #{!important};
+            }
+        }
+        >.el-input__wrapper{
+            @apply rounded-tl-none rounded-bl-none;
+        }
+    }
+    &.el-input-group--append {
+        .el-input-group__append .el-select {
+            @apply w-[90px];
+            .el-select__wrapper{
+                @apply shadow-none border-0 #{!important};
+            }
+        }
+        >.el-input__wrapper{
+            @apply rounded-tr-none rounded-br-none;
+        }
+    }
+    &.el-input-group--prepend .el-input-group__prepend .el-select {
+        @apply w-[90px];
+        .el-select__wrapper{
+            @apply shadow-none border-0 #{!important};
+        }
+    }
+}
+
+// multiple select group
+.fct-multiple-select-group{
+    @apply flex w-full;
+    .input-prepend{
+        @apply w-[100px];
+        .el-select__wrapper{
+            @apply rounded-tr-none rounded-br-none border-r-0 bg-gray-50 dark:bg-primary-500;
+            &.is-focused{
+                @apply border-gray-outline dark:border-dark-400;
+            }
+        }
+    }
+    .input-append{
+        @apply flex-1;
+        .el-select__wrapper{
+            @apply rounded-tl-none rounded-bl-none;
+        }
+    }
+}
+.el-input .el-input__count .el-input__count-inner{
+    @apply dark:bg-transparent dark:text-gray-300;
+}
+.fct-input-group{
+    @apply flex gap-2;
+    .el-input-group__append{
+        @apply w-auto p-0;
+    }
+    .el-tooltip__trigger{
+        @apply cursor-pointer dark:text-gray-300;
+    }
+    .input-prepend{
+        @apply w-full;
+        //.el-select__wrapper{
+        //    @apply rounded-tr-none rounded-br-none;
+        //}
+    }
+    .input-append{
+        //button{
+        //    @apply border-l-0 rounded-tl-none rounded-bl-none h-full;
+        //}
+    }
+    .el-dropdown{
+        @apply mr-2 items-start;
+    }
+    &.el-input-group{
+        @apply gap-0;
+    }
+}
+.fct-select-gray{
+    .el-select__wrapper{
+        @apply bg-gray-25 border-gray-divider dark:bg-primary-500 dark:border-primary-500;
+        box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+    }
+}
+.fct-term-input-item{
+    .el-select__wrapper{
+        @apply h-auto;
+    }
+    .el-button {
+        .icon {
+            .cross {
+                @apply w-full h-full;
+            }
+        }
+    }
+}
+
+.input-with-total-stock{
+    .el-input__wrapper{
+        @apply bg-gray-50 cursor-not-allowed dark:bg-primary-500;
+        &.is-focus{
+            @apply border-gray-outline dark:border-dark-400 #{!important};
+        }
+        .el-input__inner{
+            @apply cursor-not-allowed;
+        }
+    }
+    .el-input-group__append{
+        @apply bg-white;
+    }
+    .el-tooltip__trigger{
+        @apply p-2.5;
+    }
+}
+
+//.el-input-group{
+//    &__append{
+//        .el-button{
+//            @apply border-l-0 rounded-tl-none rounded-bl-none #{!important};
+//        }
+//    }
+//    &__append,
+//    &__prepend{
+//        @apply px-3 border border-solid border-gray-outline shadow-none dark:bg-transparent dark:border-dark-400;
+//        .el-select{
+//            @apply m-0 w-[80px];
+//        }
+//        .el-select__wrapper{
+//            @apply shadow-none p-0 #{!important};
+//        }
+//    }
+//    &__append{
+//        @apply border-l-0 rounded-tr rounded-br;
+//    }
+//    &__prepend{
+//        @apply border-r-0 rounded-tl rounded-bl;
+//        .el-select{
+//            .el-input__wrapper{
+//                @apply p-0 shadow-none hover:shadow-none hover:border-0 focus:border-0 focus:shadow-none hover:outline-none #{!important};
+//            }
+//            .el-input.is-focus .el-input__wrapper{
+//                @apply shadow-none #{!important};
+//            }
+//            input{
+//                @apply m-0;
+//            }
+//        }
+//        div.el-select .el-input__wrapper{
+//            @apply border-0 #{!important};
+//        }
+//    }
+//    &--append {
+//        .el-input-group{
+//            &__append .el-select .el-input{
+//                &.is-focus .el-input__wrapper{
+//                    @apply shadow-none #{!important};
+//                }
+//                .el-input__wrapper{
+//                    @apply p-0 shadow-none #{!important};
+//                }
+//                .el-input__inner{
+//                    @apply m-0 text-ellipsis overflow-hidden whitespace-nowrap;
+//                }
+//            }
+//        }
+//    }
+//    &--prepend .el-input-group__prepend .el-select .el-input.is-focus .el-input__wrapper{
+//        @apply shadow-none #{!important};
+//    }
+//}
+
+.fct-checkbox-blocks,
+.el-radio-group.fct-radios-blocks{
+    @apply grid gap-3;
+}
+.fct-checkbox-blocks label{
+    @apply mr-0 h-auto;
+}
+.el-radio-group.fct-radios-blocks label:not(.is-bordered) {
+    @apply block mr-0 h-auto;
+}
+.fct-checkbox-blocks label:last-child{
+    @apply mb-0;
+}
+
+.is-error{
+    .el-select__wrapper{
+        @apply border-red-500 #{!important};
+    }
+}
+.el-input-number.is-controls-right {
+    .el-input-number__decrease,
+    .el-input-number__increase{
+        @apply h-5;
+    }
+    .el-input-number__decrease{
+        @apply rounded-br-[7px];
+    }
+    .el-input-number__increase{
+        @apply rounded-tr-[7px];
+    }
+}
+
+.el-radio-button.is-active .el-radio-button__original-radio:not(:disabled)+.el-radio-button__inner {
+    @apply dark:bg-dark-400 dark:border-dark-400;
+}
+.el-radio-button__inner {
+    @apply dark:bg-dark-600 dark:border-dark-400 dark:hover:text-gray-300;
+}
+.el-radio-button:first-child .el-radio-button__inner{
+    @apply dark:border-dark-400;
+}
+.el-range-editor.is-disabled input {
+    @apply dark:bg-transparent;
+}

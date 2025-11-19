@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./customer-profile-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.fct-customer-profile-block-editor{
+    --fluent-cart-customer-dashboard-primary-color: var(--fluent-cart-primary-color, theme('colors.primary.500'));
+
+    // text colors
+    --fluent-cart-customer-dashboard-title-color: var(--fluent-cart-title-color, theme('colors.system.dark'));
+    --fluent-cart-customer-dashboard-sub-title-color: var(--fluent-cart-sub-title-color, theme('colors.gray.800'));
+    --fluent-cart-customer-dashboard-text-color: var(--fluent-cart-text-color, theme('colors.system.mid'));
+
+    // border colors
+    --fluent-cart-customer-dashboard-border-color: var(--fluent-cart-border-outline, theme('colors.gray.outline'));
+    --fluent-cart-customer-dashboard-divider-color: var(--fluent-cart-border-divider, theme('colors.gray.outline'));
+
+
+    // button
+    --fluent-cart-customer-dashboard-button-bg: var(--fluent-cart-customer-dashboard-primary-color);
+    --fluent-cart-customer-dashboard-button-border: var(--fluent-cart-customer-dashboard-button-bg);
+    --fluent-cart-customer-dashboard-button-color: theme('colors.white');
+
+    // nav
+    --fluent-cart-customer-dashboard-nav-bg: theme('colors.transparent');
+    --fluent-cart-customer-dashboard-nav-border-radius: 0;
+    --fluent-cart-customer-dashboard-nav-padding: 0;
+    --fluent-cart-customer-dashboard-nav-border: theme('colors.gray.divider');
+    --fluent-cart-customer-dashboard-nav-text-color: theme('colors.system.mid');
+    --fluent-cart-customer-dashboard-nav-active-text-color: theme('colors.primary.500');
+    --fluent-cart-customer-dashboard-nav-active-bg-color: theme('colors.gray.50');
+    --fluent-cart-customer-dashboard-nav-active-bar-color: theme('colors.primary.500');
+
+
+    font-family: 'Inter', sans-serif !important;
+    container-type: inline-size; /* ADD THIS */
+    container-name: fct_customer_profile;
+    ul {
+        @apply list-none p-0 m-0;
+    }
+
+    .customer-theme-button-container{
+        @apply w-7 h-7 flex items-center justify-center;
+    }
+    .fct-theme-button-icon {
+        @apply relative w-3.5 h-3.5 rounded-[10px] bg-dark-300 dark:bg-dark-200;
+        transform-origin: center center;
+        transition: transform 0.75s ease-in-out, background .2s ease, color .2s ease;
+
+        &::after {
+            @apply absolute w-3 h-3 left-1.5 bottom-1 rounded-[10px] bg-white;
+            content: '';
+            transform-origin: center center;
+            transition: transform 0.5s ease, left 0.25s ease, bottom 0.25s ease, background .2s ease, color .2s ease;
+        }
+    }
+
+    .fct-customer-menu-holder{
+        @apply mb-6 relative;
+    }
+    .fct-customer-right-action-buttons{
+        @apply flex items-center gap-2 absolute right-0 top-1;
+    }
+    .fullscreen-button {
+        @apply flex items-center justify-center w-7 h-7;
+        svg{
+            @apply w-4 h-4 text-system-mid;
+        }
+    }
+    .badge{
+        @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-none font-medium py-[5px] px-2.5 rounded-md whitespace-nowrap max-h-6.5;
+        &.success{
+            @apply bg-success-25 text-success-500 dark:bg-success-800 dark:text-white;
+        }
+        &.warning{
+            @apply bg-warning-25 text-warning-500 dark:bg-warning-800 dark:text-white;
+        }
+        &.danger{
+            @apply bg-red-25 text-red-500 dark:bg-red-800 dark:text-white;
+        }
+    }
+    .fct-customer-dashboard {
+        &-title {
+            @apply text-base flex-1 font-semibold text-[var(--fluent-cart-customer-dashboard-title-color)] my-0;
+        }
+        &-header{
+            @apply flex items-center justify-between mb-4;
+            .is-link {
+                @apply font-medium underline text-sm text-[var(--fluent-cart-customer-dashboard-title-color)] focus:bg-transparent focus:shadow-none dark:text-gray-50;
+            }
+        }
+        &-item{
+            @apply mb-5 last:mb-0;
+        }
+    }
+    .fct-customer-dashboard-table{
+        @apply border border-solid border-[var(--fluent-cart-customer-dashboard-border-color)] rounded overflow-hidden;
+    }
+    table{
+        @apply w-full border-spacing-0 border-collapse text-left table-fixed;
+        td{
+            @apply text-sm text-[var(--fluent-cart-customer-dashboard-text-color)] font-normal p-2.5 border border-solid border-[var(--fluent-cart-customer-dashboard-border-color)] border-x-0 border-t-0;
+            &:first-child{
+                @apply pl-5;
+            }
+            &:last-child{
+                @apply pr-5;
+            }
+        }
+        tr{
+            &:last-child{
+                td{
+                    @apply border-b-0;
+                }
+            }
+        }
+        .text {
+            @apply text-[var(--fluent-cart-customer-dashboard-sub-title-color)] text-sm;
+        }
+        .invoice-id {
+            @apply text-[var(--fluent-cart-customer-dashboard-title-color)] text-sm block;
+        }
+    }
+    .product-info{
+        @apply flex flex-col gap-1;
+        .title{
+            @apply text-sm font-normal text-[var(--fluent-cart-customer-dashboard-title-color)] leading-[23px];
+            span {
+                @apply text-[var(--fluent-cart-customer-dashboard-sub-title-color)] text-sm;
+            }
+        }
+        .meta{
+            @apply flex items-center gap-2.5;
+        }
+    }
+    .fct-customer-payment-meta-info{
+        @apply flex flex-col gap-2 text-right;
+        .text{
+            @apply text-[13px] text-[var(--fluent-cart-customer-dashboard-text-color)] leading-[20px];
+        }
+        .copy-text{
+            @apply text-[13px] text-[var(--fluent-cart-customer-dashboard-text-color)] leading-[20px] inline-flex justify-end items-center gap-1.5;
+        }
+    }
+    .button{
+        @apply inline-flex items-center justify-center py-1 px-3 rounded text-[13px] font-normal text-system-dark bg-white no-underline border border-solid border-gray-outline cursor-pointer leading-none duration-200 transition hover:bg-gray-50 !important;
+        svg{
+            @apply w-3 h-3 mr-1.5;
+        }
+    }
+    .fct-customer-downloads-file-info {
+        .text{
+            @apply text-[var(--fluent-cart-customer-dashboard-text-color)];
+        }
+    }
+
+    .fluent-cart-customer-profile-app {
+        @apply flex border-[1px] border-solid border-[var(--fluent-cart-customer-dashboard-border-color)] rounded;
+        @media (max-width: 1159px) {
+            .grid-cols-5 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            .col-span-2,
+            .col-span-3 {
+                grid-column: span 1 / span 1;
+            }
+            .fct-purchase-history-route-wrap {
+                .grid-cols-5 {
+                    > .col-span-3 {
+                        order: 2;
+                    }
+                }
+            }
+        }
+        @media (max-width: 806px) {
+            @apply flex-col border-0;
+        }
+
+        .el-button {
+            &.is-text {
+                &.update-payment-details,
+                &.cancel-auto-renew{
+                    @apply p-0 underline font-normal leading-5;
+                }
+
+            }
+        }
+
+        &.el-message-box{
+            @apply inline-block;
+        }
+    }
+
+    // .fct-customer-dashboard-customer-info
+    .fct-customer-dashboard-customer-info {
+        @apply relative flex items-center gap-3 py-3 pl-5 pr-3 border-0 border-b-[1px] border-solid border-[var(--fluent-cart-customer-dashboard-border-color)];
+        img {
+            @apply block object-cover w-10 h-10 rounded-full flex-none;
+        }
+        &-content {
+            h3 {
+                @apply m-0 mb-1 text-sm leading-5 font-medium text-primary-500;
+            }
+            p {
+                @apply m-0 text-xs leading-4 text-system-mid;
+            }
+
+        }
+    }
+
+    .fct-customer-dashboard-app-container {
+        .fct-customer-dashboard-main-content {
+            min-height: 600px;
+            @apply relative overflow-hidden p-5 w-full;
+            @media (max-width: 806px) {
+                @apply p-0;
+            }
+        }
+        .el-pagination {
+            .el-pager {
+                @apply m-0 p-0;
+            }
+        }
+    }
+
+    #fct-customer-logout-button {
+        @apply absolute top-2 right-0;
+    }
+
+    .fct-customer-logout-btn{
+        @apply shadow-none bg-transparent rounded-none text-system-mid p-1.5 flex items-center hover:text-system-dark !important;
+        svg{
+            @apply w-4 h-4;
+        }
+    }
+
+    .fct-customer-dashboard-navs-wrap {
+        @apply w-[272px] flex-none border border-l-0 border-y-0 border-solid border-[var(--fluent-cart-customer-dashboard-border-color)];
+        .fct-customer-dashboard-navs-title {
+            @apply m-0 uppercase text-xs leading-4 font-medium text-gray-500 pt-5 px-6 pb-3;
+        }
+
+        #menu-container {
+            @apply px-5 pb-5 pt-3;
+        }
+
+        #fct-customer-menu-holder {
+            @apply mb-0;
+        }
+        .fct-customer-navs {
+            @apply flex-col gap-0 items-start p-0 m-0;
+            .fct-customer-nav-item {
+                @apply mb-1 relative;
+                &:last-child {
+                    @apply mb-0;
+                }
+                &:before {
+                    content: '';
+                    transform: translateY(-50%);
+                    @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fluent-cart-customer-dashboard-nav-active-bar-color)] rounded-tr-xs rounded-br-xs;
+                }
+                .fct-customer-nav-link {
+                    @apply no-underline block text-[var(--fluent-cart-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none;
+                }
+                &.active_customer_menu {
+                    &:before {
+                        @apply w-1;
+                    }
+                    .fct-customer-nav-link {
+                        @apply bg-[var(--fluent-cart-customer-dashboard-nav-active-bg-color)] text-[var(--fluent-cart-customer-dashboard-nav-active-text-color)];
+                    }
+                }
+            }
+        }
+    }
+    .fct-customer-dashboard-customer-info-content {
+        h3 {
+            @apply text-[var(--fluent-cart-customer-dashboard-title-color)];
+        }
+        p {
+            @apply text-[var(--fluent-cart-customer-dashboard-text-color)];
+        }
+    }
+    .fct-customer-dashboard-navs-wrap {
+        #fct-customer-menu-toggle {
+            @apply hidden w-9 h-9 items-center justify-center;
+            svg {
+                @apply block w-5 h-5;
+            }
+        }
+    }
+}
+
+@container fct_customer_profile (max-width: 806px) {
+    .fct-customer-dashboard-navs-wrap {
+        #fct-customer-menu-toggle {
+            @apply flex #{!important};
+        }
+        #menu-container,
+        .fct-customer-dashboard-customer-info {
+            @apply hidden;
+        }
+    }
+    .fct-customer-dashboard-table {
+        table {
+            @apply block;
+            tbody {
+                @apply block;
+            }
+            tr {
+                @apply block border-[1px] border-solid border-gray-divider border-x-0 border-t-0;
+                &:last-child {
+                    @apply border-b-0;
+                }
+                td {
+                    @apply w-full block border-0;
+                }
+            }
+        }
+    }
+    .fluent-cart-customer-profile-app {
+        @apply flex-col;
+    }
+}
