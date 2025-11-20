@@ -140,6 +140,7 @@
     grid-column: span 5 / span 5;
   }
 }
+.fc-products-wrapper,
 .fct-products-wrapper {
   .fct-products-wrapper-inner {
     grid-template-columns: repeat(5,minmax(0,1fr));

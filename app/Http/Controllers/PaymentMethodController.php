@@ -29,7 +29,7 @@ class PaymentMethodController extends Controller
             foreach ($gateways as $gateway) {
                 if (isset($gateway['requires_pro'])) {
                     $categorizedGateways['is_pro_required'][] = $gateway;
-                } elseif (isset($gateway['upcoming'])) {
+                } elseif (Arr::get($gateway, 'upcoming', false) === true) {
                     $categorizedGateways['upcoming'][] = $gateway;
                 } else {
                     $categorizedGateways['available'][] = $gateway;

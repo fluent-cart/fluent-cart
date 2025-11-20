@@ -1,0 +1,1 @@
+import{A as a}from"./Arr-MwYQQ3qa.js";jQuery(document).ready(function(n){n(document).on("click","#fct-clear-colors-btn",function(){var o,t;const c=a.get(window,"fluent_cart_shop_app_elementor_vars.color_codes",[]),e=(t=(o=elementor.getPanelView())==null?void 0:o.getCurrentPageView())==null?void 0:t.model;e&&c.forEach(l=>{var r;(r=e.setSetting)==null||r.call(e,l,"")})})});

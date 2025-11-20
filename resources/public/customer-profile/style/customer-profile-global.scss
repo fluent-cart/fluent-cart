@@ -48,11 +48,11 @@
   border-width: 0;
 }
 
-* {
-  @apply box-border;
-}
 .fct_customer_profile_wrap {
   @apply max-w-[1200px] !important;
+  * {
+    @apply box-border;
+  }
 }
 .fct-customer-root-container {
   ul {

@@ -3,7 +3,7 @@
         'name' => 'wpfluent/wpfluent',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'b997002c66d3ae878c95ddcd3b36efbe42dc44f1',
+        'reference' => '97b05c9d4fe05c2d9a086fdcec989747eeb3ee1b',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(
@@ -20,6 +20,15 @@
             'install_path' => __DIR__ . '/../fakerphp/faker',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'openspout/openspout' => array(
+            'pretty_version' => 'v3.7.4',
+            'version' => '3.7.4.0',
+            'reference' => 'dfbbd53b5edcd486b45a37f6a04fac33073c70f3',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../openspout/openspout',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'psr/container' => array(
             'pretty_version' => '2.0.2',
@@ -60,7 +69,7 @@
         'wpfluent/wpfluent' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'b997002c66d3ae878c95ddcd3b36efbe42dc44f1',
+            'reference' => '97b05c9d4fe05c2d9a086fdcec989747eeb3ee1b',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(

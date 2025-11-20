@@ -1,5 +1,10 @@
 parameters:
     level: 2
+    scanDirectories:
+        - ../vendor
+
+    autoload_files:
+        - ../fluent-cart.php
 
     # Ignore WordPress dynamic things
     ignoreErrors:
@@ -14,3 +19,4 @@ parameters:
 
 includes:
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
+

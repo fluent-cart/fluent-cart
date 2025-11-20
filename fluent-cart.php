@@ -33,5 +33,6 @@ return (function ($_) {
     return $_(__FILE__);
 })(
     require __DIR__ . '/boot/app.php',
-    require __DIR__ . '/vendor/autoload.php'
+    require __DIR__ . '/vendor/autoload.php',
+    //require __DIR__ . '/dev/build-scoped/vendor/scoper-autoload.php'
 );

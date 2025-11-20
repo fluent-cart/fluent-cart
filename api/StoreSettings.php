@@ -898,7 +898,7 @@ class StoreSettings implements ArrayableInterface
                                     __('Display the cart icon in the body of the website', 'fluent-cart'),
                                     __('Use this', 'fluent-cart'),
                                     __('Copy to clipboard', 'fluent-cart'),
-                                    'fcart-cart-toogle-button',
+                                    'fcart-cart-toggle-button',
                                     __('CSS class to display the cart link/icon anywhere else.', 'fluent-cart')
                                 )
                             ],

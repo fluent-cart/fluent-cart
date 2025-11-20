@@ -8,7 +8,19 @@ if (!defined('ABSPATH')) {
  */
 ?>
 
-<div class="fct-customer-dashboard-navs-wrap" role="navigation" aria-label="<?php esc_attr_e('Customer Dashboard', 'fluent-cart'); ?>">
+<div id="fct-customer-dashboard-navs-wrap" class="fct-customer-dashboard-navs-wrap" role="navigation" aria-label="<?php esc_attr_e('Customer Dashboard', 'fluent-cart'); ?>">
+    <div class="fct-nav-compact-toggle-wrap">
+        <button
+            type="button"
+            aria-label="<?php esc_attr_e('Toggle navigation menu', 'fluent-cart'); ?>"
+            id="fct-customer-nav-compact-toggle"
+        >
+            <svg class="fct-compact-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12.1329 5.08936L13.115 6.07145L9.88108 9.30539L16.2505 9.30546L16.2504 10.6943L9.88108 10.6943L13.115 13.9282L12.133 14.9103L7.22246 9.99983L12.1329 5.08936ZM4.44482 14.8609V5.13867H5.83371V14.8609H4.44482Z" fill="#565865"/>
+            </svg>
+        </button>
+    </div>
+
     <?php if($profileData): ?>
     <div class="fct-customer-dashboard-customer-info" role="banner">
         <img src="<?php echo esc_url($profileData['photo']); ?>" alt="<?php echo esc_attr($profileData['full_name']); ?>" />
@@ -19,7 +31,7 @@ if (!defined('ABSPATH')) {
     </div>
     <?php endif; ?>
 
-    <div id="menu-container">
+    <div id="fct-customer-menu-container">
         <button 
             id="fct-customer-menu-toggle"
             type="button"
@@ -40,8 +52,27 @@ if (!defined('ABSPATH')) {
                                 aria-label="<?php echo esc_attr($menuItem['label']) ?>"
                                 href="<?php echo esc_url($menuItem['link']); ?>"
                             >
-                                <?php echo esc_html($menuItem['label']); ?>
+                                <span class="fct-customer-nav-link-icon">
+                                    <?php
+                                        if (!empty($menuItem['icon_svg'])) {
+                                            echo wp_kses(
+                                                    $menuItem['icon_svg'],
+                                                    apply_filters('fct_allowed_svg_tags', [])
+                                            );
+                                        } elseif (!empty($menuItem['icon_url'])) {
+                                            echo '<img src="' . esc_url($menuItem['icon_url']) . '" alt="" />';
+                                        }
+                                    ?>
+                                </span>
+
+                                <span class="fct-customer-nav-link-text">
+                                   <?php echo esc_html($menuItem['label']); ?>
+                                </span>
                             </a>
+
+                            <span class="fct-customer-nav-tooltip">
+                                <?php echo esc_html($menuItem['label']); ?>
+                            </span>
                         </li>
                     <?php endforeach; ?>
                 </ul>

@@ -349,6 +349,7 @@ export default {
           } else {
 
             vl.tax_amount = parseInt(vl.tax_amount) || 0;
+            vl.shipping_charge = parseInt(vl.shipping_charge) || 0;
             vl.discount_total = parseInt(vl.discount_total) || 0;
             vl.quantity = parseInt(vl.quantity) || 1;
 

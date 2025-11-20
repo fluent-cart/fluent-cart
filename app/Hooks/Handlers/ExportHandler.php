@@ -2,7 +2,7 @@
 
 namespace FluentCart\App\Hooks\Handlers;
 
-use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
+use FluentCart\OpenSpout\Writer\Common\Creator\WriterEntityFactory;
 use FluentCart\Api\Resource\ProductResource;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\CustomerHelper;

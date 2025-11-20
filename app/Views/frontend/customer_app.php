@@ -60,6 +60,9 @@
         var menuToggle = document.getElementById('fct-customer-menu-toggle');
         var menuHolder = document.getElementById('fct-customer-menu-holder');
         var loader = document.getElementById('fct-customer-loader');
+        var navCompactToggle = document.getElementById('fct-customer-nav-compact-toggle');
+        var navCompactWrap = document.getElementById('fct-customer-dashboard-navs-wrap');
+
         if (loader) {
             loader.remove();
         }
@@ -99,5 +102,13 @@
                 menuHolder.classList.remove('is-active');
             }
         });
+
+        if(navCompactToggle){
+            navCompactToggle.addEventListener('click', function (e) {
+                e.stopPropagation(); // prevent click from bubbling to document
+                this.classList.toggle('is-active');
+                navCompactWrap.classList.toggle('is-compact');
+            });
+        }
     });
 </script>

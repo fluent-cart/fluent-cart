@@ -18,6 +18,7 @@
     "pack": "node resources/dev/zip.js",
     "abspath": "node resources/dev/add-abspath-check.js",
     "addindex": "node resources/dev/add-index-files.js",
+    "checkabs": "node resources/dev/absissue.js",
     "zip": "node resources/dev/zip.js",
     "translate": "node resources/dev/translator.js",
     "translate-frontend": "node resources/dev/translator-frontend.js",
@@ -28,7 +29,8 @@
     "prod": "npm run build",
     "el_plus": "node resources/dev/element-plus-resolver.js",
     "el_plus_customer_profile": "node resources/dev/element-plus-resolver_customer.js",
-    "translate:all": "npm run translate-frontend -- --payment %npm_config_argv% && npm run translate -- --customer %npm_config_argv% && npm run translate-frontend -- %npm_config_argv% && npm run translate -- %npm_config_argv% && npm run translate -- --block %npm_config_argv% && npm run translate --customer %npm_config_argv% && npm run translate --customer %npm_config_argv% && npm run translate --block %npm_config_argv%"
+    "translate:all": "npm run translate-frontend -- --payment %npm_config_argv% && npm run translate -- --customer %npm_config_argv% && npm run translate-frontend -- %npm_config_argv% && npm run translate -- %npm_config_argv% && npm run translate -- --block %npm_config_argv% && npm run translate --customer %npm_config_argv% && npm run translate --customer %npm_config_argv% && npm run translate --block %npm_config_argv%",
+    "package-src": "node resources/dev/package-src.js"
 
   },
   "dependencies": {

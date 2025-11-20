@@ -1,0 +1,1 @@
+window.addEventListener("fluent_cart_load_payments_offline_payment",function(e){var t,n;const a=(t=window.fluentcart_checkout_vars)==null?void 0:t.submit_button;(n=window.fct_cod_data)!=null&&n.translations,e.detail.paymentLoader.enableCheckoutButton(a.text)});

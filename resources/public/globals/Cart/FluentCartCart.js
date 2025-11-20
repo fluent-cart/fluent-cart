@@ -419,7 +419,7 @@ export default class FluentCartCart {
             const cartDrawer = document.querySelector('[data-fluent-cart-cart-drawer]');
             const drawerOverlay = document.querySelector('[data-fluent-cart-cart-drawer-overlay]');
             const toggleButton = e.target.closest('[data-fluent-cart-cart-toggle-button]');
-            const expandButton = e.target.closest('[data-fluent-cart-cart-expand-button], .fcart-cart-toogle-button');
+            const expandButton = e.target.closest('[data-fluent-cart-cart-expand-button], .fcart-cart-toggle-button');
             const collapseButton = e.target.closest('[data-fluent-cart-cart-collapse-button]');
 
             // Handle toggle button

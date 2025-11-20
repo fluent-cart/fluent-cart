@@ -3015,7 +3015,7 @@
         'isEntry' => true
     ],
     'resources/admin/bootstrap/app.js' => [
-        'file' => 'app-BFPDRI5y.js',
+        'file' => 'app-S2UeDE_k.js',
         'name' => 'app',
         'src' => 'resources/admin/bootstrap/app.js',
         'isEntry' => true,
@@ -3412,7 +3412,7 @@
         ]
     ],
     'resources/public/customer-profile/style/customer-profile-global.scss' => [
-        'file' => 'assets/customer-profile-global-_s1Z3BTc.css',
+        'file' => 'assets/customer-profile-global-CCXKU3cQ.css',
         'src' => 'resources/public/customer-profile/style/customer-profile-global.scss',
         'isEntry' => true
     ],
@@ -3438,7 +3438,7 @@
         'src' => 'resources/public/fonts/Inter-SemiBold.woff'
     ],
     'resources/public/globals/FluentCartApp.js' => [
-        'file' => 'FluentCartApp-JLLfXxEP.js',
+        'file' => 'FluentCartApp-CxRYmDx2.js',
         'name' => 'FluentCartApp',
         'src' => 'resources/public/globals/FluentCartApp.js',
         'isEntry' => true
@@ -3526,7 +3526,7 @@
         'isEntry' => true
     ],
     'resources/public/product-card/style/product-card.scss' => [
-        'file' => 'assets/product-card-CFz1qKFa.css',
+        'file' => 'assets/product-card-SR3A9Jfr.css',
         'src' => 'resources/public/product-card/style/product-card.scss',
         'isEntry' => true
     ],
@@ -3537,7 +3537,7 @@
         'isEntry' => true
     ],
     'resources/public/product-page/style/shop-app.scss' => [
-        'file' => 'assets/shop-app-DZ5ZyM1E.css',
+        'file' => 'assets/shop-app-lTYYrIlF.css',
         'src' => 'resources/public/product-page/style/shop-app.scss',
         'isEntry' => true
     ],
@@ -3577,7 +3577,7 @@
         'isEntry' => true
     ],
     'resources/public/single-product/single-product.scss' => [
-        'file' => 'assets/single-product-GGmQljXL.css',
+        'file' => 'assets/single-product-sbVhxFhP.css',
         'src' => 'resources/public/single-product/single-product.scss',
         'isEntry' => true
     ],

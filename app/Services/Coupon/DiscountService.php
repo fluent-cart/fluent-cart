@@ -88,7 +88,7 @@ class DiscountService
             ->get();
 
         if ($coupons->isEmpty()) {
-            return new \WP_Error('no_valid_coupons', __('No valid coupons found.', 'fluent-cart'), []);
+            return new \WP_Error('no_valid_coupons', __('Coupon can not be applied.', 'fluent-cart'), []);
         }
 
         $invalidCoupons = [];
@@ -109,7 +109,7 @@ class DiscountService
         }
 
         if (empty($validCoupons)) {
-            return new \WP_Error('no_valid_coupons', __('No valid coupons found.', 'fluent-cart'), $invalidCoupons);
+            return new \WP_Error('no_valid_coupons', __('Coupon can not be applied.', 'fluent-cart'), $invalidCoupons);
         }
 
         // Let's check if we have multiple coupons and if they are stackable. If not, we will only keep the first one and invalidate the rest.

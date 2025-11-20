@@ -46,6 +46,7 @@ IGNORE_PATTERNS=(
     "fluent-cart.zip"
     ".git/*"
     "build.sh"
+    "svn/*"
     "research/*"
     "resources/*"
     "node_modules"

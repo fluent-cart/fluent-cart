@@ -1,39 +1,107 @@
 /*=== tab content =====*/
 .fct-customer-dashboard-navs-wrap {
-    @apply w-[272px] flex-none border border-l-0 border-y-0 border-solid border-[var(--fct-customer-dashboard-border-color)];
-    .fct-customer-dashboard-navs-title {
-        @apply m-0 uppercase text-xs leading-4 font-medium text-gray-500 pt-5 px-6 pb-3;
+  @apply w-[272px] flex-none border border-l-0 border-y-0 border-solid border-[var(--fct-customer-dashboard-border-color)] relative transition-all duration-200 ease-in-out;
+
+  #fct-customer-menu-container {
+    @apply p-5;
+    height: calc(100% - 64px);
+  }
+  .fct-customer-navs-wrap {
+    a {
+      @apply no-underline;
+    }
+  }
+}
+
+/* === compact view ===*/
+.fct-customer-dashboard-navs-wrap.is-compact {
+  @apply w-[80px];
+  .fct-customer-dashboard-customer-info-content,
+  .fct-customer-nav-link-text {
+    @apply hidden whitespace-nowrap overflow-hidden;
+  }
+  .fct-customer-logout-btn {
+    @apply inline-flex;
+    .button-text {
+      @apply hidden;
+    }
+  }
+  .fct-customer-navs {
+    .fct-customer-nav-link {
+      @apply pl-2.5;
+    }
+    .fct-customer-nav-tooltip {
+      @apply block;
+    }
+  }
+}
+
+.fct-nav-compact-toggle-wrap {
+  @apply absolute top-[50px] right-[-12px] z-[2];
+  button {
+    @apply bg-white border-0 p-0 m-0 w-6 h-6 rounded-[6px] border border-solid border-gray-outline flex items-center justify-center;
+    box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03);
+    svg {
+      @apply transition-transform duration-200 ease-in-out;
+    }
+    &.is-active {
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .fct-compact-toggle-icon {
+    @apply block;
+  }
+}
+
+/* === customer navs ===*/
+.fct-customer-navs {
+  @apply flex-col gap-0 items-start p-0 m-0;
+  .fct-customer-nav-link {
+    @apply no-underline flex items-center gap-2 text-[var(--fct-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none transition-none hover:bg-[var(--fct-customer-dashboard-nav-active-bg-color)] hover:text-[var(--fct-customer-dashboard-nav-active-text-color)];
+    .fct-customer-nav-link-icon {
+      @apply flex-shrink-0 max-h-5 max-w-5;
+    }
+  }
+
+  .fct-customer-nav-tooltip {
+    @apply absolute left-full z-[3] top-1/2 bg-white py-1 px-2.5 text-sm font-normal transition-all duration-200 leading-[20px] inline-block text-[var(--fct-customer-dashboard-nav-text-color)] border border-solid border-gray-outline rounded whitespace-nowrap opacity-0 invisible transition-all duration-200 ease-in-out hidden;
+    box-shadow: 0 12px 24px 0 rgba(14, 18, 27, 0.06), 0 1px 2px 0 rgba(14, 18, 27, 0.03);
+    transform: translateY(-50%);
+    &::before {
+      @apply absolute left-[-4px] top-1/2 w-1.5 h-1.5 bg-white border border-solid border-gray-outline border-t-0 border-r-0;
+      transform: translateY(-50%) rotate(45deg);
+      content: "";
+    }
+  }
+
+  .fct-customer-nav-item {
+    @apply mb-1 relative;
+    &:last-child {
+      @apply mb-0;
+    }
+    &:before {
+      content: '';
+      transform: translateY(-50%);
+      @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fct-customer-dashboard-nav-active-bar-color)] rounded-tr-xs rounded-br-xs;
+    }
+    &.active_customer_menu {
+      &:before {
+        @apply w-1;
+      }
+      .fct-customer-nav-link {
+        @apply bg-[var(--fct-customer-dashboard-nav-active-bg-color)] text-[var(--fct-customer-dashboard-nav-active-text-color)];
+      }
     }
 
-    #menu-container {
-      @apply px-5 pb-5;
-      height: calc(100% - 64px);
+    &:hover {
+      .fct-customer-nav-tooltip {
+        @apply opacity-100 visible ml-1.5;
+      }
     }
-    .fct-customer-navs {
-        @apply flex-col gap-0 items-start p-0 m-0;
-        .fct-customer-nav-item {
-            @apply mb-1 relative;
-            &:last-child {
-                @apply mb-0;
-            }
-            &:before {
-                content: '';
-                transform: translateY(-50%);
-                @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fct-customer-dashboard-nav-active-bar-color)] rounded-tr-xs rounded-br-xs;
-            }
-            .fct-customer-nav-link {
-                @apply no-underline block text-[var(--fct-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none transition-none !important;
-            }
-            &.active_customer_menu {
-                &:before {
-                    @apply w-1;
-                }
-                .fct-customer-nav-link {
-                    @apply bg-[var(--fct-customer-dashboard-nav-active-bg-color)] text-[var(--fct-customer-dashboard-nav-active-text-color)] !important;
-                }
-            }
-        }
-    }
+  }
 }
 
 #fct-customer-menu-holder{
@@ -52,31 +120,8 @@
     }
 }
 
-/*=== tab content =====*/
-.fct-customer-dashboard-tabs {
-    .el-tabs__header{
-        @apply mb-6;
-    }
-    .el-tabs__active-bar{
-        @apply bg-primary-500;
-    }
-    .el-tabs__item{
-        @apply h-auto pb-2.5 px-3 text-system-mid font-semibold hover:text-primary-500;
-        &.is-active{
-            @apply text-primary-500;
-        }
-    }
-    .el-tabs__nav-wrap:after{
-        @apply h-[1px] bg-gray-100;
-    }
-}
-
-.fct-customer-navs-wrap{
-    @apply pt-3;
-}
-
 // customer menu toggle
-#menu-container {
+#fct-customer-menu-container {
   #fct-customer-menu-toggle {
     @apply bg-gray-50 focus:bg-gray-50;
   }
@@ -88,7 +133,6 @@
         @apply w-5 h-5 text-system-dark;
     }
 }
-
 
 @media (max-width: 806px) {
     #fct-customer-menu-holder{
@@ -115,11 +159,12 @@
     }
 
     .fct-customer-dashboard-navs-wrap {
-        #menu-container {
+        #fct-customer-menu-container {
             @apply p-0 relative;
         }
     }
-    .fct-customer-dashboard-navs-wrap .fct-customer-navs .fct-customer-nav-item:before{
+    .fct-customer-dashboard-navs-wrap .fct-customer-navs .fct-customer-nav-item:before,
+    .fct-nav-compact-toggle-wrap {
         @apply hidden;
     }
 }

@@ -111,3 +111,21 @@
     grid-template-areas:  'head  body' 'head footer';
   }
 }
+
+@media (max-width: 990px) {
+  .fct-product-list {
+    @apply grid-cols-3;
+  }
+}
+
+@media (max-width: 768px) {
+  .fct-product-list {
+    @apply grid-cols-2;
+  }
+}
+
+@media (max-width: 575px) {
+  .fct-product-list {
+    @apply grid-cols-1;
+  }
+}

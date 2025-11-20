@@ -49,6 +49,18 @@ npm i
 npm run build
 ```
 
+#### Production Build with zip
+
+```bash
+npm i
+npm run build:zip
+```
+
+#### To list transaltion strings for frontend use
+```bash
+npm run translate:all
+```
+
 ### 🤝 Contributing
 
 FluentCart is now **100% community-driven**! We welcome contributions of all sizes – from typo fixes to entire new payment gateways.
