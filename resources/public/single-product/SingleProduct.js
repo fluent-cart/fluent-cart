@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
         #subscriptionInfo;
         #productId;
         #pricingSection;
+        #productThumbnail;
+        #videoContainer;
 
         toTitleCase(str) {
             return str.replace(
@@ -64,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.#itemPrice = this.findOneInContainer('[data-fluent-cart-product-item-price]');
             this.#subscriptionInfo = this.findOneInContainer('[data-fluent-cart-product-payment-type]');
             this.#pricingSection = this.findOneInContainer('[data-fluent-cart-product-pricing-section]');
+            this.#productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
+            this.#videoContainer = this.findOneInContainer('[data-fluent-cart-product-video]');
 
             this.#setupIncreaseButton();
             this.#setupDecreaseButton();
@@ -72,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.#setupVariationButtons();
 
             this.#setup();
+            this.#initVideoLazyLoader();
 
             this.#initTabOnDemand();
             this.#setMobileViewClass();
@@ -564,38 +569,101 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         #setThumbImage(control) {
-            const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
-            const videoContainer = this.findOneInContainer('[data-fluent-cart-product-video]');
-
             if (control.dataset.mediaType === 'video') {
-                if (productThumbnail) {
-                    productThumbnail.classList.add('is-hidden');
-                }
-
-                if (videoContainer) {
-                    videoContainer.classList.remove('is-hidden');
-                    const inlineVideo = videoContainer.querySelector('video');
-                    if (inlineVideo) {
-                        inlineVideo.currentTime = 0;
-                    }
-                }
-
+                this.#showVideo(document.readyState === 'complete');
                 return;
             }
 
-            if (!productThumbnail) return;
+            if (!this.#productThumbnail) return;
 
-            if (videoContainer) {
-                videoContainer.classList.add('is-hidden');
-            }
+            this.#hideVideoContainer();
 
             let thumbnailUrl = control.dataset.url;
             if (thumbnailUrl === undefined) {
-                thumbnailUrl = productThumbnail.dataset.defaultImageUrl;
+                thumbnailUrl = this.#productThumbnail.dataset.defaultImageUrl;
             }
 
-            productThumbnail.classList.remove('is-hidden');
-            productThumbnail.setAttribute('src', thumbnailUrl);
+            this.#productThumbnail.classList.remove('is-hidden');
+            this.#productThumbnail.setAttribute('src', thumbnailUrl);
+        }
+
+        #initVideoLazyLoader() {
+            if (!this.#videoContainer) {
+                return;
+            }
+
+            this.#showVideoContainerOnly();
+
+            const loadVideo = () => {
+                this.#loadFeaturedVideo(true);
+                this.#resetInlineVideoTime();
+            };
+
+            if (document.readyState === 'complete') {
+                loadVideo();
+            } else {
+                window.addEventListener('load', loadVideo, {once: true});
+            }
+        }
+
+        #showVideo(showWithContent = false) {
+            if (!this.#videoContainer) {
+                return;
+            }
+
+            this.#showVideoContainerOnly();
+            this.#loadFeaturedVideo(showWithContent);
+            this.#resetInlineVideoTime();
+        }
+
+        #showVideoContainerOnly() {
+            if (this.#productThumbnail) {
+                this.#productThumbnail.classList.add('is-hidden');
+            }
+
+            if (this.#videoContainer) {
+                this.#videoContainer.classList.remove('is-hidden');
+            }
+        }
+
+        #hideVideoContainer() {
+            if (this.#videoContainer) {
+                this.#videoContainer.classList.add('is-hidden');
+            }
+        }
+
+        #resetInlineVideoTime() {
+            const inlineVideo = this.#videoContainer?.querySelector('video');
+            if (inlineVideo && this.#videoContainer?.dataset.videoLoaded === 'yes') {
+                inlineVideo.currentTime = 0;
+            }
+        }
+
+        #loadFeaturedVideo(force = false) {
+            if (!this.#videoContainer) {
+                return;
+            }
+
+            if (!force && document.readyState !== 'complete') {
+                return;
+            }
+
+            if (this.#videoContainer.dataset.videoLoaded === 'yes') {
+                return;
+            }
+
+            const embedData = this.#videoContainer.dataset.videoEmbed || '';
+            if (!embedData) {
+                return;
+            }
+
+            try {
+                const videoHtml = atob(embedData);
+                this.#videoContainer.innerHTML = videoHtml;
+                this.#videoContainer.dataset.videoLoaded = 'yes';
+            } catch (error) {
+                console.error('Failed to decode product video', error);
+            }
         }
     }
 

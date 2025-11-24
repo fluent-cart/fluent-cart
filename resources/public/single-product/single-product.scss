@@ -136,6 +136,23 @@
   img {
     @apply rounded-[7px] object-cover w-full h-full;
   }
+
+  img.is-hidden {
+    @apply hidden;
+  }
+
+  .fct-product-featured-video {
+    @apply w-full h-full rounded-[7px] overflow-hidden flex items-center justify-center bg-[var(--fct-single-product-qty-bg)];
+
+    iframe,
+    video {
+      @apply w-full h-full;
+    }
+
+    &.is-hidden {
+      @apply hidden;
+    }
+  }
 }
 
 .fct-gallery-thumb-controls {
