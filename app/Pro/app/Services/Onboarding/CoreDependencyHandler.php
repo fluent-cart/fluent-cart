@@ -64,7 +64,7 @@ class CoreDependencyHandler
         wp_send_json_success(
             [
                 'message'  => 'Successfully installed ',
-                'redirect_url' => self_admin_url('admin.php?page=fluent-cart')
+                'redirect_url' => self_admin_url('admin.php?page=webmakerr')
             ],
             200
         );
@@ -136,7 +136,7 @@ class CoreDependencyHandler
 
         $UrlMaps = [
             'fluent-cart' => [
-                'admin_url' => admin_url('admin.php?page=fluent-cart'),
+                'admin_url' => admin_url('admin.php?page=webmakerr'),
                 'title'     => __('Go to FluentCart Dashboard', 'fluent-cart-pro'),
             ],
         ];

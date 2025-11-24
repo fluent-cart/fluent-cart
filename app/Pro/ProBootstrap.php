@@ -32,7 +32,7 @@ class ProBootstrap
             'basename'     => plugin_basename(FLUENTCART_PRO_PLUGIN_FILE_PATH),
             'version'      => FLUENTCART_PRO_PLUGIN_VERSION,
             'api_url'      => 'https://fluentcart.com/',
-            'activate_url' => admin_url('admin.php?page=fluent-cart#/settings/licensing'),
+            'activate_url' => admin_url('admin.php?page=webmakerr#/settings/licensing'),
             'plugin_title' => 'FluentCart Pro',
         ]);
 

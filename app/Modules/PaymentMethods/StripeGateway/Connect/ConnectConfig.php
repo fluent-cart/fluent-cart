@@ -35,14 +35,14 @@ class ConnectConfig
         $mode = Arr::get($data, 'mode', '') === 'test' ? 'test' : 'live';
 
         if (!$intent) {
-            wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/stripe'));
+            wp_redirect(admin_url('admin.php?page=webmakerr#/settings/payments/stripe'));
             exit;
         }
 
         if ($intent == 'connect') {
             if ($stripeSettings->getApiKey($mode)) {
                 // already connected
-                wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/stripe'));
+                wp_redirect(admin_url('admin.php?page=webmakerr#/settings/payments/stripe'));
                 exit;
             }
 
@@ -98,7 +98,7 @@ class ConnectConfig
             }
         }
 
-        wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/stripe'));
+        wp_redirect(admin_url('admin.php?page=webmakerr#/settings/payments/stripe'));
     }
 
     public static function getConnectConfig(): array

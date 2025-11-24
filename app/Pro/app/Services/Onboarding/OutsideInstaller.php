@@ -34,7 +34,7 @@ class OutsideInstaller
                             __('Successfully enabled', 'fluent-cart-pro'),
                             $title
                         ),
-                        'redirect_url' => self_admin_url('admin.php?page=fluent-cart#/beta')
+                        'redirect_url' => self_admin_url('admin.php?page=webmakerr#/beta')
                     ],
                     200
                 );
@@ -135,7 +135,7 @@ class OutsideInstaller
                 wp_send_json_success(
                     [
                         'message'  => 'Successfully installed ' . $title,
-                        'redirect_url' => self_admin_url('admin.php?page=fluent-cart#/beta')
+                        'redirect_url' => self_admin_url('admin.php?page=webmakerr#/beta')
                     ],
                     200
                 );

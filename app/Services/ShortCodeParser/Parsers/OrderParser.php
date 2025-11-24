@@ -288,7 +288,7 @@ class OrderParser extends BaseParser
         if (empty($this->order)) {
             return $code;
         }
-        return admin_url('admin.php?page=fluent-cart#/orders/' . Arr::get($this->order, 'id') . '/view');
+        return admin_url('admin.php?page=webmakerr#/orders/' . Arr::get($this->order, 'id') . '/view');
     }
 
     public function getAdminOrderAnchorLink($accessor, $code = null, $conditions = [])
@@ -298,7 +298,7 @@ class OrderParser extends BaseParser
             return $code;
         }
 
-        $url = admin_url('admin.php?page=fluent-cart#/orders/' . Arr::get($this->order, 'id') . '/view');
+        $url = admin_url('admin.php?page=webmakerr#/orders/' . Arr::get($this->order, 'id') . '/view');
 
         if (!empty($defaultValue)) {
             return "<a style='color: #017EF3; text-decoration: none;' href='" . $url . "'>" . $defaultValue . "</a>";

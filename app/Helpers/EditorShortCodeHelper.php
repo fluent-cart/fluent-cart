@@ -271,7 +271,7 @@ class EditorShortCodeHelper
     {
         $url = esc_url(site_url());
         return [
-            'View Order' => '<a href="' . $url . '/wp-admin/admin.php?page=fluent-cart#/orders/{{order.id}}/view" style="background-color: green; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a>'
+            'View Order' => '<a href="' . $url . '/wp-admin/admin.php?page=webmakerr#/orders/{{order.id}}/view" style="background-color: green; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a>'
         ];
     }
 }

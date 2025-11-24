@@ -99,7 +99,7 @@ class GlobalPaymentHandler
                 ConnectConfig::verifyAuthorizeSuccess($data);
             }
 
-            wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/stripe'));
+            wp_redirect(admin_url('admin.php?page=webmakerr#/settings/payments/stripe'));
         }
     }
 
