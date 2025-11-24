@@ -1,18 +1,17 @@
 export default class CheckoutHelper {
-
     static quantity = null;
 
     static handleFragments(fragments) {
         let fargmentsReplaced = false;
-        
+
         fragments.forEach((fragment) => {
             const element = document.querySelector(fragment.selector);
             if (!element) return;
-            
+
             if (fragment.selector && fragment.type === 'replace') {
                 fargmentsReplaced = true;
             }
-            
+
             if (fragment.type === 'replace') {
                 element.innerHTML = fragment.content;
             } else {
@@ -58,7 +57,7 @@ export default class CheckoutHelper {
         .catch(error => {
             console.error('Error rendering checkout summary:', error);
         });
-        
+
     }
 
 

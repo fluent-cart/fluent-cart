@@ -106,11 +106,7 @@ export default class PaymentLoader {
 
         const checkedInput = this.#form.querySelector('input[name="_fct_pay_method"]:checked');
         if (checkedInput) {
-            this.#form.querySelectorAll('input[name="_fct_pay_method"]').forEach(el => {
-                el.parentNode.classList.remove('active');
-            });
-
-            checkedInput.parentNode.classList.add('active');
+            this.#setPaymentMethodUIState(checkedInput, this.#form.querySelectorAll('input[name="_fct_pay_method"]'));
 
             const wrapper = checkedInput.parentNode;
             const embed = wrapper.querySelector('.fluent-cart-checkout_embed_payment_container');
@@ -127,9 +123,9 @@ export default class PaymentLoader {
                 if (instructions) {
                     instructions.style.display = 'block';
                 }
-
-                this.load(this.payMethod);
             }
+
+            this.load(this.payMethod);
         }
 
         // Update button state
@@ -148,8 +144,7 @@ export default class PaymentLoader {
             input.addEventListener('change', () => {
                 this.payMethod = this.#form.querySelector('input[name="_fct_pay_method"]:checked')?.value;
 
-                paymentMethodInputs.forEach(el => el.parentNode.classList.remove('active'));
-                input.parentNode.classList.add('active');
+                this.#setPaymentMethodUIState(input, paymentMethodInputs);
 
                 if (this.paymenMethodsWithCustomCheckoutButtons.includes(this.payMethod)) {
                     this.#checkoutUiService.hideCheckoutButton();
@@ -175,10 +170,24 @@ export default class PaymentLoader {
                     if (instructions) {
                         instructions.style.display = 'block';
                     }
-                    this.load(this.payMethod);
                 }
+
+                this.load(this.payMethod);
             });
         });
+    }
+
+    #setPaymentMethodUIState(selectedInput, paymentMethodInputs) {
+        paymentMethodInputs.forEach(el => {
+            const isSelected = el === selectedInput;
+            el.parentNode.classList.toggle('active', isSelected);
+            el.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            if (!isSelected) {
+                el.checked = false;
+            }
+        });
+
+        selectedInput.checked = true;
     }
 
     checkTotal(checkoutSummary) {
@@ -242,6 +251,8 @@ export default class PaymentLoader {
                 if (firstPaymentMethod) {
                     firstPaymentMethod.checked = true;
                     this.payMethod = firstPaymentMethod.value;
+                    firstPaymentMethod.setAttribute('aria-checked', 'true');
+                    firstPaymentMethod.dispatchEvent(new Event('change', {bubbles: true}));
                     this.load();
                 }
             } else {
@@ -307,6 +318,8 @@ export default class PaymentLoader {
                 });
 
                 firstPaymentMethodInput.parentNode.classList.add('active');
+
+                firstPaymentMethodInput.setAttribute('aria-checked', 'true');
 
 
                 const initialWrapper = firstPaymentMethodInput.parentNode;
