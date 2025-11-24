@@ -1,6 +1,5 @@
 import CheckoutHelper from "./CheckoutHelper";
 import Url from "@/utils/support/Url";
-import CartCheckoutHelper from "./CheckoutHelper";
 
 export default class DataWatcher {
 
