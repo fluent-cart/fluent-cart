@@ -28,6 +28,9 @@ const props = defineProps({
   },
   icon: {
     default: 'GalleryAdd'
+  },
+  libraryType: {
+    default: 'image'
   }
 })
 
@@ -66,7 +69,7 @@ onMounted(() => {
       text: props.action_title
     },
     library: {
-      type: 'image'
+      type: props.libraryType
     },
     multiple: props.multiple ? 'add' : false,  // Set to true to allow multiple files to be selected
     is_button: props.is_button,

@@ -47,6 +47,7 @@ const setupProduct = (product) => {
   productDownloadableModel.setDownloadableFiles(product.downloadable_files);
 
   editableProduct.gallery = editableProduct?.detail?.gallery_image?.meta_value ?? [];
+  editableProduct.featured_video = editableProduct?.featured_video ?? null;
 
   editableProduct.taxonomies = props.taxonomies;
   editableProduct.product_terms = {};

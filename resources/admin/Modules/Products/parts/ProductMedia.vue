@@ -1,11 +1,90 @@
 <script setup>
 import * as Card from '@/Bits/Components/Card/Card.js';
 import Gallery from '@/Bits/Components/Attachment/Gallery.vue';
+import MediaButton from '@/Bits/Components/Buttons/MediaButton.vue';
+import {computed} from 'vue';
 
 const props = defineProps({
   product: Object,
   productEditModel: Object,
 })
+
+const updateFeaturedVideo = (video) => {
+  props.product.featured_video = video;
+  props.productEditModel.updateMedia('featured_video', video);
+}
+
+const onVideoSelected = (selected) => {
+  if (!Array.isArray(selected) || !selected.length) {
+    updateFeaturedVideo(null);
+    return;
+  }
+
+  const file = selected[0];
+  updateFeaturedVideo({
+    id: file.id ?? '',
+    title: file.title ?? '',
+    url: file.url ?? '',
+    type: 'file'
+  });
+}
+
+const detectVideoType = (url) => {
+  if (!url) {
+    return 'url';
+  }
+
+  return /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(url) ? 'file' : 'url';
+}
+
+const updateVideoUrl = (value) => {
+  const url = value ? value.trim() : '';
+
+  if (!url) {
+    updateFeaturedVideo(null);
+    return;
+  }
+
+  const currentVideo = props.product.featured_video || {};
+
+  updateFeaturedVideo({
+    ...currentVideo,
+    url,
+    type: detectVideoType(url),
+    title: currentVideo?.title ?? ''
+  });
+}
+
+const clearVideo = () => {
+  updateFeaturedVideo(null);
+}
+
+const videoUrl = computed(() => props.product?.featured_video?.url ?? '');
+const isFileSource = computed(() => {
+  if (!videoUrl.value) {
+    return false;
+  }
+
+  const type = props.product?.featured_video?.type;
+  if (type === 'file') {
+    return true;
+  }
+
+  return /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(videoUrl.value);
+});
+
+const videoAttachments = computed(() => {
+  const video = props.product?.featured_video;
+  if (video?.id && video.url) {
+    return [{
+      id: video.id,
+      title: video.title ?? '',
+      url: video.url
+    }];
+  }
+
+  return [];
+});
 </script>
 
 <template>
@@ -34,6 +113,57 @@ const props = defineProps({
               productEditModel.updateMedia('gallery',value);
             }"
           />
+        </div>
+
+        <div class="fct-admin-summary-item mt-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="fct-admin-summary-item-title">{{ $t('Featured Video') }}</p>
+              <p class="fct-admin-summary-item-desc">{{ $t('Use a product video as the featured media on the product page.') }}</p>
+            </div>
+
+            <el-button v-if="product.featured_video" type="danger" text @click="clearVideo">
+              {{ $t('Remove') }}
+            </el-button>
+          </div>
+
+          <div class="fct-admin-input-wrapper mt-3">
+            <el-form label-position="top">
+              <el-form-item :label="$t('Video URL')">
+                <el-input
+                    :model-value="videoUrl"
+                    :placeholder="$t('YouTube, Vimeo or direct MP4 URL')"
+                    @input="updateVideoUrl"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <div class="flex items-center gap-3 mt-2">
+            <MediaButton
+                icon="Video"
+                :title="$t('Upload Video')"
+                :attachments="videoAttachments"
+                :library-type="'video'"
+                @onMediaSelected="onVideoSelected"
+            />
+            <p class="text-xs text-gray-500">{{ $t('Upload a video file or paste a public video link.') }}</p>
+          </div>
+
+          <div class="mt-3" v-if="videoUrl">
+            <video
+                v-if="isFileSource"
+                :src="videoUrl"
+                controls
+                style="width: 100%; border-radius: 8px; max-height: 340px;"
+            ></video>
+            <iframe
+                v-else
+                :src="videoUrl"
+                allowfullscreen
+                style="width: 100%; min-height: 260px; border: 0; border-radius: 8px;"
+            ></iframe>
+          </div>
         </div>
       </Card.Body>
     </Card.Container>

@@ -19,6 +19,7 @@ window.addEventListener('fluentCartSingleProductModalOpened' , function (event) 
 
 export default class ImageGallery {
     #imgContainer;
+    #videoContainer;
     #lightBox;
     #zoomer;
     #lightBoxImages;
@@ -40,6 +41,7 @@ export default class ImageGallery {
         this.#thumbnailControls = this.findInContainer('[data-fluent-cart-thumb-control-button]');
         this.#thumbnailControlsWrapper = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail-controls]');
         this.#imgContainer = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
+        this.#videoContainer = this.findOneInContainer('[data-fluent-cart-product-video]');
 
         this.#listenForVariationChange();
 
@@ -65,6 +67,10 @@ export default class ImageGallery {
         });
     }
 
+    #hasActiveVideo() {
+        return this.#videoContainer && !this.#videoContainer.classList.contains('is-hidden');
+    }
+
     #setup() {
         const controlButtons = this.#thumbnailControlsWrapper?.querySelectorAll('[data-fluent-cart-thumb-control-button]:not(.is-hidden)');
         const activeControl = this.#thumbnailControlsWrapper?.querySelector('.active[data-fluent-cart-thumb-control-button]:not(.is-hidden)');
@@ -79,6 +85,9 @@ export default class ImageGallery {
 
 
     #initImageGallery() {
+        if (!this.#imgContainer) {
+            return;
+        }
         this.#imgContainer.removeEventListener('click', this.#openLightBox.bind(this));
         this.#lightBox = new Lightbox({}, []);
         this.#imgContainer.addEventListener('click', this.#openLightBox.bind(this));
@@ -86,6 +95,9 @@ export default class ImageGallery {
 
 
     #openLightBox(event) {
+        if (this.#hasActiveVideo()) {
+            return;
+        }
         const imageParentContainer = this.#imgContainer.parentElement;
 
         // Check if position is already relative
@@ -217,7 +229,7 @@ export default class ImageGallery {
     #initImageZoom() {
         const zoomEnabledOnPage = window.fluentcart_single_product_vars.enable_image_zoom === 'yes';
 
-        if (zoomEnabledOnPage && this.#enableZoom) {
+        if (zoomEnabledOnPage && this.#enableZoom && !this.#hasActiveVideo()) {
             if (this.#zoomer == null && this.#imgContainer) {
                 window.onload = function () {
                     // Select your main image and any gallery thumbnails
@@ -260,6 +272,9 @@ export default class ImageGallery {
 
         if (this.#thumbnailControls.length > 0) {
             this.#thumbnailControls.forEach((control, index) => {
+                if (control.dataset.mediaType === 'video') {
+                    return;
+                }
                 const variationId = control.dataset.variationId.toString();
                 const image = control.querySelector('[data-fluent-cart-single-product-page-product-thumbnail-controls-thumb]');
 
@@ -318,13 +333,37 @@ export default class ImageGallery {
 
     #setThumbImage(control) {
         const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
+        if (control.dataset.mediaType === 'video') {
+            if (productThumbnail) {
+                productThumbnail.classList.add('is-hidden');
+            }
+
+            if (this.#videoContainer) {
+                this.#videoContainer.classList.remove('is-hidden');
+                const inlineVideo = this.#videoContainer.querySelector('video');
+                if (inlineVideo) {
+                    inlineVideo.currentTime = 0;
+                }
+            }
+
+            return;
+        }
+
         if (!productThumbnail) return;
+
+        if (this.#videoContainer) {
+            this.#videoContainer.classList.add('is-hidden');
+        }
 
         let thumbnailUrl = control.dataset.url;
         if (thumbnailUrl === undefined) {
             thumbnailUrl = productThumbnail.dataset.defaultImageUrl;
         }
 
+        productThumbnail.classList.remove('is-hidden');
+        if (!this.#zoomer) {
+            this.#initImageZoom();
+        }
         productThumbnail.setAttribute('src', thumbnailUrl);
     }
 

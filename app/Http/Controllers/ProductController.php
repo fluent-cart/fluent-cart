@@ -335,6 +335,9 @@ class ProductController extends Controller
             $featuredImageId = get_post_thumbnail_id($product->ID);
             $productData = $product->toArray();
             $productData['featured_image_id'] = $featuredImageId;
+            $productData['featured_video'] = ProductResource::formatFeaturedVideo(
+                get_post_meta($product->ID, '_fct_featured_video', true)
+            );
             //get featured image id
             return $this->sendSuccess([
                 'product'      => $productData,

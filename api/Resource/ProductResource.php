@@ -269,6 +269,16 @@ class ProductResource extends BaseResourceApi
             update_post_meta($postId, FluentProducts::CPT_NAME . '-gallery-image', $gallery);
         }
 
+        if (Arr::has($product, 'featured_video')) {
+            $featuredVideo = static::formatFeaturedVideo(Arr::get($product, 'featured_video'));
+
+            if (empty($featuredVideo)) {
+                delete_post_meta($postId, '_fct_featured_video');
+            } else {
+                update_post_meta($postId, '_fct_featured_video', $featuredVideo);
+            }
+        }
+
 
         if (isset($gallery[0])) {
             set_post_thumbnail($postId, Arr::get($gallery, '0.id'));
@@ -285,6 +295,12 @@ class ProductResource extends BaseResourceApi
         $product = static::getQuery()->with('variants')->addAppends([
             'viewUrl'
         ])->find($postId);
+
+        if ($product) {
+            $product->featured_video = static::formatFeaturedVideo(
+                get_post_meta($postId, '_fct_featured_video', true)
+            );
+        }
 
 
         return static::makeSuccessResponse(
@@ -428,6 +444,38 @@ class ProductResource extends BaseResourceApi
             ['code' => 404, 'message' => __('Product not found in database.', 'fluent-cart')]
         ]);
 
+    }
+
+    public static function formatFeaturedVideo($videoMeta)
+    {
+        if (empty($videoMeta)) {
+            return [];
+        }
+
+        if (is_string($videoMeta)) {
+            $videoMeta = [
+                'url'  => $videoMeta,
+                'type' => 'url'
+            ];
+        }
+
+        $url = esc_url_raw(Arr::get($videoMeta, 'url'));
+        $id = absint(Arr::get($videoMeta, 'id', 0));
+        $type = sanitize_text_field(Arr::get($videoMeta, 'type', $id ? 'file' : 'url'));
+        $title = sanitize_text_field(Arr::get($videoMeta, 'title', ''));
+
+        if (empty($url)) {
+            return [];
+        }
+
+        return array_filter([
+            'id'    => $id ?: null,
+            'url'   => $url,
+            'type'  => $type,
+            'title' => $title
+        ], static function ($value) {
+            return $value !== null && $value !== '';
+        });
     }
 
     public static function setThumbnail($productId, $data = [])

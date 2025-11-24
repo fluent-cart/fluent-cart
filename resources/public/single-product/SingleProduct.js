@@ -565,13 +565,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         #setThumbImage(control) {
             const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
+            const videoContainer = this.findOneInContainer('[data-fluent-cart-product-video]');
+
+            if (control.dataset.mediaType === 'video') {
+                if (productThumbnail) {
+                    productThumbnail.classList.add('is-hidden');
+                }
+
+                if (videoContainer) {
+                    videoContainer.classList.remove('is-hidden');
+                    const inlineVideo = videoContainer.querySelector('video');
+                    if (inlineVideo) {
+                        inlineVideo.currentTime = 0;
+                    }
+                }
+
+                return;
+            }
+
             if (!productThumbnail) return;
+
+            if (videoContainer) {
+                videoContainer.classList.add('is-hidden');
+            }
 
             let thumbnailUrl = control.dataset.url;
             if (thumbnailUrl === undefined) {
                 thumbnailUrl = productThumbnail.dataset.defaultImageUrl;
             }
 
+            productThumbnail.classList.remove('is-hidden');
             productThumbnail.setAttribute('src', thumbnailUrl);
         }
     }

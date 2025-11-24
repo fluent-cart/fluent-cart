@@ -241,6 +241,9 @@ class ShopResource extends BaseResourceApi
         $product->view_url = $product->view_url;
         $product->edit_url = $product->edit_url;
         $product->featured_media = $product->featured_media;
+        $product->featured_video = ProductResource::formatFeaturedVideo(
+            get_post_meta($product->ID, '_fct_featured_video', true)
+        );
 
         return $product->toArray();
     }
