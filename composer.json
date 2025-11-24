@@ -31,12 +31,13 @@
     "woocommerce/action-scheduler": "^3.9",
     "wpfluent/framework": "^2.11.4"
   },
-  "autoload": {
-    "psr-4": {
-      "FluentCart\\App\\": "app/",
-      "FluentCart\\Dev\\": "dev/",
-      "FluentCart\\Api\\": "api/"
-    },
+    "autoload": {
+        "psr-4": {
+            "FluentCart\\App\\": "app/",
+            "FluentCartPro\\App\\": "app/Pro/app/",
+            "FluentCart\\Dev\\": "dev/",
+            "FluentCart\\Api\\": "api/"
+        },
     "classmap": [
       "database/"
     ],

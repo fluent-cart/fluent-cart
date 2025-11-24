@@ -4,6 +4,7 @@
 use FluentCart\Framework\Foundation\Application;
 use FluentCart\App\Hooks\Handlers\ActivationHandler;
 use FluentCart\App\Hooks\Handlers\DeactivationHandler;
+use FluentCart\App\Pro\ProBootstrap;
 use FluentCart\App\Services\Permission\PermissionManager;
 
 return function ($file) {
@@ -28,6 +29,8 @@ return function ($file) {
 
     add_action('plugins_loaded', function () use ($app) {
         do_action('fluentcart_loaded', $app);
+
+        ProBootstrap::register($app);
 
         (new FluentCart\App\Modules\Data\ProductDataSetup())->boot();
 
