@@ -200,6 +200,11 @@ class ProductUpdateRequest extends RequestGuard
             'product_terms'                       => 'nullable|array',
             'product_terms.*'                     => 'nullable|array',
             'product_terms.*.*'                   => 'nullable|numeric',
+            'featured_video'                      => 'nullable|array',
+            'featured_video.type'                 => 'nullable|sanitizeText',
+            'featured_video.url'                  => 'nullable|sanitizeText',
+            'featured_video.title'                => 'nullable|sanitizeText',
+            'featured_video.id'                   => 'nullable|numeric',
 
             // 'variants' => 'required_if:post_status,publish,future',
             'variants.*.variation_title'          => 'required|sanitizeText|maxLength:200',
@@ -390,6 +395,15 @@ class ProductUpdateRequest extends RequestGuard
                 return empty($value) ? '' : sanitize_url($value);
             };
             $sanitizers['gallery.*.title'] = 'sanitize_text_field';
+        }
+
+        if (isset($data['featured_video'])) {
+            $sanitizers['featured_video.type'] = 'sanitize_text_field';
+            $sanitizers['featured_video.id'] = 'intval';
+            $sanitizers['featured_video.title'] = 'sanitize_text_field';
+            $sanitizers['featured_video.url'] = function ($value) {
+                return empty($value) ? '' : sanitize_url($value);
+            };
         }
 
         // Variants

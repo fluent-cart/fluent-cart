@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\Renderer;
 
 use FluentCart\Api\ModuleSettings;
+use FluentCart\Api\Resource\ProductResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
@@ -42,6 +43,8 @@ class ProductRenderer
 
     protected $defaultImageAlt = null;
 
+    protected $featuredVideo = [];
+
     public function __construct(Product $product, $config = [])
     {
         $this->product = $product;
@@ -49,6 +52,9 @@ class ProductRenderer
         $this->viewType = $config['view_type'] ?? 'both';
         $this->columnType = $config['column_type'] ?? 'masonry';
         $defaultVariationId = $config['default_variation_id'] ?? '';
+        $this->featuredVideo = ProductResource::formatFeaturedVideo(
+            get_post_meta($product->ID, '_fct_featured_video', true)
+        );
 
         if (!$defaultVariationId) {
             $variationIds = $product->variants->pluck('id')->toArray();
@@ -254,11 +260,17 @@ class ProductRenderer
         ?>
         <div class="fct-product-gallery-thumb" role="region"
              aria-label="<?php echo esc_attr($this->product->post_title . ' gallery'); ?>">
+            <?php if ($this->hasFeaturedVideo()) { ?>
+                <div class="fct-product-featured-video" data-fluent-cart-product-video>
+                    <?php echo wp_kses_post($this->getVideoPlayerHtml()); ?>
+                </div>
+            <?php } ?>
             <img
                     src="<?php echo esc_url($this->defaultImageUrl ?? '') ?>"
                     alt="<?php echo esc_attr($this->defaultImageAlt) ?>"
                     data-fluent-cart-single-product-page-product-thumbnail
                     data-default-image-url="<?php echo esc_url($featuredMedia) ?>"
+                    class="<?php echo $this->hasFeaturedVideo() ? 'is-hidden' : ''; ?>"
             />
         </div>
         <?php
@@ -270,12 +282,43 @@ class ProductRenderer
 
         <div class="fct-gallery-thumb-controls" data-fluent-cart-single-product-page-product-thumbnail-controls>
 
+            <?php if ($this->hasFeaturedVideo()) {
+                $this->renderGalleryVideoControl();
+            } ?>
+
             <?php $this->renderGalleryThumbControl(); ?>
 
         </div>
 
         <?php
 
+    }
+
+    public function renderGalleryVideoControl()
+    {
+        $videoUrl = Arr::get($this->featuredVideo, 'url', '');
+        if (!$videoUrl) {
+            return;
+        }
+
+        ?>
+
+        <button
+                type="button"
+                class="fct-gallery-thumb-control-button active"
+                data-fluent-cart-thumb-control-button
+                data-media-type="video"
+                data-url="<?php echo esc_url($videoUrl); ?>"
+                data-variation-id="0"
+                aria-label="<?php echo esc_attr__('View product video', 'fluent-cart'); ?>"
+                aria-pressed="true"
+        >
+            <span class="fct-gallery-thumb-control-button__label">
+                <?php esc_html_e('Video', 'fluent-cart'); ?>
+            </span>
+        </button>
+
+        <?php
     }
 
     public function renderGalleryThumbControl()
@@ -330,6 +373,33 @@ class ProductRenderer
         <?php
 
 
+    }
+
+    protected function hasFeaturedVideo()
+    {
+        return !empty(Arr::get($this->featuredVideo, 'url'));
+    }
+
+    protected function getVideoPlayerHtml()
+    {
+        if (!$this->hasFeaturedVideo()) {
+            return '';
+        }
+
+        $videoUrl = Arr::get($this->featuredVideo, 'url', '');
+        $title = Arr::get($this->featuredVideo, 'title', $this->product->post_title);
+
+        $embedHtml = wp_oembed_get($videoUrl);
+
+        if ($embedHtml) {
+            return $embedHtml;
+        }
+
+        return sprintf(
+            '<video controls preload="metadata" src="%1$s" title="%2$s" style="width:100%%;max-height:520px;border-radius:8px;"></video>',
+            esc_url($videoUrl),
+            esc_attr($title)
+        );
     }
 
     public function renderGallery($args = [])
