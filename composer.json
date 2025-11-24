@@ -36,7 +36,9 @@
             "FluentCart\\App\\": "app/",
             "FluentCartPro\\App\\": "app/Pro/app/",
             "FluentCart\\Dev\\": "dev/",
-            "FluentCart\\Api\\": "api/"
+            "FluentCart\\Api\\": "api/",
+            "FluentCart\\Framework\\": "vendor/wpfluent/framework/src/WPFluent/",
+            "FluentCart\\OpenSpout\\": "vendor/openspout/openspout/src/"
         },
     "classmap": [
       "database/"
