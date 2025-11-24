@@ -24,7 +24,9 @@ export default class PaymentLoader {
         this.#isZeroPayment = window.fluentcart_checkout_info?.is_zero_payment === 'yes';
         this.#hasSubscriptions = window.fluentcart_checkout_info?.has_subscription === 'yes';
         this.buttons = this.#form.querySelector('[data-fluent-cart-checkout-page-checkout-button]');
-        this.paymenMethodsWithCustomCheckoutButtons = window.fluentcart_checkout_vars?.payment_methods_with_custom_checkout_buttons;
+        this.paymenMethodsWithCustomCheckoutButtons = Array.isArray(window.fluentcart_checkout_vars?.payment_methods_with_custom_checkout_buttons)
+            ? window.fluentcart_checkout_vars.payment_methods_with_custom_checkout_buttons
+            : [];
 
         this.#submitButton = window.fluentcart_checkout_vars?.submit_button;
 
