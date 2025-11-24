@@ -257,13 +257,21 @@ class ProductRenderer
             }
         }
 
+        $videoPlayerHtml = '';
+        if ($this->hasFeaturedVideo()) {
+            $videoPlayerHtml = base64_encode($this->getVideoPlayerHtml());
+        }
+
         ?>
         <div class="fct-product-gallery-thumb" role="region"
              aria-label="<?php echo esc_attr($this->product->post_title . ' gallery'); ?>">
             <?php if ($this->hasFeaturedVideo()) { ?>
-                <div class="fct-product-featured-video" data-fluent-cart-product-video>
-                    <?php echo wp_kses_post($this->getVideoPlayerHtml()); ?>
-                </div>
+                <div
+                        class="fct-product-featured-video"
+                        data-fluent-cart-product-video
+                        data-video-embed="<?php echo esc_attr($videoPlayerHtml); ?>"
+                        data-video-loaded="false"
+                ></div>
             <?php } ?>
             <img
                     src="<?php echo esc_url($this->defaultImageUrl ?? '') ?>"
