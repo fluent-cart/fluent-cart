@@ -411,6 +411,7 @@ class AssetLoader
                 'payments_trans'                               => TransStrings::paymentsString()
             ],
             'fluentcart_checkout_info' => [
+                'slug'                   => fluentCart()->config->get('app.slug'),
                 'baseUrl'                => site_url(),
                 'rest_url'               => Helper::getRestInfo()['url'],
                 'checkout_nonce'         => wp_create_nonce('fluentcart'),

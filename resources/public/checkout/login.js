@@ -1,3 +1,7 @@
+import { ensureCheckoutDataAttributeCompatibility } from "./slugCompat";
+
+ensureCheckoutDataAttributeCompatibility();
+
 document.addEventListener("DOMContentLoaded", function () {
     class Login {
         constructor() {
