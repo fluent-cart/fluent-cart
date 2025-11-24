@@ -30,4 +30,5 @@ return array(
     'FluentCart\\Dev\\' => array($baseDir . '/dev'),
     'FluentCart\\App\\' => array($baseDir . '/app'),
     'FluentCart\\Api\\' => array($baseDir . '/api'),
+    'FluentCartPro\\App\\' => array($baseDir . '/app/Pro/app'),
 );
