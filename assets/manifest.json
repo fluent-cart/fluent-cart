@@ -548,8 +548,8 @@
       "_NotFound-tC_jj0zn.js"
     ]
   },
-  "_dateShortCuts-BXDLx_t9.js": {
-    "file": "dateShortCuts-BXDLx_t9.js",
+  "_dateShortCuts-BTEsKMNI.js": {
+    "file": "dateShortCuts-BTEsKMNI.js",
     "name": "dateShortCuts",
     "imports": [
       "_vue.esm-bundler-DZdE0M9V.js",
@@ -619,8 +619,8 @@
       "_vue.esm-bundler-DZdE0M9V.js"
     ]
   },
-  "_payment-loader-rBHbdlEj.js": {
-    "file": "payment-loader-rBHbdlEj.js",
+  "_payment-loader-rBaVBa6w.js": {
+    "file": "payment-loader-rBaVBa6w.js",
     "name": "payment-loader"
   },
   "_productService-BVWCmR6j.js": {
@@ -631,6 +631,10 @@
       "_Arr-MwYQQ3qa.js",
       "_dayjs.min-2rai63wT.js"
     ]
+  },
+  "_slugCompat-iE-eJHRP.js": {
+    "file": "slugCompat-iE-eJHRP.js",
+    "name": "slugCompat"
   },
   "_timezone-C2U15obx.js": {
     "file": "timezone-C2U15obx.js",
@@ -796,7 +800,7 @@
     ]
   },
   "resources/admin/Bits/Components/Form/Components/StoreSettings/PageSelector.vue": {
-    "file": "PageSelector-hwvuMG6N.js",
+    "file": "PageSelector-CjxFE49u.js",
     "name": "PageSelector",
     "src": "resources/admin/Bits/Components/Form/Components/StoreSettings/PageSelector.vue",
     "isDynamicEntry": true,
@@ -3015,7 +3019,7 @@
     "isEntry": true
   },
   "resources/admin/bootstrap/app.js": {
-    "file": "app-S2UeDE_k.js",
+    "file": "app-jIjmomCF.js",
     "name": "app",
     "src": "resources/admin/bootstrap/app.js",
     "isEntry": true,
@@ -3037,7 +3041,7 @@
       "_Rest-DEQMhckH.js",
       "_dayjs.min-2rai63wT.js",
       "_index-DwF99AZu.js",
-      "_dateShortCuts-BXDLx_t9.js",
+      "_dateShortCuts-BTEsKMNI.js",
       "_Notify-CV-A2uNH.js",
       "_NotFound-tC_jj0zn.js",
       "_Asset-DDfERlE5.js",
@@ -3247,7 +3251,7 @@
     "isEntry": true
   },
   "resources/licensing/license.js": {
-    "file": "license-B4ENo0hO.js",
+    "file": "license-C6Gj_Boo.js",
     "name": "license",
     "src": "resources/licensing/license.js",
     "isEntry": true,
@@ -3255,7 +3259,7 @@
       "_vue.esm-bundler-DZdE0M9V.js",
       "_RouteCell-DrtjJJDU.js",
       "_NotFound-tC_jj0zn.js",
-      "_dateShortCuts-BXDLx_t9.js",
+      "_dateShortCuts-BTEsKMNI.js",
       "_Empty-aPQNCX5s.js",
       "_Translator-Bios5QX5.js",
       "_Arr-MwYQQ3qa.js",
@@ -3330,31 +3334,38 @@
     "isEntry": true
   },
   "resources/public/checkout/FluentCartCheckout.js": {
-    "file": "FluentCartCheckout-B97kmC0x.js",
+    "file": "FluentCartCheckout-DkMAvviJ.js",
     "name": "FluentCartCheckout",
     "src": "resources/public/checkout/FluentCartCheckout.js",
     "isEntry": true,
     "imports": [
-      "_payment-loader-rBHbdlEj.js",
+      "_payment-loader-rBaVBa6w.js",
       "_Url-D4lOoZOf.js",
       "_timezone-C2U15obx.js",
       "_dayjs.min-2rai63wT.js",
+      "_slugCompat-iE-eJHRP.js",
       "_Str-Ckn63bs5.js",
       "_vue.esm-bundler-DZdE0M9V.js",
       "_Arr-MwYQQ3qa.js"
     ]
   },
   "resources/public/checkout/login.js": {
-    "file": "login-DF2TGzqn.js",
+    "file": "login-BNH6fJh-.js",
     "name": "login",
     "src": "resources/public/checkout/login.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_slugCompat-iE-eJHRP.js"
+    ]
   },
   "resources/public/checkout/registration.js": {
-    "file": "registration-Czoc6fJs.js",
+    "file": "registration-DaFtksBf.js",
     "name": "registration",
     "src": "resources/public/checkout/registration.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_slugCompat-iE-eJHRP.js"
+    ]
   },
   "resources/public/checkout/style/checkout.scss": {
     "file": "assets/checkout-BK3dwA0a.css",
@@ -3480,12 +3491,12 @@
     "isEntry": true
   },
   "resources/public/payments/custom-payment-page.js": {
-    "file": "custom-payment-page-gEWrCK01.js",
+    "file": "custom-payment-page-Dl3xn7sx.js",
     "name": "custom-payment-page",
     "src": "resources/public/payments/custom-payment-page.js",
     "isEntry": true,
     "imports": [
-      "_payment-loader-rBHbdlEj.js"
+      "_payment-loader-rBaVBa6w.js"
     ]
   },
   "resources/public/payments/custom-payment-page.scss": {
@@ -3566,7 +3577,7 @@
     "isEntry": true
   },
   "resources/public/single-product/SingleProduct.js": {
-    "file": "SingleProduct-CrbjLkou.js",
+    "file": "SingleProduct-Bm_k_LX3.js",
     "name": "SingleProduct",
     "src": "resources/public/single-product/SingleProduct.js",
     "isEntry": true
@@ -3577,7 +3588,7 @@
     "isEntry": true
   },
   "resources/public/single-product/single-product.scss": {
-    "file": "assets/single-product-sbVhxFhP.css",
+    "file": "assets/single-product-BNIHKuW4.css",
     "src": "resources/public/single-product/single-product.scss",
     "isEntry": true
   },

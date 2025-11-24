@@ -1,11 +1,14 @@
 import FluentCartCheckoutHandler from './FluentCartCheckoutHandler';
 import CheckoutHelper from "./CheckoutHelper";
+import { ensureCheckoutDataAttributeCompatibility } from "./slugCompat";
 
 let firstTimeLoad = true;
 let fluentCheckout = {
     checkoutPageContainer: null,
     init() {
 
+
+        ensureCheckoutDataAttributeCompatibility();
 
         this.checkoutPageContainer =
             document.querySelector('[data-fluent-cart-checkout-page]');
