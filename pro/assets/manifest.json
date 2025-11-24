@@ -1,0 +1,53 @@
+{
+  "_index.js": {
+    "file": "index.js"
+  },
+  "resources/admin/app.js": {
+    "file": "admin/app.js",
+    "imports": [
+      "_index.js"
+    ],
+    "isEntry": true,
+    "src": "resources/admin/app.js"
+  },
+  "resources/admin/global_admin.js": {
+    "file": "admin/global_admin.js",
+    "isEntry": true,
+    "src": "resources/admin/global_admin.js"
+  },
+  "resources/admin/onboarding/onboarding-app.css": {
+    "file": "onboarding-app.css",
+    "src": "resources/admin/onboarding/onboarding-app.css"
+  },
+  "resources/admin/onboarding/onboarding-app.js": {
+    "css": [
+      "onboarding-app.css"
+    ],
+    "file": "admin/onboarding/onboarding-app.js",
+    "imports": [
+      "_index.js"
+    ],
+    "isEntry": true,
+    "src": "resources/admin/onboarding/onboarding-app.js"
+  },
+  "resources/admin/onboarding/onboarding-app.scss": {
+    "file": "onboarding-app2.css",
+    "isEntry": true,
+    "src": "resources/admin/onboarding/onboarding-app.scss"
+  },
+  "resources/public/payment-methods/mollie-checkout.js": {
+    "file": "public/payment-methods/mollie-checkout.js",
+    "isEntry": true,
+    "src": "resources/public/payment-methods/mollie-checkout.js"
+  },
+  "resources/public/payment-methods/paddle-checkout.js": {
+    "file": "public/payment-methods/paddle-checkout.js",
+    "isEntry": true,
+    "src": "resources/public/payment-methods/paddle-checkout.js"
+  },
+  "resources/scss/admin.scss": {
+    "file": "admin.css",
+    "isEntry": true,
+    "src": "resources/scss/admin.scss"
+  }
+}
