@@ -346,6 +346,7 @@ class AssetLoader
         }
 
         $alreadyLoaded = true;
+        $slug = fluentCart()->config->get('app.slug');
 
         Vite::enqueueAllStyles(
             [
@@ -361,13 +362,13 @@ class AssetLoader
         $scripts = [
             [
                 'source'       => 'public/checkout/FluentCartCheckout.js',
-                'dependencies' => ['fluent-cart-app'],
+                'dependencies' => [$slug . '-app'],
                 'inFooter'     => true,
                 'handle'       => 'fct-checkout'
             ],
             [
                 'source'       => 'public/orderbump/orderbump.js',
-                'dependencies' => ['fluent-cart-app'],
+                'dependencies' => [$slug . '-app'],
                 'inFooter'     => true,
                 'handle'       => 'fct-orderbump'
             ]
