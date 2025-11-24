@@ -400,14 +400,35 @@ class ProductRenderer
         $embedHtml = wp_oembed_get($videoUrl);
 
         if ($embedHtml) {
-            return $embedHtml;
+            return $this->formatEmbedHtml($embedHtml);
         }
 
         return sprintf(
-            '<video controls preload="metadata" src="%1$s" title="%2$s" style="width:100%%;max-height:520px;border-radius:8px;"></video>',
+            '<video class="fct-product-featured-video__embed" controls preload="metadata" playsinline src="%1$s" title="%2$s" style="width:100%%;height:100%%;border-radius:8px;"></video>',
             esc_url($videoUrl),
             esc_attr($title)
         );
+    }
+
+    protected function formatEmbedHtml($embedHtml)
+    {
+        if (!$embedHtml) {
+            return '';
+        }
+
+        if (stripos($embedHtml, '<iframe') !== false) {
+            if (!preg_match('/<iframe[^>]*\bloading=/i', $embedHtml)) {
+                $embedHtml = preg_replace('/<iframe\b/i', '<iframe loading="lazy"', $embedHtml, 1);
+            }
+
+            if (!preg_match('/<iframe[^>]*\bclass=/i', $embedHtml)) {
+                $embedHtml = preg_replace('/<iframe\b/i', '<iframe class="fct-product-featured-video__embed"', $embedHtml, 1);
+            } else {
+                $embedHtml = preg_replace('/<iframe([^>]*)class="([^"]*)"/i', '<iframe$1class="$2 fct-product-featured-video__embed"', $embedHtml, 1);
+            }
+        }
+
+        return $embedHtml;
     }
 
     public function renderGallery($args = [])

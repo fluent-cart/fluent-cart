@@ -9,14 +9,33 @@ const props = defineProps({
   productEditModel: Object,
 })
 
+const normalizeFeaturedVideo = (video) => {
+  const normalized = video && typeof video === 'object' ? {...video} : {};
+
+  normalized.url = (normalized.url ?? '').trim();
+  normalized.title = normalized.title ?? '';
+
+  if (!normalized.url) {
+    return {url: ''};
+  }
+
+  if (!normalized.type) {
+    normalized.type = detectVideoType(normalized.url);
+  }
+
+  return normalized;
+};
+
 const updateFeaturedVideo = (video) => {
-  props.product.featured_video = video;
-  props.productEditModel.updateMedia('featured_video', video);
+  const formattedVideo = normalizeFeaturedVideo(video);
+
+  props.product.featured_video = formattedVideo;
+  props.productEditModel.updateMedia('featured_video', formattedVideo);
 }
 
 const onVideoSelected = (selected) => {
   if (!Array.isArray(selected) || !selected.length) {
-    updateFeaturedVideo(null);
+    updateFeaturedVideo({});
     return;
   }
 
@@ -40,23 +59,17 @@ const detectVideoType = (url) => {
 const updateVideoUrl = (value) => {
   const url = value ? value.trim() : '';
 
-  if (!url) {
-    updateFeaturedVideo(null);
-    return;
-  }
-
   const currentVideo = props.product.featured_video || {};
 
   updateFeaturedVideo({
     ...currentVideo,
     url,
-    type: detectVideoType(url),
-    title: currentVideo?.title ?? ''
+    type: url ? detectVideoType(url) : ''
   });
 }
 
 const clearVideo = () => {
-  updateFeaturedVideo(null);
+  updateFeaturedVideo({});
 }
 
 const videoUrl = computed(() => props.product?.featured_video?.url ?? '');
@@ -122,7 +135,7 @@ const videoAttachments = computed(() => {
               <p class="fct-admin-summary-item-desc">{{ $t('Use a product video as the featured media on the product page.') }}</p>
             </div>
 
-            <el-button v-if="product.featured_video" type="danger" text @click="clearVideo">
+            <el-button v-if="videoUrl" type="danger" text @click="clearVideo">
               {{ $t('Remove') }}
             </el-button>
           </div>
