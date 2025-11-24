@@ -18,10 +18,11 @@ class AdminMenuHandler
             return $title . ' Pro ';
         }, 10, 2);
 
-        $this->enqueueAssets(
-            $app = App::getInstance(),
-            $slug = $app->config->get('app.slug')
-        );
+        [$app, $slug] = $this->resolveAppAndSlug();
+
+        if ($app && $slug) {
+            $this->enqueueAssets($app, $slug);
+        }
     }
 
 
@@ -32,12 +33,30 @@ class AdminMenuHandler
      */
     public function render()
     {
+        [$app, $slug] = $this->resolveAppAndSlug();
 
-        $this->enqueueAssets(
-            $app = App::getInstance(),
-            $slug = $app->config->get('app.slug')
-        );
+        if ($app && $slug) {
+            $this->enqueueAssets($app, $slug);
+        }
 
+    }
+
+    /**
+     * Resolve the application instance and menu slug.
+     *
+     * @return array
+     */
+    protected function resolveAppAndSlug()
+    {
+        $app = App::getInstance();
+
+        if (!$app || empty($app->config)) {
+            return [null, null];
+        }
+
+        $slug = $app->config->get('app.slug');
+
+        return [$app, $slug];
     }
 
     /**
