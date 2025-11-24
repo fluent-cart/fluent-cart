@@ -58,11 +58,11 @@ class PayPalPartnerRenderer
                 FrontendView::renderNotFoundPage(
                     __('Error', 'fluent-cart'),
                     __('Error', 'fluent-cart'),
-                    __('Please setup your store country and currency first. ', 'fluent-cart') . '<a href="' . admin_url('admin.php?page=fluent-cart#/settings/store-settings/') . '">' . __('Settings', 'fluent-cart') . '</a>',
+                    __('Please setup your store country and currency first. ', 'fluent-cart') . '<a href="' . admin_url('admin.php?page=webmakerr#/settings/store-settings/') . '">' . __('Settings', 'fluent-cart') . '</a>',
 
                     __('Go Back to the Store', 'fluent-cart'),
                     null,
-                    admin_url('admin.php?page=fluent-cart#/settings/payments')
+                    admin_url('admin.php?page=webmakerr#/settings/payments')
                 );
                 die();
             }
@@ -73,14 +73,14 @@ class PayPalPartnerRenderer
                 __('Please try again in a moment.', 'fluent-cart'), '',
                 __('Go Back to the Store', 'fluent-cart'),
                 null,
-                admin_url('admin.php?page=fluent-cart#/settings/payments')
+                admin_url('admin.php?page=webmakerr#/settings/payments')
             );
             die();
 
         }
 
         $logo = Vite::getAssetUrl('images/logo/logo-full-dark.svg');
-        $baseUrl = admin_url('admin.php?page=fluent-cart#/');
+        $baseUrl = admin_url('admin.php?page=webmakerr#/');
 
 
         App::make('view')->render('paypal.authenticate', [

@@ -21,7 +21,7 @@
         <a
                 aria-label="<?php __('FluentCart Logo', 'fluent-cart'); ?>"
                 title="<?php __('FluentCart Logo', 'fluent-cart'); ?>"
-                href="<?php echo esc_url(admin_url('admin.php?page=fluent-cart#/')); ?>">
+                href="<?php echo esc_url(admin_url('admin.php?page=webmakerr#/')); ?>">
             <img src="<?php echo esc_url($logo); ?>"
                  alt="<?php __('FluentCart Logo', 'fluent-cart'); ?>"/>
         </a>

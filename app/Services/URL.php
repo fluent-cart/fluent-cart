@@ -32,7 +32,7 @@ class URL
         $baseUrl = site_url('/');
 
         $baseParams = [
-            'fluent-cart' => $page
+            'webmakerr' => $page
         ];
 
         // Merge base and custom params
@@ -58,7 +58,7 @@ class URL
 
     public static function getDashboardUrl(string $path, $params = null): string
     {
-        $url = admin_url('admin.php?page=fluent-cart#/');
+        $url = admin_url('admin.php?page=webmakerr#/');
 
         if (is_array($params)) {
             return $url . self::appendQueryParams($path, $params);

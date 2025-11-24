@@ -74,7 +74,7 @@ abstract class BaseIntegrationManager
             'description'             => $this->description,
             'category'                => $this->category,
             'disable_global_settings' => $this->disableGlobalSettings,
-            'config_url'              => $this->disableGlobalSettings ? '' : admin_url('admin.php?page=fluent-cart#/integrations/' . $this->integrationKey),
+            'config_url'              => $this->disableGlobalSettings ? '' : admin_url('admin.php?page=webmakerr#/integrations/' . $this->integrationKey),
             'logo'                    => $this->logo,
             'enabled'                 => $this->isConfigured(),
             'scopes'                  => $this->scopes,

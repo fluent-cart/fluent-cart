@@ -43,7 +43,7 @@ class FirstTimePluginActivation extends EventDispatcher
             if (get_option('fluent_cart_plugin_once_activated') !== '1') {
                 update_option('fluent_cart_plugin_once_activated', true);
                 (new static())->dispatch();
-                wp_redirect(admin_url('admin.php?page=fluent-cart#/onboarding'));
+                wp_redirect(admin_url('admin.php?page=webmakerr#/onboarding'));
             }
         }
     }

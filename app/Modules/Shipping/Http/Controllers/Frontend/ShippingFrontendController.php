@@ -37,7 +37,7 @@ class ShippingFrontendController extends Controller
                 . esc_html__('No shipping methods available for this address.', 'fluent-cart');
 
             if (current_user_can('manage_options')) {
-                $settingsPageUrl = admin_url('admin.php?page=fluent-cart#/settings/shipping');
+                $settingsPageUrl = admin_url('admin.php?page=webmakerr#/settings/shipping');
 
                 $settingsLink = '<a href="' . esc_url($settingsPageUrl??'') . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
 

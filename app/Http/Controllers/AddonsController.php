@@ -117,7 +117,7 @@ class AddonsController extends Controller
 
         return $this->sendSuccess([
             'message'  => __('Addon installation started successfully.', 'fluent-cart'),
-            'redirect' => admin_url('admin.php?page=fluent-cart#/integrations')
+            'redirect' => admin_url('admin.php?page=webmakerr#/integrations')
         ]);
     }
 

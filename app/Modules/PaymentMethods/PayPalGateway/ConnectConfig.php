@@ -88,7 +88,7 @@ class ConnectConfig
         ];
         $settingsInstance->updateNonSensitiveData($data);
 
-        wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/paypal'));
+        wp_redirect(admin_url('admin.php?page=webmakerr#/settings/payments/paypal'));
     }
 
     public function getSellerAuthToken(Request $request)

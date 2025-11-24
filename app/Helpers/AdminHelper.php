@@ -19,7 +19,7 @@ class AdminHelper
 
         $productId = $product->ID;
 
-        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
+        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=webmakerr#/'), []);
 
         $menuItems = apply_filters('fluent_cart/product_admin_items', [
             'product_edit'          => [
@@ -51,7 +51,7 @@ class AdminHelper
         if (isset($request['action']) && $request['action'] == 'edit') {
             $menuItems['product_details'] = [
                 'label' => __('Edit Pricing', 'fluent-cart'),
-                'link'  => admin_url('admin.php?page=fluent-cart#/products/' . $productId)
+                'link'  => admin_url('admin.php?page=webmakerr#/products/' . $productId)
             ];
         }
 
@@ -76,7 +76,7 @@ class AdminHelper
 
     public static function getAdminMenu($echo = false, $activeNav = '')
     {
-        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
+        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=webmakerr#/'), []);
         $menuItems = apply_filters('fluent_cart/global_admin_menu_items', [
             'dashboard'    => [
                 'label' => __('Dashboard', 'fluent-cart'),

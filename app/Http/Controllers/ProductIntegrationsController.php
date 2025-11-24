@@ -30,7 +30,7 @@ class ProductIntegrationsController extends Controller
         return [
             'feeds'                  => array_values($formattedFeeds),
             'available_integrations' => $availableIntegrations,
-            'all_module_config_url'  => admin_url('admin.php?page=fluent-cart#/integrations')
+            'all_module_config_url'  => admin_url('admin.php?page=webmakerr#/integrations')
         ];
     }
 

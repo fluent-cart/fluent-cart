@@ -38,7 +38,7 @@ class LicenseWidgets
     {
         $content = '<div>';
         foreach ($licenses as $license) {
-            $link = esc_url(admin_url('admin.php?page=fluent-cart#/licenses/' . $license->id . '/view'));
+            $link = esc_url(admin_url('admin.php?page=webmakerr#/licenses/' . $license->id . '/view'));
             $content .= '<b><p style="margin:0 0 2px 0">' . esc_html($license->product->post_title) .'( ' . esc_html($license->productVariant->variation_title) . ' )</p></b>';
             $content .= '<p style="display:flex;margin:0;align-items:center;">
                         <code style="word-wrap: break-word;">' . esc_html($license->license_key) . '</code>

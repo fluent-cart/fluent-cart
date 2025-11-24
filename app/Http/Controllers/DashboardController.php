@@ -14,7 +14,7 @@ class DashboardController extends Controller
     public function getOnboardingData()
     {
         $completed = 0;
-        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
+        $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=webmakerr#/'), []);
         $steps = [
             'page_setup'   => [
                 'title'     => __('Setup Pages', 'fluent-cart'),

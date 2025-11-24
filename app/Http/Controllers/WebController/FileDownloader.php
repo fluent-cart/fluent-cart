@@ -108,7 +108,7 @@ class FileDownloader extends Controller
 
                 if(is_user_logged_in() && current_user_can('manage_options')){
 
-                    $settingsUrl = admin_url('admin.php?page=fluent-cart#/settings/storage/' . $download->driver);
+                    $settingsUrl = admin_url('admin.php?page=webmakerr#/settings/storage/' . $download->driver);
 
                     FrontendView::renderNotFoundPage(
                         __('Driver Error', 'fluent-cart'),

@@ -208,7 +208,7 @@ class FluentProducts
                         'view_item'     => __('View Product', 'fluent-cart'),
                         'search_items'  => __('Search products', 'fluent-cart'),
                 ],
-            //'_edit_link' => 'admin.php?page=fluent-cart#/products/%d/pricing',
+            //'_edit_link' => 'admin.php?page=webmakerr#/products/%d/pricing',
                 'description'           => __('FluentCart products post type', 'fluent-cart'),
                 'public'                => true,
                 'hierarchical'          => false,
@@ -257,7 +257,7 @@ class FluentProducts
             // disable direct create product
             $postType = App::request()->get('post_type');
             if ($pagenow == 'post-new.php' && $postType == self::CPT_NAME) {
-                wp_redirect(admin_url('admin.php?page=fluent-cart#/products/?add-new=true'));
+                wp_redirect(admin_url('admin.php?page=webmakerr#/products/?add-new=true'));
                 exit;
             }
         });

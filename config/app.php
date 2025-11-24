@@ -3,7 +3,7 @@
 
 return [
     'name'           => 'FluentCart',
-    'slug'           => 'fluent-cart',
+    'slug'           => 'webmakerr',
     'domain_path'    => '/language',
     'text_domain'    => 'fluent-cart',
     'hook_prefix'    => 'fluent_cart/',

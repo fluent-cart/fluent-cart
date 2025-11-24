@@ -78,7 +78,7 @@ const handleFocus = (val) => {
   inputFocus.value = val;
 }
 
-const baseAdminUrl = Arr.get(window, 'fluentCartAdminApp.admin_url', '').toString().replace('admin.php?page=fluent-cart#/', 'post.php?action=edit&post=');
+const baseAdminUrl = Arr.get(window, 'fluentCartAdminApp.admin_url', '').toString().replace('admin.php?page=webmakerr#/', 'post.php?action=edit&post=');
 
 const editUrl = () => {
   if (!model.value) {
