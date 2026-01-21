@@ -129,7 +129,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         // validate if the settings/credentials are correct
         if ('yes' === $is_active) {
             $response = static::validateSettings($settings);
-            if (isset($reponse['status']) && $response['status'] === 'failed') {
+            if (isset($response['status']) && $response['status'] === 'failed') {
                 wp_send_json(
                     [
                         'status'  => 'failed',
