@@ -6,24 +6,56 @@ use FluentCart\Api\Resource\FrontendResource\CartResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 
+use FluentCart\App\Helpers\CartHelper;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Hooks\Handlers\ShortCodes\Checkout\CheckoutPageHandler;
 use FluentCart\App\Hooks\Handlers\ShortCodes\ReceiptHandler;
 use FluentCart\App\Http\Controllers\WebController\FileDownloader;
+use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\PayPalPartnerRenderer;
+use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\FrontendView;
 use FluentCart\App\Services\PrintService;
 use FluentCart\App\Services\Renderer\CartRenderer;
+use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\URL;
+use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Renderer\CheckoutRenderer;
+use FluentCart\App\Services\Renderer\ModalCheckoutRenderer;
 
 class WebRoutes
 {
     public static function register()
     {
+
         add_action('init', function () {
             self::registerRoutes();
-        }, 99);
+        });
+    }
+
+    public static function renderModalCheckout() {
+        AssetLoader::loadModalCheckoutAssets();
+
+        add_action('wp_footer', function () {
+            if (
+                isset($_SERVER['HTTP_SEC_FETCH_DEST']) &&
+                $_SERVER['HTTP_SEC_FETCH_DEST'] === 'iframe'
+            ) {
+                return;
+            }
+
+            $cart = CartHelper::getCart();
+
+            if (!$cart) {
+                $cart = new Cart();
+            }
+
+            (new ModalCheckoutRenderer($cart))->render();
+        });
+
+        // Stop rendering when loaded inside an iframe
 
     }
 
@@ -204,10 +236,71 @@ class WebRoutes
 
             case 'print-dispatch-slip':
                 return self::handlePrintRoute('dispatchSlip');
+            
+            case 'modal_checkout':
+                return self::handleModalCheckout();
 
             default:
                 return false;
         }
+    }
+
+    private static function handleModalCheckout(): bool
+    {
+        $variationId = App::request()->get('item_id');
+        $quantity = App::request()->get('quantity', 1);
+
+        if (!is_numeric($variationId)) {
+            return false;
+        }
+
+        if (is_numeric($quantity)) {
+            $quantity = intval($quantity);
+            $quantity = max($quantity, 1);
+        } else {
+            $quantity = 1;
+        }
+
+        $variation = ProductVariation::query()->find($variationId);
+
+        if (empty($variation)) {
+            return false;
+        }
+
+        $soldIndividually = $variation->soldIndividually();
+
+        if ($soldIndividually) {
+            $quantity = 1;
+        }
+
+        $cart = CartResource::generateCartForInstantCheckout($variationId, $quantity);
+
+        if ($cart) {
+            $modalCheckoutRenderer = new ModalCheckoutRenderer($cart);
+            ob_start();
+            $modalCheckoutRenderer->renderForm();
+            $checkoutContent = ob_get_clean();
+
+            AssetLoader::loadCheckoutAssets($cart);
+
+            Vite::enqueueStyle(
+                'fluentcart-modal-checkout-iframe-css',
+                'public/checkout/style/checkout-iframe.scss'
+            );
+
+//            Vite::enqueueScript(
+//                'fluentcart-modal-checkout-form-js',
+//                'public/checkout/ModalCheckoutForm.js',
+//                []
+//            );
+
+            FrontendView::make(__('Checkout', 'fluent-cart'), $checkoutContent);
+            die();
+        }
+
+        return false;
+
+
     }
 
     private static function handlePrintRoute($method): bool

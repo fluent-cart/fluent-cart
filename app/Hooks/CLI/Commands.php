@@ -1127,4 +1127,78 @@ class Commands
         $command = new RetentionSnapshotCommand();
         $command->generate($args, $assoc_args);
     }
+
+
+    public function sync_stripe_renwals($args, $assoc_args)
+    {
+        $days = isset($assoc_args['days']) ? absint($assoc_args['days']) : 30;
+
+        if ($days > 365) {
+            \WP_CLI::line('Days cannot be more than 365');
+            return;
+        }
+
+        // Base query parameters (applied to every page)
+        $body_params = array(
+            'expand' => ['data.payment_intent'],
+            'status'      => 'paid',
+            'limit'       => 10, // Max per page
+            'created[gt]' => strtotime(-$days . ' days'), // Invoices created after ~30 days ago
+        );
+
+        $starting_after = null;
+        $has_more = true;
+
+        while ($has_more) {
+            if ($starting_after) {
+                $body_params['starting_after'] = $starting_after;
+            }
+            $data = (new \FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API())->getStripeObject('invoices', $body_params);
+
+            if (is_wp_error($data)) {
+                \WP_CLI::line('Error fetching invoices: ' . $data->get_error_message());
+                return;
+            }
+
+            foreach ($data['data'] as $invoice) {
+                if (isset($invoice['billing_reason']) && $invoice['billing_reason'] === 'subscription_cycle') {
+                    $paymentIntent = isset($invoice['payment_intent']) ? $invoice['payment_intent'] : null;
+                    if(!$paymentIntent) {
+                        continue;
+                    }
+
+                    $transactionExists = \FluentCart\App\Models\OrderTransaction::where('vendor_charge_id', $paymentIntent['id'])
+                        ->where('payment_method', 'stripe')
+                        ->exists();
+
+                    if ($transactionExists) {
+                        \WP_CLI::line('Skipping already processed Intent ID: ' . $paymentIntent['id']);
+                        continue;
+                    }
+
+                    $order = (new \FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\Webhook())->processSubscriptionRenewal($invoice);
+
+                    if (is_wp_error($order)) {
+                        \WP_CLI::line('Error processing invoice ID ' . $invoice['id'] . ': ' . $order->get_error_message());
+                        continue;
+                    }
+
+                    if(!$order) {
+                        \WP_CLI::line('No order created for invoice ID: ' . $invoice['id']);
+                        continue;
+                    }
+
+                    \WP_CLI::line('Created Order ID: ' . $order->id . ' for Invoice ID: ' . $invoice['id']);
+                }
+            }
+
+            $has_more = $data['has_more'] ?? false;
+            if ($has_more && !empty($data['data'])) {
+                $last_invoice = end($data['data']);
+                $starting_after = $last_invoice['id'];
+            }
+        }
+
+        \WP_CLI::line('Completed syncing Stripe renewals.');
+    }
 }

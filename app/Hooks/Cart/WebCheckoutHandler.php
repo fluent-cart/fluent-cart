@@ -27,6 +27,7 @@ use FluentCart\App\Services\Renderer\CheckoutRenderer;
 use FluentCart\App\Services\Renderer\ProductModalRenderer;
 use FluentCart\App\Services\Renderer\ShippingMethodsRender;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Renderer\ModalCheckoutRenderer;
 
 class WebCheckoutHandler
 {
@@ -176,6 +177,7 @@ class WebCheckoutHandler
 
     public function handleApplyCouponAjax()
     {
+
         $couponCode = App::request()->getSafe('coupon_code', 'sanitize_text_field');
         $cart = CartHelper::getCart(null, false);
 
@@ -195,20 +197,39 @@ class WebCheckoutHandler
 
         $cartTotal = $cart->getEstimatedTotal();
 
+        $modalCheckoutRender = (new ModalCheckoutRenderer($cart));
+        $enableModalCheckout = App::request()->get('modal_checkout');
+
+        $fragments = [];
+
+        $fragments[] = [
+            'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
+            'content' => $summary,
+            'type' => 'replace'
+        ];
+
+        if ($enableModalCheckout === 'yes') {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content'  => $modalCheckoutRender->getFragment('payment_methods'),
+                'type'     => 'replace'
+            ];
+        } else {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content'  => (new CheckoutRenderer($cart))->getFragment('payment_methods'),
+                'type'     => 'replace'
+            ];
+        }
+
+        $fragments[] = [
+            'selector' => '[data-fct-modal-checkout-summary-group]',
+            'content'  => $modalCheckoutRender->getFragment('summary_group'),
+            'type'     => 'replace'
+        ];
+
         return [
-            'fragments' => [
-                [
-                    'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
-                    'content' => $summary,
-                    'type' => 'replace'
-                ],
-                [
-                    // also update the payment methods to validate the zero recurring coupon
-                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
-                    'content' => (new CheckoutRenderer($cart))->getFragment('payment_methods'),
-                    'type' => 'replace'
-                ]
-            ],
+            'fragments' => $fragments,
             'cart' => $cart,
             'total' => $cartTotal,
             'formatted_total' => Helper::toDecimal($cartTotal),
@@ -238,20 +259,40 @@ class WebCheckoutHandler
 
         $cartTotal = $cart->getEstimatedTotal();
 
+        $modalCheckoutRender = (new ModalCheckoutRenderer($cart));
+        $enableModalCheckout = App::request()->get('modal_checkout');
+
+        $fragments = [];
+
+        $fragments[] = [
+            'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
+            'content' => $summary,
+            'type' => 'replace'
+        ];
+
+        if ($enableModalCheckout === 'yes') {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content'  => $modalCheckoutRender->getFragment('payment_methods'),
+                'type'     => 'replace'
+            ];
+        } else {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content'  => (new CheckoutRenderer($cart))->getFragment('payment_methods'),
+                'type'     => 'replace'
+            ];
+        }
+
+        $fragments[] = [
+            'selector' => '[data-fct-modal-checkout-summary-group]',
+            'content'  => $modalCheckoutRender->getFragment('summary_group'),
+            'type'     => 'replace'
+        ];
+
+
         return [
-            'fragments' => [
-                [
-                    'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
-                    'content' => $summary,
-                    'type' => 'replace'
-                ],
-                [
-                    // also update the payment methods to validate the zero recurring coupon
-                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
-                    'content' => (new CheckoutRenderer($cart))->getFragment('payment_methods'),
-                    'type' => 'replace'
-                ]
-            ],
+            'fragments' => $fragments,
             'total' => $cartTotal,
             'formatted_total' => Helper::toDecimal($cartTotal),
             'applied_coupons' => $cart->coupons,
@@ -758,6 +799,8 @@ class WebCheckoutHandler
         $fragments = [];
 
         $cartRender = (new CheckoutRenderer($cart));
+        $modalCheckoutRender = (new ModalCheckoutRenderer($cart));
+        $enableModalCheckout = App::request()->get('modal_checkout');
 
         if (!empty($hookChanges['shipping'])) {
             $fragments[] = [
@@ -774,11 +817,27 @@ class WebCheckoutHandler
                 'type' => 'replace'
             ];
 
+
             // also update the payment methods
+            if ($enableModalCheckout === 'yes') {
+                $fragments[] = [
+                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                    'content' => $modalCheckoutRender->getFragment('payment_methods'),
+                    'type' => 'replace'
+                ];
+            } else {
+                $fragments[] = [
+                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                    'content' => $cartRender->getFragment('payment_methods'),
+                    'type' => 'replace'
+                ];
+            }
+
+
             $fragments[] = [
-                'selector' => '[data-fluent-cart-checkout-payment-methods]',
-                'content' => $cartRender->getFragment('payment_methods'),
-                'type' => 'replace'
+                'selector' => '[data-fct-modal-checkout-summary-group]',
+                'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                'type'     => 'replace'
             ];
         }
 

@@ -15,7 +15,9 @@
  */
 
 use FluentCart\App\App;
+use FluentCart\App\Http\Routes\WebRoutes;
 use FluentCart\App\Models\Cart;
+use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\FileSystem\Drivers\Local\LocalDriver;
 use FluentCart\Framework\Support\Arr;
 
@@ -66,6 +68,8 @@ use FluentCart\Framework\Support\Arr;
 \FluentCart\App\Hooks\Handlers\BlockEditors\PriceRangeBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\ExcerptBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\ProductCardShortCode::register();
+\FluentCart\App\Hooks\Handlers\BlockEditors\Buttons\BuyNowButtonBlockEditor::register();
+\FluentCart\App\Hooks\Handlers\BlockEditors\Buttons\AddToCartButtonBlockEditor::register();
 
 if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
     \FluentCart\App\Hooks\Handlers\BlockEditors\StockBlock::register();
@@ -179,10 +183,14 @@ add_action('after_setup_theme', function () {
     (new \FluentCart\App\Modules\Templating\Bricks\BricksLoader())->register();
 });
 
+
+
+
+
 /**
  * Development Hooks
  */
 
 add_action('init', function () {
-
+    WebRoutes::renderModalCheckout();
 });

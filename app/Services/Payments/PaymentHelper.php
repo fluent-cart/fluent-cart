@@ -37,7 +37,13 @@ class PaymentHelper
             is_array($args) ? $args : []
         );
 
-        return add_query_arg($queryArgs, (new StoreSettings())->getReceiptPage());
+        $receiptUrl = (new StoreSettings())->getReceiptPage();
+
+        if (empty($receiptUrl)) {
+            $receiptUrl = site_url();
+        }
+
+        return add_query_arg($queryArgs, $receiptUrl);
     }
 
     public static function getCustomPaymentLink($orderHash): string

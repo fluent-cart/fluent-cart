@@ -63,14 +63,9 @@ class CartDrawerRenderer
 
                 </div>
 
-                <button class="fct-cart-drawer-open-btn <?php echo esc_attr($this->itemCount > 0 ? '' : 'is-hidden') ?>"
-                        data-fluent-cart-cart-expand-button
-                        aria-label="<?php esc_attr_e('Open Shopping Cart', 'fluent-cart'); ?>">
-                    <img src="<?php echo esc_url(Vite::getAssetUrl('images/cart.svg')); ?>"
-                         alt="<?php esc_attr_e('Cart Icon', 'fluent-cart'); ?>"/>
 
-                    <?php $this->renderItemCount(); ?>
-                </button>
+                <?php $this->renderCartIconButton(); ?>
+
 
             </div>
 
@@ -121,6 +116,25 @@ class CartDrawerRenderer
                  </button>
             </div>
 
+        <?php
+    }
+
+    public function renderCartIconButton()
+    {
+        $showCartIconInBody = (new StoreSettings())->get('show_cart_icon_in_body');
+
+        if ($showCartIconInBody !== 'yes') {
+            return '';
+        }
+        ?>
+        <button class="fct-cart-drawer-open-btn <?php echo esc_attr($this->itemCount > 0 ? '' : 'is-hidden') ?>"
+                data-fluent-cart-cart-expand-button
+                aria-label="<?php esc_attr_e('Open Shopping Cart', 'fluent-cart'); ?>">
+            <img src="<?php echo esc_url(Vite::getAssetUrl('images/cart.svg')); ?>"
+                 alt="<?php esc_attr_e('Cart Icon', 'fluent-cart'); ?>"/>
+
+            <?php $this->renderItemCount(); ?>
+        </button>
         <?php
     }
     

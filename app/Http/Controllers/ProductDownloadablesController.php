@@ -43,7 +43,7 @@ class ProductDownloadablesController extends Controller
             if (is_array($variationIds)) {
                 $variationIds = array_map('intval', $variationIds);
             } else {
-                $variationIds = '';
+                $variationIds = [];
             }
 
             $sanitizedData[] = [
@@ -136,6 +136,7 @@ class ProductDownloadablesController extends Controller
         $productDownload = ProductDownload::query()->findOrFail($downloadId);
         $data = $request->getSafe($request->sanitize());
 
+
         $fileName = Arr::get($data, 'file_name');
 
         $filePath = $fileName;
@@ -147,9 +148,9 @@ class ProductDownloadablesController extends Controller
 
 
         if (is_array($productVariationId)) {
-            $productVariationId = array_map('intval', $productVariationId);
+            $productVariationId = array_values(array_filter(array_map('intval', $productVariationId)));
         } else {
-            $productVariationId = '';
+            $productVariationId = [];
         }
 
         $productDownload->product_variation_id = $productVariationId;

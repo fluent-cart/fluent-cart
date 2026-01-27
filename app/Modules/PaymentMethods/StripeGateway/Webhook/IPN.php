@@ -401,13 +401,13 @@ class IPN
         // get the order from the event, in case of renewal create one
         $order = (new Webhook())->processAndInsertOrderByEvent($event);
 
-        if ($order === false) {
+        if (!$order) {
             // This is already handled or not our event
             $this->sendResponse(200, 'Event not handled or not related to an order.');
         }
 
-        if (!$order || is_wp_error($order)) {
-            $this->sendResponse(400, 'Order not found or error occurred.');
+        if (is_wp_error($order)) {
+            $this->sendResponse(400, 'Order not found or error occurred. Error: '. $order->get_error_message());
         }
 
         $eventType = str_replace('.', '_', $event->type);
@@ -419,10 +419,10 @@ class IPN
                 'order' => $order
             ]);
 
-            return $this->sendResponse(200, 'Webhook event processed successfully.');
+            $this->sendResponse(200, 'Webhook event processed successfully.');
         }
 
-        return $this->sendResponse(200, 'No handler found for this event type.');
+        $this->sendResponse(200, 'No handler found for this event type.');
 
     }
 
@@ -430,7 +430,7 @@ class IPN
     {
         wp_send_json([
             'message' => $message,
-        ], 200);
+        ], $statusCode);
     }
 
 }

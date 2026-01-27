@@ -29,6 +29,10 @@ class ProductVariationResource extends BaseResourceApi
             $query->with('product_detail');
         }
 
+        if (Arr::get($params, 'with_product')) {
+            $query->with('product');
+        }
+
         $variants = $query->orderBy(
                 sanitize_sql_orderby(Arr::get($params, 'order_by', 'ID')),
                 sanitize_sql_orderby(Arr::get($params, 'order_type', 'ASC'))

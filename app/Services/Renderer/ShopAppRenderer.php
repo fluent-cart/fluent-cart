@@ -4,6 +4,8 @@ namespace FluentCart\App\Services\Renderer;
 
 use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\Taxonomy;
+use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Http\Routes\WebRoutes;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\Framework\Pagination\CursorPaginator;
 use FluentCart\Framework\Support\Arr;

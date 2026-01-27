@@ -28,7 +28,7 @@ if (isset($styles) && is_array($styles) && !empty($enqueue_prefix)) {
 ?>
 <body>
 
-<div style="width: 100%; padding: 32px; box-sizing: border-box">
+<div style="width: 100%; box-sizing: border-box">
     <?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 </div>
 </body>

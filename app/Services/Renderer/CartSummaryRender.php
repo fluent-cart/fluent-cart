@@ -183,7 +183,7 @@ class CartSummaryRender
         <?php
     }
 
-    protected function maybeShowCustomCartSummaries()
+    public function maybeShowCustomCartSummaries()
     {
         $isCustomCheckout = Arr::get($this->cart->checkout_data, 'custom_checkout') === 'yes';
         if (!$isCustomCheckout) {

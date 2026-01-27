@@ -275,26 +275,35 @@ class CheckoutRenderer
         ]);
     }
 
-    public function renderCreateAccountField($attr_title = '')
+    public function renderCreateAccountField($atts = [])
     {
         //check store settings also
+        $attr_title = Arr::get($atts, 'title');
+        $extraClass = Arr::get($atts, 'wrapper_atts') ? '' : 'fct-has-default-font-size';
 
-        if (!is_user_logged_in() && $this->storeSettings->get('user_account_creation_mode') === 'user_choice') {
-            $formRender = new FormFieldRenderer();
-            $label = __('Create an account?', 'fluent-cart');
-            if (!empty($attr_title)) {
-                $label = $attr_title;
-            }
-            $formRender->renderField([
-                'type' => 'checkbox',
-                'id' => 'allow_create_account',
-                'name' => 'allow_create_account',
-                'checkbox_value' => 'yes',
-                'label' => $label,
-                'value' => Arr::get($this->cart->checkout_data, 'form_data.allow_create_account', ''),
-                'wrapper_class' => 'fct_create_account_wrapper',
-            ]);
-        }
+        ?>
+            <?php if (!is_user_logged_in() && $this->storeSettings->get('user_account_creation_mode') === 'user_choice'): ?>
+                <div class="fct_allow_create_account_wrapper <?php echo esc_attr($extraClass); ?>">
+                    <?php
+                        $formRender = new FormFieldRenderer();
+                        $label = __('Create an account?', 'fluent-cart');
+                        if (!empty($attr_title)) {
+                            $label = $attr_title;
+                        }
+                        $formRender->renderField([
+                            'type' => 'checkbox',
+                            'id' => 'allow_create_account',
+                            'name' => 'allow_create_account',
+                            'checkbox_value' => 'yes',
+                            'label' => $label,
+                            'value' => Arr::get($this->cart->checkout_data, 'form_data.allow_create_account', ''),
+                            'wrapper_class' => 'fct_create_account_wrapper',
+                        ]);
+                    ?>
+                </div>
+            <?php endif;?>
+
+        <?php
     }
 
     public function renderNameFields()
@@ -461,29 +470,36 @@ class CheckoutRenderer
         ]);
     }
 
-    public function renderShipToDifferentField($attr_title = '')
+    public function renderShipToDifferentField($atts = [])
     {
         $formRender = new FormFieldRenderer();
+        $attr_title = Arr::get($atts, 'title');
+        $extraClass = Arr::get($atts, 'wrapper_atts') ? '' : 'fct-has-default-font-size';
         $title = __('Ship to a different address?', 'fluent-cart');
         if (!empty($attr_title)) {
             $title = $attr_title;
         }
 
+        ?>
 
+        <div class="fct_ship_to_different_wrapper <?php echo esc_attr($extraClass); ?>">
+            <?php
+                $formRender->renderField([
+                    'type' => 'checkbox',
+                    'id' => 'ship_to_different',
+                    'name' => 'ship_to_different',
+                    'checkbox_value' => 'yes',
+                    'label' => $title,
+                    'value' => Arr::get($this->cart->checkout_data, 'form_data.ship_to_different', ''),
+                    'extra_atts' => [
+                        'data-fluent-cart-ship-to-different-address' => 'yes',
+                        'aria-controls' => 'shipping_address_section_section',
+                    ],
+                ]);
+            ?>
+        </div>
 
-        $formRender->renderField([
-            'type' => 'checkbox',
-            'id' => 'ship_to_different',
-            'name' => 'ship_to_different',
-            'checkbox_value' => 'yes',
-            'label' => $title,
-            'value' => Arr::get($this->cart->checkout_data, 'form_data.ship_to_different', ''),
-            'wrapper_class' => 'fct_ship_to_different_wrapper',
-            'extra_atts' => [
-                'data-fluent-cart-ship-to-different-address' => 'yes',
-                'aria-controls' => 'shipping_address_section_section',
-            ],
-        ]);
+        <?php
     }
 
     public function renderShippingAddressFields($section_title = '')
@@ -621,7 +637,7 @@ class CheckoutRenderer
         }
     }
 
-    public function renderPaymentMethods()
+    public function renderPaymentMethods($atts = [])
     {
         if ($this->cart->getEstimatedTotal() <= 0) {
             if (!$this->cart->hasSubscription() || $this->cart->getEstimatedRecurringTotal() <= 0) {
@@ -832,7 +848,7 @@ class CheckoutRenderer
     }
 
 
-    public function agreeTerms($attr_title = '')
+    public function agreeTerms($atts = [])
     {
         if (!CheckoutFieldsSchema::isTermsVisible()) {
             return;
@@ -840,9 +856,11 @@ class CheckoutRenderer
 
         $termsText = CheckoutFieldsSchema::getTermsText();
         $sectionId = 'agree_terms_section';
+        $extraClass = Arr::get($atts, 'wrapper_atts') ? '' : 'fct-has-default-font-size';
+        $title = Arr::get($atts, 'title');
 
         ?>
-            <div class="fct_checkout_form_section" role="group" aria-labelledby="agree_terms_label">
+            <div class="fct_checkout_form_section <?php echo esc_attr($extraClass); ?>" role="group" aria-labelledby="agree_terms_label" data-fct-checkout-form-section>
                 <div class="fct_form_section_body">
                     <div class="fct_checkout_agree_terms">
                         <div>
@@ -851,8 +869,8 @@ class CheckoutRenderer
                                     id="agree_terms" name="agree_terms" value="yes" required aria-required="true"
                                     aria-label="<?php echo esc_attr($termsText); ?>">
                                 <?php
-                                if (!empty($attr_title)) {
-                                    echo esc_html($attr_title);
+                                if (!empty($title)) {
+                                    echo esc_html($title);
                                 } else {
                                     echo wp_kses_post($termsText);
                                 } ?>

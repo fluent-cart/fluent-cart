@@ -17,6 +17,8 @@ use FluentCart\App\Http\Requests\UpgradePathSettingRequest;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Models\ProductDownload;
+use FluentCart\App\Models\ProductMeta;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Models\TaxClass;
@@ -141,6 +143,70 @@ class ProductController extends Controller
 
         return $this->sendError(['code' => 400, 'message' => __('Product creation failed!', 'fluent-cart')]);
 
+    }
+
+    /**
+     * Duplicate a product with selected options
+     *
+     * @param Request $request
+     * @param int $productId
+     * @return WP_REST_Response
+     */
+    public function duplicate(Request $request, $productId): WP_REST_Response
+    {
+        try {
+            $data = $request->getSafe([
+                'import_stock_management'   => 'sanitize_text_field',
+                'import_license_settings'   => 'sanitize_text_field',
+                'import_downloadable_files' => 'sanitize_text_field',
+            ]);
+
+            $importStockManagement = filter_var(
+                Arr::get($data, 'import_stock_management', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            $importLicenseSettings = filter_var(
+                Arr::get($data, 'import_license_settings', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            $importDownloadableFiles = filter_var(
+                Arr::get($data, 'import_downloadable_files', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            try {
+                $newProductId = Product::duplicateProduct($productId, [
+                    'import_stock_management'   => $importStockManagement,
+                    'import_license_settings'   => $importLicenseSettings,
+                    'import_downloadable_files' => $importDownloadableFiles,
+                ]);
+
+                return $this->sendSuccess([
+                    'product_id' => $newProductId,
+                    'message'    => __('Product duplicated successfully. The new product has been saved as a draft.', 'fluent-cart')
+                ]);
+
+            } catch (\RuntimeException $e) {
+                if ((int)$e->getCode() === 404) {
+                    return $this->sendError([
+                        'message' => __('Product not found', 'fluent-cart')
+                    ]);
+                }
+                return $this->sendError([
+                    'message' => __('Failed to duplicate product: ', 'fluent-cart') . $e->getMessage()
+                ]);
+            } catch (\Exception $e) {
+                return $this->sendError([
+                    'message' => __('Failed to duplicate product: ', 'fluent-cart') . $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return $this->sendError([
+                'message' => __('An error occurred while duplicating the product.', 'fluent-cart'),
+                'error'   => $e->getMessage()
+            ]);
+        }
     }
 
     public function delete(Request $request, Product $product)

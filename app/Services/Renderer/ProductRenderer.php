@@ -2,15 +2,17 @@
 
 namespace FluentCart\App\Services\Renderer;
 
-use FluentCart\Api\ModuleSettings;
+use FluentCart\App\App;
+use FluentCart\App\Vite;
 use FluentCart\Api\StoreSettings;
+use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
-use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\App;
+use FluentCart\App\Http\Routes\WebRoutes;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\Framework\Support\Collection;
+use FluentCart\App\Modules\Templating\AssetLoader;
 
 class ProductRenderer
 {
@@ -888,7 +890,8 @@ class ProductRenderer
 
     public function renderPurchaseButtons($atts = [])
     {
-        $this->renderBuyNowButton($atts);
+        $buyNowButtonAtts = $atts;
+        $this->renderBuyNowButton($buyNowButtonAtts);
         $this->renderAddToCartButton($atts);
     }
 
@@ -911,6 +914,8 @@ class ProductRenderer
 
         $atts = wp_parse_args($atts, $defaults);
 
+        $enableModalCheckout = Helper::isModalCheckoutEnabled();
+
         $stockStatus = 'in-stock';
         if (ModuleSettings::isActive('stock_management')) {
             $stockStatus = $this->defaultVariant->isStock() ? 'in-stock' : 'out-of-stock';
@@ -920,6 +925,7 @@ class ProductRenderer
         if (!$this->defaultVariant->isStock()) {
             $variationClass .= ' is-hidden ';
         }
+
         $buyNowAttributes = [
                 'data-fluent-cart-direct-checkout-button' => '',
                 'data-variation-type'                     => $this->product->detail->variation_type,
@@ -931,11 +937,81 @@ class ProductRenderer
                 'data-url'                                => site_url('?fluent-cart=instant_checkout&item_id='),
         ];
 
+        if ($enableModalCheckout) {
+            $buyNowAttributes['data-fct-instant-checkout-button'] = '';
+            $buyNowAttributes['data-enable-modal-checkout'] = 'yes';
+        }
+
         $buyButtonText = apply_filters('fluent_cart/product/buy_now_button_text', $atts['buy_now_text'], [
                 'product' => $this->product
         ]);
         ?>
         <a <?php $this->renderAttributes($buyNowAttributes); ?> aria-label="<?php echo esc_attr($buyButtonText); ?>">
+            <?php echo wp_kses_post($buyButtonText); ?>
+        </a>
+        <?php
+    }
+
+    public function renderBuyNowButtonBlock($atts = [])
+    {
+        $text = Arr::get($atts, 'text', __('Buy Now', 'fluent-cart'));
+
+
+        // Stock management check using isStock() method
+//        if (ModuleSettings::isActive('stock_management')) {
+//            if ($this->product->detail->variation_type === 'simple' && $this->defaultVariant) {
+//                if (!$this->defaultVariant->isStock()) {
+//                    echo '<span aria-disabled="true">' . esc_html__('Out of stock', 'fluent-cart') . '</span>';
+//                    return;
+//                }
+//            }
+//        }
+
+        $defaults = [
+                'buy_now_text'     => $text
+        ];
+
+        $atts = wp_parse_args($atts, $defaults);
+
+        $enableModalCheckout = Arr::get($atts, 'enable_modal_checkout', false);
+
+        $stockStatus = 'in-stock';
+        if (ModuleSettings::isActive('stock_management')) {
+            $stockStatus = $this->defaultVariant->isStock() ? 'in-stock' : 'out-of-stock';
+        }
+
+        $variationClass = 'fluent-cart-direct-checkout-button';
+        if (!$this->defaultVariant->isStock()) {
+            $variationClass .= ' is-hidden ';
+        }
+
+        $buyNowAttributes = [
+                'data-fluent-cart-direct-checkout-button' => '',
+                'data-variation-type'                     => $this->product->detail->variation_type,
+                'class'                                   => 'wp-block-button__link wp-element-button',
+                'data-stock-availability'                 => $stockStatus,
+                'data-quantity'                           => '1',
+                'href'                                    => site_url('?fluent-cart=instant_checkout&item_id=') . ($this->defaultVariant ? $this->defaultVariant->id : '') . '&quantity=1',
+                'data-cart-id'                            => $this->defaultVariant ? $this->defaultVariant->id : '',
+                'data-url'                                => site_url('?fluent-cart=instant_checkout&item_id='),
+        ];
+
+
+
+
+        if ($enableModalCheckout) {
+            $buyNowAttributes['data-fct-instant-checkout-button'] = '';
+            $buyNowAttributes['data-enable-modal-checkout'] = 'yes';
+        }
+
+
+        $buyNowAttributes = get_block_wrapper_attributes($buyNowAttributes);
+
+        $buyButtonText = apply_filters('fluent_cart/product/buy_now_button_text', $atts['buy_now_text'], [
+                'product' => $this->product
+        ]);
+        ?>
+        <a <?php echo($buyNowAttributes); ?> aria-label="<?php echo esc_attr($buyButtonText); ?>">
             <?php echo wp_kses_post($buyButtonText); ?>
         </a>
         <?php

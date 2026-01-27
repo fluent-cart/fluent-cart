@@ -50,7 +50,14 @@ class ProductDownloadableFileRequest extends RequestGuard
         return [
             'id' => 'intval',
             //'post_id' => 'intval',
-            'product_variation_id' => 'sanitize_text_field',
+            'product_variation_id' => function ($value) {
+                if (!is_array($value)) {
+                    return [];
+                }
+                return array_values(array_filter(array_map(function ($id) {
+                    return sanitize_text_field($id);
+                }, $value)));
+            },
             //'download_identifier' => 'sanitize_text_field',
             'title' => 'sanitize_text_field',
             'type' => 'sanitize_text_field',

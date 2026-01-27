@@ -105,6 +105,7 @@ class PayPalSubscriptions extends AbstractSubscriptionModule
                             'payment_method'      => 'paypal',
                             'vendor_charge_id'    => $chargeId,
                             'payment_method_type' => 'PayPal',
+                            'total'               => $amount,
                             'meta'                => [
                                 'payer' => $payer
                             ],

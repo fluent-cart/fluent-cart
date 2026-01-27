@@ -80,6 +80,7 @@ class FluentMetaRequest extends RequestGuard
             'currency_position'                    => 'sanitize_text_field',
             'checkout_method_style'                => 'sanitize_text_field',
             'require_logged_in'                    => 'sanitize_text_field',
+            'enable_modal_checkout'                => 'sanitize_text_field',
             'show_cart_icon_in_nav'                => 'sanitize_text_field',
             'show_cart_icon_in_body'               => 'sanitize_text_field',
             'additional_address_field'             => 'sanitize_text_field',
@@ -87,6 +88,7 @@ class FluentMetaRequest extends RequestGuard
             'user_account_creation_mode'           => 'sanitize_text_field',
             'force_ssl'                            => 'sanitize_text_field',
             'checkout_page_id'                     => 'intval',
+            'custom_payment_page_id'               => 'intval',
             'cart_page_id'                         => 'intval',
             'receipt_page_id'                      => 'intval',
             'shop_page_id'                         => 'intval',
@@ -113,6 +115,7 @@ class FluentMetaRequest extends RequestGuard
             'product_slug'                         => 'sanitize_text_field',
             'min_receipt_number'                   => 'sanitize_text_field',
             'inv_prefix'                           => 'sanitize_text_field',
+            'zero_price_text'                      => 'sanitize_text_field',
             'enable_image_zoom_in_single_product'  => 'sanitize_text_field',
             'enable_image_zoom_in_modal'           => 'sanitize_text_field',
             'theme_setup'                          => function ($value) {

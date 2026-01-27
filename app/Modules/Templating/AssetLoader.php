@@ -34,6 +34,7 @@ class AssetLoader
     public static function enqueueAssets()
     {
         $pageType = TemplateService::getCurrentFcPageType();
+
         switch ($pageType) {
             case 'single_product':
                 self::loadSingleProductAssets();
@@ -58,7 +59,6 @@ class AssetLoader
 
     public static function loadSingleProductAssets()
     {
-
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -75,7 +75,7 @@ class AssetLoader
                 'source'       => 'public/single-product/SingleProduct.js',
                 'dependencies' => [],
                 'inFooter'     => true
-            ],
+            ]
         ];
         $localizeData = [
             'fluentcart_single_product_vars' => [
@@ -103,6 +103,29 @@ class AssetLoader
         Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-single-product-page');
 
 
+    }
+
+    public static function loadModalCheckoutAssets() 
+    {
+        static $isLoaded = false;
+        if ($isLoaded) {
+            return;
+        }
+
+        $isLoaded = true;
+
+//        $scripts = [
+//            'source'       => 'public/checkout/ModalCheckoutHandler.js',
+//            'dependencies' => [],
+//            'inFooter'     => true
+//        ];
+
+        Vite::enqueueStyle(
+            'fluentcart-modal-checkout-css',
+            'public/checkout/style/modal-checkout.scss'
+        );
+
+//        Vite::enqueueAllScripts($scripts, 'fluent-cart-modal-checkout');
     }
 
     public static function loadProductCardAssets()
@@ -309,7 +332,8 @@ class AssetLoader
                 'currency_settings'    => CurrencySettings::get(),
                 'has_active_cart'      => !!$cart,
                 'is_drawer_hidden'     => CartLoader::shouldHideCartDrawer(),
-                'is_admin_bar_showing' => is_admin_bar_showing()
+                'is_admin_bar_showing' => is_admin_bar_showing(),
+                'cart_item_count'      => $cart ? count($cart->cart_data ?? []) : 0,
             ],
             'fluentcart_utm_vars'    => [
                 'allowed_keys' => UtmHelper::allowedUtmParameterKey()
@@ -394,6 +418,22 @@ class AssetLoader
             }
         }
 
+
+        //if url has cart hash then it's an instant checkout
+        $hasInstantCheckout = App::request()->get(Helper::INSTANT_CHECKOUT_URL_PARAM);
+        $iframeSource = Arr::get(App::request()->server(), 'HTTP_SEC_FETCH_DEST');
+        $hasModalCheckout = false;
+
+        //else check if it's a modal checkout
+        if ($iframeSource === 'iframe') {
+            $hasModalCheckout = App::request()->get('fluent-cart') === 'modal_checkout';
+
+        }
+        $isInstantCheckout = 'no';
+        if ($hasInstantCheckout || $hasModalCheckout) {
+            $isInstantCheckout = 'yes';
+        }
+
         $data = [
             'fluentcart_checkout_vars' => [
                 'rest'                                         => Helper::getRestInfo(),
@@ -407,7 +447,11 @@ class AssetLoader
                     'text' => __('Place Order', 'fluent-cart'),
                 ],
                 'trans'                                        => TransStrings::checkoutPageString(),
-                'payments_trans'                               => TransStrings::paymentsString()
+                'payments_trans'                               => TransStrings::paymentsString(),
+                'cart_hash'                                    => $cart->cart_hash,
+                'is_instant_checkout'                          =>  $isInstantCheckout,
+                'is_modal_checkout'                            =>  $hasModalCheckout ? 'yes' : 'no',
+
             ],
             'fluentcart_checkout_info' => [
                 'baseUrl'                => site_url(),
@@ -459,7 +503,7 @@ class AssetLoader
             'fluentcart-add-to-cart-btn-css',
             'public/buttons/add-to-cart/style/style.scss'
         );
-        
+
         Vite::enqueueStyle(
             'fluentcart-direct-checkout-btn-css',
             'public/buttons/direct-checkout/style/style.scss'

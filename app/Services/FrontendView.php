@@ -98,12 +98,24 @@ class FrontendView
         );
 
         Vite::enqueueScript(
-            $slug . '-fluentcart-print-js',
+            $slug . '-fluentcart-print-js2',
             'public/print/Print.js',
             []
-        );
+        )->with([
+            'fct_receipt_data' => self::getLocalizeData()
+        ]);
 
         return self::loadView('', $params, 'print/index.php');
+    }
+
+    public static function getLocalizeData(): array
+    {
+        return [
+            'translations' => [
+                'FluentCart Receipt' => __('FluentCart Receipt', 'fluent-cart'),
+                'Receipt Number' => __('Receipt Number', 'fluent-cart'),
+            ]
+        ];
     }
 
 

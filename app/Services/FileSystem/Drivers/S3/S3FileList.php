@@ -40,9 +40,22 @@ class S3FileList
         $this->maxKeys = (int)App::request()->get('per_page', 10);
 
         // ✅ Corrected region-based S3 endpoint
-        $baseUrl = $this->bucket === ''
-            ? "https://s3.{$this->region}.amazonaws.com"
-            : "https://{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        // $baseUrl = $this->bucket === ''
+        //     ? "https://s3.{$this->region}.amazonaws.com"
+        //     : "https://{$this->bucket}.s3.{$this->region}.amazonaws.com";
+
+        $hasDot = strpos($this->bucket, '.') !== false;
+
+        // Base S3 endpoint
+        if ($this->bucket === '') {
+            $baseUrl = "https://s3.{$this->region}.amazonaws.com";
+        } elseif ($hasDot) {
+            // Path-style (required for dotted buckets)
+            $baseUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}";
+        } else {
+            // Virtual-hosted style
+            $baseUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        }
 
         $this->requestUrl = "{$baseUrl}/?encoding-type=url&list-type=2&max-keys={$this->maxKeys}";
         $this->signature = $this->generateSignature();
@@ -176,8 +189,15 @@ class S3FileList
         $contentHash = $this->getContentHash();
         $host = $this->getHost();
 
+        $canonicalUri = '/';
+
+        if ($this->bucket !== '' && strpos($this->bucket, '.') !== false) {
+            // Path-style: include bucket in URI
+            $canonicalUri = '/' . $this->bucket . '/';
+        }
+
         return "{$this->httpMethod}\n" .
-            "/\n" .
+            "{$canonicalUri}\n" .
             "{$canonicalQuery}\n" .
             "host:{$host}\n" .
             "x-amz-content-sha256:{$contentHash}\n" .
@@ -186,11 +206,26 @@ class S3FileList
             "{$contentHash}";
     }
 
-    private function getHost(): string
+
+    private function getHostOld(): string
     {
         return $this->bucket === ''
             ? "s3.{$this->region}.amazonaws.com"
             : "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+    }
+
+    private function getHost(): string
+    {
+        if ($this->bucket === '') {
+            return "s3.{$this->region}.amazonaws.com";
+        }
+
+        // If bucket contains dot, use path-style host
+        if (strpos($this->bucket, '.') !== false) {
+            return "s3.{$this->region}.amazonaws.com";
+        }
+
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
     }
 
     private function getContentHash(): string

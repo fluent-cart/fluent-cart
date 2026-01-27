@@ -11,7 +11,13 @@ class UserParser extends BaseParser
 
     public function __construct($data)
     {
-        $this->userId = Arr::get($data, 'user_id', null);
+        if (Arr::has($data, 'user_id')) {
+            $uId = Arr::get($data, 'user_id', null);
+        } else {
+            $uId = Arr::get($data, 'customer.user_id', null);
+        }
+
+        $this->userId = $uId;
         $this->setUser();
         parent::__construct($data);
     }
@@ -32,28 +38,33 @@ class UserParser extends BaseParser
         return $this->get($accessor,$code);
     }
 
-    public function getUserId()
+    public function getID()
     {
         return $this->userId;
     }
 
-    public function getUserFirstName()
+    public function getFirstName()
     {
-        return $this->getDataFromUser('user_firstname');
+        return $this->getDataFromUser('first_name');
     }
 
-    public function getUserLastName()
+    public function getLastName()
     {
-        return $this->getDataFromUser('user_lastname');
+        return $this->getDataFromUser('last_name');
     }
 
-    public function getUserDisplayName()
+    public function getDisplayName()
     {
         return $this->getDataFromUser('display_name');
     }
+    public function getEmail()
+    {
+        return $this->getDataFromUser('user_email');
+    }
+
     public function getUserEmail()
     {
-        return $this->getDataFromUser('user_url');
+        return $this->getDataFromUser('user_email');
     }
 
     private function getDataFromUser(string $key)
@@ -62,6 +73,10 @@ class UserParser extends BaseParser
             return '';
         }
 
-        return $this->user->{$key};
+        if ($key === 'first_name' || $key === 'last_name') {
+            return get_user_meta($this->userId, $key, true) ?: '';
+        }
+
+        return $this->user->{$key} ?? '';
     }
 }

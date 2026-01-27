@@ -54,6 +54,10 @@ class TurnstileBoot
                 $isCheckoutPage = true;
             }
 
+            if (!$isCheckoutPage) {
+                $isCheckoutPage = \FluentCart\App\App::request()->get('fluent-cart') === 'modal_checkout';
+            }
+
             if (!$isCheckoutPage && is_page()) {
                 global $post;
                 if ($post && has_shortcode($post->post_content, 'fluent_cart_checkout')) {
@@ -64,7 +68,7 @@ class TurnstileBoot
             if ($isCheckoutPage) {
                 wp_enqueue_script(
                     'cloudflare-turnstile',
-                    'https://challenges.cloudflare.com/turnstile/v0/api.js',
+                    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
                     [],
                     null,
                     true
@@ -139,12 +143,21 @@ class TurnstileBoot
                     }
 
                     try {
-                        turnstile.render(widget, {
+                        const renderedId = turnstile.render(widget, {
                             sitekey: siteKey,
-                            callback: 'fluentCartTurnstileCallback',
+                            callback: function(token) {
+                                if (typeof window.fluentCartTurnstileCallback === 'function') {
+                                    window.fluentCartTurnstileCallback(token);
+                                } else {
+                                    window.fluentCartTurnstileToken = token;
+                                }
+                            },
                             size: 'invisible',
                             theme: 'auto'
                         });
+                        if (renderedId) {
+                            widget.setAttribute('data-widget-id', renderedId);
+                        }
                         return true;
                     } catch (error) {
                         return false;

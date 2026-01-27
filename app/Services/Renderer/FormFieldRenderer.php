@@ -101,7 +101,7 @@ class FormFieldRenderer
              return;
          }
         ?>
-        <div <?php RenderHelper::renderAtts($wrapperAttributes); ?>>
+        <div <?php RenderHelper::renderAtts($wrapperAttributes); ?> data-fct-checkout-form-section>
             <?php
                 if (!empty($fieldData['before_callback'])) {
                     call_user_func($fieldData['before_callback'], $fieldData);

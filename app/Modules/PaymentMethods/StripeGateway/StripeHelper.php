@@ -91,7 +91,8 @@ class StripeHelper
 
         $subscriptionUpdateData = array_filter([
             'current_payment_method' => 'stripe',
-            'status'                 => $status
+            'status'                 => $status,
+            'recurring_total'        => Arr::get($stripeSubscription, 'plan.amount'),
         ]);
 
         if ($stripeStatus == Status::SUBSCRIPTION_CANCELED) {
