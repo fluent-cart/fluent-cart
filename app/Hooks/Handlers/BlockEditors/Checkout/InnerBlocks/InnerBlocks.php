@@ -540,7 +540,10 @@ class InnerBlocks
         ob_start();
         ?>
         <div <?php echo $atts; ?>>
-            <?php (new CheckoutRenderer($cart))->renderCreateAccountField($title); ?>
+            <?php (new CheckoutRenderer($cart))->renderCreateAccountField([
+                    'title'       => $title,
+                    'wrapper_atts'=> $atts,
+            ]); ?>
         </div>
         <?php
 
@@ -628,7 +631,10 @@ class InnerBlocks
         ?>
         <div <?php echo $atts; ?>>
             <?php
-            (new CheckoutRenderer($cart))->renderShipToDifferentField($title);
+            (new CheckoutRenderer($cart))->renderShipToDifferentField([
+                    'title'       => $title,
+                    'wrapper_atts'=> $atts,
+            ]);
             ?>
         </div>
         <?php
@@ -689,7 +695,10 @@ class InnerBlocks
         ?>
         <div <?php echo $atts; ?>>
             <?php
-                (new CheckoutRenderer($cart))->agreeTerms($title);
+                (new CheckoutRenderer($cart))->agreeTerms([
+                    'title'       => $title,
+                    'wrapper_atts'=> $atts,
+                ]);
             ?>
         </div>
         <?php

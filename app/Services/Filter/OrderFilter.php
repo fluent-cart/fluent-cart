@@ -10,6 +10,8 @@ use FluentCart\App\Models\Order;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCartPro\App\Modules\Licensing\Models\License;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+
 
 class OrderFilter extends BaseFilter
 {
@@ -189,6 +191,15 @@ class OrderFilter extends BaseFilter
 
     public static function advanceFilterOptions(): array
     {
+        $manager = GatewayManager::getInstance();
+        $payment_routes = $manager->getRoutes();
+        $availablePaymentMethods = [];
+        
+        foreach ($payment_routes as $route) {
+            $availablePaymentMethods[$route['name']] = Arr::get($route, 'meta.title', $route['name']);
+        }
+
+     
         $filters = [
             'order'        => [
                 'label'    => __('Order Property', 'fluent-cart'),
@@ -263,11 +274,7 @@ class OrderFilter extends BaseFilter
                         'column'      => 'payment_method',
                         'relation'    => 'transactions',
                         'filter_type' => 'relation',
-                        'options'     => [
-                            'stripe'          => __('Stripe', 'fluent-cart'),
-                            'paypal'          => __('PayPal', 'fluent-cart'),
-                            'offline_payment' => __('Cash on Delivery', 'fluent-cart'),
-                        ],
+                        'options'     => $availablePaymentMethods,
                         'is_multiple' => true,
                         'is_only_in'  => true
                     ],

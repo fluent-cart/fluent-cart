@@ -291,7 +291,15 @@ class S3 extends BaseStorageDriver
             }
         }
 
-        $url = "https://{$bucket}.s3.amazonaws.com"; // The global endpoint
+        //$url = "https://{$bucket}.s3.amazonaws.com"; // The global endpoint
+        if (strpos($bucket, '.') !== false) {
+            // If bucket contains dot, use path-style (required for SSL)
+            $url = "https://s3.amazonaws.com/{$bucket}";
+        } else {
+            // Normal bucket: use virtual-hosted style
+            $url = "https://{$bucket}.s3.amazonaws.com";
+        }
+
 
         $response = wp_remote_head($url);
 

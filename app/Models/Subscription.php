@@ -515,12 +515,16 @@ class Subscription extends Model
             ];
         }
 
-        if ($this->status !== Status::SUBSCRIPTION_COMPLETED) {
-            $updateData['status'] = Status::SUBSCRIPTION_CANCELED;
-        }
+        $updateData['status'] = Status::SUBSCRIPTION_CANCELED;
+        $updateData['next_billing_date'] = NULL;
 
         if (empty($updateData['canceled_at']) && !$this->canceled_at) {
             $updateData['canceled_at'] = gmdate('Y-m-d H:i:s', time());
+        }
+
+        if ($this->status === Status::SUBSCRIPTION_COMPLETED) {
+            $updateData['status'] = Status::SUBSCRIPTION_COMPLETED;
+            $updateData['canceled_at'] = NULL;
         }
 
         $config = $this->config;

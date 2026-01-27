@@ -84,3 +84,21 @@ add_filter('fluent_cart/dummy_product_info', function ($info) {
 
     return $infos;
 });
+
+/**
+ * Display custom text for zero-priced items (e.g., "FREE" instead of $0.00)
+ *
+ * @param string $text The default text (empty string)
+ * @param array  $args Context array with 'amount', 'with_currency', 'currency_code'
+ * @return string Custom zero price text from settings, or original text
+ */
+add_filter('fluent_cart/zero_price_text', function ($text, $args) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+    $storeSettings = new \FluentCart\Api\StoreSettings();
+    $zeroPriceText = $storeSettings->get('zero_price_text', '');
+
+    if (!empty($zeroPriceText)) {
+        return esc_html($zeroPriceText);
+    }
+
+    return $text;
+}, 10, 2);

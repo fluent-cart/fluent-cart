@@ -14,6 +14,7 @@ use FluentCart\App\Vite;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Relations\hasOne;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\Framework\Support\Str;
 
 /**
  *  Product Model - DB Model for Products
@@ -513,7 +514,6 @@ class Product extends Model
         if (!empty($galleryImages)) {
             foreach ($galleryImages as $image) {
                 $images[] = [
-                    'attachment_id' => $image['id'],
                     'type'          => 'gallery_image',
                     'url'           => $image['url'],
                     'alt'           => $image['title'],
@@ -535,7 +535,6 @@ class Product extends Model
             if (!empty($variant['media']['meta_value'])) {
                 foreach ($variant['media']['meta_value'] as $image) {
                     $images[] = [
-                        'attachment_id' => $image['id'],
                         'type'            => 'variation_image',
                         'url'             => $image['url'],
                         'alt'             => $image['title'],
@@ -577,4 +576,186 @@ class Product extends Model
         });
     }
 
+    public static function duplicateProduct($productId, array $options = []): int
+    {
+        $originalProduct = static::with([
+            'detail',
+            'variants' => function ($query) {
+                $query->with(['media'])->orderBy('serial_index', 'ASC');
+            },
+            'downloadable_files'
+        ])->find($productId);
+
+        if (!$originalProduct) {
+            throw new \RuntimeException(\__('Product not found', 'fluent-cart'), 404);
+        }
+
+        return $originalProduct->performDuplicate($options);
+    }
+
+    protected function performDuplicate(array $options = []): int
+    {
+        $importStockManagement = (bool)Arr::get($options, 'import_stock_management', false);
+        $importLicenseSettings = (bool)Arr::get($options, 'import_license_settings', false);
+        $importDownloadableFiles = (bool)Arr::get($options, 'import_downloadable_files', false);
+
+        $productId = (int)$this->ID;
+
+        global $wpdb;
+        $wpdb->query('START TRANSACTION');
+
+        try {
+            $newPostData = [
+                'post_title'   => $this->post_title . ' (' . \__('Copy', 'fluent-cart') . ')',
+                'post_name'    => \sanitize_title($this->post_title . '-copy-' . time()),
+                'post_content' => $this->post_content,
+                'post_excerpt' => $this->post_excerpt,
+                'post_status'  => 'draft',
+                'post_type'    => FluentProducts::CPT_NAME,
+                'post_author'  => \get_current_user_id(),
+            ];
+
+            $newProductId = \wp_insert_post($newPostData);
+
+            if (\is_wp_error($newProductId)) {
+                throw new \RuntimeException($newProductId->get_error_message());
+            }
+
+            if ($this->detail) {
+                $detailData = $this->detail->toArray();
+
+                unset($detailData['id'], $detailData['created_at'], $detailData['updated_at']);
+                $detailData['post_id'] = $newProductId;
+
+                if (!$importStockManagement) {
+                    $detailData['manage_stock'] = 0;
+                    $detailData['stock_status'] = 'in-stock';
+
+                    if (isset($detailData['other_info'])) {
+                        $otherInfo = $detailData['other_info'];
+                        $detailData['other_info'] = $otherInfo;
+                    }
+                }
+
+                if ($importLicenseSettings) {
+                    $licenseSettings = ProductMeta::query()
+                        ->where('object_id', $productId)
+                        ->where('object_type', null)
+                        ->where('meta_key', 'license_settings')
+                        ->first();
+
+                    if ($licenseSettings) {
+                        ProductMeta::query()->create([
+                            'object_id'   => $newProductId,
+                            'object_type' => null,
+                            'meta_key'    => 'license_settings',
+                            'meta_value'  => $licenseSettings->meta_value
+                        ]);
+                    }
+                }
+
+                if (!$importDownloadableFiles) {
+                    $detailData['manage_downloadable'] = 0;
+                }
+
+                ProductDetail::query()->create($detailData);
+            }
+
+            $variationIdMap = [];
+            if ($this->variants) {
+                foreach ($this->variants as $originalVariant) {
+                    $variantData = $originalVariant->toArray();
+
+                    unset($variantData['id'], $variantData['created_at'], $variantData['updated_at']);
+                    $variantData['post_id'] = $newProductId;
+
+                    if (!$importStockManagement) {
+                        $variantData['manage_stock'] = 0;
+                        $variantData['stock_status'] = 'in-stock';
+                        $variantData['total_stock'] = 0;
+                        $variantData['available'] = 0;
+                        $variantData['on_hold'] = 0;
+                        $variantData['committed'] = 0;
+                    }
+
+                    $newVariant = ProductVariation::query()->create($variantData);
+                    $variationIdMap[$originalVariant->id] = $newVariant->id;
+
+                    if ($originalVariant->media && $newVariant) {
+                        foreach ($originalVariant->media as $media) {
+                            \wp_set_object_terms(
+                                $newVariant->id,
+                                $media->term_id ?? $media->id,
+                                'product_media'
+                            );
+                        }
+                    }
+                }
+            }
+
+            if ($importDownloadableFiles && $this->downloadable_files) {
+                foreach ($this->downloadable_files as $file) {
+                    $fileData = $file->toArray();
+
+                    unset($fileData['id'], $fileData['created_at'], $fileData['updated_at']);
+                    $fileData['post_id'] = $newProductId;
+                    $fileData['download_identifier'] = Str::uuid();
+
+                    if (!empty($fileData['product_variation_id'])) {
+                        $productVariationIds = [];
+                        foreach ($fileData['product_variation_id'] as $variationId) {
+                            $productVariationIds[] = Arr::get($variationIdMap, $variationId);
+                        }
+                        $fileData['product_variation_id'] = $productVariationIds;
+                    }
+
+                    ProductDownload::query()->create($fileData);
+                }
+            }
+
+            $featuredImageId = \get_post_thumbnail_id($productId);
+            if ($featuredImageId) {
+                \set_post_thumbnail($newProductId, $featuredImageId);
+            }
+
+            $taxonomies = \get_object_taxonomies(FluentProducts::CPT_NAME);
+            foreach ($taxonomies as $taxonomy) {
+                $terms = \wp_get_object_terms($productId, $taxonomy, ['fields' => 'ids']);
+                if (!empty($terms) && !\is_wp_error($terms)) {
+                    \wp_set_object_terms($newProductId, $terms, $taxonomy);
+                }
+            }
+
+            $postMeta = \get_post_meta($productId);
+            if ($postMeta) {
+                foreach ($postMeta as $key => $values) {
+                    $skipKeys = ['_edit_lock', '_edit_last'];
+                    if (in_array($key, $skipKeys)) {
+                        continue;
+                    }
+
+                    foreach ($values as $value) {
+                        \add_post_meta($newProductId, $key, \maybe_unserialize($value));
+                    }
+                }
+            }
+
+            $wpdb->query('COMMIT');
+
+            \do_action('fluent_cart/product_duplicated', [
+                'original_product_id' => $productId,
+                'new_product_id'      => $newProductId,
+                'options'             => [
+                    'import_stock_management'   => $importStockManagement,
+                    'import_license_settings'   => $importLicenseSettings,
+                    'import_downloadable_files' => $importDownloadableFiles,
+                ]
+            ]);
+
+            return (int)$newProductId;
+        } catch (\Throwable $e) {
+            $wpdb->query('ROLLBACK');
+            throw $e;
+        }
+    }
 }

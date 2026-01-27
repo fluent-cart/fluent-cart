@@ -8,7 +8,7 @@ class LicensePolicy extends Policy
 {
     public function verifyRequest(Request $request)
     {
-        return true;
+        return $this->hasRoutePermissions();
     }
 
     public function index(Request $request)

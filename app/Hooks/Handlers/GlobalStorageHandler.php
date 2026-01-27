@@ -18,9 +18,10 @@ class GlobalStorageHandler
         add_action('init', function () {
             (new Local())->init();
             (new S3())->init();
-        });
-        //This hook will allow others to register their storage driver with ours
-        do_action('fluent_cart/register_storage_drivers');
+            //This hook will allow others to register their storage driver with ours
+            do_action('fluent_cart/register_storage_drivers');
+        },9);
+
 
     }
 

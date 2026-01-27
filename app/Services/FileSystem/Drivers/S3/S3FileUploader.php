@@ -39,8 +39,17 @@ class S3FileUploader
         $this->date = substr($this->timeStamp, 0, 8);
 
         // ✅ Correct Regional Endpoint
-        $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
+        // $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
 
+        $hasDot = strpos($this->bucket, '.') !== false;
+
+        if ($hasDot) {
+            // Path-style URL
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$this->s3FilePath}";
+        } else {
+            // Virtual-hosted style
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
+        }
         $this->signature = $this->generateSignature();
     }
 
@@ -124,18 +133,38 @@ class S3FileUploader
 
         $contentHash = $this->getContentHash();
 
+        // If bucket has dot, use path-style URL in canonical request
+        if (strpos($this->bucket, '.') !== false) {
+            $canonicalUri = "/{$this->bucket}{$s3FilePath}";
+        } else {
+            $canonicalUri = $s3FilePath;
+        }
+
         return "{$this->httpMethod}\n"
-            . "{$s3FilePath}\n\n"
+            . "{$canonicalUri}\n\n"
             . "host:{$this->getUploadHost()}\n"
             . "x-amz-content-sha256:{$contentHash}\n"
             . "x-amz-date:{$this->timeStamp}\n\n"
             . "host;x-amz-content-sha256;x-amz-date\n"
             . "{$contentHash}";
     }
+    private function getUploadHostOld(): string
+    {
+        // ✅ Regional host
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+    }
 
     private function getUploadHost(): string
     {
-        // ✅ Regional host
+        if ($this->bucket === '') {
+            return "s3.{$this->region}.amazonaws.com";
+        }
+
+        // If bucket contains dot, use path-style host
+        if (strpos($this->bucket, '.') !== false) {
+            return "s3.{$this->region}.amazonaws.com";
+        }
+
         return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
     }
 

@@ -521,13 +521,14 @@ class InnerBlocks
         $renderer = new \FluentCart\App\Services\Renderer\ProductFilterRender($filters);
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
-
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fct-shop-filter-wrapper" data-fluent-cart-shop-app-filter-wrapper>';
             $innerBlocksContent .= '<div class="fct-shop-filter-wrapper-inner">';
             $innerBlocksContent .= '<form class="fct-shop-filter-form" data-fluent-cart-product-filter-form>';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $instance->context['filter_renderer'] = $renderer;
                     $innerBlocksContent .= $instance->render();
                 }
@@ -573,10 +574,12 @@ class InnerBlocks
         $innerBlocksContent = '';
 
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fct-product-action-container fct-shop-view-switcher-wrap">';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -635,10 +638,12 @@ class InnerBlocks
 
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fct-shop-filter-item"><div class="fct-shop-button-group">';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -681,10 +686,12 @@ class InnerBlocks
     {
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fluent-cart-shop-no-result-found hide" data-fluent-cart-shop-no-result-found="">';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -697,10 +704,12 @@ class InnerBlocks
     {
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fluent-cart-product-loader loader-hidden" data-fluent-cart-product-loader>';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -777,10 +786,12 @@ class InnerBlocks
 
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             $innerBlocksContent .= '<div class="fct-product-image-inner-blocks">';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -886,6 +897,7 @@ class InnerBlocks
         ProductDataSetup::setProductsCache($products);
 
         $innerBlocksContent = '';
+        $blockContext = $block->context;
         foreach ($products as $key => $product) {
             setup_postdata($product->ID);
             if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
@@ -898,7 +910,8 @@ class InnerBlocks
 
                 foreach ($block->inner_blocks as $inner_block) {
                     if (isset($inner_block->parsed_block)) {
-                        $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                        $innerContext = array_merge($inner_block->context, $blockContext);
+                        $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                         $innerBlocksContent .= $instance->render();
                     }
                 }
@@ -1006,6 +1019,7 @@ class InnerBlocks
 
 
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $blockContext = $block->context;
             // start wrapper
             $innerBlocksContent .= sprintf(
                     '<div class="fct-products-wrapper-inner %s%s" data-fluent-cart-product-wrapper-inner  
@@ -1043,7 +1057,8 @@ class InnerBlocks
                 }
 
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
 
@@ -1131,9 +1146,11 @@ class InnerBlocks
 
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
             $innerBlocksContent .= '<div class="fct-shop-paginator">';
+            $blockContext = $block->context;
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    $instance = new \WP_Block($inner_block->parsed_block, $block->context);
+                    $innerContext = array_merge($inner_block->context, $blockContext);
+                    $instance = new \WP_Block($inner_block->parsed_block, $innerContext);
                     $innerBlocksContent .= $instance->render();
                 }
             }
@@ -1146,15 +1163,12 @@ class InnerBlocks
     {
         $allProducts = $this->getInitialProducts($block);
         $products = $allProducts['products'];
-        $total = $allProducts['total'];
-        $page = Arr::get($block->context, 'fluent-cart/per_page', 10);
-        $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
-        $orderBy = Arr::get($block->context, 'fluent-cart/order_by','ID');
+
 
         if($products instanceof CursorPaginator){
             return '';
         }
-        $total = $allProducts['total'];
+//        $total = $allProducts['total'];
         $page = Arr::get($block->context, 'fluent-cart/per_page', 10);
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by','ID');
@@ -1173,44 +1187,6 @@ class InnerBlocks
             ]
         ]))->renderPaginatorResultWrapper($wrapper_attributes);
         return ob_get_clean();
-
-        $currentPage = Arr::get(App::request()->all(), 'current_page', 1);
-        $perPage = $products->perPage();
-        $total = $allProducts['total'];
-
-        $start = $currentPage;
-        $end = $perPage;
-
-        $html = sprintf(
-                '<div class="fct-shop-paginator-result-wrapper">
-            <div %s>
-                Showing <span class="fct-shop-paginator-from" data-fluent-cart-shop-app-paginator-info-pagination-from>%s</span> of <span class="fct-shop-paginator-to" data-fluent-cart-shop-app-paginator-info-pagination-to>%s</span> of <span class="fct-shop-paginator-total" data-fluent-cart-shop-app-paginator-info-pagination-total>%s</span> Items
-            </div>
-            
-            <div class="fct-shop-per-page-selector">
-                <select data-fluent-cart-shop-app-paginator-per-page-selector>
-                    <option value="10">%s</option>
-                    <option value="20">%s</option>
-                    <option value="30">%s</option>
-                </select>
-            </div>
-        </div>',
-
-                // %s (1): The wrapper attributes string (already handled by esc_attr in the context)
-                $wrapper_attributes,
-
-                // %s (2, 3, 4): Start, End, and Total counts
-                $start,
-                $end,
-                $total,
-
-                // %s (5, 6, 7): The translated "Per page" strings
-                esc_html__('10 Per page', 'fluent-cart'),
-                esc_html__('20 Per page', 'fluent-cart'),
-                esc_html__('30 Per page', 'fluent-cart')
-        );
-
-        return $html;
     }
 
     public function renderProductPaginatorNumber($attributes, $content, $block)

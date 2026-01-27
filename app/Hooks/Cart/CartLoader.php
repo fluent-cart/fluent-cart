@@ -30,6 +30,14 @@ class CartLoader
             return;
         }
 
+        // Stop rendering when loaded inside iframe (frontend iframe checkout, quick-view, etc.)
+        if (
+            isset($_SERVER['HTTP_SEC_FETCH_DEST']) &&
+            $_SERVER['HTTP_SEC_FETCH_DEST'] === 'iframe'
+        ) {
+            return;
+        }
+
         $enableNavFloatingButton = apply_filters('fluent_cart/buttons/enable_floating_cart_button', true, []);
 
         if (!$enableNavFloatingButton) {

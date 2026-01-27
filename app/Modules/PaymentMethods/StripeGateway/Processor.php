@@ -85,13 +85,17 @@ class Processor
                 'latest_invoice.confirmation_secret',
                 'pending_setup_intent'
             ],
-            'metadata'         => [
+            'metadata'         => apply_filters('fluent_cart/payments/stripe_metadata_subscription', [
                 'fct_ref_id' => $paymentInstance->order->uuid,
                 'email'      => $paymentInstance->order->customer->email,
                 'name'       => $paymentInstance->order->full_name,
                 'subscription_item'       => $subscriptionModel->item_name,
                 'order_reference' => 'fct_order_id_' . $paymentInstance->order->id,
-            ]
+            ], [
+                'order'       => $paymentInstance->order,
+                'transaction' => $paymentInstance->transaction,
+                'subscription' => $subscriptionModel
+            ]),
         ];
 
         if (Arr::get($stripePlan, 'trial_period_days')) {
@@ -210,12 +214,15 @@ class Processor
             'amount'                    => $intentAmount,
             'currency'                  => $transactionCurrency,
             'automatic_payment_methods' => ['enabled' => 'true'],
-            'metadata'                  => [
+            'metadata'                  => apply_filters('fluent_cart/payments/stripe_metadata_onetime', [
                 'fct_ref_id' => $order->uuid,
                 'Name'       => $order->customer->full_name,
                 'Email'      => $order->customer->email,
                 'order_reference' => 'fct_order_id_' . $paymentInstance->order->id,
-            ]
+            ], [
+                'order'       => $order,
+                'transaction' => $transaction
+            ]),
         ];
 
         $itemCount = 1;
@@ -478,6 +485,7 @@ class Processor
             'client_reference_id' => $order->uuid,
             'line_items'          => $lineItems,
             'mode'                => 'subscription',
+            'consent_collection' => ['payment_method_reuse_agreement' => ['position' => 'hidden']],
             'success_url'         => Arr::get($paymentArgs, 'success_url') . '&fct_stripe_hosted=1&trx_hash=' . $transaction->uuid,
             'cancel_url'          => StripeHelper::getCancelUrl(),
             'subscription_data'   => $subscriptionData,

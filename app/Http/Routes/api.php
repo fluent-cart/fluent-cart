@@ -114,6 +114,9 @@ $router->prefix('products')->withPolicy('ProductPolicy')->group(function (Router
     $router->get('/{productId}/pricing', [ProductController::class, 'get'])->meta([
         'permissions' => 'products/view'
     ]);
+    $router->post('/{productId}/duplicate', [ProductController::class, 'duplicate'])->meta([
+        'permissions' => 'products/create'
+    ]);
 
     $router->get('/{id}/upgrade-paths', [ProductController::class, 'getUpgradeSettings'])->int('id')->meta([
         'permissions' => 'products/view'

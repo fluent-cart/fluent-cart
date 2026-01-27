@@ -10,6 +10,7 @@ use FluentCart\App\Helpers\ProductAdminHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Models\ProductMeta;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -384,6 +385,7 @@ class ProductResource extends BaseResourceApi
             }
             $product->detail()->delete();
             $product->variants()->delete();
+            $product->licensesMeta()->delete();
             $product->downloadable_files()->delete();
 
             $taxonomies = Taxonomy::getTaxonomies();
@@ -551,6 +553,74 @@ class ProductResource extends BaseResourceApi
             if (count($deletedProductIds) > 0 && count($failedProductIds) < 1) {
                 return static::makeSuccessResponse('', __('Selected product and associated data have been deleted', 'fluent-cart'));
             }
+        }
+
+        if ($action === 'duplicate_products') {
+            $importStockManagement = filter_var(
+                Arr::get($params, 'import_stock_management', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            $importLicenseSettings = filter_var(
+                Arr::get($params, 'import_license_settings', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            $importDownloadableFiles = filter_var(
+                Arr::get($params, 'import_downloadable_files', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            $options = [
+                'import_stock_management'   => $importStockManagement,
+                'import_license_settings'   => $importLicenseSettings,
+                'import_downloadable_files' => $importDownloadableFiles,
+            ];
+
+            $failedProductIds = [];
+            $newProductIds = [];
+
+            foreach ($productIds as $productId) {
+                try {
+                    $newProductIds[] = Product::duplicateProduct($productId, $options);
+                } catch (\Throwable $e) {
+                    $failedProductIds[] = $productId;
+                }
+            }
+
+            if (count($failedProductIds) > 0) {
+                $failedProductIdsText = implode(' , ', $failedProductIds);
+                return count($newProductIds) > 0
+                    ? static::makeSuccessResponse(
+                        [
+                            'new_product_ids' => $newProductIds
+                        ],
+                        sprintf(
+                            esc_html__(
+                                'Some products could not be duplicated (Product ID: %s). Remaining selected products have been duplicated as drafts.',
+                                'fluent-cart'
+                            ),
+                            esc_html($failedProductIdsText)
+                        )
+                    )
+                    : static::makeErrorResponse([
+                        [
+                            'code'    => 400,
+                            'message' => sprintf(
+                                esc_html__(
+                                    'Selected products could not be duplicated (Product ID: %s).',
+                                    'fluent-cart'
+                                ),
+                                esc_html($failedProductIdsText)
+                            ),
+                        ],
+                    ]);
+            }
+
+            return static::makeSuccessResponse(
+                [
+                    'new_product_ids' => $newProductIds
+                ],
+                __('Selected products have been duplicated as drafts', 'fluent-cart')
+            );
         }
 
         return static::makeErrorResponse([

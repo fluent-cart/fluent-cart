@@ -58,10 +58,13 @@ class ProductDownload extends Model
     {
         if (is_array($variations)) {
             $value = json_encode($variations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } elseif (is_numeric($variations)) {
+            $value = json_encode([(int)$variations], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } else {
-            $value = [];
+            $value = json_encode([], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
-        $this->attributes['settings'] = $value;
+
+        $this->attributes['product_variation_id'] = $value;
     }
 
     public function getProductVariationIdAttribute($value)

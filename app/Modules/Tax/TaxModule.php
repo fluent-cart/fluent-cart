@@ -816,48 +816,49 @@ class TaxModule
     public static function taxTitleLists() :array
     {
         return apply_filters('fluent_cart/tax/country_tax_titles', [
-            'AU' => 'ABN', // Australia
-            'NZ' => 'GST', // New Zealand
-            'IN' => 'GST', // India
-            'SG' => 'GST', // Singapore
-            'MY' => 'SST', // Malaysia
-            'CA' => 'GST / HST / PST / QST', // Canada
-            'GB' => 'VAT', // United Kingdom
-            'EU' => 'VAT', // European Union
-            'FR' => 'VAT', // France
-            'DE' => 'VAT', // Germany
-            'NL' => 'VAT', // Netherlands
-            'ES' => 'VAT', // Spain
-            'IT' => 'VAT', // Italy
-            'IE' => 'VAT', // Ireland
-            'US' => 'EIN / Sales Tax', // United States
-            'ZA' => 'VAT', // South Africa
-            'NG' => 'TIN / VAT', // Nigeria
-            'AE' => 'TRN / VAT', // United Arab Emirates
-            'SA' => 'VAT', // Saudi Arabia
-            'QA' => 'VAT', // Qatar
-            'JP' => 'Consumption Tax (CTN)', // Japan
-            'CN' => 'VAT', // China
-            'HK' => 'BRN', // Hong Kong
-            'PH' => 'TIN / VAT', // Philippines
-            'ID' => 'NPWP / PPN', // Indonesia
-            'TH' => 'VAT', // Thailand
-            'VN' => 'MST / VAT', // Vietnam
-            'BD' => 'BIN / VAT', // Bangladesh
-            'PK' => 'NTN / STRN', // Pakistan
-            'LK' => 'VAT', // Sri Lanka
-            'NP' => 'PAN / VAT', // Nepal
-            'BR' => 'CNPJ / CPF', // Brazil
-            'AR' => 'CUIT', // Argentina
-            'MX' => 'RFC / IVA', // Mexico
-            'CL' => 'RUT / IVA', // Chile
-            'PE' => 'RUC / IGV', // Peru
-            'RU' => 'INN / VAT', // Russia
-            'TR' => 'VKN / VAT', // Turkey
-            'CH' => 'MWST / TVA / IVA', // Switzerland
-            'NO' => 'VAT', // Norway
-            'IS' => 'VSK', // Iceland
-            'IL' => 'VAT', // Israel
+            'AU' => __('ABN', 'fluent-cart'), // Australia
+            'NZ' => __('GST', 'fluent-cart'), // New Zealand
+            'IN' => __('GST', 'fluent-cart'), // India
+            'SG' => __('GST', 'fluent-cart'), // Singapore
+            'MY' => __('SST', 'fluent-cart'), // Malaysia
+            'CA' => __('GST / HST / PST / QST', 'fluent-cart'), // Canada
+            'GB' => __('VAT', 'fluent-cart'), // United Kingdom
+            'EU' => __('VAT', 'fluent-cart'), // European Union
+            'FR' => __('VAT', 'fluent-cart'), // France
+            'DE' => __('VAT', 'fluent-cart'), // Germany
+            'NL' => __('VAT', 'fluent-cart'), // Netherlands
+            'ES' => __('VAT', 'fluent-cart'), // Spain
+            'IT' => __('VAT', 'fluent-cart'), // Italy
+            'IE' => __('VAT', 'fluent-cart'), // Ireland
+            'US' => __('EIN / Sales Tax', 'fluent-cart'), // United States
+            'ZA' => __('VAT', 'fluent-cart'), // South Africa
+            'NG' => __('TIN / VAT', 'fluent-cart'), // Nigeria
+            'AE' => __('TRN / VAT', 'fluent-cart'), // United Arab Emirates
+            'SA' => __('VAT', 'fluent-cart'), // Saudi Arabia
+            'QA' => __('VAT', 'fluent-cart'), // Qatar
+            'JP' => __('Consumption Tax (CTN)', 'fluent-cart'), // Japan
+            'CN' => __('VAT', 'fluent-cart'), // China
+            'HK' => __('BRN', 'fluent-cart'), // Hong Kong
+            'PH' => __('TIN / VAT', 'fluent-cart'), // Philippines
+            'ID' => __('NPWP / PPN', 'fluent-cart'), // Indonesia
+            'TH' => __('VAT', 'fluent-cart'), // Thailand
+            'VN' => __('MST / VAT', 'fluent-cart'), // Vietnam
+            'BD' => __('BIN / VAT', 'fluent-cart'), // Bangladesh
+            'PK' => __('NTN / STRN', 'fluent-cart'), // Pakistan
+            'LK' => __('VAT', 'fluent-cart'), // Sri Lanka
+            'NP' => __('PAN / VAT', 'fluent-cart'), // Nepal
+            'BR' => __('CNPJ / CPF', 'fluent-cart'), // Brazil
+            'AR' => __('CUIT', 'fluent-cart'), // Argentina
+            'MX' => __('RFC / IVA', 'fluent-cart'), // Mexico
+            'CL' => __('RUT / IVA', 'fluent-cart'), // Chile
+            'PE' => __('RUC / IGV', 'fluent-cart'), // Peru
+            'RU' => __('INN / VAT', 'fluent-cart'), // Russia
+            'TR' => __('VKN / VAT', 'fluent-cart'), // Turkey
+            'CH' => __('MWST / TVA / IVA', 'fluent-cart'), // Switzerland
+            'NO' => __('VAT', 'fluent-cart'), // Norway
+            'IS' => __('VSK','fluent-cart'), // Iceland
+            'IL' => __('VAT', 'fluent-cart'), // Israel
+            'SE' => __('VAT', 'fluent-cart'), // Sweden
         ]);
 
     }
@@ -867,7 +868,7 @@ class TaxModule
         if (isset($countryTaxTitles[$countryCode])) {
             return $countryTaxTitles[$countryCode];
         }
-        return 'VAT';
+        return __('VAT', 'fluent-cart');
     }
 
 }

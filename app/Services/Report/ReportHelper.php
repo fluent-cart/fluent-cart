@@ -161,7 +161,7 @@ class ReportHelper
             'compareType'      => 'sanitize_text_field',
             'compareDate'      => 'sanitize_text_field',
             'groupKey'         => function ($value) {
-                $acceptedValues = ['billing_country', 'shipping_country', 'payment_method', 'payment_status'];
+                $acceptedValues = ['billing_country', 'shipping_country', 'payment_method', 'payment_status', 'default', 'monthly', 'yearly'];
                 return in_array($value, $acceptedValues) ? $value : 'payment_method';
             },
             'currency'         => 'sanitize_text_field',

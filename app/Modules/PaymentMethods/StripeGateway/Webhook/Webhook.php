@@ -97,11 +97,15 @@ class Webhook
             $isSubscriptionCycle = $vendorDataObject->billing_reason === 'subscription_cycle';
             if ($isSubscriptionCycle) {
                 if ($eventType === 'invoice.paid') {
-
                     $vendorDataObject = (new API())->getStripeObject('invoices/' . $vendorDataObject->id, ['expand' => ['payment_intent']]);
-                    
-                    $this->processSubscriptionRenewal($vendorDataObject);
+                    $createdOrder = $this->processSubscriptionRenewal($vendorDataObject);
+                    if ($createdOrder) {
+                        wp_send_json([
+                            'message' => 'Subscription renewal processed successfully. Order ID: ' . $createdOrder->id,
+                        ], 200);
+                    }
                 }
+
                 return false;
             }
         }
@@ -176,7 +180,7 @@ class Webhook
         $parentOrder = null;
 
         $vendorSubscriptionId = Arr::get($vendorInvoiceObject, 'subscription', null)
-        ?: (Arr::get($vendorInvoiceObject, 'parent.subscription_details.subscription', null) ?? null);
+            ?: (Arr::get($vendorInvoiceObject, 'parent.subscription_details.subscription', null) ?? null);
 
         if ($vendorSubscriptionId) {
             $subscription = Subscription::query()->where('vendor_subscription_id', $vendorSubscriptionId)
@@ -188,10 +192,10 @@ class Webhook
             $parentOrder = Order::query()->where('id', $subscription->parent_order_id)->first();
         }
 
-        if ($parentOrder) {
+        if (!$parentOrder) {
             // let's try to find from the meta ref id
-            if (!Arr::get($vendorInvoiceObject, 'subscription_details.metadata.fct_ref_id', null)) {
-                $refId = Arr::get($vendorInvoiceObject, 'subscription_details.metadata.fct_ref_id', null);
+            $refId = Arr::get($vendorInvoiceObject, 'subscription_details.metadata.fct_ref_id', null);
+            if ($refId) {
                 $parentOrder = Order::query()->where('uuid', $refId)->first();
             }
         }
@@ -206,8 +210,7 @@ class Webhook
         if (!$parentOrder || !$subscription || $subscription->current_payment_method !== 'stripe') {
             fluent_cart_error_log('Stripe Webhook Error: Subscription Renewal - Order or Subscription not found.', 'Vendor Subscription ID: ' . $vendorSubscriptionId);
             return false; // this is not our order
-        }
-;
+        };
         $paymentIntent = Arr::get($vendorInvoiceObject, 'payment_intent', null);
         if (is_array($paymentIntent)) {
             $paymentIntentId = Arr::get($paymentIntent, 'id', null);
@@ -220,8 +223,9 @@ class Webhook
                 ->where('subscription_id', $subscription->id)
                 ->where('vendor_charge_id', $paymentIntentId)
                 ->exists();
+
             if ($alreadyRecorded) {
-                return false;
+                return null; // already recorded
             }
         }
 
@@ -231,12 +235,14 @@ class Webhook
             'vendor_charge_id' => $paymentIntentId
         ];
 
-        $paymentIntent = (new API())->getStripeObject('payment_intents/' . $paymentIntentId, [], $parentOrder->mode);
+        $paymentIntent = (new API())->getStripeObject('payment_intents/' . $paymentIntentId, [
+            'expand' => ['latest_charge']
+        ], $parentOrder->mode);
 
         if (!is_wp_error($paymentIntent)) {
-            $transactionData['card_last_4'] = Arr::get($paymentIntent, 'charges.data.0.payment_method_details.card.last4', '');
-            $transactionData['card_brand'] = (string)Arr::get($paymentIntent, 'charges.data.0.payment_method_details.card.brand', '');
-            $transactionData['payment_method_type'] = (string)Arr::get($paymentIntent, 'charges.data.0.payment_method_details.type', '');
+            $transactionData['card_last_4'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.last4', '');
+            $transactionData['card_brand'] = (string)Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.brand', '');
+            $transactionData['payment_method_type'] = (string)Arr::get($paymentIntent, 'latest_charge.payment_method_details.type', '');
         } else {
             $activePaymentMethod = $subscription->getMeta('active_payment_method', []);
             if (!$activePaymentMethod || !is_array($activePaymentMethod)) {
@@ -261,8 +267,7 @@ class Webhook
             $subscriptionUpdateData = StripeHelper::getSubscriptionUpdateData($stripeSubscription, $subscription);
         }
 
-        SubscriptionService::recordRenewalPayment($transactionData, $subscription, $subscriptionUpdateData);
-
+        $createdTransaction = SubscriptionService::recordRenewalPayment($transactionData, $subscription, $subscriptionUpdateData);
 
         $subscription = Subscription::query()->find($subscription->id);
 
@@ -277,7 +282,11 @@ class Webhook
             }
         }
 
+        if ($createdTransaction) {
+            return $createdTransaction->order;
+        }
 
+        return null;
     }
 
 }

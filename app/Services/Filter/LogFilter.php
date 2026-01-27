@@ -18,7 +18,7 @@ class LogFilter extends BaseFilter
                         $searchableColumns = ['id'];
                         $search = Str::of($search)->remove('#')->toString();
                     } else {
-                        $searchableColumns = ['id', 'title', 'content', 'module'];
+                        $searchableColumns = ['id', 'title', 'content', 'module_name'];
                     }
 
                     foreach ($searchableColumns as $index => $column) {

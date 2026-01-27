@@ -188,8 +188,12 @@ class StatusHelper
             (new OrderStatusUpdated($this->order, $oldOrderStatus, $this->order->status, true, $actionActivity, 'order_status'))->dispatch();
         }
 
+        $autoCompleteDigitalOrder = apply_filters('fluent_cart/order_status/auto_complete_digital_order', true, [
+            'order' => $this->order,
+        ]);
+
         // Now if it's a digital product so we will make it auto completed
-        if ($this->order->fulfillment_type == 'digital'
+        if ($this->order->fulfillment_type == 'digital' && $autoCompleteDigitalOrder
             && !$refundedTotal && ($oldOrderStatus != $this->order->status)
             && ($this->order->status != Status::ORDER_COMPLETED)
         ) {

@@ -131,6 +131,56 @@ class SubscriptionService
             return new \WP_Error('order_creation_failed', __('Failed to create child order for the subscription renewal.', 'fluent-cart'));
         }
 
+        $billingAddress = $parentOrder->billing_address;
+        $shippingAddress = $parentOrder->shipping_address;
+
+        $customer = $parentOrder->customer;
+
+        $fullName = '';
+        $email = '';
+        $firstName = '';
+        $lastName = '';
+        if ($customer) {
+            $fullName = $customer->first_name . ' ' . $customer->last_name;
+            $email = $customer->email;
+            $firstName = $customer->first_name;
+            $lastName = $customer->last_name;
+        }
+
+        $billingAddressData = $billingAddress ? [
+            'type' => 'billing',
+            'full_name' => $fullName,
+            'address_1' => $billingAddress->address_1,
+            'address_2' => $billingAddress->address_2,
+            'city' => $billingAddress->city,
+            'state' => $billingAddress->state,
+            'postcode' => $billingAddress->postcode,
+            'country' => $billingAddress->country,
+            'email' => $email,
+            'first_name' => $firstName,
+            'last_name' => $lastName
+        ] : [];
+
+        $shippingAddressData = $shippingAddress ? [
+            'type' => 'shipping',
+            'full_name' => $fullName,
+            'address_1' => $shippingAddress->address_1,
+            'address_2' => $shippingAddress->address_2,
+            'city' => $shippingAddress->city,
+            'state' => $shippingAddress->state,
+            'postcode' => $shippingAddress->postcode,
+            'country' => $shippingAddress->country,
+            'email' => $email,
+            'first_name' => $firstName,
+            'last_name' => $lastName
+        ] : [];
+
+        \FluentCart\App\Helpers\AddressHelper::insertOrderAddresses(
+            $childOrder->id,
+            $billingAddressData,
+            $shippingAddressData
+        );
+
         //  Create Order Item
         $orderItem['order_id'] = $childOrder->id;
         $orderItem['created_at'] = $createdAt;
@@ -173,8 +223,13 @@ class SubscriptionService
         if ($isEot) {
             $subscriptionUpdateArgs['status'] = 'completed';
             $subscriptionUpdateArgs['next_billing_date'] = NULL;
+            $subscriptionUpdateArgs['canceled_at'] = NULL;
         } else if (!$subscriptionModel->next_billing_date && empty($subscriptionUpdateArgs['next_billing_date'])) {
             $subscriptionUpdateArgs['next_billing_date'] = $subscriptionModel->guessNextBillingDate();
+        }
+
+        if (Arr::get($subscriptionUpdateArgs, 'status') === Status::SUBSCRIPTION_ACTIVE) {
+            $subscriptionUpdateArgs['recurring_total'] = Arr::get($subscriptionUpdateArgs, 'recurring_total', $subscriptionModel->recurring_total);
         }
 
         $givenSubscriptionStatus = Arr::get($subscriptionUpdateArgs, 'status');

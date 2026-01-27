@@ -19,6 +19,7 @@ return [
     'Login failed.' => __('Login failed.', 'fluent-cart'),
     'Login failed. Please try again.' => __('Login failed. Please try again.', 'fluent-cart'),
     'Login successful' => __('Login successful', 'fluent-cart'),
+    'Modal checkout is not available. Please try again.' => __('Modal checkout is not available. Please try again.', 'fluent-cart'),
     'Network error occurred' => __('Network error occurred', 'fluent-cart'),
     'Order Processing...' => __('Order Processing...', 'fluent-cart'),
     'Password is required' => __('Password is required', 'fluent-cart'),

@@ -54,7 +54,11 @@ return function ($file) {
 
                     $updateUrl = admin_url('plugins.php?s=fluent-cart&plugin_status=all&fluent-cart-pro-check-update=' . time());
 
-                    $notices[] = '<div>FluentCart Pro Plugin needs to be updated to the latest version. <a href="' . esc_url($updateUrl) . '">Click here to update</a></div>';
+                    $notices[] = [
+                        'id'   => 'update_license',
+                        'type' => 'core_update',
+                        'html' => '<div>FluentCart Pro Plugin needs to be updated to the latest version. <a href="' . esc_url($updateUrl) . '">Click here to update</a></div>'
+                    ];
                 }
                 return $notices;
             });
