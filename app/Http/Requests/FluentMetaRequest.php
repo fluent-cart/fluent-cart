@@ -115,6 +115,7 @@ class FluentMetaRequest extends RequestGuard
             'product_slug'                         => 'sanitize_text_field',
             'min_receipt_number'                   => 'sanitize_text_field',
             'inv_prefix'                           => 'sanitize_text_field',
+            'zero_price_text'                      => 'sanitize_text_field',
             'enable_image_zoom_in_single_product'  => 'sanitize_text_field',
             'enable_image_zoom_in_modal'           => 'sanitize_text_field',
             'theme_setup'                          => function ($value) {
