@@ -353,6 +353,87 @@ class Cart extends Model
         return $this->addItem($item, $replacingIndex);
     }
 
+    public function addByCustom(array $variation, array $config = [])
+    {
+        $variation = CartHelper::normalizeCustomFields(
+            is_object($variation) ? $variation : (object) $variation
+        );
+
+        $variation = is_array($variation)
+            ? $variation
+            : (array) $variation;
+
+
+        if (!is_array($variation)) {
+            return new \WP_Error(
+                'invalid_custom_item',
+                __('Invalid custom item data.', 'fluent-cart')
+            );
+        }
+
+        $quantity = (int)Arr::get($config, 'quantity', 1);
+        $variationId = Arr::get($variation, 'id');
+
+        if ($quantity == 0) {
+            // that means we have to remove it
+            return $this->removeItem(
+                $variationId,
+                Arr::get($config, 'remove_args', []),
+                true
+            );
+        }
+
+        $requiredFields = [
+            'id',
+            'object_id',
+            'post_id',
+            'post_title',
+            'price',
+            'unit_price',
+            'payment_type'
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (
+                !array_key_exists($field, $variation) ||
+                $variation[$field] === '' ||
+                $variation[$field] === null
+            ) {
+                // Missing required field → remove item
+                //Invalid custom items are never allowed to persist in cart state. Silent removal here is intentional to avoid breaking cart update/recalculation flows.
+
+                return $this->removeItem($variationId);
+            }
+        }
+
+        // Subscription items may exist in cart, 
+        // but checkout must be initiated via direct checkout flow to ensure proper handling.           
+        if (Arr::get($variation, 'payment_type', null) === 'subscription') {
+            return new \WP_Error('invalid_item', __('Subscription items must be purchased via direct checkout.', 'fluent-cart'));
+
+        }
+
+        // Find existing item in cart
+        $replacingIndex = null; 
+        $existingItem = $this->findExistingItemAndIndex(
+            $variationId,
+            Arr::get($config, 'matched_args', [])
+        );
+
+        if ($existingItem) {
+            $replacingIndex = $existingItem[0];
+        }
+
+        if ($quantity <= 0) {
+            // remove the item if quantity is zero or negative after adjustment
+            return $this->removeItem($variationId);
+        }
+
+        $item = CartHelper::generateCartItemCustomItem($variation, $quantity);
+
+        return $this->addItem($item, $replacingIndex);
+    }
+
     public function guessCustomer()
     {
         if ($this->customer_id) {
@@ -703,7 +784,7 @@ class Cart extends Model
         );
     }
 
-    protected function findExistingItemAndIndex($objectId, $extraArgs = [])
+    public function findExistingItemAndIndex($objectId, $extraArgs = [])
     {
         $cartData = array_values($this->cart_data);
 
@@ -789,5 +870,42 @@ class Cart extends Model
     {
         return Arr::get($this->checkout_data, 'form_data.ship_to_different') === 'yes';
     }
+
+    // Unique hook handling
+    protected function uniqueHooks($hooks)
+    {
+        return array_values(array_unique($hooks));
+    }
+
+    public function addDraftCreatedActions($hooks)
+    {
+        return [
+            '__after_draft_created_actions__' => $this->uniqueHooks($hooks)
+        ];
+    }
+
+    public function addSuccessActions($hooks)
+    {
+        return [
+            '__on_success_actions__' => $this->uniqueHooks($hooks)
+        ];
+    }
+
+    public function addCartNotices($notices)
+    {
+        // Remove duplicates by notice ID
+        $uniqueNotices = [];
+        foreach ($notices as $notice) {
+            $uniqueNotices[$notice['id']] = $notice;
+        }
+
+        $uniqueNotices = array_values($uniqueNotices);
+
+        return [
+            '__cart_notices' => $uniqueNotices
+        ];
+    }
+
+
 
 }

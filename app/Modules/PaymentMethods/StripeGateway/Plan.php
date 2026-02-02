@@ -7,6 +7,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
+use FluentCart\App\Services\ProductItemService;
 use FluentCart\Framework\Support\Arr;
 
 class Plan
@@ -29,8 +30,10 @@ class Plan
      */
     public static function getStripePricing($data = [])
     {
-        $variation = ProductVariation::query()->find(Arr::get($data, 'variation_id'));
-        $product = Product::query()->find(Arr::get($data, 'product_id'));
+        $item = ProductItemService::getItem($data);
+        $product   = $item->product;
+        $variation = $item->variation;
+
         if (!$variation || !$product) {
             return new \WP_Error('invalid_product', esc_html__('Invalid product or variation.', 'fluent-cart'));
         }
@@ -122,7 +125,8 @@ class Plan
      */
     public static function getOneTimeAddonPrice($data = [])
     {
-        $product = Product::query()->find(Arr::get($data, 'product_id'));
+        $item = ProductItemService::getItem($data);
+        $product = $item->product;
 
         if (!$product) {
             return new \WP_Error('invalid_product', esc_html__('Invalid product.', 'fluent-cart'));

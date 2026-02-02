@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.8
+Stable tag: 1.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ Meet FluentCart. It’s a performance-first, self-hosted eCommerce platform for 
 
 Built from the ground up with flexibility, performance, and long-term scalability in mind, this isn’t a fork of existing plugins. This is a fresh take on what a WordPress store should be: lean, powerful, and completely under your control. FluentCart adapts to your model without adding bloat or cutting you into a SaaS fee structure.
 
-FluentCart is ideal for solo creators, growing businesses, and developers building client stores. If you're tired of overcomplicated dashboards and bloated add-ons this is your answer. Forget about transaction fees, because FluentCart charges exactly 0 transaction fees on both Free and Pro isntallations.
+FluentCart is ideal for solo creators, growing businesses, and developers building client stores. If you're tired of overcomplicated dashboards and bloated add-ons, this is your answer. Forget about transaction fees, because FluentCart charges exactly 0 transaction fees on both Free and Pro installations.
 
 FluentCart is for you if you're looking to free yourself from rigid checkout flows, or vendor lock-ins. Run your store with clarity and confidence, whether you sell ebooks, handmade goods, software licenses, or monthly product bundles.
 
@@ -136,6 +136,8 @@ If you need even more customizability, the option to use advanced CSS is also av
 * Product Gallery
 * Product Info
 * Buy Section
+* Buy Now Button
+* Add To Cart Button
 * Available Stock
 
 == Business Growth ==
@@ -189,10 +191,12 @@ More native integrations *coming soon* in FluentCart,
 * Paddle
 * Paystack
 * Mollie
+* RazorPay
+* Authorize.Net
+* Mercado Pago (onetime)
 * Square (Coming Soon)
-* RazorPay (Coming Soon)
-* Authorize.Net (Coming Soon)
 * AirWallex (Coming Soon)
+
 
 = Popular page builders =
 * Gutenberg
@@ -309,12 +313,22 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 == Changelog ==
 
+= 1.3.9 (Jan 28, 2026) = 
+- Adds Mercado Pago gateway (one-time payments)
+- Adds Ghost product checkout
+- Adds Gutenberg block: Add to Cart
+- Adds Shortcode [fluent_cart_checkout_button]
+- Adds Shortcode [fluent_cart_add_to_cart_button]
+- Fixes IPN issues for some third-party gateways
+- Fixes Dashboard styling issues
+- Improves security
+
 = 1.3.8 (Jan 23, 2026) =
 - Adds Instant checkout feature
 - Adds Product Button block (Guttenberg)
 - Adds Product duplicate feature
 - Adds Copy variation ID option in variation context menu
-- Fixes S3 driver directory seperator issue
+- Fixes S3 driver directory separator issue
 - Improves JS file size optimization
 
 = 1.3.7 (Jan 20, 2026) =

@@ -70,6 +70,8 @@ use FluentCart\Framework\Support\Arr;
 \FluentCart\App\Hooks\Handlers\ShortCodes\ProductCardShortCode::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\Buttons\BuyNowButtonBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\Buttons\AddToCartButtonBlockEditor::register();
+\FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\DirectCheckoutShortcode::register();
+\FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\AddToCartShortcode::register();
 
 if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
     \FluentCart\App\Hooks\Handlers\BlockEditors\StockBlock::register();

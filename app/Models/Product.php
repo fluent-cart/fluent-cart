@@ -426,7 +426,11 @@ class Product extends Model
 
     public function soldIndividually()
     {
-        if ($this->detail->other_info && Arr::get($this->detail->other_info, 'sold_individually') === 'yes') {
+        if (
+            $this->detail && 
+            $this->detail->other_info && 
+            Arr::get($this->detail->other_info, 'sold_individually') === 'yes'
+        ) {
             return true;
         }
 
@@ -508,17 +512,17 @@ class Product extends Model
         $images = [];
         $thumbnailImage = $this->thumbnail ?? Vite::getAssetUrl('images/placeholder.svg');
 
-        $galleryImages = get_post_meta(1110, 'fluent-products-gallery-image', true);
+        $galleryImages = get_post_meta($this->ID, 'fluent-products-gallery-image', true);
 
 
         if (!empty($galleryImages)) {
             foreach ($galleryImages as $image) {
                 $images[] = [
                     'type'          => 'gallery_image',
-                    'url'           => $image['url'],
-                    'alt'           => $image['title'],
+                    'url'           => Arr::get($image, 'url', ''),
+                    'alt'           => Arr::get($image, 'title', ''),
                     'product_title' => $this->post_title,
-                    'attachment_id' => $image['id'],
+                    'attachment_id' => Arr::get($image, 'id', ''),
                 ];
             }
         } else {
@@ -536,11 +540,11 @@ class Product extends Model
                 foreach ($variant['media']['meta_value'] as $image) {
                     $images[] = [
                         'type'            => 'variation_image',
-                        'url'             => $image['url'],
-                        'alt'             => $image['title'],
-                        'variation_title' => $variant->variation_title,
-                        'variation_id'    => $variant->id,
-                        'attachment_id'   => $image['id'],
+                        'url'             => Arr::get($image, 'url', ''),
+                        'alt'             => Arr::get($image, 'title', ''),
+                        'variation_title' => Arr::get($variant, 'variation_title', ''),
+                        'variation_id'    => Arr::get($variant, 'id', ''),
+                        'attachment_id'   => Arr::get($image, 'id', ''),
                     ];
                 }
 
@@ -551,7 +555,7 @@ class Product extends Model
 
     public function isBundleProduct(): bool
     {
-        return $this->detail->other_info && Arr::get($this->detail->other_info, 'is_bundle_product') === 'yes';
+        return $this->detail && $this->detail->other_info && Arr::get($this->detail->other_info, 'is_bundle_product') === 'yes';
     }
 
 

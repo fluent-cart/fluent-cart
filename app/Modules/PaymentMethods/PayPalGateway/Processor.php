@@ -151,6 +151,7 @@ class Processor
             }
 
             $data = [
+                'order_id'         => $subscription->parent_order_id,
                 'product_id'       => $subscription->product_id,
                 'variation_id'     => $subscription->variation_id,
                 'trial_days'       => $subscription->getReactivationTrialDays(), // trial days for reactivation
@@ -164,6 +165,7 @@ class Processor
             $status = $subscription->status;
         } else {
             $data = [
+                'order_id'         => $subscription->parent_order_id,
                 'product_id'       => $subscription->product_id,
                 'variation_id'     => $subscription->variation_id,
                 'trial_days'       => $subscription->trial_days,

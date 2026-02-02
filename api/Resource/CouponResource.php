@@ -174,14 +174,14 @@ class CouponResource extends BaseResourceApi
 
     private static function formatAmount($data)
     {
-        if (!isset($data['conditions']['max_discount_amount']) || $data['conditions']['max_discount_amount'] == '') {
+        if (empty(Arr::get($data, 'conditions.max_discount_amount', ''))) {
             $data['max_discount_amount'] = null;
         }
-        if (Arr::get($data, 'type', '') !== 'percentage') {
+        if (Arr::get($data, 'type') !== 'percentage') {
             $data['amount'] = Helper::toCent(Arr::get($data, 'amount', 0));
         }
-        if (!$data['conditions']['max_discount_amount'] == null) {
-            $data['conditions']['max_discount_amount'] = Helper::toCent(Arr::get($data['conditions'], 'max_discount_amount', null));
+        if (!empty(Arr::get($data, 'conditions.max_discount_amount'))) {
+            $data['conditions']['max_discount_amount'] = Helper::toCent($data['conditions']['max_discount_amount']);
         }
         $data['conditions']['min_purchase_amount'] = Helper::toCent(Arr::get($data['conditions'], 'min_purchase_amount', 0));
         return $data;

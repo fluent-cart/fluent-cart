@@ -42,6 +42,6 @@ if (!empty($celebration)) {
 \FluentCart\App\App::make('view')->render('emails.parts.call_to_action_box', [
     'content'     => esc_html__('Want to see more details about this renewal? You can view the order details page for more information.', 'fluent-cart'),
     'link'        => $transaction->order->getViewUrl('admin'),
-    'button_text' => esc_html__('View Details', 'fluent-cart'),
+    'button_text' => __('View Details', 'fluent-cart'),
 ]);
 ?>

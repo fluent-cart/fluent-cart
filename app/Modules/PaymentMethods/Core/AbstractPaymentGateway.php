@@ -306,7 +306,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
     public function renderStoreModeNotice(): string
     {
         if ((new StoreSettings())->get('order_mode') == 'test') {
-            return '<div class="mt-5"><span class="text-warning-500">' . __('Your Store is in Test mode, Change Store\'s \'Order Mode\' to \'Live\' and update related settings to enable Live payment !!', 'fluent-cart') . '</span></div>';
+            return '<div class="mt-5"><span class="text-warning-500">' . __('Your Store is in test mode, change Store\'s \'Order Mode\' to \'Live\' and update related settings to enable live payment!', 'fluent-cart') . '</span></div>';
         }
         return '<div class="mt-5"><span class="text-success-500">' . __('Your Store is in Live mode', 'fluent-cart') . '</span></div>';
     }
@@ -356,7 +356,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
                 Arr::get($style, 'handle'),
                 Arr::get($style, 'src'),
                 Arr::get($style, 'deps', null),
-                $this->getEnqueueVersion()
+                Arr::get($style, 'version', $this->getEnqueueVersion())
             );
         }
 
@@ -372,7 +372,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
                 $handle,
                 Arr::get($script, 'src'),
                 Arr::get($script, 'deps', null),
-                $this->getEnqueueVersion(),
+                Arr::get($script, 'version', $this->getEnqueueVersion()),
                 Arr::get($script, 'in_footer', false),
             );
         }

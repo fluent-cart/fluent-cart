@@ -71,17 +71,18 @@ class TaxEUController extends Controller
             where('class_id', intval($taxClassId))->first();
 
 
+            $overrideRate = Arr::get($override, 'rate');
             if ($existingTaxRate) {
-                $existingTaxRate->rate = $override['rate'];
+                $existingTaxRate->rate = $overrideRate;
                 $existingTaxRate->save();
             } else {
                 TaxRate::query()->create([
                     'country' => $countryCode,
                     'name' => $override['type'],
-                    'rate' => $override['rate'],
+                    'rate' => $overrideRate,
                     'group' => 'EU',
                     'class_id' => intval($taxClassId),
-                    'tax_rate' => $override['rate']
+                    'tax_rate' => $overrideRate
                 ]);
             }
         }

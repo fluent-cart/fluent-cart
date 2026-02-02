@@ -97,19 +97,30 @@ class BuyNowButtonBlockEditor extends BlockEditor
         }
 
         if (!$variantId) {
-            return '<p>' . esc_html__('No variant selected', 'fluent-cart') . '</p>';
+            if(Helper::isAdminUser()){
+                return '<p class="fct-admin-notice">' . esc_html__('No variant selected', 'fluent-cart') . '</p>';
+            }
+            return '';
         }
 
         $variant = ProductVariation::query()->find($variantId);
 
         if (!$variant) {
-            return '<p>' . esc_html__('Invalid variant', 'fluent-cart') . '</p>';
+            if(Helper::isAdminUser()){
+                return '<p class="fct-admin-notice">' . esc_html__('Invalid variant', 'fluent-cart') . '</p>';
+            }
+
+            return '';
         }
 
         $product = Product::query()->find($variant->post_id);
 
         if (!$product) {
-            return '<p>' . esc_html__('Product not found', 'fluent-cart') . '</p>';
+            if(Helper::isAdminUser()){
+                return '<p class="fct-admin-notice">' . esc_html__('Product not found', 'fluent-cart') . '</p>';
+            }
+
+            return '';
         }
 
         ob_start();

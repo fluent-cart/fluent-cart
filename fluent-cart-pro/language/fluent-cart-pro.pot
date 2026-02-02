@@ -1,0 +1,1973 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FluentCart Pro\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-08 13:03+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.3; php-7.4.33\n"
+"X-Domain: fluent-cart-pro"
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:209
+msgid " after"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:213
+msgid " sign-up fee"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Webhook/MollieIPN.php:293
+msgid " via Mollie"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:213
+msgid " with"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:288
+msgid "#0d3d75"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:281
+msgid "#0F4B8D"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:167
+#: app/Modules/Integrations/WebhookConnect.php:206
+#: app/Modules/Integrations/WPUserConnect.php:139
+msgid "+ Add more"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:11
+msgid "A New Era of Commerce With WordPress"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:132
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:167
+msgid "Accesses Removed from the connected student on order revoke"
+msgstr ""
+
+#: app/Services/Onboarding/CoreDependencyHandler.php:80
+msgid "Activate Plugin"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:319
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:324
+msgid "Activated Methods"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/ProductLicenseController.php:82
+msgid "Activation limit must be greater than or equal to 0"
+msgstr ""
+
+#: app/Modules/Licensing/Concerns/CanManageLicenseSites.php:125
+msgid "Activation mismatched"
+msgstr ""
+
+#: app/Modules/Licensing/Concerns/CanManageLicenseSites.php:119
+msgid "Activation not found"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:52
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:59
+msgid "Add to Courses"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:64
+msgid "Add to LearnDash Groups"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:71
+msgid "Add to Memberships"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:213
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:243
+msgid "Add webhook"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:184
+msgid "All Data"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:254
+msgid "Allow customers to pay with bank accounts."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:507
+msgid "An error occurred while loading Paddle."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:506
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:107
+msgid "API key is required."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:322
+msgid "API Login ID, Transaction Key and Client Key are required."
+msgstr ""
+
+#: app/Services/Translations/Translations.php:21
+msgid "Are you sure to delete this?"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:45
+msgid "Authorize.Net"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:259
+msgid "Authorize.Net checkout Form Button Text"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:266
+msgid "Authorize.Net Checkout Form Header Text"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:328
+msgid "Authorize.Net credentials verified successfully!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:135
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:141
+msgid "Authorize.Net declined the transaction."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:168
+msgid "Authorize.Net Fraud Approved"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:98
+msgid ""
+"Authorize.Net is not configured correctly. Please contact the site "
+"administrator."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:87
+msgid "Authorize.Net is not enabled."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:93
+msgid "Authorize.Net marked the payment as declined/void."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetHelper.php:142
+msgid "Authorize.Net marked transaction as pending review."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:142
+msgid "Authorize.Net Payment Captured"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:193
+msgid "Authorize.Net Payment Failed"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:143
+msgid "Authorize.Net payment form failed to load."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetHelper.php:141
+msgid "Authorize.Net Pending"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:361
+msgid "Authorize.Net Subscription Cancelled"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:381
+msgid "Authorize.Net Subscription Expired"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:401
+msgid "Authorize.Net Subscription Expiring"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:323
+msgid "Authorize.Net Subscription Payment"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:441
+msgid "Authorize.Net Subscription Payment Failed"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:421
+msgid "Authorize.Net Subscription Payment Terminated"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:163
+msgid "Available payment methods on Checkout"
+msgstr ""
+
+#: app/Modules/Licensing/Services/LicenseHelper.php:148
+msgid "Back to License List"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:283
+msgid "Background color for the Authorize.Net payment button. Default: #0F4B8D"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:323
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:261
+msgid "Beta Notice"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:18
+msgid ""
+"Built for lightning-fast processing, your store will perform under any "
+"stress without breaking your server"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:280
+msgid "Button Background Color"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:287
+msgid "Button Hover Color"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:19
+msgid "cancel"
+msgstr ""
+
+#: app/Services/PluginManager/PluginLicenseManager.php:45
+msgid "Check Update"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:15
+msgid "Clean, Modern Interface"
+msgstr ""
+
+#: app/Services/PluginManager/FluentLicensing.php:265
+msgid "Click Here to Renew Your License"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:141
+msgid "Click the button to securely enter your payment details."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:390
+msgid "Color of the Paddle checkout button"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:303
+msgid ""
+"Configure this URL in your Authorize.Net dashboard under Account > Settings >"
+" Webhooks."
+msgstr ""
+
+#: app/Services/Translations/Translations.php:20
+msgid "confirm"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:501
+msgid "Confirmation failed"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:23
+msgid "Create / Update WP User with Custom Roles on order events"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:591
+#, php-format
+msgid ""
+"Currency %s is not supported by Paddle. Please check supported currencies."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:157
+msgid "Custom Headers"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:122
+msgid "Custom headers to include in the webhook request"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:58
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:120
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:161
+msgid "Customer not found"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:373
+msgid "Dark"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:209
+msgid "day"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Price.php:203
+msgid "Days"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:101
+msgid "DELETE"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:412
+msgid "Disable Webhook Verification"
+msgstr ""
+
+#: app/Services/PluginManager/PluginLicenseManager.php:43
+msgid "Docs"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:294
+msgid "Enable Debug Logging"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:253
+msgid "Enable e-Check (ACH)"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:267
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:268
+msgid "Enter Payment Details"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:215
+msgid "Enter The Webhook URL:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:244
+msgid "Enter The Webhook URL: "
+msgstr ""
+
+#: app/Services/PluginManager/Updater.php:317
+#: app/Services/ProPluginManager/Updater.php:317
+msgid "Error"
+msgstr ""
+
+#: app/Services/Onboarding/OutsideInstaller.php:62
+msgid "Error downloading plugin"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:505
+msgid "Error occurred"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:503
+#, php-format
+msgid "Error: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:500
+msgid "Error: Missing transaction ID"
+msgstr ""
+
+#: app/Services/PluginManager/FluentLicensing.php:264
+msgid "expired at"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:353
+msgid "External"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:46
+msgid "Failed to cancel subscription."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:495
+msgid "Failed to create order"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:65
+msgid "Failed to create order bump"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:353
+msgid "Failed to create subscription in Mollie. Error: "
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:138
+msgid "Failed to delete order bump"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:499
+msgid "Failed to prepare valid Paddle items from order data."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:280
+msgid "Failed to reactivate subscription."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:91
+msgid "Failed to sync subscription."
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:123
+msgid "Failed to update order bump"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:44
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:51
+msgid "Feed Title"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:273
+msgid "Fluent Cart Checkout Button Text"
+msgstr ""
+
+#: app/Services/Onboarding/CoreDependencyHandler.php:15
+#: app/Services/Onboarding/CoreDependencyHandler.php:16
+msgid "FluentCart"
+msgstr ""
+
+#. Name of the plugin
+msgid "FluentCart Pro"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:12
+msgid ""
+"FluentCart requires the Core Plugin to be installed first. Let's get you set "
+"up in just one click."
+msgstr ""
+
+#. Author of the plugin
+msgid "FluentCart Team"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:408
+msgid "Font size of the Paddle checkout button"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Price.php:134
+msgid "For"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:112
+msgid "Form Data"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:169
+#, php-format
+msgid "Fraud approved via webhook. Transaction ID: %s"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:98
+msgid "GET"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:234
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:263
+msgid ""
+"Get your API key from Paddle Dashboard > Developer Tools > Authentication"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:14
+msgid ""
+"Go from Setup to first sale in minutes. Configuration is straightforward "
+"with the Onboarding Wizard."
+msgstr ""
+
+#. %s is a link to Paddle webhook docs
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:212
+#, php-format
+msgid "Go to Developer Tools > Notifications > %s"
+msgstr ""
+
+#: app/Services/Onboarding/CoreDependencyHandler.php:140
+msgid "Go to FluentCart Dashboard"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:242
+msgid "Go to Settings > Webhooks >"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:160
+msgid "Header Name"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:161
+msgid "Header Value"
+msgstr ""
+
+#: app/Services/PluginManager/PluginLicenseManager.php:44
+msgid "Help & Support"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:290
+msgid "Hover color for the Authorize.Net payment button. Default: #0d3d75"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:396
+msgid "Hover color of the Paddle checkout button"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:208
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:240
+msgid "How to configure?"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:87
+msgid "https://example.com/webhook-endpoint"
+msgstr ""
+
+#. URI of the plugin
+#. Author URI of the plugin
+msgid "https://fluentcart.com"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:332
+msgid ""
+"If enabled, only the selected Mollie payment methods will be displayed "
+"during checkout."
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:83
+msgid ""
+"If you enable this, existing roles of the user will be removed and only the "
+"selected role will be assigned to that user."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:76
+msgid ""
+"If you enable this, on refund or subscription validity expiration, the "
+"selected groups and courses will be removed from the customer."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:83
+msgid ""
+"If you enable this, on refund or subscription validity expiration, the "
+"selected memberships and courses will be removed from the customer."
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:98
+msgid ""
+"If you enable this, on refund or subscription validity expiration, the "
+"selected role will be removed and assign \"subscriber\" role if not other "
+"role exists to that user."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:241
+msgid "In your Mollie Dashboard:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:209
+msgid "In your Paddle Dashboard:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:216
+msgid "Initial Payment"
+msgstr ""
+
+#: app/Services/Onboarding/CoreDependencyHandler.php:77
+msgid "Install Plugin"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:77
+#: app/Modules/Integrations/WPUserConnect.php:65
+msgid "Integration Title"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:349
+msgid "Internal"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:102
+msgid "Invalid expiration date!"
+msgstr ""
+
+#: app/Modules/Licensing/Services/LicenseHelper.php:128
+#: app/Modules/Licensing/Services/LicenseHelper.php:251
+#: app/Modules/Licensing/Services/LicenseHelper.php:277
+#: app/Modules/Licensing/Services/LicenseHelper.php:284
+msgid "Invalid License key provided."
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:482
+msgid "Invalid package data"
+msgstr ""
+
+#: app/Services/Onboarding/CoreDependencyHandler.php:144
+msgid "Invalid plugin or file mods are disabled."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:60
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:70
+msgid "Invalid refund amount. Please check the items available refund amounts."
+msgstr ""
+
+#: app/Http/Requests/RoleRequest.php:38
+msgid "Invalid role."
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:137
+msgid "Invalid status!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:248
+msgid "Invalid subscription or payment method."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetRefund.php:37
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:32
+msgid "Invalid transaction ID for refund."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:71
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:257
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:35
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:187
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:217
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:245
+#: app/Modules/PaymentMethods/MollieGateway/MollieSubscriptions.php:30
+#: app/Modules/PaymentMethods/MollieGateway/MollieSubscriptions.php:132
+msgid "Invalid vendor subscription ID."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:64
+msgid "Invalid webhook payload."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Webhook/WebhookVerifier.php:65
+#: app/Modules/PaymentMethods/PaddleGateway/Webhook/WebhookVerifier.php:107
+#: app/Modules/PaymentMethods/PaddleGateway/Webhook/WebhookVerifier.php:111
+#: app/Modules/PaymentMethods/PaddleGateway/API/API.php:183
+msgid "Invalid webhook signature"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:59
+msgid "Invalid webhook signature."
+msgstr ""
+
+#: app/Http/Controllers/ProductController.php:58
+msgid "Inventory update failed"
+msgstr ""
+
+#: app/Http/Controllers/ProductController.php:63
+msgid "Inventory updated successfully"
+msgstr ""
+
+#: app/Modules/Promotional/OrderBump/OrderBumpBoot.php:304
+msgid "Item has been added to your cart"
+msgstr ""
+
+#: app/Modules/Promotional/OrderBump/OrderBumpBoot.php:240
+msgid "Item has been removed from your cart"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:111
+msgid "JSON"
+msgstr ""
+
+#: app/Http/Requests/RoleRequest.php:53
+msgid "Key is required."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:87
+msgid "LearnDash"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:175
+msgid "LearnDash Integration Success"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/license-actions.php:37
+msgid "License"
+msgstr ""
+
+#: app/Modules/Licensing/Services/LicenseHelper.php:267
+#: app/Modules/Licensing/Services/LicenseHelper.php:273
+msgid "License activation could not be found"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:233
+msgid "License deleted successfully!"
+msgstr ""
+
+#: app/Services/PluginManager/FluentLicensing.php:264
+msgid "license has been"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:392
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:525
+msgid "License is not enabled for this product"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:160
+msgid "License limit has been updated successfully!"
+msgstr ""
+
+#: app/Modules/Licensing/Services/LicenseHelper.php:147
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:118
+msgid "License not found"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:311
+msgid "License not found or does not match with the item_id"
+msgstr ""
+
+#: app/Modules/Licensing/Licensing.php:75
+msgid "License Settings"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/ProductLicenseController.php:47
+msgid ""
+"License settings cannot be saved for bundle products. Licenses are generated "
+"according to bundle items' license settings."
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:384
+msgid "License settings not found for this product"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:146
+msgid "License status has been updated successfully!"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:109
+msgid "License validity extended!"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:112
+msgid "License validity reduced!"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:38
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:106
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:298
+msgid "license_key, site_url and item_id is required"
+msgstr ""
+
+#: app/Modules/Licensing/Licensing.php:61
+msgid "Licenses"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseGenerationHandler.php:86
+msgid "Licenses generated successfully"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:94
+msgid "LifterLMS"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:204
+msgid "LifterLMS Integration Success"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:369
+msgid "Light"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:260
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:274
+msgid "Live API Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:208
+msgid "Live API Login ID"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:218
+msgid "Live Client Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:267
+msgid "Live Client Token / Public Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:239
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:331
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:269
+msgid "Live credentials"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:223
+msgid "Live Signature Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:213
+msgid "Live Transaction Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:274
+msgid "Live Webhook Secret"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:276
+msgid "live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:162
+msgid "Loading payment methods..."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:295
+msgid "Log Authorize.Net API interactions for troubleshooting."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:18
+msgid "Manage Course accesses with FluentCart + LearnDash"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:22
+msgid "Manage Course accesses with FluentCart + LifterLMS"
+msgstr ""
+
+#: app/Modules/StockManagement/StockManagement.php:23
+msgid "Manage stock of your products easier than ever!"
+msgstr ""
+
+#: app/Http/Controllers/ProductController.php:91
+#: app/Http/Controllers/ProductController.php:97
+msgid "Manage stock update failed"
+msgstr ""
+
+#: app/Http/Controllers/ProductController.php:102
+msgid "Manage stock updated successfully"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:16
+msgid ""
+"Manage your store with a clean dashboard that gives you everything you need "
+"in an intuitive workflow."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:189
+msgid "Map Payload Data"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:120
+msgid "Map User Meta (optional)"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:116
+msgid "Marked license as lifetime!"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:124
+msgid "Meta Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:285
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:365
+msgid ""
+"Minimum 7 days is required for subscription. Please change the subscription "
+"interval to at weekly or greater"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:40
+msgid "Mollie"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:213
+msgid "Mollie Payment Authorized"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:116
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:159
+msgid "Mollie Payment Confirmation"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:248
+msgid ""
+"Mollie payment gateway is currently in beta. Test properly before going live!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:353
+msgid "Mollie Subscription Creation Failed"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:79
+#: app/Modules/Integrations/WPUserConnect.php:67
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:46
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:53
+msgid "Name"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:48
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:55
+msgid ""
+"Name of this feed, it will be used to identify this feed in the list of feeds"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:81
+#: app/Modules/Integrations/WPUserConnect.php:69
+msgid ""
+"Name of this feed, it will be used to identify this integration in the list "
+"of integrations"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:502
+msgid "Network error"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:543
+msgid "No downloadable file found for this product"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:152
+msgid "No Headers"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:88
+msgid ""
+"No Mollie payment methods are activated for Live mode. Please contact site "
+"owner."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:91
+msgid ""
+"No Mollie payment methods are activated for Test mode. Please contact site "
+"owner."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:498
+msgid ""
+"No Paddle price IDs found in order data. Please ensure Paddle products are "
+"properly configured."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:106
+msgid "No subscription found for this order"
+msgstr ""
+
+#: app/Services/Onboarding/OutsideInstaller.php:52
+msgid "No valid url provided to install!"
+msgstr ""
+
+#: app/Modules/Promotional/PromotionalInit.php:16
+msgid "Offer Bump Products in checkout and make more revenue per order"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:414
+msgid "Only disable this for testing purposes. Keep enabled for production."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:241
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:270
+msgid "Optional: Used for frontend checkout integration"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:92
+msgid "Optionally, map user meta field with checkout/order data"
+msgstr ""
+
+#: app/Modules/Promotional/PromotionalInit.php:15
+msgid "Order Bump"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:70
+msgid "Order bump created successfully"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:143
+msgid "Order bump deleted successfully"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:84
+msgid "Order bump not found"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:128
+msgid "Order bump updated successfully"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:494
+msgid "Order creation failed"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:497
+msgid "Order handler is not properly configured"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:496
+msgid "Order handler not available"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:78
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:278
+msgid "Order has been placed successfully"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:173
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:102
+msgid "Order info retrieved!"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/license-actions.php:39
+msgid "Order Licenses"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:51
+msgid "Paddle"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/API/API.php:41
+#, php-format
+msgid "Paddle API key is missing for mode: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:388
+msgid "Paddle Checkout Button Color"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:406
+msgid "Paddle Checkout Button Font Size"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:394
+msgid "Paddle Checkout Button Hover Color"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:381
+msgid "Paddle Checkout Button Text"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:400
+msgid "Paddle Checkout Button Text Color"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:365
+msgid "Paddle Checkout Theme"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:491
+msgid "Paddle client token is missing or invalid."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:113
+msgid "Paddle gateway credentials verified successfully!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Confirmations.php:185
+msgid "Paddle Payment Confirmation"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:311
+msgid ""
+"Paddle payment gateway is currently in beta. Test properly before going live!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:490
+msgid "Paddle SDK is not loaded. Please ensure the Paddle script is included."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Webhook/WebhookVerifier.php:13
+#: app/Modules/PaymentMethods/PaddleGateway/API/API.php:173
+msgid "Paddle webhook secret is missing"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:66
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:74
+msgid "Partial refund not allowed without any items selected."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:100
+msgid "PATCH"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:160
+msgid "Pay Now"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:260
+msgid "Pay now"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:48
+msgid ""
+"Pay securely with Authorize.Net using credit/debit cards or e-check (ACH)."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:164
+msgid "Pay securely with Mollie"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:45
+msgid "Pay securely with Mollie - Credit Card, PayPal, SEPA, and more"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:54
+msgid "Pay securely with Paddle - Complete payment solution"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:380
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:383
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:492
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSettings.php:48
+msgid "Pay with Paddle"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:192
+msgid "Payload Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Confirmations.php:72
+msgid "Payment already confirmed. Redirecting...!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:213
+msgid "Payment Authorized in Mollie. Transaction ID: "
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:143
+#, php-format
+msgid "Payment captured via webhook. Transaction ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:116
+msgid ""
+"Payment confirmation received from Mollie for previously authorized payment. "
+"Transaction ID: "
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Confirmations.php:159
+msgid "Payment confirmation received from Mollie. Transaction ID: "
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Confirmations.php:185
+msgid "Payment confirmation received from Paddle. Transaction ID:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Confirmations.php:109
+msgid "Payment confirmed successfully. Redirecting...!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:142
+msgid "Payment details saved."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:504
+msgid "Payment failed"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:194
+#, php-format
+msgid "Payment failed via webhook. Transaction ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/API/AuthorizeDotNetAPI.php:154
+msgid "Payment failed with an unknown error."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:24
+msgid "Payment ID not found for refund"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Confirmations.php:93
+#, php-format
+msgid "Payment is not completed. Current status: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:290
+msgid ""
+"Payment method switching is not directly supported by Paddle. Please cancel "
+"and recreate the subscription."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:43
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:166
+msgid "Payment token could not be generated. Please try again."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:274
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:275
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:161
+msgid "Place Order"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:337
+msgid ""
+"Please make sure the following billing fields are enabled: City, State, "
+"Street Address, Post Code, Country. You can enable the fields in the "
+"checkout fields settings."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:97
+msgid "POST"
+msgstr ""
+
+#: app/Modules/Licensing/Licensing.php:21
+msgid "Product Licensing"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:376
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:516
+msgid "Product not found"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:99
+msgid "PUT"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:13
+msgid "Quick & Easy Setup"
+msgstr ""
+
+#: app/Modules/Promotional/OrderBump/OrderBumpBoot.php:93
+msgid "Recommended"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:305
+msgid ""
+"Recommended events: net.authorize.payment.authcapture.created, net.authorize."
+"payment.fraud.approved, net.authorize.payment.fraud.declined, net.authorize."
+"payment.void.created, net.authorize.payment.refund.created, net.authorize."
+"customer.subscription.cancelled, net.authorize.customer.subscription.expired,"
+" net.authorize.customer.subscription.expiring."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieProcessor.php:176
+#: app/Modules/PaymentMethods/MollieGateway/MollieProcessor.php:279
+msgid "Redirecting to Mollie payment page..."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:159
+msgid "Redirecting to Mollie..."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:43
+#, php-format
+msgid "Refund amount %s exceeds available amount %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:86
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:215
+msgid "Refund amount is required."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleHelper.php:111
+msgid ""
+"Refund could not be processed in paddle. Please check on your paddle account"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:80
+msgid ""
+"Refund could not be processed with Mollie. Please check your Mollie account"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetRefund.php:80
+msgid "Refund could not be processed. Please check your Authorize.Net account."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetRefund.php:29
+msgid ""
+"Refund is not supported for eCheck Payment from admin panel. Please use "
+"Authorize.Net dashboard to refund."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetRefund.php:90
+msgid "Refund was initiated but no refund transaction ID was returned."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:75
+msgid ""
+"Remove from selected Courses/Groups on Refund or Subscription Access "
+"Expiration "
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:82
+msgid ""
+"Remove from selected Courses/Memberships on Refund or Subscription Access "
+"Expiration "
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:97
+msgid ""
+"Remove from selected User Role on Refund or Subscription Access Expiration "
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:330
+msgid "Render Selected Methods Only (Coming soon)"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:82
+msgid "Replace Existing Roles"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:126
+msgid "Request Body"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:107
+msgid "Request Format"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:118
+msgid "Request Headers"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:93
+msgid "Request Method"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:85
+msgid "Request URL"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:339
+msgid "Required Checkout Fields"
+msgstr ""
+
+#: app/Services/Translations/Translations.php:17
+msgid "Robust & Reliable Performance"
+msgstr ""
+
+#: app/Http/Controllers/RoleController.php:91
+msgid "Role deleted successfully"
+msgstr ""
+
+#: app/Http/Controllers/RoleController.php:71
+msgid "Role key is required"
+msgstr ""
+
+#: app/Http/Controllers/RoleController.php:54
+msgid "Role synced successfully"
+msgstr ""
+
+#: app/Modules/Licensing/Licensing.php:22
+msgid "Sale Licenses of your products easier than ever!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:231
+msgid "Sandbox API Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:238
+msgid "Sandbox Client Token / Public Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:245
+msgid "Sandbox Webhook Secret"
+msgstr ""
+
+#: app/Modules/Promotional/OrderBump/OrderBumpBoot.php:185
+msgid "Save"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:493
+msgid "Secure payment powered by Paddle"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:245
+msgid "Select all events"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:53
+msgid "Select Learndash Courses"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:65
+msgid "Select LearnDash Groups"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:60
+msgid "Select LifterLMS Courses"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:72
+msgid "Select Memberships"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:217
+msgid "Select the following events:"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:70
+msgid "Select the groups you would like to add the customer to"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:54
+msgid "Select the LearnDash Courses you would like to add."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:61
+msgid "Select the LifterLMS Courses you would like to add."
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:77
+msgid "Select the memberships you would like to add the customer to"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:77
+msgid ""
+"Select the user role you want to assign to the user. The integartion will "
+"skip running if user exist in the selected role."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:193
+msgid "Select Value"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:185
+msgid "Selected Fields"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:22
+msgid "Send data anywhere via webhook"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/ProductLicenseController.php:120
+msgid "Settings has been updated successfully."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieProcessor.php:64
+msgid "Shipping"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:371
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:388
+msgid "Shipping Fee"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Processor.php:213
+msgid "Signup Fee"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:198
+msgid "Site deactivated successfully"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:201
+msgid "Site has been activated successfully!"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/LicenseController.php:180
+msgid "Site has been deactivated successfully!"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:323
+msgid "Site not found"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:204
+msgid "Site not found or not activated for this license"
+msgstr ""
+
+#: app/Modules/StockManagement/StockManagement.php:22
+msgid "Stock Management"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:231
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:316
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:253
+msgid "Store Mode notice"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:362
+#, php-format
+msgid "Subscription cancelled via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:382
+#, php-format
+msgid "Subscription expired via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:402
+#, php-format
+msgid "Subscription expiring via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:255
+msgid "Subscription is already completed."
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:157
+msgid "Subscription not found."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:232
+msgid "Subscription paused successfully"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:442
+#, php-format
+msgid "Subscription payment failed via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:422
+#, php-format
+msgid "Subscription payment terminated via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:324
+#, php-format
+msgid "Subscription payment via webhook. Subscription ID: %s"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:303
+msgid ""
+"Subscription reactivation is not directly supported by Paddle. Please create "
+"a new subscription."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:260
+msgid "Subscription resumed successfully"
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:151
+msgid "Subscription UID is required."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:278
+msgid "Subscription updated successfully"
+msgstr ""
+
+#: app/Services/Onboarding/OutsideInstaller.php:34
+msgid "Successfully enabled"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:345
+msgid "Tax Mode"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:361
+msgid "Tax mode to use for Paddle transactions"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:292
+msgid "Test API Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:186
+msgid "Test API Login ID"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:196
+msgid "Test Client Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:245
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:337
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:287
+msgid "Test credentials"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:201
+msgid "Test Signature Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:191
+msgid "Test Transaction Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:294
+msgid "test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:402
+msgid "Text color of the Paddle checkout button"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:384
+msgid "Text to display on the Paddle checkout button"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:131
+msgid "The data sent in the request body."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:114
+msgid "The format in which the data will be sent"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:103
+msgid "The HTTP method to use for the webhook request"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:139
+msgid "The license is not Active. Please contact the support."
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:132
+msgid "The license key is expired. Please renew or purchase a new license"
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:170
+msgid ""
+"The parent order of this subscription is not in a valid state for "
+"reactivation."
+msgstr ""
+
+#. Description of the plugin
+msgid "The Pro version of FluentCart - A New Era of Commerce with WordPress"
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:177
+msgid "The product variant for this subscription is not valid."
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:161
+msgid "The recurring amount for this subscription is not valid."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:89
+msgid "The URL to which the webhook request will be sent"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:377
+msgid "Theme to use for Paddle checkout modal"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:188
+msgid ""
+"This license key has no activation limit. Please upgrade or purchase a new "
+"license."
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:507
+msgid "This license key is not valid"
+msgstr ""
+
+#: app/Modules/Licensing/Hooks/Handlers/LicenseApiHandler.php:125
+msgid ""
+"This license key is not valid for this product. Did you provide the valid "
+"license key?"
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:165
+msgid "This subscription cannot be reactivated."
+msgstr ""
+
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:188
+msgid ""
+"This subscription is not available for renew. Please purchase a new one!"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:61
+msgid "This subscription is not using Authorize.Net as payment method."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieSubscriptions.php:20
+msgid "This subscription is not using Mollie as payment method."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/PaddleSubscriptions.php:25
+msgid "This subscription is not using Paddle as payment method."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:262
+msgid "This text will be displayed on the Authorize.Net popup form button."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:269
+msgid "This text will be displayed on the Authorize.Net popup form header."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:276
+msgid "This text will be displayed on the Fluent Cart checkout button."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Price.php:134
+msgid "Times"
+msgstr ""
+
+#: app/Modules/Promotional/Http/Controllers/OrderBumpController.php:51
+msgid "Title and source object id are required"
+msgstr ""
+
+#: app/Http/Requests/RoleRequest.php:52
+msgid "Title is required."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieProcessor.php:83
+msgid "Total Tax"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:130
+msgid "Transaction is held for review by Authorize.Net."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Price.php:203
+msgid "Trial"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieHelper.php:209
+msgid "trial"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/CustomerProfileController.php:21
+msgid "Unable to find licenses"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/MollieProcessor.php:168
+msgid "Unable to get checkout URL from Mollie"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:92
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:529
+msgid "Unable to process payment. No transaction ID returned by Authorize.Net."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetSubscriptions.php:519
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:426
+msgid ""
+"Unable to process subscription. No subscription ID returned by Authorize.Net."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/API/AuthorizeDotNetAPI.php:79
+msgid "Unknown Authorize.Net API request error"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/API/API.php:215
+msgid "Unknown Paddle API error"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Price.php:136
+msgid "Until Cancel"
+msgstr ""
+
+#: app/Hooks/Handlers/UpgradeHandler.php:159
+msgid "Upgrade Discount"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:357
+msgid "Use Paddle Account Settings"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:248
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:277
+msgid "Used to verify webhook signatures"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:108
+msgid "User Create / Update"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:145
+msgid "User creation failed from LearnDash Integration"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:180
+msgid "User creation failed from LifterLMS Integration"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:199
+msgid "User creation failed from WP User Integration"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LearnDashLMSConnect.php:176
+#, php-format
+msgid "User has been added to courses: %s and groups: %s"
+msgstr ""
+
+#: app/Modules/Integrations/LMS/LifterLMSConnect.php:205
+#, php-format
+msgid "User has been added to courses: %s and memberships: %s"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:247
+#, php-format
+msgid "User has been created and assigned user role: %s"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:245
+#, php-format
+msgid "User has been updated and assigned user role: %s"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:87
+msgid "User Meta Maps"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:126
+msgid "User Meta Value"
+msgstr ""
+
+#: app/Http/Requests/RoleRequest.php:26
+msgid "User not found."
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:73
+msgid "User Role"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:185
+msgid "User Role Removed"
+msgstr ""
+
+#: app/Modules/Licensing/Http/Controllers/ProductLicenseController.php:93
+#, php-format
+msgid "Validity type is required for %s."
+msgstr ""
+
+#: app/Http/Controllers/ProductController.php:19
+msgid "Variant not found"
+msgstr ""
+
+#: app/Services/PluginManager/PluginLicenseManager.php:43
+msgid "View FluentCRM documentation"
+msgstr ""
+
+#: app/Services/PluginManager/PluginLicenseManager.php:44
+msgid "Visit Support"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:20
+#: app/Modules/Integrations/WebhookConnect.php:141
+msgid "Webhook"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:252
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:281
+msgid "Webhook Configuration"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:79
+msgid "Webhook ignored. Entity not supported."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:292
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:304
+msgid "Webhook is configured and listening to the following events:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:73
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/Webhook/IPN.php:103
+msgid "Webhook processed."
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:279
+#: app/Modules/Integrations/WebhookConnect.php:290
+msgid "Webhook Request Failed"
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:299
+msgid "Webhook Request Sent"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:300
+msgid "Webhook URL"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:204
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:290
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:302
+msgid "Webhook URL:"
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:237
+msgid "Webhook URL: "
+msgstr ""
+
+#: app/Modules/Integrations/WebhookConnect.php:153
+msgid "With Headers"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:21
+msgid "WP User Create/Update"
+msgstr ""
+
+#: app/Modules/Integrations/WPUserConnect.php:251
+msgid "WP User Integration Success"
+msgstr ""
+
+#. %1$s Item Title
+#: app/Hooks/Handlers/SubscriptionRenewalHandler.php:265
+#, php-format
+msgid "You are reactivating your subscription: %1$s ."
+msgstr ""
+
+#. %1$s Item Title, %2$s Variation Title
+#: app/Hooks/Handlers/UpgradeHandler.php:151
+#, php-format
+msgid "You are upgrading your plan from %1$s to %2$s."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:207
+msgid ""
+"You can do it by following the instructions below. Or provide valid API Key "
+"and save the settings and reload."
+msgstr ""
+
+#: app/Services/Translations/Translations.php:10
+#, php-format
+msgid ""
+"You can replace this module from %s/resources/admin/Components/Dashboard."
+"vue%s"
+msgstr ""
+
+#: app/Services/PluginManager/Updater.php:317
+#: app/Services/ProPluginManager/Updater.php:317
+msgid "You do not have permission to install plugin updates"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:180
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:514
+msgid "You have already paid for this order."
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNetProcessor.php:409
+msgid "You have already subscribed to this plan."
+msgstr ""
+
+#: app/Modules/PaymentMethods/MollieGateway/Mollie.php:239
+msgid ""
+"You should configure your Mollie webhooks to get all updates of your "
+"payments remotely."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:206
+msgid ""
+"You should configure your Paddle webhooks to get all updates of your "
+"payments remotely."
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:262
+msgid "Your live API key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:209
+msgid "Your live API Login ID"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:219
+msgid "Your live Client Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:269
+msgid "Your live client token"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:224
+msgid "Your live Signature Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:214
+msgid "Your live Transaction Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:276
+msgid "Your live webhook secret"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:233
+msgid "Your sandbox API key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:240
+msgid "Your sandbox client token"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PaddleGateway/Paddle.php:247
+msgid "Your sandbox webhook secret"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:187
+msgid "Your test API Login ID"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:197
+msgid "Your test Client Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:202
+msgid "Your test Signature Key"
+msgstr ""
+
+#: app/Modules/PaymentMethods/AuthorizeDotNetGateway/AuthorizeDotNet.php:192
+msgid "Your test Transaction Key"
+msgstr ""

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FluentCart\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-23 08:10+0000\n"
+"POT-Creation-Date: 2026-01-27 13:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -213,7 +213,7 @@ msgid "%s / Unlimited"
 msgstr ""
 
 #. %s is the list of out of stock variants
-#: api/Resource/OrderResource.php:1090
+#: api/Resource/OrderResource.php:1101
 #, php-format
 msgid "%s are out of stock"
 msgstr ""
@@ -287,8 +287,8 @@ msgstr ""
 
 #. %s is the out of stock variant
 #. %s is the product title
-#: api/Resource/OrderResource.php:1093
-#: api/Resource/FrontendResource/CartResource.php:473
+#: api/Resource/OrderResource.php:1104
+#: api/Resource/FrontendResource/CartResource.php:564
 #, php-format
 msgid "%s is out of stock"
 msgstr ""
@@ -570,19 +570,19 @@ msgid ""
 msgstr ""
 
 #. %s: product title
-#: app/Services/OrderService.php:307
+#: app/Services/OrderService.php:315
 #, php-format
 msgid "[%1$s] is out of stock. Only %2$s left."
 msgstr ""
 
 #. %s: product title
-#: app/Services/OrderService.php:145
+#: app/Services/OrderService.php:153
 #, php-format
 msgid "[%s] is not available."
 msgstr ""
 
 #. %s: product title
-#: app/Services/OrderService.php:227 app/Services/OrderService.php:241
+#: app/Services/OrderService.php:235 app/Services/OrderService.php:249
 #, php-format
 msgid "[%s] is out of stock."
 msgstr ""
@@ -598,6 +598,7 @@ msgid "A Coruña"
 msgstr ""
 
 #: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:76
+#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:72
 msgid ""
 "A custom button block with product selection and automatic link assignment."
 msgstr ""
@@ -680,6 +681,12 @@ msgid ""
 "Bancontact, and more. Popular in Europe with seamless checkout experience."
 msgstr ""
 
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:85
+msgid ""
+"Accept payments with Mercado Pago - Cards, Pix, Boleto, OXXO, and more. "
+"Perfect for businesses in Latin America."
+msgstr ""
+
 #: app/Modules/PaymentMethods/PromoGateways/Addons/PaystackAddon.php:85
 msgid ""
 "Accept payments with Paystack - Cards, Bank Transfer, USSD, and Mobile Money."
@@ -731,7 +738,7 @@ msgid "Activate FluentCart Pro"
 msgstr ""
 
 #: app/Helpers/AddressHelper.php:337
-#: app/Services/Renderer/ModalCheckoutRenderer.php:488
+#: app/Services/Renderer/ModalCheckoutRenderer.php:487
 #: app/Services/Renderer/CheckoutRenderer.php:689
 #: app/Modules/Shipping/Http/Controllers/Frontend/ShippingFrontendController.php:42
 msgid "Activate from settings."
@@ -763,7 +770,7 @@ msgstr ""
 msgid "Activation Limit"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:195
+#: app/Services/Renderer/ModalCheckoutRenderer.php:194
 msgid "Activation limit %d"
 msgstr ""
 
@@ -783,7 +790,7 @@ msgstr ""
 #: app/Helpers/Helper.php:163 app/Helpers/Helper.php:221
 #: app/Helpers/Helper.php:823 app/Services/Filter/LicenseFilter.php:54
 #: app/Services/Filter/LicenseFilter.php:175
-#: app/Services/Filter/OrderFilter.php:443
+#: app/Services/Filter/OrderFilter.php:446
 #: app/Services/Filter/OrderBumpFilter.php:43
 #: app/Services/Filter/OrderBumpFilter.php:159
 #: app/Services/Translations/admin-translation.php:68
@@ -1143,8 +1150,9 @@ msgstr ""
 
 #: api/StoreSettings.php:46 api/StoreSettings.php:1289
 #: app/Services/Renderer/ProductCardRender.php:275
-#: app/Services/Renderer/ProductRenderer.php:912
-#: app/Services/Renderer/ProductRenderer.php:1024
+#: app/Services/Renderer/ProductRenderer.php:914
+#: app/Services/Renderer/ProductRenderer.php:1046
+#: app/Services/Renderer/ProductRenderer.php:1108
 #: app/Services/Renderer/PricingTableRenderer.php:230
 #: app/Services/Translations/block-editor-translation.php:22
 #: app/Modules/Templating/AssetLoader.php:83
@@ -1160,6 +1168,7 @@ msgid "Add To Cart"
 msgstr ""
 
 #: app/Services/Translations/block-editor-translation.php:25
+#: app/Hooks/Handlers/ShortCodes/Buttons/AddToCartShortcode.php:39
 msgid "Add to Cart"
 msgstr ""
 
@@ -1167,18 +1176,21 @@ msgstr ""
 msgid "Add To Cart Button"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:26
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:46
-#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:44
+#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:71
 msgid "Add to Cart Button"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:27
+#: app/Services/Translations/block-editor-translation.php:26
 msgid "Add to cart button only will show for non subscription product"
 msgstr ""
 
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:318
 msgid "Add to Cart Button will be shown only for non-subscribable products."
+msgstr ""
+
+#: app/Services/Renderer/ProductRenderer.php:1132
+msgid "Add to Cart is not supported for subscription product"
 msgstr ""
 
 #: app/Modules/Integrations/FluentPlugins/FluentCommunityConnect.php:114
@@ -1220,7 +1232,7 @@ msgid "Add Your First Product"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:133
-#: app/Services/Translations/block-editor-translation.php:28
+#: app/Services/Translations/block-editor-translation.php:27
 msgid "Add..."
 msgstr ""
 
@@ -1247,7 +1259,7 @@ msgstr ""
 #: app/Helpers/CartCheckoutHelper.php:486
 #: app/Services/Renderer/AddressSelectRenderer.php:223
 #: app/Services/Translations/admin-translation.php:138
-#: app/Services/Translations/block-editor-translation.php:29
+#: app/Services/Translations/block-editor-translation.php:28
 msgid "Address"
 msgstr ""
 
@@ -1275,7 +1287,7 @@ msgstr ""
 
 #: app/Services/Renderer/AddressSelectRenderer.php:231
 #: app/Services/Translations/admin-translation.php:139
-#: app/Services/Translations/block-editor-translation.php:30
+#: app/Services/Translations/block-editor-translation.php:29
 msgid "Address Label"
 msgstr ""
 
@@ -1293,7 +1305,7 @@ msgstr ""
 msgid "Address Line 2"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:31
+#: app/Services/Translations/block-editor-translation.php:30
 msgid "Address Modal"
 msgstr ""
 
@@ -1318,7 +1330,7 @@ msgstr ""
 msgid "Address options"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:32
+#: app/Services/Translations/block-editor-translation.php:31
 msgid "Address Section Label"
 msgstr ""
 
@@ -1553,7 +1565,7 @@ msgstr ""
 msgid "Alessandria"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:33
+#: app/Services/Translations/block-editor-translation.php:32
 msgid "Alex Smith"
 msgstr ""
 
@@ -1589,7 +1601,7 @@ msgstr ""
 msgid "Align main axis"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:34
+#: app/Services/Translations/block-editor-translation.php:33
 msgid "Alignment"
 msgstr ""
 
@@ -1656,11 +1668,11 @@ msgstr ""
 msgid "All time"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:35
+#: app/Services/Translations/block-editor-translation.php:34
 msgid "Allow Create Account"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:36
+#: app/Services/Translations/block-editor-translation.php:35
 msgid "Allow Out Of Stock"
 msgstr ""
 
@@ -1680,7 +1692,7 @@ msgstr ""
 msgid "Alphabetical (Z to A)"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:37
+#: app/Services/Translations/block-editor-translation.php:36
 msgid "Also search in Content"
 msgstr ""
 
@@ -1909,7 +1921,7 @@ msgstr ""
 msgid "Apartment, suite, unit, etc."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:38
+#: app/Services/Translations/block-editor-translation.php:37
 msgid "Apartment, suite, unit, etc. (optional)"
 msgstr ""
 
@@ -1965,24 +1977,24 @@ msgid "Applies to Whole World"
 msgstr ""
 
 #: app/Services/Renderer/AddressSelectRenderer.php:160
-#: app/Services/Renderer/ModalCheckoutRenderer.php:233
+#: app/Services/Renderer/ModalCheckoutRenderer.php:232
 #: app/Services/Renderer/CartSummaryRender.php:367
 #: app/Services/Renderer/EUVatRenderer.php:62
 #: app/Services/Translations/admin-translation.php:167
-#: app/Services/Translations/block-editor-translation.php:39
+#: app/Services/Translations/block-editor-translation.php:38
 #: app/Modules/Tax/TaxModule.php:485
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:154
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:212
 msgid "Apply"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:40
+#: app/Services/Translations/block-editor-translation.php:39
 msgid "Apply Button Text"
 msgstr ""
 
 #: app/Services/Renderer/ShopAppRenderer.php:426
 #: app/Services/Translations/admin-translation.php:168
-#: app/Services/Translations/block-editor-translation.php:41
+#: app/Services/Translations/block-editor-translation.php:40
 #: app/Hooks/Handlers/BlockEditors/ShopApp/InnerBlocks/InnerBlocks.php:663
 msgid "Apply Filter"
 msgstr ""
@@ -1993,7 +2005,7 @@ msgstr ""
 
 #: app/Helpers/CartCheckoutHelper.php:916
 #: app/Services/Renderer/CartSummaryRender.php:358
-#: app/Services/Translations/block-editor-translation.php:42
+#: app/Services/Translations/block-editor-translation.php:41
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:211
 msgid "Apply Here"
 msgstr ""
@@ -2107,30 +2119,30 @@ msgid "Are you sure to reset all notifications?"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:182
-#: app/Services/Translations/customer-profile-translation.php:33
-msgid "Are you sure want to delete this address?"
-msgstr ""
-
-#: app/Services/Translations/admin-translation.php:183
 msgid ""
 "Are you sure you want to change the order status to Cancel? This action is "
 "irreversible and cannot be undone."
 msgstr ""
 
-#: app/Services/Translations/admin-translation.php:184
+#: app/Services/Translations/admin-translation.php:183
 msgid "Are you sure you want to complete this order!"
 msgstr ""
 
-#: app/Services/Translations/admin-translation.php:185
+#: app/Services/Translations/admin-translation.php:184
 msgid "Are you sure you want to delete these orders?"
 msgstr ""
 
 #. %s - coupon title
-#: app/Services/Translations/admin-translation.php:187
+#: app/Services/Translations/admin-translation.php:186
 #, php-format
 msgid ""
 "Are you sure you want to delete this %s coupon. This action is not "
 "recoverable"
+msgstr ""
+
+#: app/Services/Translations/admin-translation.php:187
+#: app/Services/Translations/customer-profile-translation.php:33
+msgid "Are you sure you want to delete this address?"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:188
@@ -2702,7 +2714,7 @@ msgstr ""
 msgid "Back to Gateway Settings"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:525
+#: app/Http/Controllers/OrderController.php:526
 msgid "Back to orders"
 msgstr ""
 
@@ -2726,7 +2738,7 @@ msgstr ""
 msgid "Back to Subscription list"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:43
+#: app/Services/Translations/block-editor-translation.php:42
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:283
 msgid "Background"
 msgstr ""
@@ -2757,7 +2769,7 @@ msgstr ""
 msgid "Baden-Württemberg"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:44
+#: app/Services/Translations/block-editor-translation.php:43
 msgid "Badge"
 msgstr ""
 
@@ -3109,7 +3121,7 @@ msgstr ""
 msgid "Beta"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:45
+#: app/Services/Translations/block-editor-translation.php:44
 msgid "Bg Color"
 msgstr ""
 
@@ -3167,7 +3179,7 @@ msgstr ""
 #: app/Services/Renderer/CheckoutRenderer.php:468
 #: app/Services/Translations/admin-translation.php:263
 #: app/Services/Translations/customer-profile-translation.php:38
-#: app/Services/Translations/block-editor-translation.php:46
+#: app/Services/Translations/block-editor-translation.php:45
 #: app/Views/emails/parts/addresses.php:26
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:150
 msgid "Billing Address"
@@ -3177,7 +3189,7 @@ msgstr ""
 msgid "billing address also"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:506
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:507
 msgid "Billing address created successfully"
 msgstr ""
 
@@ -3189,11 +3201,11 @@ msgstr ""
 msgid "Billing Address Field"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:47
+#: app/Services/Translations/block-editor-translation.php:46
 msgid "Billing Address Heading"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:522
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:523
 msgid "Billing address updated successfully"
 msgstr ""
 
@@ -3209,7 +3221,7 @@ msgstr ""
 msgid "Billing Cycle"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:422
+#: app/Services/Renderer/ModalCheckoutRenderer.php:421
 msgid "Billing information"
 msgstr ""
 
@@ -3364,7 +3376,7 @@ msgstr ""
 msgid "Boquerón"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:48
+#: app/Services/Translations/block-editor-translation.php:47
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:141
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:153
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:296
@@ -3375,7 +3387,7 @@ msgstr ""
 msgid "Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:49
+#: app/Services/Translations/block-editor-translation.php:48
 msgid "Border Color"
 msgstr ""
 
@@ -3676,7 +3688,7 @@ msgstr ""
 msgid "Bundle Of"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:772
+#: app/Services/Renderer/ProductRenderer.php:774
 #: app/Services/Renderer/CartItemRenderer.php:211
 #: app/Services/Renderer/Receipt/ThankYouRender.php:934
 msgid "Bundle of"
@@ -3751,7 +3763,7 @@ msgstr ""
 msgid "Butebo"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:50
+#: app/Services/Translations/block-editor-translation.php:49
 msgid "Button"
 msgstr ""
 
@@ -3760,11 +3772,11 @@ msgstr ""
 msgid "Button Text"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:52
+#: app/Services/Translations/block-editor-translation.php:51
 msgid "Button text"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:51
+#: app/Services/Translations/block-editor-translation.php:50
 msgid "Button Url Params"
 msgstr ""
 
@@ -3784,13 +3796,14 @@ msgid "Buy %s now"
 msgstr ""
 
 #: app/Services/Renderer/ProductCardRender.php:268
-#: app/Services/Renderer/ProductRenderer.php:911
-#: app/Services/Renderer/ProductRenderer.php:957
-#: app/Services/Renderer/ProductRenderer.php:1023
+#: app/Services/Renderer/ProductRenderer.php:913
+#: app/Services/Renderer/ProductRenderer.php:959
+#: app/Services/Renderer/ProductRenderer.php:1045
 #: app/Services/Renderer/PricingTableRenderer.php:276
-#: app/Services/Translations/block-editor-translation.php:53
+#: app/Services/Translations/block-editor-translation.php:52
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:451
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:628
+#: app/Hooks/Handlers/ShortCodes/Buttons/DirectCheckoutShortcode.php:42
 msgid "Buy Now"
 msgstr ""
 
@@ -3821,7 +3834,7 @@ msgstr ""
 msgid "By %s"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:54
+#: app/Services/Translations/block-editor-translation.php:53
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:242
 msgid ""
 "By checking this box, you agree to create an account with us to manage your "
@@ -3841,8 +3854,8 @@ msgstr ""
 msgid "by license key, order id, customer name/email or connected sites."
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:80
-#: app/Services/Filter/OrderFilter.php:209
+#: app/Services/Filter/CustomerFilter.php:81
+#: app/Services/Filter/OrderFilter.php:212
 msgid "By Order Items"
 msgstr ""
 
@@ -4003,12 +4016,12 @@ msgstr ""
 #: app/Services/Translations/TransStrings.php:241
 #: app/Services/Translations/admin-translation.php:287
 #: app/Services/Translations/customer-profile-translation.php:43
-#: app/Services/Translations/block-editor-translation.php:55
+#: app/Services/Translations/block-editor-translation.php:54
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:156
 msgid "Cancel"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:56
+#: app/Services/Translations/block-editor-translation.php:55
 msgid "Cancel Button Text"
 msgstr ""
 
@@ -4034,7 +4047,7 @@ msgid "Cancel subscription is not implemented for this payment method."
 msgstr ""
 
 #: app/Helpers/Status.php:158 app/Helpers/Status.php:170
-#: app/Helpers/Status.php:255 app/Services/Filter/OrderFilter.php:226
+#: app/Helpers/Status.php:255 app/Services/Filter/OrderFilter.php:229
 #: app/Services/Translations/admin-translation.php:292
 #: app/Services/Translations/customer-profile-translation.php:45
 msgid "Canceled"
@@ -4135,12 +4148,12 @@ msgstr ""
 msgid "Carchi"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:57
+#: app/Services/Translations/block-editor-translation.php:56
 msgid "Card"
 msgstr ""
 
 #: app/Helpers/EditorShortCodeHelper.php:178
-#: app/Services/Filter/OrderFilter.php:390
+#: app/Services/Filter/OrderFilter.php:393
 msgid "Card Brand"
 msgstr ""
 
@@ -4156,7 +4169,7 @@ msgstr ""
 msgid "Card Last 4"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:382
+#: app/Services/Filter/OrderFilter.php:385
 msgid "Card last 4"
 msgstr ""
 
@@ -4165,10 +4178,11 @@ msgid "Card Number"
 msgstr ""
 
 #: app/Modules/PaymentMethods/PromoGateways/Addons/PaystackAddon.php:87
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:87
 msgid "Card payments & Bank transfers"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:58
+#: app/Services/Translations/block-editor-translation.php:57
 msgid "Card Sizing"
 msgstr ""
 
@@ -4210,7 +4224,7 @@ msgstr ""
 msgid "Cart and Checkout"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:59
+#: app/Services/Translations/block-editor-translation.php:58
 msgid "Cart Button Text"
 msgstr ""
 
@@ -4242,11 +4256,11 @@ msgstr ""
 msgid "Cart Total"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:661
+#: app/Hooks/Cart/WebCheckoutHandler.php:662
 msgid "Cart updated successfully"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:182
+#: api/Resource/FrontendResource/CartResource.php:199
 msgid "Cart validation error!"
 msgstr ""
 
@@ -4300,7 +4314,7 @@ msgstr ""
 
 #: app/CPT/FluentProducts.php:277
 #: app/Services/Translations/admin-translation.php:302
-#: app/Services/Translations/block-editor-translation.php:60
+#: app/Services/Translations/block-editor-translation.php:59
 msgid "Category"
 msgstr ""
 
@@ -4340,7 +4354,7 @@ msgstr ""
 msgid "Cebu"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:61
+#: app/Services/Translations/block-editor-translation.php:60
 msgid "Center"
 msgstr ""
 
@@ -4424,7 +4438,7 @@ msgstr ""
 
 #: app/Services/Renderer/AddressSelectRenderer.php:104
 #: app/Services/Translations/admin-translation.php:304
-#: app/Services/Translations/block-editor-translation.php:62
+#: app/Services/Translations/block-editor-translation.php:61
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:152
 msgid "Change"
 msgstr ""
@@ -4491,7 +4505,7 @@ msgstr ""
 msgid "Chanthaburi"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:374
+#: app/Services/Filter/OrderFilter.php:377
 msgid "Charge"
 msgstr ""
 
@@ -4533,23 +4547,23 @@ msgstr ""
 msgid "Check Update"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:63
+#: app/Services/Translations/block-editor-translation.php:62
 msgid "Checkbox Active Background"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:64
+#: app/Services/Translations/block-editor-translation.php:63
 msgid "Checkbox Active Text Color"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:65
+#: app/Services/Translations/block-editor-translation.php:64
 msgid "Checkbox Background"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:66
+#: app/Services/Translations/block-editor-translation.php:65
 msgid "Checkbox Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:67
+#: app/Services/Translations/block-editor-translation.php:66
 msgid "Checkbox Text Color"
 msgstr ""
 
@@ -4562,14 +4576,14 @@ msgstr ""
 msgid "Checking..."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:68
+#: app/Services/Translations/block-editor-translation.php:67
 msgid "Checkmark Border"
 msgstr ""
 
 #: api/StoreSettings.php:44 api/StoreSettings.php:698 api/StoreSettings.php:708
-#: app/Services/Renderer/ModalCheckoutRenderer.php:109
+#: app/Services/Renderer/ModalCheckoutRenderer.php:108
 #: app/Services/Translations/admin-translation.php:325
-#: app/Http/Routes/WebRoutes.php:297
+#: app/Http/Routes/WebRoutes.php:320
 msgid "Checkout"
 msgstr ""
 
@@ -4581,7 +4595,7 @@ msgstr ""
 msgid "Checkout Agree Terms Field"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:69
+#: app/Services/Translations/block-editor-translation.php:68
 msgid "Checkout Button Text"
 msgstr ""
 
@@ -4609,7 +4623,7 @@ msgstr ""
 msgid "Checkout fields has been updated successfully."
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:123
+#: app/Services/Renderer/ModalCheckoutRenderer.php:122
 #: app/Services/Renderer/CheckoutRenderer.php:214
 msgid "Checkout Form"
 msgstr ""
@@ -4952,7 +4966,7 @@ msgstr ""
 
 #: app/Services/Translations/TransStrings.php:120
 #: app/Services/Translations/TransStrings.php:135
-#: app/Services/Translations/block-editor-translation.php:70
+#: app/Services/Translations/block-editor-translation.php:69
 msgid "Clear"
 msgstr ""
 
@@ -4996,7 +5010,7 @@ msgstr ""
 msgid "Close Cart"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:89
+#: app/Services/Renderer/ModalCheckoutRenderer.php:91
 msgid "Close checkout"
 msgstr ""
 
@@ -5078,7 +5092,7 @@ msgstr ""
 msgid "Colima"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:71
+#: app/Services/Translations/block-editor-translation.php:70
 msgid "Collapsed"
 msgstr ""
 
@@ -5126,7 +5140,7 @@ msgstr ""
 msgid "Colonia"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:72
+#: app/Services/Translations/block-editor-translation.php:71
 msgid "Color"
 msgstr ""
 
@@ -5216,7 +5230,7 @@ msgstr ""
 #: app/Services/Renderer/AddressSelectRenderer.php:263
 #: app/Services/Translations/admin-translation.php:370
 #: app/Services/Translations/customer-profile-translation.php:52
-#: app/Services/Translations/block-editor-translation.php:73
+#: app/Services/Translations/block-editor-translation.php:72
 msgid "Company Name"
 msgstr ""
 
@@ -5245,7 +5259,7 @@ msgstr ""
 msgid "Compare price"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:74
+#: app/Services/Translations/block-editor-translation.php:73
 msgid "Compare Price Color"
 msgstr ""
 
@@ -5298,10 +5312,10 @@ msgstr ""
 
 #: app/Helpers/Status.php:156 app/Helpers/Status.php:168
 #: app/Helpers/Status.php:259 app/Helpers/Helper.php:143
-#: app/Helpers/Helper.php:154 app/Services/Filter/OrderFilter.php:223
+#: app/Helpers/Helper.php:154 app/Services/Filter/OrderFilter.php:226
 #: app/Services/Translations/admin-translation.php:384
 #: app/Services/Translations/customer-profile-translation.php:53
-#: app/Services/Translations/block-editor-translation.php:75
+#: app/Services/Translations/block-editor-translation.php:74
 msgid "Completed"
 msgstr ""
 
@@ -5309,7 +5323,7 @@ msgstr ""
 msgid "Completed (EOT)"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:138
+#: app/Http/Controllers/OrderController.php:139
 msgid "Completed status can not be updated"
 msgstr ""
 
@@ -5479,9 +5493,9 @@ msgstr ""
 msgid "Contact Information"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:118
-#: app/Services/Filter/OrderFilter.php:315
-#: app/Services/Filter/OrderFilter.php:404
+#: app/Services/Filter/CustomerFilter.php:119
+#: app/Services/Filter/OrderFilter.php:318
+#: app/Services/Filter/OrderFilter.php:407
 msgid "Contains"
 msgstr ""
 
@@ -5647,11 +5661,11 @@ msgstr ""
 msgid "Cotopaxi"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:199
+#: api/Resource/FrontendResource/CartResource.php:216
 msgid "Could not add"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1122
+#: app/Hooks/Cart/WebCheckoutHandler.php:1123
 msgid "Could not apply item at this time."
 msgstr ""
 
@@ -5675,7 +5689,7 @@ msgstr ""
 msgid "Could not switch payment method"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/SwitchCustomerMethod.php:93
+#: app/Modules/PaymentMethods/StripeGateway/SwitchCustomerMethod.php:94
 msgid "Could not switch payment method, please try again later"
 msgstr ""
 
@@ -5708,12 +5722,12 @@ msgstr ""
 #: app/Services/Renderer/CheckoutFieldsSchema.php:214
 #: app/Services/Renderer/CheckoutFieldsSchema.php:217
 #: app/Services/Renderer/AddressSelectRenderer.php:285
-#: app/Services/Translations/block-editor-translation.php:76
+#: app/Services/Translations/block-editor-translation.php:75
 msgid "Country / Region"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:155
-#: app/Http/Controllers/TaxEUController.php:185
+#: app/Http/Controllers/TaxEUController.php:156
+#: app/Http/Controllers/TaxEUController.php:186
 #: app/Http/Controllers/TaxRateController.php:241
 #: app/Modules/Shipping/Http/Controllers/Frontend/ShippingFrontendController.php:29
 msgid "Country code is required"
@@ -5750,7 +5764,7 @@ msgstr ""
 msgid "Country Rates"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:77
+#: app/Services/Translations/block-editor-translation.php:76
 msgid "Country/Region"
 msgstr ""
 
@@ -5762,7 +5776,7 @@ msgstr ""
 msgid "County"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:78
+#: app/Services/Translations/block-editor-translation.php:77
 #: app/Hooks/Handlers/BlockEditors/Checkout/InnerBlocks/InnerBlocks.php:423
 msgid "Coupon"
 msgstr ""
@@ -5821,7 +5835,7 @@ msgstr ""
 msgid "Coupon Discount"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:285
+#: app/Services/Renderer/ModalCheckoutRenderer.php:284
 msgid "Coupon discount"
 msgstr ""
 
@@ -5927,7 +5941,7 @@ msgid ""
 "FluentCart + FluentCommunity Integration."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:79
+#: app/Services/Translations/block-editor-translation.php:78
 msgid "Create Account"
 msgstr ""
 
@@ -5937,7 +5951,7 @@ msgid ""
 "builder."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:80
+#: app/Services/Translations/block-editor-translation.php:79
 msgid "Create an Account?"
 msgstr ""
 
@@ -5961,7 +5975,7 @@ msgstr ""
 msgid "Create My Account"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:81
+#: app/Services/Translations/block-editor-translation.php:80
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:241
 msgid "Create my user account"
 msgstr ""
@@ -6156,8 +6170,8 @@ msgstr ""
 msgid "Current Plan"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:536
-#: app/Services/Renderer/ProductRenderer.php:1214
+#: app/Services/Renderer/ProductRenderer.php:538
+#: app/Services/Renderer/ProductRenderer.php:1327
 msgid "Current price"
 msgstr ""
 
@@ -6169,7 +6183,7 @@ msgstr ""
 msgid "Current Revenue"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:82
+#: app/Services/Translations/block-editor-translation.php:81
 msgid "Current Tab"
 msgstr ""
 
@@ -6200,7 +6214,7 @@ msgid "Cusco"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:469
-#: app/Services/Translations/block-editor-translation.php:83
+#: app/Services/Translations/block-editor-translation.php:82
 msgid "Custom"
 msgstr ""
 
@@ -6218,7 +6232,7 @@ msgstr ""
 msgid "Custom text"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:84
+#: app/Services/Translations/block-editor-translation.php:83
 msgid "Custom Width"
 msgstr ""
 
@@ -6259,17 +6273,17 @@ msgstr ""
 msgid "Customer can see this reason"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:406
+#: app/Http/Controllers/OrderController.php:407
 msgid "Customer changed"
 msgstr ""
 
 #. 1: old customer name, 2: new customer name
-#: app/Http/Controllers/OrderController.php:409
+#: app/Http/Controllers/OrderController.php:410
 #, php-format
 msgid "Customer changed from %1$s to %2$s"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:417
+#: app/Http/Controllers/OrderController.php:418
 msgid "Customer changed successfully"
 msgstr ""
 
@@ -6305,11 +6319,11 @@ msgid "Customer Details"
 msgstr ""
 
 #: api/Resource/CustomerResource.php:301
-msgid "Customer do not have any changes to update."
+msgid "Customer does not have any changes to update."
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:128
-#: app/Services/Filter/OrderFilter.php:328
+#: app/Services/Filter/CustomerFilter.php:129
+#: app/Services/Filter/OrderFilter.php:331
 msgid "Customer Email"
 msgstr ""
 
@@ -6326,7 +6340,7 @@ msgstr ""
 msgid "Customer ID"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:335
+#: app/Http/Controllers/OrderController.php:336
 msgid "Customer id is required"
 msgstr ""
 
@@ -6353,7 +6367,7 @@ msgstr ""
 msgid "Customer Informations"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:370
+#: app/Http/Controllers/OrderController.php:371
 msgid "Customer is already attached to this order"
 msgstr ""
 
@@ -6362,12 +6376,12 @@ msgstr ""
 msgid "Customer last name"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:135
+#: app/Services/Filter/CustomerFilter.php:136
 msgid "Customer LTV"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:113
-#: app/Services/Filter/OrderFilter.php:310
+#: app/Services/Filter/CustomerFilter.php:114
+#: app/Services/Filter/OrderFilter.php:313
 #: app/Services/Translations/admin-translation.php:480
 msgid "Customer Name"
 msgstr ""
@@ -6383,7 +6397,7 @@ msgstr ""
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:326
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:363
 #: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:125
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:366
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:367
 msgid "Customer not found"
 msgstr ""
 
@@ -6413,8 +6427,8 @@ msgid "Customer Profile Page"
 msgstr ""
 
 #: app/Services/Filter/LicenseFilter.php:136
-#: app/Services/Filter/CustomerFilter.php:109
-#: app/Services/Filter/OrderFilter.php:305
+#: app/Services/Filter/CustomerFilter.php:110
+#: app/Services/Filter/OrderFilter.php:308
 #: app/Services/Filter/OrderBumpFilter.php:120
 msgid "Customer Property"
 msgstr ""
@@ -6639,7 +6653,7 @@ msgstr ""
 #: app/Helpers/AdminHelper.php:82
 #: app/Services/Translations/admin-translation.php:501
 #: app/Services/Translations/customer-profile-translation.php:69
-#: app/Services/Translations/block-editor-translation.php:86
+#: app/Services/Translations/block-editor-translation.php:85
 #: app/Hooks/Handlers/MenuHandler.php:176
 #: app/Hooks/Handlers/ShortCodes/CustomerProfileHandler.php:201
 msgid "Dashboard"
@@ -6649,15 +6663,15 @@ msgstr ""
 msgid "Data"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:886
-#: app/Hooks/Cart/WebCheckoutHandler.php:993
-#: app/Hooks/Cart/WebCheckoutHandler.php:1088
+#: app/Hooks/Cart/WebCheckoutHandler.php:887
+#: app/Hooks/Cart/WebCheckoutHandler.php:994
+#: app/Hooks/Cart/WebCheckoutHandler.php:1089
 msgid "Data saved successfully"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:503
 #: app/Services/Translations/customer-profile-translation.php:70
-#: app/Services/Translations/block-editor-translation.php:87
+#: app/Services/Translations/block-editor-translation.php:86
 #: app/Views/invoice/receipt_slip.php:433
 #: app/Services/Renderer/Receipt/ReceiptRenderer.php:699
 msgid "Date"
@@ -6736,8 +6750,8 @@ msgstr ""
 msgid "Decrease of %s year-over-year"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:851
-#: app/Services/Renderer/ProductRenderer.php:852
+#: app/Services/Renderer/ProductRenderer.php:853
+#: app/Services/Renderer/ProductRenderer.php:854
 #: app/Services/Renderer/CartRenderer.php:262
 #: app/Services/Renderer/CartRenderer.php:263
 msgid "Decrease Quantity"
@@ -6745,7 +6759,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:510
 #: app/Services/Translations/customer-profile-translation.php:71
-#: app/Services/Translations/block-editor-translation.php:88
+#: app/Services/Translations/block-editor-translation.php:87
 #: app/Modules/Templating/Bricks/Elements/ProductsCollection.php:110
 msgid "Default"
 msgstr ""
@@ -6754,7 +6768,7 @@ msgstr ""
 msgid "Default Body"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:89
+#: app/Services/Translations/block-editor-translation.php:88
 msgid "Default Filter"
 msgstr ""
 
@@ -6790,7 +6804,7 @@ msgstr ""
 #: app/Services/Translations/TransStrings.php:247
 #: app/Services/Translations/admin-translation.php:516
 #: app/Services/Translations/customer-profile-translation.php:72
-#: app/Services/Translations/block-editor-translation.php:90
+#: app/Services/Translations/block-editor-translation.php:89
 msgid "Delete"
 msgstr ""
 
@@ -6916,7 +6930,7 @@ msgstr ""
 msgid "Department"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:85
+#: app/Services/Translations/block-editor-translation.php:84
 msgid "DESC"
 msgstr ""
 
@@ -6994,10 +7008,6 @@ msgstr ""
 msgid "Diourbel"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:1069
-msgid "Dipute accepeted!"
-msgstr ""
-
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:41
 msgid "Direct Buy Button"
 msgstr ""
@@ -7023,7 +7033,7 @@ msgid "Disable Editing"
 msgstr ""
 
 #: app/Helpers/Helper.php:825 app/Services/Filter/LicenseFilter.php:176
-#: app/Services/Filter/OrderFilter.php:444
+#: app/Services/Filter/OrderFilter.php:447
 #: app/Services/Filter/OrderBumpFilter.php:160
 #: app/Services/Translations/admin-translation.php:544
 #: app/Services/Translations/customer-profile-translation.php:74
@@ -7109,7 +7119,7 @@ msgstr ""
 msgid "Display Conditions"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:91
+#: app/Services/Translations/block-editor-translation.php:90
 msgid "Display Name"
 msgstr ""
 
@@ -7126,10 +7136,14 @@ msgstr ""
 msgid "Displays Single FluentCart Product."
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:376
+#: app/Services/Filter/OrderFilter.php:379
 #: app/Services/Translations/admin-translation.php:562
 #: app/Services/Translations/customer-profile-translation.php:75
 msgid "Dispute"
+msgstr ""
+
+#: app/Http/Controllers/OrderController.php:1070
+msgid "Dispute accepted!"
 msgstr ""
 
 #: app/Services/Localization/i18n/address-locales.php:79
@@ -7312,11 +7326,11 @@ msgstr ""
 msgid "Distrito Nacional"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:92
+#: app/Services/Translations/block-editor-translation.php:91
 msgid "Divider"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:93
+#: app/Services/Translations/block-editor-translation.php:92
 msgid "Divider Color"
 msgstr ""
 
@@ -7476,7 +7490,7 @@ msgid "Downloadable File Deleted Successfully"
 msgstr ""
 
 #: app/Services/Translations/customer-profile-translation.php:79
-#: app/Services/Translations/block-editor-translation.php:94
+#: app/Services/Translations/block-editor-translation.php:93
 #: app/Services/Renderer/Receipt/ThankYouRender.php:585
 #: app/Services/ShortCodeParser/Parsers/OrderParser.php:249
 #: app/Hooks/Handlers/BlockEditors/CustomerProfileBlockEditor.php:46
@@ -7739,7 +7753,7 @@ msgstr ""
 msgid "Edit product content in FluentCart."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:95
+#: app/Services/Translations/block-editor-translation.php:94
 msgid "Edit product selection"
 msgstr ""
 
@@ -7901,7 +7915,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:604
 #: app/Services/Translations/customer-profile-translation.php:85
-#: app/Services/Translations/block-editor-translation.php:96
+#: app/Services/Translations/block-editor-translation.php:95
 msgid "Email"
 msgstr ""
 
@@ -7916,8 +7930,8 @@ msgstr ""
 
 #: app/Helpers/CartCheckoutHelper.php:676
 #: app/Services/Renderer/CheckoutFieldsSchema.php:60
-#: app/Services/Renderer/ModalCheckoutRenderer.php:382
-#: app/Services/Renderer/ModalCheckoutRenderer.php:389
+#: app/Services/Renderer/ModalCheckoutRenderer.php:381
+#: app/Services/Renderer/ModalCheckoutRenderer.php:388
 msgid "Email address"
 msgstr ""
 
@@ -8315,15 +8329,15 @@ msgstr ""
 msgid "Enable EU VAT Number"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:97
+#: app/Services/Translations/block-editor-translation.php:96
 msgid "Enable Filter"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:98
+#: app/Services/Translations/block-editor-translation.php:97
 msgid "Enable Filtering"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:100
+#: app/Services/Translations/block-editor-translation.php:99
 msgid "Enable image zoom"
 msgstr ""
 
@@ -8335,7 +8349,7 @@ msgstr ""
 msgid "Enable installment payment"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:99
+#: app/Services/Translations/block-editor-translation.php:98
 msgid "Enable Instant Modal Checkout"
 msgstr ""
 
@@ -8423,9 +8437,9 @@ msgstr ""
 msgid "End To"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:120
-#: app/Services/Filter/OrderFilter.php:317
-#: app/Services/Filter/OrderFilter.php:406
+#: app/Services/Filter/CustomerFilter.php:121
+#: app/Services/Filter/OrderFilter.php:320
+#: app/Services/Filter/OrderFilter.php:409
 msgid "Ends With"
 msgstr ""
 
@@ -8444,7 +8458,7 @@ msgid "Enriquillo"
 msgstr ""
 
 #. %s - section title
-#: app/Services/Translations/block-editor-translation.php:102
+#: app/Services/Translations/block-editor-translation.php:101
 #, php-format
 msgid "Enter %s Title"
 msgstr ""
@@ -8524,7 +8538,7 @@ msgstr ""
 msgid "Enter priority (0-10)"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:228
+#: app/Services/Renderer/ModalCheckoutRenderer.php:227
 msgid "Enter promotion code"
 msgstr ""
 
@@ -8641,8 +8655,8 @@ msgstr ""
 msgid "Equal"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:292
-#: app/Services/Filter/OrderFilter.php:403
+#: app/Services/Filter/OrderFilter.php:295
+#: app/Services/Filter/OrderFilter.php:406
 #: app/Services/Translations/admin-translation.php:661
 msgid "Equals"
 msgstr ""
@@ -8683,7 +8697,7 @@ msgid "Error generating snapshots"
 msgstr ""
 
 #. %s is the error message
-#: app/Services/Translations/block-editor-translation.php:104
+#: app/Services/Translations/block-editor-translation.php:103
 #, php-format
 msgid "Error in component: %s"
 msgstr ""
@@ -8806,7 +8820,7 @@ msgstr ""
 msgid "EU VAT Settings"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:247
+#: app/Http/Controllers/TaxEUController.php:248
 msgid "EU VAT settings saved successfully"
 msgstr ""
 
@@ -8844,12 +8858,12 @@ msgstr ""
 msgid "Examples"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:105
+#: app/Services/Translations/block-editor-translation.php:104
 #: app/Hooks/Handlers/BlockEditors/ExcerptBlockEditor.php:57
 msgid "Excerpt"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:106
+#: app/Services/Translations/block-editor-translation.php:105
 msgid "Excerpt:"
 msgstr ""
 
@@ -8916,7 +8930,7 @@ msgstr ""
 #: app/Helpers/Status.php:253 app/Helpers/Helper.php:824
 #: app/Services/Filter/LicenseFilter.php:55
 #: app/Services/Filter/LicenseFilter.php:177
-#: app/Services/Filter/OrderFilter.php:445
+#: app/Services/Filter/OrderFilter.php:448
 #: app/Services/Filter/OrderBumpFilter.php:161
 #: app/Services/Translations/admin-translation.php:685
 #: app/Services/Translations/customer-profile-translation.php:94
@@ -8989,7 +9003,7 @@ msgstr ""
 #: app/Helpers/Status.php:159 app/Helpers/Status.php:182
 #: app/Helpers/Status.php:196 app/Helpers/Status.php:213
 #: app/Helpers/Helper.php:219 app/Helpers/Helper.php:236
-#: app/Services/Filter/OrderFilter.php:361
+#: app/Services/Filter/OrderFilter.php:364
 #: app/Services/Translations/admin-translation.php:690
 #: app/Services/Translations/customer-profile-translation.php:99
 msgid "Failed"
@@ -9005,10 +9019,6 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:691
 msgid "Failed Orders"
-msgstr ""
-
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:756
-msgid "Failed reason- "
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:694
@@ -9027,7 +9037,7 @@ msgstr ""
 msgid "Failed to add file!"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:309
+#: app/Http/Controllers/OrderController.php:310
 msgid "Failed to attach customer"
 msgstr ""
 
@@ -9080,7 +9090,7 @@ msgstr ""
 msgid "Failed To Delete"
 msgstr ""
 
-#: api/Resource/OrderResource.php:723
+#: api/Resource/OrderResource.php:734
 msgid "Failed to delete"
 msgstr ""
 
@@ -9198,7 +9208,7 @@ msgstr ""
 msgid "Failed to retrieve access token from PayPal."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1098
+#: app/Hooks/Cart/WebCheckoutHandler.php:1099
 msgid "Failed to save data"
 msgstr ""
 
@@ -9239,12 +9249,12 @@ msgstr ""
 msgid "Failed to update"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1230
+#: api/Resource/OrderResource.php:1241
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:398
 msgid "Failed to update address"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:516
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:517
 msgid "Failed to update billing address"
 msgstr ""
 
@@ -9269,7 +9279,7 @@ msgstr ""
 msgid "Failed to update order note."
 msgstr ""
 
-#: api/Resource/OrderResource.php:1214
+#: api/Resource/OrderResource.php:1225
 msgid "Failed to update payment status"
 msgstr ""
 
@@ -9293,7 +9303,7 @@ msgstr ""
 msgid "Failed to update shipping method"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1066
+#: api/Resource/OrderResource.php:1077
 msgid "Failed to update status"
 msgstr ""
 
@@ -9340,6 +9350,10 @@ msgstr ""
 
 #: app/Helpers/Status.php:251
 msgid "Failing"
+msgstr ""
+
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:756
+msgid "Failure reason: "
 msgstr ""
 
 #: app/Services/Localization/i18n/states.php:570
@@ -9390,7 +9404,7 @@ msgstr ""
 msgid "Fatick"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:107
+#: app/Services/Translations/block-editor-translation.php:106
 msgid "Feature List Color"
 msgstr ""
 
@@ -9602,15 +9616,15 @@ msgstr ""
 msgid "Filter"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:108
+#: app/Services/Translations/block-editor-translation.php:107
 msgid "Filter Background"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:109
+#: app/Services/Translations/block-editor-translation.php:108
 msgid "Filter Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:110
+#: app/Services/Translations/block-editor-translation.php:109
 msgid "Filter Option"
 msgstr ""
 
@@ -9635,7 +9649,7 @@ msgid "Final price after all installments, excluding any fees."
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:735
-#: app/Services/Translations/block-editor-translation.php:111
+#: app/Services/Translations/block-editor-translation.php:110
 msgid "Find products to make a pricing table"
 msgstr ""
 
@@ -9659,7 +9673,7 @@ msgstr ""
 msgid "First Order Date"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:95
+#: app/Services/Filter/CustomerFilter.php:96
 msgid "First Purchase Date"
 msgstr ""
 
@@ -9681,7 +9695,7 @@ msgid "Fixed Amount"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:738
-#: app/Services/Translations/block-editor-translation.php:112
+#: app/Services/Translations/block-editor-translation.php:111
 msgid "Flat Rate"
 msgstr ""
 
@@ -9698,7 +9712,7 @@ msgstr ""
 msgid "Florida"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:113
+#: app/Services/Translations/block-editor-translation.php:112
 msgid ""
 "Fluent Booking – The Ultimate Appointments Scheduling, Events Booking, "
 "Events Calendar Solution"
@@ -9716,7 +9730,7 @@ msgstr ""
 msgid "Fluent Forms"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:114
+#: app/Services/Translations/block-editor-translation.php:113
 msgid ""
 "Fluent Forms Pro Add-On: The Fastest & Most Powerful WordPress Form Plugin"
 msgstr ""
@@ -9802,7 +9816,7 @@ msgid ""
 "Add/Remove tags, lists, run automations on order activities."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:115
+#: app/Services/Translations/block-editor-translation.php:114
 msgid ""
 "FluentCRM – The Ultimate CRM, Marketing, & Automation Solution for WordPress"
 msgstr ""
@@ -9907,11 +9921,12 @@ msgid "Fraudulent"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:745
-#: app/Services/Translations/block-editor-translation.php:116
+#: app/Services/Translations/block-editor-translation.php:115
 msgid "Free"
 msgstr ""
 
 #: app/Modules/PaymentMethods/PromoGateways/Addons/PaystackAddon.php:90
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:89
 msgid "Free & Open Source addon"
 msgstr ""
 
@@ -9922,11 +9937,12 @@ msgstr ""
 #: app/Modules/PaymentMethods/PromoGateways/Addons/PaystackAddon.php:96
 #: app/Modules/PaymentMethods/PromoGateways/Addons/AddonGatewaySettings.php:236
 #: app/Modules/PaymentMethods/PromoGateways/Addons/RazorpayAddon.php:94
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:95
 msgid "Free addon - Click the button above to get started"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:746
-#: app/Services/Translations/block-editor-translation.php:117
+#: app/Services/Translations/block-editor-translation.php:116
 msgid "Free Shipping"
 msgstr ""
 
@@ -10032,7 +10048,7 @@ msgstr ""
 msgid "Fulfilment Type is required."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:118
+#: app/Services/Translations/block-editor-translation.php:117
 msgid "Full Address"
 msgstr ""
 
@@ -10043,12 +10059,12 @@ msgstr ""
 #: app/Services/Renderer/CheckoutFieldsSchema.php:472
 #: app/Services/Renderer/AddressSelectRenderer.php:248
 #: app/Services/Translations/admin-translation.php:752
-#: app/Services/Translations/block-editor-translation.php:119
+#: app/Services/Translations/block-editor-translation.php:118
 msgid "Full Name"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:367
-#: app/Services/Renderer/ModalCheckoutRenderer.php:373
+#: app/Services/Renderer/ModalCheckoutRenderer.php:366
+#: app/Services/Renderer/ModalCheckoutRenderer.php:372
 msgid "Full name"
 msgstr ""
 
@@ -10073,7 +10089,7 @@ msgstr ""
 msgid "Full name is required."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:120
+#: app/Services/Translations/block-editor-translation.php:119
 msgid "Full Width"
 msgstr ""
 
@@ -10199,7 +10215,7 @@ msgid "Geita"
 msgstr ""
 
 #: app/Helpers/EditorShortCodeHelper.php:13
-#: app/Services/Translations/block-editor-translation.php:121
+#: app/Services/Translations/block-editor-translation.php:120
 msgid "General"
 msgstr ""
 
@@ -10566,12 +10582,12 @@ msgstr ""
 msgid "Grenada"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:122
+#: app/Services/Translations/block-editor-translation.php:121
 msgid "Grid"
 msgstr ""
 
 #: app/Services/Renderer/ShopAppRenderer.php:235
-#: app/Services/Translations/block-editor-translation.php:123
+#: app/Services/Translations/block-editor-translation.php:122
 msgid "Grid View"
 msgstr ""
 
@@ -10687,7 +10703,7 @@ msgstr ""
 msgid "Grouped by"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:124
+#: app/Services/Translations/block-editor-translation.php:123
 msgid "Grouping"
 msgstr ""
 
@@ -10928,7 +10944,7 @@ msgstr ""
 
 #: app/Services/Renderer/CartSummaryRender.php:317
 #: app/Services/Translations/admin-translation.php:810
-#: app/Services/Translations/block-editor-translation.php:125
+#: app/Services/Translations/block-editor-translation.php:124
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:213
 msgid "Have a Coupon?"
 msgstr ""
@@ -10937,7 +10953,7 @@ msgstr ""
 msgid "Have a new license Key?"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:214
+#: app/Services/Renderer/ModalCheckoutRenderer.php:213
 msgid "Have a promotional code?"
 msgstr ""
 
@@ -10949,7 +10965,7 @@ msgstr ""
 msgid "Hawke’s Bay"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:126
+#: app/Services/Translations/block-editor-translation.php:125
 msgid "Header BG"
 msgstr ""
 
@@ -10957,7 +10973,7 @@ msgstr ""
 msgid "Header Name"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:127
+#: app/Services/Translations/block-editor-translation.php:126
 msgid "Header Title Color"
 msgstr ""
 
@@ -10965,7 +10981,7 @@ msgstr ""
 msgid "Header Value"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:128
+#: app/Services/Translations/block-editor-translation.php:127
 msgid "Heading"
 msgstr ""
 
@@ -11125,7 +11141,7 @@ msgid "Himachal Pradesh"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:823
-#: app/Services/Translations/block-editor-translation.php:129
+#: app/Services/Translations/block-editor-translation.php:128
 msgid "Hint: "
 msgstr ""
 
@@ -11181,15 +11197,15 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:130
+#: app/Services/Translations/block-editor-translation.php:129
 msgid "House number and street name *"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:131
+#: app/Services/Translations/block-editor-translation.php:130
 msgid "Hover Background"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:132
+#: app/Services/Translations/block-editor-translation.php:131
 msgid "Hover Color"
 msgstr ""
 
@@ -11289,7 +11305,7 @@ msgid "Hîncești"
 msgstr ""
 
 #: app/Services/Renderer/CheckoutFieldsSchema.php:647
-#: app/Services/Translations/block-editor-translation.php:133
+#: app/Services/Translations/block-editor-translation.php:132
 msgid "I agree to the terms and conditions."
 msgstr ""
 
@@ -11330,7 +11346,7 @@ msgstr ""
 msgid "Icon"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:135
+#: app/Services/Translations/block-editor-translation.php:134
 msgid "Icon Color"
 msgstr ""
 
@@ -11353,12 +11369,12 @@ msgstr ""
 msgid "Icon URL"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:136
+#: app/Services/Translations/block-editor-translation.php:135
 msgid "Icon Visibility"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:827
-#: app/Services/Translations/block-editor-translation.php:134
+#: app/Services/Translations/block-editor-translation.php:133
 msgid "ID"
 msgstr ""
 
@@ -11545,13 +11561,13 @@ msgid ""
 "lifetime value of ${CurrencyFormatter.scaled(ltv)}."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:138
+#: app/Services/Translations/block-editor-translation.php:137
 msgid "In frontend this filter will be Hidden until product types are added."
 msgstr ""
 
 #: app/Models/ProductDetail.php:163 app/Models/ProductDetail.php:170
 #: app/Helpers/Status.php:277 app/Helpers/Helper.php:572
-#: app/Services/Translations/block-editor-translation.php:137
+#: app/Services/Translations/block-editor-translation.php:136
 msgid "In Stock"
 msgstr ""
 
@@ -11632,8 +11648,8 @@ msgstr ""
 msgid "Increase of %s year-over-year"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:874
-#: app/Services/Renderer/ProductRenderer.php:875
+#: app/Services/Renderer/ProductRenderer.php:876
+#: app/Services/Renderer/ProductRenderer.php:877
 #: app/Services/Renderer/CartRenderer.php:285
 #: app/Services/Renderer/CartRenderer.php:286
 msgid "Increase Quantity"
@@ -11695,15 +11711,15 @@ msgstr ""
 msgid "Inner Mongolia / 內蒙古"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:139
+#: app/Services/Translations/block-editor-translation.php:138
 msgid "Input Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:140
+#: app/Services/Translations/block-editor-translation.php:139
 msgid "Input Focus Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:141
+#: app/Services/Translations/block-editor-translation.php:140
 msgid "Input Placeholder Color"
 msgstr ""
 
@@ -11770,7 +11786,7 @@ msgstr ""
 msgid "Installing..."
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:182
+#: app/Services/Renderer/ProductRenderer.php:184
 #: app/Services/Translations/admin-translation.php:865
 msgid "Installment"
 msgstr ""
@@ -11923,7 +11939,11 @@ msgstr ""
 msgid "Invalid credentials!"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:931
+#: app/Models/Cart.php:370 api/Resource/FrontendResource/CartResource.php:302
+msgid "Invalid custom item data."
+msgstr ""
+
+#: app/Hooks/Cart/WebCheckoutHandler.php:932
 msgid "Invalid data key"
 msgstr ""
 
@@ -11959,7 +11979,7 @@ msgstr ""
 msgid "Invalid GitHub releases URL"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:232
+#: api/Resource/FrontendResource/CartResource.php:249
 msgid "Invalid item."
 msgstr ""
 
@@ -11983,7 +12003,7 @@ msgstr ""
 msgid "Invalid payment method instance"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1239
+#: app/Hooks/Cart/WebCheckoutHandler.php:1240
 msgid "Invalid payment method."
 msgstr ""
 
@@ -12014,17 +12034,25 @@ msgstr ""
 msgid "Invalid plugin selected for installation."
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:39
+#: api/Resource/FrontendResource/CartResource.php:51
 msgid "Invalid Product"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Plan.php:35
-#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:38
+#: app/Modules/PaymentMethods/StripeGateway/Plan.php:38
+#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:40
 msgid "Invalid product or variation."
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Plan.php:128
+#: app/Modules/PaymentMethods/StripeGateway/Plan.php:132
 msgid "Invalid product."
+msgstr ""
+
+#: app/Hooks/Handlers/ShortCodes/Buttons/AddToCartShortcode.php:73
+msgid "Invalid product/variant for Add to Cart button shortcode."
+msgstr ""
+
+#: app/Hooks/Handlers/ShortCodes/Buttons/DirectCheckoutShortcode.php:90
+msgid "Invalid product/variant for Checkout button shortcode."
 msgstr ""
 
 #: app/Services/Payments/Refund.php:30 app/Services/Payments/Refund.php:126
@@ -12053,7 +12081,7 @@ msgstr ""
 msgid "Invalid Shipping Class."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1259
+#: app/Hooks/Cart/WebCheckoutHandler.php:1260
 msgid "Invalid shipping method."
 msgstr ""
 
@@ -12071,8 +12099,8 @@ msgid "Invalid Square credentials or location ID"
 msgstr ""
 
 #: app/Services/Localization/LocalizationManager.php:627
-#: app/Hooks/Cart/WebCheckoutHandler.php:1218
-#: app/Hooks/Cart/WebCheckoutHandler.php:1228
+#: app/Hooks/Cart/WebCheckoutHandler.php:1219
+#: app/Hooks/Cart/WebCheckoutHandler.php:1229
 msgid "Invalid state code."
 msgstr ""
 
@@ -12095,12 +12123,12 @@ msgstr ""
 msgid "Invalid transaction ID for refund."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1131
+#: app/Hooks/Cart/WebCheckoutHandler.php:1132
 msgid "Invalid upgrade request."
 msgstr ""
 
-#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:106
-#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:66
+#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:110
+#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:98
 msgid "Invalid variant"
 msgstr ""
 
@@ -12136,7 +12164,7 @@ msgstr ""
 msgid "Invoice No."
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:132
+#: app/Services/Filter/OrderFilter.php:135
 #: app/Services/Translations/customer-profile-translation.php:111
 msgid "Invoice Number"
 msgstr ""
@@ -12306,7 +12334,7 @@ msgstr ""
 msgid "item"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:496
+#: api/Resource/FrontendResource/CartResource.php:587
 msgid "Item added in cart!"
 msgstr ""
 
@@ -12328,11 +12356,11 @@ msgstr ""
 msgid "Item count distribution"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1191
+#: app/Hooks/Cart/WebCheckoutHandler.php:1192
 msgid "Item has been applied successfully"
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1191
+#: app/Hooks/Cart/WebCheckoutHandler.php:1192
 msgid "Item has been reverted successfully"
 msgstr ""
 
@@ -12340,11 +12368,11 @@ msgstr ""
 msgid "Item Height"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:351
-#: api/Resource/FrontendResource/CartResource.php:364
-#: api/Resource/FrontendResource/CartResource.php:372
-#: api/Resource/FrontendResource/CartResource.php:390
-#: api/Resource/FrontendResource/CartResource.php:547
+#: api/Resource/FrontendResource/CartResource.php:442
+#: api/Resource/FrontendResource/CartResource.php:455
+#: api/Resource/FrontendResource/CartResource.php:463
+#: api/Resource/FrontendResource/CartResource.php:481
+#: api/Resource/FrontendResource/CartResource.php:638
 msgid "Item is not available."
 msgstr ""
 
@@ -12378,7 +12406,7 @@ msgstr ""
 msgid "Item Quantity"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:407
+#: api/Resource/FrontendResource/CartResource.php:498
 msgid "Item removed from cart"
 msgstr ""
 
@@ -12565,7 +12593,7 @@ msgstr ""
 msgid "Johor"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:370
+#: app/Services/Renderer/ModalCheckoutRenderer.php:369
 msgid "Jon Doe"
 msgstr ""
 
@@ -13355,7 +13383,7 @@ msgstr ""
 msgid "La Vega"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:142
+#: app/Services/Translations/block-editor-translation.php:141
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:166
 msgid "Label"
 msgstr ""
@@ -13497,7 +13525,7 @@ msgid "Larache"
 msgstr ""
 
 #: app/Services/Email/FluentBlockParser.php:1202
-#: app/Services/Translations/block-editor-translation.php:143
+#: app/Services/Translations/block-editor-translation.php:142
 msgid "Large"
 msgstr ""
 
@@ -13546,7 +13574,7 @@ msgstr ""
 msgid "Last Order Date"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:101
+#: app/Services/Filter/CustomerFilter.php:102
 #: app/Services/Translations/admin-translation.php:911
 msgid "Last Purchase Date"
 msgstr ""
@@ -13596,7 +13624,7 @@ msgid "lbs"
 msgstr ""
 
 #: app/Services/Renderer/CheckoutRenderer.php:566
-#: app/Services/Translations/block-editor-translation.php:144
+#: app/Services/Translations/block-editor-translation.php:143
 msgid "Leave a Note"
 msgstr ""
 
@@ -13628,7 +13656,7 @@ msgstr ""
 msgid "Lecco"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:145
+#: app/Services/Translations/block-editor-translation.php:144
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:437
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:562
 #: app/Modules/Templating/Bricks/Elements/ProductGallery.php:80
@@ -13747,7 +13775,7 @@ msgid "License Key"
 msgstr ""
 
 #: app/Services/Filter/LicenseFilter.php:162
-#: app/Services/Filter/OrderFilter.php:428
+#: app/Services/Filter/OrderFilter.php:431
 #: app/Services/Filter/OrderBumpFilter.php:146
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:233
 msgid "License key"
@@ -13762,7 +13790,7 @@ msgid "License Key Prefix (Optional)"
 msgstr ""
 
 #: app/Services/Filter/LicenseFilter.php:158
-#: app/Services/Filter/OrderFilter.php:424
+#: app/Services/Filter/OrderFilter.php:427
 #: app/Services/Filter/OrderBumpFilter.php:142
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:229
 msgid "License Property"
@@ -13782,7 +13810,7 @@ msgstr ""
 msgid "License Settings Not Available for Bundle Products"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:436
+#: app/Services/Filter/OrderFilter.php:439
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:242
 msgid "License Status"
 msgstr ""
@@ -13800,7 +13828,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:935
 #: app/Services/Translations/customer-profile-translation.php:124
-#: app/Services/Translations/block-editor-translation.php:146
+#: app/Services/Translations/block-editor-translation.php:145
 #: app/Services/Renderer/Receipt/ThankYouRender.php:703
 #: app/Services/ShortCodeParser/Parsers/OrderParser.php:240
 #: app/Services/ShortCodeParser/Parsers/OrderParser.php:361
@@ -13892,7 +13920,7 @@ msgstr ""
 msgid "Link to product"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:147
+#: app/Services/Translations/block-editor-translation.php:146
 msgid "Link With Shop App"
 msgstr ""
 
@@ -13900,7 +13928,7 @@ msgstr ""
 msgid "Lira"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:148
+#: app/Services/Translations/block-editor-translation.php:147
 msgid "List"
 msgstr ""
 
@@ -13923,7 +13951,7 @@ msgid "List of sites where the license is activated"
 msgstr ""
 
 #: app/Services/Renderer/ShopAppRenderer.php:246
-#: app/Services/Translations/block-editor-translation.php:149
+#: app/Services/Translations/block-editor-translation.php:148
 msgid "List View"
 msgstr ""
 
@@ -13962,7 +13990,7 @@ msgstr ""
 msgid "Live credentials"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:150
+#: app/Services/Translations/block-editor-translation.php:149
 msgid "Live Filter"
 msgstr ""
 
@@ -13983,7 +14011,7 @@ msgstr ""
 msgid "Lleida"
 msgstr ""
 
-#: app/Services/Renderer/ProductCardRender.php:345
+#: app/Services/Renderer/ProductCardRender.php:346
 #: app/Services/Translations/TransStrings.php:202
 #: app/Services/Translations/TransStrings.php:208
 #: app/Services/Translations/TransStrings.php:215
@@ -14009,7 +14037,7 @@ msgstr ""
 
 #: app/Services/Translations/checkout-translation.php:17
 #: app/Services/Translations/admin-translation.php:948
-#: app/Services/Translations/block-editor-translation.php:151
+#: app/Services/Translations/block-editor-translation.php:150
 msgid "Loading..."
 msgstr ""
 
@@ -14075,7 +14103,7 @@ msgstr ""
 msgid "Logo"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:152
+#: app/Services/Translations/block-editor-translation.php:151
 #: app/Views/frontend/customer_menu.php:83
 #: app/Views/frontend/customer_menu.php:83
 #: app/Views/frontend/customer_menu.php:86
@@ -14118,7 +14146,7 @@ msgstr ""
 msgid "Lopburi"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:153
+#: app/Services/Translations/block-editor-translation.php:152
 msgid "Lorem ipsum dolor set amet"
 msgstr ""
 
@@ -14381,7 +14409,7 @@ msgstr ""
 msgid "Make this coupon recurring"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:154
+#: app/Services/Translations/block-editor-translation.php:153
 msgid "Make title a link"
 msgstr ""
 
@@ -14581,7 +14609,7 @@ msgid "Mantova"
 msgstr ""
 
 #: app/Services/Renderer/CartSummaryRender.php:293
-#: app/Services/Translations/block-editor-translation.php:155
+#: app/Services/Translations/block-editor-translation.php:154
 #: app/Hooks/Handlers/BlockEditors/Checkout/InnerBlocks/InnerBlocks.php:434
 msgid "Manual Discount"
 msgstr ""
@@ -14843,7 +14871,7 @@ msgstr ""
 msgid "Max uses must be greater than or equal to max per customer."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:156
+#: app/Services/Translations/block-editor-translation.php:155
 msgid "Max Visible Items"
 msgstr ""
 
@@ -14913,7 +14941,7 @@ msgid "Media"
 msgstr ""
 
 #: app/Services/Email/FluentBlockParser.php:1196
-#: app/Services/Translations/block-editor-translation.php:157
+#: app/Services/Translations/block-editor-translation.php:156
 msgid "Medium"
 msgstr ""
 
@@ -14951,6 +14979,11 @@ msgstr ""
 
 #: app/Hooks/filters.php:42
 msgid "Men’s Shoes"
+msgstr ""
+
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:84
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:112
+msgid "Mercado Pago Payment Gateway"
 msgstr ""
 
 #: app/Services/Localization/i18n/states.php:1122
@@ -15145,7 +15178,7 @@ msgstr ""
 msgid "Modal checkout is not available. Please try again."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:158
+#: app/Services/Translations/block-editor-translation.php:157
 msgid "Modal Open Button Text"
 msgstr ""
 
@@ -15710,7 +15743,7 @@ msgstr ""
 #: app/Services/Renderer/AddressSelectRenderer.php:252
 #: app/Services/Translations/admin-translation.php:1016
 #: app/Services/Translations/customer-profile-translation.php:133
-#: app/Services/Translations/block-editor-translation.php:159
+#: app/Services/Translations/block-editor-translation.php:158
 #: app/Modules/Integrations/FluentPlugins/FluentCRMConnect.php:104
 #: app/Modules/Integrations/FluentPlugins/FluentCommunityConnect.php:97
 msgid "Name"
@@ -15854,7 +15887,7 @@ msgstr ""
 msgid "Nauru"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:160
+#: app/Services/Translations/block-editor-translation.php:159
 msgid "Nav"
 msgstr ""
 
@@ -16038,7 +16071,7 @@ msgstr ""
 msgid "New Stock"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:161
+#: app/Services/Translations/block-editor-translation.php:160
 msgid "New Tab"
 msgstr ""
 
@@ -16243,9 +16276,9 @@ msgstr ""
 #: app/Hooks/Cart/WebCheckoutHandler.php:247
 #: app/Hooks/Cart/WebCheckoutHandler.php:307
 #: app/Hooks/Cart/WebCheckoutHandler.php:528
-#: app/Hooks/Cart/WebCheckoutHandler.php:673
-#: app/Hooks/Cart/WebCheckoutHandler.php:901
-#: app/Hooks/Cart/WebCheckoutHandler.php:1109
+#: app/Hooks/Cart/WebCheckoutHandler.php:674
+#: app/Hooks/Cart/WebCheckoutHandler.php:902
+#: app/Hooks/Cart/WebCheckoutHandler.php:1110
 msgid "No active cart found"
 msgstr ""
 
@@ -16299,7 +16332,7 @@ msgstr ""
 msgid "No categories found."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:745
+#: app/Hooks/Cart/WebCheckoutHandler.php:746
 msgid "No changes detected"
 msgstr ""
 
@@ -16392,7 +16425,7 @@ msgstr ""
 msgid "No downloads yet"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:162
+#: app/Services/Translations/block-editor-translation.php:161
 msgid "No edit found"
 msgstr ""
 
@@ -16469,11 +16502,11 @@ msgstr ""
 msgid "No matching data"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:199
+#: app/Http/Controllers/TaxEUController.php:200
 msgid "No matching OSS shipping override found to delete"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:169
+#: app/Http/Controllers/TaxEUController.php:170
 msgid "No matching OSS tax override found to delete"
 msgstr ""
 
@@ -16485,7 +16518,7 @@ msgstr ""
 msgid "No Min Purchase Requirement"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:212
+#: app/Http/Controllers/OrderController.php:213
 msgid "No missing licenses found!"
 msgstr ""
 
@@ -16509,7 +16542,7 @@ msgstr ""
 msgid "No notes"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:163
+#: app/Services/Translations/block-editor-translation.php:162
 msgid "No options found"
 msgstr ""
 
@@ -16537,7 +16570,7 @@ msgstr ""
 msgid "No payment method found!"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:486
+#: app/Services/Renderer/ModalCheckoutRenderer.php:485
 #: app/Services/Renderer/CheckoutRenderer.php:687
 msgid "No Payment method is activated for this site yet."
 msgstr ""
@@ -16554,15 +16587,15 @@ msgstr ""
 msgid "no processing"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:1090
+#: app/Services/Renderer/ProductRenderer.php:1203
 msgid "No Product Found!"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:164
+#: app/Services/Translations/block-editor-translation.php:163
 msgid "No product gallery"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:165
+#: app/Services/Translations/block-editor-translation.php:164
 msgid "No products found"
 msgstr ""
 
@@ -16627,7 +16660,7 @@ msgid "No Shipping Zone Id provided"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Processor.php:33
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:391
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:395
 msgid "No subscription found."
 msgstr ""
 
@@ -16702,11 +16735,11 @@ msgid "No valid payment method to update!"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Stripe.php:416
-msgid "No Valid public key is not found!"
+msgid "No valid public key found!"
 msgstr ""
 
-#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:100
-#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:60
+#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:101
+#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:88
 msgid "No variant selected"
 msgstr ""
 
@@ -16752,7 +16785,7 @@ msgid "Non-well-formed quoted string %s"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1109
-#: app/Services/Translations/block-editor-translation.php:166
+#: app/Services/Translations/block-editor-translation.php:165
 msgid "None"
 msgstr ""
 
@@ -16871,9 +16904,9 @@ msgstr ""
 msgid "Not Calculated"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:121
-#: app/Services/Filter/OrderFilter.php:318
-#: app/Services/Filter/OrderFilter.php:407
+#: app/Services/Filter/CustomerFilter.php:122
+#: app/Services/Filter/OrderFilter.php:321
+#: app/Services/Filter/OrderFilter.php:410
 msgid "Not Contains"
 msgstr ""
 
@@ -16885,7 +16918,7 @@ msgstr ""
 msgid "Not Equal"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:293
+#: app/Services/Filter/OrderFilter.php:296
 #: app/Services/Translations/admin-translation.php:1112
 msgid "Not Equals"
 msgstr ""
@@ -16952,7 +16985,7 @@ msgid "Notes"
 msgstr ""
 
 #: app/Services/Renderer/CheckoutRenderer.php:577
-#: app/Services/Translations/block-editor-translation.php:167
+#: app/Services/Translations/block-editor-translation.php:166
 msgid "Notes about your order, e.g. Leave it at my doorstep."
 msgstr ""
 
@@ -17053,7 +17086,7 @@ msgstr ""
 msgid "Number of payments to split the price over the installment period."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:168
+#: app/Services/Translations/block-editor-translation.php:167
 msgid "Numbers"
 msgstr ""
 
@@ -17227,7 +17260,7 @@ msgstr ""
 
 #: app/Helpers/Status.php:157 app/Helpers/Status.php:166
 #: app/Helpers/Helper.php:141 app/Helpers/Helper.php:152
-#: app/Services/Filter/OrderFilter.php:225
+#: app/Services/Filter/OrderFilter.php:228
 #: app/Services/Translations/admin-translation.php:1130
 #: app/Services/Translations/customer-profile-translation.php:152
 msgid "On Hold"
@@ -17265,7 +17298,7 @@ msgstr ""
 msgid "One Column"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:180
+#: app/Services/Renderer/ProductRenderer.php:182
 #: app/Services/Translations/admin-translation.php:1133
 msgid "One Time"
 msgstr ""
@@ -17294,8 +17327,8 @@ msgstr ""
 msgid "Only one \"Whole World\" shipping zone is allowed."
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:158
-#: app/Services/Filter/OrderFilter.php:176
+#: app/Services/Filter/OrderFilter.php:161
+#: app/Services/Filter/OrderFilter.php:179
 msgid "only supports '=' operator"
 msgstr ""
 
@@ -17312,11 +17345,11 @@ msgstr ""
 msgid "Opacity"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:169
+#: app/Services/Translations/block-editor-translation.php:168
 msgid "Open checkout in a modal instead of navigating to the product page."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:170
+#: app/Services/Translations/block-editor-translation.php:169
 msgid "Open in new tab"
 msgstr ""
 
@@ -17332,11 +17365,11 @@ msgstr ""
 msgid "Operators"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:171
+#: app/Services/Translations/block-editor-translation.php:170
 msgid "Option 1"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:172
+#: app/Services/Translations/block-editor-translation.php:171
 msgid "Option 2"
 msgstr ""
 
@@ -17400,8 +17433,8 @@ msgstr ""
 
 #. %s is the order/invoice number
 #. %s is the order id
-#: app/Http/Controllers/OrderController.php:473
-#: app/Http/Controllers/OrderController.php:492
+#: app/Http/Controllers/OrderController.php:474
+#: app/Http/Controllers/OrderController.php:493
 #, php-format
 msgid "Order %s deleted successfully"
 msgstr ""
@@ -17430,11 +17463,11 @@ msgstr ""
 msgid "Order addresses"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1057
+#: api/Resource/OrderResource.php:1068
 msgid "Order already has the same status"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:282
+#: app/Services/Filter/OrderFilter.php:285
 msgid "Order Amount"
 msgstr ""
 
@@ -17459,7 +17492,7 @@ msgstr ""
 msgid "Order Bumps"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:173
+#: app/Services/Translations/block-editor-translation.php:172
 msgid "Order By"
 msgstr ""
 
@@ -17467,7 +17500,7 @@ msgstr ""
 msgid "Order by"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:229
+#: app/Http/Controllers/OrderController.php:230
 msgid "Order can not be refunded."
 msgstr ""
 
@@ -17541,7 +17574,7 @@ msgstr ""
 msgid "Order Customer Id"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:297
+#: app/Services/Filter/OrderFilter.php:300
 #: app/Views/emails/components/header.php:10
 #: app/Views/emails/parts/order_header.php:20
 msgid "Order Date"
@@ -17571,7 +17604,7 @@ msgstr ""
 msgid "Order Fulfillment Type"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:627
+#: app/Http/Controllers/OrderController.php:628
 msgid "Order has already been paid"
 msgstr ""
 
@@ -17579,15 +17612,15 @@ msgstr ""
 msgid "Order has been delivered #{{order.invoice_no}}"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:704
+#: app/Http/Controllers/OrderController.php:705
 msgid "Order has been marked as paid"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:178
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:283
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:182
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:287
 #: app/Modules/PaymentMethods/Cod/Cod.php:62
 #: app/Modules/PaymentMethods/PayPalGateway/Processor.php:133
-#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:196
+#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:198
 msgid "Order has been placed successfully"
 msgstr ""
 
@@ -17595,7 +17628,7 @@ msgstr ""
 msgid "Order has been shipped #{{order.invoice_no}} 📦"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:287
+#: app/Services/Filter/OrderFilter.php:290
 msgid "Order Hash (UUID)"
 msgstr ""
 
@@ -17612,7 +17645,7 @@ msgstr ""
 msgid "Order ID"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:114
+#: app/Services/Filter/OrderFilter.php:117
 msgid "Order Id"
 msgstr ""
 
@@ -17665,20 +17698,20 @@ msgid "Order items failed to update!"
 msgstr ""
 
 #: api/OrderItems.php:106 api/Resource/OrderItemResource.php:125
-#: api/Resource/OrderItemResource.php:273
+#: api/Resource/OrderItemResource.php:291
 msgid "Order items updated."
 msgstr ""
 
 #: app/Listeners/IntegrationEventListener.php:355
 #: app/Helpers/CustomerHelper.php:182
-#: app/Http/Controllers/OrderController.php:179
-#: app/Http/Controllers/OrderController.php:201
-#: app/Http/Controllers/OrderController.php:428
-#: app/Http/Controllers/OrderController.php:524
+#: app/Http/Controllers/OrderController.php:180
+#: app/Http/Controllers/OrderController.php:202
+#: app/Http/Controllers/OrderController.php:429
+#: app/Http/Controllers/OrderController.php:525
 #: app/Http/Controllers/WidgetsController.php:28
 #: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:145
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:382
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:450
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:383
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:451
 msgid "Order not found"
 msgstr ""
 
@@ -17690,7 +17723,7 @@ msgstr ""
 msgid "Order not found or you do not have permission to view it."
 msgstr ""
 
-#: api/Resource/OrderResource.php:771 api/Resource/OrderResource.php:944
+#: api/Resource/OrderResource.php:782 api/Resource/OrderResource.php:955
 #: app/Modules/PaymentMethods/Cod/CodHandler.php:39
 msgid "Order not found!"
 msgstr ""
@@ -17740,8 +17773,8 @@ msgstr ""
 msgid "Order Processing..."
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:76
-#: app/Services/Filter/OrderFilter.php:205
+#: app/Services/Filter/CustomerFilter.php:77
+#: app/Services/Filter/OrderFilter.php:208
 #: app/Services/Filter/ProductFilter.php:147
 msgid "Order Property"
 msgstr ""
@@ -17750,7 +17783,7 @@ msgstr ""
 msgid "Order Rate"
 msgstr ""
 
-#: app/Http/Routes/WebRoutes.php:205
+#: app/Http/Routes/WebRoutes.php:228
 msgid "Order Receipt"
 msgstr ""
 
@@ -17787,7 +17820,7 @@ msgid "Order Stats Overview of"
 msgstr ""
 
 #: app/Helpers/EditorShortCodeHelper.php:216
-#: app/Services/Filter/OrderFilter.php:219
+#: app/Services/Filter/OrderFilter.php:222
 #: app/Services/Translations/admin-translation.php:1153
 msgid "Order Status"
 msgstr ""
@@ -17796,16 +17829,16 @@ msgstr ""
 msgid "Order status"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:839
+#: app/Http/Controllers/OrderController.php:840
 msgid "Order Status has been changed for the selected orders"
 msgstr ""
 
 #. 1: old status, 2: new status
 #. %1$s is the old status, %2$s is the new status
 #: app/Helpers/StatusHelper.php:50 app/Helpers/StatusHelper.php:186
-#: app/Helpers/StatusHelper.php:209 api/Resource/OrderResource.php:987
-#: app/Http/Controllers/OrderController.php:679
-#: app/Http/Controllers/OrderController.php:697
+#: app/Helpers/StatusHelper.php:209 api/Resource/OrderResource.php:998
+#: app/Http/Controllers/OrderController.php:680
+#: app/Http/Controllers/OrderController.php:698
 #: app/Modules/PaymentMethods/Cod/Cod.php:99
 #, php-format
 msgid "Order status has been updated from %1$s to %2$s"
@@ -17816,9 +17849,9 @@ msgid "Order status information"
 msgstr ""
 
 #: app/Helpers/StatusHelper.php:47 app/Helpers/StatusHelper.php:183
-#: app/Helpers/StatusHelper.php:206 api/Resource/OrderResource.php:984
-#: app/Http/Controllers/OrderController.php:676
-#: app/Http/Controllers/OrderController.php:694
+#: app/Helpers/StatusHelper.php:206 api/Resource/OrderResource.php:995
+#: app/Http/Controllers/OrderController.php:677
+#: app/Http/Controllers/OrderController.php:695
 #: app/Modules/PaymentMethods/Cod/Cod.php:96
 msgid "Order status updated"
 msgstr ""
@@ -17828,7 +17861,7 @@ msgid "Order Subtotal"
 msgstr ""
 
 #: app/Services/Renderer/CheckoutRenderer.php:251
-#: app/Services/Translations/block-editor-translation.php:174
+#: app/Services/Translations/block-editor-translation.php:173
 #: app/Views/invoice/invoice_template.php:48
 #: app/Views/invoice/dispatch_slip.php:37
 #: app/Views/invoice/shipping_slip.php:28
@@ -17846,7 +17879,7 @@ msgid "Order Summary"
 msgstr ""
 
 #: app/Services/Renderer/CartSummaryRender.php:59
-#: app/Services/Translations/block-editor-translation.php:176
+#: app/Services/Translations/block-editor-translation.php:175
 msgid "Order summary"
 msgstr ""
 
@@ -17864,7 +17897,7 @@ msgstr ""
 msgid "Order Total Amount"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:320
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:324
 msgid "Order total including all items, shipping (If any), and taxes (If any)"
 msgstr ""
 
@@ -17873,18 +17906,18 @@ msgid "Order Total Paid"
 msgstr ""
 
 #: app/Helpers/EditorShortCodeHelper.php:220
-#: app/Services/Filter/OrderFilter.php:259
+#: app/Services/Filter/OrderFilter.php:262
 #: app/Services/Translations/admin-translation.php:1154
 #: app/Services/Translations/customer-profile-translation.php:157
-#: app/Services/Translations/block-editor-translation.php:175
+#: app/Services/Translations/block-editor-translation.php:174
 msgid "Order Type"
 msgstr ""
 
-#: api/Resource/OrderResource.php:627
+#: api/Resource/OrderResource.php:638
 msgid "Order update failed."
 msgstr ""
 
-#: api/Resource/OrderResource.php:621
+#: api/Resource/OrderResource.php:632
 msgid "Order updated successfully"
 msgstr ""
 
@@ -17937,7 +17970,7 @@ msgstr ""
 msgid "Orders grouped by based on their order value in different ranges."
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:722
+#: app/Http/Controllers/OrderController.php:723
 msgid "Orders selection is required"
 msgstr ""
 
@@ -17981,14 +18014,14 @@ msgstr ""
 msgid "Oriental Mindoro"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:533
-#: app/Services/Renderer/ProductRenderer.php:1209
+#: app/Services/Renderer/ProductRenderer.php:535
+#: app/Services/Renderer/ProductRenderer.php:1322
 #: app/Services/Renderer/CartItemRenderer.php:67
 msgid "Original price"
 msgstr ""
 
 #. 1: Original price, 2: Current item price
-#: app/Services/Renderer/ProductRenderer.php:515
+#: app/Services/Renderer/ProductRenderer.php:517
 #, php-format
 msgid "Original Price: %1$s, Price: %2$s"
 msgstr ""
@@ -18027,16 +18060,16 @@ msgstr ""
 msgid "Osmaniye"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:204
+#: app/Http/Controllers/TaxEUController.php:205
 msgid "OSS shipping override deleted successfully"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:174
+#: app/Http/Controllers/TaxEUController.php:175
 msgid "OSS tax override deleted successfully"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:90
-#: app/Http/Controllers/TaxEUController.php:144
+#: app/Http/Controllers/TaxEUController.php:91
+#: app/Http/Controllers/TaxEUController.php:145
 msgid "OSS tax override saved successfully"
 msgstr ""
 
@@ -18110,7 +18143,7 @@ msgid "Out Of Stock"
 msgstr ""
 
 #: app/Models/ProductDetail.php:177
-#: app/Services/Translations/block-editor-translation.php:177
+#: app/Services/Translations/block-editor-translation.php:176
 #: app/Modules/Templating/AssetLoader.php:85
 #: app/Modules/Templating/AssetLoader.php:238
 #: app/Hooks/Handlers/ShortCodes/SingleProductShortCode.php:83
@@ -18121,7 +18154,7 @@ msgstr ""
 msgid "Out of Stock"
 msgstr ""
 
-#: api/StoreSettings.php:48 app/Services/Renderer/ProductRenderer.php:461
+#: api/StoreSettings.php:48 app/Services/Renderer/ProductRenderer.php:463
 #: app/Services/Renderer/PricingTableRenderer.php:265
 #: app/Services/Translations/admin-translation.php:1173
 #: app/Modules/Templating/Bricks/Elements/ProductStock.php:37
@@ -18248,11 +18281,11 @@ msgstr ""
 msgid "Pagination information"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:178
+#: app/Services/Translations/block-editor-translation.php:177
 msgid "Pagination Type"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:179
+#: app/Services/Translations/block-editor-translation.php:178
 msgid "Paginator"
 msgstr ""
 
@@ -18261,7 +18294,7 @@ msgid "Pahang"
 msgstr ""
 
 #: app/Helpers/Status.php:180 app/Helpers/Helper.php:217
-#: app/Helpers/Helper.php:235 app/Services/Filter/OrderFilter.php:236
+#: app/Helpers/Helper.php:235 app/Services/Filter/OrderFilter.php:239
 #: app/Services/Translations/admin-translation.php:1185
 #: app/Services/Translations/customer-profile-translation.php:168
 msgid "Paid"
@@ -18439,13 +18472,13 @@ msgstr ""
 msgid "Parma"
 msgstr ""
 
-#: app/Helpers/Status.php:181 app/Services/Filter/OrderFilter.php:238
+#: app/Helpers/Status.php:181 app/Services/Filter/OrderFilter.php:241
 #: app/Services/Translations/admin-translation.php:1187
 #: app/Services/Translations/customer-profile-translation.php:169
 msgid "Partially Paid"
 msgstr ""
 
-#: app/Helpers/Status.php:184 app/Services/Filter/OrderFilter.php:240
+#: app/Helpers/Status.php:184 app/Services/Filter/OrderFilter.php:243
 #: app/Services/Translations/admin-translation.php:1188
 msgid "Partially Refunded"
 msgstr ""
@@ -18531,14 +18564,14 @@ msgstr ""
 msgid "Pay with cash upon delivery"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:398
+#: app/Services/Filter/OrderFilter.php:401
 msgid "Payer email"
 msgstr ""
 
 #: app/Services/Renderer/CheckoutRenderer.php:666
 #: app/Services/Translations/admin-translation.php:1193
 #: app/Services/Translations/customer-profile-translation.php:174
-#: app/Services/Translations/block-editor-translation.php:180
+#: app/Services/Translations/block-editor-translation.php:179
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:180
 msgid "Payment"
 msgstr ""
@@ -18583,12 +18616,12 @@ msgstr ""
 msgid "Payment Confirmation Failed!"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:260
+#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:262
 msgid "Payment confirmation received from PayPal. Transaction ID: "
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:534
-msgid "Payment confirmation received from Stripe. Transaction ID: "
+msgid "Payment confirmation received from Stripe. Transaction ID:"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:280
@@ -18626,7 +18659,7 @@ msgid "Payment information"
 msgstr ""
 
 #: app/Helpers/EditorShortCodeHelper.php:176
-#: app/Services/Filter/OrderFilter.php:271
+#: app/Services/Filter/OrderFilter.php:274
 #: app/Services/Translations/admin-translation.php:1197
 #: app/Services/Translations/customer-profile-translation.php:175
 #: app/Views/invoice/thank_you.php:267
@@ -18668,7 +18701,7 @@ msgstr ""
 msgid "Payment Method Title"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/SwitchCustomerMethod.php:119
+#: app/Modules/PaymentMethods/StripeGateway/SwitchCustomerMethod.php:120
 msgid "Payment Method updated successfully"
 msgstr ""
 
@@ -18686,7 +18719,7 @@ msgstr ""
 msgid "Payment Method:"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:181
+#: app/Services/Translations/block-editor-translation.php:180
 msgid "Payment Methods"
 msgstr ""
 
@@ -18725,21 +18758,21 @@ msgstr ""
 msgid "Payment Settings"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:232
+#: app/Services/Filter/OrderFilter.php:235
 #: app/Services/Translations/admin-translation.php:1201
 msgid "Payment Status"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:951
-msgid "Payment status been successfully updated"
+#: app/Http/Controllers/OrderController.php:952
+msgid "Payment status has been successfully updated"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1209
+#: api/Resource/OrderResource.php:1220
 msgid "Payment Status has been updated"
 msgstr ""
 
 #. %1$s is the old status, %2$s is the new status
-#: api/Resource/OrderResource.php:1200
+#: api/Resource/OrderResource.php:1211
 #, php-format
 msgid "Payment status has been updated from %1$s to %2$s"
 msgstr ""
@@ -18753,11 +18786,11 @@ msgid "Payment Term"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1203
-#: app/Services/Translations/block-editor-translation.php:182
+#: app/Services/Translations/block-editor-translation.php:181
 msgid "Payment Type"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:183
+#: app/Services/Translations/block-editor-translation.php:182
 msgid "Payment Type Color"
 msgstr ""
 
@@ -18813,7 +18846,7 @@ msgid ""
 msgstr ""
 
 #: app/Modules/PaymentMethods/PayPalGateway/PayPal.php:463
-msgid "PayPal live credentials is required!"
+msgid "PayPal live credentials are required!"
 msgstr ""
 
 #: app/Services/Translations/customer-profile-translation.php:171
@@ -18828,7 +18861,7 @@ msgstr ""
 msgid "PayPal payment button"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:260
+#: app/Modules/PaymentMethods/PayPalGateway/Processor.php:262
 msgid "PayPal Payment Confirmation"
 msgstr ""
 
@@ -18841,7 +18874,7 @@ msgid "PayPal subscription updated successfully"
 msgstr ""
 
 #: app/Modules/PaymentMethods/PayPalGateway/PayPal.php:463
-msgid "PayPal test credentials is required!!"
+msgid "PayPal test credentials are required!"
 msgstr ""
 
 #: app/Modules/PaymentMethods/PayPalGateway/IPN.php:284
@@ -18888,8 +18921,8 @@ msgstr ""
 #: app/Helpers/Status.php:179 app/Helpers/Status.php:193
 #: app/Helpers/Status.php:210 app/Helpers/Status.php:249
 #: app/Helpers/Helper.php:216 app/Helpers/Helper.php:234
-#: app/Services/Filter/OrderFilter.php:237
-#: app/Services/Filter/OrderFilter.php:359
+#: app/Services/Filter/OrderFilter.php:240
+#: app/Services/Filter/OrderFilter.php:362
 #: app/Services/Translations/admin-translation.php:1206
 #: app/Services/Translations/customer-profile-translation.php:179
 msgid "Pending"
@@ -18920,7 +18953,7 @@ msgstr ""
 msgid "Per Order"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:184
+#: app/Services/Translations/block-editor-translation.php:183
 msgid "Per Page/Scroll"
 msgstr ""
 
@@ -19042,12 +19075,12 @@ msgstr ""
 #: app/Services/Renderer/CheckoutFieldsSchema.php:507
 #: app/Services/Translations/admin-translation.php:1216
 #: app/Services/Translations/customer-profile-translation.php:180
-#: app/Services/Translations/block-editor-translation.php:185
+#: app/Services/Translations/block-editor-translation.php:184
 msgid "Phone"
 msgstr ""
 
 #: app/Services/Renderer/AddressSelectRenderer.php:272
-#: app/Services/Translations/block-editor-translation.php:186
+#: app/Services/Translations/block-editor-translation.php:185
 msgid "Phone Number"
 msgstr ""
 
@@ -19139,9 +19172,13 @@ msgstr ""
 msgid "Piura"
 msgstr ""
 
+#: app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php:88
+msgid "Pix, Boleto & Virtual Debit Card"
+msgstr ""
+
 #: app/Services/Translations/checkout-translation.php:26
-#: app/Services/Translations/block-editor-translation.php:187
-#: app/Modules/Templating/AssetLoader.php:447
+#: app/Services/Translations/block-editor-translation.php:186
+#: app/Modules/Templating/AssetLoader.php:452
 #: app/Modules/PaymentMethods/StripeGateway/Stripe.php:161
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:226
 msgid "Place Order"
@@ -19151,7 +19188,7 @@ msgstr ""
 msgid "Place order"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:188
+#: app/Services/Translations/block-editor-translation.php:187
 msgid "Placeholder"
 msgstr ""
 
@@ -19288,11 +19325,11 @@ msgstr ""
 msgid "Please log in to access your customer portal."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:189
+#: app/Services/Translations/block-editor-translation.php:188
 msgid "Please preview your form on the front-end to view payment methods."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:190
+#: app/Services/Translations/block-editor-translation.php:189
 msgid "Please preview your form on the front-end to view shipping methods."
 msgstr ""
 
@@ -19308,7 +19345,7 @@ msgstr ""
 msgid "Please Provide a license key of"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:101
+#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:109
 msgid "Please provide a valid charge Id!"
 msgstr ""
 
@@ -19393,9 +19430,9 @@ msgid "Please select cancel reason!"
 msgstr ""
 
 #: api/Customers.php:164 api/Resource/CustomerResource.php:326
-#: app/Http/Controllers/OrderController.php:766
-#: app/Http/Controllers/OrderController.php:791
-#: app/Http/Controllers/OrderController.php:858
+#: app/Http/Controllers/OrderController.php:767
+#: app/Http/Controllers/OrderController.php:792
+#: app/Http/Controllers/OrderController.php:859
 #: api/Resource/FrontendResource/CustomerResource.php:219
 msgid "Please select status"
 msgstr ""
@@ -19540,7 +19577,7 @@ msgstr ""
 msgid "Portuguesa"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:191
+#: app/Services/Translations/block-editor-translation.php:190
 #: app/Modules/Templating/Bricks/Elements/ProductGallery.php:73
 msgid "Position"
 msgstr ""
@@ -19594,7 +19631,7 @@ msgstr ""
 #: app/Helpers/EditorShortCodeHelper.php:134
 #: app/Helpers/EditorShortCodeHelper.php:143
 #: app/Services/Translations/admin-translation.php:1260
-#: app/Services/Translations/block-editor-translation.php:192
+#: app/Services/Translations/block-editor-translation.php:191
 #: app/Services/Localization/i18n/address-locales.php:49
 #: app/Services/Localization/i18n/address-locales.php:543
 #: app/Services/Localization/i18n/address-locales.php:553
@@ -19606,7 +19643,7 @@ msgstr ""
 #: app/Services/Renderer/CheckoutFieldsSchema.php:268
 #: app/Services/Renderer/AddressSelectRenderer.php:378
 #: app/Services/Renderer/AddressSelectRenderer.php:383
-#: app/Services/Translations/block-editor-translation.php:193
+#: app/Services/Translations/block-editor-translation.php:192
 msgid "Postcode / ZIP"
 msgstr ""
 
@@ -19731,7 +19768,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1272
 #: app/Services/Translations/customer-profile-translation.php:185
-#: app/Services/Translations/block-editor-translation.php:194
+#: app/Services/Translations/block-editor-translation.php:193
 #: app/Views/emails/parts/subscription_item.php:24
 #: app/Modules/Templating/Bricks/Elements/ProductsCollection.php:104
 msgid "Price"
@@ -19745,15 +19782,15 @@ msgstr ""
 msgid "Price (Low to High)"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:195
+#: app/Services/Translations/block-editor-translation.php:194
 msgid "Price Color"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:196
+#: app/Services/Translations/block-editor-translation.php:195
 msgid "Price Format"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:197
+#: app/Services/Translations/block-editor-translation.php:196
 msgid "Price Grouping"
 msgstr ""
 
@@ -19787,7 +19824,7 @@ msgstr ""
 msgid "Price must be greater than 0 and use in cent!."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:198
+#: app/Services/Translations/block-editor-translation.php:197
 #: app/Hooks/Handlers/BlockEditors/PriceRangeBlockEditor.php:57
 msgid "Price Range"
 msgstr ""
@@ -19813,7 +19850,7 @@ msgid "Price Range typography"
 msgstr ""
 
 #. 1: Minimum price, 2: Maximum price
-#: app/Services/Renderer/ProductRenderer.php:565
+#: app/Services/Renderer/ProductRenderer.php:567
 #, php-format
 msgid "Price range: %1$s - %2$s"
 msgstr ""
@@ -19827,7 +19864,7 @@ msgid "Price, Quantity field should not be empty or zero!"
 msgstr ""
 
 #. 1: Current item price
-#: app/Services/Renderer/ProductRenderer.php:522
+#: app/Services/Renderer/ProductRenderer.php:524
 #, php-format
 msgid "Price: %1$s"
 msgstr ""
@@ -19904,7 +19941,7 @@ msgstr ""
 msgid "Pricing Type"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:199
+#: app/Services/Translations/block-editor-translation.php:198
 msgid "Primary"
 msgstr ""
 
@@ -19912,7 +19949,7 @@ msgstr ""
 msgid "Primary address cannot be deleted!"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:200
+#: app/Services/Translations/block-editor-translation.php:199
 msgid "Primary Color"
 msgstr ""
 
@@ -19946,11 +19983,11 @@ msgstr ""
 
 #: app/Helpers/Status.php:155 app/Helpers/Status.php:167
 #: app/Helpers/Helper.php:142 app/Helpers/Helper.php:153
-#: app/Services/Filter/OrderFilter.php:224
+#: app/Services/Filter/OrderFilter.php:227
 #: app/Services/Translations/checkout-translation.php:29
 #: app/Services/Translations/admin-translation.php:1280
 #: app/Services/Translations/customer-profile-translation.php:186
-#: app/Services/Translations/block-editor-translation.php:201
+#: app/Services/Translations/block-editor-translation.php:200
 msgid "Processing"
 msgstr ""
 
@@ -19964,7 +20001,7 @@ msgstr ""
 
 #: app/CPT/FluentProducts.php:183
 #: app/Services/Translations/admin-translation.php:1282
-#: app/Services/Translations/block-editor-translation.php:202
+#: app/Services/Translations/block-editor-translation.php:201
 #: app/Modules/Templating/Bricks/Elements/ProductGallery.php:41
 msgid "Product"
 msgstr ""
@@ -20001,7 +20038,7 @@ msgstr ""
 msgid "Product Button"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:203
+#: app/Services/Translations/block-editor-translation.php:202
 #: app/Hooks/Handlers/BlockEditors/ProductCardBlockEditor.php:42
 msgid "Product Card"
 msgstr ""
@@ -20120,11 +20157,11 @@ msgstr ""
 msgid "Product gallery"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:204
+#: app/Services/Translations/block-editor-translation.php:203
 msgid "Product Grid Option"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:205
+#: app/Services/Translations/block-editor-translation.php:204
 msgid "Product Grid Size"
 msgstr ""
 
@@ -20153,7 +20190,7 @@ msgid "Product ID not found"
 msgstr ""
 
 #: app/Services/Renderer/CartRenderer.php:144
-#: app/Services/Translations/block-editor-translation.php:206
+#: app/Services/Translations/block-editor-translation.php:205
 #: app/Modules/Templating/Bricks/DynamicData.php:36
 #: app/Hooks/Handlers/BlockEditors/ShopApp/InnerBlocks/InnerBlocks.php:152
 msgid "Product Image"
@@ -20205,7 +20242,7 @@ msgid "Product No Result"
 msgstr ""
 
 #: app/Services/Async/DummyProductService.php:30
-#: app/Http/Routes/WebRoutes.php:117
+#: app/Http/Routes/WebRoutes.php:138
 msgid "Product Not Found"
 msgstr ""
 
@@ -20218,9 +20255,9 @@ msgstr ""
 #: app/Http/Controllers/ProductController.php:376
 #: app/Http/Controllers/ProductController.php:409
 #: app/Modules/Templating/TemplateActions.php:71
-#: app/Hooks/Cart/WebCheckoutHandler.php:1284
-#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:112
-#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:72
+#: app/Hooks/Cart/WebCheckoutHandler.php:1285
+#: app/Hooks/Handlers/BlockEditors/Buttons/BuyNowButtonBlockEditor.php:120
+#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:108
 msgid "Product not found"
 msgstr ""
 
@@ -20253,7 +20290,7 @@ msgstr ""
 msgid "Product Paginator Number"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:207
+#: app/Services/Translations/block-editor-translation.php:206
 msgid "Product Per Row"
 msgstr ""
 
@@ -20278,7 +20315,7 @@ msgstr ""
 msgid "Product Quantity"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:869
+#: app/Services/Renderer/ProductRenderer.php:871
 msgid "Product quantity"
 msgstr ""
 
@@ -20290,7 +20327,7 @@ msgstr ""
 msgid "Product Search"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:208
+#: app/Services/Translations/block-editor-translation.php:207
 msgid "Product Settings"
 msgstr ""
 
@@ -20315,7 +20352,7 @@ msgid "Product Taxonomies"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1294
-#: app/Services/Translations/block-editor-translation.php:209
+#: app/Services/Translations/block-editor-translation.php:208
 #: app/Modules/Templating/Bricks/DynamicData.php:35
 #: app/Hooks/Handlers/BlockEditors/ShopApp/InnerBlocks/InnerBlocks.php:107
 msgid "Product Title"
@@ -20345,7 +20382,7 @@ msgstr ""
 msgid "Product Updates!"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:617
+#: app/Services/Renderer/ProductRenderer.php:619
 msgid "Product Variants"
 msgstr ""
 
@@ -20395,7 +20432,7 @@ msgid "Products to be deleted:"
 msgstr ""
 
 #: app/Services/Translations/customer-profile-translation.php:188
-#: app/Services/Translations/block-editor-translation.php:210
+#: app/Services/Translations/block-editor-translation.php:209
 #: app/Hooks/Handlers/ShortCodes/CustomerProfileHandler.php:241
 msgid "Profile"
 msgstr ""
@@ -20447,19 +20484,19 @@ msgstr ""
 msgid "Provided customer status is not valid"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:798
+#: app/Http/Controllers/OrderController.php:799
 msgid "Provided order status is not valid"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:865
+#: app/Http/Controllers/OrderController.php:866
 msgid "Provided payment status is not valid"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:773
+#: app/Http/Controllers/OrderController.php:774
 msgid "Provided shipping status is not valid"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1061
+#: api/Resource/OrderResource.php:1072
 msgid "Provided status is not valid"
 msgstr ""
 
@@ -20578,7 +20615,7 @@ msgid "Purchase Date"
 msgstr ""
 
 #: app/Services/Translations/customer-profile-translation.php:192
-#: app/Services/Translations/block-editor-translation.php:211
+#: app/Services/Translations/block-editor-translation.php:210
 #: app/Hooks/Handlers/BlockEditors/CustomerProfileBlockEditor.php:43
 #: app/Hooks/Handlers/ShortCodes/CustomerProfileHandler.php:209
 msgid "Purchase History"
@@ -20607,7 +20644,7 @@ msgstr ""
 msgid "purchased"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:90
+#: app/Services/Filter/CustomerFilter.php:91
 #: app/Services/Translations/admin-translation.php:1319
 #: app/Modules/Integrations/FluentPlugins/FluentCRMDeepIntegration.php:594
 #: app/Modules/Integrations/FluentPlugins/FluentSupportWidget.php:53
@@ -20651,10 +20688,10 @@ msgstr ""
 msgid "Qty"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:845
-#: app/Services/Renderer/ProductRenderer.php:867
+#: app/Services/Renderer/ProductRenderer.php:847
+#: app/Services/Renderer/ProductRenderer.php:869
 #: app/Services/Translations/admin-translation.php:1320
-#: app/Services/Translations/block-editor-translation.php:212
+#: app/Services/Translations/block-editor-translation.php:211
 #: app/Modules/Templating/Bricks/Elements/ProductAddToCart.php:36
 msgid "Quantity"
 msgstr ""
@@ -20664,7 +20701,7 @@ msgstr ""
 msgid "Quantity %d"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:163
+#: api/Resource/FrontendResource/CartResource.php:180
 msgid "Quantity can not be negative."
 msgstr ""
 
@@ -20672,7 +20709,7 @@ msgstr ""
 msgid "Quantity must be greater than 0."
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:456
+#: api/Resource/FrontendResource/CartResource.php:547
 msgid "Quantity updated!"
 msgstr ""
 
@@ -20699,7 +20736,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:213
+#: app/Services/Translations/block-editor-translation.php:212
 msgid "Query type"
 msgstr ""
 
@@ -20771,15 +20808,15 @@ msgstr ""
 msgid "Rangamati"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:214
+#: app/Services/Translations/block-editor-translation.php:213
 msgid "Range"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:215
+#: app/Services/Translations/block-editor-translation.php:214
 msgid "Range Filter Only works in pages."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:216
+#: app/Services/Translations/block-editor-translation.php:215
 msgid "Range Slider Background"
 msgstr ""
 
@@ -20915,12 +20952,12 @@ msgstr ""
 msgid "Recipient"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:217
+#: app/Services/Translations/block-editor-translation.php:216
 msgid "Recommended"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1338
-#: app/Services/Translations/block-editor-translation.php:218
+#: app/Services/Translations/block-editor-translation.php:217
 msgid "Recommended variant"
 msgstr ""
 
@@ -20953,8 +20990,8 @@ msgstr ""
 msgid "Redirecting to receipt..."
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:373
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:527
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:377
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:536
 msgid "Redirecting to Stripe checkout..."
 msgstr ""
 
@@ -20971,7 +21008,7 @@ msgstr ""
 msgid "Reduced tax rate for essential goods"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:461
+#: app/Services/Filter/OrderFilter.php:464
 #: app/Services/Translations/admin-translation.php:1340
 msgid "Refer Url"
 msgstr ""
@@ -21003,7 +21040,7 @@ msgstr ""
 msgid "Refund amount exceeds the net paid amount for this order."
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:240
+#: app/Http/Controllers/OrderController.php:241
 msgid "Refund amount is required"
 msgstr ""
 
@@ -21038,7 +21075,7 @@ msgstr ""
 msgid "Refund management & webhooks"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:126
+#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:134
 msgid "Refund not completed in paypal. Please refund from PayPal Manually."
 msgstr ""
 
@@ -21070,9 +21107,9 @@ msgstr ""
 
 #: app/Helpers/Status.php:183 app/Helpers/Status.php:197
 #: app/Helpers/Status.php:214 app/Helpers/Helper.php:220
-#: app/Helpers/Helper.php:237 app/Services/Filter/OrderFilter.php:239
-#: app/Services/Filter/OrderFilter.php:360
-#: app/Services/Filter/OrderFilter.php:375
+#: app/Helpers/Helper.php:237 app/Services/Filter/OrderFilter.php:242
+#: app/Services/Filter/OrderFilter.php:363
+#: app/Services/Filter/OrderFilter.php:378
 #: app/Services/Translations/admin-translation.php:1351
 msgid "Refunded"
 msgstr ""
@@ -21178,13 +21215,13 @@ msgstr ""
 
 #: app/Services/Renderer/EUVatRenderer.php:125
 #: app/Services/Translations/admin-translation.php:1366
-#: app/Services/Translations/block-editor-translation.php:219
+#: app/Services/Translations/block-editor-translation.php:218
 #: app/Modules/Tax/TaxModule.php:534
 #: app/Hooks/Handlers/BlockEditors/Checkout/CheckoutBlockEditor.php:193
 msgid "Remove"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:220
+#: app/Services/Translations/block-editor-translation.php:219
 msgid "Remove Button Text"
 msgstr ""
 
@@ -21261,7 +21298,7 @@ msgstr ""
 msgid "Renew Subscription Plan"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:265
+#: app/Services/Filter/OrderFilter.php:268
 #: app/Services/Translations/admin-translation.php:1372
 #: app/Services/Translations/customer-profile-translation.php:201
 msgid "Renewal"
@@ -21288,11 +21325,11 @@ msgid "Renewals"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1375
-#: app/Services/Translations/block-editor-translation.php:221
+#: app/Services/Translations/block-editor-translation.php:220
 msgid "Repeat Interval"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:222
+#: app/Services/Translations/block-editor-translation.php:221
 msgid "Repeat Interval Color"
 msgstr ""
 
@@ -21348,27 +21385,27 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:223
+#: app/Services/Translations/block-editor-translation.php:222
 msgid "Reset Button Background"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:224
+#: app/Services/Translations/block-editor-translation.php:223
 msgid "Reset Button Border"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:225
+#: app/Services/Translations/block-editor-translation.php:224
 msgid "Reset Button Color"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:226
+#: app/Services/Translations/block-editor-translation.php:225
 msgid "Reset Button Hover Bg"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:227
+#: app/Services/Translations/block-editor-translation.php:226
 msgid "Reset Button Hover Color"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:228
+#: app/Services/Translations/block-editor-translation.php:227
 msgid "Reset Colors"
 msgstr ""
 
@@ -21490,7 +21527,7 @@ msgstr ""
 msgid "Rieti"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:229
+#: app/Services/Translations/block-editor-translation.php:228
 #: app/Modules/Templating/Bricks/Elements/ProductGallery.php:78
 msgid "Right"
 msgstr ""
@@ -22225,12 +22262,12 @@ msgstr ""
 msgid "Screenshot"
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:230
+#: app/Services/Translations/block-editor-translation.php:229
 msgid "Scroll"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1424
-#: app/Services/Translations/block-editor-translation.php:231
+#: app/Services/Translations/block-editor-translation.php:230
 #: app/Modules/Shipping/Services/Filter/ShippingClassFilter.php:45
 #: app/Modules/Shipping/Services/Filter/ShippingZoneFilter.php:42
 msgid "Search"
@@ -22254,7 +22291,7 @@ msgstr ""
 msgid "Search by class name"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:157
+#: app/Services/Filter/OrderFilter.php:160
 msgid "Search by customer name or email"
 msgstr ""
 
@@ -22278,20 +22315,20 @@ msgstr ""
 msgid "Search by invoice no, customer name, or customer email."
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:175
+#: app/Services/Filter/OrderFilter.php:178
 msgid "Search by license key"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:124
+#: app/Services/Filter/OrderFilter.php:127
 msgid ""
 "Search by order status e.g., completed, processing, on-hold, canceled, failed"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:148
+#: app/Services/Filter/OrderFilter.php:151
 msgid "Search by payment method e.g., stripe, PayPal, offline_payment"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:138
+#: app/Services/Filter/OrderFilter.php:141
 msgid ""
 "Search by payment status e.g., paid, pending, partially_paid, refunded, "
 "partially_refunded"
@@ -22335,10 +22372,11 @@ msgid "Search for %s"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1448
+#: app/Services/Translations/block-editor-translation.php:234
 msgid "Search for products..."
 msgstr ""
 
-#: app/Services/Translations/block-editor-translation.php:232
+#: app/Services/Translations/block-editor-translation.php:231
 msgid "Search Grid Size"
 msgstr ""
 
@@ -22359,7 +22397,7 @@ msgid "Search orders"
 msgstr ""
 
 #: app/Services/Renderer/SearchBarRenderer.php:91
-#: app/Services/Translations/block-editor-translation.php:233
+#: app/Services/Translations/block-editor-translation.php:232
 msgid "Search Products"
 msgstr ""
 
@@ -22377,7 +22415,7 @@ msgstr ""
 #: app/Services/Renderer/ProductFilterRender.php:68
 #: app/Services/Renderer/SearchBarRenderer.php:106
 #: app/Services/Translations/admin-translation.php:1430
-#: app/Services/Translations/block-editor-translation.php:234
+#: app/Services/Translations/block-editor-translation.php:233
 msgid "Search Products..."
 msgstr ""
 
@@ -22469,14 +22507,14 @@ msgstr ""
 msgid "See Full Report"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:806
+#: app/Services/Renderer/ProductRenderer.php:808
 #: app/Services/Renderer/CartItemRenderer.php:242
 #: app/Services/Translations/admin-translation.php:1460
 #: app/Services/Renderer/Receipt/ThankYouRender.php:967
 msgid "See Less"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:800
+#: app/Services/Renderer/ProductRenderer.php:802
 #: app/Services/Renderer/CartItemRenderer.php:236
 #: app/Services/Translations/admin-translation.php:1461
 #: app/Services/Renderer/Receipt/ThankYouRender.php:960
@@ -22531,7 +22569,7 @@ msgid "Select a Country"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1507
-#: app/Http/Controllers/TaxEUController.php:216
+#: app/Http/Controllers/TaxEUController.php:217
 msgid "Select a cross-border registration type"
 msgstr ""
 
@@ -22644,8 +22682,8 @@ msgid "Select country"
 msgstr ""
 
 #: app/Http/Controllers/TaxEUController.php:48
-#: app/Http/Controllers/TaxEUController.php:101
-#: app/Http/Controllers/TaxEUController.php:219
+#: app/Http/Controllers/TaxEUController.php:102
+#: app/Http/Controllers/TaxEUController.php:220
 msgid "Select country of OSS registration"
 msgstr ""
 
@@ -22727,7 +22765,7 @@ msgstr ""
 msgid "Select Group"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:223
+#: app/Http/Controllers/TaxEUController.php:224
 msgid "Select home country of registration"
 msgstr ""
 
@@ -23023,7 +23061,7 @@ msgid "Selected Account does not exist"
 msgstr ""
 
 #: api/Resource/CustomerResource.php:388 api/Resource/ProductResource.php:627
-#: app/Http/Controllers/OrderController.php:923
+#: app/Http/Controllers/OrderController.php:924
 #: api/Resource/FrontendResource/CustomerResource.php:281
 msgid "Selected action is invalid"
 msgstr ""
@@ -23049,16 +23087,16 @@ msgstr ""
 msgid "Selected integration feed successfully deleted"
 msgstr ""
 
-#: api/Resource/OrderResource.php:717
+#: api/Resource/OrderResource.php:728
 msgid "Selected order and associated data has been deleted"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1139
+#: api/Resource/OrderResource.php:1150
 msgid "Selected order and associated data have been deleted"
 msgstr ""
 
 #. %s is the payment status
-#: app/Http/Controllers/OrderController.php:915
+#: app/Http/Controllers/OrderController.php:916
 #, php-format
 msgid "Selected orders payment status has been marked as %s"
 msgstr ""
@@ -23069,7 +23107,7 @@ msgstr ""
 msgid "Selected payment method %s is not active!"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:850
+#: app/Http/Controllers/OrderController.php:851
 msgid "Selected payments has been successfully captured"
 msgstr ""
 
@@ -23631,17 +23669,17 @@ msgstr ""
 msgid "Shipping Status"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:782
+#: app/Http/Controllers/OrderController.php:783
 msgid "Shipping Status has been changed for the selected orders"
 msgstr ""
 
 #. %1$s is the old status, %2$s is the new status
-#: api/Resource/OrderResource.php:965
+#: api/Resource/OrderResource.php:976
 #, php-format
 msgid "Shipping status has been updated from %1$s to %2$s"
 msgstr ""
 
-#: api/Resource/OrderResource.php:962
+#: api/Resource/OrderResource.php:973
 msgid "Shipping status updated"
 msgstr ""
 
@@ -23672,7 +23710,7 @@ msgstr ""
 msgid "Shipping Tax Rate (%)"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:1013
+#: app/Http/Controllers/OrderController.php:1014
 msgid "Shipping updated"
 msgstr ""
 
@@ -24172,7 +24210,7 @@ msgid "Signature:"
 msgstr ""
 
 #: app/Helpers/AdminOrderProcessor.php:134
-#: app/Helpers/CheckoutProcessor.php:607
+#: app/Helpers/CheckoutProcessor.php:617
 #: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:178
 msgid "Signup Fee"
 msgstr ""
@@ -24181,7 +24219,7 @@ msgstr ""
 msgid "signup fee"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:470
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:476
 msgid "Signup fee / initial payment"
 msgstr ""
 
@@ -24261,7 +24299,7 @@ msgstr ""
 msgid "Single charge for the entire order."
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:263
+#: app/Services/Filter/OrderFilter.php:266
 msgid "Single Payment"
 msgstr ""
 
@@ -24543,7 +24581,7 @@ msgstr ""
 msgid "Sorry! No modules found based on your filter."
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:151
+#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:152
 msgid "Sorry, New Subscription ID or Vendor Order ID is not available!"
 msgstr ""
 
@@ -24849,9 +24887,9 @@ msgstr ""
 msgid "Starts From"
 msgstr ""
 
-#: app/Services/Filter/CustomerFilter.php:119
-#: app/Services/Filter/OrderFilter.php:316
-#: app/Services/Filter/OrderFilter.php:405
+#: app/Services/Filter/CustomerFilter.php:120
+#: app/Services/Filter/OrderFilter.php:319
+#: app/Services/Filter/OrderFilter.php:408
 msgid "Starts With"
 msgstr ""
 
@@ -24912,7 +24950,7 @@ msgid ""
 "only be changed once pricing is set."
 msgstr ""
 
-#: api/Resource/OrderResource.php:1053
+#: api/Resource/OrderResource.php:1064
 msgid "Status has been updated"
 msgstr ""
 
@@ -25084,11 +25122,11 @@ msgid "Stripe Hosted checkout"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Stripe.php:208
-msgid "Stripe not connected in Live Mode!"
+msgid "Stripe not connected in live mode!"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Stripe.php:208
-msgid "Stripe not connected in Test Mode!!"
+msgid "Stripe not connected in test mode!"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:534
@@ -25153,12 +25191,12 @@ msgstr ""
 msgid "Subscribed"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:264
-#: app/Services/Renderer/ProductRenderer.php:181
+#: app/Services/Filter/OrderFilter.php:267
+#: app/Services/Renderer/ProductRenderer.php:183
 #: app/Services/Translations/admin-translation.php:1646
 #: app/Services/Translations/customer-profile-translation.php:224
 #: app/Views/emails/parts/subscription_item.php:19
-#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:189
+#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:197
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:121
 msgid "Subscription"
 msgstr ""
@@ -25179,7 +25217,7 @@ msgstr ""
 msgid "Subscription canceled."
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:290
+#: app/Http/Controllers/OrderController.php:291
 msgid "Subscription cancelled successfully"
 msgstr ""
 
@@ -25262,8 +25300,12 @@ msgstr ""
 msgid "Subscription is not active for Selected payment method %s!"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:384
+#: api/Resource/FrontendResource/CartResource.php:475
 msgid "Subscription items can't be combined with other products in the cart."
+msgstr ""
+
+#: app/Models/Cart.php:412
+msgid "Subscription items must be purchased via direct checkout."
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1654
@@ -25298,7 +25340,7 @@ msgid "Subscription options"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1656
-#: app/Http/Controllers/OrderController.php:118
+#: app/Http/Controllers/OrderController.php:119
 msgid "Subscription Order cannot be edited."
 msgstr ""
 
@@ -25318,7 +25360,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1657
 #: app/Services/Translations/customer-profile-translation.php:226
-#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:190
+#: app/Modules/PaymentMethods/PayPalGateway/PayPalHelper.php:198
 msgid "Subscription Plan"
 msgstr ""
 
@@ -25356,7 +25398,7 @@ msgstr ""
 msgid "Subscription Retention"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:219
+#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:220
 msgid "Subscription switched to PayPal"
 msgstr ""
 
@@ -25364,11 +25406,11 @@ msgstr ""
 msgid "Subscription Type"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:249
+#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:250
 msgid "Subscription updated successfully"
 msgstr ""
 
-#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:161
+#: app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php:162
 msgid "Subscription was created but not found in paypal or connecting issue"
 msgstr ""
 
@@ -25410,7 +25452,7 @@ msgid "Suburb"
 msgstr ""
 
 #: app/Helpers/Status.php:194 app/Helpers/Status.php:211
-#: app/Services/Filter/OrderFilter.php:358
+#: app/Services/Filter/OrderFilter.php:361
 #: app/Services/Translations/admin-translation.php:1666
 #: app/Services/Translations/customer-profile-translation.php:236
 msgid "Succeeded"
@@ -25427,13 +25469,13 @@ msgstr ""
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:27
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:66
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:159
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:336
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:342
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:429
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:337
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:343
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:430
 msgid "Success"
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:194
+#: api/Resource/FrontendResource/CartResource.php:211
 msgid "Successfully added!"
 msgstr ""
 
@@ -26292,7 +26334,7 @@ msgstr ""
 msgid "The %s must not be greater than 100 characters."
 msgstr ""
 
-#: api/Resource/OrderResource.php:657
+#: api/Resource/OrderResource.php:668
 msgid "The address information does not match"
 msgstr ""
 
@@ -26354,7 +26396,7 @@ msgid "The night's still young!"
 msgstr ""
 
 #. %s: The order ID(s) that could not be deleted.
-#: api/Resource/OrderResource.php:1135
+#: api/Resource/OrderResource.php:1146
 #, php-format
 msgid ""
 "The order ID - %s cannot be deleted at the moment as these orders status is "
@@ -26362,7 +26404,7 @@ msgid ""
 msgstr ""
 
 #. %s: The order ID(s) that could not be deleted.
-#: api/Resource/OrderResource.php:1132
+#: api/Resource/OrderResource.php:1143
 #, php-format
 msgid ""
 "The order ID - %s cannot be deleted at the moment as these orders status is "
@@ -26370,7 +26412,7 @@ msgid ""
 msgstr ""
 
 #. %s is the order ids
-#: app/Http/Controllers/OrderController.php:907
+#: app/Http/Controllers/OrderController.php:908
 #, php-format
 msgid ""
 "The order ID - %s cannot be updated at the moment because its payment status "
@@ -26378,16 +26420,16 @@ msgid ""
 msgstr ""
 
 #. %s is the order ids
-#: app/Http/Controllers/OrderController.php:901
+#: app/Http/Controllers/OrderController.php:902
 #, php-format
 msgid ""
 "The order ID - %s cannot be updated at the moment because the transaction "
 "either already has the same status or does not match the provided order. The "
-"remaining orders statuses have been updated successfully."
+"remaining order statuses have been updated successfully."
 msgstr ""
 
 #. %s is the order ids
-#: app/Http/Controllers/OrderController.php:833
+#: app/Http/Controllers/OrderController.php:834
 #, php-format
 msgid ""
 "The order ID - %s cannot be updated because they are either already "
@@ -26395,7 +26437,7 @@ msgid ""
 msgstr ""
 
 #. %s is the order ids
-#: app/Http/Controllers/OrderController.php:827
+#: app/Http/Controllers/OrderController.php:828
 #, php-format
 msgid ""
 "The order ID - %s cannot be updated because they are either already "
@@ -26484,7 +26526,7 @@ msgstr ""
 msgid "The selected plugin has been installed. Please refresh the page."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1137
+#: app/Hooks/Cart/WebCheckoutHandler.php:1138
 msgid "The selected product variation is not available for purchase."
 msgstr ""
 
@@ -26492,8 +26534,8 @@ msgstr ""
 msgid "The selected shipping method is not available."
 msgstr ""
 
-#: api/Resource/OrderResource.php:1163
-#: app/Http/Controllers/OrderController.php:942
+#: api/Resource/OrderResource.php:1174
+#: app/Http/Controllers/OrderController.php:943
 msgid "The selected transaction does not match with the provided order"
 msgstr ""
 
@@ -26532,8 +26574,12 @@ msgstr ""
 msgid "The total sales you had in this period."
 msgstr ""
 
-#: app/Models/User.php:50 app/Services/Permission/PermissionManager.php:268
+#: app/Services/Permission/PermissionManager.php:268
 #: app/Services/Permission/PermissionManager.php:286
+msgid "The user already has all the accesses as part of Administrator Role"
+msgstr ""
+
+#: app/Models/User.php:50
 msgid "The user already have all the accesses as part of Administrator Role"
 msgstr ""
 
@@ -26570,10 +26616,6 @@ msgstr ""
 msgid "This addon cannot be installed at this time"
 msgstr ""
 
-#: app/Hooks/Handlers/BlockEditors/Buttons/AddToCartButtonBlockEditor.php:45
-msgid "This block will display the Add to Cart button."
-msgstr ""
-
 #: app/Hooks/Handlers/BlockEditors/BuySectionBlockEditor.php:43
 msgid "This block will display the buy section."
 msgstr ""
@@ -26607,11 +26649,11 @@ msgid "This block will display the stock."
 msgstr ""
 
 #: app/Models/Cart.php:212 app/Models/Cart.php:243 app/Models/Cart.php:343
-#: app/Models/Cart.php:386 app/Models/Cart.php:437 app/Models/Cart.php:479
+#: app/Models/Cart.php:467 app/Models/Cart.php:518 app/Models/Cart.php:560
 msgid "This cart is locked and cannot be modified."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:1114
+#: app/Hooks/Cart/WebCheckoutHandler.php:1115
 msgid "This cart is locked or already has an upgrade applied."
 msgstr ""
 
@@ -26831,7 +26873,7 @@ msgstr ""
 msgid "This note will be added to the Contact's Profile"
 msgstr ""
 
-#: api/Resource/OrderResource.php:695
+#: api/Resource/OrderResource.php:706
 msgid "This order cannot be deleted because order status is completed."
 msgstr ""
 
@@ -27535,8 +27577,8 @@ msgstr ""
 msgid "Trans Nzoia"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1157
-#: app/Http/Controllers/OrderController.php:936
+#: api/Resource/OrderResource.php:1168
+#: app/Http/Controllers/OrderController.php:937
 msgid "Transaction already has the same status"
 msgstr ""
 
@@ -27552,12 +27594,12 @@ msgstr ""
 msgid "Transaction Details"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:343
+#: app/Services/Filter/OrderFilter.php:346
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:193
 msgid "Transaction Id"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:239
+#: app/Http/Controllers/OrderController.php:240
 msgid "Transaction ID is required"
 msgstr ""
 
@@ -27565,7 +27607,7 @@ msgstr ""
 msgid "Transaction ID:"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:374
+#: app/Http/Controllers/FrontendControllers/CustomerOrderController.php:375
 msgid "Transaction not found"
 msgstr ""
 
@@ -27573,7 +27615,7 @@ msgstr ""
 msgid "Transaction not found for the provided setup intent."
 msgstr ""
 
-#: api/Resource/OrderResource.php:1151
+#: api/Resource/OrderResource.php:1162
 #: app/Modules/PaymentMethods/Core/AbstractPaymentGateway.php:177
 #: app/Modules/PaymentMethods/PayPalGateway/PayPal.php:136
 #: app/Modules/PaymentMethods/PayPalGateway/PayPal.php:221
@@ -27584,11 +27626,11 @@ msgstr ""
 msgid "Transaction Property"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:351
+#: app/Services/Filter/OrderFilter.php:354
 msgid "Transaction Status"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:367
+#: app/Services/Filter/OrderFilter.php:370
 msgid "Transaction Type"
 msgstr ""
 
@@ -27596,7 +27638,7 @@ msgstr ""
 msgid "Transactions"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:338
+#: app/Services/Filter/OrderFilter.php:341
 msgid "Transactions Property"
 msgstr ""
 
@@ -27882,12 +27924,12 @@ msgstr ""
 msgid "Unable To Create Term/s"
 msgstr ""
 
-#: app/Http/Controllers/OrderController.php:633
+#: app/Http/Controllers/OrderController.php:634
 msgid "Unable to mark paid for canceled order"
 msgstr ""
 
 #: app/Services/DateTime/DateTime.php:147
-msgid "Unable to parse datetime: "
+msgid "Unable to parse datetime:"
 msgstr ""
 
 #: app/Services/Report/DashBoardReportService.php:218
@@ -28016,7 +28058,7 @@ msgstr ""
 msgid "Unlimited"
 msgstr ""
 
-#: app/Services/Renderer/ModalCheckoutRenderer.php:193
+#: app/Services/Renderer/ModalCheckoutRenderer.php:192
 msgid "Unlimited Activation"
 msgstr ""
 
@@ -28143,7 +28185,7 @@ msgstr ""
 msgid "Update your payment method to continue with the subscription."
 msgstr ""
 
-#: app/Hooks/Cart/WebCheckoutHandler.php:939
+#: app/Hooks/Cart/WebCheckoutHandler.php:940
 msgid "Updated"
 msgstr ""
 
@@ -28528,7 +28570,7 @@ msgstr ""
 msgid "UTM Campaign"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:455
+#: app/Services/Filter/OrderFilter.php:458
 msgid "Utm Campaign"
 msgstr ""
 
@@ -28536,7 +28578,7 @@ msgstr ""
 msgid "UTM Content"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:459
+#: app/Services/Filter/OrderFilter.php:462
 msgid "Utm Content"
 msgstr ""
 
@@ -28548,7 +28590,7 @@ msgstr ""
 msgid "UTM ID"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:460
+#: app/Services/Filter/OrderFilter.php:463
 msgid "Utm Id"
 msgstr ""
 
@@ -28556,11 +28598,11 @@ msgstr ""
 msgid "UTM Medium"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:458
+#: app/Services/Filter/OrderFilter.php:461
 msgid "Utm Medium"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:477
+#: app/Services/Filter/OrderFilter.php:480
 msgid "Utm Property"
 msgstr ""
 
@@ -28568,7 +28610,7 @@ msgstr ""
 msgid "UTM Source"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:457
+#: app/Services/Filter/OrderFilter.php:460
 msgid "Utm Source"
 msgstr ""
 
@@ -28576,7 +28618,7 @@ msgstr ""
 msgid "UTM Term"
 msgstr ""
 
-#: app/Services/Filter/OrderFilter.php:456
+#: app/Services/Filter/OrderFilter.php:459
 msgid "Utm Term"
 msgstr ""
 
@@ -28656,12 +28698,12 @@ msgstr ""
 msgid "Validation Failed"
 msgstr ""
 
-#: app/Http/Controllers/TaxEUController.php:229
+#: app/Http/Controllers/TaxEUController.php:230
 msgid "Validation failed for EU VAT settings"
 msgstr ""
 
 #: app/Http/Controllers/TaxEUController.php:53
-#: app/Http/Controllers/TaxEUController.php:106
+#: app/Http/Controllers/TaxEUController.php:107
 msgid "Validation failed for OSS tax override"
 msgstr ""
 
@@ -28722,7 +28764,7 @@ msgstr ""
 msgid "Variant"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:1195
+#: app/Services/Renderer/ProductRenderer.php:1308
 msgid "Variant title"
 msgstr ""
 
@@ -28849,10 +28891,13 @@ msgstr ""
 msgid "Vat Tax ID"
 msgstr ""
 
-#: app/Views/invoice/receipt_slip.php:188
-#: app/Views/invoice/receipt_slip.php:227
 #: app/Services/Renderer/Receipt/ReceiptRenderer.php:339
 #: app/Services/Renderer/Receipt/ReceiptRenderer.php:389
+msgid "VAT/Tax ID:"
+msgstr ""
+
+#: app/Views/invoice/receipt_slip.php:188
+#: app/Views/invoice/receipt_slip.php:227
 msgid "VAT/Tax ID: "
 msgstr ""
 
@@ -28990,7 +29035,7 @@ msgid "View %1$s"
 msgstr ""
 
 #. %s image title
-#: app/Services/Renderer/ProductRenderer.php:388
+#: app/Services/Renderer/ProductRenderer.php:390
 #, php-format
 msgid "View %s image"
 msgstr ""
@@ -29370,7 +29415,7 @@ msgid "We couldn't find any products matching your search"
 msgstr ""
 
 #: api/Checkout/CheckoutApi.php:818
-msgid "We dont ship to this address. Please select a different address."
+msgid "We don't ship to this address. Please select a different address."
 msgstr ""
 
 #. %s is the number of completed orders
@@ -29976,7 +30021,7 @@ msgid ""
 "%4$s"
 msgstr ""
 
-#: app/Services/Renderer/ProductRenderer.php:1094
+#: app/Services/Renderer/ProductRenderer.php:1207
 msgid "You can try clearing any filters."
 msgstr ""
 
@@ -29984,7 +30029,7 @@ msgstr ""
 msgid "You can update your card"
 msgstr ""
 
-#: api/Resource/OrderResource.php:1000
+#: api/Resource/OrderResource.php:1011
 msgid "You cannot change the order status once it has been canceled."
 msgstr ""
 
@@ -29993,7 +30038,7 @@ msgid "You cannot purchase more than one subscription at a time."
 msgstr ""
 
 #. %s: product title
-#: app/Services/OrderService.php:159
+#: app/Services/OrderService.php:167
 #, php-format
 msgid ""
 "You cannot purchase multiple quantities of the subscription product [%s]. "
@@ -30171,7 +30216,7 @@ msgstr ""
 msgid "You're about to mark this tax report as filed."
 msgstr ""
 
-#: api/Resource/FrontendResource/CartResource.php:442
+#: api/Resource/FrontendResource/CartResource.php:533
 msgid "You've reached the maximum quantity for this product."
 msgstr ""
 
@@ -30295,8 +30340,8 @@ msgstr ""
 
 #: app/Modules/PaymentMethods/Core/AbstractPaymentGateway.php:309
 msgid ""
-"Your Store is in Test mode, Change Store's 'Order Mode' to 'Live' and update "
-"related settings to enable Live payment !!"
+"Your Store is in test mode, change Store's 'Order Mode' to 'Live' and update "
+"related settings to enable live payment!"
 msgstr ""
 
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:347

@@ -5,6 +5,7 @@ namespace FluentCart\App\Hooks\Handlers;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\PaystackAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\RazorpayAddon;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\MercadoPagoAddon;
 
 class AddonGatewaysHandler
 {
@@ -15,6 +16,7 @@ class AddonGatewaysHandler
     protected $defaultGateways = [
         'paystack' => PaystackAddon::class,
         'razorpay' => RazorpayAddon::class,
+        'mercado_pago' => MercadoPagoAddon::class,
     ];
     
     public function register()

@@ -231,12 +231,12 @@ class Subscription extends Model
 
         $definedCurrency = Arr::get($this->config, 'currency', '');
 
-        if(!$definedCurrency) {
-            return $definedCurrency;
+        if(empty($definedCurrency)) {
+            $currency = CurrencySettings::get('currency');
+            return strtoupper($currency);
         }
 
-        $currency = CurrencySettings::get('currency');
-        return strtoupper($currency);
+        return strtoupper($definedCurrency);
     }
 
     /**
@@ -516,7 +516,6 @@ class Subscription extends Model
         }
 
         $updateData['status'] = Status::SUBSCRIPTION_CANCELED;
-        $updateData['next_billing_date'] = NULL;
 
         if (empty($updateData['canceled_at']) && !$this->canceled_at) {
             $updateData['canceled_at'] = gmdate('Y-m-d H:i:s', time());

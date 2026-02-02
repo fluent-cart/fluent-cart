@@ -55,7 +55,7 @@ class OrderItem extends Model
         'created_at',
 //        'shipping_charge'
     ];
-    protected $appends = ['payment_info', 'setup_info'];
+    protected $appends = ['payment_info', 'setup_info', 'is_custom'];
 
     protected $casts = [
         'unit_price'         => 'double',
@@ -93,7 +93,7 @@ class OrderItem extends Model
     {
         if (is_string($value)) {
             $decoded = json_decode($value, true);
-            return $decoded ?: [];
+            return is_array($decoded) ? $decoded : [];
         }
 
         return [];
@@ -217,4 +217,15 @@ class OrderItem extends Model
             ->where('meta_key', 'product_thumbnail');
     }
 
+    public function getIsCustomAttribute()
+    {
+        return $this->other_info['is_custom'] ?? false;
+    }
+
+    public function getViewUrlAttribute()
+    {
+        return $this->is_custom
+            ? ($this->other_info['view_url'] ?? '')
+            : '';
+    }
 }

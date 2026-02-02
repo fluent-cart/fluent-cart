@@ -265,7 +265,7 @@ class PermissionManager
             return new \WP_Error('user_not_found', __('User not found', 'fluent-cart'));
         }
         if (user_can($wpUser, 'manage_options')) {
-            return new \WP_Error('super_admin', __('The user already have all the accesses as part of Administrator Role', 'fluent-cart'));
+            return new \WP_Error('super_admin', __('The user already has all the accesses as part of Administrator Role', 'fluent-cart'));
         }
         // Assign the capability directly to the user
         if (!$wpUser->has_cap(static::ADMIN_CAP)) {
@@ -283,7 +283,7 @@ class PermissionManager
             return new \WP_Error('user_not_found', __('User not found', 'fluent-cart'));
         }
         if (user_can($wpUser, 'manage_options')) {
-            return new \WP_Error('super_admin', __('The user already have all the accesses as part of Administrator Role', 'fluent-cart'));
+            return new \WP_Error('super_admin', __('The user already has all the accesses as part of Administrator Role', 'fluent-cart'));
         }
 
         if (!$wpUser->has_cap(static::ADMIN_CAP)) {

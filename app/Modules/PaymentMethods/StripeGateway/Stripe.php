@@ -205,7 +205,7 @@ class Stripe extends AbstractPaymentGateway
         } else {
             $sk = $mode === 'live' ? Arr::get($data, 'live_secret_key') : Arr::get($data, 'test_secret_key');
             if (empty($sk)) {
-                $errorMessage = $mode === 'live' ? __('Stripe not connected in Live Mode!', 'fluent-cart') : __('Stripe not connected in Test Mode!!', 'fluent-cart');
+                $errorMessage = $mode === 'live' ? __('Stripe not connected in live mode!', 'fluent-cart') : __('Stripe not connected in test mode!', 'fluent-cart');
                 return [
                     'status'  => 'failed',
                     'message' => $errorMessage
@@ -413,7 +413,7 @@ class Stripe extends AbstractPaymentGateway
         $publicKey = $stripeSettings->getPublicKey();
 
         if (empty($publicKey)) {
-            $message = __('No Valid public key is not found!', 'fluent-cart');
+            $message = __('No valid public key found!', 'fluent-cart');
             fluent_cart_add_log('Stripe Credential Validation', $message, 'error', ['log_type' => 'payment']);
             wp_send_json([
                 'status'  => 'failed',

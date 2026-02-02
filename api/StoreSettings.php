@@ -80,8 +80,7 @@ class StoreSettings implements ArrayableInterface
             'variation_columns'                    => 'masonry',
             'modules_settings'                     => [],
             'min_receipt_number'                   => '1',
-            'inv_prefix'                           => 'INV-',
-            'zero_price_text'                      => ''
+            'inv_prefix'                           => 'INV-'
         ];
 
         return apply_filters('fluent_cart/store_settings/values', $defaultSettings, []);
@@ -398,34 +397,6 @@ class StoreSettings implements ArrayableInterface
                             ],
 
                             'hr5' => [
-                                'type'  => 'html',
-                                'value' => '<hr class="settings-divider">'
-                            ],
-
-                            'zero_price_text_grid' => [
-                                'type'            => 'grid',
-                                'columns'         => [
-                                    'default' => 1,
-                                    'md'      => 3
-                                ],
-                                'disable_nesting' => true,
-                                'schema'          => [
-                                    'label'           => [
-                                        'type'  => 'html',
-                                        'value' => '<span class="setting-label">' . __('Zero Price Text', 'fluent-cart') . '</span>
-                                                            <div class="form-note">' . __('Display custom text (e.g., "FREE") instead of $0.00 for zero-priced items. Leave empty to show $0.00.', 'fluent-cart') . '</div>'
-                                    ],
-                                    'zero_price_text' => [
-                                        'wrapperClass' => 'col-span-2 flex items-center',
-                                        "label"        => '',
-                                        "type"         => "input",
-                                        "placeholder"  => __('e.g., FREE', 'fluent-cart'),
-                                        "value"        => ""
-                                    ],
-                                ]
-                            ],
-
-                            'hr5_2' => [
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
                             ],

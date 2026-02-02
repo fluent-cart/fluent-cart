@@ -1,0 +1,18 @@
+{
+  "protocol": "http://",
+  "host": "localhost",
+  "port": 8000,
+  "strict_port": true,
+  "vite_protocol": "ws",
+  "manifest_path": "assets/manifest.json",
+  "allowedPorts": [
+    8880,
+    8000,
+    8080,
+    8888,
+    4000,
+    4444,
+    5555,
+    5000
+  ]
+}

@@ -43,6 +43,7 @@ class Processor
 
         if ($orderType == 'renewal') {
             $stripePlan = Plan::getStripePricing([
+                'order_id'         => $subscriptionModel->parent_order_id,
                 'product_id'       => $subscriptionModel->product_id,
                 'variation_id'     => $subscriptionModel->variation_id,
                 'billing_interval' => $subscriptionModel->billing_interval,
@@ -55,6 +56,7 @@ class Processor
             $initialAmount = 0;
         } else {
             $stripePlan = Plan::getStripePricing([
+                'order_id'         => $subscriptionModel->parent_order_id,
                 'product_id'       => $subscriptionModel->product_id,
                 'variation_id'     => $subscriptionModel->variation_id,
                 'billing_interval' => $subscriptionModel->billing_interval,
@@ -108,6 +110,8 @@ class Processor
                 'product_id' => $subscriptionModel->product_id,
                 'currency'   => $paymentInstance->order->currency,
                 'amount'     => (int)$initialAmount,
+                'variation_id'     => $subscriptionModel->variation_id,
+                'order_id'         => $subscriptionModel->parent_order_id,
             ]);
 
             if (is_wp_error($addonPrice)) {
@@ -409,7 +413,8 @@ class Processor
                 'recurring_total'  => $subscriptionModel->getCurrentRenewalAmount(),
                 'currency'         => $order->currency,
                 'trial_days'       => $subscriptionModel->getReactivationTrialDays(),
-                'interval_count'   => 1
+                'interval_count'   => 1,
+                'order_id'         => $subscriptionModel->parent_order_id,
             ]);
         } else {
             $stripePlan = Plan::getStripePricing([
@@ -419,7 +424,8 @@ class Processor
                 'recurring_total'  => $subscriptionModel->recurring_total,
                 'currency'         => $order->currency,
                 'trial_days'       => (int)$subscriptionModel->trial_days,
-                'interval_count'   => 1
+                'interval_count'   => 1,
+                'order_id'         => $subscriptionModel->parent_order_id,
             ]);
         }
 
@@ -468,6 +474,9 @@ class Processor
                 'currency'   => $order->currency,
                 'amount'     => (int)$initialAmount,
                 'name'       => __('Signup fee / initial payment', 'fluent-cart'),
+                'variation_id'     => $subscriptionModel->variation_id,
+                'order_id'         => $subscriptionModel->parent_order_id,
+
             ]);
 
             if (is_wp_error($addonPrice)) {

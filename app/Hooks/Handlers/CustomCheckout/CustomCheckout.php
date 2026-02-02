@@ -10,6 +10,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\Payments\PaymentHelper;
+use FluentCart\App\Services\ProductItemService;
 use FluentCart\Framework\Support\Arr;
 
 class CustomCheckout
@@ -51,9 +52,17 @@ class CustomCheckout
                 return $item->payment_type !== 'signup_fee';
             })->first()->toArray();
 
-            $subscriptionItem = ProductVariation::query()
-                ->where('id', $orderItem['object_id'])
-                ->first()->toArray();
+            $subscriptionItemData = ProductItemService::getItem([
+                'order_id'         => Arr::get($orderItem, 'order_id'),
+                'product_id'       => Arr::get($orderItem, 'post_id'),
+                'variation_id'     => Arr::get($orderItem, 'object_id'),
+            ]);
+
+            if (!$subscriptionItemData || !$subscriptionItemData->variation) {
+                die('Failed to load product data for custom checkout!');
+            }
+            $subscriptionItem = $subscriptionItemData->variation->toArray();
+
             $subscriptionModel = Subscription::query()->where('parent_order_id', $order->id)->first();
 
             $totalSignup = Arr::get($orderItem, 'other_info.signup_fee', 0) - Arr::get($orderItem, 'other_info.signup_discount', 0);
@@ -88,8 +97,18 @@ class CustomCheckout
         } else {
             $items = [];
             foreach ($order->order_items as $orderItem) {
-                $item = ProductVariation::query()->where('id', $orderItem['object_id'])->first()->toArray();
-                Arr::set($item, 'discount_total', (string) ($orderItem->discount_total));
+                $itemData = ProductItemService::getItem([
+                    'order_id'         => $orderItem->order_id,
+                    'product_id'       => $orderItem->post_id,
+                    'variation_id'     => $orderItem->object_id,
+                ]);
+                if (!$itemData || !$itemData->variation) {
+                    die('Failed to load product data for custom checkout!');
+                }
+                $item = $itemData->variation->toArray();
+
+
+                Arr::set($item, 'discount_total', (string)($orderItem->discount_total));
                 Arr::set($item, 'tax_amount', $orderItem->tax_amount);
                 Arr::set($item, 'post_title', $orderItem->post_title);
 

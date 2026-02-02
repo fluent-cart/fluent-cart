@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API;
+use FluentCart\App\Services\ProductItemService;
 use FluentCart\Framework\Support\Arr;
 
 class PayPalHelper
@@ -31,8 +32,9 @@ class PayPalHelper
      */
     public static function getPayPalPlan($data = [])
     {
-        $variation = ProductVariation::query()->find(Arr::get($data, 'variation_id'));
-        $product = Product::query()->find(Arr::get($data, 'product_id'));
+        $item = ProductItemService::getItem($data);
+        $product   = $item->product;
+        $variation = $item->variation;
 
         if (!$variation || !$product) {
             return new \WP_Error('invalid_product', esc_html__('Invalid product or variation.', 'fluent-cart'));
@@ -55,12 +57,15 @@ class PayPalHelper
             'product'   => $product
         ]);
 
-        $paypalPlanId = $product->getProductMeta($planId);
+        $paypalPlan = null;
+        if ($product && $product instanceof Product) {
+            $paypalPlanId = $product->getProductMeta($planId);
 
-        if ($paypalPlanId) {
-            $paypalPlan = API::getResource('billing/plans/' . $paypalPlanId);
-            if (!is_wp_error($paypalPlan)) {
-                return $paypalPlan;
+            if ($paypalPlanId) {
+                $paypalPlan = API::getResource('billing/plans/' . $paypalPlanId);
+                if (!is_wp_error($paypalPlan)) {
+                    return $paypalPlan;
+                }
             }
         }
 
@@ -88,7 +93,10 @@ class PayPalHelper
             return $paypalPlan;
         }
 
-        $product->updateProductMeta($planId, $paypalPlan['id']);
+
+        if ($product && $product instanceof Product) {
+            $product->updateProductMeta($planId, $paypalPlan['id']);
+        }
 
         return $paypalPlan;
     }

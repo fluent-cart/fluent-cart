@@ -56,6 +56,7 @@ class CartHelper
                 ]
             ),
             'variation_type'       => $variation['product_detail']['variation_type'],
+            'is_custom'            => false,
         ], $variation->toArray());
 
         $cartItem = Arr::only($data, [
@@ -77,7 +78,8 @@ class CartHelper
             'line_total',
             'subtotal',
             'total',
-            'variation_type'
+            'variation_type',
+            'is_custom'
         ]);
 
         //  $cartItem['shipping_charge'] = $shippingCharge;
@@ -87,26 +89,33 @@ class CartHelper
 
     public static function generateCartItemCustomItem(array $variation, $quantity = 1): array
     {
-
         //Need to test and check this toArray Issue
-        $data = wp_parse_args([
-            'quantity'       => $quantity,
-            'price'          => Arr::get($variation, 'item_price'),
-            'unit_price'     => Arr::get($variation, 'item_price'),
-            'object_id'      => Arr::get($variation, 'id'),
-            'tax_amount'     => Arr::get($variation, 'tax_amount', 0),
-            'title'          => Arr::get($variation, 'variation_title'),
-            'post_title'     => Arr::get($variation, 'post_title'),
-            'cost'           => Arr::get($variation, 'item_cost', 0),
-            'featured_media' => Arr::get($variation, 'featured_media'),
-            'view_url'       => Arr::get($variation, 'featured_media'),
-            'variation_type' => Arr::get($variation, 'variation_type'),
-        ], $variation);
+        $data = wp_parse_args(
+            [
+                'quantity'       => $quantity,
+                'price'          => Arr::get($variation, 'item_price'),
+                'unit_price'     => Arr::get($variation, 'item_price'),
+                'object_id'      => Arr::get($variation, 'id'),
+                'tax_amount'     => Arr::get($variation, 'tax_amount', 0),
+                'title'          => Arr::get($variation, 'variation_title'),
+                'post_title'     => Arr::get($variation, 'post_title'),
+                'cost'           => Arr::get($variation, 'item_cost', 0),
+                'featured_media' => Arr::get($variation, 'featured_media'),
+                'view_url'       => Arr::get($variation, 'view_url'),
+                'variation_type' => Arr::get($variation, 'variation_type'),
+                'is_custom'      => Arr::get($variation, 'is_custom', false),
+            ],
+            $variation
+        );
 
         $manualDiscount = Arr::get($data, 'manual_discount', 0);
         $couponDiscount = Arr::get($data, 'coupon_discount', 0);
         $discountTotal = $manualDiscount + $couponDiscount;
-        $subtotal = Arr::get($data, 'item_price', 0) * $data['quantity'];
+        $itemPrice = Arr::get($data, 'item_price', 0);
+        if (!is_numeric($itemPrice)) {
+            $itemPrice = 0;
+        }
+        $subtotal = $itemPrice * Arr::get($data, 'quantity');
 
         $data['subtotal'] = $subtotal;
         $data['manual_discount'] = $manualDiscount;
@@ -134,7 +143,8 @@ class CartHelper
             'line_total',
             'subtotal',
             'total',
-            'variation_type'
+            'variation_type',
+            'is_custom'
         ]);
 
         return $cartItem;
@@ -383,6 +393,57 @@ class CartHelper
             static::generateCartItemCustomItem($variation, $quantity)
         ];
         return $cart;
+    }
+
+    /**
+     * Normalize custom item fields to standard cart variation format.
+     *
+     * NOTE:
+     * - Custom items may originate from external sources (filters, adjustments, migrations)
+     * - Some sources provide `id`, others only provide `item_id`
+     * - For cart consistency, `id` is required and will fall back to `item_id` when missing
+     * - This method intentionally mutates the provided object to normalize field names.
+     *   The variation object is treated as a transient data structure and is not reused
+     *   elsewhere after normalization.
+     *
+     * @param object $variation
+     * @return object
+     */
+    public static function normalizeCustomFields(object $variation): object
+    {
+        // Map custom fields to native fields only if they exist
+        $variation->id              = $variation->id ?? $variation->item_id;
+        $variation->item_price      = $variation->item_price
+            ?? $variation->unit_price
+            ?? $variation->price
+            ?? 0;
+        $variation->variation_title = $variation->title ?? ($variation->variation_title ?? '');
+
+
+        // Fallbacks
+        $variation->post_id     = $variation->post_id ?? 0;
+        $variation->object_id   = $variation->object_id ?? $variation->id;
+        $variation->unit_price  = $variation->unit_price
+            ?? $variation->item_price
+            ?? $variation->price
+            ?? 0;
+
+        // Payment & fulfillment
+        $variation->payment_type     = sanitize_text_field($variation->payment_type ?? 'onetime');
+        $variation->fulfillment_type = sanitize_text_field($variation->fulfillment_type ?? 'digital');
+
+        // Other info
+        if (!empty($variation->other_info) && is_array($variation->other_info)) {
+            $variation->other_info = $variation->other_info;
+        } else {
+            $variation->other_info = [];
+        }
+
+        // Add custom flags
+        $variation->other_info['is_custom'] = $variation->is_custom ?? false;
+        $variation->other_info['view_url']  = $variation->view_url  ?? '';
+
+        return $variation;
     }
 
 

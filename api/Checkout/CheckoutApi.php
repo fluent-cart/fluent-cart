@@ -815,7 +815,7 @@ class CheckoutApi
 
 
                 if (empty($availableShippingMethods) || is_wp_error($availableShippingMethods)) {
-                    $errors['shipping_method']['unavailable'] = __('We dont ship to this address. Please select a different address.', 'fluent-cart');
+                    $errors['shipping_method']['unavailable'] = __('We don\'t ship to this address. Please select a different address.', 'fluent-cart');
                 } else {
                     $found = false;
                     foreach ($availableShippingMethods as $shippingMethod) {

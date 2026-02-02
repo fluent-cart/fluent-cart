@@ -22,8 +22,9 @@ class CustomerFilter extends BaseFilter
             return $query
                 ->where(function ($query) use ($search) {
                     $search = trim($search);
+                    $searchLike = addcslashes($search, '\\%_');
                     $query
-                        ->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                        ->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchLike}%"])
                         ->when(is_numeric($search), function ($query) use ($search) {
                             $query->orWhere('id', 'LIKE', "%{$search}%");
                         })

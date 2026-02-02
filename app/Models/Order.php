@@ -625,7 +625,7 @@ class Order extends Model
 
                 $ids = $download->product_variation_id;
 
-                if(in_array($download->id,$alreadyAdded)){
+                if (in_array($download->id, $alreadyAdded)) {
                     continue;
                 }
                 if (!is_array($ids) || empty($ids) || in_array($item->object_id, $ids)) {
@@ -635,10 +635,10 @@ class Order extends Model
                             'download_url'        => Helper::generateDownloadFileLink($download, $order->id),
                             'title'               => $download->title,
                             'file_size'           => $download->file_size,
-                            'formatted_file_size' => Helper::readableFileSize($download['file_size']),
+                            'formatted_file_size' => Helper::readableFileSize($download->file_size),
                         ];
 
-                    $alreadyAdded[]= $download->id;
+                    $alreadyAdded[] = $download->id;
                 }
             }
 

@@ -30,7 +30,7 @@ return [
     'Apt, suite, unit' => __('Apt, suite, unit', 'fluent-cart'),
     'Are you sure to disconnect the site' => __('Are you sure to disconnect the site', 'fluent-cart'),
     'Are you sure to disconnect?' => __('Are you sure to disconnect?', 'fluent-cart'),
-    'Are you sure want to delete this address?' => __('Are you sure want to delete this address?', 'fluent-cart'),
+    'Are you sure you want to delete this address?' => __('Are you sure you want to delete this address?', 'fluent-cart'),
     /* translators: %s is the next billing date  */
     'Auto renews on %s' => __('Auto renews on %s', 'fluent-cart'),
     'Back to Shopping Now' => __('Back to Shopping Now', 'fluent-cart'),

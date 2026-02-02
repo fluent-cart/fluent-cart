@@ -14,7 +14,7 @@ use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
 
 /**
- *  Order Model - DB Model for Orders
+ *  Customer Model - DB Model for Customers
  *
  *  Database Model
  *

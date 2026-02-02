@@ -124,10 +124,18 @@ class OrderService
             ->toArray();
 
         foreach ($products as $product) {
-            static::validateProductAvailability($product, $currentVariations);
-            static::validateSubscriptionQuantity($product);
-            static::validateStockStatus($product, $currentVariations, $prevOrder);
-            static::validateStockQuantity($product, $currentVariations, $prevOrder);
+            // Custom item validation occurs during cart insertion.
+            // If the validation hook is missing or fails, the item is not added to the cart 
+            // and therefore never reaches OrderService. 
+            // Adding a fallback here would duplicate responsibility and break cart invariants.
+            // is_custom is already normalized and validated at cart level.
+            // No coercion required here.
+            if(!Arr::get($product, 'is_custom', false)) {
+                static::validateProductAvailability($product, $currentVariations);
+                static::validateSubscriptionQuantity($product);
+                static::validateStockStatus($product, $currentVariations, $prevOrder);
+                static::validateStockQuantity($product, $currentVariations, $prevOrder);
+            }
         }
     }
 

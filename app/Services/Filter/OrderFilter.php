@@ -33,11 +33,14 @@ class OrderFilter extends BaseFilter
         if (!empty($this->search)) {
             $search = $this->search;
 
+            $search = trim($search);
+            $searchLike = addcslashes($search, '\\%_');
+
             $this->query->orWhere('invoice_no', 'LIKE', "%{$search}%")
-                ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                ->orWhereHas('customer', function ($customerQuery) use ($search, $searchLike) {
                     $customerQuery
                         ->where('email', 'LIKE', "%{$search}%")
-                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchLike}%"]);
                 });
         }
     }

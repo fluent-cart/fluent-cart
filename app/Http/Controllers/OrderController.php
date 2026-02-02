@@ -93,7 +93,8 @@ class OrderController extends Controller
 
         return $this->response->sendSuccess([
             'message'  => __('Order created successfully!', 'fluent-cart'),
-            'order_id' => $order->id
+            'order_id' => $order->id,
+            'uuid'     => $order->uuid
         ]);
     }
 
@@ -898,7 +899,7 @@ class OrderController extends Controller
                     ? $this->sendSuccess([
                         'message' => sprintf(
                             /* translators: %s is the order ids */
-                            __("The order ID - %s cannot be updated at the moment because the transaction either already has the same status or does not match the provided order. The remaining orders statuses have been updated successfully.", 'fluent-cart'), $failedOrderIds)
+                            __("The order ID - %s cannot be updated at the moment because the transaction either already has the same status or does not match the provided order. The remaining order statuses have been updated successfully.", 'fluent-cart'), $failedOrderIds)
                     ])
                     :
                     $this->sendError([
@@ -948,7 +949,7 @@ class OrderController extends Controller
 
         return [
             'transaction' => $transaction,
-            'message'     => __('Payment status been successfully updated', 'fluent-cart')
+            'message'     => __('Payment status has been successfully updated', 'fluent-cart')
         ];
     }
 
@@ -1066,7 +1067,7 @@ class OrderController extends Controller
         }
 
         return $this->sendSuccess([
-            'message' => __('Dipute accepeted!', 'fluent-cart')
+            'message' => __('Dispute accepted!', 'fluent-cart')
         ]);
     }
 

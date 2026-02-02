@@ -115,7 +115,7 @@ class DashBoardReportService extends ReportService
 
         foreach ($bindings as $binding) {
             $binding = is_numeric($binding) ? $binding : "'$binding'";
-            $queryt = preg_replace('/\?/', $binding, $query, 1);
+            $query = preg_replace('/\?/', $binding, $query, 1);
         }
 
         $currentStats = App::db()->select($query, $bindings)[0];

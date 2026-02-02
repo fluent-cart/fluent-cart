@@ -48,7 +48,7 @@ class CouponsController extends Controller
         }
 
         if (!empty($data['end_date'])) {
-            $data['start_date'] = DateTime::anyTimeToGmt($data['start_date']);
+            $data['end_date'] = DateTime::anyTimeToGmt($data['end_date']);
         }
 
         $isCreated = CouponResource::create($data);

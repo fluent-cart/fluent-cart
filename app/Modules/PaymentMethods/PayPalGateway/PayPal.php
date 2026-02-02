@@ -460,7 +460,7 @@ class PayPal extends AbstractPaymentGateway
         if (!$clientId || !$clientSecret) {
             return [
                 'status'  => 'failed',
-                'message' => $mode === 'live' ? __('PayPal live credentials is required!', 'fluent-cart') : __('PayPal test credentials is required!!', 'fluent-cart'),
+                'message' => $mode === 'live' ? __('PayPal live credentials are required!', 'fluent-cart') : __('PayPal test credentials are required!', 'fluent-cart'),
             ];
         }
 

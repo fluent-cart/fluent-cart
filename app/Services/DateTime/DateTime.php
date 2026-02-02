@@ -144,7 +144,7 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
             return new static($dt->format('Y-m-d H:i:s'), $dt->getTimezone());
         } catch (\Exception $e) {
             throw new \InvalidArgumentException(
-                esc_html__('Unable to parse datetime: ', 'fluent-cart') . esc_html($e->getMessage())
+                esc_html__('Unable to parse datetime:', 'fluent-cart') . ' ' . esc_html($e->getMessage())
             );
         }
     }

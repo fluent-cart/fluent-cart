@@ -569,9 +569,10 @@ class WebCheckoutHandler
         $requestData = App::request()->all();
 
         $data = [
-            'item_id' => (int) Arr::get($requestData, 'item_id'),
-            'quantity' => (int) Arr::get($requestData, 'quantity', 0),
-            'by_input' => Arr::get($requestData, 'by_input', false)
+            'item_id'  => (int)Arr::get($requestData, 'item_id'),
+            'quantity' => (int)Arr::get($requestData, 'quantity', 0),
+            'by_input' => Arr::get($requestData, 'by_input', false),
+            'is_custom' => Arr::get($requestData, 'is_custom', false)
         ];
 
         $cart = CartResource::update($data, '', $requestData);

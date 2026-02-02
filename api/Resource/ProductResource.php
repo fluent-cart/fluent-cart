@@ -641,7 +641,7 @@ class ProductResource extends BaseResourceApi
                 $id = Arr::get($variant, 'rowId', null);
                 foreach ($downloadableFiles as $idx => $downloadFile) {
                     $variantIds = Arr::get($downloadFile, 'product_variation_id', null);
-                    if ($variantIds == null) {
+                    if (empty($variantIds)) {
                         $errors['downloadable_files.' . $idx . '.product_variation_id'] = 'Please choose variant';
                     }
                     if ($fulfilmentType === 'digital' && is_array($variantIds) && in_array($id, $variantIds)) {

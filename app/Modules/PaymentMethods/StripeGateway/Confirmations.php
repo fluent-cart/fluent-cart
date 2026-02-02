@@ -531,7 +531,7 @@ class Confirmations
         $transaction->fill($transactionUpdateData);
         $transaction->save();
 
-        fluent_cart_add_log(__('Stripe Payment Confirmation', 'fluent-cart'), __('Payment confirmation received from Stripe. Transaction ID: ', 'fluent-cart') . $intentId,  'info', [
+        fluent_cart_add_log(__('Stripe Payment Confirmation', 'fluent-cart'), __('Payment confirmation received from Stripe. Transaction ID:', 'fluent-cart') . ' ' . $intentId,  'info', [
             'module_name' => 'order',
             'module_id'   => $order->id,
         ]);

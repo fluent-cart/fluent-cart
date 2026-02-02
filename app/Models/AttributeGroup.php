@@ -109,9 +109,20 @@ class AttributeGroup extends Model
 					
 			}
 
-            if ( $filterKey === 'terms_count' ) {
-                return $query->havingRaw($filterKey.' '.$operator.' '.$value);
-			}
+
+
+            if ($filterKey === 'terms_count') {
+                // Validate operator is in whitelist
+                $allowedOperators = ['=', '>', '<', '>=', '<=', '!='];
+                if (in_array($operator, $allowedOperators)) {
+                    return $query->havingRaw($filterKey.' '.$operator.' ?', [(int)$value]);
+                }else{
+                    return $query;
+                }
+
+                // Use parameterized query
+
+            }
 
 			$param = [ $filterKey => [ "column" =>  $filterKey, "operator" => $operator, "value" => trim( $value ) ] ];
 			$query->when($param, function ($query) use ($param) {

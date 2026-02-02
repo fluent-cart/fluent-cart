@@ -292,6 +292,7 @@ class ProductCardRender
                     'class'                               => 'fluent-cart-add-to-cart-button',
                     'data-variation-type'                 => $this->product->detail->variation_type,
                     'data-fluent-cart-add-to-cart-button' => '',
+                    'data-is-custom'                      => false,
                     'aria-label'                          => $ariaLabel
             ];
         }

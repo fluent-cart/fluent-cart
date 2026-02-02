@@ -179,12 +179,12 @@ return [
     'Are you sure to disconnect?' => __('Are you sure to disconnect?', 'fluent-cart'),
     'Are you sure to regenerate?' => __('Are you sure to regenerate?', 'fluent-cart'),
     'Are you sure to reset all notifications?' => __('Are you sure to reset all notifications?', 'fluent-cart'),
-    'Are you sure want to delete this address?' => __('Are you sure want to delete this address?', 'fluent-cart'),
     'Are you sure you want to change the order status to Cancel? This action is irreversible and cannot be undone.' => __('Are you sure you want to change the order status to Cancel? This action is irreversible and cannot be undone.', 'fluent-cart'),
     'Are you sure you want to complete this order!' => __('Are you sure you want to complete this order!', 'fluent-cart'),
     'Are you sure you want to delete these orders?' => __('Are you sure you want to delete these orders?', 'fluent-cart'),
     /* translators: %s - coupon title */
     'Are you sure you want to delete this %s coupon. This action is not recoverable' => __('Are you sure you want to delete this %s coupon. This action is not recoverable', 'fluent-cart'),
+    'Are you sure you want to delete this address?' => __('Are you sure you want to delete this address?', 'fluent-cart'),
     'Are you sure you want to delete this file? This action is not recoverable.' => __('Are you sure you want to delete this file? This action is not recoverable.', 'fluent-cart'),
     'Are you sure you want to delete this order bump?' => __('Are you sure you want to delete this order bump?', 'fluent-cart'),
     'Are you sure you want to delete this order? This action can not be undone!' => __('Are you sure you want to delete this order? This action can not be undone!', 'fluent-cart'),

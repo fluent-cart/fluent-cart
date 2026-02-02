@@ -344,6 +344,11 @@ class AssetLoader
             $slug . '-fluentcart-drawer',
             'public/cart-drawer/cart-drawer.scss',
         );
+
+        Vite::enqueueStyle(
+            $slug . '-global-styles',
+            'public/globals/style.scss',
+        );
     }
 
     public static function loadCheckoutAssets($cart = null)

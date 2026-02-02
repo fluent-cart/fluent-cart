@@ -194,7 +194,8 @@ class CustomerOrderController extends BaseFrontendController
                 'extra_amount'  => $extraAmount,
                 'image'         => Arr::get($item, 'productImage.meta_value.0.url', ''),
                 'variant_image' => Arr::get($item, 'variantImages.meta_value.0.url', ''),
-                'url'           => $item->product->view_url ?? '',
+                'url'           => $item->is_custom 
+                                    ? ($item->view_url ?? '') : ($item->product->view_url ?? ''),
                 'line_meta'     => $item->line_meta,
                 'id'            => $item->id
 

@@ -310,19 +310,6 @@ class Helper
             return $amount;
         }
 
-        // Check if zero prices should display as "FREE"
-        if (floatval($amount) == 0) {
-            $freeText = apply_filters('fluent_cart/zero_price_text', '', [
-                'amount'        => $amount,
-                'with_currency' => $withCurrency,
-                'currency_code' => $currencyCode,
-            ]);
-
-            if ($freeText !== '') {
-                return $freeText;
-            }
-        }
-
         // Set default decimal places to 2
         $decimal = 2;
 
@@ -1720,5 +1707,10 @@ class Helper
         //$storeSettings = new StoreSettings();
         //$enableModalCheckout = $storeSettings->get('enable_modal_checkout', 'no');
         return apply_filters('fluent_cart/enable_modal_checkout', false);
+    }
+
+    public static function isAdminUser(): bool
+    {
+        return current_user_can('manage_options');
     }
 }

@@ -14,8 +14,27 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
     public static $prefixLengthsPsr4 = array (
         'F' =>
         array (
+            'FluentCart\\Psr\\Container\\' => 25,
             'FluentCart\\OpenSpout\\' => 21,
             'FluentCart\\Framework\\' => 21,
+            'FluentCart\\FluentCart\\Psr\\Container\\' => 36,
+            'FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 47,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 58,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 69,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 80,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 91,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 102,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 113,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' => 124,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 105,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 94,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 83,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 72,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 61,
+            'FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' => 50,
+            'FluentCart\\FluentCart\\FluentCart\\Faker\\' => 39,
+            'FluentCart\\FluentCart\\Faker\\' => 28,
+            'FluentCart\\Faker\\' => 17,
             'FluentCart\\Dev\\' => 15,
             'FluentCart\\App\\' => 15,
             'FluentCart\\Api\\' => 15,
@@ -23,6 +42,10 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
     );
 
     public static $prefixDirsPsr4 = array (
+        'FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
         'FluentCart\\OpenSpout\\' =>
         array (
             0 => __DIR__ . '/..' . '/openspout/openspout/src',
@@ -30,6 +53,78 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\Framework\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
+        ),
+        'FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Psr\\Container\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
+        ),
+        'FluentCart\\Faker\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
         ),
         'FluentCart\\Dev\\' =>
         array (
@@ -187,6 +282,8 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Hooks\\Handlers\\OrderEventHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/OrderEventHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\PromoGatewaysHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/PromoGatewaysHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\RetentionSnapshotHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/RetentionSnapshotHandler.php',
+        'FluentCart\\App\\Hooks\\Handlers\\ShortCodes\\Buttons\\AddToCartShortcode' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ShortCodes/Buttons/AddToCartShortcode.php',
+        'FluentCart\\App\\Hooks\\Handlers\\ShortCodes\\Buttons\\DirectCheckoutShortcode' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ShortCodes/Buttons/DirectCheckoutShortcode.php',
         'FluentCart\\App\\Hooks\\Handlers\\ShortCodes\\CartShortcode' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ShortCodes/CartShortcode.php',
         'FluentCart\\App\\Hooks\\Handlers\\ShortCodes\\Checkout\\CheckoutPageHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ShortCodes/Checkout/CheckoutPageHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\ShortCodes\\Checkout\\CheckoutShippingMethodsShortCode' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ShortCodes/Checkout/CheckoutShippingMethodsShortCode.php',
@@ -423,6 +520,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Modules\\PaymentMethods\\PayPalGateway\\Processor' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PayPalGateway/Processor.php',
         'FluentCart\\App\\Modules\\PaymentMethods\\PayPalGateway\\SubscriptionManager' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PayPalGateway/SubscriptionManager.php',
         'FluentCart\\App\\Modules\\PaymentMethods\\PromoGateways\\Addons\\AddonGatewaySettings' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PromoGateways/Addons/AddonGatewaySettings.php',
+        'FluentCart\\App\\Modules\\PaymentMethods\\PromoGateways\\Addons\\MercadoPagoAddon' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PromoGateways/Addons/MercadoPagoAddon.php',
         'FluentCart\\App\\Modules\\PaymentMethods\\PromoGateways\\Addons\\PaystackAddon' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PromoGateways/Addons/PaystackAddon.php',
         'FluentCart\\App\\Modules\\PaymentMethods\\PromoGateways\\Addons\\RazorpayAddon' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PromoGateways/Addons/RazorpayAddon.php',
         'FluentCart\\App\\Modules\\PaymentMethods\\PromoGateways\\Pro\\AuthorizeNetPromo' => __DIR__ . '/../..' . '/app/Modules/PaymentMethods/PromoGateways/Pro/AuthorizeNetPromo.php',
@@ -566,6 +664,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\PluginInstaller\\BackgroundInstaller' => __DIR__ . '/../..' . '/app/Services/PluginInstaller/BackgroundInstaller.php',
         'FluentCart\\App\\Services\\PluginInstaller\\PaymentAddonManager' => __DIR__ . '/../..' . '/app/Services/PluginInstaller/PaymentAddonManager.php',
         'FluentCart\\App\\Services\\PrintService' => __DIR__ . '/../..' . '/app/Services/PrintService.php',
+        'FluentCart\\App\\Services\\ProductItemService' => __DIR__ . '/../..' . '/app/Services/ProductItemService.php',
         'FluentCart\\App\\Services\\RateLimitter' => __DIR__ . '/../..' . '/app/Services/RateLimitter.php',
         'FluentCart\\App\\Services\\Renderer\\AddressSelectRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/AddressSelectRenderer.php',
         'FluentCart\\App\\Services\\Renderer\\CartDrawerRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/CartDrawerRenderer.php',

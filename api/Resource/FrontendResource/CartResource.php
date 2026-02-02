@@ -25,34 +25,47 @@ class CartResource extends BaseResourceApi
         return Cart::query();
     }
 
-    public static function generateCartForInstantCheckout($variationId, $quantity = 1)
+    public static function generateCartForInstantCheckout($variationId, $quantity = 1, $params = [])
     {
-
         RateLimitter::isSpamming('generate_instant_checkout_cart_attempt', 10, 60, true);
 
-        $variation = ProductVariation::query()
-            ->with(['product'])
-            ->with(['media', 'shippingClass'])
-            ->where('id', $variationId)->first();
+        $isCustom = Arr::get($params, 'is_custom', false);
 
+        if($isCustom) {
+            $variation = Arr::get($params, 'variation');
+            $variation = CartHelper::normalizeCustomFields($variation);
+        }
+        else {
+            $variation = ProductVariation::query()
+                ->with(['product'])
+                ->with(['media', 'shippingClass'])
+                ->where('id', $variationId)->first();
+
+            $variation = apply_filters('fluent_cart/cart/item_modify', $variation, [
+                'item_id'     => $variationId,
+                'quantity'    => $quantity,
+            ]);
+        }
+        
         if (!$variation) {
             return new WP_Error(__('Invalid Product', 'fluent-cart'));
         }
 
         $quantity = apply_filters('fluent_cart/item_max_quantity', $quantity, [
             'variation' => $variation,
-            'product'   => $variation->product
+            'product'   => !$isCustom ? $variation->product : []
         ]);
 
         if ($variation->payment_type === 'subscription') {
             $quantity = 1;
         }
 
-        $canPurchase = $variation->canPurchase($quantity);
-        if (is_wp_error($canPurchase)) {
-            return $canPurchase;
+        if(!$isCustom) {
+            $canPurchase = $variation->canPurchase($quantity);
+            if (is_wp_error($canPurchase)) {
+                return $canPurchase;
+            }
         }
-
 
         $cartQuery = Cart::query()
             ->whereJsonLength('cart_data', 1)
@@ -60,7 +73,7 @@ class CartResource extends BaseResourceApi
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(cart_data, '$[0].quantity')) = ?", [(string)$quantity])
             ->where('cart_group', 'instant')
             ->where('stage', '==', 'draft');
-
+        
         if (is_user_logged_in()) {
             $cartQuery->where('user_id', get_current_user_id());
         } else {
@@ -69,11 +82,15 @@ class CartResource extends BaseResourceApi
 
         $cart = $cartQuery->first();
 
-
         if (!$cart) {
-            $cart = CartHelper::generateCartFromVariation($variation, $quantity);
+            if(!$isCustom) {
+                $cart = CartHelper::generateCartFromVariation($variation, $quantity);
+            }
+            else {
+                // TODO: Legacy object-to-array conversion. Kept for backward compatibility.
+                $cart = CartHelper::generateCartFromCustomVariation(json_decode(json_encode($variation), true), $quantity);
+            }
         }
-
 
         if (is_user_logged_in()) {
             $cart->user_id = get_current_user_id();
@@ -233,27 +250,101 @@ class CartResource extends BaseResourceApi
             );
         }
 
-        $variation = ProductVariation::query()->where('id', $itemId)->with('product')->first();
+        $existingItem = $cart->findExistingItemAndIndex($itemId);
+        $existingItem = Arr::get($existingItem, 1);
 
+        $rawIsCustom = $existingItem !== null
+            ? Arr::get($existingItem, 'is_custom', false)
+            : Arr::get($data, 'is_custom', false);
+
+        $isCustom = in_array(
+            strtolower((string) $rawIsCustom),
+            ['1', 'true'],
+            true
+        );
+
+        if($isCustom){
+            // Detect item and quantity change, let external modify item
+            if ($existingItem) {
+                $changedVariation = apply_filters('fluent_cart/cart/custom_item_quantity_changed', $existingItem, 
+                [
+                    'old_quantity'     => (int) Arr::get($existingItem, 'quantity', 0),
+                    'new_quantity'     => $quantity,
+                    'by_input'         => $byInput,
+                    'is_changed'       => true,
+                    'is_custom'        => $isCustom,
+                ]); 
+
+                if (!is_object($changedVariation)) {
+                    $changedVariation = (object) $changedVariation;
+                }
+
+                $variation = $changedVariation;
+
+                $quantity = isset($changedVariation->quantity)
+                    ? (int) $changedVariation->quantity
+                    : 0;
+            }
+            else {
+                $variation = apply_filters('fluent_cart/cart/validate_custom_item', $existingItem, [
+                    'item_id'          => $itemId,
+                    'quantity'         => $quantity,
+                    'is_custom'        => $isCustom,
+                ]);
+
+                if (!is_object($variation)) {
+                    $variation = (object) $variation;
+                }
+            }
+
+            if (!$variation || !is_object($variation)) {
+                return new WP_Error('invalid_custom_item', 
+                    __('Invalid custom item data.', 'fluent-cart'));
+            }
+
+        }else{
+            $variation = ProductVariation::query()->where('id', $itemId)->with('product')->first();
+            $variation = apply_filters('fluent_cart/cart/item_modify', $variation, [
+                'item_id'        => $itemId,
+                'quantity'       => $quantity,
+            ]);
+        }
 
         if (!$variation) {
             return $cart->removeItem($itemId);
         }
 
+        $soldIndividually = $isCustom
+            ? !empty($variation->sold_individually)  
+            : (bool) $variation->soldIndividually();
 
-        if ($variation->soldIndividually()) {
+        if ($soldIndividually) {
             if ($quantity >= 1) {
                 $quantity = 1;
             }
             $byInput = true;
         }
 
-        $cart = $cart->addByVariation($variation, [
-            'quantity'      => $quantity,
-            'by_input'      => $byInput,
-            'will_validate' => true,
-            'replace'       => false
-        ]);
+        if($isCustom) {
+            $cart = $cart->addByCustom(
+                is_array($variation) ? $variation : (array) $variation,
+                [
+                    'quantity'  => $quantity,
+                    'is_custom' => $isCustom,
+                ]
+            );
+
+        }
+        else {
+            $cart = $cart->addByVariation($variation, [
+                'quantity'      => $quantity,
+                'by_input'      => $byInput,
+                'will_validate' => true,
+                'replace'       => false,
+                'is_custom'     => $isCustom,
+            ]);
+        }
+        
 
         if (is_wp_error($cart)) {
             return $cart;
@@ -305,7 +396,7 @@ class CartResource extends BaseResourceApi
     {
         $cart = static::get();
 
-        if ($cart == null) {
+        if (empty($cart)) {
             return null;
         }
 

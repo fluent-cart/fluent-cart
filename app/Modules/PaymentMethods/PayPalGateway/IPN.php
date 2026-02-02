@@ -245,8 +245,8 @@ class IPN
 
         $data = json_decode($post_data, true);
 
-        if (!$data) {
-            return; // could not decode JSON
+        if (empty($data)) {
+            return;
         }
 
         $webhookType = Arr::get($data, 'event_type', '');

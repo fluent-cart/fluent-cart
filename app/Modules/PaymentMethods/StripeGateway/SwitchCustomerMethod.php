@@ -62,6 +62,7 @@ class SwitchCustomerMethod
         $processedSubscriptionItem = $this->getSubscriptionItem($subscriptionModel, $variation);
 
         $data = wp_parse_args($processedSubscriptionItem, [
+            'order_id'         => $subscriptionModel->parent_order_id,
             'product_id'       => $subscriptionModel->product_id,
             'variation_id'     => $subscriptionModel->variation_id,
             'billing_interval' => $subscriptionModel->billing_interval,

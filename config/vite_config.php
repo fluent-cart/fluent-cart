@@ -269,6 +269,7 @@
             'resources/admin/Bits/Components/Icons/More.vue',
             'resources/admin/Bits/Components/Icons/OrderItemsIcon.vue',
             'resources/admin/Bits/Components/Icons/OrderValueIcon.vue',
+            'resources/admin/Bits/Components/Icons/Overview.vue',
             'resources/admin/Bits/Components/Icons/Package.vue',
             'resources/admin/Bits/Components/Icons/Page.vue',
             'resources/admin/Bits/Components/Icons/PaidOrdersIcon.vue',
@@ -285,8 +286,10 @@
             'resources/admin/Bits/Components/Icons/Receipt.vue',
             'resources/admin/Bits/Components/Icons/Redirect.vue',
             'resources/admin/Bits/Components/Icons/Refresh.vue',
+            'resources/admin/Bits/Components/Icons/Refund.vue',
             'resources/admin/Bits/Components/Icons/Reload.vue',
             'resources/admin/Bits/Components/Icons/ReorderDotsVertical.vue',
+            'resources/admin/Bits/Components/Icons/Revenue.vue',
             'resources/admin/Bits/Components/Icons/Rotate.vue',
             'resources/admin/Bits/Components/Icons/RunningShoe.vue',
             'resources/admin/Bits/Components/Icons/Scratch.vue',
@@ -300,6 +303,7 @@
             'resources/admin/Bits/Components/Icons/ShipmentStatus.vue',
             'resources/admin/Bits/Components/Icons/Shipping.vue',
             'resources/admin/Bits/Components/Icons/ShoppingCartIcon.vue',
+            'resources/admin/Bits/Components/Icons/Source.vue',
             'resources/admin/Bits/Components/Icons/SpeedFill.vue',
             'resources/admin/Bits/Components/Icons/Stars.vue',
             'resources/admin/Bits/Components/Icons/Stop.vue',
@@ -317,6 +321,7 @@
             'resources/admin/Bits/Components/Icons/Unfulfilled.vue',
             'resources/admin/Bits/Components/Icons/Unlink.vue',
             'resources/admin/Bits/Components/Icons/Upload.vue',
+            'resources/admin/Bits/Components/Icons/Users.vue',
             'resources/admin/Bits/Components/Icons/Wallet.vue',
             'resources/admin/Bits/Components/Icons/Warning.vue',
             'resources/admin/Bits/Components/Icons/WarningFill.vue',
@@ -357,15 +362,6 @@
         'name' => 'Icons',
         'imports' => [
             '_BlockEditorTranslator.js'
-        ]
-    ],
-    '_InspectorSettings.js' => [
-        'file' => 'chunks/InspectorSettings.js',
-        'name' => 'InspectorSettings',
-        'imports' => [
-            '_BlockEditorTranslator.js',
-            '_SelectVariationModal.js',
-            '_Icons.js'
         ]
     ],
     '_Model.js' => [
@@ -2197,6 +2193,16 @@
             '__plugin-vue_export-helper.js'
         ]
     ],
+    'resources/admin/Bits/Components/Icons/Overview.vue' => [
+        'file' => 'chunks/Overview.js',
+        'name' => 'Overview',
+        'src' => 'resources/admin/Bits/Components/Icons/Overview.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
     'resources/admin/Bits/Components/Icons/Package.vue' => [
         'file' => 'chunks/Package.js',
         'name' => 'Package',
@@ -2357,6 +2363,16 @@
             '__plugin-vue_export-helper.js'
         ]
     ],
+    'resources/admin/Bits/Components/Icons/Refund.vue' => [
+        'file' => 'chunks/Refund.js',
+        'name' => 'Refund',
+        'src' => 'resources/admin/Bits/Components/Icons/Refund.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
     'resources/admin/Bits/Components/Icons/Reload.vue' => [
         'file' => 'chunks/Reload.js',
         'name' => 'Reload',
@@ -2371,6 +2387,16 @@
         'file' => 'chunks/ReorderDotsVertical.js',
         'name' => 'ReorderDotsVertical',
         'src' => 'resources/admin/Bits/Components/Icons/ReorderDotsVertical.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
+    'resources/admin/Bits/Components/Icons/Revenue.vue' => [
+        'file' => 'chunks/Revenue.js',
+        'name' => 'Revenue',
+        'src' => 'resources/admin/Bits/Components/Icons/Revenue.vue',
         'isDynamicEntry' => true,
         'imports' => [
             '_vue.esm-bundler.js',
@@ -2501,6 +2527,16 @@
         'file' => 'chunks/ShoppingCartIcon.js',
         'name' => 'ShoppingCartIcon',
         'src' => 'resources/admin/Bits/Components/Icons/ShoppingCartIcon.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
+    'resources/admin/Bits/Components/Icons/Source.vue' => [
+        'file' => 'chunks/Source.js',
+        'name' => 'Source',
+        'src' => 'resources/admin/Bits/Components/Icons/Source.vue',
         'isDynamicEntry' => true,
         'imports' => [
             '_vue.esm-bundler.js',
@@ -2677,6 +2713,16 @@
             '__plugin-vue_export-helper.js'
         ]
     ],
+    'resources/admin/Bits/Components/Icons/Users.vue' => [
+        'file' => 'chunks/Users.js',
+        'name' => 'Users',
+        'src' => 'resources/admin/Bits/Components/Icons/Users.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
     'resources/admin/Bits/Components/Icons/Wallet.vue' => [
         'file' => 'chunks/Wallet.js',
         'name' => 'Wallet',
@@ -2725,11 +2771,10 @@
         'imports' => [
             '_BlockEditorTranslator.js',
             '_index4.js',
-            '_InspectorSettings.js',
             '_SingleProductContext.js',
             '_Icons.js',
-            '_add-query-args.js',
             '_SelectVariationModal.js',
+            '_add-query-args.js',
             '_ProductListItem.js',
             '_index5.js'
         ]
@@ -2742,10 +2787,9 @@
         'imports' => [
             '_BlockEditorTranslator.js',
             '_index4.js',
-            '_InspectorSettings.js',
+            '_SelectVariationModal.js',
             '_Icons.js',
             '_add-query-args.js',
-            '_SelectVariationModal.js',
             '_ProductListItem.js',
             '_index5.js'
         ]
@@ -3559,12 +3603,6 @@
         'src' => 'resources/public/checkout/ModalCheckoutForm.js',
         'isEntry' => true
     ],
-    'resources/public/checkout/ModalCheckoutHandler.js' => [
-        'file' => 'ModalCheckoutHandler.js',
-        'name' => 'ModalCheckoutHandler',
-        'src' => 'resources/public/checkout/ModalCheckoutHandler.js',
-        'isEntry' => true
-    ],
     'resources/public/checkout/login.js' => [
         'file' => 'login.js',
         'name' => 'login',
@@ -3608,7 +3646,7 @@
         'isEntry' => true
     ],
     'resources/public/components/select/style/style.scss' => [
-        'file' => 'assets/style6.css',
+        'file' => 'assets/style7.css',
         'src' => 'resources/public/components/select/style/style.scss',
         'isEntry' => true
     ],
@@ -3673,10 +3711,12 @@
         'file' => 'FluentCartApp.js',
         'name' => 'FluentCartApp',
         'src' => 'resources/public/globals/FluentCartApp.js',
-        'isEntry' => true,
-        'imports' => [
-            'resources/public/checkout/ModalCheckoutHandler.js'
-        ]
+        'isEntry' => true
+    ],
+    'resources/public/globals/style.scss' => [
+        'file' => 'assets/style6.css',
+        'src' => 'resources/public/globals/style.scss',
+        'isEntry' => true
     ],
     'resources/public/gutenberg/gutenberg.js' => [
         'file' => 'gutenberg.js',

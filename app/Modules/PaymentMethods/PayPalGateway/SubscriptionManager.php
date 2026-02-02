@@ -114,6 +114,7 @@ class SubscriptionManager
         $processedSubscriptionItem = $this->getSubscriptionItemForUpdate($subscriptionModel, $variation);
 
         $data = wp_parse_args($processedSubscriptionItem, [
+            'order_id'       => $subscriptionModel->parent_order_id,
             'product_id'     => $subscriptionModel->product_id,
             'variation_id'   => $subscriptionModel->variation_id,
             'currency'       => $subscriptionModel->order->currency,

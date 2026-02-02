@@ -298,7 +298,7 @@ class CustomerResource extends BaseResourceApi
             }
 
             return static::makeErrorResponse([
-                ['code' => 400, 'message' => __('Customer do not have any changes to update.', 'fluent-cart')]
+                ['code' => 400, 'message' => __('Customer does not have any changes to update.', 'fluent-cart')]
             ]);
         }
 

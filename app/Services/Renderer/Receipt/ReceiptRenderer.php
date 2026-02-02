@@ -336,7 +336,7 @@ class ReceiptRenderer
                     <div
                             class="fct-receipt-page-order-items-addresses-bill-to-vat-number"
                             style="margin-bottom: 3px;">
-                        <?php echo esc_html__('VAT/Tax ID: ', 'fluent-cart') . esc_html($this->vat_tax_id); ?>
+                        <?php echo esc_html__('VAT/Tax ID:', 'fluent-cart') . ' ' . esc_html($this->vat_tax_id); ?>
                     </div>
                 <?php endif; ?>
                 <div
@@ -386,7 +386,7 @@ class ReceiptRenderer
                     <div
                             class="fct-receipt-page-order-items-addresses-bill-to-vat-number"
                             style="margin-bottom: 3px;">
-                        <?php echo esc_html__('VAT/Tax ID: ', 'fluent-cart') . esc_html($vat_tax_id); ?>
+                        <?php echo esc_html__('VAT/Tax ID:', 'fluent-cart') . ' ' . esc_html($vat_tax_id); ?>
                     </div>
                 <?php endif; ?>
                 <div
@@ -753,7 +753,7 @@ class ReceiptRenderer
             <h3><?php echo esc_html__('Payment Confirmation Failed!', 'fluent-cart'); ?></h3>
             <span><?php echo esc_html__('We are sorry, your order is placed but payment confirmation has failed.', 'fluent-cart'); ?></span>
             <?php if ($failed_reason) : ?>
-                <p style="color:red;font-style: italic;"><?php echo esc_html__('Failed reason- ', 'fluent-cart') . esc_html($failed_reason) ?></p>
+                <p style="color:red;font-style: italic;"><?php echo esc_html__('Failure reason: ', 'fluent-cart') . esc_html($failed_reason) ?></p>
             <?php endif; ?>
             <span><?php echo esc_html__('Please try to complete payment again from here!', 'fluent-cart'); ?></span>
             <a href="<?php echo esc_url($custom_payment_url ?? ''); ?>"><?php echo esc_url($custom_payment_url); ?></a>

@@ -117,7 +117,7 @@ class CheckoutProcessor
                 $additionalItemIds = [];
                 foreach ($additionalItems as $additionalItem) {
                     $additionalItem['order_id'] = $this->orderModel->id;
-                    $additionalItem['line_total'] = $additionalItem['subtotal'] - $additionalItem['discount_total'];
+                    $additionalItem['line_total'] = Arr::get($additionalItem, 'subtotal', 0) - Arr::get($additionalItem, 'discount_total', 0);
                     $mata = Arr::get($additionalItem, 'line_meta', []);
                     $mata['parent_item_id'] = $createdItem->id;
                     $additionalItem['line_meta'] = $mata;
@@ -548,16 +548,26 @@ class CheckoutProcessor
             $variationTitle = Arr::get($cartItem, 'variation_title', '');
 
             if (!$postTitle) {
-                $product = Product::query()->find(Arr::get($cartItem, 'post_id', 0));
-                if ($product) {
-                    $postTitle = $product->post_title;
+                if(Arr::get($cartItem, 'is_custom', false)) {
+                    $postTitle = Arr::get($cartItem, 'post_title', '');
+                }
+                else {
+                    $product = Product::query()->find(Arr::get($cartItem, 'post_id', 0));
+                    if ($product) {
+                        $postTitle = $product->post_title;
+                    }
                 }
             }
 
             if (!$variationTitle) {
-                $variation = ProductVariation::query()->find(Arr::get($cartItem, 'object_id', 0));
-                if ($variation) {
-                    $variationTitle = $variation->variation_title;
+                if(Arr::get($cartItem, 'is_custom', false)) {
+                    $variationTitle = Arr::get($cartItem, 'title', '');
+                }
+                else {
+                   $variation = ProductVariation::query()->find(Arr::get($cartItem, 'object_id', 0));
+                    if ($variation) {
+                        $variationTitle = $variation->variation_title;
+                    } 
                 }
             }
 

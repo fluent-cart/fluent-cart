@@ -522,13 +522,24 @@ class OrderResource extends BaseResourceApi
 
         $orderId = $order->id;
 
-
         /**
          * First delete the deleted items
          */
         if (!empty($deletedItems)) {
+            // Filter only the custom items that are in the deleted IDs
+            $customItems = $order->order_items
+                ->filter(fn($item) => $item->is_custom && in_array($item->id, $deletedItems))
+                ->values(); // reset keys
+            
+            if ($customItems->isNotEmpty()) {
+                do_action('fluent_cart/order/before_custom_items_deleted', $customItems, $order);
+            }
 
             OrderItem::destroy($deletedItems);
+
+            if ($customItems->isNotEmpty()) {
+                do_action('fluent_cart/order/after_custom_items_deleted', $customItems, $order);
+            }
         }
 
         if (!empty($discount)) {

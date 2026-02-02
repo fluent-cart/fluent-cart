@@ -216,7 +216,9 @@ class OrderItemResource extends BaseResourceApi
             $item['order_id'] = $id;
             $productId = Arr::get($item, 'post_id');
             $variationId = Arr::get($item, 'object_id', null);
-            if (isset($productId) && isset($variationId)) {
+            $isCustom = Arr::get($item, 'other_info.is_custom', false);
+            
+            if (isset($productId) && isset($variationId) && !$isCustom) {
 
                 $orderItem = $orderItems->where('post_id', $productId)
                     ->where('object_id', $variationId)->first();
@@ -248,6 +250,22 @@ class OrderItemResource extends BaseResourceApi
                     $existingData['fulfilled_quantity'] = $fulfillment_type === 'physical' ? Arr::get($item, 'fulfilled_quantity', 0) : Arr::get($item, 'quantity', 0);
                     $existingItems[] = $existingData;
                 }
+            }
+            else if(isset($productId) && isset($variationId) && $isCustom){
+                $oldItem = $orderItems->firstWhere('object_id', $variationId);
+                $filteredItem = (array) apply_filters('fluent_cart/order/custom_item_changed',
+                    $oldItem,
+                    $item
+                );
+
+                $filteredData = Arr::only($filteredItem, ['id', 'quantity', 'unit_price', 'cost', 'subtotal', 'tax_amount', 'discount_total', 'line_total', 'shipping_charge']
+                );
+
+                $filteredData['fulfilled_quantity'] = $fulfillment_type === 'physical'
+                    ? Arr::get($item, 'fulfilled_quantity', 0)
+                    : Arr::get($item, 'quantity', 0);
+
+                $existingItems[] = $filteredData;
             }
         }
 

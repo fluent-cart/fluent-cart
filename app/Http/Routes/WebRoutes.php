@@ -75,14 +75,18 @@ class WebRoutes
         }
 
         if ($page === 'instant_checkout') {
-
-            $variationId = App::request()->get('item_id');
+            $requestData = App::request()->all();
+            $variationId = sanitize_text_field(App::request()->get('item_id'));
             $quantity = App::request()->get('quantity', 1);
+            // Raw request flag; actual validation and normalization
+            // happens in CartResource.
+            $isCustom = (bool)Arr::get($requestData, 'is_custom', false);
 
-            if (!is_numeric($variationId)) {
-                return;
+            if(!$isCustom) {
+                if (!is_numeric($variationId)) {
+                    return;
+                } 
             }
-
 
             if (is_numeric($quantity)) {
                 $quantity = intval($quantity);
@@ -91,21 +95,38 @@ class WebRoutes
                 $quantity = 1;
             }
 
+            if($isCustom) {
+                $variation = apply_filters('fluent_cart/cart/validate_custom_item', null, [
+                    'item_id'          => $variationId,
+                    'quantity'         => $quantity,
+                    'is_custom'        => $isCustom,
+                    'action'           => 'instant_checkout',
+                ]);
 
-            $variation = ProductVariation::query()->find($variationId);
+                if (!is_object($variation)) {
+                    $variation = (object) $variation;
+                }
+
+            } else {
+                $variation = ProductVariation::query()->find($variationId);
+            }
 
             if (empty($variation)) {
                 return;
             }
 
-            $soldIndividually = $variation->soldIndividually();
+            $soldIndividually = $isCustom
+            ? !empty($variation->sold_individually)  
+            : (bool) $variation->soldIndividually();
 
             if ($soldIndividually) {
                 $quantity = 1;
             }
 
-            $cart = CartResource::generateCartForInstantCheckout($variationId, $quantity);
-
+            $cart = CartResource::generateCartForInstantCheckout($variationId, $quantity, [
+                'is_custom' => $isCustom,
+                'variation' => $variation
+            ]);
 
             if (is_wp_error($cart)) {
                 (new CheckoutPageHandler())->enqueueStyles();
@@ -150,11 +171,13 @@ class WebRoutes
             unset($queryArray['coupons']);
             unset($queryArray['redirect_to']);
 
+            if (isset($queryArray['is_custom'])) {
+                unset($queryArray['is_custom']);
+            }
+
             $queryArray['fct_cart_hash'] = $cart->cart_hash;
 
-
             $redirect_url = URL::appendQueryParams($target_path, $queryArray);
-
 
             wp_redirect($redirect_url);
             exit;

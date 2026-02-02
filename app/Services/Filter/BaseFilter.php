@@ -120,6 +120,14 @@ abstract class BaseFilter
      */
     public int $perPage = 10;
 
+
+    /**
+     * Current page number
+     *
+     * @var ?int
+     */
+    public ?int $page = null;
+
     /**
      * The offset for paginated results.
      *
@@ -225,6 +233,7 @@ abstract class BaseFilter
         $this->sortType = $this->parseSortType();
         $this->searchGroups = $this->parseSearchGroups();
         $this->perPage = $this->parsePerPage();
+        $this->page = $this->parsePageNumber();
     }
 
     protected function parseSelect(): array
@@ -266,6 +275,12 @@ abstract class BaseFilter
             return $perPage;
         }
         return $this->perPage;
+    }
+
+    protected function parsePageNumber(): ?int
+    {
+        $page = Arr::get($this->args, $this->getParsableKey('page'), $this->page);
+        return is_numeric($page) ? (int)$page : null;
     }
 
     /**
@@ -835,6 +850,7 @@ abstract class BaseFilter
             'scopes'           => 'scopes',
             'user_tz'          => 'user_tz',
             'select'           => 'select',
+            'page'             => 'page'
         ];
     }
 
@@ -903,7 +919,12 @@ abstract class BaseFilter
         $perPage = empty($perPage) ? $this->perPage : $perPage;
         $filter = $this->getFilterName();
         $this->query = apply_filters("fluent_cart/{$filter}_list_filter_query", $this->query, $this->toArray());
-        return $this->query->paginate($perPage);
+        return $this->query->paginate(
+            $perPage,
+            ['*'],
+            'page',
+            $this->page
+        );
     }
 
     public static function fromRequest(Request $request): BaseFilter
