@@ -11,14 +11,19 @@ const props = defineProps({
 const defaultOtherInfo = {
     use_pricing_table: 'no',
     group_pricing_by: 'payment_type',
-    sold_individually: 'no'
+    sold_individually: 'no',
+    order_note_enabled: 'no',
+    order_note_title: ''
 };
 
 watch(
     () => props.product.detail,
     (newDetail) => {
-        if (newDetail && (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0)) {
-            props.product.detail.other_info = { ...defaultOtherInfo };
+        if (newDetail) {
+            props.product.detail.other_info = {
+              ...defaultOtherInfo,
+              ...(newDetail.other_info || {})
+            };
         }
     },
     { immediate: true }

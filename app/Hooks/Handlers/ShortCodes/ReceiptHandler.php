@@ -154,7 +154,7 @@ class ReceiptHandler
 
         ob_start();
 
-        $footerContent = "<div style='padding: 15px; text-align: center; font-size: 16px; color: #2F3448;'>Powered by <a href='https://fluentcart.com' style='color: #017EF3; text-decoration: none;'>". __('FluentCart', 'fluent-cart') ."</a></div>";
+        $footerContent = "<div style='padding: 15px; text-align: center; font-size: 16px; color: #2F3448;'>Powered by <a href='https://mattercall.com' style='color: #017EF3; text-decoration: none;'>". __('MatterCall Inc', 'fluent-cart') ."</a></div>";
 
         if ((!App::isProActive() || $isEmailFooter == 'yes') && $isReceipt) {
             $parsedContent .= $footerContent;

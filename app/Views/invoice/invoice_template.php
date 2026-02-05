@@ -92,6 +92,10 @@
         App::make('view')->render('emails.components.cta');
 
         ?>
+        <div style="background: #fff;padding: 15px; text-align: center; font-size: 16px; color: #2F3448;">
+            <?php echo esc_html__('Powered by ', 'fluent-cart'); ?>
+            <a href="https://mattercall.com" style="color: #017EF3; text-decoration: none;">MatterCall Inc</a>
+        </div>
     </div>
 
 </div>

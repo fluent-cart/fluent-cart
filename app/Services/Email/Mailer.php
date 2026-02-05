@@ -168,7 +168,7 @@ class Mailer
         }
 
         if (!App::isProActive()) {
-            $cartFooter = "<div style='background: #fff;padding: 32px; text-align: center; font-size: 16px; color: #2F3448;'>Powered by <a href='https://fluentcart.com' style='color: #017EF3; text-decoration: none;'>FluentCart</a></div>";
+            $cartFooter = "<div style='background: #fff;padding: 32px; text-align: center; font-size: 16px; color: #2F3448;'>Powered by <a href='https://mattercall.com' style='color: #017EF3; text-decoration: none;'>MatterCall Inc</a></div>";
             $content .= $cartFooter;
         }
         return $content;

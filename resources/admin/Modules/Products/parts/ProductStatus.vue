@@ -62,14 +62,19 @@ const getStatusTooltip = () => {
 const defaultOtherInfo = {
     use_pricing_table: 'no',
     group_pricing_by: 'payment_type',
-    sold_individually: 'no'
+    sold_individually: 'no',
+    order_note_enabled: 'no',
+    order_note_title: ''
 };
 
 watch(
     () => props.product.detail,
     (newDetail) => {
-        if (newDetail && (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0)) {
-            props.product.detail.other_info = { ...defaultOtherInfo };
+        if (newDetail) {
+            props.product.detail.other_info = {
+              ...defaultOtherInfo,
+              ...(newDetail.other_info || {})
+            };
         }
     },
     { immediate: true }
@@ -235,6 +240,27 @@ onMounted(() => {
               <el-checkbox @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
                   {{ translate('Limit purchases to 1 item per order') }}
               </el-checkbox>
+          </div>
+          <div class="mt-4 pt-4" v-if="product.detail">
+            <div class="flex items-center justify-between gap-3">
+              <LabelHint
+                :title="translate('Checkout Note Field')"
+                :content="translate('Show a customer note field on checkout for this product.')"
+              />
+              <el-switch
+                v-model="product.detail.other_info.order_note_enabled"
+                active-value="yes"
+                inactive-value="no"
+                @change="value => {productEditModel.onChangeInputField('order_note_enabled',value)}"
+              />
+            </div>
+            <div class="mt-3" v-if="product.detail.other_info.order_note_enabled === 'yes'">
+              <el-input
+                :placeholder="translate('Leave a Note')"
+                v-model="product.detail.other_info.order_note_title"
+                @input="value => {productEditModel.onChangeInputField('order_note_title',value)}"
+              />
+            </div>
           </div>
       </Card.Body>
     </Card.Container>
