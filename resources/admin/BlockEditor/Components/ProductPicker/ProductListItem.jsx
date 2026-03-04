@@ -1,15 +1,15 @@
 import CollapsibleList from "@/BlockEditor/Components/ProductPicker/CollapsibleList";
 import ListItem from "./ListItem";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+const {useState} = wp.element;
 
-const {useState} = wp.element
 const ProductListItem = (props) => {
     const {
         products,
         index,
         updateSelectedVariations,
         selectedVariations,
-        isMultiple,
+        isMultiple = false,
         allow_subscription = true
     } = props;
 
@@ -23,7 +23,8 @@ const ProductListItem = (props) => {
     const firstVariant = {
         ...product.variants[0],
         variation_type: product?.detail?.variation_type,
-        variation_title: product?.post_title
+        variation_title: product?.post_title,
+        is_child: false
     };
     const hasMultipleVariation = product.variants.length > 1;
     const title = hasMultipleVariation ?
@@ -52,10 +53,10 @@ const ProductListItem = (props) => {
         return baseVariants.map((variant) => ({
             ...variant,
             variation_type: product?.detail?.variation_type,
-            variation_title: variant?.variation_title
+            variation_title: variant?.variation_title,
+            is_child: true
         }));
     }
-    
 
     return <>
         <div className="fct-collapsible-list-item-inner">

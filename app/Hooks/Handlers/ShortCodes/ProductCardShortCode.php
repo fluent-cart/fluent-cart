@@ -7,7 +7,6 @@ use FluentCart\App\App;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\ProductCardRender;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
 class ProductCardShortCode extends ShortCode

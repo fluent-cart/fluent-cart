@@ -73,8 +73,8 @@ const deleteSingleOrder = (index = 0) => {
   // Update the current order status to 'processing'
   const orderIndex = deletedOrders.value.findIndex(item => item.id === orderId);
 
-  // Skip API call for completed orders
-  if (order.status === 'completed') {
+  // Skip API call for completed non-test orders
+  if (order.mode !== 'test' && order.status === 'completed') {
     if (orderIndex !== -1) {
       deletedOrders.value[orderIndex].status = 'warning';
       deletedOrders.value[orderIndex].error_message = `Cannot delete order ${invoiceNo} due to status: completed`;
@@ -131,8 +131,8 @@ const handleBulkDelete = () => {
     id: order.id,
     invoice_no: order.invoice_no,
     parent_id: order.parent_id,
-    status: order.status === 'completed' ? 'warning' : 'pending',
-    error_message: order.status === 'completed' ? `${
+    status: (order.mode !== 'test' && order.status === 'completed') ? 'warning' : 'pending',
+    error_message: (order.mode !== 'test' && order.status === 'completed') ? `${
       /* translators: %s is the order number */
       translate('Cannot delete order %s due to status: completed', order.invoice_no)
     }` : ''

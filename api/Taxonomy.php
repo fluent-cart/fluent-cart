@@ -122,6 +122,30 @@ class Taxonomy
         return Collection::make($terms)->pluck('term_id')->toArray();
     }
 
+    public static function getTermIdsBySlugs($slugs, $taxonomy = 'product-categories'): array
+    {
+        if (is_string($slugs)) {
+            $slugs = array_map('trim', explode(',', $slugs));
+        }
+
+        $termIds = [];
+        foreach ($slugs as $slug) {
+            $slug = sanitize_text_field($slug);
+            if (empty($slug)) {
+                continue;
+            }
+            $term = get_term_by('slug', sanitize_title($slug), $taxonomy);
+            if (!$term || is_wp_error($term)) {
+                $term = get_term_by('name', $slug, $taxonomy);
+            }
+            if ($term && !is_wp_error($term)) {
+                $termIds[] = (int) $term->term_id;
+            }
+        }
+
+        return $termIds;
+    }
+
     public static function addTaxonomyTerms(string $taxonomy, array $terms, array $args = [])
     {
         $taxonomies = static::getTaxonomies();

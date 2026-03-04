@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./related-product-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+
+.fct-no-related-products {
+  @apply text-center;
+}
+.fct-related-products-placeholder .fct-button-secondary,
+.fct-related-product-inspector-controls .fct-button-secondary {
+  @apply w-auto;
+}
+.fct-related-products-grid {
+  @apply grid gap-5;
+  --fct-related-product-columns: 3;
+  grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
+}
+
+.fct-related-product-card {
+  @apply h-full flex flex-col justify-between;
+}
+
+// Product Picker styles
+.fct-product-picker-selected {
+  @apply flex items-center gap-2 bg-white rounded-md border border-solid border-gray-outline p-2 mb-3;
+}
+
+.fct-product-picker-selected-img {
+  @apply w-10 rounded-sm flex-shrink-0 object-cover;
+  height: 40px !important;
+}
+
+.fct-product-picker-selected-title {
+  @apply text-xs text-system-dark leading-[1.3];
+}
+
+.fct-product-picker-button-wrap {
+  @apply relative;
+}
+
+.fct-product-picker-btn {
+  @apply w-full justify-center rounded-md font-medium gap-1;
+  @apply border border-solid shadow-none text-system-dark border-gray-outline hover:border-gray-outline hover:bg-gray-50 !important;
+}
+
+.fct-product-picker-dropdown {
+  @apply absolute top-full left-0 right-0 z-[1024] bg-white px-2 pb-2 rounded mt-1 min-w-[250px] border border-solid border-gray-outline;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.fct-product-picker-search {
+  @apply mx-[-8px];
+  input {
+    @apply rounded-tl rounded-tr rounded-bl-none rounded-br-none h-auto min-h-[auto] py-2.5 pl-3 border-x-0 border-t-0 border-gray-outline focus:border-x-0 focus:border-t-0 focus:shadow-none !important;
+  }
+}
+
+.fct-product-picker-list {
+  @apply max-h-[250px] overflow-y-auto;
+}
+
+.fct-product-picker-item {
+  @apply bg-white rounded-sm flex items-center gap-2 w-full py-2 px-3 border-0 cursor-pointer text-system-dark hover:bg-gray-25;
+}
+
+.fct-product-picker-item-img {
+  @apply w-8 h-8 rounded-sm object-cover flex-shrink-0;
+}
+
+.fct-product-picker-item-title {
+  @apply text-xs leading-[1.3] truncate;
+}
+
+.fct-product-picker-loading {
+  @apply flex justify-center p-5;
+}
+
+.fct-product-picker-empty {
+  @apply text-center text-system-dark-light text-sm p-3;
+}
+
+// Placeholder cards (default mode in editor)
+.fct-product-card-placeholder {
+  @apply rounded border border-solid border-gray-outline bg-white p-2 flex flex-col gap-3;
+}
+
+.fct-placeholder-image {
+  @apply w-full rounded-md bg-gray-100;
+  aspect-ratio: 1;
+}
+
+.fct-placeholder-line {
+  @apply rounded bg-gray-100;
+}
+
+.fct-placeholder-title {
+  @apply h-4 w-3/4;
+}
+
+.fct-placeholder-price {
+  @apply h-4 w-1/3;
+}
+
+.fct-placeholder-button {
+  @apply h-9 w-full;
+}
+
+// Show/Hide element toggles in editor
+.fct-hide-image [data-type="fluent-cart/shopapp-product-image"] {
+  @apply hidden !important;
+}
+
+.fct-hide-title [data-type="fluent-cart/shopapp-product-title"] {
+  @apply hidden !important;
+}
+
+.fct-hide-price [data-type="fluent-cart/shopapp-product-price"] {
+  @apply hidden !important;
+}
+
+.fct-hide-button [data-type="fluent-cart/shopapp-product-buttons"] {
+  @apply hidden !important;
+}

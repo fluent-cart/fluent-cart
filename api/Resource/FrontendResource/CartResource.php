@@ -11,7 +11,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Services\RateLimitter;
+use FluentCart\App\Services\RateLimiter;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
@@ -27,7 +27,7 @@ class CartResource extends BaseResourceApi
 
     public static function generateCartForInstantCheckout($variationId, $quantity = 1, $params = [])
     {
-        RateLimitter::isSpamming('generate_instant_checkout_cart_attempt', 10, 60, true);
+        RateLimiter::isSpamming('generate_instant_checkout_cart_attempt', 10, 60, true);
 
         $isCustom = Arr::get($params, 'is_custom', false);
 

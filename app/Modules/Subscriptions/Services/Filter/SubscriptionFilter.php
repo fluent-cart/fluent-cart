@@ -3,16 +3,14 @@
 namespace FluentCart\App\Modules\Subscriptions\Services\Filter;
 
 use FluentCart\Api\ModuleSettings;
-use FluentCart\Api\PaymentMethods;
 use FluentCart\App\App;
-use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Services\Filter\BaseFilter;
 use FluentCart\App\Services\Filter\LabelFilter;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\Framework\Support\Collection;
 use FluentCart\Framework\Support\Str;
 
 class SubscriptionFilter extends BaseFilter
@@ -107,15 +105,13 @@ class SubscriptionFilter extends BaseFilter
 
     public static function advanceFilterOptions(): array
     {
-        $activePaymentMethods = PaymentMethods::getActiveMeta();
-        $paymentMethodOptions = Collection::make($activePaymentMethods)->pluck('title', 'slug')->toArray();
-        $paymentMethodOptions = array_merge(
-            $paymentMethodOptions,
-            [
-                'stripe' => __('Stripe', 'fluent-cart'),
-                'paypal' => __('PayPal', 'fluent-cart')
-            ]
-        );
+        $manager = GatewayManager::getInstance();
+        $paymentRoutes = $manager->getRoutes();
+        $paymentMethodOptions = [];
+        foreach ($paymentRoutes as $route) {
+            $paymentMethodOptions[$route['name']] = Arr::get($route, 'meta.title', $route['name']);
+        }
+
         $filters = [
             'subscription' => [
                 'label'    => __('Subscription', 'fluent-cart'),
@@ -157,6 +153,13 @@ class SubscriptionFilter extends BaseFilter
                             'weekly'      => __('Weekly', 'fluent-cart'),
                             'daily'       => __('Daily', 'fluent-cart'),
                         ],
+                        'is_multiple' => true,
+                    ],
+                    [
+                        'label'       => __('Payment Method', 'fluent-cart'),
+                        'value'       => 'current_payment_method',
+                        'type'        => 'selections',
+                        'options'     => $paymentMethodOptions,
                         'is_multiple' => true,
                     ],
                     [

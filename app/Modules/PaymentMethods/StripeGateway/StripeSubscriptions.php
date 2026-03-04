@@ -3,6 +3,8 @@
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Helpers\StatusHelper;
+use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractSubscriptionModule;
@@ -83,9 +85,16 @@ class StripeSubscriptions extends AbstractSubscriptionModule
                     continue;
                 }
 
+                $amountPaid = Arr::get($invoice, 'amount_paid');
+                $chargeCurrency = Arr::get($invoice, 'currency');
+
+                if ($chargeCurrency && CurrenciesHelper::isZeroDecimal($chargeCurrency)) {
+                    $amountPaid = $amountPaid * 100;
+                }
+
                 $transactionData = [
                     'payment_method'   => 'stripe',
-                    'total'            => (int)Arr::get($invoice, 'amount_paid'),
+                    'total'            => (int)$amountPaid,
                     'vendor_charge_id' => Arr::get($invoice, 'payment_intent'),
                     'created_at'       => ($paidAt = Arr::get($invoice, 'status_transitions.paid_at')) ? DateTime::anyTimeToGmt($paidAt)->format('Y-m-d H:i:s') : DateTime::now()->format('Y-m-d H:i:s'),
                 ];
@@ -116,6 +125,8 @@ class StripeSubscriptions extends AbstractSubscriptionModule
                     'status'           => Status::TRANSACTION_SUCCEEDED,
                     'total'            => (int)Arr::get($invoice, 'amount_paid')
                 ]);
+
+                (new StatusHelper($transaction->order))->syncOrderStatuses($transaction);
             }
         }
 
@@ -140,6 +151,23 @@ class StripeSubscriptions extends AbstractSubscriptionModule
     {
         if (!$vendorSubscriptionId) {
             return new \WP_Error('invalid_subscription', __('Invalid vendor subscription ID.', 'fluent-cart'));
+        }
+
+        // first check if the subscription is already canceled in Stripe
+        $response = (new API())->getStripeObject('subscriptions/' . $vendorSubscriptionId, [], Arr::get($args, 'mode', 'live'));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status = StripeHelper::transformSubscriptionStatus($response);
+
+        if ($status == Status::SUBSCRIPTION_CANCELED) {
+            $canceledAt = Arr::get($response, 'canceled_at');
+            return [
+                'status' => Status::SUBSCRIPTION_CANCELED,
+                'canceled_at' =>  $canceledAt ? gmdate('Y-m-d H:i:s', $canceledAt) : NULL
+            ];
         }
 
         $response = (new API())->deleteStripeObject('subscriptions/' . $vendorSubscriptionId, [], Arr::get($args, 'mode', 'live'));

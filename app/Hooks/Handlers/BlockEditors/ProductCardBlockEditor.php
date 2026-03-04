@@ -56,7 +56,8 @@ class ProductCardBlockEditor extends BlockEditor
         $product = null;
         if ($queryType === 'default') {
             $product = fluent_cart_get_current_product();
-            $product && setup_postdata($product->ID);
+            // TODO: Check
+            //$product && setup_postdata($product->ID);
         } else {
             if ($productId = Arr::get($shortCodeAttribute, 'product_id', false)) {
                 $product = Product::query()->with(['variants'])->find($productId);

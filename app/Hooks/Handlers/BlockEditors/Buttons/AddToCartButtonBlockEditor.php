@@ -68,7 +68,7 @@ class AddToCartButtonBlockEditor extends BlockEditor
             $this->getLocalizationKey()     => [
                 'slug'              => $this->slugPrefix,
                 'name'              => static::getEditorName(),
-                'title'             => __('Add to Cart Button', 'fluent-cart'),
+                'title'             => __('Add to Cart', 'fluent-cart'),
                 'description'       => __('A custom button block with product selection and automatic link assignment.', 'fluent-cart'),
                 'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
             ],

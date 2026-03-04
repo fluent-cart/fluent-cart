@@ -18,6 +18,7 @@ class ProductVariationMigrator extends Migrator
                 `sold_individually` TINYINT(1) UNSIGNED NULL DEFAULT 0,
                 `variation_title` VARCHAR(192) NOT NULL,
                 `variation_identifier` VARCHAR(100) NULL,
+                `sku` VARCHAR(30) NULL DEFAULT NULL,
                 `manage_stock` TINYINT(1) NULL DEFAULT 0,
                 `payment_type` VARCHAR(50) NULL,
                 `stock_status` VARCHAR(30) NULL DEFAULT 'out-of-stock',
@@ -38,6 +39,7 @@ class ProductVariationMigrator extends Migrator
                 `created_at` DATETIME NULL,
                 `updated_at` DATETIME NULL,
                 INDEX `{$indexPrefix}_post_id_idx` (`post_id` ASC),
+                UNIQUE INDEX `sku_unique` (`sku` ASC),
                 INDEX `{$indexPrefix}_stock_status_idx` (`stock_status` ASC)";
     }
 }

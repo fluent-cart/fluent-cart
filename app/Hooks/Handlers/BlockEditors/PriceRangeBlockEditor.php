@@ -3,7 +3,9 @@
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Renderer\ProductCardRender;
 use FluentCart\App\Services\Renderer\ProductRenderer;
+use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
@@ -16,18 +18,40 @@ class PriceRangeBlockEditor extends BlockEditor
     public function supports(): array
     {
         return [
-            'html'       => false,
-            'align' => true,
-            'typography' => [
-                'fontSize'   => true,
-                'lineHeight' => true
+            'html'                 => false,
+            'align'                => true,
+            'typography'           => [
+                'fontSize'                      => true,
+                'lineHeight'                    => true,
+                '__experimentalFontFamily'      => true,
+                '__experimentalFontWeight'      => true,
+                '__experimentalFontStyle'       => true,
+                '__experimentalTextTransform'   => true,
+                '__experimentalTextDecoration'  => true,
+                '__experimentalLetterSpacing'   => true,
+                '__experimentalDefaultControls' => [
+                    'fontSize'   => true,
+                    'lineHeight' => true,
+                    'fontWeight' => true,
+                ],
             ],
-            'spacing'    => [
-                'margin' => true
+            'color'                => [
+                'text'       => true,
+                'background' => true,
+                'link'       => true,
+                'gradients'   => true,
             ],
-            'color'      => [
-                'text' => true,
-            ]
+            'spacing'              => [
+                'margin'  => true,
+                'padding' => true,
+            ],
+            '__experimentalBorder' => [
+                'color'  => true,
+                'radius' => true,
+                'style'  => true,
+                'width'  => true,
+            ],
+            'shadow'               => true,
         ];
     }
 
@@ -62,6 +86,11 @@ class PriceRangeBlockEditor extends BlockEditor
         ];
     }
 
+    public function useContext()
+    {
+        return ['fluent-cart/price_format'];
+    }
+
     public function render(array $shortCodeAttribute, $block = null)
     {
         AssetLoader::loadSingleProductAssets();
@@ -78,14 +107,27 @@ class PriceRangeBlockEditor extends BlockEditor
             }
         }
 
-
-
         if (!$product) {
             return '';
         }
 
+        $defaultPriceFormat = 'starts_from';
+        if (is_singular('fluent-products') && TemplateService::getCurrentFcPageType() === 'single_product') {
+            $defaultPriceFormat = 'range';
+        }
+        // Context from parent (ShopApp) takes priority, then block's own attribute, then default
+        $attrPriceFormat = Arr::get($shortCodeAttribute, 'price_format', $defaultPriceFormat);
+        $priceFormat = $block ? Arr::get($block->context ?? [], 'fluent-cart/price_format', $attrPriceFormat) : $attrPriceFormat;
+
+        $wrapper_attributes = get_block_wrapper_attributes([
+            'class' => 'fct-product-card-prices',
+        ]);
+
+        $render = new ProductCardRender($product, [
+            'price_format' => $priceFormat,
+        ]);
         ob_start();
-        (new ProductRenderer($product))->renderPrices();
+        $render->renderPrices($wrapper_attributes);
         return ob_get_clean();
     }
 }

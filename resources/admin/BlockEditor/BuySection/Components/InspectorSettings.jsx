@@ -46,6 +46,9 @@ const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSele
                                             setAttributes({product_id: selectedProduct.ID || ''});
                                             setSelectedProduct(selectedProduct);
                                         }}
+                                        selectedProduct={selectedProduct}
+                                        setSelectedProduct={setSelectedProduct}
+                                        isMultiple={false}
                                     />
 
                                     

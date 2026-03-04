@@ -7,7 +7,7 @@ use FluentCart\Api\Checkout\CheckoutApi;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ShippingMethod;
-use FluentCart\App\Services\RateLimitter;
+use FluentCart\App\Services\RateLimiter;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\Framework\Http\Request\Request;
 
@@ -18,7 +18,7 @@ class CheckoutController extends Controller
      */
     public function placeOrder(Request $request)
     {
-        RateLimitter::isSpamming('place_order_attempt', 5, 60, true);
+        RateLimiter::isSpamming('place_order_attempt', 5, 60, true);
 
         CheckoutApi::placeOrder($request->all(), true);
     }

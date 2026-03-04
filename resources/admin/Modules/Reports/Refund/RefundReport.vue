@@ -75,8 +75,6 @@ onUnmounted(() => {
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-refund-report-page">
-      <PageHeading :title="translate('Refunds')"></PageHeading>
-
       <Summary />
 
       <RefundLineChart

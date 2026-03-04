@@ -20,6 +20,7 @@ const rest = window['fluentCartRestVars'].rest;
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     icon: {
@@ -64,17 +65,22 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
         const singleProductData = useSingleProductData();
 
-
         const isInsideProductInfo = useSelect((select) => {
-            const {getBlockParents, getBlockName} = select(blockEditorStore);
+            const { getBlockParents, getBlockName } = select(blockEditorStore);
 
             // Get all parent block IDs of this block
             const parents = getBlockParents(clientId);
 
             // Check if any parent has blockName 'product-info'
-            return parents.some((parentId) => getBlockName(parentId) === 'fluent-cart/product-info');
+            return parents.some((parentId) => {
+                const name = getBlockName(parentId);
+                return [
+                    'fluent-cart/product-info',
+                    'fluent-cart/product-carousel',
+                ].includes(name);
+            });
         }, [clientId]);
-
+        
         setAttributes({inside_product_info: isInsideProductInfo ? 'yes' : 'no'});
 
 

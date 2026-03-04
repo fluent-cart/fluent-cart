@@ -100,16 +100,54 @@ class ShopAppHandler
             'order_type'                       => 'DESC',
             'live_filter'                      => false,
             'custom_filters'                   => json_encode([]),
-            'filters'                          => json_encode([])
+            'filters'                          => json_encode([]),
+            'ids'                              => '',
+            'exclude_ids'                      => '',
+            'category'                         => '',
+            'category_id'                      => '',
+            'tag'                              => '',
+            'tag_id'                           => '',
+            'fulfillment_type'                 => '',
+            'product_type'                     => '',
+            'on_sale'                          => '',
+            'sort_by'                          => '',
+            'columns'                          => '',
+            'orderby'                          => '',
+            'order'                            => '',
+            'limit'                            => '',
         ), $shortcodeAttributes, static::SHORT_CODE);
 
+        // Alias: limit → per_page
+        if (!empty($this->shortcodeAttributes['limit']) && is_numeric($this->shortcodeAttributes['limit'])) {
+            $this->shortcodeAttributes['per_page'] = $this->shortcodeAttributes['limit'];
+        }
 
-        $this->shortcodeAttributes['per_page'] = is_numeric($this->shortcodeAttributes['per_page']) ? $this->shortcodeAttributes['per_page'] : 10;
+        // Alias: columns → product_box_grid_size (controls the CSS grid columns)
+        if (!empty($this->shortcodeAttributes['columns']) && is_numeric($this->shortcodeAttributes['columns'])) {
+            $this->shortcodeAttributes['product_box_grid_size'] = $this->shortcodeAttributes['columns'];
+        }
+
+        // Map orderby+order → sort_by (WooCommerce-style)
+        if (!empty($this->shortcodeAttributes['orderby']) && empty($this->shortcodeAttributes['sort_by'])) {
+            $order = strtoupper($this->shortcodeAttributes['order'] ?: 'DESC');
+            $orderbyMap = [
+                'date'  => ['ASC' => 'date-oldest', 'DESC' => 'date-newest'],
+                'title' => ['ASC' => 'name-asc', 'DESC' => 'name-desc'],
+                'price' => ['ASC' => 'price-low', 'DESC' => 'price-high'],
+                'id'    => ['ASC' => 'date-oldest', 'DESC' => 'date-newest'],
+            ];
+            $orderby = strtolower($this->shortcodeAttributes['orderby']);
+            if (isset($orderbyMap[$orderby][$order])) {
+                $this->shortcodeAttributes['sort_by'] = $orderbyMap[$orderby][$order];
+            }
+        }
+
+        $this->shortcodeAttributes['per_page'] = is_numeric($this->shortcodeAttributes['per_page']) ? (int) $this->shortcodeAttributes['per_page'] : 10;
 
         $viewMode = $this->shortcodeAttributes['view_mode'];
 
         if (!($viewMode === 'list' || $viewMode === 'grid')) {
-            $viewMode = '';
+            $viewMode = 'grid';
         }
 
         $this->shortcodeAttributes['view_mode'] = $viewMode;
@@ -197,6 +235,7 @@ class ShopAppHandler
 
     private function prepareInitialViewData()
     {
+
         $allProducts = $this->getInitialProducts();
         $this->defaultViewData = [
             'products'                         => Arr::get($allProducts, 'products', []),
@@ -209,9 +248,9 @@ class ShopAppHandler
             'enable_wildcard_filter'           => $this->shortcodeAttributes['enable_wildcard_filter'],
             'enable_wildcard_for_post_content' => $this->shortcodeAttributes['enable_wildcard_for_post_content'],
             'default_filters'                  => $this->shortcodeAttributes['default_filters'],
-            'custom_filters'                   => json_decode($this->shortcodeAttributes['custom_filters'], true),
+            'custom_filters'                   => is_array($this->shortcodeAttributes['custom_filters'])? $this->shortcodeAttributes['custom_filters']: json_decode($this->shortcodeAttributes['custom_filters'], true),
             'use_default_style'                => $this->shortcodeAttributes['use_default_style'],
-            'colors'                           => json_decode($this->shortcodeAttributes['colors'], true),
+            'colors'                           => is_array($this->shortcodeAttributes['colors'])? $this->shortcodeAttributes['colors']:  json_decode($this->shortcodeAttributes['colors'], true),
             'store_settings'                   => new StoreSettings(),
             'filters'                          => $this->shortcodeAttributes['filters']
         ];
@@ -288,8 +327,8 @@ class ShopAppHandler
         $enableFilters = Arr::get($filters, 'enabled', false) === true;
 
 
-        $allowOutOfStock = Arr::get($defaultFilters, 'enabled', false) === true &&
-            Arr::get($defaultFilters, 'allow_out_of_stock', false) === true;
+        $allowOutOfStock = (Arr::get($defaultFilters, 'enabled', false) === true) &&
+            filter_var(Arr::get($defaultFilters, 'allow_out_of_stock', false), FILTER_VALIDATE_BOOLEAN);
 
         if (Arr::get($defaultFilters, 'enabled') != 1) {
             $defaultFilters = [];
@@ -300,6 +339,48 @@ class ShopAppHandler
         $urlTerms = Helper::parseTermIdsForFilter($this->urlFilters);
         $defaultTerms = Helper::parseTermIdsForFilter($defaultFilters);
         $mergedTerms = Helper::mergeTermIdsForFilter($defaultTerms, $urlTerms);
+
+        // --- Shortcode attribute: include/exclude IDs ---
+        $includeIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['ids'])))));
+        $excludeIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['exclude_ids'])))));
+
+        // --- Shortcode attribute: category (by slug) and category_id ---
+        $categoryTermIds = [];
+        if (!empty($this->shortcodeAttributes['category'])) {
+            $categoryTermIds = Taxonomy::getTermIdsBySlugs($this->shortcodeAttributes['category'], 'product-categories');
+        }
+        if (!empty($this->shortcodeAttributes['category_id'])) {
+            $catIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['category_id'])))));
+            $categoryTermIds = array_unique(array_merge($categoryTermIds, $catIds));
+        }
+        if (!empty($categoryTermIds)) {
+            $existing = Arr::get($mergedTerms, 'product-categories', []);
+            $mergedTerms['product-categories'] = array_unique(array_merge($existing, $categoryTermIds));
+        }
+
+        // --- Shortcode attribute: tag (by slug) and tag_id ---
+        $tagTermIds = [];
+        if (!empty($this->shortcodeAttributes['tag'])) {
+            $tagTermIds = Taxonomy::getTermIdsBySlugs($this->shortcodeAttributes['tag'], 'product-tags');
+        }
+        if (!empty($this->shortcodeAttributes['tag_id'])) {
+            $tIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['tag_id'])))));
+            $tagTermIds = array_unique(array_merge($tagTermIds, $tIds));
+        }
+        if (!empty($tagTermIds)) {
+            $existing = Arr::get($mergedTerms, 'product-tags', []);
+            $mergedTerms['product-tags'] = array_unique(array_merge($existing, $tagTermIds));
+        }
+
+        // --- Shortcode attribute: sort_by ---
+        if (!empty($this->shortcodeAttributes['sort_by'])) {
+            $filters['sort_by'] = sanitize_text_field($this->shortcodeAttributes['sort_by']);
+        }
+
+        // --- Shortcode attribute: fulfillment_type / product_type, stock_availability, on_sale ---
+        // product_type is an alias for fulfillment_type
+        $productType = sanitize_text_field($this->shortcodeAttributes['product_type'] ?: $this->shortcodeAttributes['fulfillment_type']);
+        $onSale = in_array(strtolower($this->shortcodeAttributes['on_sale']), ['yes', '1', 'true'], true);
 
         // merge $this->urlFilters and $filters
         $filters = array_merge($filters, $this->urlFilters);
@@ -322,6 +403,13 @@ class ShopAppHandler
             'live_filter'              => $this->shortcodeAttributes['live_filter'],
             'enable_filters'           => $enableFilters,
             'custom_filters'           => $customFilters,
+            'include_ids'              => $includeIds,
+            'exclude_ids'              => $excludeIds,
+            'product_type'             => $productType,
+            'on_sale'                  => $onSale,
+            'product_box_grid_size'    => $this->shortcodeAttributes['product_box_grid_size'],
+            'view_mode'                => $this->shortcodeAttributes['view_mode'],
+            'price_format'             => $this->shortcodeAttributes['price_format'],
         ];
 
         return $params;

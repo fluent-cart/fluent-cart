@@ -102,8 +102,16 @@ class ProductDetailResource extends BaseResourceApi
 
         // Stock & Price Range Handling
         if ($triggeredAction === 'variant_modified') {
-            if (Arr::get($data, 'manage_stock') == 0) {
+            $manageStock = Arr::has($data, 'manage_stock') ? Arr::get($data, 'manage_stock') : $detail->manage_stock;
+
+            if (!$manageStock) {
                 $data['stock_availability'] = Helper::IN_STOCK;
+            } else {
+                $hasInStock = \FluentCart\App\Models\ProductVariation::query()
+                    ->where('post_id', $detail->post_id)
+                    ->where('stock_status', 'in-stock')
+                    ->exists();
+                $data['stock_availability'] = $hasInStock ? Helper::IN_STOCK : Helper::OUT_OF_STOCK;
             }
         }
 
@@ -115,8 +123,8 @@ class ProductDetailResource extends BaseResourceApi
             }
         }
 
-        $data['min_price'] = $detail->min_price ?? 0;
-        $data['max_price'] = $detail->max_price ?? 0;
+        $data['min_price'] = Arr::get($data, 'min_price') ?: ($detail->min_price ?? 0);
+        $data['max_price'] = Arr::get($data, 'max_price') ?: ($detail->max_price ?? 0);
 
         // Handle Default Variation
         if (empty(Arr::get($data, 'default_variation_id'))) {

@@ -34,4 +34,7 @@
   &.disabled{
     @apply opacity-50 cursor-not-allowed;
   }
+  &.out-of-stock {
+    @apply cursor-not-allowed pointer-events-none;
+  }
 }

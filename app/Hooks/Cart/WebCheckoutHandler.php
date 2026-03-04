@@ -359,18 +359,38 @@ class WebCheckoutHandler
             'cart' => $cart
         ]);
 
+        $fragments = [];
+
+        $cartRender = (new CheckoutRenderer($cart));
+        $modalCheckoutRender = (new ModalCheckoutRenderer($cart));
+        $enableModalCheckout = App::request()->getSafe('modal_checkout', 'sanitize_text_field');
+
         ob_start();
         (new CartSummaryRender($cart))->render(false);
         $cartSummaryInner = ob_get_clean();
 
+        $fragments[] = [
+            'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
+            'content' => $cartSummaryInner,
+            'type' => 'replace'
+        ];
+
+        if ($enableModalCheckout === 'yes') {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content' => $modalCheckoutRender->getFragment('payment_methods'),
+                'type' => 'replace'
+            ];
+        } else {
+            $fragments[] = [
+                'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                'content' => $cartRender->getFragment('payment_methods'),
+                'type' => 'replace'
+            ];
+        }
+
         return [
-            'fragments' => [
-                [
-                    'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
-                    'content' => $cartSummaryInner,
-                    'type' => 'replace'
-                ]
-            ],
+            'fragments' => $fragments,
             'total' => $totalPrice,
             'applied_coupons' => $cart->coupons,
             'shipping_charge' => $shippingCharge,

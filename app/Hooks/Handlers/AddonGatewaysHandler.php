@@ -6,6 +6,7 @@ use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\PaystackAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\RazorpayAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\MercadoPagoAddon;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\FlutterwaveAddon;
 
 class AddonGatewaysHandler
 {
@@ -17,6 +18,7 @@ class AddonGatewaysHandler
         'paystack' => PaystackAddon::class,
         'razorpay' => RazorpayAddon::class,
         'mercado_pago' => MercadoPagoAddon::class,
+        'flutterwave' => FlutterwaveAddon::class,
     ];
     
     public function register()

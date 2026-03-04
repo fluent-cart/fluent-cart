@@ -52,7 +52,7 @@ class SearchBarBlockEditor extends BlockEditor
         $link_with_shop_app = !empty($linkWithShopApp) ? 'link_with_shop_app=' . $linkWithShopApp : '';
 
         $shortcodeName = SearchBarShortCode::getShortCodeName();
-        return "[$shortcodeName {$url_mode} {$category_mode} {$link_with_shop_app}]";
+        return "[$shortcodeName $url_mode $category_mode $link_with_shop_app]";
     }
 
 }

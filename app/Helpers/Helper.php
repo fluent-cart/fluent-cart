@@ -537,6 +537,7 @@ class Helper
         return is_singular([FluentProducts::CPT_NAME]);
     }
 
+
     public static function isTrue($array, $key)
     {
         $value = $array[$key] ?? false;
@@ -1712,5 +1713,32 @@ class Helper
     public static function isAdminUser(): bool
     {
         return current_user_can('manage_options');
+    }
+
+    /**
+     * Convert string/boolean to actual boolean value.
+     * Handles shortcode string attributes like "true"/"false"
+     *
+     * @param mixed $value The value to convert to boolean
+     * @param bool $default Default value if conversion fails
+     * @return bool The boolean result
+     */
+    public static function toBool($value, bool $default = false): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $value = strtolower(trim($value));
+            if (in_array($value, ['true', '1', 'yes', 'on'], true)) {
+                return true;
+            }
+            if (in_array($value, ['false', '0', 'no', 'off'], true)) {
+                return false;
+            }
+        }
+
+        return $default;
     }
 }

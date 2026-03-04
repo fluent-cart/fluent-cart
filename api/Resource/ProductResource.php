@@ -194,6 +194,18 @@ class ProductResource extends BaseResourceApi
 
                 unset($variant['rowId']);
                 unset($variant['media']);
+
+                // Recalculate stock_status and sync total_stock from available
+                if (isset($variant['manage_stock'])) {
+                    if ($variant['manage_stock']) {
+                        $avail = intval(Arr::get($variant, 'available', 0));
+                        $variant['stock_status'] = $avail > 0 ? Helper::IN_STOCK : Helper::OUT_OF_STOCK;
+                        $variant['total_stock'] = $avail;
+                    } else {
+                        $variant['stock_status'] = Helper::IN_STOCK;
+                    }
+                }
+
                 $variantData = $variant;
 
                 // Handle other_info
@@ -235,6 +247,18 @@ class ProductResource extends BaseResourceApi
                     }
                     unset($variant['rowId']);
                     $variant['serial_index'] = $index + 1;
+
+                    // Recalculate stock_status from available and manage_stock
+                    if (isset($variant['manage_stock'])) {
+                        if ($variant['manage_stock']) {
+                            $avail = intval(Arr::get($variant, 'available', 0));
+                            $variant['stock_status'] = $avail > 0 ? Helper::IN_STOCK : Helper::OUT_OF_STOCK;
+                            $variant['total_stock'] = $avail;
+                        } else {
+                            $variant['stock_status'] = Helper::IN_STOCK;
+                        }
+                    }
+
                     if (!empty($otherInfo)) {
                         if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
                             if (Arr::get($otherInfo, 'manage_setup_fee') == 'yes') {
@@ -261,6 +285,18 @@ class ProductResource extends BaseResourceApi
 
         $defaultVariationId = Arr::get($detail, 'default_variation_id');
         $detail['default_variation_id'] = $defaultVariationId;
+
+        // Recalculate min_price / max_price from current variant prices
+        $variantPriceRange = ProductVariation::query()
+            ->where('post_id', $postId)
+            ->selectRaw('MIN(item_price) as min_price, MAX(item_price) as max_price')
+            ->first();
+
+        if ($variantPriceRange) {
+            $detail['min_price'] = $variantPriceRange->min_price ?: 0;
+            $detail['max_price'] = $variantPriceRange->max_price ?: 0;
+        }
+
         ProductDetailResource::update($detail, Arr::get($detail, 'id'), ['action' => 'variant_modified']);
 
         (new StockChanged([$postId]))->dispatch();
@@ -430,17 +466,6 @@ class ProductResource extends BaseResourceApi
             ['code' => 404, 'message' => __('Product not found in database.', 'fluent-cart')]
         ]);
 
-    }
-
-    public static function setThumbnail($productId, $data = [])
-    {
-
-        $productMeta = ProductMetaResource::find($productId);
-
-        if (empty($productMeta)) {
-            return ProductMetaResource::Create($data['thumbnail'], ['product_id' => $productId]);
-        }
-        return ProductMetaResource::update($data['thumbnail'], $productId);
     }
 
     /**
@@ -728,6 +753,39 @@ class ProductResource extends BaseResourceApi
         return static::makeErrorResponse([
             ['code' => 400, 'message' => __("Product update failed!", 'fluent-cart')]
         ]);
+    }
+
+    public static function findByProductAndVariants(array $params = [])
+    {
+        $productId  = Arr::get($params, 'product_id', null);
+        $variantIds = Arr::get($params, 'variant_ids', []);
+
+        if (empty($productId)) {
+            return null;
+        }
+
+        $product = static::getQuery()
+            ->where('ID', $productId)
+            ->with([
+                'postmeta',
+                'detail',
+                'variants' => function ($query) use ($variantIds) {
+                    // Filter variants only if variant_ids provided
+                    if (!empty($variantIds)) {
+                        $query->whereIn('id', $variantIds);
+                    }
+
+                    $query->with('media')
+                        ->orderBy('serial_index', 'ASC');
+                }
+            ])
+            ->first();
+
+        if (!$product) {
+            return null;
+        }
+
+        return $product;
     }
 
 }

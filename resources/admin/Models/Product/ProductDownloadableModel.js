@@ -9,6 +9,7 @@ class ProductDownloadableModel extends Model {
 
     data = {
         downloadableFiles: {},
+        sourceProduct: null,
         addModal: {
             files: [],
             isModalOpen: false
@@ -23,7 +24,7 @@ class ProductDownloadableModel extends Model {
         saving: false
     };
 
-    setDownloadableFiles(files) {
+    setDownloadableFiles(files, sourceProduct = null) {
         files = files.map(file => {
 
             if (typeof file.settings === 'string') {
@@ -36,6 +37,15 @@ class ProductDownloadableModel extends Model {
             return file;
         })
         this.data.downloadableFiles = files;
+        if (sourceProduct) {
+            this.data.sourceProduct = sourceProduct;
+        }
+    }
+    
+    syncToSourceProduct() {
+        if (this.data.sourceProduct && Array.isArray(this.data.downloadableFiles)) {
+            this.data.sourceProduct.downloadable_files = [...this.data.downloadableFiles];
+        }
     }
 
     get downloadableFiles() {
@@ -201,6 +211,7 @@ class ProductDownloadableModel extends Model {
             downloadable_files: this.insertableFiles
         }).then((response) => {
             this.setDownloadableFiles(response.downloadable_files);
+            this.syncToSourceProduct();
             this.closeAddModal()
             Notify.success(translate('Variations Synced Successfully'));
         }).catch((error) => {
@@ -242,6 +253,7 @@ class ProductDownloadableModel extends Model {
             this.downloadableFiles[index] = {
                 ...file
             };
+            this.syncToSourceProduct();
         }).catch(error => {
             if (error.hasOwnProperty('message')) {
                 Notify.error(error.message)

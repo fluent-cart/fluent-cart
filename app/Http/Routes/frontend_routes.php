@@ -24,7 +24,8 @@ $router->prefix('public')
 
 $router->prefix('cart')
     ->withPolicy('PublicPolicy')->group(function (Router $router) {
-        $router->get('add_item', [CartController::class, 'addToCart']);
+        // add_item removed — cart updates go through the WordPress AJAX handler
+        // (fluent_cart_cart_update action in WebCheckoutHandler), not this REST route.
         //$router->post('/apply-coupon', [CartController::class, 'applyCoupon']);
         //$router->post('/cancel-coupon', [CartController::class, 'cancelCoupon']);
         //$router->post('/re-apply-coupon', [CartController::class, 'reapplyCoupon']);
@@ -90,7 +91,7 @@ $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group
     $router->post('subscriptions/{subscription_uuid}/get-or-create-plan', [CustomerSubscriptionController::class, 'getOrCreatePlan'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/switch-payment-method', [CustomerSubscriptionController::class, 'switchPaymentMethod'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/confirm-subscription-switch', [CustomerSubscriptionController::class, 'confirmSubscriptionSwitch'])->alphaNumDash('subscription_uuid');
-    $router->post('subscriptions/{subscription_uuid}/confirm-subscription-reactivation', [CustomerSubscriptionController::class, 'confirmSubscriptionReactivation'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/cancel-auto-renew', [CustomerSubscriptionController::class, 'cancelAutoRenew'])->alphaNumDash('subscription_uuid');
+    $router->post('subscriptions/{subscription_uuid}/initiate-early-payment', [CustomerSubscriptionController::class, 'initiateEarlyPayment'])->alphaNumDash('subscription_uuid');
 
 });

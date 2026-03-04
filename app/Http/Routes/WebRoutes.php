@@ -151,7 +151,11 @@ class WebRoutes
             $redirectTo = App::request()->get('redirect_to');
             if (!empty($redirectTo)) {
                 $url = sanitize_url(wp_unslash($redirectTo));
-                if (!empty($url) && filter_var($url, FILTER_VALIDATE_URL)) {
+                $allowedHosts = [parse_url(home_url(), PHP_URL_HOST)];
+                $allowedHosts = apply_filters('fluent_cart/instant_checkout/allowed_redirect_hosts', $allowedHosts, [
+                    'allowed_hosts' => $allowedHosts
+                ]);
+                if (!empty($url) && filter_var($url, FILTER_VALIDATE_URL) && in_array(parse_url($url, PHP_URL_HOST), $allowedHosts, true)) {
                     $target_path = $url;
                 }
             }

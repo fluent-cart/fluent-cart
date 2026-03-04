@@ -763,12 +763,11 @@ abstract class BaseFilter
                 $column = strtolower($column);
                 if ($columnSchema = Arr::get($validColumns, $column, null)) {
 
-
                     $type = Arr::get($columnSchema, 'type', 'string');
 
                     if ($type === 'custom') {
                         $callback = $columnSchema['callback'];
-                        $callback($this->query, $value);
+                        $callback($this->query, $value, $operator, $this);
                         return true;
                     }
                     if (is_array($columnSchema)) {
@@ -798,7 +797,13 @@ abstract class BaseFilter
                         $value = DateTime::anyTimeToGmt($value, $this->userTz)->format('Y-m-d H:i:s');
                     }
 
-                    $this->query->where($column, $operator, $value);
+                    if ($this->shouldApplyMatchFilter($operator)) {
+                        $this->applyMatchFilter($this->query, $column, $value, $operator);
+                    } else {
+                        $this->query->where($column, $operator, $value);
+                    }
+
+
                     return true;
                 }
             }
@@ -806,6 +811,51 @@ abstract class BaseFilter
 
         return false;
     }
+
+    public function shouldApplyMatchFilter(string $operator): bool
+    {
+        $operator = trim($operator);
+        return $operator === '=' || $operator==='!=';
+    }
+
+    public function applyMatchFilter(Builder $query, string $column, $value, string $operator = '='): Builder
+    {
+        $value = sanitize_text_field($value);
+
+        $hasStartWildcard = Str::startsWith($value, '*');
+        $hasEndWildcard   = Str::endsWith($value, '*');
+
+        // No wildcards → strict equality / inequality
+        if (!$hasStartWildcard && !$hasEndWildcard) {
+            return $query->where($column, $operator === '!=' ? '!=' : '=', $value);
+        }
+
+        // Remove * wildcards
+        $likeValue = $value;
+
+        if ($hasStartWildcard) {
+            $likeValue = ltrim($likeValue, '*');
+        }
+
+        if ($hasEndWildcard) {
+            $likeValue = rtrim($likeValue, '*');
+        }
+
+        // Convert to SQL LIKE pattern
+        if ($hasStartWildcard && $hasEndWildcard) {
+            $likeValue = '%' . $likeValue . '%';   // *value*
+        } elseif ($hasStartWildcard) {
+            $likeValue = '%' . $likeValue;         // *value
+        } else {
+            $likeValue = $likeValue . '%';         // value*
+        }
+
+        $sqlOperator = $operator === '!=' ? 'NOT LIKE' : 'LIKE';
+
+        return $query->where($column, $sqlOperator, $likeValue);
+    }
+
+
 
 
     public function centColumns(): array

@@ -78,7 +78,6 @@ onMounted(() => {
 
 <template>
   <div class="report-overview-page">
-    <PageHeading :title="translate('Overview')"></PageHeading>
 
     <div class="flex items-center justify-start gap-1 mb-2 text-xs text-system-mid dark:text-system-light">
       <DynamicIcon name="InformationFill" class="w-4 h-4 text-system-light" />

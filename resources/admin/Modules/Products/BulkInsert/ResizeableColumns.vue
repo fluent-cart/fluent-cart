@@ -1,20 +1,32 @@
 <template>
   <div class="max-w-full overflow-x-scroll">
-    <div class="resizable-table max-h-[800px] min-w-[1700px]">
+    <div class="resizable-table" :class="{ 'is-resizing': resizingIndex !== null }" @scroll="emit('scroll', $event)">
       <div class="relative">
-        <table class="w-full " id="tb" ref="table">
+        <table id="tb" ref="table" :style="{ tableLayout: 'fixed', width: tableWidth + 'px' }">
           <thead>
           <tr>
+            <th v-if="$slots['header-first']" class="bulk-checkbox-cell">
+              <slot name="header-first" />
+            </th>
             <th
-                :class="{'sticky left-0 z-70': index === 0}"
+                :class="{
+                  'sticky-col': index === 0,
+                  'sticky-col sticky-col-right': index === columns.length - 1 && stickyLast
+                }"
+                :style="{
+                  width: column.width + 'px',
+                  zIndex: (index === 0 || (index === columns.length - 1 && stickyLast)) ? 70 : (columns.length - index + 50),
+                  left: index === 0 && $slots['header-first'] ? '40px' : (index === 0 ? '0px' : undefined)
+                }"
                 v-for="(column, index) in columns"
-                :key="index"
-                :style="{ width: column.width + 'px' }"
+                :key="column.key || index"
             >
-              {{ column.title }}
+              <slot v-if="index === columns.length - 1" name="header-last">{{ column.title }}</slot>
+              <template v-else>{{ column.title }}</template>
               <span
                   v-if="index < columns.length-1"
                   class="resizer"
+                  :class="{ 'is-active': resizingIndex === index }"
                   @mousedown="(event) => onMouseDown(event, index)"
                   @touchstart="(event) => onMouseDown(event, index)"
               ></span>
@@ -31,20 +43,48 @@
 </template>
 
 <script setup>
-import {ref, defineProps, onMounted, nextTick, useTemplateRef} from 'vue';
+import {ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef, useSlots} from 'vue';
 
+
+const emit = defineEmits(['scroll', 'resize-end']);
+const slots = useSlots();
 
 const table = useTemplateRef('table')
+const resizingIndex = ref(null);
+let resizeObserver = null;
+
 onMounted(() => {
   nextTick(() => {
     const headerCells = table.value.querySelectorAll('th');
+    // Skip the leading checkbox <th> when header-first slot is used
+    const offset = slots['header-first'] ? 1 : 0;
 // Get widths of all header cells
     Array.from(headerCells).forEach((th, index) => {
-      props.columns[index].width = th.offsetWidth;
-      props.columns[index].minWidth = th.offsetWidth;
+      const colIndex = index - offset;
+      if (colIndex < 0 || colIndex >= props.columns.length) return;
+      props.columns[colIndex].width = th.offsetWidth;
+      if (!props.columns[colIndex].minWidth) {
+        props.columns[colIndex].minWidth = th.offsetWidth;
+      }
 
     });
+
+    // Track table & header height so resizer matches content without causing fake scroll
+    resizeObserver = new ResizeObserver(() => {
+      table.value.style.setProperty('--resizer-height', table.value.offsetHeight + 'px');
+      const th = table.value.querySelector('th');
+      if (th) {
+        table.value.style.setProperty('--header-height', th.offsetHeight + 'px');
+      }
+    });
+    resizeObserver.observe(table.value);
   })
+})
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
 })
 
 // Define props
@@ -53,6 +93,15 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  stickyLast: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const tableWidth = computed(() => {
+  const extra = slots['header-first'] ? 40 : 0;
+  return props.columns.reduce((sum, col) => sum + col.width, 0) + extra;
 });
 
 // Methods
@@ -61,81 +110,25 @@ const onMouseDown = (event, index) => {
 
   const startX = event.clientX;
   const startWidth = props.columns[index].width;
+  const minWidth = props.columns[index].minWidth || 50;
 
-  const neighbourStartWidth = props.columns[index + 1].width;
+  resizingIndex.value = index;
 
   const onMouseMove = (event) => {
-    let moved = (event.clientX - startX);
-    const currentWidth = props.columns[index].width;
     const newWidth = startWidth + (event.clientX - startX);
-    const minWidth = props.columns[index].minWidth || 50; // Default to 50 if not specified
-
-    const neighbourWidth = props.columns[index + 1].width;
-    const neighbourMinWidth = props.columns[index + 1].minWidth || 50;
-
-    const isIncreasing = moved >= 0;
-
-    if (isIncreasing) {
-      props.columns[index].width = startWidth + moved;
-      props.columns[index + 1].width = neighbourStartWidth - moved;
-    } else {
-      if (newWidth > minWidth) { // Use minWidth if defined
-        props.columns[index].width = newWidth;
-        props.columns[index + 1].width = neighbourStartWidth + moved;
-      }
+    if (newWidth >= minWidth) {
+      props.columns[index].width = newWidth;
     }
-
   };
 
   const onMouseUp = () => {
+    resizingIndex.value = null;
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+    emit('resize-end');
   };
 
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
 };
 </script>
-
-<style scoped>
-.resizable-table {
-  border-radius: 4px;
-}
-
-table {
-  position: relative;
-  border-collapse: collapse;
-}
-
-/* Fixed header styles */
-thead th {
-
-  position: sticky;
-  top: 0;
-}
-
-th {
-  background-color: #f0f0f0; /* Header background color */
-  border-bottom: 2px solid #ccc; /* Bottom border for header */
-  padding: 10px;
-  top: 0;
-}
-
-
-thead:hover .resizer{
-  opacity: 1;
-
-}
-.resizer {
-  opacity: 0;
-  background: red;
-  cursor: col-resize;
-  display: inline-block;
-  width: 2px; /* Adjust the width of the resizer */
-  height: 100%;
-  position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 1;
-}
-</style>

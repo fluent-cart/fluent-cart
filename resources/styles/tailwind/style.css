@@ -75,6 +75,7 @@
 @import "tax.scss";
 @import "order-bump.scss";
 @import "pro-feature.scss";
+@import "bulk-insert.scss";
 
 @import "responsive.scss";
 
@@ -105,6 +106,10 @@
 .fct-btn-group.sm .el-button+.el-button,
 .fct-btn-group.sm > * {
     @apply ml-2 first:ml-0;
+}
+.fct-btn-group.xs .el-button+.el-button,
+.fct-btn-group.xs > * {
+    @apply ml-1 first:ml-0;
 }
 .error{
     @apply text-red-500 block;
@@ -315,7 +320,7 @@ code{
 }
 
 .underline-link-button{
-    @apply min-h-[auto] flex items-center gap-0.5 text-primary-500 underline focus:outline-none focus:shadow-none dark:text-gray-50 !important;
+    @apply bg-transparent text-[13px] cursor-pointer font-normal border-0 min-h-[auto] flex items-center gap-0.5 text-primary-500 underline focus:outline-none focus:shadow-none dark:text-gray-50 !important;
 }
 
 /*beta version menu*/
@@ -332,14 +337,7 @@ a.fluent_cart_beta {
 }
 
 
-@media (max-width: 1024px) {
-    #fct_admin_app_wrapper {
-        @apply m-0 w-full;
-        #fluent_cart_plugin_app {
-            @apply pl-2.5 pr-5;
-        }
-    }
-}
+
 .components-modal__screen-overlay {
     @apply hidden !important;
 }

@@ -53,7 +53,7 @@ class AssetLoader
                 self::loadCheckoutAssets();
                 break;
             default:
-                return; // No need to load any assets
+                return;
         }
     }
 
@@ -82,7 +82,9 @@ class AssetLoader
                 'trans'                      => TransStrings::singleProductPageString(),
                 'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
                 // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
-                'out_of_stock_button_text'   => App::storeSettings()->get('out_of_stock_button_text', __('Out of Stock', 'fluent-cart')),
+                'out_of_stock_button_text'   => apply_filters('fluent_cart/product/out_of_stock_text', __('Not Available', 'fluent-cart'), []),
+
+                'buy_now_button_text'        => apply_filters('fluent_cart/product/buy_now_button_text', __('Buy Now', 'fluent-cart'), []),
                 'in_stock_status'            => Helper::IN_STOCK,
                 'out_of_stock_status'        => Helper::OUT_OF_STOCK,
                 'enable_image_zoom'          => (new StoreSettings())->get('enable_image_zoom_in_single_product'),
@@ -103,6 +105,15 @@ class AssetLoader
         Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-single-product-page');
 
 
+    }
+
+    public static function loadAddToCartCss()
+    {
+        $singlePageStyles = [
+            'public/buttons/add-to-cart/style/style.scss',
+        ];
+
+        Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-add-to-cart');
     }
 
     public static function loadModalCheckoutAssets() 
@@ -139,10 +150,20 @@ class AssetLoader
             'public/product-card/style/product-card.scss',
         ];
         Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-product-card-page');
+        Vite::enqueueStyle(
+            'fluent-cart-sold-out-badge',
+            'admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss'
+        );
+        Vite::enqueueStyle(
+            'fluent-cart-sale-badge',
+            'admin/BlockEditor/SaleBadge/style/sale-badge-block-editor.scss'
+        );
         Vite::enqueueScript(
             'fluent-cart-product-card-js',
             'public/product-card/product-card.js',
-            []
+            [],
+            null,
+            true
         );
     }
 
@@ -154,6 +175,7 @@ class AssetLoader
         }
         $isLoaded = true;
         static::loadProductCardAssets();
+
         $app = App::getInstance();
         $slug = $app->config->get('app.slug');
         Vite::enqueueStyle(
@@ -235,7 +257,8 @@ class AssetLoader
                 'trans'                    => TransStrings::singleProductPageString(),
                 'cart_button_text'         => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
                 // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
-                'out_of_stock_button_text' => App::storeSettings()->get('out_of_stock_button_text', __('Out of Stock', 'fluent-cart')),
+                'out_of_stock_button_text' => apply_filters('fluent_cart/product/out_of_stock_button_text', __('Not Available', 'fluent-cart'), []),
+                'buy_now_button_text'      => apply_filters('fluent_cart/product/buy_now_button_text', __('Buy Now', 'fluent-cart'), []),
                 'in_stock_status'          => Helper::IN_STOCK,
                 'out_of_stock_status'      => Helper::OUT_OF_STOCK,
                 'enable_image_zoom'        => (new StoreSettings())->get('enable_image_zoom_in_single_product')
@@ -426,14 +449,7 @@ class AssetLoader
 
         //if url has cart hash then it's an instant checkout
         $hasInstantCheckout = App::request()->get(Helper::INSTANT_CHECKOUT_URL_PARAM);
-        $iframeSource = Arr::get(App::request()->server(), 'HTTP_SEC_FETCH_DEST');
-        $hasModalCheckout = false;
-
-        //else check if it's a modal checkout
-        if ($iframeSource === 'iframe') {
-            $hasModalCheckout = App::request()->get('fluent-cart') === 'modal_checkout';
-
-        }
+        $hasModalCheckout = App::request()->get('fluent-cart') === 'modal_checkout';
         $isInstantCheckout = 'no';
         if ($hasInstantCheckout || $hasModalCheckout) {
             $isInstantCheckout = 'yes';
@@ -521,6 +537,23 @@ class AssetLoader
         Vite::enqueueStyle(
             'fluentcart-thank-you-css',
             'public/receipt/style/thank_you.scss',
+        );
+    }
+
+    public static function loadMiniCartAssets()
+    {
+        static $isLoaded = false;
+        if ($isLoaded) {
+            return;
+        }
+        $isLoaded = true;
+
+        $app = fluentCart();
+        $slug = $app->config->get('app.slug');
+
+        Vite::enqueueStyle(
+            $slug . '-mini-cart',
+            'public/cart-drawer/mini-cart.scss',
         );
     }
 

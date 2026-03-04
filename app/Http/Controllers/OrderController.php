@@ -16,6 +16,7 @@ use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\OrderItemHelper;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Http\Requests\CustomerRequest;
 use FluentCart\App\Http\Requests\OrderRequest;
 use FluentCart\App\Models\Customer;
@@ -26,10 +27,17 @@ use FluentCart\App\Models\OrderAddress;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderOperation;
+use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingMethod;
+use FluentCart\App\Models\Activity;
+use FluentCart\App\Models\AppliedCoupon;
+use FluentCart\App\Models\Cart;
+use FluentCart\App\Models\LabelRelationship;
+use FluentCart\App\Models\OrderDownloadPermission;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\DateTime\DateTime;
@@ -254,24 +262,44 @@ class OrderController extends Controller
         }
 
         $vendorRefundId = $result['vendor_refund_id'];
+        $isManuallyRefunded = Arr::get($result, 'manual_refund.status', 'no');
 
         $responseData = [
             'fluent_cart_refund' => [
                 'status'  => 'success',
-                'message' => 'Refund processed on FluentCart.'
+                'message' => __('Refund processed on FluentCart.', 'fluent-cart')
             ],
-            'gateway_refund'     => [
-                'status'  => is_wp_error($vendorRefundId) ? 'failed' : 'success',
-                'message' => !is_wp_error($vendorRefundId) ? 'Refund processed on ' . ucfirst($transaction->payment_method) : 'ERROR processing refund on ' . ucfirst($transaction->payment_method) . ': ' . $vendorRefundId->get_error_message()
-            ]
         ];
 
-        if (is_wp_error($vendorRefundId)) {
-            fluent_cart_warning_log('Refund failed on ' . ucfirst($transaction->payment_method), $vendorRefundId->get_error_message(), [
-                'module_name' => 'order',
-                'module_id'   => $order->id,
-                'log_type'    => 'api'
-            ]);
+
+        if ($isManuallyRefunded === 'yes') {
+            $message = __('Refund processed manually.', 'fluent-cart');
+            $source  = Arr::get($result, 'manual_refund.source');
+            if ($source) {
+                $message = sprintf(
+                    __('Refund processed manually. source: %s', 'fluent-cart'),
+                    $source
+                );
+            }
+            $responseData['gateway_refund'] = [
+                'status'  => 'success',
+                'message' => $message
+            ];
+        } else {
+            $responseData['gateway_refund'] = [
+                'status'  => is_wp_error($vendorRefundId) ? 'failed' : 'success',
+                'message' => !is_wp_error($vendorRefundId)
+                    ? sprintf(__('Refund processed on %s', 'fluent-cart'), ucfirst($transaction->payment_method))
+                    : sprintf(__('ERROR processing refund on %s: %s', 'fluent-cart'), ucfirst($transaction->payment_method), $vendorRefundId->get_error_message())
+            ];
+
+            if (is_wp_error($vendorRefundId)) {
+                fluent_cart_warning_log('Refund failed on ' . ucfirst($transaction->payment_method), $vendorRefundId->get_error_message(), [
+                    'module_name' => 'order',
+                    'module_id'   => $order->id,
+                    'log_type'    => 'api'
+                ]);
+            }
         }
 
         $cancelSubscription = Arr::get($refundInfo, 'cancelSubscription') == 'true';
@@ -457,14 +485,22 @@ class OrderController extends Controller
 
 
         $connectedOrderIds = [$order->id];
+        $isTestMode = $order->mode === Status::ORDER_MODE_TEST;
 
         if ($order->type === 'subscription') {
             $childOrderIds = Order::query()->where('parent_id', $order->id)->get()->pluck('id')->toArray();
             $connectedOrderIds = array_merge($childOrderIds, $connectedOrderIds);
+
+            // Delete subscription meta before subscriptions
+            $subscriptionIds = Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->pluck('id')->toArray();
+            if ($subscriptionIds) {
+                SubscriptionMeta::query()->whereIn('subscription_id', $subscriptionIds)->delete();
+            }
+
             Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->delete();
         } else if ($order->type === 'renewal') {
 
-            $this->deleteOrderRelatedData([$order->id], $order->type);
+            $this->deleteOrderRelatedData([$order->id], $order->type, $isTestMode);
 
             (new RenewalOrderDeleted($order))->dispatch();
 
@@ -483,7 +519,7 @@ class OrderController extends Controller
         }
 
 
-        $this->deleteOrderRelatedData($connectedOrderIds, $order->type);
+        $this->deleteOrderRelatedData($connectedOrderIds, $order->type, $isTestMode);
 
         (new OrderDeleted($order, $connectedOrderIds))->dispatch();
 
@@ -504,7 +540,7 @@ class OrderController extends Controller
     /**
      * Delete order related data (transactions, items, meta, addresses, orders)
      */
-    private function deleteOrderRelatedData(array $orderIds, $type = 'renewal')
+    private function deleteOrderRelatedData(array $orderIds, $type = 'renewal', $isTestMode = false)
     {
         OrderTransaction::query()->whereIn('order_id', $orderIds)->delete();
         if ($type !== 'renewal') {
@@ -512,6 +548,19 @@ class OrderController extends Controller
         }
         OrderItem::query()->whereIn('order_id', $orderIds)->delete();
         OrderMeta::query()->whereIn('order_id', $orderIds)->delete();
+        OrderTaxRate::query()->whereIn('order_id', $orderIds)->delete();
+        OrderOperation::query()->whereIn('order_id', $orderIds)->delete();
+        AppliedCoupon::query()->whereIn('order_id', $orderIds)->delete();
+        Cart::query()->whereIn('order_id', $orderIds)->delete();
+        OrderDownloadPermission::query()->whereIn('order_id', $orderIds)->delete();
+        LabelRelationship::query()->where('labelable_type', Order::class)
+            ->whereIn('labelable_id', $orderIds)->delete();
+
+        if ($isTestMode) {
+            Activity::query()->where('module_type', Order::class)
+                ->whereIn('module_id', $orderIds)->delete();
+        }
+
         Order::query()->whereIn('id', $orderIds)->delete();
     }
 
@@ -1068,6 +1117,32 @@ class OrderController extends Controller
 
         return $this->sendSuccess([
             'message' => __('Dispute accepted!', 'fluent-cart')
+        ]);
+    }
+
+    public function syncOrderStatuses(Request $request, Order $order)
+    {
+        $latestTransaction = OrderTransaction::query()
+            ->where('order_id', $order->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$latestTransaction) {
+            return $this->sendError([
+                'message' => __('No transaction found for this order', 'fluent-cart')
+            ], 404);
+        }
+
+        (new StatusHelper($order))->syncOrderStatuses($latestTransaction);
+
+        // Reload order to get updated data
+        $order = Order::query()->find($order->id);
+
+        return $this->sendSuccess([
+            'message'  => __('Order statuses synced successfully', 'fluent-cart'),
+            'order'    => $order,
+            'payment_status' => $order->payment_status,
+            'status'   => $order->status,
         ]);
     }
 

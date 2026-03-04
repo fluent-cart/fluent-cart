@@ -1,62 +1,97 @@
 <template>
-  <div class="fct-setting-container setting-container">
-    <div class="fct-settings-menu-overlay" @click="toggleMenu" v-if="isMenuOpen"></div>
-    <div class="fct-settings-menu-toggle">
-      <el-button @click="toggleMenu">
-        <div class="relative w-6 h-6">
-          <Animation :visible="isMenuOpen" fade>
-            <DynamicIcon name="Cross" class="absolute justify-center inset-0 w-full h-full"/>
-          </Animation>
-          <Animation :visible="!isMenuOpen" fade>
-            <DynamicIcon name="Setting" class="absolute justify-center inset-0 w-full h-full"/>
-          </Animation>
-        </div>
-        {{ translate('Settings') }}
-      </el-button>
-    </div>
-    <Tab.Container @mouseenter="disableBodyScroll" @mouseleave="enableBodyScroll">
-      <Tab.Items :class="{'is-open': isMenuOpen}">
-        <Tab.Item v-for="(route, i) in routes" :key="i" :class="{'fct-tab-item-active': isRouteActive(route)}">
-          <Tab.Link v-if="Permission.hasAny(route.permission)" :to="route.url">
-            <DynamicIcon :name="route.icon"/>
-            {{ route.name }}
-            <DynamicIcon name="ChevronRight" class="tab-icon-right"/>
-          </Tab.Link>
-          <!-- Child Components -->
-          <Animation :visible="isRouteActive(route) && route.child" accordion class="fct-settings-menu-child-wrap">
-            <Tab.Item v-for="(child, i) in route.child" :key="i" @click="toggleMenu"
-                      :class="{ 'fct-tab-item-active': isChildActive(child, i, route) }"
-            >
-              <Tab.Link :to="child.url">
-                {{ child.name }}
-              </Tab.Link>
-            </Tab.Item>
-          </Animation>
-        </Tab.Item>
-      </Tab.Items>
+  <div class="fct-setting-container setting-container" :class="{
+    'is-collapsed': isSidebarCollapsed,
+    'is-expanded': isSidebarExpanded
+  }">
 
-      <Tab.Content>
-        <div class="fct-tab-content-inner">
+    <div
+        ref="overlayRef"
+        class="fct-settings-menu-overlay"
+        @click="closeMenu"
+    />
+
+    <div class="fct-settings-nav-wrap">
+      <div ref="sidebarRef" class="fct-settings-nav-container"
+           :class="{
+            'is-collapsed': isSidebarCollapsed,
+            'is-expanded': isSidebarExpanded
+          }"
+      >
+        <div class="fct-settings-nav-collapse-button-wrapper">
+          <el-tooltip
+              :content="translate('Toggle settings')"
+              placement="right"
+          >
+            <el-button
+                @click="toggleCollapse"
+            >
+              <DynamicIcon name="Window" />
+
+              <span class="fct-menu-collapse-button-text">
+                {{ translate('Settings') }}
+              </span>
+            </el-button>
+          </el-tooltip>
+        </div>
+
+        <ul
+            class="fct-settings-nav"
+            @mouseenter="isDesktopView && isMenuCollapsed && (isMenuExpanded = true)"
+            @mouseleave="isMenuExpanded = false"
+        >
+          <li v-for="(route, i) in routes" :key="i" class="fct-settings-nav-item" :class="{'fct-settings-nav-item-active': isRouteActive(route)}">
+            <router-link v-if="Permission.hasAny(route.permission)" :to="route.url" class="fct-settings-nav-link">
+              <DynamicIcon :name="route.icon"/>
+
+              <span class="fct-settings-nav-link-text">
+                {{ route.name }}
+                <DynamicIcon name="ChevronRight" class="fct-settings-nav-link-icon"/>
+              </span>
+            </router-link>
+
+            <!-- Child Components -->
+            <Animation
+                :visible="isDropdownVisible(route)"
+                accordion
+                class="fct-settings-nav-child-wrap"
+            >
+              <ul class="fct-settings-nav-child-list">
+                <li
+                    v-for="(child, i) in route.child"
+                    :key="i"
+                    class="fct-settings-nav-item"
+                    :class="{ 'fct-settings-nav-item-active': isChildActive(child, i, route) }"
+                >
+                  <router-link :to="child.url" class="fct-settings-nav-link">
+                    {{ child.name }}
+                  </router-link>
+                </li>
+              </ul>
+            </Animation>
+          </li>
+        </ul>
+      </div>
+
+      <div class="fct-settings-nav-content">
+        <div class="fct-settings-nav-content-inner">
           <AdminNotice/>
           <router-view/>
         </div>
-      </Tab.Content>
-    </Tab.Container>
+      </div>
+    </div>
+
   </div>
   <!-- .setting-container -->
 </template>
 
 <script setup>
-import {ref} from "vue";
+import {onMounted, onUnmounted, ref, computed} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import * as Tab from '@/Bits/Components/Tab/Tab.js';
 import {useRouter, useRoute} from 'vue-router';
 import translate from "@/utils/translator/Translator";
 import Animation from "@/Bits/Components/Animation.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Permission from "@/utils/permission/Permission";
-import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
-import RoleSettings from "@/Modules/Settings/Roles/RoleSettings.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 defineOptions({
@@ -65,17 +100,12 @@ defineOptions({
 
 const route = useRoute();
 const router = useRouter();
-
-const isModuleTabEnabled = AppConfig.config.get('isModuleTabEnabled');
-const isMenuOpen = ref(false);
-
-const disableBodyScroll = () => {
-  // document.body.style.overflow = 'hidden';
-};
-
-const enableBodyScroll = () => {
-  document.body.style.overflow = '';
-};
+const isDesktopView = ref(window.innerWidth >= 1024);
+const isMenuCollapsed = ref(false);
+const isMenuExpanded = ref(false);
+const sidebarRef = ref(null);
+const overlayRef = ref(null);
+const pluginAppWrap = ref(null);
 
 Permission.has('store/settings');
 
@@ -101,6 +131,10 @@ const routes = ref([
       {
         name: translate('Cart & Checkout'),
         url: '/settings/store-settings/cart_and_checkout'
+      },
+      {
+        name: translate('Subscriptions'),
+        url: '/settings/store-settings/subscriptions'
       },
       {
         name: translate('Checkout Fields'),
@@ -216,9 +250,112 @@ if (hasPro) {
   });
 }
 
-const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
-}
+/*
+|--------------------------------------------------------------------------
+| Actions
+|--------------------------------------------------------------------------
+*/
+
+const toggleCollapse = () => {
+  // If not desktop → removes open class and stops
+  if (!isDesktopView.value) {
+    if (sidebarRef.value) {
+      sidebarRef.value.classList.remove('is-nav-open');
+    }
+    if (overlayRef.value) {
+      overlayRef.value.classList.remove('is-overlay-open');
+    }
+    return;
+  }
+
+  isMenuCollapsed.value = !isMenuCollapsed.value;
+  isMenuExpanded.value = false;
+};
+
+const closeMenu = () => {
+  // Only work on mobile
+  if (isDesktopView.value) return;
+
+  if (sidebarRef.value) {
+    sidebarRef.value.classList.remove('is-nav-open');
+  }
+
+  if (overlayRef.value) {
+    overlayRef.value.classList.remove('is-overlay-open');
+  }
+};
+
+const isDropdownVisible = (route) => {
+  if (!route.child) return false;
+
+  // If the sidebar is visually expanded (normal or hover)
+  const isVisuallyExpanded = !isSidebarCollapsed.value || isSidebarExpanded.value;
+
+  return isVisuallyExpanded && isRouteActive(route);
+};
+/*
+|--------------------------------------------------------------------------
+| Responsive Handling
+|--------------------------------------------------------------------------
+*/
+const updateViewportMode = () => {
+  const width = window.innerWidth;
+  const wasDesktop = isDesktopView.value;
+
+  isDesktopView.value = width >= 1024;
+
+  // Switching from mobile → desktop
+  if (!wasDesktop && isDesktopView.value) {
+    // Remove mobile open classes
+    if (sidebarRef.value) {
+      sidebarRef.value.classList.remove('is-nav-open');
+    }
+
+    if (overlayRef.value) {
+      overlayRef.value.classList.remove('is-overlay-open');
+    }
+  }
+
+  // Switching from desktop → mobile
+  if (wasDesktop && !isDesktopView.value) {
+    // Remove desktop collapse visually
+    isMenuCollapsed.value = false;
+  }
+};
+
+onMounted(() => {
+  pluginAppWrap.value = document.getElementById('fluent_cart_plugin_app');
+
+  if (pluginAppWrap.value) {
+    pluginAppWrap.value.classList.add('fct_settings_page_plugin_app_wrap');
+  }
+
+  updateViewportMode();
+  window.addEventListener('resize', updateViewportMode);
+});
+
+onUnmounted(() => {
+  if (pluginAppWrap.value) {
+    pluginAppWrap.value.classList.remove('fct_settings_page_plugin_app_wrap');
+  }
+  window.removeEventListener('resize', updateViewportMode);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Computed States
+|--------------------------------------------------------------------------
+*/
+
+const isSidebarCollapsed = computed(() => {
+  return isMenuCollapsed.value;
+});
+
+const isSidebarExpanded = computed(() => {
+  return isDesktopView.value &&
+      isMenuCollapsed.value &&
+      isMenuExpanded.value;
+});
 
 
 const isRouteActive = (tabRoute) => {

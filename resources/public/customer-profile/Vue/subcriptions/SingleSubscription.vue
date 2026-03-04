@@ -127,6 +127,16 @@
                                 </div>
                             </div>
 
+                            <div v-if="subscription.bill_times > 0" class="fct-customer-dashboard-content-table-item border-0 pb-0">
+                                <div class="left-content">
+                                    <div class="title">{{ $t('Installment Progress') }}</div>
+                                    <span class="text" :aria-label="$t('Installment Progress')">
+                                        {{ $t('%s of %s paid', subscription.bill_count, subscription.bill_times) }}
+                                        ({{ $t('%s remaining', subscription.remaining_installments) }})
+                                    </span>
+                                </div>
+                            </div>
+
                             <div v-if="subscription.status == 'active' || subscription.status == 'trialing'"
                                  class="fct-customer-dashboard-content-table-item border-0 pb-0">
                                 <div class="left-content">
@@ -159,6 +169,11 @@
                             <UpgradePlan v-if="subscription?.can_upgrade" button-type="primary"
                                          :button-text="$t('Upgrade Plan')" :variation_id="subscription.variation_id"
                                          :order_hash="subscription.order.uuid"/>
+
+                            <EarlyInstallmentPayment
+                                v-if="canMakeEarlyPayment"
+                                :subscription="subscription"
+                            />
 
                             <UpdatePaymentInfos
                                 v-if="subscription.can_update_payment_method"
@@ -212,6 +227,7 @@ import Badge from "../parts/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import UpgradePlan from "./UpdatePaymentInfos/UpgradePlan.vue";
 import UpdatePaymentInfos from "./UpdatePaymentInfos/index.vue";
+import EarlyInstallmentPayment from "./UpdatePaymentInfos/EarlyInstallmentPayment.vue";
 import LicenseTable from "../parts/LicenseTable.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import TransactionsTable from "../parts/TransactionTable.vue";
@@ -228,6 +244,7 @@ export default {
         IconButton,
         UpdatePaymentInfos,
         UpgradePlan,
+        EarlyInstallmentPayment,
         DynamicIcon,
         Badge,
         LicenseTable
@@ -242,6 +259,10 @@ export default {
   computed: {
     isCancelable() {
       return !(this.subscription?.bill_times > 1 || this.subscription?.status === 'canceled');
+    },
+    canMakeEarlyPayment() {
+      const subscription = this.subscription;
+      return subscription && subscription.can_early_pay && subscription.remaining_installments > 0;
     },
     ArrowRight () {
       return ArrowRight;

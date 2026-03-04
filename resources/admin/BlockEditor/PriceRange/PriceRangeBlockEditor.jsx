@@ -2,11 +2,11 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/PriceRange/Components/InspectorSettings";
-import {useSingleProductData} from "@/BlockEditor/ProductInfo/Context/SingleProductContext";
+import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {PriceRange} from "@/BlockEditor/Icons";
 
 const {useBlockProps} = wp.blockEditor;
-const {registerBlockType} = wp.blocks;
+const {registerBlockType, createBlock} = wp.blocks;
 const {useEffect, useState} = wp.element;
 const {useSelect} = wp.data;
 const {store: blockEditorStore} = wp.blockEditor;
@@ -16,6 +16,7 @@ const placeholderImage = blockEditorData.placeholder_image;
 const rest = window['fluentCartRestVars'].rest;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     icon: {
@@ -34,6 +35,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         inside_product_info: {
             type: 'string',
             default: '-',
+        },
+        price_format: {
+            type: 'string',
+            default: 'starts_from',
         }
     },
     edit: ({attributes, setAttributes, clientId}) => {
@@ -44,16 +49,28 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const singleProductData = useSingleProductData();
 
         const isInsideProductInfo = useSelect((select) => {
-            const {getBlockParents, getBlockName} = select(blockEditorStore);
+            const { getBlockParents, getBlockName } = select(blockEditorStore);
 
-            // Get all parent block IDs of this block
             const parents = getBlockParents(clientId);
 
-            // Check if any parent has blockName 'product-info'
-            return parents.some((parentId) => getBlockName(parentId) === 'fluent-cart/product-info');
+            return parents.some((parentId) => {
+                const name = getBlockName(parentId);
+                return [
+                    'fluent-cart/product-info',
+                    'fluent-cart/products',
+                    'fluent-cart/shopapp-product-container',
+                    'fluent-cart/shopapp-product-loop',
+                    'fluent-cart/product-carousel',
+                ].includes(name);
+            });
         }, [clientId]);
 
-        setAttributes({inside_product_info: isInsideProductInfo ? 'yes' : 'no'});
+        useEffect(() => {
+            setAttributes({
+                inside_product_info: isInsideProductInfo ? 'yes' : 'no',
+                ...(!isInsideProductInfo ? { query_type: 'custom' } : {})
+            });
+        }, [isInsideProductInfo]);
 
         const fetchProduct = () => {
             apiFetch({
@@ -121,4 +138,51 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     save: function (props) {
         return null;
     },
-    });
+    transforms: {
+        from: [
+            {
+                type: 'block',
+                blocks: ['fluent-cart/shopapp-product-price'],
+                transform: () => {
+                    return createBlock(blockEditorData.slug + '/' + blockEditorData.name);
+                },
+            },
+        ],
+    },
+    supports: {
+        html: false,
+        align: ["left", "center", "right"],
+        typography: {
+            fontSize: true,
+            lineHeight: true,
+            __experimentalFontFamily: true,
+            __experimentalFontWeight: true,
+            __experimentalFontStyle: true,
+            __experimentalTextTransform: true,
+            __experimentalTextDecoration: true,
+            __experimentalLetterSpacing: true,
+            __experimentalDefaultControls: {
+                fontSize: true,
+                lineHeight: true,
+                fontWeight: true,
+            },
+        },
+        color: {
+            text: true,
+            background: true,
+            link: true,
+            gradients: true,
+        },
+        spacing: {
+            margin: true,
+            padding: true,
+        },
+        __experimentalBorder: {
+            color: true,
+            radius: true,
+            style: true,
+            width: true,
+        },
+        shadow: true,
+    },
+});

@@ -213,9 +213,7 @@ public function saveDesign(Request $request)
                 ], 423);
             }
 
-            return $this->sendSuccess([
-                'message' => __('Payment addon installed and activated successfully!', 'fluent-cart')
-            ]);
+            return $result;
         } catch (\Exception $e) {
             return $this->sendError([
                 'message' => $e->getMessage()
@@ -259,92 +257,4 @@ public function saveDesign(Request $request)
         }
     }
 
-    /*
-    * Check for addon update (for now, github,wordpress only), later we'll add support for other sources if needed
-    * @param Request $request
-    */
-    public function checkAddonUpdate(Request $request)
-    {
-        try {
-            $sourceType = $request->getSafe('source_type', 'sanitize_text_field');
-            $sourceLink = $request->getSafe('source_link', 'sanitize_url');
-            $pluginFile = $request->getSafe('plugin_file', 'sanitize_text_field');
-            $pluginSlug = $request->getSafe('plugin_slug', 'sanitize_text_field');
-            
-            if (empty($sourceType) || empty($pluginSlug)) {
-                return $this->sendError([
-                    'message' => __('Source type and plugin slug are required', 'fluent-cart')
-                ], 422);
-            }
-
-            // Validate source type
-            if (!in_array($sourceType, ['github', 'wordpress', 'other'])) {
-                return $this->sendError([
-                    'message' => __('Invalid source type', 'fluent-cart')
-                ], 422);
-            }
-
-            $manager = new PaymentAddonManager();
-            $result = $manager->checkForUpdate($sourceType, $sourceLink, $pluginFile, $pluginSlug);
-
-            if (is_wp_error($result)) {
-                return $this->sendError([
-                    'message' => $result->get_error_message()
-                ], 423);
-            }
-
-            return $this->sendSuccess([
-                'update_info' => $result
-            ]);
-        } catch (\Exception $e) {
-            return $this->sendError([
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-    /*
-    * Update addon (for now, github, wordpress only), later we'll add support for other sources if needed
-    * @param Request $request
-    */
-    public function updateAddon(Request $request)
-    {
-        try {
-            $sourceType = $request->getSafe('source_type', 'sanitize_text_field');
-            $sourceLink = $request->getSafe('source_link', 'sanitize_url');
-            $pluginSlug = $request->getSafe('plugin_slug', 'sanitize_text_field');
-            $pluginFile = $request->getSafe('plugin_file', 'sanitize_text_field');
-            
-            if (empty($sourceType) || empty($pluginSlug)) {
-                return $this->sendError([
-                    'message' => __('Source type and plugin slug are required', 'fluent-cart')
-                ], 422);
-            }
-
-            // Validate source type
-            if (!in_array($sourceType, ['github', 'wordpress', 'other'])) {
-                return $this->sendError([
-                    'message' => __('Invalid source type', 'fluent-cart')
-                ], 422);
-            }
-
-            $manager = new PaymentAddonManager();
-            $result = $manager->updateAddon($sourceType, $sourceLink, $pluginSlug, $pluginFile);
-
-            if (is_wp_error($result)) {
-                return $this->sendError([
-                    'message' => $result->get_error_message()
-                ], 423);
-            }
-
-            return $this->sendSuccess([
-                'message' => __('Payment addon updated successfully!', 'fluent-cart')
-            ]);
-        } catch (\Exception $e) {
-            return $this->sendError([
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
 }

@@ -153,7 +153,10 @@
         }
     }
   &.is-link{
-    @apply text-blue-500 border-0 p-0.5 rounded-none min-h-[auto] text-sm font-normal underline hover:text-blue-600 dark:hover:text-gray-50 dark:bg-transparent dark:text-gray-300 dark:no-underline !important;
+    @apply text-primary-500 border-0 p-0.5 rounded-none min-h-[auto] text-sm font-normal underline hover:text-primary-600 dark:hover:text-gray-50 dark:bg-transparent dark:text-gray-300 dark:no-underline !important;
+    .icon svg {
+      @apply w-4.5 h-4.5;
+    }
   }
 }
 .el-button {

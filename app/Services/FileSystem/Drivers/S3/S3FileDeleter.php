@@ -29,7 +29,12 @@ class S3FileDeleter
         $this->httpMethod = "DELETE";
         $this->timeStamp = gmdate('Ymd\THis\Z');
         $this->date = substr($this->timeStamp, 0, 8);
-        $this->requestUrl = "https://{$this->bucket}.s3.amazonaws.com/{$this->s3FilePath}";
+        $hasDot = strpos($this->bucket, '.') !== false;
+        if ($hasDot) {
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$this->s3FilePath}";
+        } else {
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
+        }
         $this->signature = $this->generateSignature();
     }
 
@@ -80,12 +85,19 @@ class S3FileDeleter
     private function createCanonicalUrl(): string
     {
         $s3FilePath = '/' . ltrim($this->s3FilePath, '/');
-        return "{$this->httpMethod}\n{$s3FilePath}\n\nhost:{$this->getHost()}\nx-amz-content-sha256:{$this->getContentHash()}\nx-amz-date:{$this->timeStamp}\n\nhost;x-amz-content-sha256;x-amz-date\n{$this->getContentHash()}";
+        $hasDot = strpos($this->bucket, '.') !== false;
+        $canonicalUri = $hasDot ? '/' . $this->bucket . $s3FilePath : $s3FilePath;
+
+        return "{$this->httpMethod}\n{$canonicalUri}\n\nhost:{$this->getHost()}\nx-amz-content-sha256:{$this->getContentHash()}\nx-amz-date:{$this->timeStamp}\n\nhost;x-amz-content-sha256;x-amz-date\n{$this->getContentHash()}";
     }
 
     private function getHost(): string
     {
-        return "{$this->bucket}.s3.amazonaws.com";
+        if (strpos($this->bucket, '.') !== false) {
+            return "s3.{$this->region}.amazonaws.com";
+        }
+
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
     }
 
     private function getContentHash(): string

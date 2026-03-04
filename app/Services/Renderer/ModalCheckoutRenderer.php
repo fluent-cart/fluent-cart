@@ -574,6 +574,12 @@ class ModalCheckoutRenderer
 
         ?>
         <div class="fluent-cart-checkout_embed_payment_wrapper">
+            <?php if ($method->getMeta('instructions')): ?>
+                <div class="fct-modal-payment-method-instructions">
+                    <?php echo wp_kses_post($method->getMeta('instructions')); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="<?php echo "fluent-cart-checkout_embed_payment_container fluent-cart-checkout_embed_payment_container_" . esc_attr($route . ' ' . $paymentMethodClass); ?>"
                  aria-hidden="true">
                 <?php do_action(

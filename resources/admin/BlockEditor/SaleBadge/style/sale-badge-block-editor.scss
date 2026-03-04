@@ -1,0 +1,80 @@
+@config "./sale-badge-block-editor.config.js";
+@tailwind utilities;
+
+.fct-sale-badge {
+    @apply inline-block font-semibold leading-none whitespace-nowrap z-[2] pointer-events-none;
+
+    // === Badge style (default) ===
+    &--badge {
+        @apply px-2.5 py-1 rounded text-[13px];
+    }
+
+    // === Ribbon style ===
+    &--ribbon {
+        @apply py-1 pl-2.5 pr-5 text-xs rounded-none;
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+
+        // Mirror ribbon when on right side
+        &.fct-sale-badge--top-right,
+        &.fct-sale-badge--bottom-right {
+            @apply pr-2.5 pl-5;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%);
+        }
+    }
+
+    // === Tag style ===
+    &--tag {
+        @apply px-2.5 py-1 rounded-sm text-[13px] relative;
+
+        &::before {
+            @apply absolute top-1/2 -left-1.5 -translate-y-1/2 w-0 h-0;
+            content: '';
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 6px solid currentColor;
+        }
+
+        // Mirror for right-side positions
+        &.fct-sale-badge--top-right::before,
+        &.fct-sale-badge--bottom-right::before {
+            @apply left-auto -right-1.5;
+            border-right: none;
+            border-left: 6px solid currentColor;
+        }
+    }
+
+    // === Position classes ===
+    &--top-left {
+        @apply absolute top-2 left-2;
+    }
+
+    &--top-right {
+        @apply absolute top-2 right-2;
+    }
+
+    &--bottom-left {
+        @apply absolute bottom-2 left-2;
+    }
+
+    &--bottom-right {
+        @apply absolute bottom-2 right-2;
+    }
+}
+
+// Default colors when user hasn't set custom colors via block supports
+.fct-sale-badge:not([class*="has-background"]) {
+    @apply bg-red-600 text-white;
+}
+
+// Inspector panel sale status indicator
+.fct-sale-badge-status {
+    @apply py-1.5 px-3 rounded text-xs;
+
+    &--on-sale {
+        @apply bg-green-50 text-green-800;
+    }
+
+    &--not-on-sale {
+        @apply bg-red-50 text-red-800;
+    }
+}

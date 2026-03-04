@@ -1,12 +1,11 @@
 <script setup>
-import * as Card from "@/Bits/Components/Card/Card.js";
 import TableWrapper from "@/Bits/Components/TableNew/TableWrapper.vue";
-import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import useShippingZoneTable from "@/utils/table-new/ShippingZoneTable";
 import ShippingZonesTable from "@/Modules/Shipping/Components/ShippingZonesTable.vue";
 import ShippingZonesLoader from "@/Modules/Shipping/Components/ShippingZonesLoader.vue";
 import translate from "@/utils/translator/Translator";
 import {useRouter} from 'vue-router';
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 const router = useRouter();
 
@@ -15,16 +14,18 @@ const shippingZoneTable = useShippingZoneTable();
 
 <template>
   <div class="setting-wrap">
-    <div class="fct-all-shipping-zones-page">
+    <SettingsHeader
+        :heading="translate('Shipping Zones')"
+        :show-save-button="false"
+    >
+      <template #action>
+        <el-button type="primary" @click="router.push({ name: 'add_shipping_zone' })" size="small">
+          {{ translate('Add Shipping Zone') }}
+        </el-button>
+      </template>
+    </SettingsHeader>
 
-      <PageHeading :title="translate('Shipping Zones')">
-        <template #action>
-          <el-button type="primary" @click="router.push({ name: 'add_shipping_zone' })">
-            {{ translate('Add Shipping Zone') }}
-          </el-button>
-        </template>
-      </PageHeading>
-
+    <div class="setting-wrap-inner">
       <div class="fct-all-shipping-zones-wrap">
         <TableWrapper :table="shippingZoneTable">
           <ShippingZonesLoader v-if="shippingZoneTable.isLoading()" :shippingZoneTable="shippingZoneTable"

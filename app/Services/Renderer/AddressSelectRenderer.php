@@ -242,16 +242,8 @@ class AddressSelectRenderer
 
                         </div>
 
-                        <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                            id="<?php echo esc_attr($this->address_type); ?>_name_wrapper">
-                            <label for="<?php echo esc_attr($this->address_type); ?>_full_name" class="sr-only">
-                                <?php echo esc_html__('Full Name', 'fluent-cart'); ?>
-                            </label>
 
-                            <input type="text" name="<?php echo esc_attr($this->address_type); ?>_full_name" autocomplete="name"
-                                placeholder="<?php echo esc_attr__('Name', 'fluent-cart'); ?>" data-required="no"
-                                data-type="input" id="<?php echo esc_attr($this->address_type); ?>_full_name">
-                        </div>
+                        <?php $this->renderNameFields(); ?>
 
                         <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
                             id="<?php echo esc_attr($this->address_type); ?>_name_wrapper">
@@ -409,5 +401,66 @@ class AddressSelectRenderer
             </div>
         </div>
         <?php
+    }
+
+
+    public function renderNameFields() {
+
+        $type = esc_attr($this->address_type);
+
+        if (CheckoutFieldsSchema::isFullNameRequired()) : ?>
+            <div class="fct_input_wrapper" id="<?php echo $type; ?>_name_wrapper">
+                <label for="<?php echo $type; ?>_full_name" class="sr-only">
+                    <?php echo esc_html__('Full Name', 'fluent-cart'); ?>
+                </label>
+
+                <input
+                        type="text"
+                        name="<?php echo $type; ?>_full_name"
+                        id="<?php echo $type; ?>_full_name"
+                        autocomplete="name"
+                        placeholder="<?php echo esc_attr__('Full Name', 'fluent-cart'); ?>"
+                        data-required="yes"
+                        data-type="input"
+                >
+            </div>
+
+        <?php else : ?>
+
+            <div class="fct_input_wrapper" id="<?php echo $type; ?>_first_name_wrapper">
+                <label for="<?php echo $type; ?>_first_name" class="sr-only">
+                    <?php echo esc_html__('First Name', 'fluent-cart'); ?>
+                </label>
+
+                <input
+                        type="text"
+                        name="<?php echo $type; ?>_first_name"
+                        id="<?php echo $type; ?>_first_name"
+                        autocomplete="given-name"
+                        placeholder="<?php echo esc_attr__('First Name', 'fluent-cart'); ?>"
+                        data-required="yes"
+                        data-type="input"
+                >
+            </div>
+
+            <?php if (CheckoutFieldsSchema::isLastNameEnabled()) : ?>
+                <div class="fct_input_wrapper" id="<?php echo $type; ?>_last_name_wrapper">
+                    <label for="<?php echo $type; ?>_last_name" class="sr-only">
+                        <?php echo esc_html__('Last Name', 'fluent-cart'); ?>
+                    </label>
+
+                    <input
+                            type="text"
+                            name="<?php echo $type; ?>_last_name"
+                            id="<?php echo $type; ?>_last_name"
+                            autocomplete="family-name"
+                            placeholder="<?php echo esc_attr__('Last Name', 'fluent-cart'); ?>"
+                            data-required="<?php echo CheckoutFieldsSchema::isLastNameRequired() ? 'yes' : 'no'; ?>"
+                            data-type="input"
+                    >
+                </div>
+            <?php endif; ?>
+
+        <?php endif;
     }
 }

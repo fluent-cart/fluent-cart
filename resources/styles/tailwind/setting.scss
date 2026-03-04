@@ -255,7 +255,7 @@
         }
     }
     .setting-wrap {
-        @apply max-w-[1124px] mx-auto py-7.5;
+        @apply pb-7.5;
         .form-section-save-action {
             @apply mt-0;
         }
@@ -269,23 +269,13 @@
             @apply mb-12.5;
         }
     }
-    .fct-settings-menu-overlay {
-        @apply fixed top-0 left-0 w-full h-full bg-black/50 z-[9999] hidden cursor-pointer transition-all duration-300 ease-in-out opacity-0 invisible;
+    .setting-wrap-inner {
+      @apply px-7.5 max-w-[1100px] pt-7.5 mx-auto;
     }
-    .fct-settings-menu-toggle {
-        @apply hidden fixed bottom-3 right-3 z-[999];
-        box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
-        .el-button {
-            svg {
-                @apply w-4 h-4;
-            }
-
-        }
-    }
-
     .fct-tab-wrapper {
       @apply pl-[160px] gap-0 transition-all duration-300 ease-in-out;
     }
+
     .fct-tab-item-wrapper {
         @apply transition-all duration-300 ease-in-out h-[calc(100vh-96px)] z-50 rounded-none border-0 border-r-[1px] border-solid border-gray-divider overflow-x-hidden dark:border-dark-400 overscroll-contain;
         &::-webkit-scrollbar {
@@ -335,46 +325,58 @@
     }
 }
 
-// Responsive
-@media (max-width: 1024px) {
-    .folded {
-        .fct-setting-container {
-            .fct-tab-wrapper {
-                @apply pl-0;
-            }
-        }
+// Collapsed settings menu
+.fct-settings-nav-collapse-button-wrapper {
+  @apply flex items-center py-3 px-5 border border-x-0 border-t-0 border-solid border-gray-divider dark:border-dark-400;
+  .el-button {
+    @apply text-base bg-transparent p-1 border-0 shadow-none rounded-none min-h-[auto] hover:bg-transparent dark:hover:bg-transparent;
+
+    cursor: w-resize;
+    svg {
+      @apply w-5 h-5;
     }
-    .fct-setting-container {
-        @apply relative h-auto;
-        .fct-settings-menu-toggle {
-            @apply block;
-        }
-        .fct-settings-menu-overlay {
-            @apply block visible opacity-100;
-        }
-        .fct-tab-wrapper {
-          @apply pl-0;
-        }
-
-        .fct-tab-item-wrapper {
-          @apply fixed top-auto bottom-0 max-w-[250px] rounded-none left-auto right-3 right-[-250px] h-full pt-[120px] w-full z-[9999] transition-all duration-300 ease-in-out opacity-0 invisible;
-          box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
-          &.is-open {
-            overscroll-behavior: contain;
-            @apply right-0 opacity-100 visible;
-          }
-        }
-
-        .fct-tab-content {
-          @apply px-0;
-        }
-
-        .fct-tab-inner {
-          overflow: inherit;
-          @apply w-full relative h-auto max-h-[inherit];
-        }
-    }
+  }
 }
+
+.fct-setting-container.is-collapsed {
+  .fct-settings-nav-content {
+    @apply pl-[230px];
+  }
+}
+
+.fct-settings-nav-container.is-collapsed {
+  @apply w-[72px];
+  .fct-settings-nav-link-text,
+  .fct-menu-collapse-button-text {
+    @apply hidden;
+  }
+  .fct-settings-nav-collapse-button-wrapper .el-button {
+    cursor: e-resize;
+  }
+}
+
+.fct-settings-nav-container.is-expanded {
+  @apply w-[260px];
+  .fct-settings-nav-link-text,
+  .fct-menu-collapse-button-text {
+    @apply flex;
+  }
+}
+
+
+// folded settings menu
+.folded {
+  .fct-settings-nav-container {
+    left: 36px;
+  }
+  .fct-settings-nav-content {
+    padding-left: 296px;
+  }
+  .fct-setting-container.is-collapsed .fct-settings-nav-content {
+    padding-left: 106px;
+  }
+}
+
 
 .scrollbar-none::-webkit-scrollbar {
     display: none;
@@ -410,10 +412,15 @@
 }
 
 .fct-checkout-field-info {
-    @apply flex gap-2 items-center;
     .fct-checkout-field-label {
         @apply font-semibold text-sm text-system-dark dark:text-gray-50;
     }
+  .fct-checkout-field-label-wrap {
+    @apply flex gap-2 items-center;
+  }
+  .fct-checkout-field-info-desc {
+    @apply text-xs text-system-mid mt-1.5 dark:text-gray-400;
+  }
 }
 
 .fct-checkout-field-tags {
@@ -428,4 +435,160 @@
   .el-checkbox__label {
     @apply inline-flex items-center gap-1;
   }
+}
+
+
+.fct-settings-nav-wrap {
+  @apply flex relative;
+}
+
+.fct-settings-nav-container {
+  @apply absolute top-0 left-[160px] z-[1024] bg-white w-[260px] flex-shrink-0 transition-all duration-300 ease-in-out h-[calc(100vh-96px)] rounded-none border-0 border-r-[1px] border-solid border-gray-divider dark:border-dark-400 dark:bg-dark-700;
+}
+.fct-settings-nav {
+  @apply overscroll-contain overflow-x-hidden p-4;
+
+  height: calc(100% - 50px);
+  &::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-transparent rounded-[6px];
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 dark:bg-dark-400;
+  }
+
+  .fct-settings-nav-item {
+    @apply mb-1.5 last:mb-0;
+  }
+  .fct-settings-nav-link {
+    @apply whitespace-nowrap min-h-[36px] relative rounded cursor-pointer py-2 px-2.5 outline-none gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
+
+    .icon:not(.fct-settings-nav-link-icon) {
+      svg{
+        @apply w-4.5 h-4.5;
+      }
+    }
+    .fct-settings-nav-link-icon{
+      @apply absolute top-[50%] right-4 opacity-0 duration-300 transition-all;
+
+      transform: translateY(-50%);
+      svg{
+        @apply w-2.5 h-2.5;
+      }
+    }
+
+  }
+
+  .fct-settings-nav-item-active {
+    .fct-settings-nav-link {
+      @apply bg-primary-25 text-system-dark dark:bg-dark-400 dark:text-gray-50;
+      .fct-settings-nav-link-icon {
+        @apply opacity-100 right-3;
+      }
+    }
+  }
+
+  .fct-settings-nav-child-wrap {
+    @apply relative pl-6.5 my-1;
+    &::before {
+      content: '';
+      @apply absolute left-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+    }
+
+    .fct-settings-nav-item {
+      .fct-settings-nav-link {
+        @apply bg-transparent text-system-mid hover:bg-primary-25 hover:text-primary-500 dark:text-gray-300 dark:hover:bg-dark-600 dark:hover:text-gray-50;
+        &::before {
+          content: "";
+          @apply absolute top-2 left-[-8px] w-0 h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
+        }
+        &.router-link-exact-active {
+          @apply bg-transparent font-medium dark:bg-transparent;
+          &::before{
+            @apply w-0.5;
+          }
+        }
+      }
+
+      &-active {
+        .fct-settings-nav-link {
+          @apply bg-transparent font-medium hover:bg-primary-25 dark:bg-transparent dark:hover:bg-dark-600;
+          &::before {
+            @apply w-0.5;
+          }
+        }
+      }
+    }
+  }
+}
+
+.fct-settings-nav-content {
+  @apply flex-1 z-[100] overflow-x-hidden pl-[418px] transition-all duration-300 ease-in-out;
+}
+
+.fct-settings-nav-content-inner {
+  overscroll-behavior: contain;
+  @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-none;
+}
+
+.fct-setting-menu-toggle {
+  display: none;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 4px !important;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.fct-setting-header {
+  @apply flex items-center justify-between mt-[1px] min-h-[52px] px-7 bg-white border border-x-0 border-t-0 border-solid border-gray-divider dark:border-dark-400 dark:bg-dark-700;
+  .fct-setting-head-title {
+    @apply text-base leading-[24px] font-medium m-0 inline-flex items-center gap-1.5;
+  }
+  .fct-setting-header-content {
+    @apply flex items-center gap-2;
+  }
+}
+
+.fct-settings-menu-overlay {
+  @apply fixed top-0 left-0 w-full h-full z-[1023] cursor-pointer transition-all duration-300 ease-in-out opacity-0 invisible;
+
+  background-color: rgba(0, 0, 0, 0.1);
+  &.is-overlay-open {
+    @apply opacity-100 visible;
+  }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .fct-setting-menu-toggle {
+    @apply block;
+  }
+
+  .folded {
+    .fct-setting-container {
+      .fct-tab-wrapper {
+        @apply pl-0;
+      }
+    }
+  }
+  .fct-setting-container {
+    @apply relative h-auto;
+  }
+
+  .fct-settings-nav-container {
+    @apply -left-[100%];
+
+    box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
+    &.is-nav-open {
+      left: 0;
+    }
+  }
+
+  .fct-settings-nav-content {
+    @apply pl-0 #{!important};
+  }
+
 }

@@ -73,7 +73,7 @@ const DEFAULT_TEMPLATE = [
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
-    apiVersion: 2,
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     example: {

@@ -251,4 +251,22 @@ class CustomerController extends Controller
             ]);
         }
     }
+
+    public function recalculateLtv(Request $request, $customerId): \WP_REST_Response
+    {
+        $customer = Customer::query()->find($customerId);
+
+        if (empty($customer)) {
+            return $this->sendError([
+                'message' => __('Customer not found.', 'fluent-cart')
+            ]);
+        }
+
+        $customer->recountStat();
+
+        return $this->sendSuccess([
+            'message'  => __('Lifetime value recalculated successfully', 'fluent-cart'),
+            'customer' => $customer
+        ]);
+    }
 }

@@ -37,6 +37,19 @@ window.fluentcart = {
         return string;
     }
 };
+
+const recursiveFlatten = function (obj, prefix) {
+    return Object.keys(obj).reduce(function (acc, key) {
+        const fullKey = prefix + '[' + key + ']';
+        if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+            Object.assign(acc, recursiveFlatten(obj[key], fullKey));
+        } else {
+            acc[fullKey] = obj[key];
+        }
+        return acc;
+    }, {});
+};
+
 const request = function (method, data = {}, cancelable) {
     const baseUrl = `${window.fluentCartRestVars.ajaxurl}`;
 
@@ -158,14 +171,12 @@ document.addEventListener('DOMContentLoaded', function () {
         get: function (data = {}, cancelable = false) {
             return request('GET', data, cancelable);
         },
-        post: function (data = {}) {
+        post: function (data = {}, cancelable = false) {
             return request('POST', data, cancelable);
         }
     };
 
-
     window.fluentcart['ajax'] = window.fluentCartAjax;
-    AddToCartButton.init();
     ModalCheckoutHandler.init();
 
     window.dispatchEvent(

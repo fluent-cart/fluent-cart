@@ -28,8 +28,14 @@ export default class ImageGallery {
     #thumbnailControlsWrapper;
     #productId;
     #thumbnailMode = 'all'; // all or by-variants
+    #resizeController = null;
 
     init(container, enableZoom = true) {
+        // Abort any previous resize listener from a prior init() call
+        if (this.#resizeController) {
+            this.#resizeController.abort();
+        }
+        this.#resizeController = new AbortController();
         this.container = container;
         this.#productId = this.container.getAttribute('data-product-id');
 
@@ -49,6 +55,8 @@ export default class ImageGallery {
 
         this.#prepareLightboxImages();
         this.#setupThumbnailControls();
+        this.#initScrollableThumbs();
+        this.#initSeeMoreButton();
     }
 
     #listenForVariationChange() {
@@ -164,35 +172,30 @@ export default class ImageGallery {
 
     #getAllImagesForLightbox() {
         const allImages = [];
-        const addedSrcs = new Set();
+        const addedVariationIds = new Set();
 
-        // Helper to add unique images
-        const addUniqueImages = (images) => {
+        const addImages = (variationId, images) => {
+            const key = String(variationId);
+            if (addedVariationIds.has(key)) return;
+            addedVariationIds.add(key);
             if (Array.isArray(images)) {
-                images.forEach(img => {
-                    if (!addedSrcs.has(img.link)) {
-                        allImages.push(img);
-                        addedSrcs.add(img.link);
-                    }
-                });
+                images.forEach(img => allImages.push(img));
             }
         };
 
         // First, add current variation images
         if (this.#currentlySelectedVariationId && this.#lightBoxImages[this.#currentlySelectedVariationId]) {
-            addUniqueImages(this.#lightBoxImages[this.#currentlySelectedVariationId]);
+            addImages(this.#currentlySelectedVariationId, this.#lightBoxImages[this.#currentlySelectedVariationId]);
         }
 
         // Then add default/variation 0 images
         if (this.#lightBoxImages[0]) {
-            addUniqueImages(this.#lightBoxImages[0]);
+            addImages('0', this.#lightBoxImages[0]);
         }
 
         // Finally, add all other variation images
         Object.keys(this.#lightBoxImages).forEach(variationId => {
-            if (variationId != this.#currentlySelectedVariationId && variationId != 0) {
-                addUniqueImages(this.#lightBoxImages[variationId]);
-            }
+            addImages(variationId, this.#lightBoxImages[variationId]);
         });
 
         return allImages.length > 0 ? allImages : this.#lightBoxImages[0] || [];
@@ -262,6 +265,33 @@ export default class ImageGallery {
     #prepareLightboxImages() {
         const lightBoxImages = {};
 
+        // Use JSON attribute when max thumbnails is limiting visible buttons
+        // (more images in JSON than buttons in DOM means some are hidden)
+        const allImagesJson = this.#thumbnailControlsWrapper?.getAttribute('data-all-gallery-images');
+        if (allImagesJson) {
+            try {
+                const allImages = JSON.parse(allImagesJson);
+                if (allImages.length > this.#thumbnailControls.length) {
+                    allImages.forEach((img) => {
+                        const variationId = (img.variation_id != null && img.variation_id !== '') ? String(img.variation_id) : '0';
+                        if (!lightBoxImages.hasOwnProperty(variationId)) {
+                            lightBoxImages[variationId] = [];
+                        }
+                        lightBoxImages[variationId].push({
+                            alt: img.title || '',
+                            link: img.url,
+                            title: img.title || ''
+                        });
+                    });
+                    this.#lightBoxImages = lightBoxImages;
+                    return;
+                }
+            } catch (e) {
+                // Fall through to DOM-based approach
+            }
+        }
+
+        // Default: gather images from thumbnail buttons in the DOM
         if (this.#thumbnailControls.length > 0) {
             this.#thumbnailControls.forEach((control, index) => {
                 const variationId = control.dataset.variationId.toString();
@@ -310,8 +340,12 @@ export default class ImageGallery {
     }
 
     #handleThumbnailChange(control) {
-        this.#thumbnailControls.forEach(ctrl => ctrl.classList.remove('active'));
+        this.#thumbnailControls.forEach(ctrl => {
+            ctrl.classList.remove('active');
+            ctrl.setAttribute('aria-pressed', 'false');
+        });
         control.classList.add('active');
+        control.setAttribute('aria-pressed', 'true');
 
         // Update current variation ID based on clicked thumbnail
         const variationId = control.dataset.variationId;
@@ -332,6 +366,52 @@ export default class ImageGallery {
         }
 
         productThumbnail.setAttribute('src', thumbnailUrl);
+    }
+
+    #initScrollableThumbs() {
+        const isScrollable = this.container.getAttribute('data-scrollable-thumbs') === 'yes';
+        if (!isScrollable || !this.#thumbnailControlsWrapper) return;
+
+        const position = this.container.classList.contains('thumb-pos-left') || this.container.classList.contains('thumb-pos-right');
+        if (!position) return;
+
+        // For left/right positions, match thumbnail container height to main image height
+        const syncHeight = () => {
+            const galleryThumb = this.findOneInContainer('.fct-product-gallery-thumb');
+            if (galleryThumb && this.#thumbnailControlsWrapper) {
+                this.#thumbnailControlsWrapper.style.maxHeight = galleryThumb.offsetHeight + 'px';
+            }
+        };
+
+        // Sync on load and resize
+        const mainImg = this.#imgContainer;
+        if (mainImg && mainImg.tagName === 'IMG') {
+            if (mainImg.complete) {
+                syncHeight();
+            } else {
+                mainImg.addEventListener('load', syncHeight, { once: true, signal: this.#resizeController.signal });
+            }
+        }
+
+        window.addEventListener('resize', syncHeight, { signal: this.#resizeController.signal });
+    }
+
+    #initSeeMoreButton() {
+        const seeMoreBtn = this.findOneInContainer('[data-fluent-cart-gallery-see-more]');
+        if (!seeMoreBtn) return;
+
+        seeMoreBtn.addEventListener('click', () => {
+            // Open lightbox with ALL images, starting from the first hidden one
+            const allImages = this.#getAllImagesForLightbox();
+            if (!allImages || allImages.length === 0) return;
+
+            // Start from the image after the last visible thumbnail (exclude hidden ones from by-variants mode)
+            const visibleCount = this.findInContainer('[data-fluent-cart-thumb-control-button]:not(.is-hidden)').length;
+            const startIndex = Math.min(visibleCount, allImages.length - 1);
+
+            this.#lightBox.setAlbum(allImages);
+            this.#lightBox.start(startIndex, () => {});
+        }, { signal: this.#resizeController.signal });
     }
 
 }

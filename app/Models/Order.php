@@ -747,38 +747,43 @@ class Order extends Model
     {
         $canBeDeleted = true;
 
-        // Only canceled or on-hold orders can be deleted
-        if ($this->status === Status::ORDER_CANCELED || $this->status === Status::ORDER_ON_HOLD) {
 
-            $isFreeOrder = ((int)$this->total_amount) === 0;
-            $isPaidOrder = in_array($this->payment_status, Status::getOrderPaymentSuccessStatuses(), true);
+        if($this->mode !== Status::ORDER_MODE_TEST){
+            // Only canceled or on-hold orders can be deleted
+            if ($this->status === Status::ORDER_CANCELED || $this->status === Status::ORDER_ON_HOLD) {
 
-            // Free orders OR canceled unpaid orders can be deleted
-            if ($isPaidOrder && !$isFreeOrder) {
+                $isFreeOrder = ((int)$this->total_amount) === 0;
+                $isPaidOrder = in_array($this->payment_status, Status::getOrderPaymentSuccessStatuses(), true);
+
+                // Free orders OR canceled unpaid orders can be deleted
+                if ($isPaidOrder && !$isFreeOrder) {
+                    $canBeDeleted = new \WP_Error(
+                        'order_cannot_be_deleted',
+                        sprintf(
+                        /* translators: 1: order/invoice number, 2: payment status */
+                            __('Order %1$s cannot be deleted due to its current payment status: %2$s.', 'fluent-cart'),
+                            $this->invoice_no,
+                            $this->payment_status
+                        )
+                    );
+                }
+
+            } else {
                 $canBeDeleted = new \WP_Error(
                     'order_cannot_be_deleted',
                     sprintf(
-                        /* translators: 1: order/invoice number, 2: payment status */
-                        __('Order %1$s cannot be deleted due to its current payment status: %2$s.', 'fluent-cart'),
+                    /* translators: 1: order/invoice number, 2: order status */
+                        __('Order %1$s cannot be deleted due to its current order status: %2$s.', 'fluent-cart'),
                         $this->invoice_no,
-                        $this->payment_status
+                        $this->status
                     )
                 );
             }
-
-        } else {
-            $canBeDeleted = new \WP_Error(
-                'order_cannot_be_deleted',
-                sprintf(
-                    /* translators: 1: order/invoice number, 2: order status */
-                    __('Order %1$s cannot be deleted due to its current order status: %2$s.', 'fluent-cart'),
-                    $this->invoice_no,
-                    $this->status
-                )
-            );
         }
 
-        if (!is_wp_error($canBeDeleted)) {
+
+
+        if (!is_wp_error($canBeDeleted) && $this->mode !== Status::ORDER_MODE_TEST) {
             // Handle subscription relationship
             $parentOrderId = $this->parent_id ? $this->parent_id : $this->id;
 

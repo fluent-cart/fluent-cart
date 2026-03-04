@@ -117,58 +117,6 @@ class ShopAppBlockEditor extends BlockEditor
     public function render(array $shortCodeAttribute, $block = null, $content = null): string
     {
         AssetLoader::loadProductArchiveAssets();
-        $filters = Arr::get($shortCodeAttribute, 'filters', []);
-        $colors = Arr::get($shortCodeAttribute, 'colors', []);
-        $default_filters = Arr::get($shortCodeAttribute, 'default_filters', [
-            'enabled' => false,
-        ]);
-
-        $allowOutOfStock = Arr::get($default_filters, 'enabled', false) === true &&
-            Arr::get($default_filters, 'allow_out_of_stock', false) === true;
-
-        $taxonomies = Taxonomy::getTaxonomies();
-        foreach ($taxonomies as $key => $taxonomy) {
-            if (isset($default_filters[$key])) {
-                if (is_array($default_filters[$key])) {
-                    $default_filters[$key] = implode(',', $default_filters[$key]);
-                } else {
-                    $default_filters[$key] = '';
-                }
-
-            }
-        }
-
-        $enableFilter = Arr::get($shortCodeAttribute, 'enable_filter', 0);
-        if ($enableFilter === 'false') {
-            $enableFilter = 0;
-        }
-
-        $view = ("[" . ShopAppHandler::SHORT_CODE . "
-            block_class='" . Arr::get($shortCodeAttribute, 'className', '') . "'
-            per_page='" . Arr::get($shortCodeAttribute, 'per_page', 10) . "'
-            order_type='" . Arr::get($shortCodeAttribute, 'order_type', 'DESC') . "'
-            live_filter='" . Arr::get($shortCodeAttribute, 'live_filter', true) . "'
-            view_mode='" . Arr::get($shortCodeAttribute, 'view_mode', '') . "'
-            price_format='" . Arr::get($shortCodeAttribute, 'price_format', 'starts_from') . "'
-            search_grid_size='" . Arr::get($shortCodeAttribute, 'search_grid_size', '') . "'
-            product_grid_size='" . Arr::get($shortCodeAttribute, 'product_grid_size', '') . "'
-            product_box_grid_size='" . Arr::get($shortCodeAttribute, 'product_box_grid_size', '') . "' 
-            paginator='" . Arr::get($shortCodeAttribute, 'paginator', '') . "' 
-            use_default_style='" . Arr::get($shortCodeAttribute, 'use_default_style', 1) . "' 
-            enable_filter='" . $enableFilter . "'
-            allow_out_of_stock='" . $allowOutOfStock . "' 
-            enable_wildcard_filter='" . Arr::get($shortCodeAttribute, 'enable_wildcard_filter', 1) . "'
-            " .
-            (count($colors) ? "colors='" . (json_encode(Arr::get($shortCodeAttribute, 'colors', []))) . "'
-            " : "") .
-            "enable_wildcard_for_post_content='" . Arr::get($shortCodeAttribute, 'enable_wildcard_for_post_content', 0) . "'
-            " .
-            (count($filters) ? "filters='" . esc_attr((json_encode(Arr::get($shortCodeAttribute, 'filters', [])))) . "'
-            " : "") .
-            "default_filters='" . (json_encode($default_filters)) . "'
-        ]");
-
-
         return $content;
     }
 }

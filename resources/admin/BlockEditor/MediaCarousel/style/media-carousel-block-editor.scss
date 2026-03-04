@@ -1,0 +1,1309 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./media-carousel-block-editor.config.js";
+@tailwind base;
+@tailwind utilities;
+
+
+/* =====================================================
+   Editor Preview – Media Carousel
+===================================================== */
+
+.is-editor-preview {
+
+    .fct-product-gallery-wrapper.is-editor-preview {
+        position: relative;
+        padding: clamp(8px, 3%, 16px);
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border-radius: clamp(8px, 2vw, 12px);
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        min-height: 100px; /* Ensure minimum visible height */
+    }
+
+    .editor-carousel-preview {
+        @apply relative w-full;
+
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: calc(100% / var(--fct-slides-per-view, 1));
+        gap: clamp(8px, 2%, 16px);
+
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding: clamp(4px, 1.5%, 8px);
+        padding-bottom: clamp(40px, 10%, 60px);
+        margin: clamp(-4px, -1.5%, -8px);
+
+        /* Hide scrollbar but keep functionality */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Smooth scrolling */
+        scroll-behavior: smooth;
+
+        /* Entrance animation */
+        animation: carouselFadeIn 0.5s ease-out;
+
+        /* Ensure minimum size */
+        min-height: 80px;
+    }
+
+    @keyframes carouselFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Media card - Enhanced design with responsive constraints */
+    .fluent-cart-product-loop.fct-product-block-editor-product-card {
+        width: 100%;
+        min-width: 0; /* Allow shrinking below content size */
+        scroll-snap-align: start;
+        box-sizing: border-box;
+        margin: 4px;
+        padding: 0;
+
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: clamp(6px, 2vw, 12px);
+        overflow: hidden;
+
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+        /* Staggered entrance animation */
+        opacity: 0;
+        animation: mediaCardEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+        @for $i from 1 through 12 {
+            &:nth-child(#{$i}) {
+                animation-delay: #{($i - 1) * 0.08}s;
+            }
+        }
+
+        &:hover {
+            border-color: #111827;
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                0 2px 4px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px);
+        }
+
+        /* Image container - flexible sizing */
+        img,
+        .fct-media-item,
+        .wp-block-image,
+        .wp-block-image img {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        &:hover img,
+        &:hover .fct-media-item,
+        &:hover .wp-block-image img {
+            transform: scale(1.05);
+        }
+
+        /* Overlay effect on hover */
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                180deg,
+                transparent 0%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.1) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        &:hover::before {
+            opacity: 1;
+        }
+    }
+
+    @keyframes mediaCardEnter {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Disable legacy track/grid behavior */
+    .editor-carousel-track {
+        display: contents;
+    }
+
+    /* Controls wrapper */
+    .fct-carousel-controls-editor {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+
+        transform: translateY(-50%);
+        z-index: 30;
+
+        pointer-events: none;
+    }
+
+    /* Navigation buttons - Enhanced design with responsive sizing */
+    .fct-carousel-controls-editor .editor-carousel-nav {
+        pointer-events: auto;
+
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+
+        /* Responsive sizing - keeps circular shape */
+        width: clamp(28px, 6vw, 40px);
+        height: clamp(28px, 6vw, 40px);
+        aspect-ratio: 1; /* Force perfect circle */
+        color: #111827;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+        border: 2px solid #e5e7eb;
+        border-radius: 50%;
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            0 2px 4px rgba(0, 0, 0, 0.06);
+
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            border-color: #111827;
+            color: #ffffff;
+            transform: translateY(-50%) scale(1.1);
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.15),
+                0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        &:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Icon styling - scales with button */
+        svg {
+            width: 45%;
+            height: 45%;
+            min-width: 12px;
+            min-height: 12px;
+            max-width: 18px;
+            max-height: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        &:hover svg {
+            transform: scale(1.1);
+        }
+    }
+
+    .fct-carousel-controls-editor .editor-carousel-nav.prev {
+        left: clamp(4px, 2%, 12px);
+    }
+
+    .fct-carousel-controls-editor .editor-carousel-nav.next {
+        right: clamp(4px, 2%, 12px);
+    }
+
+    /* Pagination - Enhanced design with responsive sizing */
+    .editor-carousel-pagination {
+        @apply flex justify-center;
+        gap: 8px;
+
+        position: absolute;
+        bottom: clamp(8px, 3%, 16px);
+        left: 50%;
+        transform: translateX(-50%);
+
+        padding: 8px 14px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border-radius: 24px;
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            0 2px 4px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        max-width: 90%; /* Prevent overflow in small containers */
+    }
+
+    .editor-carousel-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #d1d5db;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+
+        &:hover {
+            background: #9ca3af;
+            transform: scale(1.3);
+        }
+
+        &.is-active {
+            background: #111827;
+            transform: scale(1.2);
+            box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
+        }
+    }
+
+    /* Pagination variants */
+    .editor-carousel-pagination--fraction {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #111827;
+        letter-spacing: 0.5px;
+    }
+
+    .editor-carousel-pagination--progress {
+        width: 180px;
+        height: 8px;
+        background: #d1d5db;
+        border-radius: 8px;
+        overflow: hidden;
+        padding: 0;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+        position: relative;
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #111827 0%, #374151 100%);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 12px rgba(17, 24, 39, 0.5);
+        }
+    }
+
+    /* =====================================================
+       Segmented Progress Bar (Modern Image Slider Style)
+    ===================================================== */
+
+    .editor-carousel-pagination--segmented {
+        padding: 10px 16px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        width: auto;
+        min-width: 150px;
+        max-width: 90%;
+        height: auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border-radius: 24px;
+        overflow: visible;
+
+        .progress-segment {
+            flex: 1;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            min-width: 40px;
+            max-width: 80px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Shimmer effect on active segment */
+            &.is-active {
+                background: linear-gradient(
+                    90deg,
+                    #111827 0%,
+                    #374151 50%,
+                    #111827 100%
+                );
+                background-size: 200% 100%;
+                animation: segmentShimmer 2s ease-in-out infinite;
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(
+                        90deg,
+                        transparent 0%,
+                        rgba(255, 255, 255, 0.3) 50%,
+                        transparent 100%
+                    );
+                    animation: segmentGloss 2s ease-in-out infinite;
+                }
+            }
+
+            /* Completed segments */
+            &.is-completed {
+                background: #111827;
+            }
+
+            /* Hover effect */
+            &:hover {
+                transform: scaleY(1.3);
+                cursor: pointer;
+            }
+        }
+
+        /* Optional slide counter */
+        .segment-counter {
+            margin-left: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+    }
+
+    /* Segmented Progress Bar Animations */
+    @keyframes segmentShimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    @keyframes segmentGloss {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* =====================================================
+       Skeleton / Dummy Grid (Loading State)
+    ===================================================== */
+
+    .fluent-cart-empty {
+        padding: 20px 0;
+    }
+
+    /* Loading Header */
+    .fct-loading-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6b7280;
+
+        span {
+            animation: fadeInOut 1.5s ease-in-out infinite;
+        }
+    }
+
+    /* Loading Spinner */
+    .fct-loading-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #111827;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes fadeInOut {
+        0%, 100% {
+            opacity: 0.5;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    /* Shimmer Animation */
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
+    }
+
+    .dummy-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: var(--fct-slide-gap, 12px);
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .dummy-media-card {
+        flex: 0 0
+            calc(
+                (
+                    100% -
+                    (var(--fct-slides-per-view, 1) - 1)
+                        * var(--fct-slide-gap, 12px)
+                ) / var(--fct-slides-per-view, 1)
+            );
+
+        max-width:
+            calc(
+                (
+                    100% -
+                    (var(--fct-slides-per-view, 1) - 1)
+                        * var(--fct-slide-gap, 12px)
+                ) / var(--fct-slides-per-view, 1)
+            );
+
+        border-radius: 8px;
+        overflow: hidden;
+        box-sizing: border-box;
+
+        /* Stagger animation */
+        opacity: 0;
+        animation: cardFadeIn 0.5s ease-out forwards;
+        animation-delay: calc(var(--card-index) * 0.1s);
+    }
+
+    @keyframes cardFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Skeleton Elements */
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            #f0f0f0 0px,
+            #e8e8e8 40px,
+            #f0f0f0 80px
+        );
+        background-size: 1000px;
+        animation: shimmer 1.5s infinite linear;
+    }
+
+    .dummy-image {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 8px;
+    }
+}
+
+
+/* =====================================================
+   Selected Products (Inspector)
+===================================================== */
+
+.fct-selected-products {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.fct-selected-products__label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 10px;
+
+    &::before {
+        content: '✓';
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        background: #10b981;
+        color: #ffffff;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: 700;
+    }
+}
+
+.fct-selected-products__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 100%;
+}
+
+/* Group per product */
+.fct-product-chip-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+}
+
+/* Parent product chip */
+.fct-product-chip--parent {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    width: fit-content;
+
+    &::before {
+        content: '📦';
+        font-size: 14px;
+    }
+}
+
+/* Child chip container */
+.fct-variation-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: 8px;
+    padding-left: 12px;
+    border-left: 3px solid #e5e7eb;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: -3px;
+        top: 0;
+        width: 3px;
+        height: 100%;
+        background: linear-gradient(180deg, #374151 0%, #e5e7eb 100%);
+        border-radius: 2px;
+    }
+}
+
+/* Variation chips */
+.fct-variation-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+
+    &::before {
+        content: '•';
+        color: #111827;
+        font-weight: 700;
+    }
+
+    &:hover {
+        background-color: #e5e7eb;
+        border-color: #d1d5db;
+    }
+}
+
+/* =====================================================
+   Buttons
+===================================================== */
+
+.fct-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 36px;
+    padding: 8px 14px;
+
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    user-select: none;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.05s ease;
+}
+
+.fct-button-secondary {
+    width: 100%;
+    color: #111827;
+    background-color: #ffffff;
+    border-color: #d1d5db;
+}
+
+.fct-button-secondary:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.fct-button-secondary:focus,
+.fct-button-secondary:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.fct-button-secondary:active {
+    transform: translateY(1px);
+}
+
+.fct-button:disabled,
+.fct-button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   Inspector Controls
+===================================================== */
+
+.fct-inspector-control-body .components-base-control {
+    margin-bottom: 14px;
+}
+
+.fct-inspector-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #e5e7eb 50%, transparent 100%);
+    margin: 20px 0;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px;
+        height: 4px;
+        background: #d1d5db;
+        border-radius: 50%;
+    }
+}
+
+/* =====================================================
+   Product Panel - ToggleGroupControl Styling
+===================================================== */
+
+.fct-inspector-control-wrap--product-card {
+    /* ToggleGroupControl container */
+    .components-toggle-group-control {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .components-base-control__label {
+        margin-bottom: 12px;
+    }
+
+    .components-toggle-group-control__label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        display: block;
+    }
+
+    .components-toggle-group-control-option-base {
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background-color: #f3f4f6;
+        }
+
+        &[aria-checked="true"] {
+            background-color: #111827;
+            color: #ffffff;
+            font-weight: 600;
+
+            &:hover {
+                background-color: #1f2937;
+            }
+        }
+    }
+
+    /* EditorPanel spacing */
+    .fct-editor-panel {
+        padding: 16px;
+        background: #ffffff;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    .fct-editor-panel-row {
+        margin-bottom: 16px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        &.flex-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+    }
+}
+
+.fluent-cart-product-loop button {
+    @apply mt-auto py-3 px-4 bg-[var(--button-bg)] text-[var(--button-color)]
+        border-0 rounded cursor-pointer text-sm font-medium w-full
+        flex items-center justify-center
+        hover:bg-[var(--button-hover-bg)]
+        hover:text-[var(--button-hover-color)]
+        group-[.list]:max-w-[188px]
+        group-[.list]:transition-none
+        group-[.list]:mt-0;
+
+    height: max-content;
+}
+
+.fct-inspector-control-wrap--product-card {
+    .components-panel {
+        z-index: auto;
+    }
+
+    /* SelectVariationModal button styling */
+    .fct-button-secondary,
+    button[class*="select-product"],
+    button[class*="select-variation"] {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        background: #ffffff;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        &:hover {
+            background: #f8fafc;
+            border-color: #111827;
+            color: #111827;
+            border-style: solid;
+        }
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            border-color: #111827;
+            border-style: solid;
+            box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+        }
+    }
+
+    /* Panel header enhancement */
+    .fct-editor-panel > .components-panel__body-title {
+        button {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+            padding: 12px 16px;
+
+            &:hover {
+                background: #f9fafb;
+            }
+        }
+    }
+}
+
+
+/* =====================================================
+   Inspector – Force Vertical Layout
+===================================================== */
+
+.fct-inspector-control-wrap
+.fct-editor-panel-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.fct-inspector-control-wrap
+.fct-editor-panel-row
+.components-toggle-control,
+.fct-inspector-control-wrap
+.fct-editor-panel-row
+.components-select-control {
+    display: block;
+    width: 100%;
+}
+
+.fct-inspector-control-wrap
+.components-toggle-control__label,
+.fct-inspector-control-wrap
+.components-checkbox-control__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.fct-inspector-control-wrap
+.components-select-control__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.fct-inspector-control-wrap
+.components-select-control select {
+    height: 36px;
+    border-radius: 6px;
+    border-color: #d1d5db;
+    font-size: 13px;
+}
+
+.fct-inspector-control-wrap
+.fct-editor-panel-row
+.components-select-control {
+    padding-left: 12px;
+    border-left: 2px solid #e5e7eb;
+}
+
+.fct-inspector-control-wrap
+.fct-editor-panel-row:not(:last-child) {
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+
+/* =====================================================
+   Product Image Carousel (Editor)
+===================================================== */
+
+.fct-product-image-carousel-editor {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc(100% / var(--fct-slides-per-view, 1));
+    gap: 12px;
+    width: 100%;
+}
+
+.fct-product-image-slide-editor {
+    width: 100%;
+    scroll-snap-align: start;
+}
+
+.fct-product-image-slide-editor img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.fct-carousel-pagination-editor.wp-block-fluent-cart-media-carousel-pagination {
+    margin-top: 30px;
+}
+
+
+/* =====================================================
+   Media Carousel Loop (Editor)
+===================================================== */
+
+.fct-media-carousel-loop-editor {
+    width: 100%;
+    overflow: hidden;
+}
+
+.fct-media-carousel-loop-editor
+> .block-editor-block-list__layout {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 16px;
+}
+
+.fct-media-carousel-loop-editor
+> .block-editor-block-list__layout
+> .fct-product-image {
+    flex: 0 0 calc(100% / var(--fct-slides-to-show));
+    max-width: calc(100% / var(--fct-slides-to-show));
+}
+
+.fct-panel-subtitle {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin: -8px 0 16px;
+    padding: 8px 12px;
+    background: linear-gradient(90deg, #f3f4f6 0%, transparent 100%);
+    border-left: 3px solid #e5e7eb;
+    border-radius: 0 4px 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+        content: '⚡';
+        font-size: 14px;
+    }
+}
+
+/* Autoplay Control Special Styling */
+.fct-inspector-control-wrap--product-card {
+    .components-select-control:has([id*="autoplay"]):not(.fct-nested-control *) {
+        position: relative;
+        padding: 12px;
+        background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+        border: 1px solid #fbbf24;
+        border-radius: 8px;
+
+        .components-select-control__label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            color: #78350f;
+
+            &::before {
+                content: '▶';
+                font-size: 12px;
+            }
+        }
+
+        .components-select-control__input {
+            background: #ffffff;
+            border-color: #f59e0b;
+            font-weight: 500;
+
+            &:focus {
+                border-color: #d97706;
+                box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+            }
+        }
+    }
+
+    /* Arrow Size Control */
+    .components-select-control:has([id*="arrow"]) .components-select-control__label::before {
+        content: '↔';
+        margin-right: 4px;
+        opacity: 0.6;
+    }
+
+    /* Pagination Type Control */
+    .components-select-control:has([id*="pagination"]) .components-select-control__label::before {
+        content: '●';
+        margin-right: 4px;
+        opacity: 0.6;
+    }
+}
+
+.fct-nested-control {
+    padding: 12px;
+    padding-left: 16px;
+    margin-left: 8px;
+    margin-top: 12px;
+    border-left: 3px solid #e5e7eb;
+    background: linear-gradient(90deg, #f9fafb 0%, transparent 100%);
+    border-radius: 0 6px 6px 0;
+    position: relative;
+    animation: slideInFromLeft 0.3s ease-out;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: -3px;
+        top: 0;
+        width: 3px;
+        height: 100%;
+        background: linear-gradient(180deg, #374151 0%, #e5e7eb 100%);
+        border-radius: 2px;
+    }
+}
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fct-inspector-hint {
+    font-size: 11px;
+    color: #92400e;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+    padding: 8px 12px;
+    background: linear-gradient(90deg, #fef3c7 0%, transparent 100%);
+    border-left: 3px solid #fbbf24;
+    border-radius: 0 4px 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: fadeIn 0.3s ease-out;
+
+    &::before {
+        content: '💡';
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+}
+
+/* =====================================================
+   Behavior Panel - Enhanced Controls
+===================================================== */
+
+.fct-inspector-control-wrap--product-card {
+    /* Toggle Control Enhancements */
+    .components-toggle-control {
+        .components-toggle-control__label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #111827;
+        }
+    }
+
+    .components-checkbox-control:has([id*="infinite"]) .components-checkbox-control__label::before {
+        content: '∞';
+        margin-right: 6px;
+        font-size: 16px;
+        font-weight: 700;
+        opacity: 0.6;
+    }
+
+    /* Active Toggle State */
+    .components-form-toggle.is-checked {
+        .components-form-toggle__track {
+            background-color: #10b981;
+        }
+    }
+
+    /* Select Control Enhancements */
+    .components-select-control {
+        .components-select-control__input {
+            padding: 8px 12px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: #ffffff;
+
+            &:hover {
+                border-color: #cbd5e1;
+            }
+
+            &:focus {
+                border-color: #111827;
+                box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+                outline: none;
+            }
+        }
+    }
+
+    /* Range Control Enhancements */
+    .components-range-control {
+        .components-range-control__label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .components-input-control__input {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+
+            &:focus {
+                border-color: #111827;
+                box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.1);
+            }
+        }
+
+        .components-range-control__slider {
+            &::-webkit-slider-thumb {
+                background: #111827;
+                border: 2px solid #ffffff;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            &::-moz-range-thumb {
+                background: #111827;
+                border: 2px solid #ffffff;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .components-base-control__help {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+    }
+
+    /* Checkbox Control Enhancements */
+    .components-checkbox-control {
+        .components-checkbox-control__label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #111827;
+        }
+
+        .components-checkbox-control__input[type="checkbox"]:checked {
+            background: #111827;
+            border-color: #111827;
+        }
+    }
+}
+
+/* =====================================================
+   Product Panel - Animations & Polish
+===================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fct-inspector-control-wrap--product-card {
+  /* Animate panel rows */
+  .fct-editor-panel-row {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* Animate selected products */
+  .fct-selected-products {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  /* Animate product chips */
+  .fct-product-chip-group {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  /* Variation chips stagger animation */
+  .fct-variation-chip {
+    animation: fadeIn 0.2s ease-out backwards;
+
+    @for $i from 1 through 10 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.05}s;
+      }
+    }
+  }
+
+  /* Empty state hint */
+  .fct-editor-panel-row.flex-col:empty::after {
+    content: 'Select a product to display';
+    display: block;
+    padding: 24px 16px;
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    background: #f9fafb;
+    border: 1px dashed #e5e7eb;
+    border-radius: 6px;
+  }
+
+  /* Smooth transitions */
+  * {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

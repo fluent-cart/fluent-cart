@@ -82,6 +82,15 @@ class CustomerController extends Controller
             ]);
         }
 
+        // Verify address belongs to current customer before any cart mutation
+        $customerId = Arr::get($address, 'address.customer_id');
+        $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
+        if (empty($customer) || $customer->id != $customerId) {
+            return $this->sendError([
+                'message' => __('You are not authorized to view this address', 'fluent-cart')
+            ]);
+        }
+
         //update address into cart
         $addressId = Arr::get($address, 'address.id');
         $country = Arr::get($address, 'address.country');
@@ -94,7 +103,7 @@ class CustomerController extends Controller
         Arr::set($checkoutData, 'form_data.' . $type . '_country', $country);
         Arr::set($checkoutData, 'form_data.' . $type . '_state', $state);
 
-        if ($type === 'billing' &&  Arr::get($checkoutData, 'form_data.ship_to_different', 'no') === 'no') { 
+        if ($type === 'billing' &&  Arr::get($checkoutData, 'form_data.ship_to_different', 'no') === 'no') {
             Arr::set($checkoutData, 'form_data.shipping_address_id', $addressId);
             Arr::set($checkoutData, 'form_data.shipping_country', $country);
             Arr::set($checkoutData, 'form_data.shipping_state', $state);
@@ -102,15 +111,6 @@ class CustomerController extends Controller
 
         $cart->checkout_data = $checkoutData;
         $cart->save();
-
-        $customerId = Arr::get($address, 'address.customer_id');
-
-        $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
-        if (empty($customer) || $customer->id != $customerId) {
-            return $this->sendError([
-                'message' => __('You are not authorized to view this address', 'fluent-cart')
-            ]);
-        }
 
         $formattedAddress = Arr::get($address, 'address.formatted_address');
 

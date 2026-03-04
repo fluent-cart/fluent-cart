@@ -1,9 +1,6 @@
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-order-report-page">
-
-      <PageHeading :title="translate('Orders')"></PageHeading>
-
       <Summary :orderReport="orderReport" :reportFilter="reportFilter" />
 
       <OrderLineChart

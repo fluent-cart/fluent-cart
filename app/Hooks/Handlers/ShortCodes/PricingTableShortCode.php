@@ -111,7 +111,7 @@ class PricingTableShortCode extends ShortCode
             'fluentcart_pricing_table_vars' => [
                 'trans'                    => TransStrings::singleProductPageString(),
                 'cart_button_text'         => (new StoreSettings())->get('cart_button_text', __('Add To Cart', 'fluent-cart')),
-                'out_of_stock_button_text' => (new StoreSettings())->get('out_of_stock_button_text', __('Out of Stock', 'fluent-cart')),
+                'out_of_stock_button_text' => (new StoreSettings())->get('out_of_stock_button_text', __('Not Available', 'fluent-cart')),
                 'in_stock_status'          => Helper::IN_STOCK,
                 'out_of_stock_status'      => Helper::OUT_OF_STOCK,
             ]

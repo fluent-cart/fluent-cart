@@ -16,9 +16,9 @@ function recursiveFlatten(obj, prefix = '') {
     return newObj;
 }
 
-const request = function (method, route, data = {}) {
+const request = function (baseURL = null, method, route, data = {}) {
     const cleanRoute = route.startsWith('/') ? route.slice(1) : route;
-    const baseUrl = `${window.fluentCartRestVars.rest.url}/${cleanRoute}`;
+    const baseUrl = `${baseURL ? baseURL : window.fluentCartRestVars.rest.url}/${cleanRoute}`;
 
     const headers = {
         'X-WP-Nonce': window.fluentCartRestVars.rest.nonce
@@ -121,20 +121,20 @@ const request = function (method, route, data = {}) {
 };
 
 export default {
-    get(route, data = {}) {
-        return request('GET', route, data);
+    get(route, data = {}, baseURL = null) {
+        return request(baseURL, 'GET', route, data);
     },
-    post(route, data = {}) {
-        return request('POST', route, data);
+    post(route, data = {}, baseURL = null) {
+        return request(baseURL, 'POST', route, data);
     },
-    delete(route, data = {}) {
-        return request('DELETE', route, data);
+    delete(route, data = {}, baseURL = null) {
+        return request(baseURL, 'DELETE', route, data);
     },
-    put(route, data = {}) {
-        return request('PUT', route, data);
+    put(route, data = {}, baseURL = null) {
+        return request(baseURL, 'PUT', route, data);
     },
-    patch(route, data = {}) {
-        return request('PATCH', route, data);
+    patch(route, data = {}, baseURL = null) {
+        return request(baseURL, 'PATCH', route, data);
     },
     upload(route, data = {}) {
         const url = `${window.fluentCartRestVars.rest.url}/${route}`;

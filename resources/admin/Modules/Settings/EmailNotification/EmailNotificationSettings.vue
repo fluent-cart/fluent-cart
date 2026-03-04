@@ -9,8 +9,8 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
-import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
 import Str from "@/utils/support/Str";
+import SettingsHeader from "../Parts/SettingsHeader.vue";
 
 
 const selfRef = getCurrentInstance().ctx;
@@ -106,21 +106,12 @@ onMounted(() => {
 <template>
 
   <div class="setting-wrap">
-    <el-dialog
-        v-model="dialogVisible"
-        :title="translate('Coming Soon')"
-        width="300"
-
+    <SettingsHeader
+        :heading="translate('Notifications')"
+        :show-save-button="false"
     >
-      <span>{{ translate('Editing this email will be available later') }}</span>
-
-    </el-dialog>
-    <Card.Container class="overflow-hidden">
-      <Card.Header
-          :title="translate('Email Notifications')"
-      >
-        <!--Currently making the add notification option unavailable-->
-        <template #action v-if="false">
+      <template #action>
+        <div v-if="false">
           <el-popconfirm
               :width="235"
               :confirm-button-text="translate('Yes')"
@@ -136,74 +127,92 @@ onMounted(() => {
               </el-button>
             </template>
           </el-popconfirm>
-        </template>
-      </Card.Header>
-      <Card.Body class="px-0 pb-0">
-        <el-skeleton class="px-5 pb-5" :loading="loading" :rows="5" animated/>
-        <div v-if="!loading" class="fct-all-notification-table-wrap">
-          <el-table :data="notifications">
-            <el-table-column
-                prop="title"
-                :label="translate('Notification Name')"
-                width="250"
-            >
-              <template #default="scope">
-                <h4 class="m-0 mb-1">{{ scope.row.title }}</h4>
-                <p class="m-0">{{scope.row.description}}</p>
-              </template>
-            </el-table-column>
+        </div>
+      </template>
+    </SettingsHeader>
 
-            <el-table-column
-                prop="recipient"
-                :label="translate('Recipient')"
-                width="100"
-            >
-              <template #default="scope">
-                <p class="m-0">{{ Str.headline(scope.row.recipient) }}</p>
-              </template>
-            </el-table-column>
+    <div class="setting-wrap-inner">
+      <el-dialog
+          v-model="dialogVisible"
+          :title="translate('Coming Soon')"
+          width="300"
 
-            <el-table-column :label="translate('Enabled')" width="50">
-              <template #default="scope">
-                <div class="fct-all-notification-actions flex items-center gap-3">
-                  <el-switch
-                      v-if="scope.row?.manage_toggle !== 'no'"
-                      autocomplete="rutjfkde"
-                      @change="value => enableNotification(value, scope.row.name)"
-                      v-model="scope.row.settings.active"
-                      active-value="yes"
-                      inactive-value="no"
-                  ></el-switch>
-                  <!-- Show a text indicator for order_placed notifications -->
-                  <span v-if="scope.row?.manage_toggle === 'no'" class="text-gray-500 text-sm">
+      >
+        <span>{{ translate('Editing this email will be available later') }}</span>
+
+      </el-dialog>
+      <Card.Container class="overflow-hidden">
+        <Card.Header
+            :title="translate('Email Notifications')"
+        >
+        </Card.Header>
+        <Card.Body class="px-0 pb-0">
+          <el-skeleton class="px-5 pb-5" :loading="loading" :rows="5" animated/>
+          <div v-if="!loading" class="fct-all-notification-table-wrap">
+            <el-table :data="notifications">
+              <el-table-column
+                  prop="title"
+                  :label="translate('Notification Name')"
+                  width="250"
+              >
+                <template #default="scope">
+                  <h4 class="m-0 mb-1">{{ scope.row.title }}</h4>
+                  <p class="m-0">{{scope.row.description}}</p>
+                </template>
+              </el-table-column>
+
+              <el-table-column
+                  prop="recipient"
+                  :label="translate('Recipient')"
+                  width="100"
+              >
+                <template #default="scope">
+                  <p class="m-0">{{ Str.headline(scope.row.recipient) }}</p>
+                </template>
+              </el-table-column>
+
+              <el-table-column :label="translate('Enabled')" width="80">
+                <template #default="scope">
+                  <div class="fct-all-notification-actions flex items-center gap-3">
+                    <el-switch
+                        v-if="scope.row?.manage_toggle !== 'no'"
+                        autocomplete="rutjfkde"
+                        @change="value => enableNotification(value, scope.row.name)"
+                        v-model="scope.row.settings.active"
+                        active-value="yes"
+                        inactive-value="no"
+                    ></el-switch>
+                    <!-- Show a text indicator for order_placed notifications -->
+                    <span v-if="scope.row?.manage_toggle === 'no'" class="text-gray-500 text-sm">
                     {{ translate('Auto-enabled for offline payments') }}
                   </span>
-                  <div class="fct-btn-group sm">
-                    <el-tooltip effect="dark" :content="translate('Edit')" placement="top"
-                                popper-class="fct-tooltip">
+                    <div class="fct-btn-group sm">
+                      <el-tooltip effect="dark" :content="translate('Edit')" placement="top"
+                                  popper-class="fct-tooltip">
 
-                      <IconButton
-                          :to="{
+                        <IconButton
+                            :to="{
                             name: 'email_notifications/edit',
                             params: { name: scope.row.name },
                           }"
-                          size="x-small"
-                                  hover="primary">
-                        <DynamicIcon name="Edit"/>
-                      </IconButton>
-                    </el-tooltip>
+                            size="x-small"
+                            hover="primary">
+                          <DynamicIcon name="Edit"/>
+                        </IconButton>
+                      </el-tooltip>
+                    </div>
                   </div>
-                </div>
-              </template>
-            </el-table-column>
+                </template>
+              </el-table-column>
 
-            <template #empty>
-              <Empty icon="Empty/EmailNotification" :has-dark="true"
-                     :text="translate('No email notifications available! Please reactivate FluentCart!')"/>
-            </template>
-          </el-table>
-        </div>
-      </Card.Body>
-    </Card.Container>
+              <template #empty>
+                <Empty icon="Empty/EmailNotification" :has-dark="true"
+                       :text="translate('No email notifications available! Please reactivate FluentCart!')"/>
+              </template>
+            </el-table>
+          </div>
+        </Card.Body>
+      </Card.Container>
+    </div>
   </div>
 </template>

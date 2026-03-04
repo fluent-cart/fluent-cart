@@ -3,6 +3,7 @@
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Renderer\ProductCardRender;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Vite;
@@ -16,18 +17,40 @@ class ExcerptBlockEditor extends BlockEditor
     public function supports(): array
     {
         return [
-            'html'       => false,
-            'align' => true,
-            'typography' => [
-                'fontSize'   => true,
-                'lineHeight' => true
+            'html'                 => false,
+            'align'                => true,
+            'typography'           => [
+                'fontSize'                      => true,
+                'lineHeight'                    => true,
+                '__experimentalFontFamily'      => true,
+                '__experimentalFontWeight'      => true,
+                '__experimentalFontStyle'       => true,
+                '__experimentalTextTransform'   => true,
+                '__experimentalTextDecoration'  => true,
+                '__experimentalLetterSpacing'   => true,
+                '__experimentalDefaultControls' => [
+                    'fontSize'   => true,
+                    'lineHeight' => true,
+                    'fontWeight' => true,
+                ],
             ],
-            'spacing'    => [
-                'margin' => true
+            'color'                => [
+                'text'       => true,
+                'background' => true,
+                'link'       => true,
+                'gradients'   => true,
             ],
-            'color'      => [
-                'text' => true,
-            ]
+            'spacing'              => [
+                'margin'  => true,
+                'padding' => true,
+            ],
+            '__experimentalBorder' => [
+                'color'  => true,
+                'radius' => true,
+                'style'  => true,
+                'width'  => true,
+            ],
+            'shadow'               => true,
         ];
     }
 
@@ -78,14 +101,16 @@ class ExcerptBlockEditor extends BlockEditor
             }
         }
 
-
-
-        if (!$product) {
+        if (!$product || empty($product->post_excerpt)) {
             return '';
         }
 
+        $wrapper_attributes = get_block_wrapper_attributes([
+            'class' => 'fct-product-card-excerpt',
+        ]);
+
         ob_start();
-        (new ProductRenderer($product))->renderExcerpt();
+        (new ProductCardRender($product))->renderExcerpt($wrapper_attributes);
         return ob_get_clean();
     }
 }

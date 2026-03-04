@@ -4,6 +4,7 @@ namespace FluentCart\App\Http\Requests;
 
 use FluentCart\App\App;
 use FluentCart\App\Models\Customer;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
@@ -26,8 +27,14 @@ class CustomerRequest extends RequestGuard
 
         $customerId = intval(Arr::get($this->all(), 'id', 0));
 
+        if (CheckoutFieldsSchema::isFullNameRequired()) {
+            $validationRules['full_name'] = 'required|sanitizeText|maxLength:255';
+        } else {
+            $validationRules['first_name'] = 'required|sanitizeText|maxLength:255';
+            $validationRules['last_name'] = 'nullable|sanitizeText|maxLength:255';
+        }
+
         return array_merge($validationRules, [
-            'full_name' => 'required|sanitizeText|maxLength:255',
             'city'      => 'nullable|sanitizeText',
             'email'     => ['required', 'sanitizeText', 'email', 'maxLength:255', 'exist' =>function ($attribute, $value) use ($customerId) {
 
@@ -54,9 +61,10 @@ class CustomerRequest extends RequestGuard
     public function messages()
     {
         return [
-            'full_name.required' => esc_html__('Full Name field is required.', 'fluent-cart'),
-            'email.required'     => esc_html__('Email field is required.', 'fluent-cart'),
-            'email.email'        => esc_html__('Email must be a valid email address.', 'fluent-cart'),
+            'email.required'      => esc_html__('Email is required.', 'fluent-cart'),
+            'email.email'         => esc_html__('Email must be a valid email address.', 'fluent-cart'),
+            'full_name.required'  => esc_html__('Full Name is required.', 'fluent-cart'),
+            'first_name.required' => esc_html__('First Name is required.', 'fluent-cart'),
         ];
     }
 
@@ -75,6 +83,8 @@ class CustomerRequest extends RequestGuard
                 return sanitize_email($value);
             },
             'full_name'     => 'sanitize_text_field',
+            'first_name'    => 'sanitize_text_field',
+            'last_name'     => 'sanitize_text_field',
             'status'        => 'sanitize_text_field',
             'aov'           => 'sanitize_text_field',
             'notes'         => 'sanitize_text_field',

@@ -5,6 +5,7 @@ import {onMounted, ref} from "vue";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
+import SettingsHeader from "./Parts/SettingsHeader.vue";
 
 import { useSaveShortcut } from "@/mixin/saveButtonShortcutMixin";
 import Alert from "@/Bits/Components/Alert.vue";
@@ -82,49 +83,55 @@ onMounted(() => {
 
 <template>
   <div class="setting-wrap">
-
-    <Alert
-        class="mb-5"
-        type="information"
-        :content="translate('It will be available soon!')"
-
-
+    <SettingsHeader
+        :heading="translate('Invoice & Packing')"
+        :show-save-button="false"
     />
 
-    <template v-if="loading">
-      <Card.Container v-for="(template, index) in availableTemplates" :key="index">
-        <Card.Header :title="template" border_bottom/>
-        <Card.Body>
-          <el-skeleton animated :rows="6" />
-        </Card.Body>
-      </Card.Container>
-    </template>
+    <div class="setting-wrap-inner">
+      <Alert
+          class="mb-5"
+          type="information"
+          :content="translate('It will be available soon!')"
 
-    <template v-if="!loading && invoicePacking.length > 0">
-      <Card.Container v-for="(template, i) in invoicePacking" :key="i">
-        <Card.Header :title="template.title + ' (Under Development)'" border_bottom/>
-        <Card.Body>
-          <div class="setting-confirmation-content">
-            <div class="custom-wp-editor-wrapper">
-              <WpEditor
-                  :short-codes="confirmationShortcodes"
-                  v-model="template.content"
-                  @update="(val) => {
+
+      />
+
+      <template v-if="loading">
+        <Card.Container v-for="(template, index) in availableTemplates" :key="index">
+          <Card.Header :title="template" border_bottom/>
+          <Card.Body>
+            <el-skeleton animated :rows="6" />
+          </Card.Body>
+        </Card.Container>
+      </template>
+
+      <template v-if="!loading && invoicePacking.length > 0">
+        <Card.Container v-for="(template, i) in invoicePacking" :key="i">
+          <Card.Header :title="template.title + ' (Under Development)'" border_bottom/>
+          <Card.Body>
+            <div class="setting-confirmation-content">
+              <div class="custom-wp-editor-wrapper">
+                <WpEditor
+                    :short-codes="confirmationShortcodes"
+                    v-model="template.content"
+                    @update="(val) => {
                     template.content = val;
                         // updateVal(val)
                     }
                   "
-              />
+                />
+              </div>
             </div>
-          </div>
-        </Card.Body>
-      </Card.Container>
-      <div class="setting-save-action">
-        <el-button @click="saveTemplate()" type="primary" :loading="Saving" v-if="false">
-          {{Saving ? translate('Saving') : translate('Save')}}
-        </el-button>
-      </div>
-    </template>
+          </Card.Body>
+        </Card.Container>
+        <div class="setting-save-action">
+          <el-button @click="saveTemplate()" type="primary" :loading="Saving" v-if="false">
+            {{Saving ? translate('Saving') : translate('Save')}}
+          </el-button>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 

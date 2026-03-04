@@ -1,0 +1,59 @@
+@config "./sold-out-badge-block-editor.config.js";
+@tailwind utilities;
+
+.fct-sold-out-badge {
+    @apply inline-block font-medium leading-none whitespace-nowrap z-[2] pointer-events-none;
+
+    // === Badge style (default) ===
+    &--badge {
+        @apply px-2.5 py-1 rounded text-[13px];
+    }
+
+    // === Ribbon style ===
+    &--ribbon {
+        @apply py-1 pl-2.5 pr-5 text-xs rounded-none;
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+
+        // Mirror ribbon when on right side
+        &.fct-sold-out-badge--top-right,
+        &.fct-sold-out-badge--bottom-right {
+            @apply pr-2.5 pl-5;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%);
+        }
+    }
+
+    // === Tag style (V-notch cutting inward, like a ticket stub) ===
+    &--tag {
+        @apply py-1 pl-3 pr-2.5 text-[13px] rounded-none;
+        clip-path: polygon(0 0, 8px 50%, 0 100%, 100% 100%, 100% 0);
+
+        // Mirror for right-side positions
+        &.fct-sold-out-badge--top-right,
+        &.fct-sold-out-badge--bottom-right {
+            @apply pr-3 pl-2.5;
+            clip-path: polygon(0 0, 0 100%, 100% 100%, calc(100% - 8px) 50%, 100% 0);
+        }
+    }
+
+    // === Position classes ===
+    &--top-left {
+        @apply absolute top-2 left-2;
+    }
+
+    &--top-right {
+        @apply absolute top-2 right-2;
+    }
+
+    &--bottom-left {
+        @apply absolute bottom-2 left-2;
+    }
+
+    &--bottom-right {
+        @apply absolute bottom-2 right-2;
+    }
+}
+
+// Default colors when user hasn't set custom colors via block supports
+.fct-sold-out-badge:not([class*="has-background"]) {
+    @apply bg-red-50 text-red-500;
+}

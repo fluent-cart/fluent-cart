@@ -2,10 +2,11 @@
 
 namespace FluentCart\App\Modules\Subscriptions\Http\Controllers;
 
-use FluentCart\App\App;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Http\Controllers\Controller;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Subscriptions\Services\EarlyPaymentFeature;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Modules\Subscriptions\Services\Filter\SubscriptionFilter;
 
@@ -138,6 +139,58 @@ class SubscriptionController extends Controller
     {
         return $this->sendError([
             'message' => __('Not available yet', 'fluent-cart')
+        ]);
+    }
+
+    public function generateEarlyPaymentLink(Request $request, Order $order, Subscription $subscription)
+    {
+        $this->validateSubscription($subscription);
+
+        if (!EarlyPaymentFeature::isEnabled()) {
+            return $this->sendError([
+                'message' => __('Early payment is not enabled for this site.', 'fluent-cart')
+            ]);
+        }
+
+        $subscriptionOrderId = null;
+        if (property_exists($subscription, 'parent_order_id') && $subscription->parent_order_id) {
+            $subscriptionOrderId = (int) $subscription->parent_order_id;
+        }
+        
+        if ($subscriptionOrderId === null || $subscriptionOrderId !== (int) $order->id) {
+            return $this->sendError([
+                'message' => __('Invalid subscription for the specified order.', 'fluent-cart')
+            ]);
+        }
+
+        if ($subscription->bill_times <= 0) {
+            return $this->sendError([
+                'message' => __('Early payment is only available for installment subscriptions.', 'fluent-cart')
+            ]);
+        }
+
+        if (!in_array($subscription->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING])) {
+            return $this->sendError([
+                'message' => __('Subscription must be active to make early payments.', 'fluent-cart')
+            ]);
+        }
+
+        $remaining = $subscription->bill_times - $subscription->bill_count;
+
+        if ($remaining <= 0) {
+            return $this->sendError([
+                'message' => __('All installments have already been paid.', 'fluent-cart')
+            ]);
+        }
+
+        $url = add_query_arg([
+            'fluent-cart'       => 'early-installment-payment',
+            'subscription_hash' => $subscription->uuid,
+        ], home_url('/'));
+
+        return $this->sendSuccess([
+            'message'     => __('Early payment link generated.', 'fluent-cart'),
+            'payment_url' => $url,
         ]);
     }
 }

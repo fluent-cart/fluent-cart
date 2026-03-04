@@ -91,13 +91,15 @@ const handleAddonButtonClick = (event) => {
     const addonFile = button.getAttribute('data-addon-file');
     const sourceType = button.getAttribute('data-source-type');
     const sourceLink = button.getAttribute('data-source-link');
+    const repoLink = button.getAttribute('data-repo-link');
     
-    if (addonSlug && addonFile) {
+    if (addonSlug && addonFile && repoLink) {
       installAndActivateAddon({
         slug: addonSlug,
         file: addonFile,
         source_type: sourceType || 'github',
-        source_link: sourceLink || ''
+        source_link: sourceLink || '',
+        repo_link:  repoLink || ''
       });
     }
     return;
@@ -117,8 +119,13 @@ const handleAddonButtonClick = (event) => {
     }
   }
 };
+const hasPro = AppConfig.get('app_config.isProActive');
 
 const installAndActivateAddon = (gateway) => {
+  if(!hasPro){
+    window.open(gateway.repo_link, '_blank', 'noopener,noreferrer');
+    return;
+  }
   const button = document.querySelector(`[data-addon-slug="${gateway.slug}"]`);
   if (button) {
     button.disabled = true;

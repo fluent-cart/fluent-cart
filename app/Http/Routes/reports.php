@@ -50,14 +50,18 @@ $router->prefix('reports')
         //Default
         $router->get('sales-report', [DefaultReportController::class, 'getSalesReport']); //d
 
-        $router->get('fetch-default-report', [DefaultReportController::class, 'getDefaultReport']);
         $router->get('fetch-top-sold-products', [DefaultReportController::class, 'getTopSoldProducts']); //d
-        $router->get('fetch-failed-orders', [DefaultReportController::class, 'getFailedOrders']);
         $router->get('fetch-top-sold-variants', [DefaultReportController::class, 'getTopSoldVariants']); //d
-        $router->get('fetch-default-report-graphs', [DefaultReportController::class, 'getDefaultReportGraphs']);
-        $router->get('fetch-default-report-fluctuations', [DefaultReportController::class, 'getDefaultReportFluctuations']);
-        $router->get('fetch-frequently-bought-together', [DefaultReportController::class, 'getFrequentlyBoughtTogether']);
-        
+
+        // The routes below are commented out because their controller methods have not been implemented yet
+        // in DefaultReportController. The corresponding Vue calls in DefaultReport.vue are also commented out.
+        // Uncomment both when the methods are implemented.
+        // $router->get('fetch-default-report', [DefaultReportController::class, 'getDefaultReport']);
+        // $router->get('fetch-failed-orders', [DefaultReportController::class, 'getFailedOrders']);
+        // $router->get('fetch-default-report-graphs', [DefaultReportController::class, 'getDefaultReportGraphs']);
+        // $router->get('fetch-default-report-fluctuations', [DefaultReportController::class, 'getDefaultReportFluctuations']);
+        // $router->get('fetch-frequently-bought-together', [DefaultReportController::class, 'getFrequentlyBoughtTogether']);
+
         //Refund
         $router->get('refund-chart', [RefundReportController::class, 'getRefundChart']); //d
         $router->get('weeks-between-refund', [RefundReportController::class, 'getWeeksBetweenRefund']); //(d)

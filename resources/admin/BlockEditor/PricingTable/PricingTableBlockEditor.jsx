@@ -29,6 +29,7 @@ const {
 } = wp.components
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     icon: {
         src: PricingTableIcon
     },

@@ -1,15 +1,12 @@
 <template>
-  <div class="fct-single-shipping-class-page">
-    <div v-if="loading">
-      <SingleShippingClassLoader/>
-    </div>
-    <NotFound v-else-if="notFound.show"
-              :message="notFound.message"
-              :button-text="notFound.buttonText"
-              :route="notFound.route"
-    />
-    <div v-else class="fct-single-shipping-class">
-      <div class="single-page-header flex items-center justify-between">
+  <div class="setting-wrap fct-single-shipping-class-page">
+    <SettingsHeader
+        :save-button-text="translate('Save Shipping Class')"
+        :loading-text="translate('Saving Shipping Class')"
+        :loading="saving"
+        @onSave="saveClass"
+    >
+      <template #heading>
         <el-breadcrumb :separator-icon="ArrowRight">
           <el-breadcrumb-item :to="{ name: 'shipping_classes' }">
             {{ translate("Shipping Classes") }}
@@ -21,41 +18,48 @@
             {{ classForm.name }}
           </el-breadcrumb-item>
         </el-breadcrumb>
+      </template>
 
-        <div class="fct-page-header__actions">
-          <el-button type="primary" @click="saveClass" :loading="saving">
-            {{ translate('Save Shipping Class') }}
-          </el-button>
-        </div>
+    </SettingsHeader>
+
+    <div class="setting-wrap-inner">
+      <div v-if="loading">
+        <SingleShippingClassLoader/>
       </div>
+      <NotFound v-else-if="notFound.show"
+                :message="notFound.message"
+                :button-text="notFound.buttonText"
+                :route="notFound.route"
+      />
+      <div v-else class="fct-single-shipping-class">
+        <CardContainer>
+          <CardHeader :title="translate('Class Details')" border_bottom title_size="small"/>
+          <CardBody>
+            <el-form :model="classForm" :rules="rules" ref="classFormRef" label-position="top">
+              <el-form-item :label="translate('Class Name')" prop="name">
+                <el-input v-model="classForm.name" :placeholder="translate('Enter class name')"></el-input>
+              </el-form-item>
 
-      <CardContainer class="mb-4">
-        <CardHeader :title="translate('Class Details')" border_bottom title_size="small"/>
-        <CardBody>
-          <el-form :model="classForm" :rules="rules" ref="classFormRef" label-position="top">
-            <el-form-item :label="translate('Class Name')" prop="name">
-              <el-input v-model="classForm.name" :placeholder="translate('Enter class name')"></el-input>
-            </el-form-item>
+              <el-form-item :label="translate('Cost')" prop="cost">
+                <el-input-number v-model="classForm.cost" :precision="2" :min="0" :step="1" class="w-full max-w-[200px]"></el-input-number>
+                <div class="form-help-text w-full">
+                  {{ translate('Additional cost for products in this shipping class') }}
+                </div>
+              </el-form-item>
 
-            <el-form-item :label="translate('Cost')" prop="cost">
-              <el-input-number v-model="classForm.cost" :precision="2" :min="0" :step="1" class="w-full max-w-[200px]"></el-input-number>
-              <div class="form-help-text w-full">
-                {{ translate('Additional cost for products in this shipping class') }}
-              </div>
-            </el-form-item>
-
-            <el-form-item :label="translate('Cost Type')" prop="type">
-              <el-select v-model="classForm.type" style="width: 100%">
-                <el-option :label="translate('Fixed Amount')" value="fixed"></el-option>
-                <el-option :label="translate('Percentage')" value="percentage"></el-option>
-              </el-select>
-              <div class="form-help-text">
-                {{ translate('How this cost should be applied to the shipping rate') }}
-              </div>
-            </el-form-item>
-          </el-form>
-        </CardBody>
-      </CardContainer>
+              <el-form-item :label="translate('Cost Type')" prop="type">
+                <el-select v-model="classForm.type" style="width: 100%">
+                  <el-option :label="translate('Fixed Amount')" value="fixed"></el-option>
+                  <el-option :label="translate('Percentage')" value="percentage"></el-option>
+                </el-select>
+                <div class="form-help-text">
+                  {{ translate('How this cost should be applied to the shipping rate') }}
+                </div>
+              </el-form-item>
+            </el-form>
+          </CardBody>
+        </CardContainer>
+      </div>
     </div>
   </div>
 </template>
@@ -71,6 +75,7 @@ import translate from "@/utils/translator/Translator";
 import {ArrowRight} from "@element-plus/icons-vue";
 import Notify from "@/utils/Notify";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 const saveShortcut = useSaveShortcut();
 

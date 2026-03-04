@@ -397,14 +397,15 @@ class ProductEditModel extends ProductBaseModel {
         // }
 
         if (name === 'item_cost') {
-            variant['item_cost'] = (value < 0) ? 0 : value
+            const parsed = parseFloat(value);
+            variant['item_cost'] = (isNaN(parsed) || parsed < 0) ? 0 : parsed;
         }
 
-        if (parseInt(variant['item_cost']) > parseInt(variant['item_price'])) {
-            variant['item_cost'] = 0
+        if (parseFloat(variant['item_cost']) > parseFloat(variant['item_price'])) {
+            variant['item_cost'] = 0;
         }
 
-        this.data.product_changes.variants[index][name] = value;
+        this.data.product_changes.variants[index][name] = (name === 'item_cost') ? variant[name] : value;
         this.data.product_changes.variants[index]['id'] = variant.id;
         this.data.product_changes.detail['id'] = this.product.detail.id;
 
@@ -643,6 +644,22 @@ class ProductEditModel extends ProductBaseModel {
             this.data.product_changes.detail['default_variation_id'] = value;
         }
 
+        if (name === 'fulfillment_type') {
+            if (!this.data.product_changes.detail) {
+                this.data.product_changes.detail = {};
+            }
+            this.product.detail.fulfillment_type = value;
+            this.data.product_changes.detail.fulfillment_type = value;
+            this.data.product_changes.detail['id'] = this.product.detail.id;
+
+            this.product.variants.forEach((variant, index) => {
+                this.product.variants[index]['fulfillment_type'] = value;
+                this.ensureVariationIndex(index);
+                this.data.product_changes.variants[index]['fulfillment_type'] = value;
+                this.data.product_changes.variants[index]['id'] = variant.id;
+            });
+        }
+
         if (name === 'shipping_class') {
             if (!this.data.product_changes.detail) {
                 this.data.product_changes.detail = {};
@@ -800,11 +817,12 @@ class ProductEditModel extends ProductBaseModel {
                 data.variants = [];
             }
             if (!Array.isArray(data.variants) || data.variants.length === 0) {
-                //Todo need to update the the backend validation
+                const firstVariant = this.product.variants?.[0] || {};
                 data.variants[0] = {
-                    variation_title: data.post_title,
-                    item_price: '',
-                    post_id: data.ID,
+                    id: firstVariant.id,
+                    variation_title: data.post_title || firstVariant.variation_title,
+                    item_price: firstVariant.item_price ?? '',
+                    post_id: this.product.ID,
                 };
             }
         }

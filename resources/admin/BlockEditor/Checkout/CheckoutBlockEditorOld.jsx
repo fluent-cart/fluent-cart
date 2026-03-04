@@ -20,6 +20,7 @@ const blockEditorData = window.fluent_cart_checkout_data;
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     example: {

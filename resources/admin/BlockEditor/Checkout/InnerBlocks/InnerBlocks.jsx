@@ -65,7 +65,7 @@ blockEditorData.blocks.forEach(block => {
     }
 
     registerBlockType(block.slug, {
-        apiVersion: 2,
+        apiVersion: 3,
         category: "fluent-cart",
         title: block.title,
         name: block.slug,

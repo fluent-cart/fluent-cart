@@ -415,6 +415,8 @@ class AddressHelper
         );
         if ($type === 'billing') {
             unset($requirementsFields['full_name']);
+            unset($requirementsFields['first_name']);
+            unset($requirementsFields['last_name']);
             unset($requirementsFields['company_name']);
         }
 
@@ -428,6 +430,31 @@ class AddressHelper
 
         foreach ($addresses as $address) {
             $isValid = true;
+
+
+            // Resolve name fields for validation from available sources
+            $addressName = trim(Arr::get($address, 'name') ?? '');
+            $metaFirstName = trim(Arr::get($address, 'meta.other_data.first_name') ?? '');
+            $metaLastName = trim(Arr::get($address, 'meta.other_data.last_name') ?? '');
+
+            if (empty(Arr::get($address, 'first_name'))) {
+                if ($metaFirstName) {
+                    $address['first_name'] = $metaFirstName;
+                    $address['last_name'] = $metaLastName;
+                } else if ($addressName) {
+                    $nameParts = static::guessFirstNameAndLastName($addressName);
+                    $address['first_name'] = Arr::get($nameParts, 'first_name', '');
+                    $address['last_name'] = Arr::get($nameParts, 'last_name', '');
+                }
+            }
+
+            if (empty(Arr::get($address, 'full_name'))) {
+                if ($addressName) {
+                    $address['full_name'] = $addressName;
+                } else if ($metaFirstName) {
+                    $address['full_name'] = trim($metaFirstName . ' ' . $metaLastName);
+                }
+            }
 
             // If country is not required in checkout fields, only allow addresses matching store country
             if (!isset($addressValidations['country']) && $storeCountry) {

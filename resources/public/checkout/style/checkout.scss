@@ -772,7 +772,7 @@
 ul.fct_summary_items_list {
   @apply px-0 pb-0 m-0 list-none grid gap-1.5 pt-5 border border-x-0 border-solid border-b-0 border-[var(--fct-checkout-border-color)] mt-5 text-sm font-normal text-[var(--fct-checkout-secondary-text-color)];
   li {
-    @apply flex items-center justify-between;
+    @apply flex items-center justify-between border-0;
     &.shipping-charge-hidden {
       @apply hidden;
     }

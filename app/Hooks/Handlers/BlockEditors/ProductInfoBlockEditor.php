@@ -49,9 +49,15 @@ class ProductInfoBlockEditor extends BlockEditor
     }
 
 
+    protected function skipInnerBlocks(): bool
+    {
+        return true;
+    }
+
     public function render(array $shortCodeAttribute, $block = null)
     {
         AssetLoader::loadSingleProductAssets();
+        AssetLoader::enqueueProductInfoFrontendStyles();
 
         $queryType = Arr::get($shortCodeAttribute, 'query_type', 'default');
         $product = null;
@@ -88,7 +94,6 @@ class ProductInfoBlockEditor extends BlockEditor
         if ($queryType === 'custom') {
             wp_reset_postdata();
         }
-
 
         return $innerBlocksContent;
     }

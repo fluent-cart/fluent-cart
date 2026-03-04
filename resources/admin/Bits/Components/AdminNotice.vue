@@ -52,7 +52,8 @@ const NOTICE_CONFIG = {
   deactivate_license: { icon: 'WarningFill', type: 'warning' },
   update_license: { icon: 'WarningFill', type: 'warning' },
   renew_license: { icon: 'WarningFill', type: 'warning' },
-  license_activation_success: { icon: 'CheckCircleFill', type: 'success' },
+  fluent_cart_license_activated: { icon: 'CheckCircleFill', type: 'success' },
+  fluent_cart_license_notice: { icon: 'WarningFill', type: 'warning' },
 };
 
 // Icon resolver
@@ -66,7 +67,8 @@ const LICENSE_NOTICE_IDS = [
   'deactivate_license',
   'renew_license',
   'update_license',
-  'license_activation_success'
+  'fluent_cart_license_activated',
+  'fluent_cart_license_notice'
 ];
 
 const upsertNotice = (notice) => {
@@ -76,7 +78,7 @@ const upsertNotice = (notice) => {
    * License ACTIVATED (success)
    * Remove all license related notices
    */
-  if (notice.id === 'license_activation_success') {
+  if (notice.id === 'fluent_cart_license_activated') {
     notices.value = notices.value.filter(
       n => !LICENSE_NOTICE_IDS.includes(n.id)
     );
@@ -94,11 +96,11 @@ const upsertNotice = (notice) => {
    * License state changed (deactivate / renew / update)
    * Remove license activation success notice
    */
-  if (['deactivate_license', 'renew_license', 'update_license', 'activate_license']
+  if (['deactivate_license', 'renew_license', 'update_license', 'activate_license', 'fluent_cart_license_notice']
       .includes(notice.id)) {
 
     notices.value = notices.value.filter(
-      n => n.id !== 'license_activation_success'
+      n => n.id !== 'fluent_cart_license_activated'
     );
   }
 

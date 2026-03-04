@@ -123,7 +123,7 @@ const filteredTaxRates = computed(() => {
 
 <template>
   <div class="fct-tax-configuration-country-wrap">
-    <el-button type="primary" link @click="showConfig">
+    <el-button type="primary" size="small" @click="showConfig">
       {{ translate('Configure Countries') }}
     </el-button>
 

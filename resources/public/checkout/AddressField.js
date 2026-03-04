@@ -21,6 +21,9 @@ export default class AddressField {
     #nonce = '';
     #errorConfig = {
         '.fct_error_billing_address_section_section': [
+            'billing_full_name',
+            'billing_first_name',
+            'billing_last_name',
             'billing_address_1',
             'billing_address_2',
             'billing_city',
@@ -28,6 +31,18 @@ export default class AddressField {
             'billing_country',
             'billing_state',
             'billing_phone'
+        ],
+        '.fct_error_shipping_address_section_section': [
+            'shipping_full_name',
+            'shipping_first_name',
+            'shipping_last_name',
+            'shipping_address_1',
+            'shipping_address_2',
+            'shipping_city',
+            'shipping_postcode',
+            'shipping_country',
+            'shipping_state',
+            'shipping_phone'
         ],
     };
 
@@ -593,7 +608,7 @@ export default class AddressField {
     }
 
     showValidationErrors(errors) {
-        const formSections = document.querySelectorAll('.fct_checkout_form_section');
+        const formSections = document.querySelectorAll('[data-fluent-cart-checkout-page-form-section]');
         const fieldErrors = errors?.errors || {};
 
         formSections.forEach(section => {

@@ -120,9 +120,6 @@ onUnmounted(() => {
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-refund-report-page">
-
-      <PageHeading :title="translate('Subscriptions')"></PageHeading>
-
       <Summary
           :summaryData="subscriptionReportData.summary"
           :fluctuations="subscriptionReportData.fluctuations"

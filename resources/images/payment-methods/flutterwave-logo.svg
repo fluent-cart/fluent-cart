@@ -1,0 +1,5 @@
+<svg width="120" height="28" viewBox="0 0 120 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10.5 4L8.5 12L18 4L12 24H18L28 0L10.5 4Z" fill="#F5A623"/>
+  <path d="M4 16L0 28H12L18 8L4 16Z" fill="#FF8C00"/>
+  <text x="32" y="20" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#F5A623">Flutterwave</text>
+</svg>

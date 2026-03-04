@@ -10,8 +10,12 @@ use FluentCart\App\Http\Controllers\VariantController;
 use FluentCart\Framework\Http\Router;
 
 $router->prefix('advance_filter')
+    ->withPolicy('OrderPolicy')
     ->group(function (Router $router) {
-        $router->get('/get-filter-options', [AdvanceFilterController::class, 'getFilterOption']);
+        $router->get('/get-filter-options', [AdvanceFilterController::class, 'getFilterOption'])->meta([
+            'permissions'      => ['orders/view', 'customers/view', 'products/view', 'labels/view'],
+            'permissions_type' => 'any'
+        ]);
     });
 
 $router->get('forms/search_options', [AdvanceFilterController::class, 'getSearchOptions'])->withPolicy('AdminPolicy')->meta([

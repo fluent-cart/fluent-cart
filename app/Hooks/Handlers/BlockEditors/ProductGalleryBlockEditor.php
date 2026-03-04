@@ -98,10 +98,23 @@ class ProductGalleryBlockEditor extends BlockEditor
 //            'public/buttons/direct-checkout/style/style.scss'
 //        );
 
-        $thumbnailMode = 'all';
+        $thumbPosition = Arr::get($shortCodeAttribute, 'thumbPosition', 'bottom');
+        if (!in_array($thumbPosition, ['bottom', 'top', 'left', 'right'], true)) {
+            $thumbPosition = 'bottom';
+        }
+        $scrollableThumbs = Arr::get($shortCodeAttribute, 'scrollableThumbs', 'no');
+        if (!in_array($scrollableThumbs, ['yes', 'no'], true)) {
+            $scrollableThumbs = 'no';
+        }
+        $maxThumbnails = Arr::get($shortCodeAttribute, 'maxThumbnails', '');
+        $maxThumbnails = $maxThumbnails !== '' ? (int) $maxThumbnails : null;
+
         ob_start();
         (new ProductRenderer($product))->renderGallery([
-            'mode' => 'all'
+            'thumbnail_mode'    => 'all',
+            'thumb_position'    => $thumbPosition,
+            'scrollable_thumbs' => $scrollableThumbs,
+            'max_thumbnails'    => $maxThumbnails,
         ]);
         return ob_get_clean();
     }

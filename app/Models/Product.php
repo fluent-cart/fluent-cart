@@ -672,6 +672,7 @@ class Product extends Model
 
                     unset($variantData['id'], $variantData['created_at'], $variantData['updated_at']);
                     $variantData['post_id'] = $newProductId;
+                    $variantData['sku'] = null; // Use NULL to avoid unique constraint violations (empty string '' would conflict)
 
                     if (!$importStockManagement) {
                         $variantData['manage_stock'] = 0;
@@ -761,5 +762,10 @@ class Product extends Model
             $wpdb->query('ROLLBACK');
             throw $e;
         }
+    }
+
+    public function integrations(): \FluentCart\Framework\Database\Orm\Relations\HasMany
+    {
+        return $this->hasMany(ProductMeta::class, 'object_id')->where('object_type', 'product_integration');
     }
 }

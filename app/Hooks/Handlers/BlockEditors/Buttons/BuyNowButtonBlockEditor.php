@@ -72,7 +72,7 @@ class BuyNowButtonBlockEditor extends BlockEditor
             $this->getLocalizationKey()     => [
                 'slug'              => $this->slugPrefix,
                 'name'              => static::getEditorName(),
-                'title'             => __('Product Button', 'fluent-cart'),
+                'title'             => __('Buy Now', 'fluent-cart'),
                 'description'       => __('A custom button block with product selection and automatic link assignment.', 'fluent-cart'),
                 'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
             ],
@@ -82,19 +82,10 @@ class BuyNowButtonBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-
-        $enabledModalCheckout = Arr::get($shortCodeAttribute, 'enable_modal_checkout', false);
         AssetLoader::loadSingleProductAssets();
 
         $variantIds = Arr::get($shortCodeAttribute, 'variant_ids', []);
         $variantId  = Arr::get($variantIds, 0);
-
-        if($enabledModalCheckout){
-            add_action('wp_footer', function (){
-                WebRoutes::renderModalCheckout();
-                AssetLoader::loadModalCheckoutAssets();
-            });
-        }
 
         if (!$variantId) {
             if(Helper::isAdminUser()){

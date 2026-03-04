@@ -413,7 +413,9 @@ class OrderService
             $signupFee = floatval(Arr::get($otherInfo, 'signup_fee', 0));
 
             if ($trialDays > 0) {
-                $total += $signupFee;
+                // For subscriptions with trial days, charge only signup fee minus discount
+                // The discount_total is the discount applied to the signup fee
+                $total += max(0,$signupFee - $discountTotal);
                 continue;
             }
 

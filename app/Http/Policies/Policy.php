@@ -46,7 +46,7 @@ class Policy extends BasePolicy
 
 
         if (empty($requiredPermission)) {
-            return true;
+            return false;
         }
 
 

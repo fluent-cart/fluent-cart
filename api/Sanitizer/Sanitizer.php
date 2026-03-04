@@ -48,7 +48,7 @@ class Sanitizer
     }
 
 
-    public static function sanitize(array $data, array $sanitizeMap = null): array
+    public static function sanitize(array $data, ?array $sanitizeMap = null): array
     {
         $sanitizeMap = $sanitizeMap ?? Sanitizer::getDefaultSanitizerMap();
         $sanitizedData = [];

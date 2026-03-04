@@ -69,6 +69,7 @@ class ProductVariationRequest extends RequestGuard
     {
         return [
             'variants.variation_title'  => 'required|sanitizeText|maxLength:200',
+            'variants.sku'              => 'nullable|sanitizeText|maxLength:30|unique:fct_product_variations,sku' . ($this->get('variants.id') ? ',' . $this->get('variants.id') : ''),
             'variants.item_price'       => 'nullable|numeric|min:0',
             'variants.compare_price'    => [
                 'nullable',
@@ -146,6 +147,8 @@ class ProductVariationRequest extends RequestGuard
         return [
             'variants.variation_title.required'  => esc_html__('Title is required.', 'fluent-cart'),
             'variants.variation_title.max'       => esc_html__('Title may not be greater than 200 characters.', 'fluent-cart'),
+            'variants.sku.max'                   => esc_html__('SKU may not be greater than 30 characters.', 'fluent-cart'),
+            'variants.sku.unique'                => esc_html__('The SKU must be unique.', 'fluent-cart'),
             'variants.item_price.required'       => esc_html__('Price is required.', 'fluent-cart'),
             'variants.item_price.numeric'        => esc_html__('Price must be a number.', 'fluent-cart'),
             'variants.item_price.min'            => esc_html__('Price must be a positive number greater than 0.', 'fluent-cart'),
@@ -176,6 +179,7 @@ class ProductVariationRequest extends RequestGuard
             'variants.rowId'            => 'intval',
             'variants.post_id'          => 'intval',
             'variants.variation_title'  => 'sanitize_text_field',
+            'variants.sku'              => 'sanitize_text_field',
             'variants.item_price'       => 'floatval',
             'variants.compare_price'    => 'floatval',
             'variants.manage_cost'      => 'sanitize_text_field',

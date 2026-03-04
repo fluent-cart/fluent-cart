@@ -17,9 +17,9 @@
         }
     }
     &.x-small{
-        @apply w-7 h-7 rounded-sm;
+        @apply w-5.5 h-5.5 rounded-xs;
         svg{
-            @apply h-[15px] w-[15px];
+            @apply h-[13px] w-[13px];
             &.cross{
                 @apply h-3 w-3;
             }
@@ -111,7 +111,12 @@
             @apply hover:border-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:hover:text-gray-50;
         }
         &-danger{
-            @apply hover:border-red-500 hover:bg-red-25 hover:text-red-500;
+          &:hover {
+            @apply border-red-500 bg-red-25 text-red-500;
+            svg {
+              @apply text-red-500;
+            }
+          }
         }
         &-info{
             @apply hover:border-gray-500 hover:bg-gray-25 dark:hover:border-dark-300 dark:hover:bg-dark-500;

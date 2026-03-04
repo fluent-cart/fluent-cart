@@ -35,6 +35,8 @@ class FluentCartCheckoutHandler {
     #errorConfig = {
         '.fct_error_billing_personal_information_section': [
             'billing_full_name',
+            'billing_first_name',
+            'billing_last_name',
             'billing_email',
             'billing_company_name'
         ],

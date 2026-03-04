@@ -45,7 +45,7 @@ const setupProduct = (product) => {
   productEditModel.setProduct(product);
   editableProduct = productEditModel.data.product;
 
-  productDownloadableModel.setDownloadableFiles(product.downloadable_files);
+  productDownloadableModel.setDownloadableFiles(product.downloadable_files, product);
 
   editableProduct.gallery = editableProduct?.detail?.gallery_image?.meta_value ?? [];
 

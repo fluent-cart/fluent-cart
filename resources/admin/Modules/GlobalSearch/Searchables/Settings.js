@@ -8,6 +8,7 @@ const settingsRoutes = {
     '/settings/store-settings/pages_setup': translate('Pages Setup'),
     '/settings/store-settings/single_product_setup': translate('Single product & Order Setup'),
     '/settings/store-settings/cart_and_checkout': translate('Cart and Checkout'),
+    '/settings/store-settings/subscriptions': translate('Subscriptions'),
     '/settings/store-settings/checkout_fields': translate('Checkout Fields'),
 };
 let Settings = [];

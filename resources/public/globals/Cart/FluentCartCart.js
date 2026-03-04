@@ -176,6 +176,9 @@ export default class FluentCartCart {
                                     el.textContent = cartItemCount.toString();
                                     window.fluentcart_drawer_vars.cart_item_count = cartItemCount;
                                 });
+
+                                // update cart total price
+                                ref.updateCartTotalPrice(cartData);
                             }
 
                             if (response && response?.fragments) {
@@ -496,5 +499,28 @@ export default class FluentCartCart {
 
     getState() {
         return this.#cartData
+    }
+
+    updateCartTotalPrice(cartData = []) {
+        // Calculate total from subtotal (in cents)
+        let totalCents = 0;
+        const currencySymbol = window.fluentcart_drawer_vars?.currency_settings?.currency_sign || '$';
+
+        cartData.forEach(item => {
+            if (item.subtotal) {
+                totalCents += item.subtotal;
+            }
+        });
+
+        // Convert cents to dollars and format
+        const totalDollars = (totalCents / 100).toFixed(2);
+        const formattedTotal = `${currencySymbol}${totalDollars}`;
+
+        // Update all elements
+        document.querySelectorAll('[data-fluent-cart-cart-total-price]').forEach(el => {
+            el.textContent = formattedTotal;
+        });
+
+        return formattedTotal;
     }
 }

@@ -393,7 +393,7 @@ class ProductAddToCart extends Element
             'type'  => 'typography',
             'css'   => [
                 [
-                    'selector' => '.fct-product-buttons-wrap .fluent-cart-add-to-cart-button',
+                    'selector' => '.fct-product-buttons-wrap .',
                     'property' => 'font',
                 ],
             ],

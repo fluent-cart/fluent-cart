@@ -35,17 +35,17 @@ const SelectVariationModal = (props) => {
     const closePopup = () => {
         setIsPopupOpen(false);
         if (typeof onModalClosed === 'function') {
-            onModalClosed(selectedVariations);
+            onModalClosed({ ...selectedVariations });
         }
-
     };
 
     const resolvedButtonLabel = buttonLabel || (isMultiple ? blocktranslate('Add Items') : blocktranslate('Add Item'));
 
     useEffect(() => {
-        setSelectedVariations(preSelectedVariations || {});
-    }, [preSelectedVariations]);
-
+        if (isPopupOpen) {
+            setSelectedVariations(preSelectedVariations || {});
+        }
+    }, [isPopupOpen]);
 
     return (
         <>

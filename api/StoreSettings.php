@@ -2,6 +2,8 @@
 
 namespace FluentCart\Api;
 
+use FluentCart\App\App;
+use FluentCart\App\Vite;
 use FluentCart\App\CPT\Pages;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
@@ -45,7 +47,7 @@ class StoreSettings implements ArrayableInterface
             'view_cart_button_text'                => __('View Cart', 'fluent-cart'),
             'cart_button_text'                     => __('Add To Cart', 'fluent-cart'),
             'popup_button_text'                    => __('View Product', 'fluent-cart'),
-            'out_of_stock_button_text'             => __('Out of stock', 'fluent-cart'),
+            'out_of_stock_button_text'             => __('Not Available', 'fluent-cart'),
             'currency_position'                    => 'before',
             // 'thousand_separator'                   => 'comma',
             'decimal_separator'                    => 'dot',
@@ -78,6 +80,7 @@ class StoreSettings implements ArrayableInterface
             'order_mode'                           => 'test',
             'variation_view'                       => 'both',
             'variation_columns'                    => 'masonry',
+            'enable_early_payment_for_installment' => 'yes',
             'modules_settings'                     => [],
             'min_receipt_number'                   => '1',
             'inv_prefix'                           => 'INV-'
@@ -103,6 +106,8 @@ class StoreSettings implements ArrayableInterface
             'checkout_page_id'         => $this->getCheckoutPage(),
             'receipt_page_id'          => $this->getReceiptPage()
         ];
+        $isProActive = App::isProActive();
+        $proFeatureIcon = Vite::getAssetUrl('images/crown.svg');
 
 
         $fields = [
@@ -114,6 +119,7 @@ class StoreSettings implements ArrayableInterface
                 'schema'          => [
                     'store_setup'          => [
                         'title'           => __('Store Setup', 'fluent-cart'),
+                        'show_title'      => false,
                         'type'            => 'section',
                         'disable_nesting' => true,
                         'columns'         => [
@@ -524,6 +530,7 @@ class StoreSettings implements ArrayableInterface
 //                    ],
                     'pages_setup'          => [
                         'title'           => __('Pages Setup', 'fluent-cart'),
+                        'show_title'      => false,
                         'type'            => 'section',
                         'disable_nesting' => true,
                         'columns'         => [
@@ -714,6 +721,7 @@ class StoreSettings implements ArrayableInterface
                     ],
                     'single_product_setup' => [
                         'title'           => __('Product Page', 'fluent-cart'),
+                        'show_title'      => false,
                         'type'            => 'section',
                         'disable_nesting' => true,
                         'columns'         => [
@@ -919,6 +927,7 @@ class StoreSettings implements ArrayableInterface
                     ],
                     'cart_and_checkout'    => [
                         'title'           => __('Cart & checkout', 'fluent-cart'),
+                        'show_title'      => false,
                         'type'            => 'section',
                         'disable_nesting' => true,
                         'columns'         => [
@@ -1072,6 +1081,54 @@ class StoreSettings implements ArrayableInterface
                                             ],
                                         ]
                                     ],
+                                ]
+                            ],
+                        ]
+                    ],
+                    'subscriptions_setup' => [
+                        'title'           => __('Subscriptions', 'fluent-cart'),
+                        'show_title'      => false,
+                        'type'            => 'section',
+                        'disable_nesting' => true,
+                        'columns'         => [
+                            'default' => 1,
+                            'md'      => 1
+                        ],
+                        'schema'          => [
+                            'subscription_settings_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'  => [
+                                        'type'  => 'html',
+                                        'value' => '<span class="setting-label">' . __('Subscription Settings', 'fluent-cart') . (!$isProActive ? ' <img src="' . esc_url($proFeatureIcon) . '" alt="' . esc_attr__('Pro feature', 'fluent-cart') . '" class="pro-feature-icon" style="margin-left: 6px; width: 14px; height: 14px; display: inline-block; vertical-align: text-top;" />' : '') . '</span>
+                                                            <div class="form-note">' . __('Configure how installment subscriptions can be paid early.', 'fluent-cart') . '</div>'
+                                    ],
+                                    'fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'class'           => 'col-span-2',
+                                        'schema'          => [
+                                            'enable_early_payment_for_installment' => [
+                                                'label'        => __('Enable early payment for installment', 'fluent-cart'),
+                                                'type'         => 'checkbox',
+                                                'value'        => 'yes',
+                                                'disabled'     => !$isProActive,
+                                                'wrapperClass' => !$isProActive ? 'disabled' : '',
+                                                'note'         => !$isProActive
+                                                    ? "<div class='pl-6'>" . __('This is a FluentCart Pro feature.', 'fluent-cart') . "</div>"
+                                                    : "<div class='pl-6'>" . __('Allow customers to pay remaining installments early from subscription screens.', 'fluent-cart') . "</div>"
+                                            ]
+                                        ]
+                                    ]
                                 ]
                             ],
                         ]

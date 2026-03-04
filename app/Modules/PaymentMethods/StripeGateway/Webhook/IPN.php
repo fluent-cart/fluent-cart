@@ -6,6 +6,7 @@ use FluentCart\App\Events\Order\OrderRefund;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
@@ -321,6 +322,7 @@ class IPN
 
         // Skip if already confirmed
         if ($transaction->status === Status::TRANSACTION_SUCCEEDED) {
+            (new StatusHelper($transaction->order))->syncOrderStatuses($transaction);
             return true;
         }
 

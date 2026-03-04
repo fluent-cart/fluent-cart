@@ -1,0 +1,446 @@
+/* ----------------------------------
+   Carousel Wrapper
+----------------------------------- */
+.fct-product-carousel-wrapper {
+  width: 100%;
+  position: relative;
+  padding: 16px 0 36px;
+}
+
+/* ----------------------------------
+   Swiper Container
+----------------------------------- */
+.fct-product-carousel {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 8px 0 32px;
+}
+
+/* ----------------------------------
+   Swiper Wrapper
+----------------------------------- */
+.fct-product-carousel .swiper-wrapper {
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* ----------------------------------
+   Slides
+----------------------------------- */
+.fct-product-carousel .swiper-slide {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 2px;
+  flex-shrink: 0;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.35s ease;
+}
+
+/* ----------------------------------
+   Product Card (shell only)
+----------------------------------- */
+.fct-product-carousel .fct-product-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+/* Hover lift */
+.fct-product-carousel .swiper-slide:hover .fct-product-card {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.14);
+  border-color: #d1d5db;
+}
+
+/* Active slide emphasis */
+.fct-product-carousel .swiper-slide-active .fct-product-card {
+  border-color: rgba(0, 115, 170, 0.45);
+}
+
+/* ----------------------------------
+   Product Image (ONLY image)
+----------------------------------- */
+
+.fct-product-carousel img.fct-product-card-image {
+  transition: transform 0.35s ease;
+}
+
+.fct-product-carousel .swiper-slide:hover img.fct-product-card-image {
+  transform: scale(1.06);
+}
+
+/* ----------------------------------
+   Navigation Arrows
+----------------------------------- */
+.fct-product-carousel .swiper-button-prev,
+.fct-product-carousel .swiper-button-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 20;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+    pointer-events: auto;
+}
+
+/* ===============================
+   Arrow Sizes
+================================ */
+
+/* Small */
+.fct-arrows-sm .swiper-button-prev,
+.fct-arrows-sm .swiper-button-next {
+  width: 30px;
+  height: 30px;
+}
+
+.fct-arrows-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Medium (default) */
+.fct-arrows-md .swiper-button-prev,
+.fct-arrows-md .swiper-button-next {
+  width: 38px;
+  height: 38px;
+}
+
+.fct-arrows-md svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Large */
+.fct-arrows-lg .swiper-button-prev,
+.fct-arrows-lg .swiper-button-next {
+  width: 46px;
+  height: 46px;
+}
+
+.fct-arrows-lg svg {
+  width: 22px;
+  height: 22px;
+}
+
+.fct-product-carousel .swiper-button-prev:hover,
+.fct-product-carousel .swiper-button-next:hover {
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25);
+}
+
+.fct-arrows-sm .swiper-button-prev:hover,
+.fct-arrows-sm .swiper-button-next:hover {
+  transform: translateY(-50%) scale(1.12);
+}
+
+.fct-arrows-lg .swiper-button-prev:hover,
+.fct-arrows-lg .swiper-button-next:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.fct-product-carousel .swiper-button-prev::after,
+.fct-product-carousel .swiper-button-next::after {
+  display: none;
+}
+
+.fct-product-carousel .swiper-button-prev {
+  left: 10px;
+}
+
+.fct-product-carousel .swiper-button-next {
+  right: 10px;
+}
+
+.fct-product-carousel .swiper-button-disabled {
+  opacity: 0.35;
+  cursor: default !important;
+  pointer-events: auto !important;
+  user-select: none;
+
+  box-shadow: none !important;
+}
+
+/* ----------------------------------
+   Pagination
+----------------------------------- */
+.fct-product-carousel .swiper-pagination {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  pointer-events: auto;
+}
+
+/* Pagination Bullets */
+.fct-product-carousel .swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+  opacity: 1;
+  margin: 0 !important;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.fct-product-carousel .swiper-pagination-bullet:hover {
+  background: #9ca3af;
+  transform: scale(1.3);
+}
+
+.fct-product-carousel .swiper-pagination-bullet-active {
+  background: #111827;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
+}
+
+/* ----------------------------------
+   Responsive
+----------------------------------- */
+@media (max-width: 768px) {
+  .fct-product-carousel .swiper-button-prev,
+  .fct-product-carousel .swiper-button-next {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+
+/* Wrapper */
+.fct-carousel-pagination {
+    display: flex;
+    margin-top: 16px;
+}
+
+/* Position */
+.fct-pagination-inside { position: absolute; bottom: 12px; }
+.fct-pagination-outside { position: relative; }
+.fct-pagination-bottom { margin-top: 20px; }
+
+/* Alignment */
+.fct-pagination-align-left { justify-content: flex-start; }
+.fct-pagination-align-center { justify-content: center; }
+.fct-pagination-align-right { justify-content: flex-end; }
+
+/* Progress Bar Type */
+.fct-pagination-progress .swiper-pagination {
+  padding: 0;
+  width: 180px;
+  height: 8px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+}
+
+.fct-pagination-progress .swiper-pagination-progressbar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.fct-pagination-progress .swiper-pagination-progressbar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #111827 0%, #374151 100%);
+    border-radius: 8px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 12px rgba(17, 24, 39, 0.5);
+    overflow: hidden;
+}
+
+.fct-pagination-progress .swiper-pagination-progressbar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: progressShimmer 2s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Fraction Type */
+.fct-pagination-fraction .swiper-pagination {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: 1px;
+  gap: 4px;
+}
+
+.fct-pagination-fraction .swiper-pagination-current,
+.fct-pagination-fraction .swiper-pagination-total {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1;
+}
+
+/* =====================================================
+   Segmented Pagination Type
+===================================================== */
+.fct-pagination-segmented .swiper-pagination {
+  padding: 10px 16px;
+  min-width: 150px;
+  max-width: 90%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.fct-pagination-segmented .swiper-pagination-segment {
+  flex: 1;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  min-width: 40px;
+  max-width: 80px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fct-pagination-segmented .swiper-pagination-segment.is-active {
+  background: linear-gradient(
+    90deg,
+    #111827 0%,
+    #374151 50%,
+    #111827 100%
+  );
+  background-size: 200% 100%;
+  animation: segmentShimmer 2s ease-in-out infinite;
+}
+
+.fct-pagination-segmented .swiper-pagination-segment.is-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: segmentGloss 2s ease-in-out infinite;
+}
+
+.fct-pagination-segmented .swiper-pagination-segment.is-completed {
+  background: #111827;
+  box-shadow: 0 0 6px rgba(17, 24, 39, 0.2);
+}
+
+.fct-pagination-segmented .swiper-pagination-segment:hover {
+  transform: scaleY(1.3);
+  cursor: pointer;
+}
+
+.fct-pagination-segmented .segment-counter {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+@keyframes segmentShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes segmentGloss {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* =====================================================
+   Hover Zones (for autoplay on hover)
+===================================================== */
+.fct-hover-zone {
+  position: absolute;
+  top: 0;
+  width: 48px;
+  height: 100%;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.fct-hover-left {
+  left: 0;
+  cursor: w-resize;
+}
+
+.fct-hover-right {
+  right: 0;
+  cursor: e-resize;
+}
+
+

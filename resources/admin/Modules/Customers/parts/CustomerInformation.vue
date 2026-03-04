@@ -25,6 +25,9 @@
                 <el-dropdown-item command="manage_billing_address">
                   {{ $t("Manage billing address") }}
                 </el-dropdown-item>
+                <el-dropdown-item command="recalculate_ltv" :disabled="recalculatingLtv">
+                  {{ $t("Recalculate lifetime value") }}
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -34,11 +37,11 @@
         <div class="fct-admin-sidebar-item">
           <div class="fct-profile-card">
             <div class="fct-profile-image">
-              <img :src="customer?.photo" :alt="customer?.full_name"/>
+              <img :src="customer?.photo" :alt="customerDisplayName"/>
             </div>
             <div class="fct-profile-details">
               <div class="title">
-                {{ customer?.full_name }}
+                {{ customerDisplayName }}
               </div>
               <span class="text">
                 <span v-if="customer.purchase_count > 0">
@@ -298,6 +301,7 @@ export default {
     Back
   },
   data() {
+    this.localizedData = window.fluentCartAdminApp;
     return {
       addOrEditAddress: false,
       shippingAddress: [],
@@ -328,11 +332,18 @@ export default {
         customer: {},
       },
       detaching: false,
+      recalculatingLtv: false,
       shouldShowSetAsAlsoCheckbox: true,
       closingModal: false,
     };
   },
   computed: {
+    customerDisplayName() {
+      if (this.localizedData.is_full_name_required) {
+        return this.customer?.full_name;
+      }
+      return this.customer?.first_name + ' ' + this.customer?.last_name;
+    },
     hasPrimaryBilling() {
       return this.billingAddress.findIndex(
           (address) => address.is_primary == "1"
@@ -354,6 +365,9 @@ export default {
       }
       if (command === "manage_shipping_address") {
         this.manageAddress("shipping");
+      }
+      if (command === "recalculate_ltv") {
+        this.recalculateLtv();
       }
     },
     getCustomerTotalOrders(purchase_count) {
@@ -397,6 +411,26 @@ export default {
     },
     fetch() {
       this.$emit("fetch");
+    },
+    recalculateLtv() {
+      this.recalculatingLtv = true;
+      this.$post(`customers/${this.customer_id}/recalculate-ltv`)
+          .then((response) => {
+            if (response.customer) {
+              this.customer.ltv = response.customer.ltv;
+              this.customer.purchase_count = response.customer.purchase_count;
+              this.customer.aov = response.customer.aov;
+              this.customer.first_purchase_date = response.customer.first_purchase_date;
+              this.customer.last_purchase_date = response.customer.last_purchase_date;
+            }
+            this.handleSuccess(response.message);
+          })
+          .catch((error) => {
+            this.handleError(error.message || this.$t('Failed to recalculate lifetime value'));
+          })
+          .finally(() => {
+            this.recalculatingLtv = false;
+          });
     },
     handleDetachUser() {
       this.detaching = true;

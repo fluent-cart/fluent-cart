@@ -4,6 +4,7 @@ namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Vite;
 use FluentCart\Api\Taxonomy;
 use FluentCart\App\Services\URL;
@@ -450,7 +451,8 @@ class MenuHandler
 
             'datei18'    => TransStrings::dateTimeStrings(),
             'el_strings' => TransStrings::elStrings(),
-            'wp_locale'  => get_locale()
+            'wp_locale'  => get_locale(),
+            'is_full_name_required' => CheckoutFieldsSchema::isFullNameRequired(),
         ]);
 
         wp_localize_script($slug . '_admin_app_start', 'fluentCartAdminApp', $adminLocalizeData);

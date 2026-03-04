@@ -316,7 +316,7 @@ class  Vite
     private function get_asset_url($path = ''): string
     {
         if (!$this->usingDevMode()) {
-            return FLUENTCART_URL . 'assets' . DIRECTORY_SEPARATOR . $path;
+            return FLUENTCART_URL . 'assets' . '/' . $path;
         } else {
             return $this->getVitePath() . $path;
         }

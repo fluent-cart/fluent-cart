@@ -1,6 +1,5 @@
 <template>
   <div class="fct-default-report-page">
-    <PageHeading :title="translate('Sales')"></PageHeading>
 
     <SummaryCards :default-report="defaultReport" />
 

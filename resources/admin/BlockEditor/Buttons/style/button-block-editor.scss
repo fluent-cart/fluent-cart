@@ -4,21 +4,5 @@
 @tailwind utilities;
 @tailwind base;
 
-.fct-block-card-wrapper {
-  @apply bg-white rounded border border-solid border-gray-outline min-w-[300px];
-  .fluent-cart-direct-checkout-button {
-    @apply text-white inline-flex hover:text-white;
-  }
-}
-
-.fct-block-card-header {
-  @apply border border-solid border-x-0 border-t-0 border-gray-outline p-4;
-  .fct-block-card-title {
-    @apply text-lg font-medium m-0;
-  }
-}
-.fct-block-card-body {
-  @apply px-5 py-10;
-}
 
 

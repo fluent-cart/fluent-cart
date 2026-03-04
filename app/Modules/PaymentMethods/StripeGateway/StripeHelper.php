@@ -89,10 +89,17 @@ class StripeHelper
 
         $status = self::transformSubscriptionStatus($stripeSubscription, $subscriptionModel);
 
+        $amount = Arr::get($stripeSubscription, 'plan.amount', 0);
+        $currency = Arr::get($stripeSubscription, 'plan.currency', null);
+
+        if ($currency && CurrenciesHelper::isZeroDecimal($currency)) {
+            $amount = $amount * 100;
+        }
+
         $subscriptionUpdateData = array_filter([
             'current_payment_method' => 'stripe',
             'status'                 => $status,
-            'recurring_total'        => Arr::get($stripeSubscription, 'plan.amount'),
+            'recurring_total'        => $amount,
         ]);
 
         if ($stripeStatus == Status::SUBSCRIPTION_CANCELED) {

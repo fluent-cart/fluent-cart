@@ -1,6 +1,6 @@
 <template>
   <div class="setting-wrap" :class="route_name">
-    <div class="single-page-header flex items-center justify-between">
+    <div class="fct-setting-header">
       <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
         <el-breadcrumb-item :to="{ name: 'storage' }">
           {{ translate("Storage Providers") }}
@@ -9,22 +9,32 @@
           {{ Str.headline(route_name) }}
         </el-breadcrumb-item>
       </el-breadcrumb>
+      <div class="fct-setting-header-action">
+        <el-button type="primary" @click="saveSettings" :loading="saving" :disabled="saving || fetching" size="small">
+          {{ translate('Save') }}
+        </el-button>
+      </div>
     </div>
-    <el-skeleton :loading="fetching" animated :rows="6"/>
 
-    <template v-if="!fetching">
+    <div class="setting-wrap-inner">
+      <Card.Container v-if="fetching">
+        <Card.Body>
+          <el-skeleton :loading="fetching" animated :rows="5"/>
+        </Card.Body>
+      </Card.Container>
 
-      <VueForm
-          :form="form"
-          :showSubmitButton="true"
-          @onSubmitButtonClick="saveSettings"
-          :submitButtonText="translate('Save')"
-          :loading="saving"
-          @on-change="(value) => {}"
-          :validation-errors="validationErrors"
-      />
+      <template v-else>
 
-    </template>
+        <VueForm
+            :form="form"
+            :showSubmitButton="false"
+            :loading="saving"
+            @on-change="(value) => {}"
+            :validation-errors="validationErrors"
+        />
+
+      </template>
+    </div>
   </div><!-- .setting-wrap -->
 </template>
 

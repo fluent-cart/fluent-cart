@@ -106,33 +106,18 @@ class DefaultReportModel extends Model {
       });
   }
 
-  getDefaultReport(query = {}) {
-    return this.makeRequest(
-      "fetch-default-report",
-      query,
-      "summaryData",
-      "summaryData"
-    );
-  }
+  // Not yet implemented — controller methods missing. Uncomment when DefaultReportController is complete.
+  // getDefaultReport(query = {}) {
+  //   return this.makeRequest("fetch-default-report", query, "summaryData", "summaryData");
+  // }
 
-  getDefaultReportFluctuations(query = {}) {
-    return this.makeRequest(
-      "fetch-default-report-fluctuations",
-      query,
-      "fluctuations",
-      "fluctuations"
-    );
-  }
+  // getDefaultReportFluctuations(query = {}) {
+  //   return this.makeRequest("fetch-default-report-fluctuations", query, "fluctuations", "fluctuations");
+  // }
 
-  getDefaultReportGraphs(query = {}) {
-    let key = "graphs";
-    return this.makeRequest(
-      "fetch-default-report-graphs",
-      query,
-      "graphs." + query.params.graph,
-      "graphs." + query.params.graph
-    );
-  }
+  // getDefaultReportGraphs(query = {}) {
+  //   return this.makeRequest("fetch-default-report-graphs", query, "graphs." + query.params.graph, "graphs." + query.params.graph);
+  // }
 
   getTopSoldProducts(query = {}) {
     return this.makeRequest(
@@ -143,14 +128,9 @@ class DefaultReportModel extends Model {
     );
   }
 
-  getFailedOrders(query = {}) {
-    return this.makeRequest(
-      "fetch-failed-orders",
-      query,
-      "failedOrders",
-      "failedOrders"
-    );
-  }
+  // getFailedOrders(query = {}) {
+  //   return this.makeRequest("fetch-failed-orders", query, "failedOrders", "failedOrders");
+  // }
 
   getTopSoldVariants(query = {}) {
     return this.makeRequest(

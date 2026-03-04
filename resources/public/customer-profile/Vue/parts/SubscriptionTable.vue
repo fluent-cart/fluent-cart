@@ -7,7 +7,7 @@
             <CardInfo :data="subscription" :show-payment-info="showPaymentInfo"/>
             <div
                 class="text"
-                v-if="subscription.status !== 'expired' && subscription.status !== 'canceled' && subscription.status !== 'completed'"
+                v-if="subscription.status == 'active' || subscription.status == 'trialing'"
                 aria-live="polite"
             >
               <!-- translators: %s is the next billing date -->
@@ -65,7 +65,7 @@
                             </Badge>
 
                             <div class="text-meta"
-                                 v-if="scope.row.status !== 'expired' && scope.row.status !== 'canceled' && scope.row.status !== 'completed'" aria-live="polite">
+                                 v-if="scope.row.status == 'active' || scope.row.status == 'trialing'" aria-live="polite">
 
                                 <!-- translators: %s is the next billing date -->
                                 {{

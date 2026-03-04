@@ -857,3 +857,10 @@
     transform: rotate(360deg);
   }
 }
+
+.fct-shop-toolbar {
+  @apply flex items-center justify-end gap-3.5 mb-3;
+  .fct-shop-view-switcher-wrap {
+    @apply mb-0;
+  }
+}

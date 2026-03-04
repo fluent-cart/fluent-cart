@@ -1,8 +1,8 @@
 <template>
     <el-skeleton animated>
         <template #template>
-          <el-table :data="nextPageCount" class="w-full compact-table responsive">
-            <el-table-column v-if="false" type="selection" width="45"/>
+          <el-table :data="nextPageCount" class="w-full compact-table responsive fct-loader-table">
+            <el-table-column :selectable="() => false" type="selection" width="45"/>
 
             <el-table-column :label="$t('Products')" width="380">
               <div class="table-cell">
@@ -50,7 +50,7 @@
               </div>
             </el-table-column>
 
-            <el-table-column v-if="productTable.isColumnVisible('post_date')" :label="$t('Created At')" width="120">
+            <el-table-column v-if="productTable.isColumnVisible('post_date')" :label="$t('Date')" width="120">
               <div class="table-cell">
                 <el-skeleton-item varient="p" class="w-4/5" />
               </div>
@@ -84,3 +84,11 @@ const props = defineProps({
 const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1);
 
 </script>
+
+<style>
+.fct-loader-table .el-checkbox__inner {
+  background-color: #f5f6f7;
+  border-color: #dcdfe6;
+  cursor: not-allowed;
+}
+</style>

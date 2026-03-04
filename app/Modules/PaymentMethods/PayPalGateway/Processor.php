@@ -240,6 +240,8 @@ class Processor
         ]);
 
         $order = Order::query()->where('id', $transaction->order_id)->first();
+        // in race conditions between webhook and AJAX confirmation
+        $transaction = OrderTransaction::query()->where('id', $transaction->id)->first();
         if ($transaction->status === Status::TRANSACTION_SUCCEEDED || $transactionUpdateData['status'] !== Status::TRANSACTION_SUCCEEDED) {
             if (!$transaction->vendor_charge_id && !empty($transactionUpdateData['vendor_charge_id'])) {
                 $transaction->update(['vendor_charge_id' => $transactionUpdateData['vendor_charge_id']]);

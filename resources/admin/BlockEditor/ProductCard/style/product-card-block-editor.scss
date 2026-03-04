@@ -4,21 +4,6 @@
 @tailwind utilities;
 @tailwind base;
 
-.fluent-cart-product-card-block-editor {
-  @apply bg-white rounded border border-solid border-gray-outline p-5;
-  .fluent-cart-product-card-block-editor-header{
-    @apply mt-0 mb-5 pb-5 border border-t-0 border-x-0 flex items-center justify-between border-solid border-gray-outline;
-  }
-  .fluent-cart-product-card-block-editor-title{
-    @apply m-0 text-lg font-medium;
-  }
-  .fct-input{
-    @apply text-sm w-full bg-white shadow-none rounded border border-solid border-gray-outline py-2 px-3.5 m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 focus:outline-none focus:shadow-none;
-  }
-  .product-clear-button {
-    @apply text-sm font-medium bg-neutral-50 border border-solid border-gray-outline rounded cursor-pointer block py-1.5 px-3 hover:bg-neutral-400;
-  }
-}
 
 .fct-product-card{
   @apply relative bg-[var(--product-card-bg)] grid grid-cols-1 border border-solid rounded border-[var(--product-card-border-color)] transition-all duration-200 p-1;

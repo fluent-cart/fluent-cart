@@ -94,22 +94,20 @@ class API
 
     public function verifyIPN()
     {
-        $post_data = '';
-        if (ini_get('allow_url_fopen')) {
-            $post_data = file_get_contents('php://input');
-        } else {
-            // If allow_url_fopen is not enabled, then make sure that post_max_size is large enough
-            // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Required for legacy file format support
-            ini_set('post_max_size', '12M');
+        $rawPayload = @file_get_contents('php://input');
+
+        $data = $rawPayload ? json_decode($rawPayload) : null;
+
+        if (empty($data) && !empty($_POST)) {
+            $postArray = stripslashes_deep($_POST);
+            $data = json_decode(wp_json_encode($postArray));
         }
 
-        $data = json_decode($post_data);
-
-        if ($data && $data->id) {
-            return $data;
+        if (!$data || empty($data->id)) {
+            return new \WP_Error('invalid_data', __('Invalid or empty payload received from Stripe', 'fluent-cart'));
         }
 
-        return new \WP_Error('invalid_data', __('Invalid data received from Stripe', 'fluent-cart'));
+        return $data;
     }
 
     public function getEvent($eventId)

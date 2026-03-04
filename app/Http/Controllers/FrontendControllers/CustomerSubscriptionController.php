@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\SubscriptionsManager;
+use FluentCart\App\Modules\Subscriptions\Services\EarlyPaymentFeature;
 use FluentCart\App\Services\OrderService;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
@@ -128,7 +129,10 @@ class CustomerSubscriptionController extends BaseFrontendController
             'order'                     => [
                 'uuid' => $subscription->order ? $subscription->order->uuid : ''
             ],
-            'billing_addresses'         => $subscription->billing_addresses
+            'billing_addresses'         => $subscription->billing_addresses,
+            'recurring_amount'          => $subscription->recurring_amount,
+            'can_early_pay'             => EarlyPaymentFeature::canPay($subscription),
+            'remaining_installments'    => max(0, $subscription->bill_times - $subscription->bill_count),
         ];
 
 
@@ -347,6 +351,56 @@ class CustomerSubscriptionController extends BaseFrontendController
             'message' => __('Your subscription has been successfully cancelled', 'fluent-cart')
         ];
 
+    }
+
+    public function initiateEarlyPayment(Request $request, $subscription_uuid)
+    {
+        $errorResponse = $this->checkUserLoggedIn();
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError([
+                'message' => __('Customer not found', 'fluent-cart')
+            ]);
+        }
+
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
+
+        if (!$subscription) {
+            return $this->sendError([
+                'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        if (!EarlyPaymentFeature::canPay($subscription)) {
+            return $this->sendError([
+                'message' => __('Early payment is not available for this subscription.', 'fluent-cart')
+            ]);
+        }
+
+        $url = add_query_arg([
+            'fluent-cart'       => 'early-installment-payment',
+            'subscription_hash' => $subscription->uuid,
+        ], home_url('/'));
+
+        return $this->sendSuccess([
+            'message'      => __('Early payment URL generated.', 'fluent-cart'),
+            'checkout_url' => $url,
+        ]);
+    }
+
+    private function canEarlyPay(Subscription $subscription): bool
+    {
+        return App::isProActive()
+            && $subscription->bill_times > 0
+            && $subscription->bill_count < $subscription->bill_times
+            && in_array($subscription->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING]);
     }
 
     public function getSetupIntentRemainingAttempts($subscription_uuid)

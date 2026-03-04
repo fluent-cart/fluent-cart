@@ -15,6 +15,20 @@ const ProductButtonBlock = {
             </button>;
         }
 
+        if (singleProductData.product?.detail?.stock_availability === 'out-of-stock') {
+            return <button {...props} {...blockProps} disabled className={`${blockProps.className || ''} out-of-stock`} style={{
+                background: '#fff',
+                boxShadow: 'none',
+                border: '1px solid #d6dae1',
+                color: '#2F3448',
+                fontWeight: '600',
+                cursor: 'not-allowed',
+                pointerEvents: 'none',
+            }}>
+                {blocktranslate('Out of Stock')}
+            </button>;
+        }
+
         const variationType = singleProductData.product?.detail?.variation_type;
         const isSimple = variationType === "simple";
         const hasSubscription = !!singleProductData.product?.has_subscription;

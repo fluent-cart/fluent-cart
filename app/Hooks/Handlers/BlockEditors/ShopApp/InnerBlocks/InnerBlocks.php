@@ -85,6 +85,7 @@ class InnerBlocks
                     'api_version'     => 3,
                     'version'         => 3,
                     'title'           => $block['title'],
+                    'category'        => 'fluent-cart',
                     'parent'          => array_merge($block['parent'] ?? [], [static::$parentBlock]),
                     'render_callback' => $block['callback'],
                     'supports'        => Arr::get($block, 'supports', []),
@@ -260,7 +261,8 @@ class InnerBlocks
                         ],
                         'uses_context' => [
                             'fluent-cart/view_mode',
-                            'fluent-cart/enable_filter'
+                            'fluent-cart/enable_filter',
+                            'fluent-cart/default_filters',
                         ]
                 ],
                 [
@@ -274,7 +276,8 @@ class InnerBlocks
                     ],
                     'uses_context' => [
                         'fluent-cart/view_mode',
-                        'fluent-cart/enable_filter'
+                        'fluent-cart/enable_filter',
+                        'fluent-cart/default_filters',
                     ]
                 ],
                 [
@@ -547,6 +550,7 @@ class InnerBlocks
         $enableFilter = Arr::get($block->context, 'fluent-cart/enable_filter', false);
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by', 'id');
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
+        
         $allProducts = $this->getInitialProducts($block);
 
         if (!$enableFilter) {
@@ -803,10 +807,9 @@ class InnerBlocks
 
         if (!empty($innerBlocksContent)) {
             return sprintf(
-                    "<div class='fct-product-image-wrap' style='position: relative;'>
-                       <div>%s</div>
-                       
-                       <div style='position: absolute; top: 0; left: 0; width: 100%%; height: 100%%;'>
+                    "<div class='fct-product-image-wrap' style='position: relative; overflow: hidden;'>
+                       %s
+                       <div style='position: absolute; inset: 0; pointer-events: none;'>
                             %s
                        </div>
                 </div>",
@@ -851,7 +854,7 @@ class InnerBlocks
     public function renderProductLoop($attributes, $content, $block): string
     {
 
-        $lastChanged = $attributes['last_changed'];
+        $lastChanged = Arr::get($attributes,'last_changed');
         $clientId = Arr::get($attributes, 'wp_client_id', '');
         if ($clientId) {
             $blockId = 'fct_product_loop_client_' . $attributes['wp_client_id'];
@@ -898,9 +901,12 @@ class InnerBlocks
 
         $innerBlocksContent = '';
         $blockContext = $block->context;
+
         foreach ($products as $key => $product) {
             setup_postdata($product->ID);
             if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+
+
                 if ($key === 0) {
                     //add attribute provider with value wp-block
                     $innerBlocksContent .= '<div class="fct-product-card" data-template-provider="wp-block" data-fct-product-card data-fluent-cart-cursor="' . esc_attr(Arr::get($parsed, 'cursor', '')) . '" data-fluent-client-id="' . esc_attr($clientId) . '">';
@@ -937,7 +943,6 @@ class InnerBlocks
         }
         return $innerBlocksContent;
     }
-
 
     public function renderProductContainer($attributes, $content, $block): string
     {
@@ -994,6 +999,16 @@ class InnerBlocks
                 'public/product-card/style/product-card.scss',
         );
 
+        Vite::enqueueStyle(
+                'fluent-cart-sold-out-badge',
+                'admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss'
+        );
+
+        Vite::enqueueStyle(
+                'fluent-cart-sale-badge',
+                'admin/BlockEditor/SaleBadge/style/sale-badge-block-editor.scss'
+        );
+
         Vite::enqueueScript(
                 'fluentcart-zoom-js',
                 'public/single-product/xzoom/xzoom.js',
@@ -1009,14 +1024,13 @@ class InnerBlocks
                         'trans'                      => TransStrings::singleProductPageString(),
                         'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
                         // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
-                        'out_of_stock_button_text'   => App::storeSettings()->get('out_of_stock_button_text', __('Out of Stock', 'fluent-cart')),
+                        'out_of_stock_button_text'   => apply_filters('fluent_cart/product/out_of_stock_text', __('Not Available', 'fluent-cart'), []),
                         'in_stock_status'            => Helper::IN_STOCK,
                         'out_of_stock_status'        => Helper::OUT_OF_STOCK,
                         'enable_image_zoom'          => (new StoreSettings())->get('enable_image_zoom_in_single_product'),
                         'enable_image_zoom_in_modal' => (new StoreSettings())->get('enable_image_zoom_in_modal')
                 ]
         ]);
-
 
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
             $blockContext = $block->context;
@@ -1089,7 +1103,7 @@ class InnerBlocks
                         'trans'                      => TransStrings::singleProductPageString(),
                         'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
                         // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
-                        'out_of_stock_button_text'   => App::storeSettings()->get('out_of_stock_button_text', __('Out of Stock', 'fluent-cart')),
+                        'out_of_stock_button_text'   => apply_filters('fluent_cart/product/out_of_stock_text', __('Not Available', 'fluent-cart'), []),
                         'in_stock_status'            => Helper::IN_STOCK,
                         'out_of_stock_status'        => Helper::OUT_OF_STOCK,
                         'enable_image_zoom'          => (new StoreSettings())->get('enable_image_zoom_in_single_product'),
@@ -1330,7 +1344,6 @@ class InnerBlocks
         $defaultFilters = Arr::get($block->context, 'fluent-cart/default_filters', []);
         $defaultFilters = Arr::get($request, 'default_filters', $defaultFilters);
 
-
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by','ID');
         $liveFilter = Arr::get($block->context, 'fluent-cart/live_filter', true);
@@ -1346,8 +1359,9 @@ class InnerBlocks
 
         $defaultFilterEnable = Arr::get($defaultFilters, 'enabled', false) ? true : false;
 
-        $allowOutOfStock = $defaultFilterEnable === true &&
-                Arr::get($defaultFilters, 'allow_out_of_stock', false) === true;
+        $allowOutOfStock = ($defaultFilterEnable === true &&
+                Arr::get($defaultFilters, 'allow_out_of_stock', false) === true) ||
+                Arr::get($request, 'allow_out_of_stock', false) == true;
 
 
         if (!$defaultFilterEnable) {

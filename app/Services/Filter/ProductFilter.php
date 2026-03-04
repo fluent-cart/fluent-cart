@@ -53,7 +53,7 @@ class ProductFilter extends BaseFilter
             'subscribable'     => 'has_subscription',
             'not_subscribable' => 'has_subscription',
             'bundle'           => 'bundle',
-            'non_bundle'        => 'nonBundle',
+            'non_bundle'       => 'nonBundle',
         ];
     }
 
@@ -118,6 +118,23 @@ class ProductFilter extends BaseFilter
                     'id > 5',
                     'id :: 1-10'
                 ]
+            ],
+
+            'sku' => [
+                'column'      => 'SKU',
+                'description' => 'Search By SKU',
+                'type'        => 'custom',
+                'examples'    => [
+                    'sku = 1',
+                    'sku != 1',
+                ],
+                'callback'    => static function (Builder $query, $value, $operator, BaseFilter $filter) {
+                    if ($filter->shouldApplyMatchFilter($operator)) {
+                        $query->whereHas('variants', function (Builder $query) use ($value, $filter, $operator) {
+                            $filter->applyMatchFilter($query, 'sku', $value, $operator);
+                        });
+                    }
+                }
             ]
         ];
     }

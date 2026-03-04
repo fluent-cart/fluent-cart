@@ -1,60 +1,87 @@
 <template>
   <div class="fct-report-nav-links-wrap">
-    <div class="fct-report-nav-links-toggle">
-      <el-button @click="toggleReportMenu">
-        <!-- <DynamicIcon name="LineChart" class="icon"/> -->
-        {{ translate('Reports') }}
-      </el-button>
+    <div
+        ref="overlayRef"
+        class="fct-settings-menu-overlay"
+        @click="closeMenu"
+    />
+
+    <div
+        ref="sidebarRef"
+        class="fct-settings-nav-container"
+        :class="{
+          'is-collapsed': isSidebarCollapsed,
+          'is-expanded': isSidebarExpanded,
+        }"
+    >
+      <div class="fct-settings-nav-collapse-button-wrapper">
+        <el-tooltip
+            :content="translate('Toggle reports')"
+            placement="right"
+        >
+          <el-button
+              @click="toggleCollapse"
+          >
+            <DynamicIcon name="Window" />
+
+            <span class="fct-menu-collapse-button-text">
+                {{ translate('Reports') }}
+              </span>
+          </el-button>
+        </el-tooltip>
+      </div>
+
+      <ul
+          class="fct-settings-nav"
+          @mouseenter="isDesktopView && isMenuCollapsed && (isMenuExpanded = true)"
+          @mouseleave="isMenuExpanded = false"
+      >
+        <li v-for="(route, i) in navLinks" :key="i" class="fct-settings-nav-item" :class="{'fct-settings-nav-item-active': isRouteActive(route)}">
+          <div @click="handleRouterPush(route)" class="fct-settings-nav-link">
+            <DynamicIcon v-if="route.icon" :name="route.icon" class="w-5 h-5"/>
+
+            <span class="fct-settings-nav-link-text">
+                {{ route.label }}
+                <DynamicIcon name="ChevronRight" class="fct-settings-nav-link-icon"/>
+              </span>
+          </div>
+
+          <!-- Child Components -->
+          <Animation
+              accordion
+              :visible="shouldShowDropdown(route)"
+              class="fct-settings-nav-child-wrap"
+          >
+            <ul class="fct-settings-nav-child-list">
+              <li
+                  v-for="(child, i) in route.child"
+                  :key="i"
+                  class="fct-settings-nav-item"
+                  :class="{ 'fct-settings-nav-item-active': isChildActive(child, i, route) }"
+              >
+                <div @click="handleRouterPush(child)" class="fct-settings-nav-link">
+                  {{ child.label }}
+                </div>
+              </li>
+            </ul>
+          </Animation>
+        </li>
+      </ul>
     </div>
 
-    <div class="fct-report-nav-links" ref="reportNavLinks">
-      <div class="fct-report-nav-links-overlay" @click="toggleReportMenu"></div>
-      <Tab.Container>
-        <Tab.Items class="is-open">
-          <Tab.Item
-              v-for="(route, i) in navLinks"
-              :key="i"
-              :class="{'fct-tab-item-active': isRouteActive(route)}">
-            <Tab.Link
-                @click="handleRouterPush(route)">
-              <DynamicIcon v-if="route.icon" :name="route.icon" class="w-5 h-5"/>
-              {{ route.label }}
-              <DynamicIcon name="ChevronRight" class="tab-icon-right"/>
-            </Tab.Link>
-            <Animation accordion :visible="isRouteActive(route) && route.child" class="fct-settings-menu-child-wrap">
-              <Tab.Item v-for="(child, i) in route.child" :key="i"
-                        :class="{ 'fct-tab-item-active': isChildActive(child, i, route) }"
-              >
-                <Tab.Link
-                    @click="handleRouterPush(child)">
-                  {{ child.label }}
-                </Tab.Link>
-              </Tab.Item>
-            </Animation>
-          </Tab.Item>
-        </Tab.Items>
-      </Tab.Container>
-    </div>
+
   </div>
 </template>
 
 <script setup>
 import { useRouter, useRoute } from "vue-router";
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import translate from "@/utils/translator/Translator";
-import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Permission from "@/utils/permission/Permission";
 import Animation from "@/Bits/Components/Animation.vue";
-import * as Tab from '@/Bits/Components/Tab/Tab.js';
 
 const router = useRouter();
 const route = useRoute();
-const activeBar = ref(null);
-const navButtons = ref([]);
-const menuWrap = ref(null);
-const reportNavLinks = ref(null);
-const isMobileView = ref(false);
 
 const navLinks = [
   {
@@ -92,6 +119,7 @@ const navLinks = [
     label: translate('Subscriptions'),
     url: '/reports/subscriptions',
     icon: 'Subscription',
+    always_open: true,
     child: [
       {
         route: 'subscriptions-retention',
@@ -129,42 +157,29 @@ const navLinks = [
     icon: 'Source'
   },
 ];
+const isMenuCollapsed = ref(false);
+const isMenuExpanded = ref(false);
+const isDesktopView = ref(window.innerWidth >= 1024);
+const emit = defineEmits(['update:menuState']);
+const sidebarRef = ref(null);
+const overlayRef = ref(null);
 
-const checkMobileView = () => {
-  isMobileView.value = window.innerWidth < 1025;
-  updateActiveBar();
+/*
+|--------------------------------------------------------------------------
+| Actions
+|--------------------------------------------------------------------------
+*/
+const shouldShowDropdown = (route) => {
+  if (!route.child) return false;
+
+  // Hide dropdowns when sidebar is collapsed (unless temporarily expanded on hover)
+  const isVisuallyExpanded = !isSidebarCollapsed.value || isSidebarExpanded.value;
+  if (!isVisuallyExpanded) return false;
+
+  // Otherwise show if active OR always_open
+  return isRouteActive(route) || route.always_open;
 };
 
-const updateActiveBar = () => {
-  if (!activeBar.value || !reportNavLinks.value) return;
-
-  const activeIndex = navLinks.findIndex(link => link.route === route.name);
-  if (activeIndex === -1) return;
-
-  const activeButton = navButtons.value[activeIndex];
-  if (!activeButton) return;
-
-  const containerRect = reportNavLinks.value.getBoundingClientRect();
-  const buttonRect = activeButton.$el.getBoundingClientRect();
-
-  if (isMobileView.value) {
-    activeBar.value.style.width = `${buttonRect.width}px`;
-    activeBar.value.style.height = '3px';
-    activeBar.value.style.left = `${buttonRect.left - containerRect.left}px`;
-    activeBar.value.style.top = `${buttonRect.top - containerRect.top + buttonRect.height}px`;
-  } else {
-    activeBar.value.style.width = `${buttonRect.width}px`;
-    activeBar.value.style.height = '2px';
-    activeBar.value.style.left = '0px';
-    activeBar.value.style.top = 'auto';
-    activeBar.value.style.transform = `translateX(${buttonRect.left - containerRect.left}px)`;
-  }
-};
-
-const toggleReportMenu = () => {
-  reportNavLinks.value.classList.toggle('is-active');
-  updateActiveBar();
-}
 
 const isRouteActive = (tabRoute) => {
   const currentPath = route.path;
@@ -197,21 +212,113 @@ const isChildActive = (child, index, routeGroup) => {
 };
 
 const handleRouterPush = (route) => {
-  router.push({ name: route.route });
+  router.push({ name: route.route }).catch(err => {
+    // Ignore navigation duplicated errors
+    if (err.name !== 'NavigationDuplicated') {
+      console.error('Navigation error:', err);
+    }
+  });
+
   const reportBody = document.querySelector('#fct-report-body');
   if (reportBody) {
     reportBody.scrollTop = 0;
   }
 }
 
-// Watch for route changes to update the active bar
-watch(() => route.name, () => {
-  updateActiveBar();
-}, { immediate: true });
+const toggleCollapse = () => {
+  // If not desktop → removes open class and stops
+  if (!isDesktopView.value) {
+    if (sidebarRef.value) {
+      sidebarRef.value.classList.remove('is-nav-open');
+    }
+    if (overlayRef.value) {
+      overlayRef.value.classList.remove('is-overlay-open');
+    }
+    return;
+  }
+
+  isMenuCollapsed.value = !isMenuCollapsed.value;
+  isMenuExpanded.value = false;
+};
+
+const closeMenu = () => {
+  // Only work on mobile
+  if (isDesktopView.value) return;
+
+  if (sidebarRef.value) {
+    sidebarRef.value.classList.remove('is-nav-open');
+  }
+
+  if (overlayRef.value) {
+    overlayRef.value.classList.remove('is-overlay-open');
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| Responsive Handling
+|--------------------------------------------------------------------------
+*/
+const updateViewportMode = () => {
+  const width = window.innerWidth;
+  const wasDesktop = isDesktopView.value;
+
+  isDesktopView.value = width >= 1024;
+
+  // Switching from mobile → desktop
+  if (!wasDesktop && isDesktopView.value) {
+    // Remove mobile open classes
+    if (sidebarRef.value) {
+      sidebarRef.value.classList.remove('is-nav-open');
+    }
+
+    if (overlayRef.value) {
+      overlayRef.value.classList.remove('is-overlay-open');
+    }
+  }
+
+  // Switching from desktop → mobile
+  if (wasDesktop && !isDesktopView.value) {
+    // Remove desktop collapse visually
+    isMenuCollapsed.value = false;
+  }
+};
+
+const emitMenuState = () => {
+  emit('update:menuState', {
+    isMenuCollapsed: isMenuCollapsed.value,
+    isMenuExpanded: isMenuExpanded.value,
+    isDesktopView: isDesktopView.value
+  });
+};
+
+watch([isMenuCollapsed, isMenuExpanded, isDesktopView], emitMenuState, {
+  immediate: true
+});
+
+/*
+|--------------------------------------------------------------------------
+| Computed States
+|--------------------------------------------------------------------------
+*/
+const isSidebarCollapsed = computed(() => {
+  return isMenuCollapsed.value;
+});
+
+const isSidebarExpanded = computed(() => {
+  return isDesktopView.value &&
+      isMenuCollapsed.value &&
+      isMenuExpanded.value;
+});
 
 onMounted( () => {
-  menuWrap.value = document.querySelector('.fct_admin_menu_wrap');
-  checkMobileView();
-  window.addEventListener('resize', updateActiveBar);
+  updateViewportMode();
+  window.addEventListener('resize', updateViewportMode);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateViewportMode);
+});
+
+
 </script>

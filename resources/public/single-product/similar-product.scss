@@ -69,3 +69,28 @@
         }
     }
 }
+
+// related products
+.fct-related-products-grid {
+  @apply grid gap-5;
+  --fct-related-product-columns: 4;
+  grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
+}
+
+@media (max-width: 1024px) {
+  .fct-related-products-grid {
+    --fct-related-product-columns: 3 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .fct-related-products-grid {
+    --fct-related-product-columns: 2 !important;
+  }
+}
+
+@media (max-width: 424px) {
+  .fct-related-products-grid {
+    --fct-related-product-columns: 1 !important;
+  }
+}

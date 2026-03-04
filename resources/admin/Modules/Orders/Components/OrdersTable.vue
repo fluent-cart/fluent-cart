@@ -88,7 +88,8 @@ const handleSelectionChange = (selection) => {
       id: item.id,
       parent_id: item.parent_id,
       invoice_no: item.invoice_no,
-      status: item.status
+      status: item.status,
+      mode: item.mode
     };
   });
 

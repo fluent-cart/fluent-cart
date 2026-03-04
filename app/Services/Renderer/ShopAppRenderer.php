@@ -58,9 +58,9 @@ class ShopAppRenderer
             }
         }
         $this->config = $config;
-        $this->viewMode = $config['view_mode'] ?? 'grid';
+        $this->viewMode = !empty($config['view_mode']) ? $config['view_mode'] : 'grid';
         $this->isFilterEnabled = $enableFilter;
-        $this->per_page = Arr::get($defaultFilters, 'per_page', 10);
+        $this->per_page = Arr::get($config, 'per_page', Arr::get($defaultFilters, 'per_page', 10));
         $this->order_type = Arr::get($defaultFilters, 'sort_type', 'DESC');
         $this->order_by = Arr::get($defaultFilters, 'sort_by', 'id');
         $this->liveFilter = Arr::get($this->customFilters, 'live_filter', true);
@@ -90,8 +90,44 @@ class ShopAppRenderer
 
 
         $this->defaultFilters = array_merge($this->defaultFilters, Arr::get($defaultFilters, 'tax_query', []));
+
+        // Merge shortcode taxonomy_filters into defaultFilters so they persist in AJAX pagination
+        $taxonomyFilters = Arr::get($config, 'taxonomy_filters', []);
+        foreach ($taxonomyFilters as $taxonomy => $termIds) {
+            if (!empty($termIds)) {
+                if (!is_array($termIds)) {
+                    $termIds = [$termIds];
+                }
+                $existing = Arr::get($this->defaultFilters, $taxonomy, []);
+                if (is_string($existing) && $existing !== '') {
+                    $existing = array_map('trim', explode(',', $existing));
+                } elseif (!is_array($existing)) {
+                    $existing = [];
+                }
+                $this->defaultFilters[$taxonomy] = array_unique(array_merge($existing, $termIds));
+            }
+        }
+
         if (!empty($this->defaultFilters)) {
             $this->defaultFilters['enabled'] = true;
+        }
+
+        // Merge allow_out_of_stock from config into defaultFilters
+        if (Arr::get($config, 'allow_out_of_stock')) {
+            $this->defaultFilters['allow_out_of_stock'] = true;
+        }
+
+        // Merge sort_by from config filters into defaultFilters for AJAX persistence
+        $configFilters = Arr::get($config, 'filters', []);
+        if (is_string($configFilters)) {
+            $configFilters = json_decode($configFilters, true) ?: [];
+        }
+        $shortcodeSortBy = Arr::get($configFilters, 'sort_by', '');
+        if ($shortcodeSortBy) {
+            $this->defaultFilters['sort_by'] = $shortcodeSortBy;
+            if (empty($this->defaultFilters['enabled'])) {
+                $this->defaultFilters['enabled'] = true;
+            }
         }
 
         if (Arr::get($this->customFilters, 'price_range', false)) {
@@ -180,6 +216,25 @@ class ShopAppRenderer
             'data-paginator'                         => $this->paginator,
             'data-default-filters'                   => wp_json_encode($this->defaultFilters)
         ];
+
+        // Shortcode filter data attributes for AJAX persistence
+        $includeIds = Arr::get($this->config, 'include_ids', []);
+        $excludeIds = Arr::get($this->config, 'exclude_ids', []);
+        $productType = Arr::get($this->config, 'product_type', '');
+        $onSale = Arr::get($this->config, 'on_sale', false);
+
+        if (!empty($includeIds)) {
+            $wrapperAttributes['data-include-ids'] = wp_json_encode($includeIds);
+        }
+        if (!empty($excludeIds)) {
+            $wrapperAttributes['data-exclude-ids'] = wp_json_encode($excludeIds);
+        }
+        if (!empty($productType)) {
+            $wrapperAttributes['data-product-type'] = esc_attr($productType);
+        }
+        if ($onSale) {
+            $wrapperAttributes['data-on-sale'] = '1';
+        }
         ?>
         <div class="fct-products-wrapper" data-fluent-cart-shop-app data-fluent-cart-product-wrapper role="main" aria-label="<?php esc_attr_e('Products', 'fluent-cart'); ?>">
             <?php $this->renderViewSwitcher(); ?>

@@ -83,6 +83,15 @@
           </div>
         </li>
 
+        <li v-if="subscription.bill_times > 0">
+          <div class="fct-single-subscription-details-label">
+            {{ $t("Installment Progress") }}
+          </div>
+          <div class="fct-single-subscription-details-value">
+            {{ subscription.bill_count }} / {{ subscription.bill_times }}
+          </div>
+        </li>
+
         <li>
           <div class="fct-single-subscription-details-label">
             {{ $t("Auto-cancellation") }}
@@ -232,7 +241,7 @@ export default {
     },
     showNextBillingDate() {
       const status = (this.subscription?.status || '').toLowerCase();
-      return (status === 'active' || status === 'trialing' || status === 'paused') && !!this.subscription?.next_billing_date;
+      return (status === 'active' || status === 'trialing');
     },
   },
   methods: {

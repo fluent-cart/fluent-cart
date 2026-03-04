@@ -175,7 +175,9 @@ class StatusHelper
                 }
             }
 
-            (new OrderPaid($this->order, $this->order->customer, $latestTransaction))->dispatch();
+            if ($oldPaymentStatus != $this->order->payment_status && $this->order->payment_status == Status::PAYMENT_PAID) {
+                (new OrderPaid($this->order, $this->order->customer, $latestTransaction))->dispatch();
+            }  
         }
 
         if ($oldOrderStatus != $this->order->status) {

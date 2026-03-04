@@ -16,7 +16,6 @@ class AppliedCouponsMigrator extends Migrator
 		return "`id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
             `order_id` BIGINT UNSIGNED NOT NULL,
             `coupon_id` BIGINT UNSIGNED NULL,
-            `customer_id` BIGINT UNSIGNED NULL,
 			`code` VARCHAR(100) NOT NULL ,
 			`amount` double NOT NULL,
 			`created_at` DATETIME NULL ,

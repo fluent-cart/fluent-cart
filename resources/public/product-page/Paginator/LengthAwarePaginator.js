@@ -105,8 +105,13 @@ export default class LengthAwarePaginator extends Paginator {
         this.#paginatorInfo = {...response.products};
         delete this.#paginatorInfo.data;
 
+        if (views.length > 0) {
+            this.renderNewProducts(views, true);
+        }
+        
         if (typeof this.#listener.onProductFetched === "function") {
-            this.#listener.onProductFetched(views);
+            this.#listener.onProductFetched(this.productList);
+            // this.#listener.onProductFetched(views);
             if (this.productList) {
                 const top = this.productList.getBoundingClientRect().top + window.scrollY;
                 window.scrollTo({
@@ -117,7 +122,7 @@ export default class LengthAwarePaginator extends Paginator {
         }
 
         if (views.length > 0) {
-            this.renderNewProducts(views, true);
+            // this.renderNewProducts(views, true);
             this.#renderPaginator();
             if (noResultElement) {
                 setTimeout(() => {

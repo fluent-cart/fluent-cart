@@ -51,7 +51,10 @@
   }
 
   &.settings {
-    @apply max-w-[1124px] mt-5 mb-0;
+    @apply max-w-full mb-0;
+    .fct-alert {
+      @apply rounded-none;
+    }
   }
 }
 

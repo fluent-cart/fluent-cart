@@ -18,7 +18,7 @@ function getPluginVersion() {
 const PLUGIN_VERSION = getPluginVersion();
 console.log(`📦 Building FluentCart v${PLUGIN_VERSION}`);
 
-// Plugin to add cache busting query string to dynamic chunk imports
+// Plugin to add cache busting query string to all chunk imports
 const chunkCacheBustPlugin = {
     name: 'chunk-cache-bust',
     renderDynamicImport() {
@@ -26,6 +26,12 @@ const chunkCacheBustPlugin = {
             left: 'import(',
             right: ' + "?ver=' + PLUGIN_VERSION + '")'
         };
+    },
+    renderChunk(code) {
+        // Add version to static imports between chunks (from "./file.js" and import "./file.js")
+        const ver = '?ver=' + PLUGIN_VERSION;
+        return code.replace(/(from\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`)
+                   .replace(/(import\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`);
     }
 };
 
@@ -53,6 +59,17 @@ const inputs = [
     "resources/admin/BlockEditor/ProductCard/style/product-card-block-editor.scss",
     "resources/public/buttons/direct-checkout/style/style.scss",
 
+    "resources/admin/BlockEditor/ProductCarousel/ProductCarouselBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductCarousel/InnerBlocks/InnerBlocks.jsx",
+    "resources/admin/BlockEditor/ProductCarousel/style/product-carousel-block-editor.scss",
+    "resources/public/carousel/products/style/product-carousel.scss",
+    "resources/public/carousel/products/product-carousel.js",
+
+    "resources/admin/BlockEditor/MediaCarousel/MediaCarouselBlockEditor.jsx",
+    "resources/admin/BlockEditor/MediaCarousel/InnerBlocks/InnerBlocks.jsx",
+    "resources/admin/BlockEditor/MediaCarousel/style/media-carousel-block-editor.scss",
+    "resources/public/carousel/media/style/media-carousel.scss",
+    "resources/public/carousel/media/media-carousel.js",
 
     "resources/public/buttons/add-to-cart/style/style.scss",
     "resources/public/buttons/product-details/style/style.scss",
@@ -63,8 +80,16 @@ const inputs = [
     'resources/admin/BlockEditor/BuySection/style/buy-section-block-editor.scss',
     'resources/admin/BlockEditor/Excerpt/ExcerptBlockEditor.jsx',
     'resources/admin/BlockEditor/Excerpt/style/excerpt-block-editor.scss',
+    'resources/admin/BlockEditor/ProductDescription/ProductDescriptionBlockEditor.jsx',
+    'resources/admin/BlockEditor/ProductDescription/style/product-description-block-editor.scss',
     'resources/admin/BlockEditor/PriceRange/PriceRangeBlockEditor.jsx',
     'resources/admin/BlockEditor/PriceRange/style/price-range-block-editor.scss',
+    // Sale Badge
+    'resources/admin/BlockEditor/SaleBadge/SaleBadgeBlockEditor.jsx',
+    'resources/admin/BlockEditor/SaleBadge/style/sale-badge-block-editor.scss',
+    // Sold Out Badge
+    'resources/admin/BlockEditor/SoldOutBadge/SoldOutBadgeBlockEditor.jsx',
+    'resources/admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss',
     'resources/admin/BlockEditor/ProductInfo/ProductInfoBlockEditor.jsx',
     'resources/admin/BlockEditor/ProductInfo/style/product-info-block-editor.scss',
     'resources/admin/BlockEditor/ProductGallery/ProductGalleryBlockEditor.jsx',
@@ -77,6 +102,24 @@ const inputs = [
     'resources/admin/BlockEditor/Buttons/style/button-block-editor.scss',
 
     'resources/admin/BlockEditor/Components/style/fct-global-block-editor.scss',
+
+    // Product Categories List
+    'resources/admin/BlockEditor/ProductCategoriesList/ProductCategoriesListBlockEditor.jsx',
+    'resources/admin/BlockEditor/ProductCategoriesList/style/product-categories-list-block-editor.scss',
+    'resources/public/product-categories-list/product-categories-list.scss',
+    'resources/public/product-categories-list/product-categories-list.js',
+
+    // Customer Dashboard Button
+    'resources/admin/BlockEditor/CustomerDashboardButton/CustomerDashboardButtonBlockEditor.jsx',
+    'resources/admin/BlockEditor/CustomerDashboardButton/style/customer-dashboard-button-block-editor.scss',
+    'resources/public/customer-dashboard-button/customer-dashboard-button.scss',
+
+    // Store Logo
+    'resources/admin/BlockEditor/StoreLogo/StoreLogoBlockEditor.jsx',
+
+    // Related products
+    'resources/admin/BlockEditor/RelatedProduct/RelatedProductBlockEditor.jsx',
+    'resources/admin/BlockEditor/RelatedProduct/style/related-product-block-editor.scss',
 
     // product card
     //"resources/public/product-card/product-card.js",
@@ -91,9 +134,22 @@ const inputs = [
     "resources/public/search-bar-app/SearchBarApp.js",
     // Cart Js
     //"resources/public/cart/Cart.js",
+
     // Cart Drawer
     //"resources/public/cart-drawer/CartDrawer.js",
     "resources/public/cart-drawer/cart-drawer.scss",
+    "resources/public/cart-drawer/mini-cart.scss",
+    "resources/admin/BlockEditor/Cart/style/mini-cart-block-editor.scss",
+    "resources/admin/BlockEditor/Cart/MiniCartBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductTitle/ProductTitleBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductTitle/style/product-title-block-editor.scss",
+    "resources/admin/BlockEditor/ProductImage/ProductImageBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductImage/style/product-image-block-editor.scss",
+
+    // Product SKU
+    'resources/admin/BlockEditor/ProductSku/ProductSkuBlockEditor.jsx',
+    'resources/admin/BlockEditor/ProductSku/style/product-sku-block-editor.scss',
+
     "resources/admin/global.js",
     "resources/admin/admin_hooks.js",
     "resources/admin/utils/edit-wp-user-global.js",

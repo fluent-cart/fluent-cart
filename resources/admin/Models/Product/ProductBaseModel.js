@@ -1,7 +1,15 @@
 import Model from "@/utils/model/Model";
+import {generateCid} from "@/utils/cid";
+import Storage from "@/utils/Storage";
+
+export const STOCK_STATUS = {
+    IN_STOCK: 'in-stock',
+    OUT_OF_STOCK: 'out-of-stock',
+};
 
 class ProductBaseModel extends Model {
     data = {
+        visibleColumns: [],
         options: {
             status: [
                 {
@@ -41,10 +49,11 @@ class ProductBaseModel extends Model {
                 variation_type: 'simple',
                 manage_stock: 1,
                 fulfillment_type: 'physical',
-                stock_availability: 'in-stock'
+                stock_availability: STOCK_STATUS.IN_STOCK
             },
             variation: {
                 variation_title: '',
+                sku: '',
                 item_price: 0,
                 compare_price: 0,
                 serial_index: 1,
@@ -54,13 +63,15 @@ class ProductBaseModel extends Model {
                 available :  100,
                 committed : 0,
                 on_hold :  0,
-                stock_status: 'in-stock',
+                stock_status: STOCK_STATUS.IN_STOCK,
             },
             variationDetail: {
                 description: '',
                 payment_type: 'onetime',
+                installment: 'no',
                 times: '',
                 repeat_interval: '',
+                trial_days: '',
                 billing_summary: '',
                 manage_setup_fee: 'no',
                 signup_fee_name: '',
@@ -99,6 +110,7 @@ class ProductBaseModel extends Model {
         variation['other_info'] = {...this.data.dummies.variationDetail};
         //variation['media'] = {...this.data.dummies.variationImage};
         variation['media'] = [];
+        variation._cid = generateCid();
         return variation;
     }
 
@@ -128,6 +140,67 @@ class ProductBaseModel extends Model {
         }
     }
 
+    // --- Column width persistence ---
+
+    getColumnWidthStorageKey() {
+        return '';
+    }
+
+    saveColumnWidths(columns) {
+        const key = this.getColumnWidthStorageKey();
+        if (!key) return;
+        const widths = {};
+        columns.forEach(col => {
+            if (col.key) widths[col.key] = col.width;
+        });
+        Storage.set(key, widths);
+    }
+
+    restoreColumnWidths(columns) {
+        const key = this.getColumnWidthStorageKey();
+        if (!key) return;
+        const stored = Storage.get(key);
+        if (stored && typeof stored === 'object') {
+            columns.forEach(col => {
+                if (col.key && stored[col.key] !== undefined) {
+                    col.width = stored[col.key];
+                }
+            });
+        }
+    }
+
+    // --- Column visibility ---
+
+    getColumnStorageKey() {
+        return '';
+    }
+
+    getToggleableColumns() {
+        return [];
+    }
+
+    setupColumnVisibility() {
+        const key = this.getColumnStorageKey();
+        if (!key) return;
+        const stored = Storage.get(key);
+        if (Array.isArray(stored)) {
+            this.data.visibleColumns = stored;
+        } else {
+            this.data.visibleColumns = this.getToggleableColumns().map(c => c.value);
+        }
+    }
+
+    handleColumnVisibilityChange() {
+        const key = this.getColumnStorageKey();
+        if (key) {
+            Storage.set(key, this.data.visibleColumns);
+        }
+    }
+
+    isColumnVisible(key) {
+        return this.data.visibleColumns.includes(key);
+    }
+
     get downloadableFileSchema(){
         return  {
             product_variation_id: [],
@@ -144,6 +217,36 @@ class ProductBaseModel extends Model {
             },
             serial: ''
         };
+    }
+
+    /**
+     * Recalculate stock_status on each variant and stock_availability on detail
+     * when stock values change.
+     */
+    syncStockStatus(product) {
+        if (!Array.isArray(product.variants)) return;
+        const manageStock = product.detail?.manage_stock;
+
+        if (!manageStock) {
+            for (const v of product.variants) {
+                v.stock_status = STOCK_STATUS.IN_STOCK;
+            }
+            if (product.detail) {
+                product.detail.stock_availability = STOCK_STATUS.IN_STOCK;
+            }
+            return;
+        }
+
+        let allOutOfStock = true;
+        for (const v of product.variants) {
+            const avail = parseInt(v.available, 10) || 0;
+            v.stock_status = avail > 0 ? STOCK_STATUS.IN_STOCK : STOCK_STATUS.OUT_OF_STOCK;
+            if (avail > 0) allOutOfStock = false;
+        }
+
+        if (product.detail) {
+            product.detail.stock_availability = allOutOfStock ? STOCK_STATUS.OUT_OF_STOCK : STOCK_STATUS.IN_STOCK;
+        }
     }
 
     addDummyDownloadableFiles(product) {

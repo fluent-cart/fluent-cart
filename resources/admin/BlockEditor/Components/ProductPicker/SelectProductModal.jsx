@@ -3,14 +3,15 @@ import {Cross} from "@/BlockEditor/Icons";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import ProductSelector from './ProductSelector';
 
+const {useState} = wp.element;
 
-const {useEffect, useState} = wp.element;
-
-const SelectProductModal = ({onModalClosed, buttonLabel = blocktranslate('Add Product')}) => {
+const SelectProductModal = ({
+    onModalClosed,
+    buttonLabel = blocktranslate('Add Product'),
+    selectedProduct = null,
+    setSelectedProduct = () => {},
+    isMultiple = false}) => {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState({});
-
-
 
     const openPopup = () => {
         setIsPopupOpen(true);
@@ -24,7 +25,6 @@ const SelectProductModal = ({onModalClosed, buttonLabel = blocktranslate('Add Pr
         }
         
     };
-
 
     return (
         <>
@@ -50,8 +50,10 @@ const SelectProductModal = ({onModalClosed, buttonLabel = blocktranslate('Add Pr
                             <ProductSelector 
                                 prevSelectedProduct={selectedProduct}
                                 onProductSelectionUpdated={(selectedProduct) => {
-                                setSelectedProduct(selectedProduct);
-                            }} />
+                                    setSelectedProduct(selectedProduct);
+                                }}
+                                isMultiple={isMultiple}
+                            />
                         </div>
 
                         <div className="fct-popup-footer">

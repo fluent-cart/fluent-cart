@@ -30,7 +30,7 @@
         <el-row :gutter="30">
           <el-col :lg="17" :xs="24">
             <CardContainer class="overflow-hidden fct-customer-orders-items">
-              <CardHeader :title="translate('Orders') + ' ('+translateNumber(customerOrders.total)+')'" title_size="small">
+              <CardHeader :title="translate('Orders (%s)', translateNumber(customerOrders.total || 0))" title_size="small">
                 <template #action>
                   <el-input
                       v-model="search"

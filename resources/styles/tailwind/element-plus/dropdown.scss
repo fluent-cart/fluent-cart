@@ -57,6 +57,9 @@
                             }
                         }
                     }
+                  .el-button {
+                    @apply border-0 rounded-[6px] p-2 font-normal;
+                  }
                 }
                 &.item-checkbox{
                     @apply p-0 rounded-none bg-transparent cursor-default dark:bg-transparent;

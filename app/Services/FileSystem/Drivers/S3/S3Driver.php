@@ -143,11 +143,22 @@ class S3Driver extends BaseDriver
         // Credential scope
         $credentialScope = "{$dateStamp}/{$this->region}/s3/aws4_request";
 
+        $hasDot = strpos($this->bucket, '.') !== false;
+
         // Canonical request components
-        $canonicalUri = '/' . implode('/', array_map(
+        $encodedFilePath = '/' . implode('/', array_map(
             'rawurlencode',
             explode('/', ltrim($filePath, '/'))
         ));
+
+        // For dotted buckets, use path-style: include bucket in canonical URI
+        if ($hasDot) {
+            $canonicalUri = '/' . $this->bucket . $encodedFilePath;
+            $host = "s3.{$this->region}.amazonaws.com";
+        } else {
+            $canonicalUri = $encodedFilePath;
+            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        }
 
         $canonicalQueryString = [
             'X-Amz-Algorithm' => 'AWS4-HMAC-SHA256',
@@ -172,7 +183,7 @@ class S3Driver extends BaseDriver
         $canonicalQueryStringStr = implode('&', $canonicalQueryStringEncoded);
 
         // Canonical headers
-        $canonicalHeaders = "host:{$this->bucket}.s3.{$this->region}.amazonaws.com\n";
+        $canonicalHeaders = "host:{$host}\n";
 
         // Create canonical request
         $canonicalRequest = "GET\n{$canonicalUri}\n{$canonicalQueryStringStr}\n{$canonicalHeaders}\nhost\nUNSIGNED-PAYLOAD";
@@ -188,14 +199,22 @@ class S3Driver extends BaseDriver
         $signature = hash_hmac('sha256', $stringToSign, $kSigning);
 
         // Build final URL
-        $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com{$canonicalUri}?{$canonicalQueryStringStr}&X-Amz-Signature={$signature}";
+        $url = "https://{$host}{$canonicalUri}?{$canonicalQueryStringStr}&X-Amz-Signature={$signature}";
 
         return $url;
     }
     protected function retrieveFileForDownload(string $downloadableFilePath, $bucket = null)
     {
         $this->bucket = $bucket;
-        $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$downloadableFilePath}";
+        $this->region = S3::getBucketRegion($this->bucket);
+        $hasDot = strpos($this->bucket, '.') !== false;
+
+        if ($hasDot) {
+            $url = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$downloadableFilePath}";
+        } else {
+            $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$downloadableFilePath}";
+        }
+
         $date = gmdate('D, d M Y H:i:s T');
         $signature = base64_encode(hash_hmac('sha1', "GET\n\n\n{$date}\n/{$this->bucket}/{$downloadableFilePath}", $this->secretKey, true));
         $response = wp_remote_get($url, [

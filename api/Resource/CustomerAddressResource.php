@@ -308,7 +308,7 @@ class CustomerAddressResource extends BaseResourceApi
             ->where('type', $type)
             ->update(array('is_primary' => '0'));
 
-        $isUpdated = static::getQuery()->where('id', $addressId)->update(array('is_primary' => '1'));
+        $isUpdated = static::getQuery()->where('id', $addressId)->where('customer_id', $customerId)->where('type', $type)->update(array('is_primary' => '1'));
 
         if ($isUpdated) {
             return static::makeSuccessResponse('', __('Address successfully set as the primary', 'fluent-cart'));

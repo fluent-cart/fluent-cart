@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Services\PluginInstaller;
 
+use FluentCart\Framework\Support\Arr;
+
 class BackgroundInstaller
 {
 
@@ -135,4 +137,46 @@ class BackgroundInstaller
             }
         }
     }
+
+    public function installFromCdn($cdnUrl, $pluginSlug)
+    {
+        $isHandled = apply_filters('fluent_cart/outside_addon/handle_cdn_install', null, [
+            'url'         => $cdnUrl,
+            'plugin_slug' => $pluginSlug
+        ]);
+
+        if ($isHandled) {
+            return $isHandled;
+        }
+
+        return [
+            'action' => 'copy',
+            'url'    => $cdnUrl
+        ];
+    }
+
+    public function installFromGithub($githubUrl, $pluginSlug, $path = 'zipball_url')
+    {
+        $mainUrl = $githubUrl;
+        $download = null;
+
+
+        $isHandeled = apply_filters('fluent_cart/outside_addon/handle_install', null, [
+            'url'         => $githubUrl,
+            'plugin_slug' => $pluginSlug,
+            'path'        => $path
+        ]);
+
+
+        if ($isHandeled) {
+            return $isHandeled;
+        } else {
+            return [
+                'action' => 'copy',
+                'url'    => $mainUrl
+            ];
+        }
+    }
+
+
 }

@@ -51,10 +51,7 @@ class SearchBarShortCode extends ShortCode
 
     public function render(?array $viewData = null)
     {
-        $config = $viewData;
-        ob_start();
-        (new SearchBarRenderer($config))->render();
-        return ob_get_clean();
+        (new SearchBarRenderer($viewData))->render();
     }
 
     private function getTermsData($key): array

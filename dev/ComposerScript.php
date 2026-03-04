@@ -433,12 +433,32 @@ class ComposerScript
     private static function updatePsr4NamespaceArray(&$psr4, $namespace)
     {
         if (!$psr4) return;
-        
+
+        // Previous implementation:
+        // This was not idempotent — running composer install/update multiple times
+        // would stack the namespace prefix repeatedly in installed.json, e.g.:
+        //   Run 1: Faker\              → FluentCart\Faker\
+        //   Run 2: FluentCart\Faker\    → FluentCart\FluentCart\Faker\
+        //   Run 3: FluentCart\FluentCart\Faker\ → FluentCart\FluentCart\FluentCart\Faker\
+        // Because str_contains only checked if the prefix existed *anywhere* in the key,
+        // and iterated over the array while modifying it.
+        //
+        // foreach ($psr4 as $key => $value) {
+        //     if (!str_contains($key, $namespace)) {
+        //         $psr4[$namespace . '\\' . $key] = $value;
+        //         unset($psr4[$key]);
+        //     }
+        // }
+
+        // Fix: strip all existing prefix layers first, then add exactly one.
+        // This makes it idempotent — safe to run multiple times.
+        $updated = [];
         foreach ($psr4 as $key => $value) {
-            if (!str_contains($key, $namespace)) {
-                $psr4[$namespace . '\\' . $key] = $value;
-                unset($psr4[$key]);
+            while (str_starts_with($key, $namespace . '\\')) {
+                $key = substr($key, strlen($namespace) + 1);
             }
+            $updated[$namespace . '\\' . $key] = $value;
         }
+        $psr4 = $updated;
     }
 }

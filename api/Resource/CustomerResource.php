@@ -6,6 +6,7 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Collection;
 use FluentCart\Framework\Support\Arr;
@@ -115,11 +116,7 @@ class CustomerResource extends BaseResourceApi
     public static function create($data, $params = [])
     {
         $email = Arr::get($data, 'email');
-        $fullName = trim(Arr::get($data, 'full_name', ''));
-        $nameParts = AddressHelper::guessFirstNameAndLastName($fullName);
-
-        $data['first_name'] = Arr::get($nameParts, 'first_name', '');
-        $data['last_name'] = Arr::get($nameParts, 'last_name', '');
+        $data = static::resolveCustomerName($data);
 
         $data['purchase_value'] = [];
         $customer = static::getQuery()->firstOrCreate(
@@ -183,13 +180,9 @@ class CustomerResource extends BaseResourceApi
     public static function update($data, $id, $params = [])
     {
         $customer = static::getQuery()->find($id);
-        $fullName = trim(Arr::get($data, 'full_name', ''));
 
         if ($customer) {
-            $nameParts = AddressHelper::guessFirstNameAndLastName($fullName);
-
-            $data['first_name'] = Arr::get($nameParts, 'first_name', '');
-            $data['last_name'] = Arr::get($nameParts, 'last_name', '');
+            $data = static::resolveCustomerName($data);
 
             if ($customer->user_id != 0) {
                 $data['email'] = $customer->email;
@@ -450,6 +443,21 @@ class CustomerResource extends BaseResourceApi
 
         return $cachedCustomer;
 
+    }
+
+    private static function resolveCustomerName(array $data): array
+    {
+        if (CheckoutFieldsSchema::isFullNameRequired()) {
+            $fullName = trim(Arr::get($data, 'full_name', ''));
+            $nameParts = AddressHelper::guessFirstNameAndLastName($fullName);
+            $data['first_name'] = Arr::get($nameParts, 'first_name', '');
+            $data['last_name'] = Arr::get($nameParts, 'last_name', '');
+        } else {
+            $data['first_name'] = trim(Arr::get($data, 'first_name', ''));
+            $data['last_name'] = trim(Arr::get($data, 'last_name', ''));
+        }
+
+        return $data;
     }
 
     private static function updateUser($data, $userId)

@@ -9,6 +9,7 @@ import TaxConfigurationCountryModal from "@/Modules/Tax/TaxConfigurationCountryM
 import TaxRatesLoader from "@/Modules/Tax/TaxRatesLoader.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import {$confirm} from "@/Bits/common";
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 const activeRateNames = ref([]);
 const taxRates = ref([]);
@@ -132,24 +133,26 @@ onMounted(() => {
 
 <template>
   <div class="setting-wrap">
-    <div class="fct-all-tax-classes-page">
-      <Card.Container>
-        <Card.Header
-            :title="translate('Existing Tax Rates')"
-            :text="translate('Manage tax rates for different locations and tax classes')">
-          <template #action>
-            <TaxConfigurationCountryModal @refresh="fetchTaxRates" />
-          </template>
-        </Card.Header>
-        <Card.Body>
-          <TaxRatesLoader v-if="loading" />
-          <div v-else class="fct-tax-rates-wrap">
-            <el-collapse v-model="activeRateNames" accordion expand-icon-position="left">
-                <el-collapse-item v-for="(taxRate, i) in taxRates" :name="i">
+    <SettingsHeader :heading="translate('Tax Rates')" :show-save-button="false">
+      <template #action>
+        <TaxConfigurationCountryModal @refresh="fetchTaxRates" />
+      </template>
+    </SettingsHeader>
+
+    <div class="setting-wrap-inner">
+      <div class="fct-all-tax-classes-page">
+        <Card.Container>
+          <Card.Header :title="translate('Existing Tax Rates')" :text="translate('Manage tax rates for different locations and tax classes')">
+          </Card.Header>
+          <Card.Body>
+            <TaxRatesLoader v-if="loading" />
+            <div v-else class="fct-tax-rates-wrap">
+              <el-collapse v-model="activeRateNames" accordion expand-icon-position="left">
+                <el-collapse-item v-for="(taxRate, i) in taxRates" :name="i" :key="taxRate.group_code">
                   <template #title>
                   <span class="fct-tax-rates-title">
                     {{ taxRate.group_name }}
-                    <span class="total-countries">{{ taxRate.total_countries }} {{ translate(' Countries') }}</span>
+                    <span class="total-countries">{{ taxRate.total_countries }} {{ translate('Countries') }}</span>
                   </span>
                   </template>
                   <div class="fct-tax-rates-countries">
@@ -199,15 +202,16 @@ onMounted(() => {
                     </div>
                   </div>
                 </el-collapse-item>
-            </el-collapse>
+              </el-collapse>
 
-            <el-button type="info" soft plain size="small" @click="showAddCountryModal = true" class="fct-tax-rates-country-add">
-              <DynamicIcon name="Plus" class="w-5 h-5 items-center justify-center"/>
-              {{ translate('Add Country') }}
-            </el-button>
-          </div>
-        </Card.Body>
-      </Card.Container>
+              <el-button type="info" soft plain size="small" @click="showAddCountryModal = true" class="fct-tax-rates-country-add">
+                <DynamicIcon name="Plus" class="w-5 h-5 items-center justify-center"/>
+                {{ translate('Add Country') }}
+              </el-button>
+            </div>
+          </Card.Body>
+        </Card.Container>
+      </div>
     </div>
 
     <el-dialog

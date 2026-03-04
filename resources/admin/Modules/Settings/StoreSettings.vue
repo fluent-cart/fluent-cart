@@ -1,72 +1,75 @@
 <template>
   <div class="setting-wrap">
-    <template v-if="!hasFormFieldsError">
-      <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
-        <el-skeleton :loading="formLoading" animated>
-          <template #template>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-          </template>
-        </el-skeleton>
-      </div>
-      <template v-if="!formLoading">
-        <el-form v-if="form.isReady" class="relative">
-          <div class="form-section-save-action-top" v-if="!loading">
-            <el-button v-if="route.name !== 'addons'" @click="saveSettings" type="primary" :loading="saving">
-              <span v-if="!saving" class="cmd block leading-none">⌘s</span>
-              {{ saving ? translate('Saving') : translate('Save') }}
-            </el-button>
-          </div>
+    <SettingsHeader
+        :heading="currentRouteTitle"
+        :loading="saving"
+        @onSave="saveSettings"
+    />
 
-           <Card v-if="loading">
+
+    <div class="setting-wrap-inner">
+      <template v-if="!hasFormFieldsError">
+        <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
+          <el-skeleton :loading="formLoading" animated>
+            <template #template>
+              <div class="grid gap-3 mb-6">
+                <el-skeleton-item variant="p" class="w-[20%]"/>
+                <el-skeleton-item variant="p"/>
+              </div>
+              <div class="grid gap-3 mb-6">
+                <el-skeleton-item variant="p" class="w-[20%]"/>
+                <el-skeleton-item variant="p"/>
+              </div>
+              <div class="grid gap-3 mb-6">
+                <el-skeleton-item variant="p" class="w-[20%]"/>
+                <el-skeleton-item variant="p"/>
+              </div>
+              <div class="grid gap-3">
+                <el-skeleton-item variant="p" class="w-[20%]"/>
+                <el-skeleton-item variant="p"/>
+              </div>
+            </template>
+          </el-skeleton>
+        </div>
+        <template v-if="!formLoading">
+          <el-form v-if="form.isReady" class="relative">
+
+
+            <Card v-if="loading">
               <CardBody>
-                <el-skeleton 
-                  :rows="5"
-                  animated
+                <el-skeleton
+                    :rows="5"
+                    animated
                 >
                   <el-skeleton-item />
                   <el-skeleton-item variant="text" />
                   <el-skeleton-item variant="text" />
-              </el-skeleton>
+                </el-skeleton>
               </CardBody>
             </Card>
 
-          <VueForm
-              v-if="!loading"
-              :form="form"
-              :showSubmitButton="true"
+            <VueForm
+                v-if="!loading"
+                :form="form"
+                :showSubmitButton="true"
 
-              @onSubmitButtonClick="saveSettings"
-              :submitButtonText="translate('Save')"
-              :loading="saving"
-              @on-change="(value) => {}"
-              :validation-errors="validationErrors"
-          />
-        </el-form>
+                @onSubmitButtonClick="saveSettings"
+                :submitButtonText="translate('Save')"
+                :loading="saving"
+                @on-change="(value) => {}"
+                :validation-errors="validationErrors"
+            />
+          </el-form>
+        </template>
       </template>
-    </template>
-    <template v-else>
-      <Card>
-        <CardBody>
-          <p>There is an error in the form fields. Please try reloading the page.</p>
-        </CardBody>
-      </Card>
-    </template>
-
+      <template v-else>
+        <Card>
+          <CardBody>
+            <p>{{ translate('There is an error in the form fields. Please try reloading the page.') }}</p>
+          </CardBody>
+        </Card>
+      </template>
+    </div>
   </div>
   <!-- .setting-wrap -->
 </template>
@@ -74,7 +77,6 @@
 <script setup>
 
 import {
-  getCurrentInstance,
   onMounted,
   ref, watch,
 } from "vue";
@@ -87,6 +89,7 @@ import {onBeforeRouteLeave, useRoute} from 'vue-router';
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import CardBody from "@/Bits/Components/Card/CardBody.vue";
 import Card from "@/Bits/Components/Card/Card.vue";
+import SettingsHeader from "./Parts/SettingsHeader.vue";
 
 
 const settingsModel = useSettingsModel();
@@ -105,6 +108,9 @@ const saving = ref(false);
 const formLoading = ref(true);
 const validationErrors = ref({});
 const route = useRoute();
+const currentRouteName = ref(route.name);
+const currentRouteTitle = ref(route.meta.title || 'Store Settings');
+
 
 const saveSettings = () => {
   saving.value = true;
@@ -152,13 +158,6 @@ const saveSettings = () => {
         loading.value = false;
       });
 };
-const currentRouteName = ref(route.name);
-
-// add watch on route.name
-watch(() => route.name, (newVal, oldVal) => {
-  currentRouteName.value = newVal;
-  getSettings();
-});
 
 
 const hasFormFieldsError = ref(false);
@@ -191,11 +190,17 @@ const bindSaveShortcut = () => {
 
 // Watch for route changes
 watch(() => route.name, (newVal, oldVal) => {
+  currentRouteName.value = newVal;
+  currentRouteTitle.value = route.meta?.title || 'Store Settings';
+
   // Unbind first
   keyboardShortcuts.unbind('mod+s');
   // Then bind again
   bindSaveShortcut();
+
+  getSettings();
 });
+
 
 onMounted(() => {
   bindSaveShortcut();

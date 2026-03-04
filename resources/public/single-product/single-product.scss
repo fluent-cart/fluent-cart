@@ -78,7 +78,7 @@
     display: flex;
     flex-direction: column-reverse;
     .fct-gallery-thumb-controls {
-      @apply mb-5 mt-0;
+      @apply mb-3.5 mt-0;
     }
     @media (min-width: 769px) {
       @apply top-1 sticky;
@@ -86,14 +86,14 @@
   }
   &.thumb-pos-bottom {
     .fct-gallery-thumb-controls {
-      @apply mt-5 mb-0;
+      @apply mt-3.5 mb-0;
     }
   }
 
   &.thumb-pos-left {
     display: flex;
     flex-direction: row-reverse;
-    column-gap: 10px;
+    column-gap: 14px;
     aspect-ratio: auto;
     .fct-gallery-thumb-controls {
       @apply mt-0 mb-0;
@@ -109,7 +109,7 @@
 
   &.thumb-pos-right {
     display: flex;
-    column-gap: 10px;
+    column-gap: 14px;
     aspect-ratio: auto;
     align-items: stretch;
     .fct-gallery-thumb-controls {
@@ -141,7 +141,9 @@
 
 .fct-gallery-thumb-controls {
   flex-wrap: wrap;
-  @apply flex overflow-y-hidden gap-2 rounded-[4px] p-0;
+  @apply flex gap-3.5 rounded-[4px] p-0 flex-shrink-0;
+  overflow: auto;
+
   &:active::-webkit-scrollbar-thumb,
   &:focus::-webkit-scrollbar-thumb,
   &:hover::-webkit-scrollbar-thumb {
@@ -158,7 +160,46 @@
   }
 
   &::-webkit-scrollbar {
-    @apply h-1;
+    @apply h-1 w-1;
+  }
+}
+
+/* Scrollable thumbnails */
+.fct-product-gallery-wrapper[data-scrollable-thumbs="yes"] {
+  /* Horizontal scroll for top/bottom positions */
+  &.thumb-pos-bottom,
+  &.thumb-pos-top {
+    .fct-gallery-thumb-controls {
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+    }
+  }
+
+  /* Vertical scroll for left/right positions */
+  &.thumb-pos-left,
+  &.thumb-pos-right {
+    .fct-product-gallery-thumb {
+      height: auto;
+    }
+    .fct-gallery-thumb-controls {
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex-wrap: nowrap;
+    }
+  }
+}
+
+/* "See More" button in gallery */
+.fct-gallery-see-more-button {
+  @apply min-w-[92px] min-h-[92px] w-[92px] h-[92px] bg-gray-50 flex flex-col items-center justify-center cursor-pointer border border-solid border-[var(--fct-single-product-border-color)] rounded flex-shrink-0 transition-all duration-200 p-0 hover:bg-gray-100;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
+  }
+
+  .fct-see-more-text {
+    @apply text-xs mt-2.5 leading-tight font-semibold opacity-[0.6] text-[var(--fct-single-product-secondary-text-color)];
   }
 }
 
@@ -238,19 +279,55 @@
   }
 }
 
+/* Stock + SKU inline when adjacent (works for both classic and block editor paths) */
+.fct-product-stock + .fct-product-sku {
+  @apply inline-flex items-center m-0;
+
+  &::before {
+    content: '|';
+    display: inline-block;
+    color: #D6DAE1;
+    @apply text-[15px] mx-3;
+  }
+
+  .fct-product-sku__label {
+    @apply text-[15px] font-semibold text-[var(--fct-single-product-primary-text-color)];
+  }
+
+  .fct-product-sku__value {
+    @apply text-[15px] text-[var(--fct-single-product-secondary-text-color)];
+  }
+}
+
 .fct-product-stock {
-  @apply p-0 m-0 mb-4 list-none flex items-center gap-1.5;
+  @apply p-0 m-0 mb-0 list-none inline-flex items-center gap-1.5;
 
-  span {
-    @apply text-[15px] text-[var(--fct-single-product-primary-text-color)];
+  .fct-stock-badge {
+    @apply inline-block text-xs font-medium tracking-wide px-3 py-1.5 rounded-full leading-none;
   }
 
-  .in-stock {
-    @apply text-[15px] font-medium text-[var(--fct-single-product-primary-text-color)];
+  .fct_status_badge_in-stock {
+    @apply bg-green-50 text-green-700 border border-solid border-green-200;
   }
 
-  .out-of-stock {
-    @apply text-[15px] text-red-500;
+  .fct_status_badge_out-of-stock {
+    @apply bg-red-50 text-red-500 border-0;
+  }
+
+  .fct-stock-label {
+    @apply text-[15px] font-semibold text-[var(--fct-single-product-primary-text-color)];
+  }
+
+  .fct-stock-status {
+    @apply text-[15px] font-medium;
+  }
+
+  .fct_status_badge_in-stock {
+    @apply text-blue-500;
+  }
+
+  .fct_status_badge_out-of-stock {
+    @apply text-red-500;
   }
 
 }
@@ -432,6 +509,12 @@
 /*=== buttons ===*/
 .fct-product-buttons-wrap {
   @apply grid grid-cols-2 gap-3 mt-7.5;
+}
+
+/* disabled out-of-stock buttons */
+.fluent-cart-add-to-cart-button.out-of-stock,
+button.out-of-stock {
+  @apply cursor-not-allowed pointer-events-none;
 }
 
 // responsive breakpoint

@@ -45,9 +45,13 @@ const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSele
                                 <EditorPanelRow className="flex-col">
 
                                     <SelectProductModal
-                                        onModalClosed={(selectedProduct) => {
-                                            setAttributes({product_id: selectedProduct.ID || ''});
-                                            setSelectedProduct(selectedProduct);
+                                        selectedProduct={selectedProduct}
+                                        setSelectedProduct={setSelectedProduct}
+                                        onModalClosed={(product) => {
+                                            if (product) {
+                                                setAttributes({product_id: product.ID || ''});
+                                                setSelectedProduct(product);
+                                            }
                                         }}
                                     />
 

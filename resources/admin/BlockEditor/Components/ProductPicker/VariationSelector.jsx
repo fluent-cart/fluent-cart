@@ -34,8 +34,7 @@ const VariationSelector = (props) => {
     const [products, setProducts] = useState({});
     const [selectedVariations, setSelectedVariations] = useState(preSelectedVariations || {});
 
-    const updateSelectedVariations = (variation, add) => {
-
+    const updateSelectedVariationsOld = (variation, add) => {
 
         let updatedVariations = {...selectedVariations};
 
@@ -61,6 +60,54 @@ const VariationSelector = (props) => {
         }
 
     }
+
+    const resolveVariationSelection = (prev, variant, checked) => {
+        const variantId = String(variant.id);
+        const productId = String(variant.post_id || variant.product_id);
+
+        // Single select mode: only one item at a time (used by SKU block etc.)
+        if (!isMultiple) {
+            return checked ? { [variantId]: variant } : {};
+        }
+
+        const next = { ...prev };
+
+        const selectedProductIds = Object.values(prev).map(v =>
+            String(v.post_id || v.product_id)
+        );
+
+        const activeProductId = selectedProductIds[0] || null;
+
+        // PARENT CLICK (single select)
+        if (!variant.is_child) {
+            return checked ? { [variantId]: variant } : {};
+        }
+
+        // CHILD CLICK (multi select)
+        if (activeProductId && activeProductId !== productId) {
+            return checked ? { [variantId]: variant } : {};
+        }
+
+        if (checked) {
+            next[variantId] = variant;
+        } else {
+            delete next[variantId];
+        }
+
+        return next;
+    };
+
+    const updateSelectedVariations = (variant, checked) => {
+        setSelectedVariations(prev =>
+            resolveVariationSelection(prev, variant, checked)
+        );
+
+        if (typeof onVariationSelectionUpdated === "function") {
+            onVariationSelectionUpdated(prev =>
+                resolveVariationSelection(prev, variant, checked)
+            );
+        }
+    };
 
     const fetchProducts = (searchQuery = null) => {
         setLoading(true);

@@ -3,7 +3,6 @@
 namespace FluentCart\App\Services\Coupon;
 
 use FluentCart\App\Helpers\Helper;
-use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\AppliedCoupon;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Coupon;
@@ -209,8 +208,52 @@ class DiscountService
     public function apply(Coupon $coupon)
     {
         $cartItems = $this->cartItems;
-        $conditions = $coupon->conditions;
 
+        $canUseCheck = $this->checkCanUseCoupon($coupon, $cartItems);
+        if (is_wp_error($canUseCheck)) {
+            return $canUseCheck;
+        }
+
+        $preValidatedItems = $this->filterApplicableItems($cartItems, $coupon);
+        if (empty($preValidatedItems)) {
+            return new \WP_Error('no_applicable_items', __('No applicable items found for this coupon.', 'fluent-cart'));
+        }
+
+        $currentItemsSubtotal = $this->calculateItemsSubtotal($preValidatedItems);
+        $currentItemsDiscountTotal = $this->calculateExistingCouponDiscount($preValidatedItems);
+        $currentItemsTotalAfterDiscount = $currentItemsSubtotal - $currentItemsDiscountTotal;
+
+        if ($currentItemsTotalAfterDiscount <= 0) {
+            return new \WP_Error('no_applicable_items', __('No applicable items found for this coupon.', 'fluent-cart'));
+        }
+
+        $percent = $this->calculateDiscountPercent($coupon, $currentItemsTotalAfterDiscount);
+
+        list($preValidatedItems, $couponDiscountTotal) = $this->applyDiscountToItems($preValidatedItems, $percent, $coupon);
+
+        if ($coupon->type === 'fixed') {
+            list($preValidatedItems, $couponDiscountTotal) = $this->correctFixedCouponRounding(
+                $preValidatedItems, $coupon, $couponDiscountTotal
+            );
+        }
+
+        $cartItems = $this->mergeValidatedItems($cartItems, $preValidatedItems);
+
+        if (!$couponDiscountTotal) {
+            return new \WP_Error('no_discount_applied', __('This coupon could not apply any discount.', 'fluent-cart'));
+        }
+
+        $cartItems = $this->updateItemTotals($cartItems);
+
+        $this->cartItems = array_values($cartItems);
+        $this->appliedCoupons[] = $coupon->code;
+        $this->perCouponDiscounts[$coupon->code] = $couponDiscountTotal;
+
+        return true;
+    }
+
+    private function checkCanUseCoupon(Coupon $coupon, array $cartItems)
+    {
         $canUse = apply_filters('fluent_cart/coupon/can_use_coupon', true, [
             'coupon'     => $coupon,
             'cart'       => $this->cart,
@@ -225,7 +268,14 @@ class DiscountService
             return new \WP_Error('coupon_cannot_be_used', $message);
         }
 
-        $preValidatedItems = array_filter($cartItems, function ($item) use ($coupon, $conditions) {
+        return true;
+    }
+
+    private function filterApplicableItems(array $cartItems, Coupon $coupon)
+    {
+        $conditions = $coupon->conditions;
+
+        $filtered = array_filter($cartItems, function ($item) use ($coupon, $conditions) {
             $willPreSkip = apply_filters('fluent_cart/coupon/will_skip_item', false, [
                 'item'   => $item,
                 'coupon' => $coupon,
@@ -237,7 +287,6 @@ class DiscountService
             }
 
             $excludedProducts = Arr::get($conditions, 'excluded_products', []);
-
             if ($excludedProducts && in_array($item['object_id'], $excludedProducts)) {
                 return false;
             }
@@ -246,7 +295,6 @@ class DiscountService
             if (!is_array($includedProducts)) {
                 $includedProducts = [];
             }
-
             if ($includedProducts && !in_array($item['object_id'], $includedProducts)) {
                 return false;
             }
@@ -279,7 +327,6 @@ class DiscountService
             }
 
             $emailRestrictions = trim(Arr::get($conditions, 'email_restrictions', ''));
-
             if ($emailRestrictions) {
                 $customerEmail = $this->cart ? $this->cart->email : '';
                 if (!$customerEmail) {
@@ -289,7 +336,6 @@ class DiscountService
                 $allowedEmails = array_filter(array_map('trim', explode(',', $emailRestrictions)));
                 if ($allowedEmails) {
                     foreach ($allowedEmails as $email) {
-                        // match with regex pattern
                         $pattern = '/^' . str_replace('\*', '.*', preg_quote($email, '/')) . '$/i';
                         if (preg_match($pattern, $customerEmail)) {
                             return true;
@@ -303,69 +349,57 @@ class DiscountService
             return true;
         });
 
-        $preValidatedItems = array_values(array_filter($preValidatedItems));
+        return array_values(array_filter($filtered));
+    }
 
-        if (!$preValidatedItems) {
-            return new \WP_Error('no_applicable_items', __('No applicable items found for this coupon.', 'fluent-cart'));
-        }
+    private function calculateItemsSubtotal(array $items)
+    {
+        return array_sum(array_map(function ($item) {
+            return $this->getItemEffectiveSubtotal($item);
+        }, $items));
+    }
 
-        $currentItemsSubtotal = array_sum(array_map(function ($item) {
-            return (int)$item['subtotal'];
-        }, $preValidatedItems));
+    private function calculateExistingCouponDiscount(array $items)
+    {
+        return array_sum(array_map(function ($item) {
+            return (int) Arr::get($item, 'coupon_discount', 0);
+        }, $items));
+    }
 
-        $currentItemsDiscountTotal = array_sum(array_map(function ($item) {
-            return (int)Arr::get($item, 'coupon_discount', 0);
-        }, $preValidatedItems));
-
-        $currentItemsTotalAfterDiscount = $currentItemsSubtotal - $currentItemsDiscountTotal;
-
-        if ($currentItemsTotalAfterDiscount <= 0) {
-            return new \WP_Error('no_applicable_items', __('No applicable items found for this coupon.', 'fluent-cart'));
-        }
-
+    private function calculateDiscountPercent(Coupon $coupon, $totalAfterDiscount)
+    {
         if ($coupon->type == 'fixed') {
-            $amount = $coupon->amount;
-            // convert this to percentage of the current items total after discount
-            if ($amount >= $currentItemsTotalAfterDiscount) {
-                $percent = 100;
-            } else {
-                $percent = round(($amount / $currentItemsTotalAfterDiscount) * 100, 2);
+            if ($coupon->amount >= $totalAfterDiscount) {
+                return 100.0;
             }
-        } else {
-            $percent = round((min(100, max(0, (float)$coupon->amount))), 2);
+            return round(($coupon->amount / $totalAfterDiscount) * 100, 2);
         }
 
+        return round(min(100, max(0, (float) $coupon->amount)), 2);
+    }
+
+    private function applyDiscountToItems(array $items, $percent, Coupon $coupon)
+    {
         $couponDiscountTotal = 0;
 
-        foreach ($preValidatedItems as $index => $item) {
+        foreach ($items as $index => $item) {
             $existingAmount = (int) Arr::get($item, 'coupon_discount', 0);
-            $itemSubtotal   = (int) Arr::get($item, 'subtotal', 0);
+            $itemSubtotal = $this->getItemEffectiveSubtotal($item);
+            $hasTrialDays = Arr::get($item, 'other_info.payment_type') === 'subscription'
+                && Arr::get($item, 'other_info.trial_days', 0) > 0;
 
-            // Remaining amount this coupon can still discount on this line
-            $remainingTotal = $itemSubtotal - $existingAmount;
-            if ($remainingTotal < 0) {
-                $remainingTotal = 0;
-            }
-
-            // Apply this coupon on the remaining amount only
+            $remainingTotal = max(0, $itemSubtotal - $existingAmount);
             $currentDiscount = (int) round($remainingTotal * ($percent / 100));
-            $discountTotal   = (int) ($existingAmount + $currentDiscount);
+            $discountTotal = min($existingAmount + $currentDiscount, $itemSubtotal);
+            $netDiscount = max(0, $discountTotal - $existingAmount);
 
-            // Absolute guard: total discount for this line can never exceed the line subtotal
-            if ($discountTotal > $itemSubtotal) {
-                $discountTotal = $itemSubtotal;
-            }
+            $couponDiscountTotal += $netDiscount;
+            $items[$index]['coupon_discount'] = $discountTotal;
 
-            $netDiscount = $discountTotal - $existingAmount;
-
-            $couponDiscountTotal += ($netDiscount < 0) ? 0 : $netDiscount;
-
-            $preValidatedItems[$index]['coupon_discount'] = $discountTotal;
-
-            // check if it's a recurring item or not
-            if (Arr::get($item, 'other_info.payment_type') === 'subscription') {
-                if (!isset($preValidatedItems[$index]['recurring_discounts'])) {
-                    $preValidatedItems[$index]['recurring_discounts'] = [
+            // Apply recurring discount for non-trial subscriptions
+            if (Arr::get($item, 'other_info.payment_type') === 'subscription' && !$hasTrialDays) {
+                if (!isset($items[$index]['recurring_discounts'])) {
+                    $items[$index]['recurring_discounts'] = [
                         'signup' => 0,
                         'amount' => 0
                     ];
@@ -374,78 +408,66 @@ class DiscountService
                 if ($coupon->isRecurringDiscount()) {
                     $unitPrice = (int) Arr::get($item, 'unit_price', 0);
                     if ($unitPrice > 0) {
-                        $previousAmount    = (int) Arr::get($item, 'recurring_discounts.amount', 0);
-                        $remainingRecurring = $unitPrice - $previousAmount;
-                        if ($remainingRecurring < 0) {
-                            $remainingRecurring = 0;
-                        }
+                        $previousAmount = (int) Arr::get($item, 'recurring_discounts.amount', 0);
+                        $remainingRecurring = max(0, $unitPrice - $previousAmount);
+                        $recurringDiscount = (int) round($remainingRecurring * ($percent / 100));
+                        $totalRecurringDiscount = min($previousAmount + $recurringDiscount, $unitPrice);
 
-                        // Apply this recurring coupon only on the remaining recurring amount
-                        $recurringDiscount      = (int) round($remainingRecurring * ($percent / 100));
-                        $totalRecurringDiscount = $previousAmount + $recurringDiscount;
-
-                        // Guard: total recurring discount for this line can never exceed the unit price
-                        if ($totalRecurringDiscount > $unitPrice) {
-                            $totalRecurringDiscount = $unitPrice;
-                        }
-
-                        Arr::set(
-                            $preValidatedItems,
-                            $index . '.recurring_discounts.amount',
-                            $totalRecurringDiscount
-                        );
+                        Arr::set($items, $index . '.recurring_discounts.amount', $totalRecurringDiscount);
                     }
                 }
             }
         }
 
-        if ($coupon->type === 'fixed') {
+        return [$items, $couponDiscountTotal];
+    }
 
-            if ($couponDiscountTotal < $coupon->amount) {
-                // we have a rounding issue! Let's fix it by reducing the discount from any item that has a discount
-                $remainingAmount = $coupon->amount - $couponDiscountTotal;
-                foreach ($preValidatedItems as $index => $item) {
-                    if ($remainingAmount <= 0) {
-                        break;
-                    }
-
-                    $maximumReduction = (int)($item['subtotal'] - Arr::get($item, 'coupon_discount', 0));
-                    if ($maximumReduction <= 0) {
-                        continue;
-                    }
-
-                    $newDiscountAmount = min($maximumReduction, $remainingAmount);
-                    $existingAmount = Arr::get($item, 'coupon_discount', 0);
-                    $item['coupon_discount'] = $existingAmount + $newDiscountAmount;
-                    $preValidatedItems[$index] = $item;
-                    $couponDiscountTotal += $newDiscountAmount;
-                    $remainingAmount -= $newDiscountAmount;
+    private function correctFixedCouponRounding(array $items, Coupon $coupon, $couponDiscountTotal)
+    {
+        if ($couponDiscountTotal < $coupon->amount) {
+            $remainingAmount = $coupon->amount - $couponDiscountTotal;
+            foreach ($items as $index => $item) {
+                if ($remainingAmount <= 0) {
+                    break;
                 }
-            } else if ($couponDiscountTotal > $coupon->amount) {
-                // we have a rounding issue! Let's fix it by reducing the discount from any item that has a discount
-                $excessAmount = $couponDiscountTotal - $coupon->amount;
-                foreach ($preValidatedItems as $index => $item) {
-                    if ($excessAmount <= 0) {
-                        break;
-                    }
 
-                    $existingDiscount = Arr::get($item, 'coupon_discount', 0);
-                    if ($existingDiscount <= 0) {
-                        continue;
-                    }
-
-                    $newReductionAmount = min($existingDiscount, $excessAmount);
-                    $item['coupon_discount'] = $existingDiscount - $newReductionAmount;
-                    $preValidatedItems[$index] = $item;
-                    $couponDiscountTotal -= $newReductionAmount;
-                    $excessAmount -= $newReductionAmount;
+                $subtotal = $this->getItemEffectiveSubtotal($item);
+                $maximumReduction = (int) ($subtotal - Arr::get($item, 'coupon_discount', 0));
+                if ($maximumReduction <= 0) {
+                    continue;
                 }
+
+                $newDiscountAmount = min($maximumReduction, $remainingAmount);
+                $items[$index]['coupon_discount'] = Arr::get($item, 'coupon_discount', 0) + $newDiscountAmount;
+                $couponDiscountTotal += $newDiscountAmount;
+                $remainingAmount -= $newDiscountAmount;
+            }
+        } else if ($couponDiscountTotal > $coupon->amount) {
+            $excessAmount = $couponDiscountTotal - $coupon->amount;
+            foreach ($items as $index => $item) {
+                if ($excessAmount <= 0) {
+                    break;
+                }
+
+                $existingDiscount = Arr::get($item, 'coupon_discount', 0);
+                if ($existingDiscount <= 0) {
+                    continue;
+                }
+
+                $newReductionAmount = min($existingDiscount, $excessAmount);
+                $items[$index]['coupon_discount'] = $existingDiscount - $newReductionAmount;
+                $couponDiscountTotal -= $newReductionAmount;
+                $excessAmount -= $newReductionAmount;
             }
         }
 
-        // now we will merge the preValidatedItems back to cartItems
+        return [$items, $couponDiscountTotal];
+    }
+
+    private function mergeValidatedItems(array $cartItems, array $validatedItems)
+    {
         foreach ($cartItems as $index => $item) {
-            foreach ($preValidatedItems as $preItem) {
+            foreach ($validatedItems as $preItem) {
                 if ($item['id'] == $preItem['id']) {
                     $cartItems[$index] = $preItem;
                     break;
@@ -453,24 +475,30 @@ class DiscountService
             }
         }
 
-        if (!$couponDiscountTotal) {
-            return new \WP_Error('no_discount_applied', __('This coupon could not apply any discount.', 'fluent-cart'));
-        }
+        return $cartItems;
+    }
 
+    private function updateItemTotals(array $cartItems)
+    {
         foreach ($cartItems as &$item) {
-            $item['discount_total'] = (int)(Arr::get($item, 'manual_discount', 0) + Arr::get($item, 'coupon_discount', 0));
-            $item['line_total'] = (int)($item['subtotal'] - $item['discount_total']);
-            if ($item['line_total'] < 0) {
-                $item['line_total'] = 0;
-            }
+            $item['discount_total'] = (int) (Arr::get($item, 'manual_discount', 0) + Arr::get($item, 'coupon_discount', 0));
+            $subtotal = $this->getItemEffectiveSubtotal($item);
+            $item['line_total'] = max(0, (int) ($subtotal - $item['discount_total']));
         }
 
-        $this->cartItems = array_values($cartItems);
-        $this->appliedCoupons[] = $coupon->code;
+        return $cartItems;
+    }
 
-        $this->perCouponDiscounts[$coupon->code] = $couponDiscountTotal;
-
-        return true;
+    private function getItemEffectiveSubtotal(array $item)
+    {
+        $subtotal = (int) $item['subtotal'];
+        if (Arr::get($item, 'other_info.payment_type') === 'subscription'
+            && Arr::get($item, 'other_info.trial_days', 0) > 0
+        ) {
+            $quantity = (int) Arr::get($item, 'quantity', 1);
+            $subtotal = (int) Arr::get($item, 'other_info.signup_fee', 0) * ($quantity > 0 ? $quantity : 1);
+        }
+        return $subtotal;
     }
 
     public function saveCart()
@@ -548,23 +576,54 @@ class DiscountService
             return new \WP_Error('coupon_max_uses_exceeded', __('This coupon has reached its maximum number of uses.', 'fluent-cart'));
         }
         $maxPerCustomer = Arr::get($conditions, 'max_per_customer', 0);
-        if ($maxPerCustomer && $useCount) {
-            $customer = $this->getCustomer();
-            // we will find out how many times this customer has used this coupon
-            if ($customer) {
-                $usedCount = AppliedCoupon::query()->whereHas('order', function ($query) use ($customer) {
-                    $query->whereIn('payment_status', Status::getOrderPaymentSuccessStatuses());
-                })
-                    ->where('customer_id', $customer->id)
-                    ->where('coupon_id', $coupon->id)->count();
+        if ($maxPerCustomer) {
+            if (!is_user_logged_in()) {
+                return new \WP_Error('coupon_login_required', __('Please log in to use this coupon.', 'fluent-cart'));
+            }
 
-                if ($usedCount && $usedCount >= $maxPerCustomer) {
+            $customer = $this->resolveCustomerForUsageLimit();
+            if ($customer) {
+                $usageQuery = AppliedCoupon::query()
+                    ->where('coupon_id', $coupon->id)
+                    ->whereHas('order', function ($orderQuery) use ($customer) {
+                        $orderQuery->where('customer_id', $customer->id);
+                    });
+
+                $usageQuery = apply_filters('fluent_cart/coupon/per_customer_usage_query', $usageQuery, [
+                    'coupon'   => $coupon,
+                    'customer' => $customer,
+                    'cart'     => $this->cart,
+                ]);
+
+                $usedCount = $usageQuery->count();
+
+                if ($usedCount >= $maxPerCustomer) {
                     return new \WP_Error('coupon_max_uses_exceeded', __('You have reached the maximum number of uses for this coupon.', 'fluent-cart'));
                 }
             }
         }
 
         return $coupon;
+    }
+
+    protected function resolveCustomerForUsageLimit()
+    {
+        if (!is_user_logged_in()) {
+            return null;
+        }
+
+        $customer = $this->getCustomer();
+        if ($customer) {
+            return $customer;
+        }
+
+        $customer = Customer::query()->where('user_id', get_current_user_id())->first();
+        if ($customer) {
+            $this->customer = $customer;
+            return $customer;
+        }
+
+        return null;
     }
 
     public function setCustomer(Customer $customer)

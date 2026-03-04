@@ -24,6 +24,16 @@ class ShopController extends Controller
     {
         $defaultFilters = $request->get('default_filters', []);
         $filters = $request->get('filters', []);
+
+        // Merge sort_by from default_filters (shortcode) if not set by interactive filters
+        $defaultSortBy = Arr::get($defaultFilters, 'sort_by', '');
+        if ($defaultSortBy && empty(Arr::get($filters, 'sort_by'))) {
+            if (!is_array($filters)) {
+                $filters = [];
+            }
+            $filters['sort_by'] = sanitize_text_field($defaultSortBy);
+        }
+
         $defaultTermIds = Helper::parseTermIdsForFilter($defaultFilters);
         $filterTermIds = Helper::parseTermIdsForFilter($filters);
         $mergedTermIds = Helper::mergeTermIdsForFilter($defaultTermIds, $filterTermIds);
@@ -33,6 +43,12 @@ class ShopController extends Controller
         $cursor = $request->get('cursor', null);
         $orderType = $request->get('order_type', 'DESC');
         $with = $request->get('with', []);
+
+        // Shortcode filter params from AJAX
+        $includeIds  = array_slice(array_values(array_filter(array_map('intval', (array) $request->get('include_ids', [])), function ($id) { return $id > 0; })), 0, 100);
+        $excludeIds  = array_slice(array_values(array_filter(array_map('intval', (array) $request->get('exclude_ids', [])), function ($id) { return $id > 0; })), 0, 100);
+        $productType = sanitize_text_field($request->get('product_type', ''));
+        $onSale      = !empty($request->get('on_sale'));
 
         $params = [
             'cursor'             => $cursor,
@@ -47,6 +63,10 @@ class ShopController extends Controller
             'allow_out_of_stock' => $allowOutOfStock,
             "per_page"           => $request->getSafe('per_page', Sanitizer::SANITIZE_TEXT_FIELD) ?: 10,
             'paginate_using'     => $request->getSafe('paginate_using', Sanitizer::SANITIZE_TEXT_FIELD),
+            'include_ids'        => $includeIds,
+            'exclude_ids'        => $excludeIds,
+            'product_type'       => $productType,
+            'on_sale'            => $onSale,
         ];
 
         $products = ShopResource::get($params);

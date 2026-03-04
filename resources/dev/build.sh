@@ -139,14 +139,15 @@ if [[ -f "$OUTPUT_FILE" ]]; then
     fi
     FILE_SIZE_MB=$(echo "scale=2; $FILE_SIZE / 1024 / 1024" | bc)
 
-    echo -e "${GREEN}✅ ZIP file created: $OUTPUT_FILE${NC}"
-    echo -e "${GREEN}📏 Plugin size: ${FILE_SIZE_MB} MB${NC}"
-
     # Show included items
     echo -e "${BLUE}📋 Included:${NC}"
     for item in "${INCLUDE_ITEMS[@]}"; do
         echo -e "   ${item}"
     done
+
+    echo -e "${GREEN}✅ ZIP file created in: $BUILDS_DIR${NC}"
+    echo -e "${GREEN}✅ ZIP file created: $OUTPUT_FILE${NC}"
+    echo -e "${GREEN}📏 Plugin size: ${FILE_SIZE_MB} MB${NC}"
 else
     echo -e "${RED}❌ Failed to create ZIP file${NC}"
     exit 1

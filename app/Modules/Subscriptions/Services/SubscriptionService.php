@@ -4,10 +4,12 @@ namespace FluentCart\App\Modules\Subscriptions\Services;
 
 use FluentCart\App\Events\Subscription\SubscriptionEOT;
 use FluentCart\App\Events\Subscription\SubscriptionRenewed;
+use FluentCart\App\Events\Subscription\SubscriptionValidityExpired;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
+use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API;
@@ -58,12 +60,6 @@ class SubscriptionService
 
         $createdAt = Arr::get($transactionData, 'created_at', DateTime::now()->format('Y-m-d H:i:s'));
 
-        $taxTotal = Arr::get($transactionData, 'tax_total', 0);
-        $subtotal = $transactionData['total'];
-        if ($taxTotal) {
-            $subtotal = $transactionData['total'] - $taxTotal;
-        }
-
         // Let's create the order item first
         $variation = $subscriptionModel->variation;
         $product = $subscriptionModel->product;
@@ -72,6 +68,20 @@ class SubscriptionService
             ->where('order_id', $parentOrder->id)
             ->where('payment_type', Status::ORDER_TYPE_SUBSCRIPTION)
             ->first();
+
+        $taxTotal = Arr::get($transactionData, 'tax_total', 0);
+        if (!$taxTotal && $subscriptionModel->recurring_tax_total) {
+            $taxTotal = $subscriptionModel->recurring_tax_total;
+        }
+        
+        if (!$taxTotal && $parentOrder->tax_behavior == 2 && $parentOrderItem) {
+            $taxTotal = (int) Arr::get($parentOrderItem->other_info, 'recurring_tax', 0);
+        }
+
+        $subtotal = $transactionData['total'];
+        if ($taxTotal) {
+            $subtotal = $transactionData['total'] - $taxTotal;
+        }
 
         $orderItem = [
             'post_id' => $subscriptionModel->product_id,
@@ -116,6 +126,7 @@ class SubscriptionService
             'payment_method' => $transactionData['payment_method'],
             'payment_status' => $transactionData['status'] === Status::TRANSACTION_SUCCEEDED ? Status::PAYMENT_PAID : Status::PAYMENT_PENDING,
             'currency' => $transactionData['currency'],
+            'tax_behavior' => $parentOrder->tax_behavior,
             'subtotal' => $subtotal,
             'tax_total' => $taxTotal,
             'total_amount' => $transactionData['total'],
@@ -181,6 +192,25 @@ class SubscriptionService
             $shippingAddressData
         );
 
+        // Copy tax ID meta from parent order if exists
+        $parentTaxId = $parentOrder->getMeta('tax_id', '');
+        if ($parentTaxId) {
+            $childOrder->updateMeta('tax_id', $parentTaxId);
+        }
+
+        // Copy order tax rates from parent order
+        $parentTaxRates = $parentOrder->orderTaxRates;
+        foreach ($parentTaxRates as $taxRate) {
+            OrderTaxRate::query()->create([
+                'order_id'    => $childOrder->id,
+                'tax_rate_id' => $taxRate->tax_rate_id,
+                'shipping_tax' => $taxRate->shipping_tax,
+                'order_tax'   => $taxRate->order_tax,
+                'total_tax'   => $taxRate->total_tax,
+                'meta'        => $taxRate->meta,
+            ]);
+        }
+
         //  Create Order Item
         $orderItem['order_id'] = $childOrder->id;
         $orderItem['created_at'] = $createdAt;
@@ -210,8 +240,18 @@ class SubscriptionService
         $billsCount = OrderTransaction::query()
             ->where('subscription_id', $subscriptionModel->id)
             ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+            ->where('status', Status::TRANSACTION_SUCCEEDED)
             ->where('total', '>', 0)
             ->count();
+
+
+        $earlyPaymentHistory = $subscriptionModel->getMeta('early_payment_history', []);
+        foreach ($earlyPaymentHistory as $earlyPayment) {
+            $paidCount = (int) Arr::get($earlyPayment, 'count', 1);
+            if ($paidCount > 1) {
+                $billsCount += ($paidCount - 1);
+            }
+        }
 
         $subscriptionUpdateArgs['bill_count'] = $billsCount;
         $billTimes = $subscriptionModel->bill_times;
@@ -287,6 +327,12 @@ class SubscriptionService
             'old_status' => $oldStatus,
             'new_status' => $subscriptionModel->status
         ]);
+
+        // note: we needed this event, currently being used in integrations
+        if ($subscriptionModel->status === Status::SUBSCRIPTION_EXPIRED) {
+            $subscriptionModel->updateMeta('validity_expired_at', DateTime::now()->format('Y-m-d H:i:s'));
+            (new SubscriptionValidityExpired($subscriptionModel,$subscriptionModel->order,$subscriptionModel->customer))->dispatch();
+        }
 
         return $subscriptionModel;
     }

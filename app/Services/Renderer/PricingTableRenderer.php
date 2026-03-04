@@ -262,7 +262,7 @@ class PricingTableRenderer
             echo esc_html(
                 $this->storeSettings->get(
                     'out_of_stock_button_text',
-                    __('Out of stock', 'fluent-cart')
+                    __('Not Available', 'fluent-cart')
                 )
             );
             ?>

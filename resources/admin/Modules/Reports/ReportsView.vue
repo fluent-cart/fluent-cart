@@ -1,9 +1,15 @@
 <template>
-  <div class="fct-reports-view">
+  <div class="fct-reports-view" :class="{
+    'is-collapsed': menuState.isMenuCollapsed,
+    'is-expanded': menuState.isMenuExpanded && menuState.isDesktopView
+  }">
     <div class="fct-reports-view-inner">
-      <ReportFilterHeader :filterState="filter" />
+      <ReportNavLinks @update:menuState="onMenuStateUpdate"/>
 
-      <div class="fct-report-body fct-layout-width" id="fct-report-body">
+      <div class="fct-report-body" id="fct-report-body">
+        <!-- setting header -->
+        <SettingsHeader :heading="translate(routeTitle)" :show-save-button="false"/>
+
         <div v-if="!hideAllFilters || shouldRenderFilter" class="fct-report-filter-wrap">
           <AppliedFilters v-if="!hideAllFilters" :filter-state="filter" />
 
@@ -43,21 +49,28 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import reportFilter from "@/Models/Reports/ReportFilterModel";
 import Alert from "@/Bits/Components/Alert.vue";
 import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
-import ReportFilterHeader from "./Components/ReportFilterHeader.vue";
 import Storage from "@/utils/Storage";
 import AppliedFilters from "@/Bits/Components/FilterDropdown/parts/AppliedFilters.vue";
 import FilterDropdown from "@/Bits/Components/FilterDropdown/FilterDropdown.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
-import AppConfig from "@/utils/Config/AppConfig";
+import ReportNavLinks from "@/Modules/Reports/Components/ReportNavLinks.vue";
+import translate from "@/utils/translator/Translator";
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 
+const menuState = ref({
+  isMenuCollapsed: true,
+  isMenuExpanded: false,
+  isDesktopView: true
+});
 const filter = useFilterState();
 const route = useRoute();
+const routeTitle = ref(route.meta?.title);
 
 const filters = computed(() => {
   return reportFilter.data;
@@ -75,9 +88,7 @@ const hideAllFilters = computed(() => {
   return ['reports_overview', 'reports', "future_renewals"].includes(route.name);
 });
 
-const hasPro = computed(() =>
-  AppConfig.get('app_config.isProActive')
-);
+let pluginAppWrap = null
 
 const handleFilterChange = (filtersObj) => {
 
@@ -131,9 +142,28 @@ const retrieveFilters = () => {
   }
 };
 
+const onMenuStateUpdate = (state) => {
+  menuState.value = state;
+};
+
+// add watch on route.name
+watch(() => route.name, (newVal, oldVal) => {
+  routeTitle.value = route.meta?.title || 'Reports';
+});
+
 onMounted(() => {
   reportFilter.fetchReportMeta();
   retrieveFilters();
+  pluginAppWrap = document.getElementById('fluent_cart_plugin_app');
+  if (pluginAppWrap) {
+    pluginAppWrap.classList.add('fct_report_page_plugin_app_wrap');
+  }
+});
+
+onUnmounted(() => {
+  if (pluginAppWrap) {
+    pluginAppWrap.classList.remove('fct_report_page_plugin_app_wrap');
+  }
 });
 
 onBeforeUnmount(() => {

@@ -9,10 +9,25 @@
     <div class="fct-customer-edit-modal">
       <div class="fct-compact-form">
         <MaterialInput
+            v-if="localizedData.is_full_name_required"
             :label="translate('Full Name *')"
             v-model="editableCustomer.full_name"
             :class="validationErrors['full_name'] ? 'is-error' : ''"
         />
+
+        <template v-else>
+          <MaterialInput
+              :label="translate('First Name *')"
+              v-model="editableCustomer.first_name"
+              :class="validationErrors['first_name'] ? 'is-error' : ''"
+          />
+
+          <MaterialInput
+              :label="translate('Last Name')"
+              v-model="editableCustomer.last_name"
+              :class="validationErrors['last_name'] ? 'is-error' : ''"
+          />
+        </template>
 
         <MaterialInput
             type="email"
@@ -102,6 +117,7 @@ const props = defineProps({
 const editableCustomer = ref({});
 const loading = ref(false);
 const validationErrors = ref({});
+const localizedData = window.fluentCartAdminApp;
 
 const handleCloseModal = () => {
   emit("close-modal");
@@ -190,6 +206,8 @@ watch(() => props.customer, (newCustomer) => {
     id: newCustomer.id,
     email: newCustomer.email,
     full_name: newCustomer.full_name,
+    first_name: newCustomer.first_name,
+    last_name: newCustomer.last_name,
     state: newCustomer.state,
     city: newCustomer.city,
     country: newCustomer.country,
@@ -203,11 +221,12 @@ watch(() => props.customer, (newCustomer) => {
 
 
 onMounted(() => {
-  // {...props.customer};
   editableCustomer.value = {
     'id': props.customer.id,
     'email': props.customer.email,
     'full_name': props.customer.full_name,
+    'first_name': props.customer.first_name,
+    'last_name': props.customer.last_name,
     'state': props.customer.state,
     'city': props.customer.city,
     'country': props.customer.country,

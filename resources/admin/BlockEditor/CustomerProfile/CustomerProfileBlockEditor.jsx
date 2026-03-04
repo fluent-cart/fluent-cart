@@ -14,6 +14,7 @@ const blockEditorData = window.fluent_cart_customer_profile_data;
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     category: "fluent-cart",
     example: {

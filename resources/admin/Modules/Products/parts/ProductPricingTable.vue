@@ -1,7 +1,7 @@
 <script setup>
 import {onMounted, computed} from "vue";
 import ProductPricingActions from "./ProductPricingActions.vue";
-import Attachments from "@/Bits/Components/Attachment/Attachments.vue";
+import BulkMediaPicker from "@/Bits/Components/Attachment/BulkMediaPicker.vue";
 import { VueDraggableNext } from 'vue-draggable-next';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
@@ -82,25 +82,12 @@ const dragOptions = computed(() => {
               </span>
             </td>
             <td>
-              <div class="fct-product-pricing-table-item">
-                <div class="media relative">
-                  <div class="absolute top-0 left-0 w-full h-full z-10 rounded opacity-0">
-                    <attachments
-                      :previewImage="false"
-                      :showList=false
-                      :multiple=true
-                      :showDeleteButton="false"
-                      :attachments="variant?.media"
-                      @mediaUploaded="value => {productEditModel.onUploadPricingMedia('media', index, value)}"
-                    />
-                  </div>
-
-                  <div v-if="typeof variant?.media != 'undefined' && variant?.media?.length > 0" class="absolute top-0 left-0 w-full h-full z-0 rounded">
-                    <img :src='variant.media[0]?.url' :alt="variant.media[0]?.title" class="!object-contain rounded border border-solid border-gray-outline dark:border-dark-400"/>
-                  </div>
-                  <img v-else :src="appVars.asset_url + 'images/empty-image.svg'" alt="No Image"/>
-                </div>
-              </div>
+              <BulkMediaPicker
+                v-model="variant.media"
+                :compact="true"
+                :max-thumbs="1"
+                @change="value => productEditModel.onUploadPricingMedia('media', index, value)"
+              />
             </td>
             <td>
               <div class="fct-product-pricing-table-item">
@@ -194,22 +181,13 @@ const dragOptions = computed(() => {
         </span>
         <div class="fct-product-pricing-table-mobile-item-inner">
           <div class="fct-product-pricing-table-item">
-          <div class="media relative">
-            <div class="absolute top-0 left-0 w-full h-full z-10 rounded opacity-0">
-              <attachments
-                  :previewImage="false"
-                  :showList=false
-                  :multiple=true
-                  :showDeleteButton="false"
-                  :attachments="variant?.media"
-                  @mediaUploaded="value => {productEditModel.onUploadPricingMedia('media', index, value)}"
-              />
-            </div>
-
-            <div v-if="typeof variant?.media != 'undefined' && variant?.media?.length > 0" class="absolute top-0 left-0 w-full h-full z-0 rounded">
-              <img :src='variant.media[0]?.url' :alt="variant.media[0]?.title" class="!object-contain rounded border border-solid border-gray-outline dark:border-dark-400"/>
-            </div>
-            <img v-else :src="appVars.asset_url + 'images/empty-image.svg'" alt="No Image"/>
+          <div class="media">
+            <BulkMediaPicker
+              v-model="variant.media"
+              :compact="true"
+              :max-thumbs="1"
+              @change="value => productEditModel.onUploadPricingMedia('media', index, value)"
+            />
           </div>
 
           <div class="fct-product-pricing-table-item-content">

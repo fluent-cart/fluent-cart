@@ -20,9 +20,7 @@ const visibleDesktop = ref([]);
 const visibleMobile = ref([]);
 const filterPopoverOutsideClickMixin = useFilterPopoverOutsideClickMixin();
 const filter_popover_wrapper = ref([]);
-const hasPro = AppConfig.get('app_config.isProActive');
 const showStockManagement = AppConfig.get('modules_settings.stock_management.active');
-const proInventory = false;
 onMounted(() => {
   const len = Object.keys(props.product.variants).length;
   visibleDesktop.value = Array.from({ length: len }, () => false);
@@ -85,9 +83,6 @@ const saveStock = (index) => {
 }
 
 const handleManageStockChange = (value) => {
-  if (!hasPro) {
-    return;
-  }
   Rest.put(`products/${props.product.ID}/update-manage-stock`, {
     manage_stock: props.product.detail.manage_stock
   })
@@ -123,7 +118,7 @@ const toggleDropdown = (index, type) => {
 </script>
 
 <template>
-  <div v-if="hasPro && showStockManagement === 'yes'" class="fct-product-inventory-wrap">
+  <div v-if="showStockManagement === 'yes'" class="fct-product-inventory-wrap">
     <Card.Container class="overflow-hidden">
       <Card.Header :class="product.detail?.manage_stock.toString() === '0' ? 'pb-5' : ''">
         <template #action>
@@ -146,6 +141,13 @@ const toggleDropdown = (index, type) => {
                     {{scope.row.other_info.repeat_interval}}
                   </span>
                   </div>
+                </template>
+              </el-table-column>
+
+              <el-table-column :label="translate('SKU')" width="140">
+                <template #default="scope">
+                  <el-input disabled size="small" v-model="scope.row.sku" :placeholder="translate('SKU')">
+                  </el-input>
                 </template>
               </el-table-column>
 
@@ -243,6 +245,7 @@ const toggleDropdown = (index, type) => {
               >
                 <div class="title">
                   {{row.variation_title}}
+                  <div class="text-xs text-gray-500 mt-1" v-if="row.sku">SKU: {{ row.sku }}</div>
                 </div>
               </div><!-- fct-product-inventory-mobile-col -->
 
@@ -315,24 +318,6 @@ const toggleDropdown = (index, type) => {
 
         </Card.Body>
       </Animation>
-    </Card.Container>
-  </div>
-  <div v-else-if="!hasPro">
-    <Card.Container>
-      <Card.Header border_bottom>
-        <template #title>
-          <h2 class="fct-card-header-title">
-            <el-switch v-model="proInventory" active-value="1" inactive-value="0" :active-text="translate('Inventory Management')">
-            </el-switch>
-            <DynamicIcon name="Crown" class="w-4 h-4 text-warning-500" />
-          </h2>
-        </template>
-      </Card.Header>
-      <Card.Body>
-        <div class="fct-product-inventory-pro-text">
-          <p class="m-0">{{ translate('This feature is only available for pro version.') }}</p>
-        </div>
-      </Card.Body>
     </Card.Container>
   </div>
 </template>

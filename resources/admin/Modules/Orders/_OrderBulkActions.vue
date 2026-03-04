@@ -16,7 +16,7 @@
               <DynamicIcon name="ShipmentStatus"/>
               {{ translate('Change Shipping Status') }}
             </el-dropdown-item>
-            <el-dropdown-item command="delete_order" v-if="isCancelled" class="item-destructive">
+            <el-dropdown-item command="delete_order" v-if="order.mode ==='test' ||isCancelled" class="item-destructive">
               <DynamicIcon name="Delete"/>
               {{ translate('Delete order') }}
             </el-dropdown-item>
@@ -31,6 +31,10 @@
             <el-dropdown-item command="order_processing" v-if="order.status === 'completed'">
               <DynamicIcon name="Refresh"/>
               {{ translate('Back to processing') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="sync_order_statuses" v-if="!isCompleted && !isCancelled">
+              <DynamicIcon name="Refresh"/>
+              {{ translate('Sync Order Statuses') }}
             </el-dropdown-item>
             <el-dropdown-item command="order_receipt" class="item-link">
               <a target="_blank" :href="order.receipt_url">
@@ -158,6 +162,8 @@ export default {
         this.generateMissingLicenses();
       } else if(status === 'refund_order') {
         this.$emit('handlePaymentActions', 'refund');
+      } else if(status === 'sync_order_statuses') {
+        this.syncOrderStatuses();
       } else if(status.action === 'order_edit') {
         if(!status.isEditingItem) {
           if(this.shouldDisableEditing) {
@@ -309,6 +315,24 @@ export default {
             this.doing_actions = false;
             this.showModal = false;
           });
+    },
+    syncOrderStatuses() {
+      this.doing_actions = true;
+      this.$put('orders/' + this.order.id + '/sync-statuses')
+        .then(response => {
+          Notify.success(response.message)
+          this.$emit('reload');
+        })
+        .catch((errors) => {
+          if (errors.status_code == '422') {
+            Notify.validationErrors(errors);
+          } else {
+            Notify.error(errors.data?.message);
+          }
+        })
+        .finally(() => {
+          this.doing_actions = false;
+        });
     }
   }
 }

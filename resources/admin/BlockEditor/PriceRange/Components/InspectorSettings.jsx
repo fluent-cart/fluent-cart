@@ -1,9 +1,11 @@
+import SelectProductModal from "@/BlockEditor/Components/ProductPicker/SelectProductModal.jsx";
+import CustomSelect from "@/BlockEditor/Components/CustomSelect";
+
 const { InspectorControls } = wp.blockEditor;
+
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
-import CustomSelect from "@/BlockEditor/Components/CustomSelect";
-import SelectProductModal from "@/BlockEditor/Components/ProductPicker/SelectProductModal.jsx";
 
 const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSelectedProduct }) => {
     return (
@@ -12,71 +14,72 @@ const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSele
                 <div className="fct-inspector-control-group">
                     <div className="fct-inspector-control-body">
                         <EditorPanel title={blocktranslate('Product')}>
+                            <EditorPanelRow className="flex-col">
 
-                            {/* query type */}
-                            <EditorPanelRow>
-                                <span className="fct-inspector-control-label">
-                                    {blocktranslate('Query type')}
-                                </span>
-                                <div className="actions">
-                                    <CustomSelect
-                                        customKeys={{
-                                            key: 'value',
-                                            label: 'label'
-                                        }}
-                                        defaultValue={attributes.query_type}
-                                        options={[
-                                            {label: blocktranslate('Default'), value: 'default'},
-                                            {label: blocktranslate('Custom'), value: 'custom'},
-                                        ]}
-                                        onChange={function (value) {
-                                            setAttributes({query_type: value});
-                                        }}
-                                    />
-                                </div>
+                                <SelectProductModal
+                                    onModalClosed={(selectedProduct) => {
+                                        setAttributes({product_id: selectedProduct?.ID ? String(selectedProduct.ID) : ''});
+                                        setSelectedProduct(selectedProduct);
+                                    }}
+                                    selectedProduct={selectedProduct}
+                                    setSelectedProduct={setSelectedProduct}
+                                    isMultiple={false}
+                                />
+
+                                {selectedProduct?.post_title && (
+                                    <div className="fct-selected-products">
+                                        <span className="fct-selected-products__label">
+                                            {blocktranslate('Selected Product')}
+                                        </span>
+                                        <div className="fct-selected-products__list">
+                                            <div className="fct-product-chip-group">
+                                                <span className="fct-product-chip fct-product-chip--parent">
+                                                    {selectedProduct.post_title}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {selectedProduct?.detail && (
+                                            <div className="fct-selected-products__preview">
+                                                <strong>{blocktranslate('Price')}:</strong>{' '}
+                                                <span dangerouslySetInnerHTML={{__html: selectedProduct.detail.formatted_min_price}} />
+                                                {selectedProduct.detail.min_price !== selectedProduct.detail.max_price && (
+                                                    <>
+                                                        {' - '}
+                                                        <span dangerouslySetInnerHTML={{__html: selectedProduct.detail.formatted_max_price}} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                             </EditorPanelRow>
+                        </EditorPanel>
 
-                            {attributes.query_type === 'custom' && (
-                                <EditorPanelRow className="flex-col">
-
-                                    <SelectProductModal
-                                       onModalClosed={(selectedProduct) => {
-                                            setAttributes({product_id: selectedProduct.ID || ''});
-                                            setSelectedProduct(selectedProduct);
-                                        }}
-                                    />
-
-                                    {selectedProduct?.detail && (
-                                        <div className="fct-product-price-range">
-                                            <strong>{blocktranslate('Price Range')}</strong>: 
-                                            <span
-                                                className="price-min"
-                                                dangerouslySetInnerHTML={{
-                                                    __html: selectedProduct.detail.formatted_min_price
+                        <EditorPanel title={blocktranslate('Settings')}>
+                            <EditorPanelRow>
+                                <div className="fct-block-editor-control-item">
+                                    <div className="fct-inspector-control-row">
+                                        <span className="label">{blocktranslate('Price Format')}</span>
+                                        <div className="actions">
+                                            <CustomSelect
+                                                customKeys={{
+                                                    key: 'value',
+                                                    label: 'label'
+                                                }}
+                                                defaultValue={attributes.price_format}
+                                                options={[
+                                                    {label: blocktranslate('Starts From'), value: 'starts_from'},
+                                                    {label: blocktranslate('Range'), value: 'range'},
+                                                ]}
+                                                onChange={function (value) {
+                                                    setAttributes({price_format: value});
                                                 }}
                                             />
-                    
-                                            {selectedProduct.detail.min_price !== selectedProduct.detail.max_price && (
-                                                <>
-                                                    {' - '}
-                                                    <span
-                                                        className="price-max"
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: selectedProduct.detail.formatted_max_price
-                                                        }}
-                                                    />
-                                                </>
-                                            )}
                                         </div>
-                                    )}
-                    
-                                    {!selectedProduct?.detail && (
-                                    <div className="fct-product-price-range">
-                                        <strong>{blocktranslate('Price Range')}</strong>: $0.00
                                     </div>
-                                    )}                                
-                                </EditorPanelRow>
-                            )}
+                                </div>
+                            </EditorPanelRow>
                         </EditorPanel>
                     </div>
                 </div>

@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         onProductFetched(views) {
             // Hook for external use if needed
+            console.log('views type:', typeof views);
+            // Re-init media carousels ONLY for newly added products
+            window.FluentCartMediaCarousel?.reInit(views);
         }
 
     }

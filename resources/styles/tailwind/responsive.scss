@@ -1,4 +1,17 @@
 @media (max-width: 1024px) {
+  #fct_admin_app_wrapper {
+    @apply m-0 w-full;
+    #fluent_cart_plugin_app {
+      @apply pl-2.5 pr-5;
+    }
+    #fluent_cart_plugin_app.fct_settings_page_plugin_app_wrap{
+      @apply px-0 pt-[26px];
+    }
+    #fluent_cart_plugin_app.fct_report_page_plugin_app_wrap {
+      @apply px-0 pt-[60px];
+    }
+  }
+
   .fca_admin_menu,
   .table-filter-row,
   .fct-applied-filters-wrap {
@@ -43,78 +56,6 @@
   .fct-report-nav-links .active-bar{
     @apply bottom-auto rounded-xs;
   }
-  .fct-reports-view {
-    @apply relative top-auto m-0 h-auto;
-    &-inner {
-      @apply pl-0;
-      .fct-report-body {
-        overflow: inherit;
-        @apply p-0 pt-4 max-h-[auto] min-h-[auto];
-      }
-    }
-    .fct-report-header {
-      overflow: inherit;
-      @apply fixed z-[999] right-3 bottom-3 bg-transparent !top-auto h-auto !w-auto p-0 border-0;
-      &.is-fixed {
-        @apply top-auto w-auto right-3 #{!important};
-        .fct-report-header-top-inner {
-          @apply p-0;
-        }
-      }
-      &-top {
-        @apply p-0;
-        &-inner {
-          @apply p-0;
-        }
-      }
-    }
-  }
-  .fct-report-body {
-    .fct-report-filter-wrap {
-      @apply mx-0 mt-0 pt-3 rounded;
-    }
-  }
-  .fct-report-nav-links{
-    transition: .3s;
-    @apply flex-col mt-2 flex justify-start gap-1 bg-transparent p-3 rounded fixed z-[999] dark:bg-dark-500 bottom-0 top-auto right-0 h-full w-full left-auto rounded-none p-0 invisible opacity-0;
-    .fct-tab-wrapper {
-      transition: .3s;
-      @apply max-w-[270px] w-full ml-auto bg-white z-50 h-full relative pt-[110px] pb-6 px-5 overflow-x-hidden right-[-250px];
-      //.tab-item {
-      //  .tab-link {
-      //    @apply justify-end;
-      //  }
-      //  .icon {
-      //    @apply right-auto left-0;
-      //  }
-      //}
-    }
-    .fct-report-nav-links-overlay {
-      transition: .3s;
-      @apply block invisible opacity-0;
-    }
-    .el-button{
-      @apply py-0 min-h-7.5 justify-start border-0;
-      max-width: max-content;
-    }
-    &.is-active{
-      @apply visible opacity-100;
-      .fct-report-nav-links-overlay {
-        @apply visible opacity-50;
-      }
-      .fct-tab-wrapper {
-        @apply right-0;
-      }
-    }
-  }
-  .fct-report-nav-links-toggle{
-    @apply block;
-    .icon {
-      svg {
-        @apply w-4 h-4;
-      }
-    }
-  }
   .fct-report-header-top{
     @apply py-3;
   }
@@ -136,6 +77,11 @@
         }
       }
     }
+  }
+
+  .fct-reports-view {
+    position: relative;
+    height: auto;
   }
 }
 
@@ -160,11 +106,6 @@
   .fct-reports-view {
     margin-top: -24px;
   }
-  .fct-report-body {
-    .fct-report-filter-wrap {
-      @apply m-0 mt-4 mb-4 pt-2.5 rounded;
-    }
-  }
   .fct-report-header.is-fixed{
     top: 50px !important;
   }
@@ -182,6 +123,11 @@
   }
   .el-radio-group.fct-upgrade-variation-list{
     @apply overflow-x-scroll;
+  }
+  #fct_admin_app_wrapper {
+    #fluent_cart_plugin_app.fct_report_page_plugin_app_wrap {
+      @apply pt-[50px];
+    }
   }
 }
 
@@ -931,9 +877,6 @@
   }
   .fct-reports-view {
     @apply -mr-5;
-  }
-  .fct-report-body {
-    @apply pr-5;
   }
 
   .fct-report-header-top-inner {

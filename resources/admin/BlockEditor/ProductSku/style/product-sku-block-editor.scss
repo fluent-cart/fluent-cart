@@ -1,0 +1,20 @@
+@config "./product-sku-block-editor.config.js";
+@tailwind utilities;
+
+.fct-product-sku {
+    &__preview {
+        @apply inline-flex items-center gap-1.5 py-2 px-3 rounded-md bg-gray-25 border border-solid border-gray-outline;
+    }
+
+    &__label {
+        @apply text-sm font-semibold text-system-dark;
+    }
+
+    &__value {
+        @apply text-sm font-medium text-system-mid bg-white py-0.5 px-2 rounded leading-tight border border-solid border-gray-divider;
+    }
+}
+
+.fct-product-sku-info {
+    @apply py-1.5 px-3 rounded text-xs font-medium bg-gray-25 text-system-mid;
+}

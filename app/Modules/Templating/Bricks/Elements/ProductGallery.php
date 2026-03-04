@@ -80,6 +80,25 @@ class ProductGallery extends Element
                 'left'   => esc_html__('Left', 'fluent-cart'),
             ],
             'placeholder' => esc_html__('Bottom', 'fluent-cart'),
+            'rerender'    => true,
+        ];
+
+        $this->controls['scrollableThumbs'] = [
+            'tab'      => 'content',
+            'label'    => esc_html__('Scrollable thumbnails', 'fluent-cart'),
+            'type'     => 'checkbox',
+            'inline'   => true,
+            'rerender' => true,
+        ];
+
+        $this->controls['maxThumbnails'] = [
+            'tab'         => 'content',
+            'label'       => esc_html__('Max thumbnails', 'fluent-cart'),
+            'type'        => 'number',
+            'min'         => 1,
+            'max'         => 50,
+            'placeholder' => esc_html__('No limit', 'fluent-cart'),
+            'rerender'    => true,
         ];
 
         $this->controls['itemWidth'] = [
@@ -195,13 +214,16 @@ class ProductGallery extends Element
 
         // Thumbnail position
         $thumbnail_position = !empty($settings['thumbnailPosition']) ? $settings['thumbnailPosition'] : 'bottom';
+        if (!in_array($thumbnail_position, ['bottom', 'top', 'left', 'right'], true)) {
+            $thumbnail_position = 'bottom';
+        }
         $this->set_attribute('_root', 'data-pos', esc_attr($thumbnail_position));
 
-        // Thumbnail slider enabled
-        $thumbnail_slider = isset($settings['thumbnailSlider']) ? $settings['thumbnailSlider'] : false;
+        $scrollable_thumbs = !empty($settings['scrollableThumbs']) ? 'yes' : 'no';
 
-        if ($thumbnail_slider) {
-            $this->set_attribute('_root', 'class', 'thumbnail-slider');
+        $max_thumbnails = !empty($settings['maxThumbnails']) ? (int) $settings['maxThumbnails'] : null;
+        if ($max_thumbnails !== null && $max_thumbnails <= 0) {
+            $max_thumbnails = null;
         }
 
         // STEP: Render
@@ -209,7 +231,9 @@ class ProductGallery extends Element
         echo "<div {$this->render_attributes( '_root' )}>";
 
         (new ProductRenderer($product))->renderGallery([
-            'thumb_position' => $thumbnail_position,
+            'thumb_position'    => $thumbnail_position,
+            'scrollable_thumbs' => $scrollable_thumbs,
+            'max_thumbnails'    => $max_thumbnails,
         ]);
 
         echo '</div>';

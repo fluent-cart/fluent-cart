@@ -44,6 +44,8 @@ class CartLoader
             return;
         }
 
+
+
         $loadedOnce = true;
 
 
@@ -53,6 +55,18 @@ class CartLoader
             return;
         }
 
+        static::initCartDrawer();
+
+
+    }
+
+    public static function initCartDrawer(): void
+    {
+        static $loadedOnce = false;
+        if ($loadedOnce) {
+            return;
+        }
+        $loadedOnce = true;
         $cart = CartHelper::getCart(null, false);
         $itemCount = 0;
 
@@ -62,7 +76,7 @@ class CartLoader
 
         $cartItems = Arr::get(CartResource::getStatus(), 'cart_data', []);
 
-        if(empty($cartItems)){
+        if (empty($cartItems)) {
             return;
         }
 

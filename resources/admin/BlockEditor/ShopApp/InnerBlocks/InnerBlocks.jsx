@@ -64,7 +64,7 @@ blockEditorData.blocks.forEach(block => {
     }
 
     registerBlockType(block.slug, {
-        apiVersion: 2,
+        apiVersion: 3,
         category: "product-elements",
         title: block.title,
         name: block.slug,
@@ -79,6 +79,7 @@ blockEditorData.blocks.forEach(block => {
 });
 
 registerBlockType('fluent-cart/product-paginator', {
+    apiVersion: 3,
     title: blocktranslate('Paginator'),
     icon: 'screenoptions',
     parent: ['fluent-cart/products', 'core/column'],

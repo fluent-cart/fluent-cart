@@ -11,6 +11,10 @@ export default class Paginator {
     filters = [];
     #defaultFilters = {};
     #allowOutOfStock = false;
+    #includeIds = [];
+    #excludeIds = [];
+    #productType = '';
+    #onSale = false;
 
     applyingFilter = false;
     placeholderImage;
@@ -60,6 +64,36 @@ export default class Paginator {
         this.liveFilter = !!container.getAttribute('data-live-filter');
         container.removeAttribute('data-price-format');
         container.removeAttribute('data-order-type');
+
+        // Shortcode filter attributes
+        const includeIdsAttr = container.getAttribute('data-include-ids');
+        if (includeIdsAttr) {
+            try {
+                this.#includeIds = JSON.parse(includeIdsAttr);
+            } catch (e) {
+                this.#includeIds = [];
+            }
+            container.removeAttribute('data-include-ids');
+        }
+        const excludeIdsAttr = container.getAttribute('data-exclude-ids');
+        if (excludeIdsAttr) {
+            try {
+                this.#excludeIds = JSON.parse(excludeIdsAttr);
+            } catch (e) {
+                this.#excludeIds = [];
+            }
+            container.removeAttribute('data-exclude-ids');
+        }
+        const productTypeAttr = container.getAttribute('data-product-type');
+        if (productTypeAttr) {
+            this.#productType = productTypeAttr;
+            container.removeAttribute('data-product-type');
+        }
+        const onSaleAttr = container.getAttribute('data-on-sale');
+        if (onSaleAttr) {
+            this.#onSale = true;
+            container.removeAttribute('data-on-sale');
+        }
 
         this.bindFilter();
         this.handleDefaultFilters();
@@ -218,6 +252,20 @@ export default class Paginator {
 
             if (this.#allowOutOfStock) {
                 query['allow_out_of_stock'] = true;
+            }
+
+            // Shortcode filter params
+            if (this.#includeIds.length) {
+                query['include_ids'] = this.#includeIds;
+            }
+            if (this.#excludeIds.length) {
+                query['exclude_ids'] = this.#excludeIds;
+            }
+            if (this.#productType) {
+                query['product_type'] = this.#productType;
+            }
+            if (this.#onSale) {
+                query['on_sale'] = 1;
             }
 
 

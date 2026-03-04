@@ -35,7 +35,7 @@ const props = defineProps({
 <template>
   <div class="form-section">
     <Card.Container>
-      <Card.Header :title="field.title" border_bottom/>
+      <Card.Header :title="field.title" border_bottom v-if="field.show_title !== false"/>
       <Card.Body>
         <form-grid
             :form="form"

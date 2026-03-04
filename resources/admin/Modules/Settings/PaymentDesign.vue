@@ -1,62 +1,70 @@
 <template>
   <div class="setting-wrap">
-    <div class="mb-5 flex items-center justify-between">
-      <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-        <el-breadcrumb-item :to="{ path: '/settings/payments' }">
-          {{ $t("Payment Settings") }}
-        </el-breadcrumb-item>
-        <el-breadcrumb-item>
-          <span class="cursor-pointer" @click="goBack">{{ $route.params.method }}</span>
-        </el-breadcrumb-item>
-        <el-breadcrumb-item>
-          <span>{{ $t('Checkout Customization') }}</span>
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
+    <SettingsHeader
+        @onSave="savePaymentDesign"
+        :loading="saving"
+        :save-button-text="$t('Update')"
+        :loading-text="$t('Updating')"
+    >
+      <template #heading>
+        <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
+          <el-breadcrumb-item :to="{ path: '/settings/payments' }">
+            {{ $t("Payment Settings") }}
+          </el-breadcrumb-item>
+          <el-breadcrumb-item>
+            <span class="cursor-pointer" @click="goBack">{{ $route.params.method }}</span>
+          </el-breadcrumb-item>
+          <el-breadcrumb-item>
+            <span>{{ $t('Checkout Customization') }}</span>
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+      </template>
+    </SettingsHeader>
 
-    <Card.Container>
-      <Card.Header :title="$t('Customization')" border_bottom>
-        <template #action>
+    <div class="setting-wrap-inner">
+      <Card.Container>
+        <Card.Header :title="$t('Customization')" border_bottom>
+          <template #action>
             <el-button @click="goBack" type="text" class="cursor-pointer border-none p-0">
-                <el-icon class="text-gray-500 cursor-pointer" @click="goBack"> <ArrowLeft />
-                </el-icon> {{ $t('Back to Gateway Settings') }} </el-button>
-        </template>
-      </Card.Header>
-      <Card.Body>
-        <el-skeleton :loading="fetching" animated :rows="4" class="pt-2" />
-        <el-form v-if="!fetching" label-position="left">
-          <el-form-item :label="$t('Checkout Label')">
-            <el-input type="text" v-model="checkout_label"/>
-          </el-form-item>
-          <el-form-item :label="$t('Checkout Logo')">
-            <MediaInput v-model="mediaSelection" icon="Upload" :title="$t('Upload Logo')"/>
-          </el-form-item>
-          <el-form-item label-position="top">
-            <LabelHint :title="$t('Checkout Instructions')" :content="$t('Checkout Instructions will be displayed on the checkout page gateway section.')"/>
-            <wp-editor
-                v-model="checkout_instructions"
-                @update="(val) => { checkout_instructions = val; }"
-            ></wp-editor>
-          </el-form-item>
-          <!-- gap 10px -->
-          <div class="h-10"></div>
-          <el-form-item label-position="top">
-            <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Thank you page Instruction will be displayed on the thank you page receipt section.')"/>
-            <wp-editor
-                v-model="thank_you_page_instructions"
-                @update="(val) => { thank_you_page_instructions = val; }"
-            ></wp-editor>
-          </el-form-item>
-          <el-form-item>
-            <div class="mt-4 text-right w-full">
-              <el-button type="primary" :loading="saving" @click="savePaymentDesign">
-                {{ saving ? $t('Saving') : $t('Update') }}
-              </el-button>
-            </div>
-          </el-form-item>
-        </el-form>
-      </Card.Body>
-    </Card.Container>
+              <el-icon class="text-gray-500 cursor-pointer" @click="goBack"> <ArrowLeft />
+              </el-icon> {{ $t('Back to Gateway Settings') }} </el-button>
+          </template>
+        </Card.Header>
+        <Card.Body>
+          <el-skeleton :loading="fetching" animated :rows="4" class="pt-2" />
+          <el-form v-if="!fetching" label-position="left">
+            <el-form-item :label="$t('Checkout Label')">
+              <el-input type="text" v-model="checkout_label"/>
+            </el-form-item>
+            <el-form-item :label="$t('Checkout Logo')">
+              <MediaInput v-model="mediaSelection" icon="Upload" :title="$t('Upload Logo')"/>
+            </el-form-item>
+            <el-form-item label-position="top">
+              <LabelHint :title="$t('Checkout Instructions')" :content="$t('Checkout Instructions will be displayed on the checkout page gateway section.')"/>
+              <wp-editor
+                  v-model="checkout_instructions"
+                  @update="(val) => { checkout_instructions = val; }"
+              ></wp-editor>
+            </el-form-item>
+            <!-- gap 10px -->
+            <div class="h-10"></div>
+            <el-form-item label-position="top">
+              <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Thank you page Instruction will be displayed on the thank you page receipt section.')"/>
+              <wp-editor
+                  v-model="thank_you_page_instructions"
+                  @update="(val) => { thank_you_page_instructions = val; }"
+              ></wp-editor>
+            </el-form-item>
+          </el-form>
+        </Card.Body>
+      </Card.Container>
+
+      <div class="setting-save-action">
+        <el-button type="primary" :loading="saving" @click="savePaymentDesign">
+          {{ saving ? $t('Saving') : $t('Update') }}
+        </el-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -69,10 +77,13 @@ import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 
 <script type="text/babel">
 import {handleSuccess, handleError} from "@/Bits/common";
-import LabelHint from '@/Bits/Components/LabelHint.vue';
+import SettingsHeader from "./Parts/SettingsHeader.vue";
 
 export default {
   name: 'PaymentDesign',
+  components: {
+    SettingsHeader,
+  },
   data() {
     return {
       settings: {},

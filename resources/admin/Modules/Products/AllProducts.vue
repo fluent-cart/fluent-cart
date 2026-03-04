@@ -18,7 +18,7 @@ import ProductsTable from "@/Modules/Products/parts/ProductsTable.vue";
 import ProductsTableMobile from "@/Modules/Products/parts/ProductsTableMobile.vue";
 import ProductActionModal from "@/Modules/Products/parts/ProductActionModal.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import BulkAction from "@/Modules/Products/_BulkAction.vue";
+import {ArrowDown} from '@element-plus/icons-vue';
 
 
 const productTable = useProductTable({
@@ -163,7 +163,38 @@ onUnmounted(() => {
     <PageHeading :title="translate('Products')">
       <template #action>
         <UserCan permission="products/create">
-          <CreateDummyProduct @onProductCreated="productTable.fetch()" :products="productTable.getTableData()"/>
+          <el-dropdown
+              trigger="click"
+              popper-class="fct-dropdown"
+              @command=""
+              placement="bottom-end"
+          >
+            <el-button>
+              {{ translate('More actions') }}
+              <el-icon>
+                <ArrowDown/>
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item class="item-link">
+                  <CreateDummyProduct @onProductCreated="productTable.fetch()" :products="productTable.getTableData()"/>
+                </el-dropdown-item>
+
+                <el-dropdown-item @click="$router.push({ name: 'product_bulk_insert' })">
+                  <DynamicIcon name="Insert" />
+                  {{ translate('Bulk Product Insert') }}
+                </el-dropdown-item>
+
+                <el-dropdown-item @click="$router.push({ name: 'product_bulk_edit' })">
+                  <DynamicIcon name="Edit" />
+                  {{ translate('Bulk Product Edit') }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
+
 
           <el-button type="primary" @click="()=>{
             isAddProductModalVisible = true;

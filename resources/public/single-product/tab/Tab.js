@@ -25,6 +25,43 @@ export default class FluentCartSingleProductPriceTab {
             button.addEventListener('click', () => {
                 this.#changeTab(button);
             });
+
+            button.addEventListener('keydown', (event) => {
+                const tabs = Array.from(this.#tabButtons);
+                const currentIndex = tabs.indexOf(button);
+                let targetIndex = -1;
+
+                switch (event.key) {
+                    case 'Enter':
+                    case ' ':
+                        event.preventDefault();
+                        this.#changeTab(button);
+                        return;
+                    case 'ArrowRight':
+                        event.preventDefault();
+                        targetIndex = (currentIndex + 1) % tabs.length;
+                        break;
+                    case 'ArrowLeft':
+                        event.preventDefault();
+                        targetIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                        break;
+                    case 'Home':
+                        event.preventDefault();
+                        targetIndex = 0;
+                        break;
+                    case 'End':
+                        event.preventDefault();
+                        targetIndex = tabs.length - 1;
+                        break;
+                    default:
+                        return;
+                }
+
+                if (targetIndex >= 0) {
+                    tabs[targetIndex].focus();
+                    this.#changeTab(tabs[targetIndex]);
+                }
+            });
         });
     }
 
@@ -65,8 +102,12 @@ export default class FluentCartSingleProductPriceTab {
             this.#addToCartBtn.classList.add('is-hidden');
         }
 
-        // Remove active class from all tabs
-        this.#tabButtons.forEach(tab => tab.classList.remove('active'));
+        // Remove active class and update ARIA states for all tabs
+        this.#tabButtons.forEach(tab => {
+            tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
+            tab.setAttribute('tabindex', '-1');
+        });
 
         // Hide all tab contents
         const tabContents = this.#container.querySelectorAll('[data-tab-content]');
@@ -75,8 +116,10 @@ export default class FluentCartSingleProductPriceTab {
             content.style.display = 'none';
         });
 
-        // Add active class to the clicked tab
+        // Add active class to the clicked tab and update ARIA
         button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
+        button.setAttribute('tabindex', '0');
 
         // Get the associated content and show it with animation
         const activeTabId = button.dataset.tab;

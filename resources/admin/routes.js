@@ -62,6 +62,8 @@ import AddOrEditCoupon from "@/Modules/Coupons/AddOrEditCoupon.vue";
 
 import CheckoutFields from "@/Modules/Settings/CheckoutFields.vue";
 import AppConfig from "@/utils/Config/AppConfig";
+import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
+import BulkEdit from "@/Modules/Products/BulkEdit/BulkEdit.vue";
 
 
 const PaymentChildRoutes = AppConfig.get('payment_routes');
@@ -106,7 +108,7 @@ export var routes = {
             },
             {
                 name: 'view_order',
-                path: ':order_id/view',
+                path: ':order_id(\\d+)/view',
                 component: SingleOrder,
                 props: true,
                 meta: {
@@ -140,7 +142,7 @@ export var routes = {
     },
 
     product_route: {
-        path: '/products/:product_id',
+        path: '/products/:product_id(\\d+)',
         component: ProductRoute,
         name: 'product_route',
         meta: {
@@ -218,16 +220,27 @@ export var routes = {
         ]
     },
 
-    // product_bulk_insert: {
-    //     name: 'product_bulk_insert',
-    //     path: '/products/bulk-insert',
-    //     component: BulkInsert,
-    //     meta: {
-    //         active_menu: 'products',
-    //         title: 'Product Bulk Insert',
-    //         permission: "products/create"
-    //     },
-    // },
+    product_bulk_insert: {
+        name: 'product_bulk_insert',
+        path: '/products/bulk-insert',
+        component: BulkInsert,
+        meta: {
+            active_menu: 'products',
+            title: 'Product Bulk Insert',
+            permission: "products/create"
+        },
+    },
+
+    product_bulk_edit: {
+        name: 'product_bulk_edit',
+        path: '/products/bulk-edit',
+        component: BulkEdit,
+        meta: {
+            active_menu: 'products',
+            title: 'Product Bulk Edit',
+            permission: "products/edit"
+        },
+    },
 
     customers: {
         path: '/customers',
@@ -249,7 +262,7 @@ export var routes = {
             },
             {
                 name: 'view_customer',
-                path: ':customer_id/view',
+                path: ':customer_id(\\d+)/view',
                 component: SingleCustomer,
                 props: true,
                 meta: {
@@ -275,7 +288,7 @@ export var routes = {
                 path: "overview", // Empty path makes this the default child route
                 component: OverviewReport,
                 meta: {
-                    title: "Overview Reports",
+                    title: "Overview",
                     permission: "reports/view"
                 },
             },
@@ -284,7 +297,7 @@ export var routes = {
                 path: "sales",
                 component: DefaultReport,
                 meta: {
-                    title: "Sales Reports",
+                    title: "Sales",
                     permission: "reports/view"
                 },
             },
@@ -293,7 +306,7 @@ export var routes = {
                 path: "orders",
                 component: OrderReport,
                 meta: {
-                    title: "Order Reports",
+                    title: "Orders",
                     permission: "reports/view"
                 },
             },
@@ -302,7 +315,7 @@ export var routes = {
                 path: "revenue",
                 component: RevenueReport,
                 meta: {
-                    title: "Revenue Report",
+                    title: "Revenue",
                     permission: "reports/view"
                 },
             },
@@ -311,7 +324,7 @@ export var routes = {
                 path: "refunds",
                 component: RefundReport,
                 meta: {
-                    title: "Refund Report",
+                    title: "Refunds",
                     permission: "reports/view"
                 },
             },
@@ -320,7 +333,7 @@ export var routes = {
                 path: "subscriptions",
                 component: SubscriptionReport,
                 meta: {
-                    title: "Subscription Report",
+                    title: "Subscriptions",
                     permission: "reports/view"
                 }
             },
@@ -356,7 +369,7 @@ export var routes = {
                 path: "products",
                 component: ProductReport,
                 meta: {
-                    title: "Product Report",
+                    title: "Product",
                     permission: "reports/view"
                 },
             },
@@ -365,7 +378,7 @@ export var routes = {
                 path: "customer",
                 component: CustomerReport,
                 meta: {
-                    title: "Customer Report",
+                    title: "Customer",
                     permission: "reports/view"
                 },
             },
@@ -374,19 +387,10 @@ export var routes = {
                 path: "sources",
                 component: SourcesReport,
                 meta: {
-                    title: "Sources Report",
+                    title: "Sources",
                     permission: "reports/view"
                 },
             },
-            // {
-            //     name: "reports_subscriptions_new",
-            //     path: "subscriptions_new",
-            //     component: SubscriptionNew,
-            //     meta: {
-            //         title: "Subscription Reports",
-            //         permission: "reports/view"
-            //     },
-            // }
         ]
     },
     // Remove the old standalone routes
@@ -415,25 +419,41 @@ export var routes = {
                         name: 'store_setup',
                         path: '', // Full path: /settings/:settingName/store
                         component: StoreSettings,
-                        meta: {}
+                        meta: {
+                            title: 'Store Setup',
+                        }
                     },
                     {
                         name: 'pages_setup',
                         path: 'pages_setup', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
-                        meta: {}
+                        meta: {
+                            title: 'Pages Setup',
+                        }
                     },
                     {
                         name: 'single_product_setup',
                         path: 'single_product_setup', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
-                        meta: {}
+                        meta: {
+                            title: 'Product Page',
+                        }
                     },
                     {
                         name: 'cart_and_checkout',
                         path: 'cart_and_checkout', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
-                        meta: {}
+                        meta: {
+                            title: 'Cart & Checkout',
+                        }
+                    },
+                    {
+                        name: 'subscriptions_setup',
+                        path: 'subscriptions',
+                        component: StoreSettings,
+                        meta: {
+                            title: 'Subscriptions',
+                        }
                     },
                     {
                         name: 'checkout_fields',
@@ -606,12 +626,6 @@ export var routes = {
                         component: TaxConfigurations,
                         meta: {}
                     },
-                    // {
-                    //     name: 'tax_classes',
-                    //     path: 'tax_classes',
-                    //     component: TaxClasses,
-                    //     meta: {}
-                    // },
                     {
                         name: 'tax_rates',
                         path: 'tax_rates',

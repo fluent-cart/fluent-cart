@@ -3,6 +3,7 @@
       :title="isEditing ? `Edit ${currentUserName}'s Role` : 'Add Role'"
       v-model="modelValue"
       @closed="closeModal"
+      :append-to-body="true"
   >
 
     <div class="role-form">

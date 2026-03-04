@@ -131,6 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 stockStatus = activeVariationButton?.dataset.itemStock;
             }
 
+            // For simple products, also check product-level stock from the buy now button
+            const buyNowStockAttr = this.#buyNowButtons[0]?.dataset.stockAvailability;
+            if (buyNowStockAttr === window.fluentcart_single_product_vars?.out_of_stock_status) {
+                stockStatus = buyNowStockAttr;
+            }
+
             // if (this.#itemPrice && itemPrice) {
             //     this.#itemPrice.textContent = itemPrice;
             //     const priceSuffix = activeVariationButton?.dataset.priceSuffix;
@@ -223,12 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.setAttribute('href', url);
                     button.setAttribute('data-cart-id', cartId);
                     button.classList.remove('is-hidden');
-                    button.classList.remove('disabled');
-                    button.removeAttribute('disabled');
                 } else {
                     button.removeAttribute('href');
                     button.classList.add('is-hidden');
-                    button.setAttribute('disabled', 'disabled');
                 }
             });
         }
@@ -255,6 +258,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.addEventListener('click', (event) => {
                     this.#handleVariationChange(button);
                 });
+
+                button.addEventListener('keydown', (event) => {
+                    const radiogroup = button.closest('[role="radiogroup"]');
+                    if (!radiogroup) return;
+
+                    const radios = Array.from(radiogroup.querySelectorAll('[role="radio"]'));
+                    const currentIndex = radios.indexOf(button);
+                    let targetIndex = -1;
+
+                    switch (event.key) {
+                        case 'Enter':
+                        case ' ':
+                            event.preventDefault();
+                            this.#handleVariationChange(button);
+                            return;
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                            event.preventDefault();
+                            targetIndex = (currentIndex + 1) % radios.length;
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                            event.preventDefault();
+                            targetIndex = (currentIndex - 1 + radios.length) % radios.length;
+                            break;
+                        case 'Home':
+                            event.preventDefault();
+                            targetIndex = 0;
+                            break;
+                        case 'End':
+                            event.preventDefault();
+                            targetIndex = radios.length - 1;
+                            break;
+                        default:
+                            return;
+                    }
+
+                    if (targetIndex >= 0) {
+                        radios[targetIndex].focus();
+                        this.#handleVariationChange(radios[targetIndex]);
+                    }
+                });
             });
         }
 
@@ -267,7 +312,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         #handleVariationChange(button) {
-            this.#variationButtons.forEach(btn => btn.classList.remove('selected'));
+            this.#variationButtons.forEach(btn => {
+                btn.classList.remove('selected');
+                btn.setAttribute('aria-checked', 'false');
+                btn.setAttribute('tabindex', '-1');
+            });
+
+            button.setAttribute('aria-checked', 'true');
+            button.setAttribute('tabindex', '0');
 
             this.#resetQuantity();
             const variationId = button.dataset.cartId;
@@ -318,23 +370,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 this.#setupBuyNowButton(variationId, status);
 
-                if (button.dataset.paymentType === 'subscription') {
-                    this.#addToCartButtons.forEach(button => button.classList.add('is-hidden'));
-                } else {
-                    this.#addToCartButtons.forEach(button => {
-                        button.classList.remove('is-hidden');
-                        button.setAttribute('data-cart-id', variationId);
+                if (button.dataset.paymentType !== 'subscription') {
+                    this.#addToCartButtons.forEach(btn => {
+                        btn.classList.remove('is-hidden');
+                        btn.setAttribute('data-cart-id', variationId);
                     });
                 }
             }
-
 
             if (status !== undefined) {
                 this.#updateProductStatus(status);
             }
 
+            // For in-stock subscriptions, hide add-to-cart (subscriptions use Buy Now only)
+            const outOfStockSt = window.fluentcart_single_product_vars.out_of_stock_status;
+            if (button.dataset.paymentType === 'subscription' && status !== outOfStockSt) {
+                this.#addToCartButtons.forEach(btn => btn.classList.add('is-hidden'));
+            }
+
+            // Update SKU on variation change
+            const skuValue = button.dataset.sku || '';
+            const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
+            const skuElement = productScope?.querySelector('[data-fluent-cart-product-sku]');
+            if (skuElement) {
+                skuElement.textContent = skuValue;
+                const skuWrapper = skuElement.closest('.fct-product-sku');
+                if (skuWrapper) {
+                    skuWrapper.style.display = skuValue ? '' : 'none';
+                }
+            }
 
             button.classList.add('selected');
+
+            // Update aria-label on Buy Now and Add To Cart buttons with variant name
+            const variantName = button.getAttribute('aria-label') || '';
+            if (variantName) {
+                this.#buyNowButtons.forEach(btn => {
+                    const baseText = btn.textContent.trim();
+                    btn.setAttribute('aria-label', baseText + ' - ' + variantName);
+                });
+                this.#addToCartButtons.forEach(btn => {
+                    const textEl = btn.querySelector('.text');
+                    const baseText = textEl ? textEl.textContent.trim() : btn.textContent.trim();
+                    btn.setAttribute('aria-label', baseText + ' - ' + variantName);
+                });
+            }
 
             // Update variant price info
             const priceInfoElements2 = this.findInContainer('[data-fluent-cart-single-product-page-product-variant-price-info]');
@@ -378,11 +458,29 @@ document.addEventListener('DOMContentLoaded', () => {
         #updateProductStatus(status) {
 
             if (!status) return;
-            const statusElement = this.findOneInContainer("[data-fluent-cart-product-stock]");
+            const outOfStockStatus = window.fluentcart_single_product_vars.out_of_stock_status;
+            const isOutOfStock = status === outOfStockStatus;
+
+            // Update stock badge text and classes
+            // Stock badge is outside the pricing section container, so search in the broader product scope
+            const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
+            const statusElement = productScope?.querySelector("[data-fluent-cart-product-stock]");
             if (statusElement) {
                 statusElement.innerHTML = this.$t(this.toTitleCase(status.replaceAll('-', ' ')));
+
+                // Update badge class (fct_status_badge_*)
+                statusElement.className = statusElement.className.replace(/fct_status_badge_[\w-]+/g, '');
+                statusElement.classList.add('fct_status_badge_' + status);
+
+                // Update parent wrapper class
+                const stockWrapper = statusElement.closest('.fct-product-stock');
+                if (stockWrapper) {
+                    stockWrapper.classList.remove('in-stock', 'out-of-stock');
+                    stockWrapper.classList.add(status);
+                }
             }
-            if (status === window.fluentcart_single_product_vars.out_of_stock_status) {
+
+            if (isOutOfStock) {
                 this.#addToCartButtons.forEach(button => {
                     const textEl = button.querySelector('.text');
                     if (textEl) {
@@ -390,8 +488,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     button.setAttribute('disabled', 'disabled');
                     button.classList.add('out-of-stock');
+                    // Always show "Not Available" button, even for subscriptions
+                    button.classList.remove('is-hidden');
                 });
-                this.#buyNowButtons.forEach(button => button.classList.add('is-hidden'));
+
+                // Hide Buy Now button when out of stock
+                this.#buyNowButtons.forEach(button => {
+                    button.classList.add('is-hidden');
+                    button.removeAttribute('href');
+                });
             } else {
                 this.#addToCartButtons.forEach(button => {
                     const textEl = button.querySelector('.text');
@@ -401,7 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.classList.remove('out-of-stock');
                     button.removeAttribute('disabled');
                 });
-                this.#buyNowButtons.forEach(button => button.classList.remove('is-hidden'));
+                // Show Buy Now button when in stock
+                this.#buyNowButtons.forEach(button => {
+                    button.classList.remove('is-hidden');
+                });
             }
         }
 
@@ -531,11 +639,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         #initiallyHideOutOfStockButton() {
+            // Check variant-level stock
             let checkStockStatus = window.fluentcart_single_product_vars?.in_stock_status;
             let stockManagement = this.#variationButtons[0]?.dataset.stockManagement;
             let stockStatus = checkStockStatus;
             if (stockManagement === 'yes') {
                 stockStatus = this.#variationButtons[0]?.dataset.itemStock;
+            }
+
+            // Also check product-level stock from the buy now button's data attribute
+            const buyNowStock = this.#buyNowButtons[0]?.dataset.stockAvailability;
+            if (buyNowStock === window.fluentcart_single_product_vars.out_of_stock_status) {
+                stockStatus = buyNowStock;
             }
 
             if (stockStatus === window.fluentcart_single_product_vars.out_of_stock_status) {
@@ -558,8 +673,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         #handleThumbnailChange(control) {
-            this.#thumbnailControls.forEach(ctrl => ctrl.classList.remove('active'));
+            this.#thumbnailControls.forEach(ctrl => {
+                ctrl.classList.remove('active');
+                ctrl.setAttribute('aria-pressed', 'false');
+            });
             control.classList.add('active');
+            control.setAttribute('aria-pressed', 'true');
             this.#setThumbImage(control);
         }
 

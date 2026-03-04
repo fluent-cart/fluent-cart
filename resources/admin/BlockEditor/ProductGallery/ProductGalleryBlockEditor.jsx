@@ -4,7 +4,7 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductGallery/Components/InspectorSettings";
-import {useSingleProductData} from "@/BlockEditor/ProductInfo/Context/SingleProductContext";
+import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import ProductGalleryPreview from "./ProductGallery.png";
 
 const {useBlockProps} = wp.blockEditor;
@@ -19,7 +19,9 @@ const {useSelect} = wp.data;
 const {store: blockEditorStore} = wp.blockEditor;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
+    parent: ['fluent-cart/product-info'],
     description: blockEditorData.description,
     example: {
         attributes: {
@@ -58,54 +60,64 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         enableImageZoom: {
             type: 'string',
             default: 'yes'
+        },
+        thumbPosition: {
+            type: 'string',
+            default: 'bottom'
+        },
+        scrollableThumbs: {
+            type: 'string',
+            default: 'no'
+        },
+        maxThumbnails: {
+            type: 'string',
+            default: ''
         }
     },
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
-        const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const [selectedProduct, setSelectedProduct] = useState(null);
 
         const isInsideProductInfo = useSelect((select) => {
             const {getBlockParents, getBlockName} = select(blockEditorStore);
-
-            // Get all parent block IDs of this block
             const parents = getBlockParents(clientId);
-
-            // Check if any parent has blockName 'product-info'
             return parents.some((parentId) => getBlockName(parentId) === 'fluent-cart/product-info');
         }, [clientId]);
 
-        setAttributes({inside_product_info: isInsideProductInfo ? 'yes' : 'no'});
+        useEffect(() => {
+            setAttributes({inside_product_info: isInsideProductInfo ? 'yes' : 'no'});
+        }, [isInsideProductInfo]);
 
         const singleProductData = useSingleProductData();
 
+        // When inside Product Info, use the parent's product context
+        useEffect(() => {
+            if (singleProductData?.product) {
+                setSelectedProduct(singleProductData.product);
+            }
+        }, [singleProductData?.product]);
 
-        const fetchProduct = () => {
+        // When standalone (not inside Product Info), fetch product by ID
+        useEffect(() => {
+            if (isInsideProductInfo) return;
+
+            const productId = attributes.product_id;
+            if (!productId) {
+                setSelectedProduct(null);
+                return;
+            }
+
             apiFetch({
-                path: addQueryArgs(fetchUrl, {
+                path: addQueryArgs(rest.url + '/products/' + productId, {
                     with: ['detail', 'variants']
                 }),
                 headers: {
                     'X-WP-Nonce': rest.nonce
                 }
             }).then((response) => {
-                console.log(response, ' response');
-
-                setSelectedProduct(response.product || {});
-            }).finally(() => {
-
+                setSelectedProduct(response.product || null);
             });
-        }
-        
-        useEffect(() => {
-            fetchProduct();
-        }, []);
-
-        useEffect(() => {
-            if (singleProductData?.product) {
-                setSelectedProduct(singleProductData.product);
-            }
-        }, [singleProductData?.product]);
+        }, [attributes.product_id, isInsideProductInfo]);
 
 
         return (

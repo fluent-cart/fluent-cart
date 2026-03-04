@@ -1,0 +1,768 @@
+// ─────────────────────────────────────────────────────────────
+// Shared styles for BulkInsert & BulkEdit resizable tables
+// ─────────────────────────────────────────────────────────────
+
+// ── Pin content area so sidebar scroll doesn't hide the table ─
+body.fct-bulk-page #wpcontent {
+  @apply sticky top-[32px] overflow-hidden;
+  height: calc(100vh - 32px);
+}
+
+// ── Resizable table (ResizeableColumns.vue) ──────────────────
+
+.resizable-table {
+  @apply rounded-bl rounded-br overflow-auto;
+  max-height: calc(100vh - 280px);
+
+  .fct-bulk-edit-page & {
+    max-height: calc(100vh - 350px);
+  }
+
+  table {
+    @apply w-full relative border-collapse;
+  }
+
+  thead {
+    th {
+      @apply sticky top-0;
+    }
+  }
+
+  th {
+    @apply bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider p-3 text-[13px] font-medium text-system-dark text-left whitespace-nowrap overflow-visible dark:border-dark-400 dark:bg-dark-500 dark:text-gray-50;
+  }
+
+  td {
+    @apply border-0;
+  }
+
+  // Sticky column shadows (left & right)
+  th.sticky-col,
+  td.sticky-col {
+    @apply bg-white sticky z-[65] dark:bg-dark-500;
+
+    &::after {
+      @apply absolute top-0 bottom-0 right-[-6px] w-1.5 pointer-events-none;
+
+      content: '';
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.06), transparent);
+    }
+  }
+
+  th.sticky-col-right,
+  td.sticky-col-right {
+    @apply right-0;
+    &::after {
+      @apply left-[-6px] right-auto;
+      background: linear-gradient(to left, rgba(0, 0, 0, 0.06), transparent);
+    }
+  }
+  .fct-bulk-product-title-cell {
+    @apply z-[40] bg-white dark:bg-dark-700;
+  }
+
+  .el-input__wrapper {
+    @apply rounded-none border-0 bg-transparent;
+    &.is-focus {
+      @apply border border-gray-200;
+    }
+  }
+
+  .el-select__wrapper {
+    @apply border-0 rounded-none bg-transparent px-0;
+  }
+
+  .el-select {
+    @apply w-full;
+    .el-tag {
+      @apply max-w-[100px] bg-gray-100 dark:bg-dark-500 #{!important};
+    }
+    .el-select__selection {
+      flex-wrap: nowrap #{!important};
+    }
+    &.is-field-error .el-select__wrapper {
+      @apply border-red-500;
+    }
+  }
+  .el-input-number {
+    .el-input__wrapper {
+      @apply rounded-xs border;
+    }
+  }
+}
+
+
+/*== media ==*/
+.fct-media-picker {
+  @apply cursor-pointer;
+}
+.fct-mp-add-compact {
+  @apply shadow-none inline-flex items-center p-0 rounded-none border-dashed w-full h-7.5 min-h-[auto] transition-all duration-150 hover:border-gray-500 hover:text-system-dark;
+  svg {
+    @apply w-4 h-4 !important;
+  }
+}
+
+// ── Column resizer ───────────────────────────────────────────
+
+.resizer {
+  @apply block w-[9px] absolute right-[-4px] top-0 z-[60];
+  cursor: col-resize;
+  height: var(--resizer-height, 100%);
+
+  // Circular grip handle — pinned to top of header
+  &::before {
+    @apply absolute top-[3px] left-[50%] w-3.5 h-3.5 rounded-full bg-gray-200 border border-solid border-gray-outline text-[7px] leading-[13px] text-center text-system-mid opacity-0 z-[1];
+    content: '↔';
+    transform: translateX(-50%);
+    transition: opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  // Vertical guide line — full table height
+  &::after {
+    @apply absolute left-[50%] top-0 w-[1px] h-full bg-gray-200 opacity-60;
+    content: '';
+    transform: translateX(-50%);
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+  }
+
+  // Hover: show only the hovered handle + subtle line
+  &:hover::before {
+    @apply opacity-100;
+  }
+  //&:hover::after {
+  //  @apply opacity-60;
+  //}
+
+  // Active drag: prominent handle + visible line
+  &.is-active::before {
+    @apply opacity-100 bg-gray-300 border-gray-300 text-system-dark;
+  }
+  &.is-active::after {
+    @apply opacity-100;
+  }
+}
+
+// ── Checkbox cell (row selection) ─────────────────────────────
+
+th.bulk-checkbox-cell,
+td.bulk-checkbox-cell {
+  @apply p-0 text-center align-middle sticky left-0 z-[71] bg-white dark:bg-dark-500;
+}
+
+// Row checkboxes are display-only; clicks handled by parent <td>
+td.bulk-checkbox-cell input[type="checkbox"] {
+  @apply pointer-events-none;
+}
+
+// ── Selected row highlighting ────────────────────────────────
+
+tr.is-selected > td {
+  @apply bg-gray-50 dark:bg-dark-500 #{!important};
+}
+
+tr.is-selected > td.sticky-col,
+tr.is-selected > td.sticky-col-right {
+  @apply bg-gray-50 dark:bg-dark-500 #{!important};
+}
+
+// ── Cell inputs ──────────────────────────────────────────────
+
+.bulk-cell-input {
+  @apply w-full px-3 text-sm border border-solid border-transparent bg-transparent outline-none;
+  min-height: 38px;
+  box-sizing: border-box;
+  color: var(--fct-text-system-dark, #101828);
+
+  &:hover {
+    border-color: var(--fct-border-gray-divider, #EAECF0);
+  }
+
+  &:focus {
+    border-color: var(--el-color-primary, #253241);
+    background-color: #fff;
+  }
+
+  &.is-error {
+    border-color: #F04438;
+    background-color: #FEF3F2;
+
+    &::placeholder {
+      color: #F04438;
+      opacity: 0.7;
+    }
+  }
+}
+
+// WP admin targets input[type="number"] (specificity 0,1,1) which beats .bulk-cell-input (0,1,0).
+// Bump to input.bulk-cell-input (0,1,1) so our rule wins by cascade order.
+input.bulk-cell-input {
+  border-color: transparent;
+}
+
+.bulk-readonly-label {
+  @apply text-sm px-3 text-system-light;
+}
+
+// ── Editor cell (click-to-open modal) ────────────────────────
+
+.fct-bulk-editor {
+  @apply w-full px-2 text-sm cursor-pointer box-border min-h-[32px] flex items-center overflow-hidden;
+}
+
+.bulk-editor-preview {
+  @apply truncate;
+  color: var(--fct-text-system-dark, #101828);
+}
+
+.fct-bulk-editor-placeholder {
+  @apply text-system-light text-xs font-normal;
+}
+
+
+/*=== sub ===*/
+.fc-bulk-sub-icon-btn {
+  @apply flex items-center justify-center border-0 bg-transparent cursor-pointer p-0 relative w-6.5 h-6.5 text-system-light transition-colors duration-100 hover:text-system-dark dark:hover:text-gray-50;
+}
+
+.fc-bulk-sub-icon-btn.is-active {
+  @apply text-system-dark dark:text-gray-50;
+}
+
+.fc-bulk-sub-icon-btn.is-configured {
+    @apply text-primary-500;
+}
+
+.fc-bulk-sub-icon-btn:disabled {
+    @apply opacity-30 cursor-not-allowed;
+}
+
+.fct-bulk-sub-count {
+  @apply absolute bottom-[-1px] right-[-3px] min-w-[14px] h-[14px] leading-[14px] text-[9px] text-center font-semibold text-white bg-primary-500 rounded-full px-[3px] pointer-events-none;
+}
+
+.bulk-sub-popover {
+  .fct-bulk-sub-popover-title {
+    @apply text-[15px] mb-5 mt-0;
+  }
+  .fct-bulk-sub-label {
+    @apply min-w-[60px] text-[13px] text-system-mid shrink-0 dark:text-gray-300;
+  }
+  .fct-bulk-sub-value {
+    @apply text-[13px] text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-bulk-sub-section + .fct-bulk-sub-section {
+  @apply pt-3 mt-3 border border-x-0 border-solid border-b-0 border-gray-divider dark:border-dark-400;
+}
+
+.fct-bulk-sub-row {
+  @apply flex items-center gap-2;
+  + .fct-bulk-sub-row {
+    @apply mt-2;
+  }
+}
+
+
+
+.fct-bulk-sub-footer {
+  @apply flex justify-end border border-solid border-x-0 border-b-0 border-gray-divider mt-2.5 pt-2.5 dark:border-dark-400;
+}
+
+// ── Product rows ─────────────────────────────────────────────
+
+.bulk-product-row td {
+  @apply py-1 px-1.5 border border-solid border-x-0 border-t-0 border-gray-divider align-middle dark:border-dark-400;
+}
+
+.bulk-product-row:hover td,
+.bulk-product-row:hover td.sticky-col-right {
+    @apply bg-gray-25 dark:bg-dark-400;
+}
+
+.bulk-product-row.is-dirty td {
+    @apply bg-gray-50 !important;
+}
+
+.bulk-product-row.is-dirty td.sticky-col,
+.bulk-product-row.is-dirty td.sticky-col-right {
+  @apply bg-gray-50 !important;
+}
+
+// ── Variation rows ───────────────────────────────────────────
+
+.bulk-variation-row td {
+  @apply py-1 px-1.5 border border-solid border-x-0 border-t-0 border-gray-outline align-middle dark:border-dark-400;
+}
+
+.bulk-variation-cell {
+    @apply bg-gray-50 !important;
+}
+
+.bulk-variation-row:hover td,
+.bulk-variation-row:hover td.sticky-col-right {
+  @apply bg-gray-50 dark:bg-dark-400;
+}
+
+// Add variant row (BulkInsert only)
+.bulk-add-variant-row td {
+  @apply py-1.5 border-0 bg-white dark:bg-dark-600 #{!important};
+
+}
+
+// ── Collapse button & variants block ─────────────────────────
+
+.bulk-collapse-btn {
+  @apply flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 mr-1 w-6.5 h-6.5 text-system-mid hover:text-system-dark dark:text-gray-500 dark:hover:text-gray-50;
+  .bulk-collapse-icon {
+    transition: transform 0.15s ease;
+    transform: rotate(90deg);
+
+    &.is-collapsed {
+      transform: rotate(0deg);
+    }
+  }
+}
+
+
+
+.bulk-collapse-count {
+  @apply text-xs font-medium text-system-mid ml-[-2px];
+}
+
+.bulk-variants-block-row > td {
+  padding: 0 !important;
+  border: none !important;
+  line-height: 0;
+}
+
+// ── Inline save / status icons ───────────────────────────────
+
+.bulk-inline-save {
+  @apply flex items-center justify-center shrink-0 cursor-pointer p-0 transition-colors duration-150;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  background: none;
+  color: #189877;
+  border: none;
+
+  &:hover {
+    color: #117a5e;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed;
+    color: #98A2B3;
+  }
+}
+
+.bulk-status-icon {
+  @apply flex items-center justify-center shrink-0;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+
+  &.is-syncing { color: #667085; }
+  &.is-saved   { color: #12B76A; }
+  &.is-error   { color: #F04438; }
+}
+
+// ── Disabled inputs while saving/saved ───────────────────────
+
+.bulk-product-row.is-saving,
+.bulk-product-row.is-saved {
+  .bulk-cell-input:disabled,
+  .el-select.is-disabled .el-select__wrapper {
+    @apply opacity-60;
+    pointer-events: none;
+  }
+}
+
+// ── Action buttons ───────────────────────────────────────────
+
+.bulk-action-btn {
+  opacity: 0.4;
+  transition: opacity 0.15s;
+
+  &.bulk-view-link {
+    @apply flex items-center justify-center;
+    width: 28px;
+    height: 28px;
+    color: var(--el-color-primary, #253241);
+    opacity: 1;
+
+    &:hover {
+      color: var(--el-color-primary-light-3, #5a6b7d);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+tr:hover .bulk-action-btn {
+  opacity: 1;
+}
+
+// ── Setup fee badge ──────────────────────────────────────────
+
+.bulk-setup-fee {
+  @apply text-xs font-medium whitespace-nowrap cursor-pointer;
+  color: #667085;
+}
+
+.bulk-setup-fee-badge {
+  @apply inline-flex items-center whitespace-nowrap cursor-pointer font-medium rounded-sm;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 4px;
+  background: #F2F4F7;
+  color: #475467;
+}
+
+// ── Price input ──────────────────────────────────────────────
+
+.bulk-price-input {
+  .el-input__wrapper {
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 11px;
+    border-radius: 0;
+    min-height: 38px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+
+    &.is-focus {
+      border-color: var(--el-color-primary, #253241) !important;
+      background-color: #fff !important;
+    }
+  }
+
+  .el-input__inner {
+    font-size: 14px;
+    color: var(--fct-text-system-dark, #101828);
+  }
+
+  &:hover .el-input__wrapper {
+    border-color: var(--fct-border-gray-divider, #EAECF0);
+  }
+
+  .el-input-group__append {
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 8px 0 0;
+    border: none !important;
+  }
+
+  &.is-error .el-input__wrapper {
+    border-color: var(--el-color-danger, #F04438) !important;
+  }
+}
+
+// ── Inner table for variant rows inside accordion ────────────
+
+.bulk-inner-table {
+  @apply border-collapse;
+}
+
+// ── Link button ─────────────────────────────────────────────
+
+.bulk-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #D0D5DD;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  color: #475467;
+  transition: all 0.15s;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &:hover:not(:disabled) {
+    border-color: #98A2B3;
+    background: #F9FAFB;
+  }
+
+  &.is-active {
+    background: #EFF6FF;
+    border-color: #3B82F6;
+    color: #1D4ED8;
+  }
+
+  &.is-danger:not(:disabled) {
+    color: #B42318;
+    border-color: #FDA29B;
+
+    &:hover {
+      background: #FEF3F2;
+      border-color: #F04438;
+      color: #B42318;
+    }
+  }
+
+  svg { width: 14px; height: 14px; }
+}
+
+// ── Link mode: dim non-selected rows ────────────────────────
+
+.is-link-mode {
+  .bulk-product-row:not(.is-selected) > td:not(.bulk-checkbox-cell),
+  .bulk-variation-row:not(.is-selected) > td:not(.bulk-checkbox-cell) {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+}
+
+// ── Shift held: disable inputs so shift+click selects rows ──
+
+.is-shift-held {
+  .bulk-product-row,
+  .bulk-variation-row {
+    user-select: none;
+
+    td:not(.bulk-checkbox-cell) {
+      input, textarea, select, button, .el-select, .el-switch,
+      [contenteditable], [role="combobox"], [role="switch"] {
+        pointer-events: none;
+      }
+    }
+  }
+}
+
+
+// ═════════════════════════════════════════════════════════════
+// DARK MODE
+// ═════════════════════════════════════════════════════════════
+
+html.dark {
+
+  // ── Resizable table header & sticky columns ────────────────
+
+  .resizable-table {
+    th.sticky-col::after,
+    td.sticky-col::after {
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.15), transparent);
+    }
+  }
+
+  // ── Resizer handle ─────────────────────────────────────────
+
+  .resizer {
+    &::before {
+      background: #344054;
+      border-color: #475467;
+      color: #98A2B3;
+    }
+    &::after {
+      background: #475467;
+    }
+    &.is-active::before {
+      background: #475467;
+      border-color: #667085;
+      color: #D0D5DD;
+    }
+    &.is-active::after {
+      background: #667085;
+    }
+  }
+}
+
+
+/*=== fct-import-map-table ===*/
+.fct-import-map-table-wrap {
+  @apply max-h-[600px] overflow-scroll;
+  .fct-import-map-heading {
+    @apply mt-0;
+  }
+}
+.fct-import-map-table {
+  @apply w-full border-collapse;
+  thead {
+    th {
+      @apply py-2 px-2.5 bg-gray-50 text-[13px] font-semibold text-system-dark dark:text-gray-50 dark:bg-gray-800;
+    }
+
+    th:first-child {
+      @apply rounded-tl rounded-bl;
+    }
+
+    th:last-child {
+      @apply rounded-tr rounded-br;
+    }
+  }
+
+  td {
+    @apply py-2 px-2.5 text-[13px] text-system-mid border border-x-0 border-t-0 border-solid border-gray-divider dark:border-dark-400 dark:text-gray-300;
+  }
+
+  tr:last-child {
+    td {
+      @apply border-0 pb-0;
+    }
+  }
+}
+
+/*== thumb ==*/
+.fmp-stack {
+  @apply flex items-center;
+}
+
+.fmp-thumb-wrap {
+  @apply w-6 h-6 rounded-full border border-solid border-white ml-[-8px] shrink-0 relative inline-block bg-gray-50 overflow-hidden;
+}
+
+.fmp-thumb-wrap:first-child {
+  @apply ml-0;
+}
+
+/* Spinner shown behind the image while loading */
+.fmp-thumb-wrap::after {
+    @apply absolute inset-0 m-auto w-3.5 h-3.5 border-2 border-solid border-gray-divider border-t-gray-500 rounded-full;
+  content: '';
+  animation: fmp-spin 0.6s linear infinite;
+}
+
+@keyframes fmp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.fmp-thumb {
+  @apply w-full h-full rounded-full object-cover block relative z-[1] text-[0px] text-transparent;
+}
+
+/* Hide broken image icon so the spinner underneath stays visible */
+.fmp-thumb.is-hidden {
+  @apply invisible;
+}
+
+.fmp-count {
+  @apply w-6 h-6 rounded-full bg-gray-50 text-system-mid text-[10px] font-semibold inline-flex items-center justify-center border border-solid border-white shrink-0 dark:bg-gray-800 dark:border-dark-400 dark:text-gray-50;
+}
+
+.fmp-edit-icon {
+  @apply hidden items-center justify-center ml-1 text-system-mid;
+}
+
+.fct-media-picker:hover .fmp-edit-icon {
+  @apply inline-flex;
+}
+
+/* ── Add by URL tab ── */
+.fmp-url-list {
+  @apply flex flex-col gap-2 max-h-[360px] overflow-auto;
+}
+
+.fmp-url-item {
+  @apply flex items-center gap-3 p-2 border border-solid border-gray-outline rounded dark:border-dark-400;
+}
+
+.fmp-url-thumb {
+  @apply w-[48px] h-[48px] rounded object-cover shrink-0;
+}
+
+.fmp-url-info {
+  @apply flex flex-col min-w-[0];
+}
+
+.fmp-url-title {
+  @apply text-[13px] font-medium text-system-dark dark:text-gray-50;
+}
+
+.fmp-url-text {
+  @apply text-xs text-system-mid truncate;
+}
+
+.fmp-url-delete {
+  @apply shrink-0 w-6 h-6 rounded-full border border-solid border-gray-outline bg-transparent text-system-mid cursor-pointer text-base leading-normal flex items-center justify-center ml-auto transition-all duration-100 hover:border-red-500 hover:text-red-500;
+}
+
+.fmp-url-add {
+  @apply flex gap-2 mt-1;
+}
+
+/* ── Full: preview grid ── */
+.fmp-preview-grid {
+  @apply flex gap-2 flex-wrap;
+}
+
+.fmp-preview-item {
+  @apply w-[64px] h-[64px] rounded-full overflow-hidden border border-solid border-gray-outline relative;
+  img {
+    @apply w-full h-full object-cover block;
+  }
+}
+
+.fmp-preview-more {
+  @apply absolute inset-0 text-white flex items-center justify-center text-[13px] font-semibold;
+  background: rgba(0, 0, 0, 0.45);
+}
+/* ── Full: empty state ── */
+.fmp-add-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px dashed var(--fct-border-gray-divider, #EAECF0);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  color: var(--fct-text-system-mid, #667085);
+  font-size: 13px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.fmp-add-full:hover {
+  border-color: var(--fct-primary-500, #7f56d9);
+  color: var(--fct-primary-500, #7f56d9);
+}
+
+/* ── Modal: image grid ── */
+.fmp-modal-body {
+  @apply min-h-[120px];
+}
+
+.fmp-grid {
+  @apply grid grid-cols-4 gap-4;
+}
+
+.fmp-grid-item {
+  @apply bg-white relative aspect-square rounded overflow-hidden border border-solid border-gray-outline cursor-grab dark:bg-gray-800;
+}
+
+.fmp-grid-item img {
+  @apply w-full h-full object-cover block;
+}
+
+.fmp-featured-tag {
+  @apply absolute bottom-1 left-1;
+}
+
+.fmp-remove-btn {
+  @apply absolute top-1 right-1 w-5.5 h-5.5 rounded-full text-white cursor-pointer text-sm leading-normal flex items-center justify-center opacity-0 transition-opacity duration-100 border-0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.fmp-grid-item:hover .fmp-remove-btn {
+  @apply opacity-100;
+}
+
+.fmp-empty {
+  @apply flex items-center justify-center min-h-[120px] text-system-mid dark:text-gray-300;
+}
+.fct-bulk-media-picker-modal {
+  .dialog-footer {
+    @apply flex justify-between gap-2;
+  }
+}
+
+.el-overlay .el-dialog.fct-bulk-import-dialog {
+  @apply w-[810px];
+}

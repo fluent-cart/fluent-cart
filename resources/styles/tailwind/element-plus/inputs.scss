@@ -78,7 +78,7 @@
     }
     &--small {
         .el-select__wrapper{
-            @apply px-2.5 min-h-8; // 32px
+            @apply px-2.5 min-h-8 rounded-sm; // 32px
         }
         .el-select__input{
             @apply min-h-6.5;
@@ -123,7 +123,7 @@
     }
     &--small {
         .el-input__wrapper{
-            @apply px-2.5 min-h-8; // 32px
+            @apply px-2.5 min-h-8 rounded-sm; // 32px
         }
         .el-input-group__append{
             @apply h-9 #{!important};

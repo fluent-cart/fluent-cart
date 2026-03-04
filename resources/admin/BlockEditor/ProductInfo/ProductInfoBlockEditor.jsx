@@ -2,7 +2,7 @@ import {ProductInfo} from "@/BlockEditor/Icons";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductInfo/Components/InspectorSettings.jsx";
-import {SingleProductDataProvider} from "@/BlockEditor/ProductInfo/Context/SingleProductContext.jsx";
+import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext.jsx";
 import ProductInfoPreview from "./ProductInfo.png";
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
@@ -22,11 +22,11 @@ const TEMPLATE = [
             ['fluent-cart/product-gallery', {}]
         ]],
         ['core/column', {}, [
-            ['fluent-cart/shopapp-product-title', {}],
+            ['fluent-cart/product-title', {}],
             ['fluent-cart/excerpt', {}],
             ['fluent-cart/stock', {}],
+            ['fluent-cart/product-sku', {}],
             ['fluent-cart/price-range', {}],
-            // ['fluent-cart/shopapp-product-price', {}],
             ['fluent-cart/buy-section', {}]
         ]]
     ]]
@@ -34,6 +34,7 @@ const TEMPLATE = [
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     example: {
@@ -64,7 +65,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     },
     attributes: {
         product_id: {
-            type: 'string',
+            type: ['string', 'number'],
             default: '',
         },
         variant_id: {
@@ -79,27 +80,28 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes}) => {
         const blockProps = useBlockProps({className: 'my-plugin-product-card'});
         const [selectedVariant, setSelectedVariant] = useState({});
-        const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const [selectedProduct, setSelectedProduct] = useState(null);
 
+        const fetchProduct = (productId) => {
+            if (!productId) {
+                setSelectedProduct(null);
+                return;
+            }
 
-        const fetchProduct = () => {
             apiFetch({
-                path: addQueryArgs(fetchUrl,{
+                path: addQueryArgs(rest.url + '/products/' + productId, {
                     with: ['detail', 'variants']
                 }),
                 headers: {
                     'X-WP-Nonce': rest.nonce
                 },
             }).then((response) => {
-                setSelectedProduct(response.product || {});
-            }).finally(() => {
-
+                setSelectedProduct(response.product || null);
             });
         }
 
         useEffect(() => {
-            fetchProduct();
+            fetchProduct(attributes.product_id);
         }, [attributes.product_id]);
         
         return (
@@ -126,12 +128,14 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                                     'fluent-cart/buy-section',
                                     'fluent-cart/product-gallery',
                                     'fluent-cart/stock',
+                                    'fluent-cart/product-sku',
                                     'fluent-cart/price-range',
                                     'core/columns',
                                     'core/paragraph',
                                     'core/title',
                                     'fluent-cart/shopapp-product-title',
-                                    'fluent-cart/excerpt'
+                                    'fluent-cart/excerpt',
+                                    'fluent-cart/sale-badge'
                                     // 'fluent-cart/shopapp-product-price'
                                 ]
                             }

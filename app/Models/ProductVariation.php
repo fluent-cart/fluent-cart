@@ -38,6 +38,7 @@ class ProductVariation extends Model
         'sold_individually',
         'variation_title',
         'variation_identifier',
+        'sku',
         'manage_stock',
         'payment_type',
         'stock_status',
@@ -370,27 +371,25 @@ class ProductVariation extends Model
                 return false;
             }
 
-            // If child manages stock
+            // Only check stock for children that manage inventory.
+            // Children without stock management (e.g. digital products) are always considered in stock.
             if ((int)$child->manage_stock === 1) {
                 if ((int)$child->available <= 0 || $child->stock_status !== Helper::IN_STOCK) {
                     return false;
                 }
-            } else {
-                // Child doesn't manage stock, just check status
-                if ($child->stock_status !== Helper::IN_STOCK) {
-                    return false;
-                }
             }
 
-            // If child is also a bundle (nested bundle), check recursively
-            if ($child->product && $child->product->isBundleProduct()) {
-                $nestedChildIds = Arr::get($child->other_info, 'bundle_child_ids', []);
-                if (!empty($nestedChildIds)) {
-                    if (!$child->isBundleChildrenInStock()) {
-                        return false;
-                    }
-                }
-            }
+            // Nested bundle check commented out: bundle_child_ids live on the bundle's own variation,
+            // not on the leaf child variation referenced here. Each bundle's isStock() handles its own
+            // children independently, so this recursive call is redundant and causes N+1 queries.
+            // if ($child->product && $child->product->isBundleProduct()) {
+            //     $nestedChildIds = Arr::get($child->other_info, 'bundle_child_ids', []);
+            //     if (!empty($nestedChildIds)) {
+            //         if (!$child->isBundleChildrenInStock()) {
+            //             return false;
+            //         }
+            //     }
+            // }
         }
 
         return true;

@@ -103,19 +103,19 @@ class CartRenderer
 
         ?>
         <div class="fct-cart-drawer-list" data-fluent-cart-cart-list>
-            <ul class="fct-cart-drawer-list-content" data-fluent-cart-items-wrapper role="list">
-                <?php
-
-                if (!empty($items)) {
-                    foreach ($items as $cartItem) {
-                        $this->currentCartItem = $cartItem;
-                        $this->url = Arr::get($cartItem, 'view_url', '');
-                        $this->renderItem();
-                    }
-                }
-
-                ?>
-            </ul>
+            <?php if (!empty($items)) { ?>
+                <ul class="fct-cart-drawer-list-content" data-fluent-cart-items-wrapper role="list">
+                    <?php
+                        foreach ($items as $cartItem) {
+                            $this->currentCartItem = $cartItem;
+                            $this->url = Arr::get($cartItem, 'view_url', '');
+                            $this->renderItem();
+                        }
+                    ?>
+                </ul>
+            <?php } else { ?>
+                <?php $this->renderEmpty(); ?>
+            <?php } ?>
         </div>
         <?php
 

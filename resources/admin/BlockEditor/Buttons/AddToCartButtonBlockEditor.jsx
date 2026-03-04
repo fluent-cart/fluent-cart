@@ -20,7 +20,7 @@ const {
 const {useBlockProps,  RichText} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
 const {useEffect, useState} = wp.element;
-const {useSelect} = wp.data;
+const {useSelect, useDispatch} = wp.data;
 const {store: blockEditorStore} = wp.blockEditor;
 
 
@@ -29,6 +29,7 @@ const rest = window['fluentCartRestVars'].rest;
 const fetchUrl = rest.url + '/products/variants/';
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     icon: {
@@ -78,7 +79,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         shadow: true,
     },
     edit: (props) => {
-        const {attributes, setAttributes} = props;
+        const {attributes, setAttributes, clientId} = props;
         const {text, placeholder} = attributes;
         const blockProps = useBlockProps();
         const [preSelectedVariations, setPreSelectedVariations] = useState({});
@@ -88,6 +89,28 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const selectedVariant = selectedVariants[0] || null;
 
         const [ isSelectingProduct, setIsSelectingProduct ] = useState( false );
+
+        const restrictedParentBlocks = [
+            'fluent-cart/product-info',
+            'fluent-cart/products',
+            'fluent-cart/shopapp-product-container',
+            'fluent-cart/shopapp-product-loop',
+            'fluent-cart/product-carousel',
+        ];
+
+        const isInsideRestrictedParent = useSelect((select) => {
+            const { getBlockParents, getBlockName } = select(blockEditorStore);
+            const parents = getBlockParents(clientId);
+            return parents.some((parentId) => restrictedParentBlocks.includes(getBlockName(parentId)));
+        }, [clientId]);
+
+        const { removeBlock } = useDispatch(blockEditorStore);
+
+        useEffect(() => {
+            if (isInsideRestrictedParent) {
+                removeBlock(clientId);
+            }
+        }, [isInsideRestrictedParent]);
 
         let queryParams = {
             "variant_ids": attributes.variant_ids,

@@ -218,6 +218,7 @@ class Lightbox {
 
     build() {
         this.ensureTemplateExist();
+
         // Cache DOM elements
         const classList = this.classList;
         this.lightbox = document.getElementById(classList.lightbox);
@@ -244,7 +245,9 @@ class Lightbox {
             left: parseInt(imageStyle.borderLeftWidth, 10)
         };
 
-        // Attach event handlers
+        // Only attach event handlers once
+        if (this._eventsAttached) return;
+        this._eventsAttached = true;
         this.overlay.style.display = 'none';
         this.overlay.addEventListener('click', () => {
             this.end();
@@ -654,6 +657,7 @@ class Lightbox {
             const overlayEl = document.getElementById('lightboxOverlay');
             if (lightboxEl) lightboxEl.remove();
             if (overlayEl) overlayEl.remove();
+            this._eventsAttached = false;
         }, this.options.fadeDuration);
     }
 }

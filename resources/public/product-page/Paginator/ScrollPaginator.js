@@ -112,13 +112,17 @@ export default class ScrollPaginator extends Paginator {
         this.lastCursor = this.cursor;
         this.cursor = this.parseCursorFromResponse(response);
 
+        if (views.length > 0) {
+            this.renderNewProducts(views);
+        }
         if (typeof this.#listener.onProductFetched === "function") {
-            this.#listener.onProductFetched(views)
+            this.#listener.onProductFetched(this.productList);
+            // this.#listener.onProductFetched(views);
         }
 
         if (views.length > 0) {
             this.#maybeHasMoreData = true;
-            this.renderNewProducts(views)
+            // this.renderNewProducts(views);
             this.#observeLastItem(); // Observe the new last item
             if (noResultElement) {
                 setTimeout(() => {

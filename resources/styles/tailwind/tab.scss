@@ -78,6 +78,9 @@
     //@apply absolute top-[2.5px] -left-4 w-0 h-[84%] bg-primary-500 rounded-tr rounded-br duration-100 transition-all;
     //content: "";
   }
+  .fct-tab-link-text {
+    @apply whitespace-nowrap;
+  }
 }
 
 .fct-tab-content{

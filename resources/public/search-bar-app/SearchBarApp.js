@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         const viewResult = data.htmlView;
                         this.#resultContainer.innerHTML = viewResult;
+                        this.#resultContainer.parentElement.style.display = 'block';
                         const h5Element = this.#resultContainer.parentElement.querySelector('h5');
                         if (h5Element) {
                             h5Element.style.display = 'block';

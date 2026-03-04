@@ -108,6 +108,7 @@ class FluentMetaRequest extends RequestGuard
             'template_settings_checkout_page_mode' => 'sanitize_text_field',
             'show_relevant_product_in_single_page' => 'sanitize_text_field',
             'show_relevant_product_in_modal'       => 'sanitize_text_field',
+            'enable_early_payment_for_installment' => 'sanitize_text_field',
             'order_mode'                           => 'sanitize_text_field',
             'variation_view'                       => 'sanitize_text_field',
             'variation_columns'                    => 'sanitize_text_field',

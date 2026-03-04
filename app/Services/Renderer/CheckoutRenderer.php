@@ -308,7 +308,7 @@ class CheckoutRenderer
 
     public function renderNameFields()
     {
-        $schema = CheckoutFieldsSchema::getNameEmailFieldsSchema($this->cart, 'render');
+        $schema = CheckoutFieldsSchema::getNameEmailFieldsSchema($this->cart);
         if (!$schema) {
             return;
         }

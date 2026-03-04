@@ -141,6 +141,7 @@ html, body {
       cursor: pointer;
       font-weight: 500;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%), var(--fct-modal-checkout-btn-bg-color);
+      text-align: center;
       &:hover {
         background-color: var(--fct-modal-checkout-btn-bg-color);
         color: var(--fct-modal-checkout-btn-text-color);
@@ -597,7 +598,7 @@ html, body {
     display: grid;
     gap: 15px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     label {
       display: flex;
     }
@@ -623,6 +624,20 @@ html, body {
     }
   }
 
+  .fct-modal-payment-method-instructions {
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fct-modal-checkout-secondary-text-color);
+    display: none;
+    p {
+      margin: 0;
+      + p {
+        margin-top: 8px;
+      }
+    }
+  }
+
   .fluent-cart-checkout_embed_payment_wrapper {
     padding-left: 0;
     padding-right: 0;
@@ -630,7 +645,23 @@ html, body {
       grid-template-rows: 1fr;
       &.fct-payment-loading {
         grid-template-rows: 0fr;
+        .fct-modal-payment-method-instructions {
+          display: none;
+        }
+      }
+      .fct-modal-payment-method-instructions {
+        display: block;
       }
     }
   }
+
+}
+
+@media (max-width: 768px) {
+    .fct-modal-checkout-form-inner {
+        display: grid;
+    }
+    .fct-modal-checkout-details {
+        border-bottom-left-radius: 0;
+    }
 }

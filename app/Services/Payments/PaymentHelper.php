@@ -43,7 +43,11 @@ class PaymentHelper
             $receiptUrl = site_url();
         }
 
-        return add_query_arg($queryArgs, $receiptUrl);
+        return apply_filters('fluentcart/payment/success_url', add_query_arg($queryArgs, $receiptUrl), [
+            'transaction_hash' => $uuid,
+            'args' => $args,
+            'payment_method' => $this->slug ?? ''
+        ]);
     }
 
     public static function getCustomPaymentLink($orderHash): string
@@ -221,10 +225,17 @@ class PaymentHelper
             $days = 30;
         } elseif ($interval === 'weekly') {
             $days = 7;
+        } elseif ($interval === 'quarterly') {
+            $days = 90;
+        } elseif ($interval === 'half_yearly') {
+            $days = 182;
         } else {
             $days =  1;
         }
-        return $days;
+
+        return apply_filters('fluent_cart/subscription_interval_in_days', $days, [
+            'interval' => $interval
+        ]);
     }
 
 }

@@ -24,6 +24,8 @@ use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Models\TaxClass;
 use FluentCart\App\Modules\ReportingModule\ProductReport;
 use FluentCart\App\Services\Async\DummyProductService;
+use FluentCart\App\Services\BulkProductInsertService;
+use FluentCart\App\Services\BulkProductUpdateService;
 use FluentCart\App\Services\Filter\ProductFilter;
 use FluentCart\App\Services\PlanUpgradeService;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -69,6 +71,39 @@ class ProductController extends Controller
 
         return $data;
     }
+
+    public function getRelatedProducts(Request $request, $productId): WP_REST_Response
+    {
+        $productId = absint($productId);
+
+        if (!$productId) {
+            return $this->sendError('Invalid product ID');
+        }
+
+        $relatedBy = [];
+
+        if (filter_var($request->get('related_by_categories'), FILTER_VALIDATE_BOOLEAN)) {
+            $relatedBy[] = 'product-categories';
+        }
+
+        if (filter_var($request->get('related_by_brands'), FILTER_VALIDATE_BOOLEAN)) {
+            $relatedBy[] = 'product-brands';
+        }
+
+        $orderBy = sanitize_text_field($request->get('order_by', 'title_asc'));
+        $postsPerPage = absint($request->get('posts_per_page', 6));
+
+        $products = ShopResource::getSimilarProducts($productId, true, [
+            'related_by'     => $relatedBy,
+            'order_by'       => $orderBy,
+            'posts_per_page' => $postsPerPage,
+        ]);
+
+        return $this->sendSuccess([
+            'products' => $products
+        ]);
+    }
+
 
     /**
      *
@@ -143,6 +178,54 @@ class ProductController extends Controller
 
         return $this->sendError(['code' => 400, 'message' => __('Product creation failed!', 'fluent-cart')]);
 
+    }
+
+    /**
+     * Bulk insert products from import/manual entry.
+     *
+     * @param Request $request
+     * @return WP_REST_Response
+     */
+    public function bulkInsert(Request $request): WP_REST_Response
+    {
+        $products = $request->get('products', []);
+
+        if (empty($products) || !is_array($products)) {
+            return $this->sendError([
+                'message' => __('No products provided', 'fluent-cart'),
+            ]);
+        }
+
+        if (count($products) > 10) {
+            return $this->sendError([
+                'message' => __('Maximum 10 products per chunk allowed', 'fluent-cart'),
+            ]);
+        }
+
+        try {
+            $service = new BulkProductInsertService();
+            $result = $service->insertChunk($products);
+
+            if (empty($result['created']) && !empty($result['errors'])) {
+                return $this->sendError([
+                    'message' => __('All products failed to insert', 'fluent-cart'),
+                    'errors'  => $result['errors'],
+                ]);
+            }
+
+            return $this->sendSuccess([
+                'message' => sprintf(
+                    __('%d product(s) created successfully', 'fluent-cart'),
+                    count($result['created'])
+                ),
+                'created' => $result['created'],
+                'errors'  => $result['errors'],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->sendError([
+                'message' => __('Bulk insert failed: ', 'fluent-cart') . $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -382,7 +465,7 @@ class ProductController extends Controller
         $productDetail->update([
             'other_info' => $otherInfo
         ]);
-        
+
         return $this->sendSuccess([
             'message' => __('Shipping Class removed successfully', 'fluent-cart')
         ]);
@@ -593,36 +676,17 @@ class ProductController extends Controller
         ];
     }
 
-    /**
-     * Set thumbnail from a product gallery
-     *
-     * @param Request $request
-     * @param $variantId
-     * @return mixed
-     */
-    public function setProductImage(Request $request, $variantId)
-    {
-
-
-        $isSetThumbnail = ProductResource::setThumbnail($variantId, $request->all());
-
-        if (is_wp_error($isSetThumbnail)) {
-            return $isSetThumbnail;
-        }
-        return $this->response->sendSuccess($isSetThumbnail);
-    }
-
     public function updateProductDetail(Request $request, $id)
     {
         $data = $request->getSafe([
-            'variation_type' => 'sanitize_key',
-            'variation_ids.*'=> 'intval',
-            'action'         => 'sanitize_key'
+            'variation_type'  => 'sanitize_key',
+            'variation_ids.*' => 'intval',
+            'action'          => 'sanitize_key'
         ]);
 
         $isUpdated = ProductDetailResource::update(
-            $data, 
-            $id, 
+            $data,
+            $id,
             ['action' => Arr::get($data, 'action', 'change_variation_type')]
         );
 
@@ -884,16 +948,24 @@ class ProductController extends Controller
     public function searchProductVariantOptions(Request $request): array
     {
         $data = $request->getSafe([
-            'include_ids.*' => 'intval',
-            'search'        => 'sanitize_text_field',
-            'scopes.*'      => 'sanitize_text_field',
+            'include_ids.*'       => 'intval',
+            'search'              => 'sanitize_text_field',
+            'scopes.*'            => 'sanitize_text_field',
+            'subscription_status' => 'sanitize_text_field',
         ]);
 
+        $subscription_status = Arr::get($data, 'subscription_status');
         $search = Arr::get($data, 'search', '');
         $includeIds = Arr::get($data, 'include_ids', []);
 
         $productsQuery = Product::query()
-            ->with(['variants']);
+            ->where('post_status', 'publish');
+
+        $productsQuery->with(['detail', 'variants' => function ($query) use ($subscription_status) {
+            if ($subscription_status === 'not_subscribable') {
+                $query->where('payment_type', '!=', 'subscription');
+            }
+        }]);
 
         $scopes = Arr::get($data, 'scopes', []);
         if ($scopes) {
@@ -901,7 +973,15 @@ class ProductController extends Controller
         }
 
         if ($search) {
-            $productsQuery->where('post_title', 'like', '%' . $search . '%');
+            $productsQuery->where(function ($query) use ($search, $subscription_status) {
+                $query->where('post_title', 'like', '%' . $search . '%')
+                    ->orWhereHas('variants', function ($query) use ($search, $subscription_status) {
+                        $query->where('variation_title', 'like', "%$search%");
+                        if ($subscription_status === 'not_subscribable') {
+                            $query->where('payment_type', '!=', 'subscription');
+                        }
+                    });
+            });
         }
 
         $productsQuery->limit(20);
@@ -912,6 +992,11 @@ class ProductController extends Controller
         $formattedProducts = [];
 
         foreach ($products as $product) {
+            $detail = $product->detail;
+            if ($detail && $detail->manage_stock && $detail->stock_availability !== Helper::IN_STOCK) {
+                continue;
+            }
+
             $formatted = [
                 'value' => 'product_' . $product->ID,
                 'label' => $product->post_title,
@@ -921,6 +1006,9 @@ class ProductController extends Controller
 
             $children = [];
             foreach ($variants as $variant) {
+                if ($variant->manage_stock && $variant->stock_status !== Helper::IN_STOCK) {
+                    continue;
+                }
                 $pushedVariationIds[] = $variant->id;
                 $children[] = [
                     'value' => $variant->id,
@@ -941,12 +1029,24 @@ class ProductController extends Controller
         if ($leftVariationIds) {
             $leftVariants = ProductVariation::query()
                 ->whereIn('id', $leftVariationIds)
-                ->with('product')
+                ->with(['product' => function ($query) {
+                    $query->where('post_status', 'publish');
+                }, 'product.detail'])
                 ->get();
 
             foreach ($leftVariants as $variant) {
+                if ($subscription_status == 'not_subscribable' && $variant->payment_type === 'subscription') {
+                    continue;
+                }
+                if ($variant->manage_stock && $variant->stock_status !== Helper::IN_STOCK) {
+                    continue;
+                }
                 $product = $variant->product;
                 if (!$product) {
+                    continue;
+                }
+                $detail = $product->detail;
+                if ($detail && $detail->manage_stock && $detail->stock_availability !== Helper::IN_STOCK) {
                     continue;
                 }
                 if (isset($formattedProducts[$product->ID])) {
@@ -1092,12 +1192,25 @@ class ProductController extends Controller
     {
         $variation = ProductVariation::query()->findOrFail($variationId);
 
+        $childIds = $request->get('bundle_child_ids');
+
+        if (!empty($childIds) && is_array($childIds)) {
+            // Reject any child variations that belong to a bundle product
+            $bundleChildVariations = ProductVariation::whereIn('id', $childIds)
+                ->get(['id', 'post_id']);
+
+            foreach ($bundleChildVariations as $childVariation) {
+                if ($childVariation->product && $childVariation->product->isBundleProduct()) {
+                    return wp_send_json([
+                        'message' => __('A bundle product cannot be added as a bundle child.', 'fluent-cart'),
+                    ], 422);
+                }
+            }
+        }
+
         $otherInfo = $variation->other_info ?? [];
-
-        $otherInfo['bundle_child_ids'] = $request->get('bundle_child_ids');
-
+        $otherInfo['bundle_child_ids'] = $childIds;
         $variation->other_info = $otherInfo;
-
 
         return [$variation->update()];
     }
@@ -1106,6 +1219,7 @@ class ProductController extends Controller
     {
         $ids = $request->getSafe(['productIds.*' => 'intval']);
 
+        $ids = Arr::get($ids, 'productIds', []);
         $ids = is_array($ids) ? $ids : [];
 
         if (empty($ids)) {
@@ -1139,5 +1253,279 @@ class ProductController extends Controller
     public function createDummyProducts(Request $request)
     {
         return DummyProductService::create($request->get('category'), $request->get('index'));
+    }
+
+    public function updateInventory(Request $request, $postId, $variantId)
+    {
+
+        $variant = ProductVariation::query()->find($variantId);
+
+        if (!$variant) {
+            return $this->response->sendError([
+                'message' => __('Variant not found', 'fluent-cart')
+            ]);
+        }
+
+        $detail = ProductDetail::query()->where('post_id', $postId)->first();
+
+        // get variations by post_id
+        $variations = ProductVariation::query()->where('post_id', $postId)->where('id', '!=', $variantId)->get();
+        $updateData = [];
+        foreach ($variations as $variation) {
+            $updateData[] = [
+                'id'           => $variation->id,
+                'manage_stock' => 1,
+                'total_stock'  => $variation->total_stock,
+                'available'    => $variation->available,
+                'stock_status' => $variation->stock_status
+            ];
+        }
+        $updateData[] = [
+            'id'          => $variantId,
+            'total_stock' => sanitize_text_field($request->get('total_stock')),
+            'available'   => sanitize_text_field($request->get('available')),
+            'manage_stock' => 1,
+            'stock_status' => $request->get('available') > 0 ? 'in-stock' : 'out-of-stock'
+        ];
+        // update variations
+        $isUpdated = ProductVariation::query()->batchUpdate($updateData);
+
+
+        if ($detail) {
+            $hasAvailableStock = ProductVariation::query()->where('post_id', $postId)->where('available', '>', 0)->exists();
+            $detail->stock_availability = $hasAvailableStock ? 'in-stock' : 'out-of-stock';
+            $detail->manage_stock = 1;
+            $detail->save();
+        }
+
+
+        if (is_wp_error($isUpdated)) {
+            return $this->response->sendError([
+                'message' => __('Inventory update failed', 'fluent-cart')
+            ]);
+        }
+
+        return $this->response->sendSuccess([
+            'message' => __('Inventory updated successfully', 'fluent-cart')
+        ]);
+    }
+
+    public function updateManageStock(Request $request, $postId)
+    {
+        $manageStock = sanitize_text_field($request->get('manage_stock'));
+
+        $detail = ProductDetail::query()->where('post_id', $postId)->first();
+
+        $updateData = [
+            'manage_stock' => $manageStock,
+        ];
+        if ($manageStock == 0) {
+            $updateData['stock_status'] = 'in-stock';
+        }
+
+        $updatedVariations = ProductVariation::query()->where('post_id', $postId)->update($updateData);
+
+        $hasAvailableStock = ProductVariation::query()->where('post_id', $postId)->where('available', '>', 0)->exists();
+        $detail->manage_stock = $manageStock;
+        $detail->stock_availability = $hasAvailableStock || $manageStock == 0 ? 'in-stock' : 'out-of-stock';
+        $updatedProductDetails = $detail->save();
+
+        if (is_wp_error($updatedProductDetails)) {
+            return $this->response->sendError([
+                'message' => __('Manage stock update failed', 'fluent-cart')
+            ]);
+        }
+
+        if (is_wp_error($updatedVariations)) {
+            return $this->response->sendError([
+                'message' => __('Manage stock update failed', 'fluent-cart')
+            ]);
+        }
+
+        return $this->response->sendSuccess([
+            'message' => __('Manage stock updated successfully', 'fluent-cart')
+        ]);
+    }
+
+    /**
+     * Suggest a unique SKU based on product title and optional variant title.
+     *
+     * @param Request $request
+     * @return WP_REST_Response
+     */
+    public function suggestSku(Request $request)
+    {
+        $title = sanitize_text_field($request->get('title', ''));
+        $variantTitle = sanitize_text_field($request->get('variant_title', ''));
+        $excludeId = absint($request->get('exclude_id', 0));
+
+        if (empty($title)) {
+            return $this->sendError([
+                'message' => __('Product title is required to generate SKU.', 'fluent-cart')
+            ]);
+        }
+
+        $sku = $this->generateSkuFromTitle($title, $variantTitle);
+
+        if (empty($sku)) {
+            return $this->sendError([
+                'message' => __('Could not generate SKU from the given title.', 'fluent-cart')
+            ]);
+        }
+
+        $sku = $this->ensureUniqueSku($sku, $excludeId);
+
+        return $this->sendSuccess([
+            'sku' => $sku,
+        ]);
+    }
+
+    /**
+     * Generate a SKU string from a product title and optional variant title.
+     *
+     * @param string $title
+     * @param string $variantTitle
+     * @return string
+     */
+    private function generateSkuFromTitle($title, $variantTitle = '')
+    {
+        $stopWords = ['the', 'and', 'for', 'with', 'a', 'an', 'of', 'in', 'on', 'to', 'is', 'it', 'by', 'or', 'at', 'from'];
+
+        $fullTitle = trim($title);
+        if (!empty($variantTitle) && strtolower(trim($variantTitle)) !== strtolower(trim($title))) {
+            $fullTitle .= ' ' . trim($variantTitle);
+        }
+
+        $cleaned = strtoupper($fullTitle);
+        $cleaned = preg_replace('/[^A-Z0-9\s]/', '', $cleaned);
+        $words = array_values(array_filter(explode(' ', $cleaned), function ($word) use ($stopWords) {
+            return strlen($word) > 0 && !in_array(strtolower($word), $stopWords);
+        }));
+
+        if (empty($words)) {
+            return '';
+        }
+
+        $parts = array_map(function ($word) {
+            return substr($word, 0, 3);
+        }, $words);
+
+        $base = implode('-', $parts);
+
+        // Keep base within 25 chars to leave room for uniqueness suffix
+        if (strlen($base) > 25) {
+            $base = substr($base, 0, 25);
+            $base = rtrim($base, '-');
+        }
+
+        return $base;
+    }
+
+    /**
+     * Ensure the SKU is unique in the database, appending a numeric suffix if needed.
+     *
+     * @param string $sku
+     * @param int|null $excludeId
+     * @return string
+     */
+    private function ensureUniqueSku($sku, $excludeId = null)
+    {
+        $original = $sku;
+        $suffix = 0;
+        $batchSize = 10;
+
+        while ($suffix < 100) {
+            // Build a batch of candidate SKUs to check at once
+            $candidates = [];
+            for ($i = $suffix; $i < $suffix + $batchSize && $i < 100; $i++) {
+                if ($i === 0) {
+                    $candidates[] = $original;
+                } else {
+                    $maxBaseLen = 30 - strlen('-' . $i);
+                    $candidates[] = substr($original, 0, $maxBaseLen) . '-' . $i;
+                }
+            }
+
+            $query = ProductVariation::query()->whereIn('sku', $candidates);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+            $taken = $query->get()->pluck('sku')->toArray();
+
+            // Return the first candidate that isn't taken
+            foreach ($candidates as $candidate) {
+                if (!in_array($candidate, $taken)) {
+                    return $candidate;
+                }
+            }
+
+            $suffix += $batchSize;
+        }
+
+        // All candidates exhausted — fallback to timestamp-based suffix
+        $maxBaseLen = 30 - 1 - 10; // hyphen + 10-digit timestamp
+        return substr($original, 0, $maxBaseLen) . '-' . substr(time(), -10);
+    }
+
+    /**
+     * Fetch products formatted for bulk editing.
+     */
+    public function bulkEditFetch(Request $request): WP_REST_Response
+    {
+        try {
+            $service = new BulkProductUpdateService();
+            $result = $service->fetchForBulkEdit($request);
+
+            return $this->sendSuccess($result);
+        } catch (\Throwable $e) {
+            return $this->sendError([
+                'message' => __('Failed to fetch products: ', 'fluent-cart') . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Bulk update products from the bulk edit spreadsheet.
+     */
+    public function bulkUpdate(Request $request): WP_REST_Response
+    {
+        $products = $request->get('products', []);
+
+        if (empty($products) || !is_array($products)) {
+            return $this->sendError([
+                'message' => __('No products provided', 'fluent-cart'),
+            ]);
+        }
+
+        if (count($products) > 10) {
+            return $this->sendError([
+                'message' => __('Maximum 10 products per chunk allowed', 'fluent-cart'),
+            ]);
+        }
+
+        try {
+            $service = new BulkProductUpdateService();
+            $result = $service->updateChunk($products);
+
+            if (empty($result['updated']) && !empty($result['errors'])) {
+                return $this->sendError([
+                    'message' => __('All products failed to update', 'fluent-cart'),
+                    'errors'  => $result['errors'],
+                ]);
+            }
+
+            return $this->sendSuccess([
+                'message' => sprintf(
+                    __('%d product(s) updated successfully', 'fluent-cart'),
+                    count($result['updated'])
+                ),
+                'updated' => $result['updated'],
+                'errors'  => $result['errors'],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->sendError([
+                'message' => __('Bulk update failed: ', 'fluent-cart') . $e->getMessage(),
+            ]);
+        }
     }
 }

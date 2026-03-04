@@ -19,12 +19,20 @@ const ProductImageBlock = {
 
         return (
             <div {...blockProps} >
-                <div className={'group-[.list]:flex-shrink-0'}>
+                <div className={'group-[.list]:flex-shrink-0 relative'}>
                     <img src={getImage()}
-                         className={'w-full aspect-square object-cover rounded-md group-[.list]:w-[214px]'}
+                         className={'w-full aspect-square object-cover rounded-md group-[.list]:w-[214px] pointer-events-none'}
                          alt={singleProductData.product ? singleProductData.product.post_title : 'Product'}/>
+                    <div className="absolute inset-0" style={{pointerEvents: 'auto'}}>
+                        <InnerBlocks
+                            allowedBlocks={[
+                                'fluent-cart/sold-out-badge',
+                                'fluent-cart/sale-badge',
+                            ]}
+                            renderAppender={false}
+                        />
+                    </div>
                 </div>
-                <InnerBlocks/>
             </div>
         );
     },

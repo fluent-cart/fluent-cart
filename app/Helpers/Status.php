@@ -18,6 +18,9 @@ class Status
     public const ORDER_CANCELED = 'canceled';
     public const ORDER_FAILED = 'failed';
 
+    public const ORDER_MODE_TEST = 'test';
+    public const ORDER_MODE_LIVE = 'live';
+
     // Payment Statuses
     public const PAYMENT_PENDING = 'pending';
     public const PAYMENT_PAID = 'paid';
@@ -57,6 +60,8 @@ class Status
     public const SUBSCRIPTION_FAILING = 'failing';
     public const SUBSCRIPTION_EXPIRING = 'expiring';
     public const SUBSCRIPTION_COMPLETED = 'completed';
+    public const SUBSCRIPTION_AUTHENTICATED = 'authenticated';
+    public const SUBSCRIPTION_CREATED = 'created';
 
     // billing interval
     public const BILLING_YEARLY = 'yearly';

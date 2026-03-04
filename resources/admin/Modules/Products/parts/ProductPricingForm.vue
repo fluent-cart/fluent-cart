@@ -1,6 +1,6 @@
 <script setup>
 import {computed, nextTick, onMounted, ref, watch} from "vue";
-import Attachments from "@/Bits/Components/Attachment/Attachments.vue";
+import BulkMediaPicker from "@/Bits/Components/Attachment/BulkMediaPicker.vue";
 import {getMargin, getProfit} from "@/Bits//productService";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -9,7 +9,8 @@ import Animation from "@/Bits/Components/Animation.vue";
 import translate from "@/utils/translator/Translator";
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import AppConfig from "@/utils/Config/AppConfig";
-
+import Rest from "@/utils/http/Rest";
+import {ElMessage} from "element-plus";
 
 const props = defineProps({
   modeType: String,
@@ -25,6 +26,37 @@ const keyboardShortcuts = useKeyboardShortcuts();
 const changes_made = ref(0);
 
 const tempSignupValue = ref(0);
+const generatingSku = ref(false);
+
+const generateSku = () => {
+  if (generatingSku.value) return;
+  const title = props.product.post_title || '';
+  if (!title) return;
+
+  const isVariation = props.product.detail?.variation_type === 'simple_variations';
+  const variantTitle = isVariation ? (variant.value.variation_title || '') : '';
+  const excludeId = variant.value.id || 0;
+
+  generatingSku.value = true;
+  Rest.get('products/suggest-sku', {
+    title: title,
+    variant_title: variantTitle,
+    exclude_id: excludeId,
+  })
+    .then(response => {
+      if (response?.sku) {
+        variant.value.sku = response.sku;
+        props.productEditModel.updatePricingValue('sku', response.sku, props.fieldKey, variant.value, props.modeType);
+      }
+    })
+    .catch((error) => {
+      const message = error?.data?.message || translate('Failed to generate SKU.');
+      ElMessage({ message, type: 'error' });
+    })
+    .finally(() => {
+      generatingSku.value = false;
+    });
+};
 
 const changeSetupFee = (value) => {
   props.productEditModel.updatePricingOtherValue('manage_setup_fee', value, props.fieldKey, variant.value, props.modeType);
@@ -127,7 +159,7 @@ keyboardShortcuts.bind(['mod+s'], (event) => {
     <el-form label-position="top" require-asterisk-position="right">
       <div class="fct-admin-input-wrapper" v-if="product.detail?.variation_type === 'simple_variations'">
         <el-row :gutter="15">
-          <el-col :lg="16">
+          <el-col :lg="24">
             <el-form-item required class="has-tooltip-and-required">
               <LabelHint :title="translate('Title')"
                          placement="bottom"
@@ -144,7 +176,37 @@ keyboardShortcuts.bind(['mod+s'], (event) => {
                                :field-key="`${props.fieldKey}.variation_title`"/>
             </el-form-item>
           </el-col>
-          <el-col :lg="8">
+          <el-col :lg="12">
+            <el-form-item>
+              <template #label>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                  <LabelHint :title="translate('SKU')"
+                             placement="bottom"
+                             :content="translate('Stock Keeping Unit')"
+                  />
+                  <button
+                      type="button"
+                      @click="generateSku"
+                      :disabled="!product.post_title || generatingSku"
+                      class="underline-link-button"
+                  >
+                    {{ generatingSku ? translate('Generating...') : translate('Generate SKU') }}
+                  </button>
+                </div>
+              </template>
+              <el-input
+                  :class="productEditModel.hasValidationError(`${props.fieldKey}.sku`) ? 'is-error' : ''"
+                  :id="`${props.fieldKey}.sku`"
+                  :placeholder="translate('SKU')" type="text" v-model="variant.sku"
+                  maxlength="30"
+                  show-word-limit
+                  @input="value => {productEditModel.updatePricingValue('sku', value, props.fieldKey, variant, modeType)}">
+              </el-input>
+              <ValidationError :validation-errors="productEditModel.validationErrors"
+                               :field-key="`${props.fieldKey}.sku`"/>
+            </el-form-item>
+          </el-col>
+          <el-col :lg="12">
             <el-form-item required class="has-tooltip-and-required">
               <LabelHint
                   :title="translate('Fulfillment Type')"
@@ -558,7 +620,7 @@ keyboardShortcuts.bind(['mod+s'], (event) => {
                       :class="productEditModel.hasValidationError(`${props.fieldKey}.item_cost`) ? 'is-error' : ''"
                       :id="`${props.fieldKey}.item_cost`"
                       :placeholder="translate('Cost per item')" :min="0"
-                      v-model.number="variant.item_cost"
+                      v-model="variant.item_cost"
                       @change="value => {productEditModel.updatePricingValue('item_cost', value, props.fieldKey, variant, modeType)}">
                     <template #prefix>
                       <span v-html="appVars.shop.currency_sign"></span>
@@ -626,29 +688,52 @@ keyboardShortcuts.bind(['mod+s'], (event) => {
         <el-col :lg="24" v-if="product.detail?.variation_type === 'simple_variations'">
           <div class="fct-admin-input-wrapper">
             <el-form-item :label="translate('Image')">
-              <attachments
-                  :multiple=true
-                  :attachments="variant.media"
-                  @mediaUploaded="value => {productEditModel.updatePricingOtherValue('media', value, props.fieldKey, variant, modeType)}"
-                  @removeImage="value => {
-                  variant.media.splice(value, 1)
-                  if(modeType === 'add') {
-                    productEditModel.setHasChange()
-                  }
-                }"
+              <BulkMediaPicker
+                v-model="variant.media"
+                :compact="false"
+                @change="value => productEditModel.updatePricingOtherValue('media', value, props.fieldKey, variant, modeType)"
               />
             </el-form-item>
           </div><!-- .fct-admin-input-wrapper -->
         </el-col>
       </el-row>
-      <el-row v-if="product.detail?.variation_type === 'simple'">
-        <el-col :lg="24">
+      <el-row v-if="product.detail?.variation_type === 'simple'" :gutter="10">
+        <el-col :lg="12">
+          <el-form-item>
+             <template #label>
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <LabelHint :title="translate('SKU')"
+                           placement="bottom"
+                           :content="translate('Stock Keeping Unit')"
+                />
+                <button
+                    type="button"
+                    @click="generateSku"
+                    :disabled="!product.post_title || generatingSku"
+                    class="underline-link-button"
+                >
+                  {{ generatingSku ? translate('Generating...') : translate('Generate SKU') }}
+                </button>
+              </div>
+             </template>
+              <el-input
+                  :class="productEditModel.hasValidationError(`${props.fieldKey}.sku`) ? 'is-error' : ''"
+                  :id="`${props.fieldKey}.sku`"
+                  :placeholder="translate('SKU')" type="text" v-model="variant.sku"
+                  maxlength="30"
+                  show-word-limit
+                  @input="value => {productEditModel.updatePricingValue('sku', value, props.fieldKey, variant, modeType)}">
+              </el-input>
+              <ValidationError :validation-errors="productEditModel.validationErrors"
+                               :field-key="`${props.fieldKey}.sku`"/>
+            </el-form-item>
+        </el-col>
+        <el-col :lg="12">
           <el-form-item required class="has-tooltip-and-required">
             <template #label>
               <LabelHint :title="translate('Fulfillment Type')"
                          placement="bottom"
                          :content="translate('Choosing the Type will impact your order status change flow upon successful payment. For physical items, the status changes from On-Hold to Processing, while for digital items, it changes from On-Hold to Completed.')"
-                         style="margin-bottom: 8px;"
               />
             </template>
             <el-select v-model="variant.fulfillment_type" @change="value => {productEditModel.updatePricingValue('fulfillment_type', value, props.fieldKey, variant, modeType)}" :placeholder="translate('Select')">

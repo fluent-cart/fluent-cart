@@ -18,7 +18,7 @@ let lastChanged = '';
 
 const ProductTemplateInnerBlocks = () => {
     const innerBlocksProps = useInnerBlocksProps(
-        {className: 'wc-block-product'},
+        {className: 'fct-block-product'},
         {__unstableDisableLayoutClassNames: true}
     );
     return <div {...innerBlocksProps} />;
@@ -84,8 +84,6 @@ const ProductContent = ({
     );
 };
 
-const ProductContentComponent = ProductContent;
-
 //Our product loop block
 
 const ProductLoopBlock = {
@@ -144,6 +142,10 @@ const ProductLoopBlock = {
 
         const blocks = currentBlock.innerBlocks;
 
+        console.log({
+            blocks
+        })
+
         const [ activeBlockContextId, setActiveBlockContextId ] = useState();
 
         return (
@@ -165,7 +167,7 @@ const ProductLoopBlock = {
                                     <div key={product.ID}
                                          className="fluent-cart-product-loop fct-product-block-editor-product-card">
 
-                                        <ProductContentComponent
+                                        <ProductContent
                                             key={product.ID}
                                             attributes={{
                                                 productId: product.ID,

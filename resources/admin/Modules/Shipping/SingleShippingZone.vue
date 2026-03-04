@@ -1,51 +1,55 @@
 <template>
   <div class="setting-wrap">
-    <div class="fct-single-shipping-zone-page">
-      <div v-if="loading">
-        <SingleShippingZoneLoader/>
-      </div>
-      <NotFound v-else-if="notFound.show"
-                :message="notFound.message"
-                :button-text="notFound.buttonText"
-                :route="notFound.route"
-      />
-      <div v-else class="fct-single-shipping-zone">
-        <div class="single-page-header flex items-center justify-between">
-          <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-            <el-breadcrumb-item :to="{ name: 'shipping' }">
-              {{ translate("Shipping Zones") }}
-            </el-breadcrumb-item>
-            <el-breadcrumb-item>
-              {{ isEdit ? translate('Edit Shipping Zone') : translate('Add Shipping Zone') }}
-            </el-breadcrumb-item>
-            <el-breadcrumb-item v-if="isEdit">
-              {{ zoneForm.name }}
-            </el-breadcrumb-item>
-          </el-breadcrumb>
+    <SettingsHeader :show-save-button="false">
+      <template #heading>
+        <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
+          <el-breadcrumb-item :to="{ name: 'shipping' }">
+            {{ translate("Shipping Zones") }}
+          </el-breadcrumb-item>
+          <el-breadcrumb-item>
+            {{ isEdit ? translate('Edit Shipping Zone') : translate('Add Shipping Zone') }}
+          </el-breadcrumb-item>
+          <el-breadcrumb-item v-if="isEdit">
+            {{ zoneForm.name }}
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+      </template>
 
-          <div class="fct-page-header__actions">
-            <el-button type="primary" @click="saveZone" :loading="saving">
-              <span v-if="!saving" class="cmd">⌘s</span>
-              {{ saving ? translate('Saving') : translate('Save') }}
-            </el-button>
-          </div>
+      <template #action>
+        <el-button type="primary" @click="saveZone" :loading="saving" size="small">
+          <span v-if="!saving" class="cmd">⌘s</span>
+          {{ saving ? translate('Saving') : translate('Save') }}
+        </el-button>
+      </template>
+    </SettingsHeader>
+
+
+    <div class="setting-wrap-inner">
+      <div class="fct-single-shipping-zone-page">
+        <div v-if="loading">
+          <SingleShippingZoneLoader/>
         </div>
+        <NotFound v-else-if="notFound.show"
+                  :message="notFound.message"
+                  :button-text="notFound.buttonText"
+                  :route="notFound.route"
+        />
+        <div v-else class="fct-single-shipping-zone">
+          <CardContainer>
+            <CardHeader :title="translate('Zone Details')" border_bottom/>
+            <CardBody>
+              <el-form :model="zoneForm" :rules="rules" ref="zoneFormRef" label-position="top" require-asterisk-position="right">
+                <el-form-item :label="translate('Zone Name')" prop="name">
+                  <el-input v-model="zoneForm.name" :placeholder="translate('Enter zone name')"></el-input>
+                </el-form-item>
 
-        <CardContainer>
-          <CardHeader :title="translate('Zone Details')" border_bottom/>
-          <CardBody>
-            <el-form :model="zoneForm" :rules="rules" ref="zoneFormRef" label-position="top" require-asterisk-position="right">
-              <el-form-item :label="translate('Zone Name')" prop="name">
-                <el-input v-model="zoneForm.name" :placeholder="translate('Enter zone name')"></el-input>
-              </el-form-item>
-
-              <el-form-item label="" prop="region" class="mt-6 mb-6">
-                <el-checkbox v-model="isWholeWorld" @change="handleWholeWorldToggle">
+                <el-form-item label="" prop="region" class="mt-6 mb-6">
+                  <el-checkbox v-model="isWholeWorld" @change="handleWholeWorldToggle">
                     {{ translate('Applies to Whole World') }}
                   </el-checkbox>
-              </el-form-item>
+                </el-form-item>
 
-              <el-form-item :label="translate('Country')" prop="region" class="mb-0" required>
+                <el-form-item :label="translate('Country')" prop="region" class="mb-0" required>
                   <el-select
                       v-model="zoneForm.region"
                       :disabled="isWholeWorld"
@@ -63,23 +67,24 @@
                         :value="country.code2"
                     />
                   </el-select>
-                <div class="form-help-text">
-                  {{ translate('Add countries where this shipping zone applies.') }}
-                </div>
-              </el-form-item>
-            </el-form>
-          </CardBody>
-        </CardContainer>
+                  <div class="form-help-text">
+                    {{ translate('Select the country where this shipping zone applies.') }}
+                  </div>
+                </el-form-item>
+              </el-form>
+            </CardBody>
+          </CardContainer>
 
-        <ShippingMethods
-            v-if="isEdit"
-            :zone_id="props.zone_id"
-            :methods="zoneShippingMethods"
-            @fetchShippingMethods="fetchZoneData"
-            :country="zoneForm.region"
-        />
+          <ShippingMethods
+              v-if="isEdit"
+              :zone_id="props.zone_id"
+              :methods="zoneShippingMethods"
+              @fetchShippingMethods="fetchZoneData"
+              :country="zoneForm.region"
+          />
+        </div>
+
       </div>
-
     </div>
   </div>
 </template>
@@ -99,6 +104,7 @@ import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import ShippingMethods from "@/Modules/Shipping/ShippingMethods.vue";
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import {ElMessageBox} from "element-plus";
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 
 // Props

@@ -62,16 +62,34 @@ class Refund
         // update the main parent transaction meta
         PaymentHelper::updateTransactionRefundedTotal($transaction, $refundAmount);
 
-        $vendorRefundId = null;
-        if ($gateway = App::gateway($transaction->payment_method)) {
-            if ($gateway->has('refund')) {
-                $vendorRefundId = $gateway->processRefund($transaction, $refundAmount, $args);
-            }
+        $manualRefund = apply_filters('fluent_cart/order_refund_manually', [
+            'status' => 'no',
+            'source' => ''
+        ], [
+            'refund_amount' => $refundAmount,
+            'transaction'   => $transaction,
+            'order'         => $order,
+            'args'          => $args
+        ]);
+        
+        if (!is_array($manualRefund)) {
+            $manualRefund = ['status' => 'no', 'source' => ''];
         }
 
-        if (!is_wp_error($vendorRefundId) && $vendorRefundId) {
-            $refundTransaction->vendor_charge_id = $vendorRefundId;
-            $refundTransaction->save();
+        $vendorRefundId = null;
+
+
+        if (Arr::get($manualRefund, 'status') !== 'yes') {
+            if ($gateway = App::gateway($transaction->payment_method)) {
+                if ($gateway->has('refund')) {
+                    $vendorRefundId = $gateway->processRefund($transaction, $refundAmount, $args);
+                }
+            }
+
+            if (!is_wp_error($vendorRefundId) && $vendorRefundId) {
+                $refundTransaction->vendor_charge_id = $vendorRefundId;
+                $refundTransaction->save();
+            }
         }
 
         $manageStock = filter_var(Arr::get($args, 'manageStock'), FILTER_VALIDATE_BOOLEAN);
@@ -80,7 +98,8 @@ class Refund
 
         return [
             'refund_transaction' => $refundTransaction,
-            'vendor_refund_id'   => $vendorRefundId
+            'vendor_refund_id'   => $vendorRefundId,
+            'manual_refund'  => $manualRefund
         ];
     }
 

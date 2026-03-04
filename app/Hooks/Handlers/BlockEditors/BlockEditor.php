@@ -16,6 +16,7 @@ abstract class BlockEditor
 
     protected static string $editorName;
     private static bool $isReactSupportAdded = false;
+    private static bool $blockSupportStylesEnqueued = false;
 
     public function __construct()
     {
@@ -82,7 +83,7 @@ abstract class BlockEditor
             }
         });
 
-        register_block_type($this->slugPrefix . '/' . static::getEditorName(), [
+        $blockArgs = [
             'api_version'      => 3,
             'version'          => 3,
             'editor_script'    => $this->getScriptName(),
@@ -91,7 +92,13 @@ abstract class BlockEditor
             'provides_context' => $this->provideContext(),
             'uses_context'     => $this->useContext(),
             'supports'         => $this->supports()
-        ]);
+        ];
+
+        if ($this->skipInnerBlocks()) {
+            $blockArgs['skip_inner_blocks'] = true;
+        }
+
+        register_block_type($this->slugPrefix . '/' . static::getEditorName(), $blockArgs);
 
     }
 
@@ -114,10 +121,54 @@ abstract class BlockEditor
         return null;
     }
 
+    /**
+     * Whether to skip automatic inner block rendering in WP_Block::render().
+     *
+     * Override to return true in blocks that manually render their inner blocks
+     * in the render callback. This prevents WordPress from auto-rendering inner
+     * blocks before the callback runs (which causes double rendering and can
+     * trigger WP 6.x's empty-block script dequeue mechanism).
+     */
+    protected function skipInnerBlocks(): bool
+    {
+        return false;
+    }
+
     public function render_block($attributes, $content, $block)
     {
+        $prefix = '';
+        if (!self::$blockSupportStylesEnqueued && !is_admin()) {
+            $prefix = self::getBlockSupportFallbackStyles();
+            self::$blockSupportStylesEnqueued = true;
+        }
+
         $attributes = Arr::wrap($attributes);
-        return $this->render($attributes, $block, $content);
+        return $prefix . $this->render($attributes, $block, $content);
+    }
+
+    /**
+     * Ensure WordPress global styles (preset colors, typography, spacing) are available
+     * on the frontend. Some themes (e.g., Bricks) strip the global-styles stylesheet,
+     * which breaks block support classes like .has-vivid-red-color.
+     *
+     * This outputs a minimal inline fallback only if global styles aren't already loaded.
+     */
+    private static function getBlockSupportFallbackStyles(): string
+    {
+        // Skip if global styles are already loaded by the theme
+        if (wp_style_is('global-styles', 'done') || wp_style_is('global-styles', 'enqueued')) {
+            return '';
+        }
+
+        // Use WordPress API to get preset variables and class rules
+        if (function_exists('wp_get_global_stylesheet')) {
+            $css = wp_get_global_stylesheet(['variables', 'presets']);
+            if (!empty($css)) {
+                return '<style id="fluent-cart-block-supports-css">' . wp_strip_all_tags($css) . '</style>';
+            }
+        }
+
+        return '';
     }
 
 

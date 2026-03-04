@@ -11,24 +11,41 @@ const {useEffect, useState} = wp.element;
 
 const rest = window['fluentCartRestVars'].rest;
 
-const ProductSelector = ({prevSelectedProduct, onProductSelectionUpdated }) => {
+const ProductSelector = ({prevSelectedProduct, onProductSelectionUpdated, isMultiple = false }) => {
     
     const fetchUrl = rest.url + '/products';
     const [loading, setLoading] = useState(false);
 
     const [products, setProducts] = useState({});
-    const [selectedProduct, setSelectedProduct] = useState({});
+    // const [selectedProduct, setSelectedProduct] = useState({});
+    const [selectedProduct, setSelectedProduct] = useState(
+        isMultiple ? null : prevSelectedProduct || null
+    );
+    
+    const [selectedProducts, setSelectedProducts] = useState(
+        isMultiple ? prevSelectedProduct || [] : []
+    );
 
-    const updateSelectedProduct = (product, add) => {
+    const updateSelectedProduct = (product, checked) => {
+        if (isMultiple) {
+            setSelectedProducts(prev => {
+                const safePrev = Array.isArray(prev) ? prev : [];
 
-        setSelectedProduct(product);
+            const updated = checked
+                ? [...safePrev, product]
+                : safePrev.filter(p => p.ID !== product.ID);
 
-        if (typeof onProductSelectionUpdated === "function") {
-            onProductSelectionUpdated(product);
+            onProductSelectionUpdated?.(updated);
+
+            return updated;
+            });
+            return;
         }
 
+        const value = checked ? product : null;
+        setSelectedProduct(value);
+        onProductSelectionUpdated?.(value);
     }
-
 
     const fetchProducts = (searchQuery = null) => {
         setLoading(true);
@@ -107,8 +124,15 @@ const ProductSelector = ({prevSelectedProduct, onProductSelectionUpdated }) => {
                                                 <ListItem 
                                                     variant={product}
                                                     title={product?.post_title}
-                                                    checked={prevSelectedProduct?.ID === product.ID}
+                                                    // checked={prevSelectedProduct?.ID === product.ID}
                                                     media={product?.detail?.featured_media?.url}
+                                                    isMultiple={isMultiple}
+                                                    checked={
+                                                        isMultiple
+                                                            ? Array.isArray(selectedProducts) &&
+                                                            selectedProducts.some(p => p.ID === product.ID)
+                                                            : selectedProduct?.ID === product.ID
+                                                    }
                                                     updateSelectedVariations={updateSelectedProduct}
                                                 />
                                             </div>

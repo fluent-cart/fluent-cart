@@ -15,12 +15,12 @@ const ListItem = (props) => {
         toggleCollapse = () => {
         },
         updateSelectedVariations,
-        checked,
+        checked = false,
         isOpen,
         isMultiple = true
     } = props;
 
-    const [isChecked, setChecked] = useState(checked);
+    // const [isChecked, setChecked] = useState(checked);
 
     return <>
 
@@ -35,10 +35,11 @@ const ListItem = (props) => {
                     <>
                         <div className="content-checkbox">
                             <CheckboxControl
-                                checked={isChecked && checked}
+                                // checked={isChecked & checked}
+                                checked={checked}
                                 onChange={(checked) => {
                                     updateSelectedVariations(variant, checked)
-                                    setChecked(checked)
+                                    // setChecked(checked)
                                 }}
                             />
                         </div>

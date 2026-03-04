@@ -701,7 +701,7 @@ class OrderResource extends BaseResourceApi
             //     $deletedOrder->shipping_status = OrderMetaResource::find($deletedOrder->id, ['meta_key' => 'shipping_previous_status']);
             // }
             if (!empty($order)) {
-                if ($order->status === Status::ORDER_COMPLETED) {
+                if ($order->mode !== Status::ORDER_MODE_TEST && $order->status === Status::ORDER_COMPLETED) {
                     return static::makeErrorResponse([
                         ['code' => 400, 'message' => __('This order cannot be deleted because order status is completed.', 'fluent-cart')]
                     ]);
@@ -709,6 +709,8 @@ class OrderResource extends BaseResourceApi
                 $order->orderMeta()->delete();
                 $order->order_items()->delete();
                 $order->transactions()->delete();
+                $order->orderTaxRates()->delete();
+                $order->orderOperation()->delete();
                 $order->delete();
             }
 

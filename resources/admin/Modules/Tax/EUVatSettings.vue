@@ -1,140 +1,145 @@
 <template>
     <div class="setting-wrap">
-        <div class="fct-tax-collection-page">
+      <SettingsHeader
+          :heading="translate('VAT collection')"
+          :show-save-button="false"
+      >
+        <template #action>
+          <el-button
+              v-if="hasExistingSelection || showSelectionEditor"
+              type="primary"
+              @click="changeRegistration"
+              size="small"
+          >
+            {{ translate('Change Registration') }}
+          </el-button>
+
+          <div
+              class="form-section-save-action"
+              v-if="!showSelectionEditor && selectedMethod && !hasExistingSelection"
+          >
+            <el-button
+                type="primary"
+                @click="handleCollectCrossBorder"
+                size="small"
+                :loading="collectCrossBorderLoading"
+            >
+              {{ collectCrossBorderLoading ? translate('Saving') : translate('Save Settings') }}
+            </el-button>
+          </div>
+        </template>
+      </SettingsHeader>
+
+
+        <div class="setting-wrap-inner">
+          <div class="fct-tax-collection-page">
             <Card>
-                <CardHeader :title="$t('VAT collection')" border_bottom>
-                    <template #action>
-                        <div v-if="hasExistingSelection || showSelectionEditor">
-                            <el-button 
-                                type="primary" 
-                                link 
-                                
-                                @click="changeRegistration" 
-                                plain
-                            >
-                                {{ $t('Change Registration') }}
-                            </el-button>
-                        </div>
-                    </template>
-                </CardHeader>
 
-                <CardBody>
-                    <div class="fct-tax-collection-wrap">
+              <CardBody>
+                <div class="fct-tax-collection-wrap">
 
-                        <CollectionMethodSection
-                            v-if="!showSelectionEditor && !hasExistingSelection"
-                            v-model="selectedMethod"
-                            :crossBorderForm="crossBorderForm"
-                            :countries="countries"
-                            @change="handleCollectionMethod"
+                  <CollectionMethodSection
+                      v-if="!showSelectionEditor && !hasExistingSelection"
+                      v-model="selectedMethod"
+                      :crossBorderForm="crossBorderForm"
+                      :countries="countries"
+                      @change="handleCollectionMethod"
+                  />
+
+
+
+                  <!-- Summary view  -->
+                  <div v-if="hasExistingSelection || showSelectionEditor" class="fct-tax-selection-summary">
+                    <!-- oss -->
+                    <template v-if="selectedMethod === 'oss'">
+                      <!-- sum box -->
+                      <CrossBorderSummary
+                          :label="translate('Using One-Stop Shop (OSS) registration')"
+                          :summary="crossBorderSummary"
+                          :crossBorderForm="crossBorderForm"
+                          :countries="countries"
+                          :selectedMethod="selectedMethod"
+                          @toggle-form="handleToggleForm"
+                          @save="handleCollectCrossBorder()"
+                      />
+
+                      <template v-if="!showForm">
+                        <!-- OSS Tax Overrides -->
+                        <TaxOverride
+                            :taxOverrides="taxOverrides"
+                            @onAdd="addNewOssTaxOverride"
+                            @onEdit="editOssTaxOverride"
+                            @onDelete="deleteOssTaxOverride"
                         />
 
-                    
+                        <!-- OSS Country rates -->
+                        <OssCountryRates
+                            :ossCountryRates="ossCountryRates"
+                            :ossCountryRatesLoading="ossCountryRatesLoading"
+                            @fetch="fetchOssCountryRates()"
+                        />
+                      </template>
+                    </template>
 
-                         <!-- Summary view  -->
-                        <div v-if="hasExistingSelection || showSelectionEditor" class="fct-tax-selection-summary">
-                            <!-- oss -->
-                            <template v-if="selectedMethod === 'oss'">
-                                <!-- sum box -->
-                                 <CrossBorderSummary
-                                    :label="$t('Using One-Stop Shop (OSS) registration')"
-                                    :summary="crossBorderSummary"
-                                    :crossBorderForm="crossBorderForm"
-                                    :countries="countries"
-                                    :selectedMethod="selectedMethod"
-                                    @toggle-form="handleToggleForm"
-                                    @save="handleCollectCrossBorder()"
-                                />
+                    <!-- home -->
+                    <template v-if="selectedMethod === 'home'">
+                      <CrossBorderSummary
+                          :label="translate('Using home country registration a single EU VAT number for all EU countries.')"
+                          :summary="crossBorderSummary"
+                          :crossBorderForm="crossBorderForm"
+                          :countries="countries"
+                          :selectedMethod="selectedMethod"
+                          @toggle-form="handleToggleForm"
+                          @save="handleCollectCrossBorder()"
+                      />
+                      <!-- add override button -->
+                      <div class="form-section-save-action" v-if="!showForm">
+                        <el-button
+                            type="primary"
+                            @click="manageCountryTaxRates(crossBorderForm.home_country)"
+                        >
+                          {{ translate('Override Home Country Tax') }}
+                        </el-button>
+                      </div>
+                    </template>
 
-                                <template v-if="!showForm">
-                                    <!-- OSS Tax Overrides -->
-                                    <TaxOverride 
-                                        :taxOverrides="taxOverrides"
-                                        @onAdd="addNewOssTaxOverride"
-                                        @onEdit="editOssTaxOverride"
-                                        @onDelete="deleteOssTaxOverride"
-                                    />
+                    <!-- specific -->
+                    <SpecificCountrySection
+                        v-else-if="selectedMethod === 'specific'"
+                        :countryWiseVatSettings="countryWiseVatSettings"
+                        :euCountries="euCountries"
+                        :euRatesSummary="euRatesSummary"
+                        :euRatesLoading="euRatesLoading"
+                        @refresh="refreshSettings()"
+                        @fetch="fetchEuTaxRates()"
 
-                                    <!-- OSS Country rates -->
-                                    <OssCountryRates 
-                                        :ossCountryRates="ossCountryRates"
-                                        :ossCountryRatesLoading="ossCountryRatesLoading"
-                                        @fetch="fetchOssCountryRates()"
-                                    />
-                                </template>
-                            </template>
+                    />
 
-                            <!-- home -->
-                             <template v-if="selectedMethod === 'home'">
-                                <CrossBorderSummary
-                                    :label="$t('Using home country registration a single EU VAT number for all EU countries.')"
-                                    :summary="crossBorderSummary"
-                                    :crossBorderForm="crossBorderForm"
-                                    :countries="countries"
-                                    :selectedMethod="selectedMethod"
-                                    @toggle-form="handleToggleForm"
-                                    @save="handleCollectCrossBorder()"
-                                />
-                                <!-- add override button -->
-                                <div class="form-section-save-action" v-if="!showForm">
-                                    <el-button
-                                        type="primary" 
-                                        @click="manageCountryTaxRates(crossBorderForm.home_country)"
-                                    >
-                                        {{ $t('Overide Home Country Tax') }}
-                                    </el-button>
-                                </div>
-                             </template>
-
-                            <!-- specific -->
-                             <SpecificCountrySection
-                                v-else-if="selectedMethod === 'specific'"
-                                :countryWiseVatSettings="countryWiseVatSettings"
-                                :euCountries="euCountries"
-                                :euRatesSummary="euRatesSummary"
-                                :euRatesLoading="euRatesLoading"
-                                @refresh="refreshSettings()"
-                                @fetch="fetchEuTaxRates()"
-                             
-                             />
-
-                        </div>
-                    </div>
-                </CardBody>
+                  </div>
+                </div>
+              </CardBody>
             </Card>
 
 
-            <!-- save button -->
-            <div 
-                class="form-section-save-action" 
-                v-if="!showSelectionEditor && selectedMethod && !hasExistingSelection"
-            >
-                <el-button
-                    type="primary" 
-                    @click="handleCollectCrossBorder"
-                >
-                    {{ $t('Save') }}
-                </el-button>
-            </div>
+          </div>
 
+
+          <!-- Reusable OSS Override Modal (Tax/Shipping) -->
+          <OssOverrideModal
+              v-model="showAddOssTaxOverrideModal"
+              :title="overrideModalTitle"
+              :countries="ossCountryRates"
+              :selected-country-tax-classes="selectedCountryTaxClasses"
+              :country-code="ossTaxOverrideForm.country_code"
+              :has-valid-overrides="hasValidOverrides"
+              @change-country="onCountryChange"
+              @save="saveOssTaxOverride"
+              :mode="overrideMode"
+              class="fluent-cart-admin-pages"
+              modal-class="fct-eu-oss-override-modal"
+              :append-to-body="true"
+          />
         </div>
-
-
-         <!-- Reusable OSS Override Modal (Tax/Shipping) -->
-        <OssOverrideModal
-            v-model="showAddOssTaxOverrideModal"
-            :title="overrideModalTitle"
-            :countries="ossCountryRates"
-            :selected-country-tax-classes="selectedCountryTaxClasses"
-            :country-code="ossTaxOverrideForm.country_code"
-            :has-valid-overrides="hasValidOverrides"
-            @change-country="onCountryChange"
-            @save="saveOssTaxOverride"
-            :mode="overrideMode"
-            class="fluent-cart-admin-pages"
-            modal-class="fct-eu-oss-override-modal"
-            :append-to-body="true"
-        />
     </div>
 </template>
 
@@ -154,6 +159,7 @@ import OssCountryRates from './Components/OssCountryRates.vue';
 import LabelHint from "@/Bits/Components/LabelHint.vue";
 import SpecificCountrySection from "./Components/SpecificCountrySection.vue";
 import translate from "@/utils/translator/Translator";
+import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 export default {
     name: "EUVatSettings",
@@ -170,7 +176,8 @@ export default {
         TaxOverride,
         OssCountryRates,
         LabelHint,
-        SpecificCountrySection
+        SpecificCountrySection,
+        SettingsHeader
     },
     data() {
         return {
@@ -213,9 +220,11 @@ export default {
             taxOverrides: [],
             overrideModalTitle: 'Add OSS Tax Override',
             overrideMode: 'tax',
+            collectCrossBorderLoading: false,
         }
     },
     methods: {
+      translate,
         handleToggleForm(value) {
             this.showForm = value;
         },
@@ -380,6 +389,7 @@ export default {
             }
         },
         handleCollectCrossBorder() {
+
             if(!this.crossBorderForm.method) {
                 this.handleError(translate('Select a cross-border registration type'));
                 return;
@@ -397,6 +407,8 @@ export default {
                 }
             }
 
+            this.collectCrossBorderLoading = true;
+
             this.$post('tax/configuration/settings/eu-vat', {
                 action: 'euCrossBorderSettings',
                 eu_vat_settings: this.crossBorderForm
@@ -406,6 +418,8 @@ export default {
                 this.handleSuccess(response.message);
             }).catch((error) => {
                 this.handleError(error?.data?.message);
+            }).finally(() => {
+              this.collectCrossBorderLoading = false;
             });
 
         },

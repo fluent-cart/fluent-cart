@@ -82,8 +82,6 @@ onUnmounted(() => {
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-revenue-report-page">
-      <PageHeading :title="translate('Revenue')"></PageHeading>
-
       <RevenueReportSummary :reportFilter="reportFilter" />
 
       <RevenueLineChart

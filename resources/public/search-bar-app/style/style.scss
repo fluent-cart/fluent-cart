@@ -1,8 +1,16 @@
 @config "./style.config.js";
 @tailwind utilities;
 
-:root {
-
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .fluent-cart-search-bar-app-wrapper {
@@ -10,19 +18,21 @@
 	.fluent-cart-search-bar-app-wrapper-header-wrap {
 		@apply flex gap-2 items-center;
 		.fluent-cart-search-bar-app-wrapper-select-container {
-			@apply max-w-180;
+			@apply max-w-180 min-w-180;
 			select {
-				@apply w-full !mr-0 !shadow-none outline-none h-[48px] leading-none;
+				@apply w-full outline-none h-10 rounded bg-white text-sm border border-solid border-gray-outline;
+              margin-right: 0 !important;
+              box-shadow: none !important;
 			}
 		}
 		.fluent-cart-search-bar-app-input-wrap {
-			@apply w-full flex relative h-[48px];
+			@apply w-full flex relative h-10;
 			.fluent-cart-search-bar-app-input-clear,
 			.fluent-cart-search-bar-app-input-search {
-				@apply text-system-mid w-10 absolute top-0 left-0 h-full flex items-center justify-center;
+				@apply text-system-mid w-10 absolute top-0 left-0 h-10 flex items-center justify-center;
 			}
 			.fluent-cart-search-bar-app-input-clear {
-				@apply left-auto right-0 cursor-pointer transform-none;
+				@apply hidden left-auto right-[-1px] cursor-pointer transform-none rounded-tr rounded-br bg-transparent;
 			}
 			input {
 				@apply text-sm w-full bg-white shadow-none outline-none rounded border border-solid border-gray-outline py-2 px-[36px] m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};

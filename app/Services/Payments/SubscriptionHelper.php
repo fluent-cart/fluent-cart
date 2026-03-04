@@ -154,4 +154,16 @@ class SubscriptionHelper
         return $trialDays;
     }
 
+    public static function getSubscriptionsGracePeriodDays()
+    {
+        return apply_filters('fluent_cart/subscription/grace_period_days', [
+            'daily'       => 1,
+            'weekly'      => 3,
+            'monthly'     => 7,
+            'quarterly'   => 15,
+            'half_yearly' => 15,
+            'yearly'      => 15,
+        ]);
+    }
+
 }

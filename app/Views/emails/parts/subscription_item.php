@@ -54,6 +54,39 @@
     <tbody>
     <tr>
         <td>
+            <?php if ($order && $order->tax_total > 0): ?>
+            <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <tbody style="width:100%">
+                <tr style="width:100%">
+                    <td style="width:70%">
+                        <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
+                            <?php esc_html_e('Subtotal', 'fluent-cart'); ?>
+                        </p>
+                    </td>
+                    <td style="width:30%;text-align:right">
+                        <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
+                            <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->subtotal)); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr style="width:100%">
+                    <td style="width:70%">
+                        <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
+                            <?php esc_html_e('Tax', 'fluent-cart');
+                            echo esc_html($order->tax_behavior == 2 ? __(' (Included)', 'fluent-cart') : __(' (Excluded)', 'fluent-cart'));
+                            ?>
+                        </p>
+                    </td>
+                    <td style="width:30%;text-align:right">
+                        <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
+                            <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->tax_total)); ?>
+                        </p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <hr style="border-color:rgb(209,213,219);margin-top:8px;margin-bottom:8px;width:100%;border:none;border-top:1px solid #eaeaea">
+            <?php endif; ?>
             <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
                 <tbody style="width:100%">
                 <tr style="width:100%">

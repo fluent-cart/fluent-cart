@@ -1,54 +1,60 @@
 <template>
   <div class="setting-wrap">
-    <Card.Container class="overflow-hidden">
-      <Card.Header :title="translate('Roles and Permissions')">
-        <template #action v-if="isProActive">
-          <el-button
-              type="primary"
-              @click="()=>{
+    <SettingsHeader :heading="translate('Roles & Permissions')" :show-save-button="false"/>
+
+    <div class="setting-wrap-inner">
+      <Card.Container class="overflow-hidden">
+        <Card.Header :title="translate('Existing Roles & Permissions')">
+          <template #action>
+            <div class="fct-setting-header-action" v-if="isProActive">
+              <el-button
+                  type="primary"
+                  size="small"
+                  @click="()=>{
                 roleModal?.openModal();
               }">
-            {{ translate('Add Role') }}
-          </el-button>
-        </template>
-      </Card.Header>
+                {{ translate('Add Role') }}
+              </el-button>
+            </div>
+          </template>
+        </Card.Header>
 
-      <Card.Body v-if="isProActive" class="px-0 pb-0">
-        <div class="fct-role-settings">
-          <el-table :data="managers" v-loading="loading || deletingRole">
-            <el-table-column :label="translate('User')" :width="150">
-              <template #default="scope">
-                <div class="fct-customer-card">
-                  <div class="fct-customer-details">
-                    <div class="fct-customer-name">{{ scope.row?.display_name || translate('No Name') }}
-                      <span class="fct-customer-id">#{{ scope.row?.id }}</span>
+        <Card.Body v-if="isProActive" class="px-0 pb-0">
+          <div class="fct-role-settings">
+            <el-table :data="managers" v-loading="loading || deletingRole">
+              <el-table-column :label="translate('User')" :width="150">
+                <template #default="scope">
+                  <div class="fct-customer-card">
+                    <div class="fct-customer-details">
+                      <div class="fct-customer-name">{{ scope.row?.display_name || translate('No Name') }}
+                        <span class="fct-customer-id">#{{ scope.row?.id }}</span>
+                      </div>
+                      <div class="fct-customer-email">{{ scope.row?.email }}</div>
                     </div>
-                    <div class="fct-customer-email">{{ scope.row?.email }}</div>
                   </div>
-                </div>
-              </template>
-            </el-table-column>
+                </template>
+              </el-table-column>
 
-            <el-table-column prop="shop_role" :label="translate('Role Title')" :width="100">
-              <template #default="scope">
+              <el-table-column prop="shop_role" :label="translate('Role Title')" :width="100">
+                <template #default="scope">
                   <span class="role-title flex items-center gap-1 capitalize">
                     {{ Str.headline(scope.row.shop_role) }}
                   </span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="description" :label="translate('Roles')" :width="100">
-              <template #default="scope">
+                </template>
+              </el-table-column>
+              <el-table-column prop="description" :label="translate('Roles')" :width="100">
+                <template #default="scope">
                   <span
                       class="role-desc flex items-center gap-1 capitalize text-system-mid dark:text-system-light text-xs">
                     {{ scope.row.description }}
                   </span>
-              </template>
-            </el-table-column>
-            <el-table-column :width="100">
-              <template #default="scope">
-                <div class="fct-role-settings-table-action fct-btn-group sm justify-end">
-                  <IconButton bg="ghost" tag="a" size="x-small" hover="primary"
-                              @click="()=>{
+                </template>
+              </el-table-column>
+              <el-table-column :width="100">
+                <template #default="scope">
+                  <div class="fct-role-settings-table-action fct-btn-group sm justify-end">
+                    <IconButton tag="a" size="x-small" hover="primary"
+                                @click="()=>{
                   roleModal?.openModal(
                       scope.row.id,
                       scope.row.shop_role,
@@ -56,44 +62,45 @@
                       true
                   )
                 }">
-                    <DynamicIcon name="Edit"/>
-                  </IconButton>
+                      <DynamicIcon name="Edit"/>
+                    </IconButton>
 
-                  <el-popconfirm
-                      :width="235"
-                      :confirm-button-text="translate('Confirm')"
-                      :cancel-button-text="translate('No, Thanks')"
-                      icon-color="red"
-                      :title="translate('Are you sure to delete this user?')"
-                      @confirm="deleteRoleHandler(scope.row)"
-                  >
-                    <template #reference>
-                      <IconButton bg="ghost" tag="a" size="x-small" hover="danger">
-                        <DynamicIcon name="Delete"/>
-                      </IconButton>
-                    </template>
-                  </el-popconfirm>
-                </div>
+                    <el-popconfirm
+                        :width="235"
+                        :confirm-button-text="translate('Confirm')"
+                        :cancel-button-text="translate('No, Thanks')"
+                        icon-color="red"
+                        :title="translate('Are you sure to delete this user?')"
+                        @confirm="deleteRoleHandler(scope.row)"
+                    >
+                      <template #reference>
+                        <IconButton tag="a" size="x-small" hover="danger">
+                          <DynamicIcon name="Delete"/>
+                        </IconButton>
+                      </template>
+                    </el-popconfirm>
+                  </div>
+                </template>
+              </el-table-column>
+
+              <template #empty>
+                <Empty icon="Empty/RoleAndPermission" :has-dark="true" :text="translate('No roles found!')"/>
               </template>
-            </el-table-column>
+            </el-table>
+          </div>
+        </Card.Body>
 
-            <template #empty>
-              <Empty icon="Empty/RoleAndPermission" :has-dark="true" :text="translate('No roles found!')"/>
-            </template>
-          </el-table>
-        </div>
-      </Card.Body>
+        <Card.Body v-else class="px-0 pb-0">
+          <ProFeatureNotice
+              class="py-7.5"
+              :title="translate('Upgrade to Pro for Roles & Permission')"
+              :text="translate('This feature is only available in FluentCart Pro.')"
+          />
+        </Card.Body>
+      </Card.Container>
 
-      <Card.Body v-else class="px-0 pb-0">
-        <ProFeatureNotice
-            class="py-7.5"
-            :title="translate('Upgrade to Pro for Roles & Permission')"
-            :text="translate('This feature is only available in FluentCart Pro.')"
-        />
-      </Card.Body>
-    </Card.Container>
-
-    <RoleAssignmentModal ref="roleModal" @fetchRoles="fetchManagers"/>
+      <RoleAssignmentModal ref="roleModal" @fetchRoles="fetchManagers"/>
+    </div>
   </div>
 </template>
 
@@ -110,6 +117,7 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import ProFeatureNotice from "@/Bits/Components/ProFeatureNotice.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Str from "@/utils/support/Str";
+import SettingsHeader from "../Parts/SettingsHeader.vue";
 
 const loading = ref(false);
 const showModal = ref(false);
@@ -153,6 +161,8 @@ const deleteRoleHandler = (row) => {
 }
 
 onMounted(() => {
-  fetchManagers();
+  if (isProActive) {
+    fetchManagers();
+  }
 })
 </script>

@@ -236,7 +236,7 @@ class PlanUpgradeService
         $daysRemaining = ceil((strtotime($subscription->next_billing_date) - time()) / 86400); // convert seconds to days
 
         $maps = [
-            'monthly' => 30,
+            'monthly' => (int) gmdate('t'), // Get exact days in current month (handles leap year) to avoid false remaining days calculation
             'yearly'  => 365,
             'weekly'  => 7,
             'daily'   => 1,
@@ -247,6 +247,7 @@ class PlanUpgradeService
         }
 
         $divider = $maps[$subscription->billing_interval];
+
         if ($daysRemaining > $divider) { // making sure we are not giving discount more than the actual amount
             $daysRemaining = $divider;
         }

@@ -88,9 +88,9 @@ const DEFAULT_TEMPLATE = [
                     metadata: {name: 'Product Loop'},
                 },
                 [
-                    ['fluent-cart/shopapp-product-image'],
-                    ['fluent-cart/shopapp-product-title'],
-                    ['fluent-cart/shopapp-product-price'], // (duplicate, but valid syntax-wise)
+                    ['fluent-cart/product-image'],
+                    ['fluent-cart/product-title'],
+                    ['fluent-cart/price-range'],
                     ['fluent-cart/shopapp-product-buttons'],
                 ],
             ],
@@ -152,7 +152,7 @@ const DEFAULT_TEMPLATE = [
 const blockName = `${blockEditorData.slug}/${blockEditorData.name}`;
 
 registerBlockType(blockName, {
-    apiVersion: 2,
+    apiVersion: 3,
     providesContext: {
         'fluent-cart/paginator': 'paginator',
         'fluent-cart/per_page': 'per_page',

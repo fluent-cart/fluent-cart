@@ -58,7 +58,6 @@ class SearchBarRenderer
                     id="fluent-cart-search-category"
                     data-fluent-cart-search-bar-app-taxonomy 
                     name="termId"
-                    style="padding: 10px; border: 1px solid #D3D3D3; border-radius: 8px; font-size: 16px; background-color: #fff; margin-right: 10px;"
                     aria-describedby="category-help"
                 >
                     <option selected value="">
@@ -132,7 +131,7 @@ class SearchBarRenderer
     public function renderSearchResult() {
         ?>
 
-            <div class="fluent-cart-search-bar-app-wrapper-result-wrap">
+            <div class="fluent-cart-search-bar-app-wrapper-result-wrap" style="display: none;">
                  <h5 id="search-suggestions-heading"><?php esc_html_e('Suggestions', 'fluent-cart'); ?></h5>
 
                  <ul

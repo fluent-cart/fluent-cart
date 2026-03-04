@@ -7,6 +7,7 @@ const {registerBlockType} = wp.blocks;
 const blockEditorData = window.fluent_cart_fluent_products_search_bar_data;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     example: {
         attributes: {
