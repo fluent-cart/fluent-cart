@@ -842,6 +842,31 @@ class CheckoutProcessor
         $totalAmount = $orderData['subtotal'] - $orderData['coupon_discount_total'] - $orderData['manual_discount_total'] + $orderData['shipping_total'] + $estimatedTaxTotal + $estimatedShippingTax;
 
         $orderData['total_amount'] = $totalAmount > 0 ? $totalAmount : 0;
+
+        /**
+         * Filter the prepared order data before it is used for order creation.
+         *
+         * Allows plugins to modify any order field — currency, rate, totals,
+         * config, mode, or any other property — before the order is created.
+         * Values set here propagate to the order transaction and subscription
+         * automatically.
+         *
+         * @since 1.3.10
+         *
+         * @param array $orderData Prepared order data array.
+         * @param array $context {
+         *     Additional context for the filter.
+         *
+         *     @type array $items Formatted order items with prices and quantities.
+         *     @type array $args  Checkout arguments: customer data, payment method,
+         *                        shipping, tax, applied coupons, IP, etc.
+         * }
+         */
+        $orderData = apply_filters('fluent_cart/checkout/order_data', $orderData, [
+            'items' => $this->formattedIOrderItems,
+            'args'  => $this->args,
+        ]);
+
         $this->orderData = $orderData;
     }
 
