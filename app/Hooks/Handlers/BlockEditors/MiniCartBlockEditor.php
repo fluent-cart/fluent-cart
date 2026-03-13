@@ -22,7 +22,7 @@ class MiniCartBlockEditor extends BlockEditor
 
 
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -32,7 +32,7 @@ class MiniCartBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/Cart/style/mini-cart-block-editor.scss'
@@ -66,7 +66,7 @@ class MiniCartBlockEditor extends BlockEditor
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

@@ -10,7 +10,7 @@ class CustomerDashboardButtonBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'customer-dashboard-button';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -20,7 +20,7 @@ class CustomerDashboardButtonBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/CustomerDashboardButton/style/customer-dashboard-button-block-editor.scss'
@@ -66,7 +66,7 @@ class CustomerDashboardButtonBlockEditor extends BlockEditor
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

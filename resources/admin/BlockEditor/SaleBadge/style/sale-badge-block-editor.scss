@@ -1,5 +1,6 @@
 @config "./sale-badge-block-editor.config.js";
 @tailwind utilities;
+@import "../../Components/style/badge-positions";
 
 .fct-sale-badge {
     @apply inline-block font-semibold leading-none whitespace-nowrap z-[2] pointer-events-none;
@@ -43,22 +44,8 @@
         }
     }
 
-    // === Position classes ===
-    &--top-left {
-        @apply absolute top-2 left-2;
-    }
-
-    &--top-right {
-        @apply absolute top-2 right-2;
-    }
-
-    &--bottom-left {
-        @apply absolute bottom-2 left-2;
-    }
-
-    &--bottom-right {
-        @apply absolute bottom-2 right-2;
-    }
+    // === Position classes (shared mixin with anchor positioning) ===
+    @include badge-positions;
 }
 
 // Default colors when user hasn't set custom colors via block supports

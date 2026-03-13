@@ -328,6 +328,7 @@ class CheckoutRenderer
                 Arr::get($config, 'with_shipping')
             );
             $allowedAddresses = AddressHelper::getCustomerValidatedAddresses($config, $customer);
+
             if (!empty($allowedAddresses)) {
                 $primaryAddress = AddressHelper::getPrimaryAddress(
                     $allowedAddresses,

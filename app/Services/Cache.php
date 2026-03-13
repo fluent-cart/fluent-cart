@@ -19,7 +19,7 @@ class Cache
 
         if ($callback) {
             $value = $callback();
-            if ($value) {
+            if ($value !== null) {
                 static::set($key, $value, $expire);
             }
         }

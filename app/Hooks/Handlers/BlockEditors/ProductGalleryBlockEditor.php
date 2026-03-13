@@ -17,7 +17,7 @@ class ProductGalleryBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'product-gallery';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -27,14 +27,14 @@ class ProductGalleryBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/ProductGallery/style/product-gallery-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

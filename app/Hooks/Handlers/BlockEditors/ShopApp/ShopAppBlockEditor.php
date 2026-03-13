@@ -21,7 +21,7 @@ class ShopAppBlockEditor extends BlockEditor
 
     protected ?string $localizationKey = 'fluent_cart_shop_app_block_editor_data';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -31,7 +31,7 @@ class ShopAppBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['admin/BlockEditor/ShopApp/style/shop-app-block-editor.css'];
     }
@@ -48,7 +48,7 @@ class ShopAppBlockEditor extends BlockEditor
         InnerBlocks::register();
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         $taxonomies = Taxonomy::getTaxonomies();
 

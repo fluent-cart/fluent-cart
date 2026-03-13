@@ -252,31 +252,6 @@ class CheckoutProcessor
             $orderData['customer_id'] = $customerId;
         }
 
-        $oldShippingCharge = $prevOrder->shipping_total;
-        $newShippingCharge = Arr::get($this->args, 'shipping_charge', 0);
-
-        if ($newShippingCharge != $oldShippingCharge) {
-            $orderData['shipping_total'] = $newShippingCharge;
-            $orderData['total_amount'] = $orderData['total_amount'] + ($newShippingCharge - $oldShippingCharge);
-        }
-
-        $oldTaxTotal = $prevOrder->tax_total;
-        $newTaxTotal = Arr::get($this->args, 'tax_total', 0);
-
-        if ($newTaxTotal != $oldTaxTotal) {
-            $orderData['tax_total'] = $newTaxTotal;
-            if (Arr::get($this->args, 'tax_behavior', 0) == 1) {
-                $orderData['total_amount'] = $orderData['total_amount'] + ($newTaxTotal - $oldTaxTotal);
-            }
-        }
-
-        $oldShippingTax = $prevOrder->shipping_tax;
-        $newShippingTax = Arr::get($this->args, 'shipping_tax', 0);
-
-        if ($newShippingTax != $oldShippingTax) {
-            $orderData['shipping_tax'] = $newShippingTax;
-        }
-
         if ($isLocked) {
             $orderData = array_filter(Arr::only($orderData, ['note', 'payment_method', 'ip_address', 'customer_id', 'shipping_total', 'total_amount', 'tax_total', 'shipping_tax']));
 
@@ -463,8 +438,11 @@ class CheckoutProcessor
             $this->transactionModel = \FluentCart\App\Models\OrderTransaction::query()->create($transactionData);
         }
 
-        // insert the applied coupons
-        $this->insertAppliedCoupons(Arr::get($this->args, 'applied_coupons', []), true, $prevOrder);
+        // For locked carts (e.g. custom checkout), preserve the original order's applied coupon records.
+        // Re-inserting would delete existing records and incorrectly increment the coupon use_count.
+        if (!$isLocked) {
+            $this->insertAppliedCoupons(Arr::get($this->args, 'applied_coupons', []), true, $prevOrder);
+        }
 
         $cartHash = Arr::get($this->args, 'cart_hash', '');
 

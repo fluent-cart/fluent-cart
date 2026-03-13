@@ -31,7 +31,7 @@ class SingleProductShortCode extends ShortCode
         parent::register();
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -47,7 +47,7 @@ class SingleProductShortCode extends ShortCode
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
 
         //DirectCheckoutShortcode::make()->enqueueAssets();
@@ -73,7 +73,7 @@ class SingleProductShortCode extends ShortCode
         }
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             'fluentcart_single_product_vars' => [

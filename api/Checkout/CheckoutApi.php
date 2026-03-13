@@ -119,7 +119,16 @@ class CheckoutApi
         }
 
         if (!CheckoutFieldsSchema::isFullNameRequired()) {
-            $validatedData['billing_full_name'] = Arr::get($validatedData, 'billing_first_name') . ' ' . Arr::get($validatedData, 'billing_last_name');
+            if (!empty($validatedData['billing_full_name']) && empty($validatedData['billing_first_name'])) {
+                // Modal checkout sends billing_full_name — split into first/last name
+                $nameParts = explode(' ', $validatedData['billing_full_name'], 2);
+                $validatedData['billing_first_name'] = $nameParts[0];
+                $validatedData['billing_last_name'] = $nameParts[1] ?? '';
+            } else {
+                $validatedData['billing_full_name'] = trim(
+                    Arr::get($validatedData, 'billing_first_name') . ' ' . Arr::get($validatedData, 'billing_last_name')
+                );
+            }
         }
 
         $orderData = OrderService::groupSanitizedData($validatedData);
@@ -583,6 +592,9 @@ class CheckoutApi
 
         $billingValidations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements('billing', $fulfillmentType, !$isDifferentShipping));
 
+        // Name fields are validated separately below (full_name/first_name/last_name)
+        unset($billingValidations['full_name'], $billingValidations['first_name'], $billingValidations['last_name'], $billingValidations['company_name']);
+
         if (!isset($billingValidations['country'])) {
             // get store country
             $data['billing_country'] = (new StoreSettings())->get('store_country');
@@ -601,6 +613,8 @@ class CheckoutApi
         $shippingValidations = [];
         if ($isDifferentShipping) {
             $shippingValidations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements('shipping', 'physical'));
+            // Name fields are validated via billing basic_info, not shipping address
+            unset($shippingValidations['full_name'], $shippingValidations['first_name'], $shippingValidations['last_name'], $shippingValidations['company_name']);
             foreach ($shippingValidations as $key => $shippingValidation) {
                 $shippingAddress[$key] = Arr::get($data, 'shipping_' . $key, '');
             }
@@ -647,7 +661,7 @@ class CheckoutApi
                     continue;
                 }
 
-                if (!Arr::has($countries, $value)) {
+                if (!empty($value) && !Arr::has($countries, $value)) {
                     if (!isset($errors[$key])) {
                         $errors[$prefixedKey] = [];
                     }
@@ -658,12 +672,12 @@ class CheckoutApi
                     );
                     continue;
                 }
+
+                continue;
             }
 
             if ($key === 'state') {
                 $country = Arr::get($billingAddress, 'country', '');
-                //$countryInfo = LocalizationManager::getCountryInfo(null,$country);
-
 
                 $states = LocalizationManager::getInstance()->statesOptions($country);
 
@@ -671,32 +685,30 @@ class CheckoutApi
                     continue;
                 }
 
-                if ($rule === 'required') {
-                    if (empty($value)) {
-                        if (!isset($errors[$key])) {
-                            $errors[$prefixedKey] = [];
-                        }
-                        $errors[$prefixedKey]['required'] = sprintf(
-                        /* translators: %s attribute name */
-                            __('%s is required.', 'fluent-cart'),
-                            $titledKey
-                        );
-                        continue;
+                if ($rule === 'required' && empty($value)) {
+                    if (!isset($errors[$key])) {
+                        $errors[$prefixedKey] = [];
                     }
-
-                    if (!in_array($value, array_column($states, 'value'))) {
-                        if (!isset($errors[$key])) {
-                            $errors[$prefixedKey] = [];
-                        }
-                        $errors[$prefixedKey]['invalid'] = sprintf(
-                        /* translators: %s attribute name */
-                            __('%s is invalid.', 'fluent-cart'),
-                            $titledKey
-                        );
-
-                        continue;
-                    }
+                    $errors[$prefixedKey]['required'] = sprintf(
+                    /* translators: %s attribute name */
+                        __('%s is required.', 'fluent-cart'),
+                        $titledKey
+                    );
+                    continue;
                 }
+
+                if (!empty($value) && !in_array($value, array_column($states, 'value'))) {
+                    if (!isset($errors[$key])) {
+                        $errors[$prefixedKey] = [];
+                    }
+                    $errors[$prefixedKey]['invalid'] = sprintf(
+                    /* translators: %s attribute name */
+                        __('%s is invalid.', 'fluent-cart'),
+                        $titledKey
+                    );
+                }
+
+                continue;
             }
 
             if ($rule === 'required' && empty($value)) {
@@ -732,7 +744,7 @@ class CheckoutApi
                     continue;
                 }
 
-                if (!Arr::has($countries, $value)) {
+                if (!empty($value) && !Arr::has($countries, $value)) {
                     if (!isset($errors[$key])) {
                         $errors[$prefixedKey] = [];
                     }
@@ -743,11 +755,12 @@ class CheckoutApi
                     );
                     continue;
                 }
+
+                continue;
             }
 
             if ($key === 'state') {
                 $country = Arr::get($shippingAddress, 'country', '');
-                //$countryInfo = LocalizationManager::getCountryInfo(null,$country);
 
                 $states = LocalizationManager::getInstance()->statesOptions($country);
 
@@ -755,35 +768,31 @@ class CheckoutApi
                     continue;
                 }
 
-
-                if ($rule === 'required') {
-                    if (empty($value)) {
-                        if (!isset($errors[$key])) {
-                            $errors[$prefixedKey] = [];
-                        }
-                        $errors[$prefixedKey]['required'] = sprintf(
-                        /* translators: %s attribute name */
-                            __('%s is required.', 'fluent-cart'),
-                            $titledKey
-                        );
-
-                        continue;
+                if ($rule === 'required' && empty($value)) {
+                    if (!isset($errors[$key])) {
+                        $errors[$prefixedKey] = [];
                     }
+                    $errors[$prefixedKey]['required'] = sprintf(
+                    /* translators: %s attribute name */
+                        __('%s is required.', 'fluent-cart'),
+                        $titledKey
+                    );
 
-                    if (!in_array($value, array_column($states, 'value'))) {
-                        if (!isset($errors[$key])) {
-                            $errors[$prefixedKey] = [];
-                        }
-                        $errors[$prefixedKey]['invalid'] = sprintf(
-                        /* translators: %s attribute name */
-                            __('%s is invalid.', 'fluent-cart'),
-                            $titledKey
-                        );
-
-                        continue;
-                    }
+                    continue;
                 }
 
+                if (!empty($value) && !in_array($value, array_column($states, 'value'))) {
+                    if (!isset($errors[$key])) {
+                        $errors[$prefixedKey] = [];
+                    }
+                    $errors[$prefixedKey]['invalid'] = sprintf(
+                    /* translators: %s attribute name */
+                        __('%s is invalid.', 'fluent-cart'),
+                        $titledKey
+                    );
+                }
+
+                continue;
             }
 
             if ($rule === 'required' && empty($value)) {
@@ -823,7 +832,8 @@ class CheckoutApi
             $errors['billing_email']['invalid'] = __('Email must be a valid email address.', 'fluent-cart');
         }
 
-        if (CheckoutFieldsSchema::isFullNameRequired()) {
+        if (CheckoutFieldsSchema::isFullNameRequired() || !empty($data['billing_full_name'])) {
+            // Modal checkout always sends billing_full_name regardless of store name field settings
             if (empty($data['billing_full_name'])) {
                 $errors['billing_full_name']['required'] = __('Full name is required.', 'fluent-cart');
             }

@@ -11,7 +11,7 @@ class CustomerProfileBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'customer-profile';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -21,12 +21,12 @@ class CustomerProfileBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['admin/BlockEditor/CustomerProfile/style/customer-profile-block-editor.scss'];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey() => [

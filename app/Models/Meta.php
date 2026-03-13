@@ -44,7 +44,7 @@ class Meta extends Model
     {
         if (is_string($value)) {
             $decoded = json_decode($value, true);
-            return $decoded ?: $value;
+            return $decoded !== null ? $decoded : $value;
         }
         return $value;
     }

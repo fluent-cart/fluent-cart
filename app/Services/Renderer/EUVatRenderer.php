@@ -62,27 +62,26 @@ class EUVatRenderer
                                     <?php echo esc_html__('Apply', 'fluent-cart'); ?>
                                 </button>
                             </div>
+                            <span
+                                data-fluent-cart-checkout-page-tax-loading
+                                class="fct_tax_loading"
+                                role="status"
+                                aria-live="polite"
+                                aria-label="<?php echo esc_attr__('Validating VAT number', 'fluent-cart'); ?>">
+                            </span>
+
+                            <span
+                                data-fluent-cart-checkout-page-form-error
+                                class="fct_form_error"
+                                id="fct_billing_tax_id_error"
+                                role="alert"
+                                aria-live="assertive">
+                            </span>
+
+                            <?php $this->renderValidNote($cart->checkout_data); ?>
                         </div>
                     </div>
                 </div>
-                    <span
-                        data-fluent-cart-checkout-page-tax-loading
-                        class="fct_tax_loading"
-                        role="status"
-                        aria-live="polite"
-                        aria-label="<?php echo esc_attr__('Validating VAT number', 'fluent-cart'); ?>">
-                    </span>
-
-                    <span
-                        data-fluent-cart-checkout-page-form-error
-                        class="fct_form_error"
-                        id="fct_billing_tax_id_error"
-                        role="alert"
-                        aria-live="assertive">
-                    </span>
-
-                   <?php $this->renderValidNote($cart->checkout_data); ?>
-              </div>
             <?php
         } else {
             return '';

@@ -508,6 +508,31 @@ class InnerBlocks
                     'core/column',
                     'core/group'
                 ],
+            ],
+            [
+                'title'     => __('Checkout EU VAT', 'fluent-cart'),
+                'slug'      => 'fluent-cart/checkout-eu-vat',
+                'callback'  => [$this, 'renderCheckoutEuVat'],
+                'component' => 'CheckoutEuVatBlock',
+                'icon'      => 'editor-code',
+                'supports'  => [
+                    'html'       => false,
+                    'spacing'    => [
+                        'margin'  => true,
+                        'padding' => true
+                    ],
+                    '__experimentalBorder' => [
+                        'radius' => true,
+                        'color'  => true,
+                        'width'  => true,
+                        'style'  => true
+                    ]
+                ],
+                'parent'    => [
+                    'fluent-cart/checkout',
+                    'core/column',
+                    'core/group'
+                ],
             ]
         ];
     }
@@ -682,6 +707,26 @@ class InnerBlocks
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    public function renderCheckoutEuVat($attributes, $content, $block)
+    {
+        $cart = $this->getCart();
+        if (empty(Arr::get($cart, 'cart_data', []))) {
+            return '';
+        }
+
+        ob_start();
+        do_action('fluent_cart/before_payment_methods', ['cart' => $cart]);
+        $output = ob_get_clean();
+
+        if (empty(trim($output))) {
+            return '';
+        }
+
+        $atts = get_block_wrapper_attributes();
+
+        return sprintf('<div %s>%s</div>', $atts, $output);
     }
 
     public function renderCheckoutAgreeTermsField($attributes, $content, $block)
@@ -975,7 +1020,7 @@ class InnerBlocks
         return 'fluent_cart_checkout_inner_blocks';
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [
@@ -994,7 +1039,7 @@ class InnerBlocks
     }
 
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/checkout/style/checkout.scss',
@@ -1002,7 +1047,7 @@ class InnerBlocks
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         $scripts = [
             [

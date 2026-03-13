@@ -37,6 +37,7 @@ const DEFAULT_TEMPLATE = [
                 }
             }],
             ['fluent-cart/checkout-shipping-methods'],
+            ['fluent-cart/checkout-eu-vat'],
             ['fluent-cart/checkout-payment-methods'],
             ['fluent-cart/checkout-submit-button']
         ]],

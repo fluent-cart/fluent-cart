@@ -21,6 +21,7 @@ import CheckoutTotalBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutTotal
 import CheckoutBillingAddressFieldBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutBillingAddressFieldBlock";
 import CheckoutShippingAddressFieldBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutShippingAddressFieldBlock";
 import CheckoutShipToDifferentFieldBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutShipToDifferentFieldBlock";
+import CheckoutEuVatBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutEuVatBlock";
 
 
 const componentsMap = {
@@ -45,7 +46,8 @@ const componentsMap = {
     CheckoutTotalBlock,
     CheckoutBillingAddressFieldBlock,
     CheckoutShippingAddressFieldBlock,
-    CheckoutShipToDifferentFieldBlock
+    CheckoutShipToDifferentFieldBlock,
+    CheckoutEuVatBlock
 }
 
 const {registerBlockType} = wp.blocks;

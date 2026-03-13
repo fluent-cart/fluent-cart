@@ -561,40 +561,56 @@ export default class AddressField {
             })
             .then(response => {
                 if (response.fragment) {
-                    if (Array.isArray(response.fragment)) {
-                        response.fragment.forEach((fragment) => {
-                            const element = document.querySelector(fragment.selector);
-                            if (element && fragment.type === 'replace') {
-                                element.outerHTML = fragment.content;
-                            }
-                        });
-                    } else {
-                        let element = document.querySelector(response.fragment.selector);
-                        if(element && response.fragment.type === 'replace') {
-                            element.outerHTML = response.fragment.content;
+                    const fragments = Array.isArray(response.fragment) ? response.fragment : [response.fragment];
+                    fragments.forEach((fragment) => {
+                        if (fragment.type !== 'replace') return;
+
+                        // Update the visible clone so the user sees the new address
+                        const clonedEl = cloned.querySelector(fragment.selector);
+                        if (clonedEl) {
+                            clonedEl.outerHTML = fragment.content;
                         }
-                    }
+
+                        // Update the original hidden modal so future clones have the data
+                        // Scope to the matching address type to avoid billing/shipping cross-contamination
+                        const addrType = cloned.dataset.fluentCartAddressType;
+                        const originalModal = document.querySelector(
+                            `[data-fluent-cart-address-type="${addrType}"]:not(body > *)`
+                        );
+                        if (originalModal) {
+                            const originalEl = originalModal.querySelector(fragment.selector);
+                            if (originalEl) {
+                                originalEl.outerHTML = fragment.content;
+                            }
+                        }
+                    });
                 }
 
+                // Switch back from add-form view to address list view
                 const wrapper = cloned.querySelector('[data-fluent-cart-checkout-page-form-address-modal-address-selector-button-wrapper]');
-                const selectWrapper = document.querySelectorAll('[data-fluent-cart-checkout-page-form-address-select-wrapper]');
-                wrapper.classList.remove('hide');
-                wrapper.classList.remove('show');
+                if (wrapper) {
+                    wrapper.classList.remove('hide');
+                    wrapper.classList.remove('show');
+                }
 
-                // selectWrapper.forEach(el => {
-                //     const innerWrap = el.querySelector('[data-fluent-cart-checkout-page-form-address-modal-address-selector-button-wrapper]');
-                //     innerWrap.insertAdjacentHTML('beforeend', response.data);
-                // });
-                //
-                // if (wrapper && response.data) {
-                //     wrapper.insertAdjacentHTML('beforeend', response.data);
-                // }
-                cloned.querySelector('[data-fluent-cart-checkout-page-form-address-show-add-new-modal-form-wrapper]').classList.remove('show');
-                cloned.querySelector('[data-fluent-cart-checkout-page-form-address-show-add-new-modal-form-wrapper]').classList.add('hide');
+                const formWrapper = cloned.querySelector('[data-fluent-cart-checkout-page-form-address-show-add-new-modal-form-wrapper]');
+                if (formWrapper) {
+                    formWrapper.classList.remove('show');
+                    formWrapper.classList.add('hide');
+                }
+
+                // Restore the footer (Add Address + Apply buttons) hidden during form open
+                const addNewBtn = cloned.querySelector('[data-fluent-cart-checkout-page-form-address-show-add-new-modal-button]');
+                if (addNewBtn) {
+                    addNewBtn.parentNode.style.display = '';
+                }
+
                 if (response.message) {
                     new Toastify({text: response.message, className: "info", duration: 900}).showToast();
-                    this.#removePreviousModal();
                 }
+
+                // Re-bind selection events on the updated address list in the clone
+                this.#bindAddressSelectAction(cloned, button, cloned.dataset.fluentCartAddressType);
             })
             .catch(error => {
                 //showValidationErrors();

@@ -9,12 +9,12 @@ class ProductCategoriesListShortcode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_cart_product_categories';
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['public/product-categories-list/product-categories-list.scss'];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [

@@ -131,7 +131,7 @@ export default class TaxService {
             }
             this.clearError();
             // Optionally, you can display a small success note
-            this.showSuccess(`${result?.name ? result.name + ' • ' : ''}${result?.country || ''}`);
+            this.showSuccess(`${this.translate('Valid VAT number')}${result?.name ? ' — ' + result.name : ''}`);
             return true;
         } catch (e) {
             console.log(e, 'error');

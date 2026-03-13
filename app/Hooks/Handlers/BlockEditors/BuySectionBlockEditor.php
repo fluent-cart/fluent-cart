@@ -16,7 +16,7 @@ class BuySectionBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'buy-section';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -26,14 +26,14 @@ class BuySectionBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/BuySection/style/buy-section-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

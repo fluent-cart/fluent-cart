@@ -8,7 +8,7 @@
           class="fct-more-option-wrap"
           popper-class="fct-dropdown"
           @command="(action) => handleSubscriptionAction(action)"
-          v-if="subscription.vendor_subscription_id && (permissions.canFetch || permissions.canPause || permissions.canResume || permissions.canCancel)"
+          v-if="(subscription.vendor_subscription_id && (permissions.canFetch || permissions.canPause || permissions.canResume || permissions.canCancel)) || permissions.canSendReminder"
       >
           <span class="more-btn">
             <DynamicIcon name="More"/>
@@ -40,6 +40,12 @@
                 <delete/>
               </el-icon>
               <span class="text-red-600">{{ $t("Cancel subscription") }}</span>
+            </el-dropdown-item>
+            <el-dropdown-item command="send_reminder" v-if="permissions.canSendReminder" :disabled="loadingState.sendReminder">
+              <el-icon>
+                <Promotion/>
+              </el-icon>
+              {{ reminderLabel }}
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -187,7 +193,7 @@
 <script>
 import {markRaw} from "vue";
 import {ElMessageBox} from "element-plus";
-import {Refresh, Delete} from "@element-plus/icons-vue";
+import {Refresh, Delete, Promotion} from "@element-plus/icons-vue";
 import translate from "@/utils/translator/Translator";
 import {Container as CardContainer, Body as CardBody, Header as CardHeader} from "@/Bits/Components/Card/Card.js";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
@@ -198,7 +204,7 @@ import CancelSubscription from "@/Modules/Subscriptions/Components/CancelSubscri
 
 export default {
   name: "SubscriptionDetails",
-  props: ['subscription', 'orderId'],
+  props: ['subscription', 'orderId', 'reminderPermissions'],
   emits: ["reload", "fetchOrder"],
   data() {
     return {
@@ -207,6 +213,7 @@ export default {
         pause: false,
         resume: false,
         cancel: false,
+        sendReminder: false,
       },
       cancelSubscriptionModal: false,
     }
@@ -220,7 +227,8 @@ export default {
     CardHeader,
     DynamicIcon,
     Refresh,
-    Delete
+    Delete,
+    Promotion
   },
   computed: {
     Str() {
@@ -229,12 +237,28 @@ export default {
     permissions() {
       const status = (this.subscription?.status || "").toLowerCase();
       let vendor_subscription_id = this.subscription?.vendor_subscription_id;
+      const rp = this.reminderPermissions || {};
       return {
         canFetch: true,
         canPause: vendor_subscription_id && !['canceled', 'paused', 'trialing', 'pending', 'intended', 'active(collection paused)'].includes(status),
         canResume: vendor_subscription_id && ['paused', 'active(collection paused)'].includes(status),
         canCancel: vendor_subscription_id && !['canceled'].includes(status),
+        canSendReminder: !!(rp.canSendRenewal || rp.canSendTrialEnd),
       };
+    },
+    reminderLabel() {
+      const rp = this.reminderPermissions || {};
+      if (rp.canSendTrialEnd) {
+        return translate('Send Trial End Reminder');
+      }
+      return translate('Send Renewal Reminder');
+    },
+    reminderEvent() {
+      const rp = this.reminderPermissions || {};
+      if (rp.canSendTrialEnd) {
+        return 'subscription_trial_end_reminder';
+      }
+      return 'subscription_renewal_reminder';
     },
     paymentMethod() {
       return this.subscription?.current_payment_method || '';
@@ -250,6 +274,7 @@ export default {
       else if (action === "pause_subscription") this.confirmPause();
       else if (action === "resume_subscription") this.confirmResume();
       else if (action === "cancel_subscription") this.confirmCancel();
+      else if (action === "send_reminder") this.confirmSendReminder();
     },
 
     confirmFetch() {
@@ -401,6 +426,47 @@ export default {
       if (!this.subscription.vendor_subscription_id) return;
       this.cancelSubscriptionModal = true;
     },
+    confirmSendReminder() {
+      const reminderLabel = this.reminderLabel;
+      ElMessageBox.confirm(
+          translate('Are you sure you want to send this reminder email now?'),
+          reminderLabel,
+          {
+            type: "info",
+            icon: markRaw(Promotion),
+            cancelButtonText: translate("Cancel"),
+            confirmButtonText: translate("Send Now"),
+            beforeClose: async (action, instance, done) => {
+              if (action === "confirm") {
+                try {
+                  instance.confirmButtonLoading = true;
+                  this.loadingState.sendReminder = true;
+                  const response = await this.$post('email-notification/send-manual-reminder', {
+                    event: this.reminderEvent,
+                    entity_id: this.subscription.id
+                  });
+                  this.$notify({
+                    type: "success",
+                    title: translate("Success"),
+                    message: response.message || translate("Reminder sent successfully")
+                  });
+                } catch (e) {
+                  this.$notify({
+                    type: "error",
+                    title: translate("Error"),
+                    message: e.data?.message || translate("Failed to send reminder")
+                  });
+                } finally {
+                  instance.confirmButtonLoading = false;
+                  this.loadingState.sendReminder = false;
+                  done();
+                }
+              } else done();
+            }
+          }
+      );
+    },
+
     confirmReactivate() {
       if (!this.subscription.vendor_subscription_id) return;
       ElMessageBox.confirm(

@@ -8,7 +8,7 @@ class CustomerDashboardButtonShortcode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_cart_customer_dashboard_button';
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/customer-dashboard-button/customer-dashboard-button.scss',

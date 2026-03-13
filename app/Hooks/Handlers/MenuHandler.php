@@ -386,6 +386,7 @@ class MenuHandler
         $appConfig['version'] = FLUENTCART_VERSION;
         $appConfig['permissions'] = PermissionManager::getUserPermissions();
         $appConfig['isProActive'] = App::isProActive();
+        $appConfig['proVersion'] = defined('FLUENTCART_PRO_PLUGIN_VERSION') ? FLUENTCART_PRO_PLUGIN_VERSION : null;
 
         $appConfig['logos'] = [
             'dark'  => Vite::getAssetUrl('images/logo/logo-full-dark.svg'),
@@ -453,6 +454,7 @@ class MenuHandler
             'el_strings' => TransStrings::elStrings(),
             'wp_locale'  => get_locale(),
             'is_full_name_required' => CheckoutFieldsSchema::isFullNameRequired(),
+            'fct_editor_frame'                 => '',
         ]);
 
         wp_localize_script($slug . '_admin_app_start', 'fluentCartAdminApp', $adminLocalizeData);

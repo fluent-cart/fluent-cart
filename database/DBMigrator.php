@@ -442,6 +442,21 @@ class DBMigrator
 
             }
 
+            // Add payment_status index for reminder scan performance
+            $ordersTable = $wpdb->prefix . 'fct_orders';
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $existingIndex = $wpdb->get_results($wpdb->prepare(
+                "SHOW INDEX FROM %i WHERE Key_name = 'fct_payment_status'",
+                $ordersTable
+            ));
+            if (empty($existingIndex)) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+                $wpdb->query($wpdb->prepare(
+                    "ALTER TABLE %i ADD INDEX `fct_payment_status` (`payment_status`, `id`)",
+                    $ordersTable
+                ));
+            }
+
             if (!Schema::hasColumn('sku', 'fct_product_variations')) {
                 $table_name = $wpdb->prefix . 'fct_product_variations';
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange

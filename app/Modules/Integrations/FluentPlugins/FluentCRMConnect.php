@@ -230,8 +230,10 @@ class FluentCRMConnect extends BaseIntegrationManager
             $contactData['address_line_1'] = $order->billing_address->address_1;
             $contactData['address_line_2'] = $order->billing_address->address_2;
             $contactData['city'] = $order->billing_address->city;
-            $contactData['postcode'] = $order->billing_address->postcode;
+            $contactData['state'] = $order->billing_address->state;
+            $contactData['postal_code'] = $order->billing_address->postcode;
             $contactData['country'] = $order->billing_address->country;
+            $contactData['phone'] = $order->billing_address->phone;
         }
 
         $contactData['timezone'] = Arr::get($order->config, 'user_tz', '');

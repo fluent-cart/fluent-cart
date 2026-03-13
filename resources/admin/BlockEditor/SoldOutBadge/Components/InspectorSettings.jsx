@@ -27,7 +27,7 @@ const InspectorSettings = ({
                                 />
 
                                 {typeof isOutOfStock === 'boolean' && (
-                                    <div className={`fct-sale-badge-status ${isOutOfStock ? 'fct-sale-badge-status--not-on-sale' : 'fct-sale-badge-status--on-sale'}`}>
+                                    <div className={`fct-sold-out-badge-status ${isOutOfStock ? 'fct-sold-out-badge-status--out-of-stock' : 'fct-sold-out-badge-status--in-stock'}`}>
                                         {isOutOfStock
                                             ? blocktranslate('Product is out of stock')
                                             : blocktranslate('Product is in stock')

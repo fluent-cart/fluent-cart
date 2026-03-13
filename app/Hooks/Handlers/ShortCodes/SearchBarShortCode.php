@@ -13,7 +13,7 @@ class SearchBarShortCode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_products_search_bar';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -23,14 +23,14 @@ class SearchBarShortCode extends ShortCode
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/search-bar-app/style/style.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             'fluentcart_search_bar_vars' => [

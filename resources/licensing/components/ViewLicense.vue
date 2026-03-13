@@ -577,6 +577,7 @@ export default {
                             site_url: activation.site?.site_url,
                             created_at: activation.site?.created_at,
                             status: activation.status,
+                            is_local: activation.is_local,
                         }))
                         .sort((a, b) => b.id - a.id);
                 })

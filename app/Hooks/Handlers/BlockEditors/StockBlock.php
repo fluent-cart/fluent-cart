@@ -31,7 +31,7 @@ class StockBlock extends BlockEditor
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -41,14 +41,14 @@ class StockBlock extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
 //        'admin/BlockEditor/Stock/style/stock-block-editor.scss'
         return [];
     }
 
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

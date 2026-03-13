@@ -315,6 +315,7 @@
           }
         }
     }
+
     .fct-all-shipping-classes-wrap,
     .fct-all-shipping-zones-wrap {
         .fct-table-wrapper {
@@ -323,6 +324,42 @@
             }
         }
     }
+}
+
+/* ── Email Preview Drawer (top-level, drawer uses append-to-body) ── */
+.fct-preview-toolbar {
+  @apply flex justify-center mb-4;
+}
+.fct-preview-device-toggle {
+  @apply inline-flex bg-gray-50 dark:bg-primary-500 rounded p-1 gap-1;
+}
+.fct-device-btn {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border-0 bg-transparent text-xs font-medium text-system-mid dark:text-system-light cursor-pointer transition duration-150;
+  &:hover {
+    @apply bg-gray-100 dark:bg-dark-600 dark:text-system-light;
+  }
+  &.active {
+    @apply bg-white text-system-dark dark:bg-dark-600 dark:text-system-light shadow-sm;
+  }
+  svg {
+    @apply w-4 h-4;
+  }
+}
+.fct-preview-stage {
+  @apply flex justify-center px-4 mt-4;
+  transition: all 0.3s ease;
+}
+.fct-device-frame {
+  @apply bg-white border border-solid border-gray-divider rounded-lg overflow-hidden transition-all duration-300;
+  &--desktop {
+    @apply w-full;
+  }
+  &--tablet {
+    @apply w-[768px] max-w-full;
+  }
+  &--mobile {
+    @apply w-[375px] max-w-full;
+  }
 }
 
 // Collapsed settings menu
@@ -428,6 +465,60 @@
 }
 .fct-checkout-field-action {
      @apply flex gap-1.5 items-center;
+}
+
+/* ── Email Body Type Segmented Control ── */
+.fct-seg-wrap {
+  @apply inline-flex rounded-sm p-[3px] gap-[2px];
+  background: #EAECF0;
+
+  .dark & {
+    background: #252840;
+  }
+}
+
+.fct-seg-btn {
+  @apply relative py-[7px] px-[18px] text-sm font-medium border-none bg-transparent rounded-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1;
+  color: #565865;
+  font-family: inherit;
+  letter-spacing: -0.1px;
+  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    color: #2F3448;
+    background: rgba(255,255,255,.5);
+  }
+
+  &.active {
+    color: #2F3448;
+    background: #FFFFFF;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(47,52,72,.12), 0 0 0 1px rgba(47,52,72,.06);
+  }
+
+  &:focus {
+    @apply outline-none;
+  }
+
+  .dark & {
+    color: #6B7080;
+
+    &:hover {
+      color: #A0A5BC;
+      background: rgba(255,255,255,.05);
+    }
+
+    &.active {
+      color: #E4E6F0;
+      background: #2F3448;
+      box-shadow: 0 1px 3px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.06);
+    }
+  }
+}
+
+.fct-seg-icon {
+  @apply mr-1.5;
+  vertical-align: -2px;
 }
 
 .fct-powered-by-email-footer-checkbox {

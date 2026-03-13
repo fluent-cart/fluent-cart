@@ -801,11 +801,11 @@ input[type="number"] {
     @apply hidden;
   }
   .fct-bundle-products-title {
-    @apply text-[13px] leading-[20px] font-medium text-system-dark mb-1.5 mt-0;
+    @apply text-[13px] leading-[20px] font-medium text-system-dark mb-1.5 mt-0 dark:text-gray-50;
   }
   .fct-bundle-products-list {
     p {
-      @apply mt-0 mb-1 text-xs text-system-mid leading-[18px] border-0 p-0;
+      @apply mt-0 mb-1 text-xs text-system-mid leading-[18px] border-0 p-0 dark:text-gray-300;
     }
   }
   .fct-bundle-products-more {

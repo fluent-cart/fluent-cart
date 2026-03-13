@@ -190,6 +190,10 @@ const routes = ref([
         url: '/settings/email_mailing_settings'
       },
       {
+        name: translate('Reminders'),
+        url: '/settings/email_mailing_settings/reminders'
+      },
+      {
         name: translate('Notifications'),
         url: '/settings/email_notifications'
       }

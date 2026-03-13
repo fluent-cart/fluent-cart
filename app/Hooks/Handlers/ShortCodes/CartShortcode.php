@@ -49,7 +49,7 @@ class CartShortcode extends ShortCode
         $cartRenderer->render();
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         (new CartLoader())->enqueueStyle();
 

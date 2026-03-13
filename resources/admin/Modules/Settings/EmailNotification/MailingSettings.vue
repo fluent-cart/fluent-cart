@@ -85,7 +85,7 @@ onMounted(() => {
         :loading="saving"
         @onSave="saveEmailSettings"
     />
-    
+
 
     <div class="setting-wrap-inner">
       <Card.Container>
@@ -253,4 +253,3 @@ compliance.`)
     </div>
   </div>
 </template>
-

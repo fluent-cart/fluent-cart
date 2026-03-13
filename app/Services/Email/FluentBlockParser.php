@@ -3,6 +3,38 @@
 namespace FluentCart\App\Services\Email;
 
 use FluentCart\App\App;
+use FluentCart\App\Services\Email\Blocks\ButtonBlock;
+use FluentCart\App\Services\Email\Blocks\ButtonsBlock;
+use FluentCart\App\Services\Email\Blocks\CodeBlock;
+use FluentCart\App\Services\Email\Blocks\ColumnBlock;
+use FluentCart\App\Services\Email\Blocks\ColumnsBlock;
+use FluentCart\App\Services\Email\Blocks\CoverBlock;
+use FluentCart\App\Services\Email\Blocks\GroupBlock;
+use FluentCart\App\Services\Email\Blocks\HeadingBlock;
+use FluentCart\App\Services\Email\Blocks\ImageBlock;
+use FluentCart\App\Services\Email\Blocks\ListBlock;
+use FluentCart\App\Services\Email\Blocks\ListItemBlock;
+use FluentCart\App\Services\Email\Blocks\MediaTextBlock;
+use FluentCart\App\Services\Email\Blocks\ParagraphBlock;
+use FluentCart\App\Services\Email\Blocks\PreformattedBlock;
+use FluentCart\App\Services\Email\Blocks\PullquoteBlock;
+use FluentCart\App\Services\Email\Blocks\QuoteBlock;
+use FluentCart\App\Services\Email\Blocks\SeparatorBlock;
+use FluentCart\App\Services\Email\Blocks\SocialLinksBlock;
+use FluentCart\App\Services\Email\Blocks\SpacerBlock;
+use FluentCart\App\Services\Email\Blocks\TableBlock;
+use FluentCart\App\Services\Email\Blocks\VerseBlock;
+use FluentCart\App\Services\Email\Blocks\EmailRowBlock;
+use FluentCart\App\Services\Email\Blocks\OrderItemsLoopBlock;
+use FluentCart\App\Services\Email\Blocks\LicenseDetailsLoopBlock;
+use FluentCart\App\Services\Email\Blocks\DownloadDetailsLoopBlock;
+use FluentCart\App\Services\Email\Blocks\SubscriptionDetailsLoopBlock;
+use FluentCart\App\Services\Email\Blocks\ShortcodeConditionBlock;
+use FluentCart\App\Services\Email\Blocks\ConditionContentBlock;
+use FluentCart\App\Services\Email\Blocks\ConditionFallbackBlock;
+use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Hooks\Handlers\FluentCartBlockEditorHandler;
+use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Support\Arr;
 
 /**
@@ -19,6 +51,16 @@ class FluentBlockParser
         $this->data = $data;
     }
 
+    private function isEmailEditorBlock($blockName)
+    {
+        foreach (FluentCartBlockEditorHandler::getEmailEditorBlocks() as $blockClass) {
+            if ($blockName === 'fluent-cart/' . $blockClass::getEditorName()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Parse Gutenberg blocks and convert to email HTML
      *
@@ -27,13 +69,7 @@ class FluentBlockParser
      */
     public function parse($content)
     {
-        // Parse blocks using WordPress function if available
-        if (function_exists('parse_blocks')) {
-            $blocks = parse_blocks($content);
-        } else {
-            // Fallback: use custom parser
-            $blocks = $this->parseBlocksManually($content);
-        }
+        $blocks = parse_blocks($content);
 
         $css = $this->getCommonStyles();
 
@@ -45,45 +81,27 @@ class FluentBlockParser
     }
 
     /**
-     * Manual block parser (fallback if parse_blocks not available)
+     * Public proxy for renderBlocks — allows block renderers to
+     * render nested inner blocks without using reflection.
+     *
+     * @param array $blocks
+     * @return string
      */
-    private function parseBlocksManually($content)
+    public function renderNestedBlocks(array $blocks): string
     {
-        $blocks = [];
-        $pattern = '/<!--\s+wp:([a-z][a-z0-9_-]*\/)?([a-z][a-z0-9_-]*)\s+(\{.*?\})?\s+(\/)?-->/';
+        return $this->renderBlocks($blocks, true);
+    }
 
-        preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE);
-
-        $lastOffset = 0;
-        foreach ($matches[0] as $index => $match) {
-            $blockName = ($matches[1][$index][0] ?? '') . $matches[2][$index][0];
-            $attrs = $matches[3][$index][0] ?? '{}';
-            $isSelfClosing = !empty($matches[4][$index][0]);
-
-            $blockStart = $match[1] + strlen($match[0]);
-
-            // Find closing tag if not self-closing
-            if (!$isSelfClosing) {
-                $closingPattern = '/<!--\s+\/wp:' . preg_quote($blockName, '/') . '\s+-->/';
-                if (preg_match($closingPattern, $content, $closeMatch, PREG_OFFSET_CAPTURE, $blockStart)) {
-                    $innerHTML = substr($content, $blockStart, $closeMatch[0][1] - $blockStart);
-                    $lastOffset = $closeMatch[0][1] + strlen($closeMatch[0][0]);
-                } else {
-                    $innerHTML = '';
-                }
-            } else {
-                $innerHTML = '';
-            }
-
-            $blocks[] = [
-                'blockName'   => $blockName,
-                'attrs'       => json_decode($attrs, true) ?? [],
-                'innerHTML'   => trim($innerHTML),
-                'innerBlocks' => []
-            ];
-        }
-
-        return $blocks;
+    /**
+     * Public proxy for renderBlock — allows block renderers to
+     * render a single nested block without using reflection.
+     *
+     * @param array $block
+     * @return string
+     */
+    public function renderNestedBlock(array $block): string
+    {
+        return $this->renderBlock($block);
     }
 
     /**
@@ -126,52 +144,55 @@ class FluentBlockParser
         // Handle different block types
         switch ($blockName) {
             case 'core/paragraph':
-                return $this->renderParagraph($block, $innerHTML, $attrs);
+                return (new ParagraphBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/heading':
-                return $this->renderHeading($innerHTML, $attrs);
+                return (new HeadingBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/image':
-                return $this->renderImage($attrs, $innerHTML);
+                return (new ImageBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/list':
-                return $this->renderList($innerHTML, $innerBlocks, $attrs);
+                return (new ListBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/list-item':
-                return $this->renderListItem($innerHTML, $attrs);
+                return (new ListItemBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/quote':
-                return $this->renderQuote($innerHTML, $attrs);
+                return (new QuoteBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/button':
-                return $this->renderButton($innerHTML, $attrs);
+                return (new ButtonBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/buttons':
-                return $this->renderButtons($block, $innerBlocks, $attrs);
+                return (new ButtonsBlock($attrs, $innerHTML, $innerBlocks, $this, $block))->render();
 
             case 'core/columns':
-                return $this->renderColumns($innerBlocks, $attrs);
+                return (new ColumnsBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/column':
-                return $this->renderColumn($innerBlocks, $attrs, $innerHTML);
+                return (new ColumnBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/separator':
-                return $this->renderSeparator($attrs);
+                return (new SeparatorBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/spacer':
-                return $this->renderSpacer($attrs);
+                return (new SpacerBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/group':
-                return $this->renderGroup($innerBlocks, $attrs, $innerHTML, $isRoot);
+                return (new GroupBlock($attrs, $innerHTML, $innerBlocks, $this))->setIsRoot($isRoot)->render();
 
             case 'core/cover':
-                return $this->renderCover($innerBlocks, $attrs, $innerHTML);
+                return (new CoverBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
+
+            case 'core/media-text':
+                return (new MediaTextBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/table':
-                return $this->renderTable($innerHTML, $attrs);
+                return (new TableBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/social-links':
-                return $this->renderSocialLinks($innerBlocks, $attrs, $innerHTML);
+                return (new SocialLinksBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/social-link':
                 return ''; // Handled by parent social-links
@@ -182,37 +203,88 @@ class FluentBlockParser
                 return $this->wrapInTable($innerHTML);
 
             case 'core/preformatted':
-                // Preformatted text block
-                return $this->wrapInTable("<pre style=\"font-family: monospace; background: #f4f4f4; padding: 15px; overflow-x: auto; border-radius: 4px;\">{$innerHTML}</pre>");
+                return (new PreformattedBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/code':
-                // Code block
-                return $this->wrapInTable("<pre style=\"font-family: 'Courier New', monospace; background: #282c34; color: #abb2bf; padding: 20px; overflow-x: auto; border-radius: 4px;\">{$innerHTML}</pre>");
+                return (new CodeBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/pullquote':
-                // Pullquote block (similar to quote but more prominent)
-                $styles = "margin: 30px 0; padding: 30px; border-top: 4px solid #000; border-bottom: 4px solid #000; text-align: center; font-size: 20px; font-style: italic;";
-                return $this->wrapInTable("<blockquote style=\"{$styles}\">{$innerHTML}</blockquote>");
+                return (new PullquoteBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
 
             case 'core/verse':
-                // Verse block (for poetry)
-                $styles = "font-family: serif; white-space: pre-wrap; margin: 20px 0; padding: 20px; background: #f9f9f9;";
-                return $this->wrapInTable("<pre style=\"{$styles}\">{$innerHTML}</pre>");
+                return (new VerseBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
             case 'fluent-cart/order-wrapper':
                 return $this->renderOrderWrapper($innerBlocks, $attrs, $innerHTML);
             case 'fluent-cart/order-items':
                 return $this->renderOrderItemsTable($innerHTML, $attrs);
+            case 'fluent-cart/email-order-items':
+                return (new OrderItemsLoopBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
+            case 'fluent-cart/email-subscription-details':
+                return (new SubscriptionDetailsLoopBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
             case 'fluent-cart/subscription-details':
                 return $this->renderOrderSubscriptionsDetails($innerHTML, $attrs);
+            case 'fluent-cart/email-license-details':
+                return (new LicenseDetailsLoopBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
+            case 'fluent-cart/email-download-details':
+                return (new DownloadDetailsLoopBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
             case 'fluent-cart/license-details':
                 return $this->renderOrderLicenseDetails($innerHTML, $attrs);
             case 'fluent-cart/download-details':
                 return $this->renderOrderDownloadsDetails($innerHTML, $attrs);
             case 'fluent-cart/order-addresses':
                 return $this->renderOrderAddressesDetails($innerHTML, $attrs);
+            case 'fluent-cart/email-row-header':
+                return (new EmailRowBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setRowType('header')->render();
+            case 'fluent-cart/email-row-body':
+                return (new EmailRowBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setRowType('body')->render();
+            case 'fluent-cart/email-row-footer':
+                return (new EmailRowBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setRowType('footer')->render();
+            case 'fluent-cart/email-order-addresses':
+                return (new \FluentCart\App\Services\Email\Blocks\OrderAddressesBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
+            case 'fluent-cart/email-address-container':
+                return (new \FluentCart\App\Services\Email\Blocks\AddressContainerBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
+            case 'fluent-cart/email-billing-address':
+            case 'fluent-cart/email-shipping-address':
+                return $this->renderBlocks($innerBlocks, true);
             case 'fluent-cart/email-header':
-                return $this->renderEmailHeader($innerHTML, $attrs);
+            case 'fluent-cart/email-order-summary':
+            case 'fluent-cart/email-order-totals':
+                return $this->renderEmailWrapperBlock($innerBlocks, $attrs);
+            case 'fluent-cart/shortcode-condition':
+                return (new ShortcodeConditionBlock($attrs, $innerHTML, $innerBlocks, $this))
+                    ->setParserData($this->data)->render();
+            case 'fluent-cart/condition-content':
+                return (new ConditionContentBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
+            case 'fluent-cart/condition-fallback':
+                return (new ConditionFallbackBlock($attrs, $innerHTML, $innerBlocks, $this))->render();
+            case 'fluent-cart/celebration':
+                return $this->renderCelebration($attrs);
             default:
+                if ($this->isEmailEditorBlock($blockName)) {
+                    return render_block($block);
+                }
+
+                // Allow third-party blocks to render via action hook
+                ob_start();
+                do_action('fluent_cart/block_editor/render_block', [
+                    'block'=> $block, 
+                    'block_name'=>$blockName, 
+                    'attributes'=>$attrs
+                ]);
+                $thirdPartyContent = ob_get_clean();
+                if (!empty($thirdPartyContent)) {
+                    return $thirdPartyContent;
+                }
+
                 // Fallback for unrecognized blocks
                 if (!empty($innerHTML)) {
                     return $this->wrapInTable($innerHTML);
@@ -269,6 +341,7 @@ class FluentBlockParser
         return '{{order.items_table}}';
     }
 
+
     public function renderOrderSubscriptionsDetails($innerHTML, $attrs)
     {
         return '{{order.subscriptions_details}}';
@@ -295,6 +368,144 @@ class FluentBlockParser
     }
 
     /**
+     * Render an email wrapper block (email-header, email-order-summary, etc.)
+     * with its own style attributes (background, border, padding) applied.
+     */
+    private function renderEmailWrapperBlock($innerBlocks, $attrs)
+    {
+        $content = $this->renderBlocks($innerBlocks, true);
+
+        if (empty(trim($content))) {
+            return '';
+        }
+
+        // Build inline styles from the wrapper block's own attributes
+        $style = Arr::get($attrs, 'style', []);
+        $tdStyles = '';
+
+        // Background color (preset or inline)
+        if (!empty($attrs['backgroundColor'])) {
+            $tdStyles .= 'background-color: ' . $this->getColorFromSlug($attrs['backgroundColor']) . ';';
+        } elseif (!empty($style['color']['background'])) {
+            $tdStyles .= 'background-color: ' . $this->getColorFromSlug($style['color']['background']) . ';';
+        }
+
+        // Gradient
+        if (!empty($style['color']['gradient'])) {
+            $tdStyles .= ' background: ' . $style['color']['gradient'] . ';';
+        }
+
+        // Detect if wrapper has visual styling (background/border/gradient)
+        $hasBackground = !empty($attrs['backgroundColor'])
+            || !empty($style['color']['background'])
+            || !empty($style['color']['gradient']);
+        $hasBorder = !empty($style['border']) || !empty($attrs['borderColor']);
+
+        // Padding
+        $padding = Arr::get($style, 'spacing.padding', []);
+        if (!empty($padding)) {
+            if (is_string($padding)) {
+                $tdStyles .= " padding: {$this->resolveSpacingValue($padding)};";
+            } elseif (is_array($padding)) {
+                foreach (['top', 'right', 'bottom', 'left'] as $side) {
+                    if (isset($padding[$side])) {
+                        $tdStyles .= " padding-{$side}: {$this->resolveSpacingValue($padding[$side])};";
+                    }
+                }
+            }
+        } elseif ($hasBackground || $hasBorder) {
+            // Add default padding so background/border is visible around inner content
+            $tdStyles .= ' padding: 8px;';
+        }
+
+        // Margin
+        $margin = Arr::get($style, 'spacing.margin', []);
+        if (!empty($margin)) {
+            if (is_string($margin)) {
+                $tdStyles .= " margin: {$this->resolveSpacingValue($margin)};";
+            } elseif (is_array($margin)) {
+                foreach (['top', 'right', 'bottom', 'left'] as $side) {
+                    if (isset($margin[$side])) {
+                        $tdStyles .= " margin-{$side}: {$this->resolveSpacingValue($margin[$side])};";
+                    }
+                }
+            }
+        }
+
+        // Border
+        $border = Arr::get($style, 'border', []);
+        if (!empty($border) || !empty($attrs['borderColor'])) {
+            $hasShorthand = isset($border['width']) || isset($border['color']) || !empty($attrs['borderColor']);
+            if ($hasShorthand) {
+                $tdStyles .= ' border-width: ' . ($border['width'] ?? '1px') . ';';
+                $tdStyles .= ' border-style: ' . ($border['style'] ?? 'solid') . ';';
+                if (isset($border['color'])) {
+                    $tdStyles .= ' border-color: ' . $this->getColorFromSlug($border['color']) . ';';
+                }
+                if (isset($attrs['borderColor'])) {
+                    $tdStyles .= ' border-color: ' . $this->getColorFromSlug($attrs['borderColor']) . ';';
+                }
+            } elseif (isset($border['style'])) {
+                $tdStyles .= " border-style: {$border['style']};";
+            }
+
+            // Border radius
+            if (isset($border['radius'])) {
+                $radius = $border['radius'];
+                if (is_string($radius)) {
+                    $tdStyles .= " border-radius: {$radius};";
+                } elseif (is_array($radius)) {
+                    $map = ['topLeft' => 'top-left', 'topRight' => 'top-right', 'bottomLeft' => 'bottom-left', 'bottomRight' => 'bottom-right'];
+                    foreach ($map as $key => $css) {
+                        if (isset($radius[$key])) {
+                            $tdStyles .= " border-{$css}-radius: {$radius[$key]};";
+                        }
+                    }
+                }
+            }
+
+            // Per-side borders
+            foreach (['top', 'right', 'bottom', 'left'] as $side) {
+                if (isset($border[$side])) {
+                    $s = $border[$side];
+                    $w = $s['width'] ?? '1px';
+                    $bs = $s['style'] ?? 'solid';
+                    $c = isset($s['color']) ? $this->getColorFromSlug($s['color']) : '#000';
+                    $tdStyles .= " border-{$side}: {$w} {$bs} {$c};";
+                }
+            }
+        }
+
+        // If no styles were applied, return content directly
+        if (empty(trim($tdStyles))) {
+            return $content;
+        }
+
+        return "<div style=\"{$tdStyles}\">{$content}</div>";
+    }
+
+    /**
+     * Render celebration block directly for email (avoids render_block CSS bloat).
+     */
+    private function renderCelebration($attrs)
+    {
+        $celebrationType = Arr::get($attrs, 'celebration_type', 'order');
+        if (!in_array($celebrationType, ['order', 'renewal'], true)) {
+            $celebrationType = 'order';
+        }
+
+        $text = TemplateService::getCelebration($celebrationType);
+
+        if (empty($text)) {
+            return '';
+        }
+
+        return App::make('view')->make('emails.parts.celebration', [
+            'text' => $text
+        ]);
+    }
+
+    /**
      * Render paragraph block
      */
     private function renderParagraph($block, $content, $attrs)
@@ -306,17 +517,6 @@ class FluentBlockParser
             //  return '';
         }
 
-        // get style attribute value from p
-        $styleAttr = '';
-        if (preg_match('/<p[^>]*style=["\']([^"\']*)["\'][^>]*>/s', $content, $styleMatch)) {
-            $styleAttr = $styleMatch[1];
-        }
-
-        $classAttr = '';
-        if (preg_match('/<p[^>]*class=["\']([^"\']*)["\'][^>]*>/s', $content, $classMatch)) {
-            $classAttr = $classMatch[1];
-        }
-
         // Extract content if it's wrapped in <p> tags
         if (preg_match('/<p[^>]*>(.*?)<\/p>/s', $content, $matches)) {
             $innerContent = $matches[1];
@@ -324,16 +524,189 @@ class FluentBlockParser
             $innerContent = $content;
         }
 
-        $classAttr .= ' fluent-paragraph';
-
         if (!$innerContent) {
             // return '';
         }
 
-        return "<table role=\"presentation\" class=\"{$classAttr}\" style=\"{$styleAttr}\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">
+        // Build styles from attrs
+        $style = $attrs['style'] ?? [];
+        $paragraphStyles = "display: block; margin: 0; font-size: inherit; line-height: inherit;";
+        $wrapperStyles = "padding: 0;";
+
+        // Handle text color
+        $textColor = null;
+        if (isset($attrs['textColor'])) {
+            $textColor = $this->getColorFromSlug($attrs['textColor']);
+            $paragraphStyles .= " color: {$textColor};";
+        }
+        if (!empty($style['color']['text'])) {
+            $textColor = $this->getColorFromSlug($style['color']['text']);
+            $paragraphStyles .= " color: {$textColor};";
+        }
+
+        // Handle background color
+        if (isset($attrs['backgroundColor'])) {
+            $wrapperStyles .= " background-color: {$this->getColorFromSlug($attrs['backgroundColor'])};";
+        }
+        if (!empty($style['color']['background'])) {
+            $wrapperStyles .= " background-color: {$this->getColorFromSlug($style['color']['background'])};";
+        }
+
+        // Handle gradient background
+        if (!empty($style['color']['gradient'])) {
+            $wrapperStyles .= " background: {$style['color']['gradient']};";
+        }
+
+        // Handle typography
+        if (isset($style['typography'])) {
+            $typography = $style['typography'];
+
+            if (isset($typography['fontSize'])) {
+                $paragraphStyles .= " font-size: {$typography['fontSize']};";
+            }
+            if (isset($typography['fontFamily'])) {
+                $paragraphStyles .= " font-family: {$typography['fontFamily']};";
+            }
+            if (isset($typography['fontWeight'])) {
+                $paragraphStyles .= " font-weight: {$typography['fontWeight']};";
+            }
+            if (isset($typography['lineHeight'])) {
+                $paragraphStyles .= " line-height: {$typography['lineHeight']};";
+            }
+            if (isset($typography['textTransform'])) {
+                $paragraphStyles .= " text-transform: {$typography['textTransform']};";
+            }
+            if (isset($typography['letterSpacing'])) {
+                $paragraphStyles .= " letter-spacing: {$typography['letterSpacing']};";
+            }
+            if (isset($typography['textDecoration'])) {
+                $paragraphStyles .= " text-decoration: {$typography['textDecoration']};";
+            }
+            if (isset($typography['fontStyle'])) {
+                $paragraphStyles .= " font-style: {$typography['fontStyle']};";
+            }
+        }
+
+        // Handle font size preset
+        if (isset($attrs['fontSize'])) {
+            $fontSize = $this->getFontSizeFromSlug($attrs['fontSize']);
+            $paragraphStyles .= " font-size: {$fontSize};";
+        }
+
+        // Handle text alignment
+        if (isset($attrs['align'])) {
+            $paragraphStyles .= " text-align: {$attrs['align']};";
+        }
+
+        // Handle spacing (padding)
+        if (isset($style['spacing']['padding'])) {
+            $padding = $style['spacing']['padding'];
+            if (is_string($padding)) {
+                $wrapperStyles .= " padding: {$padding};";
+            } elseif (is_array($padding)) {
+                $paddingParts = [];
+                if (isset($padding['top'])) $paddingParts[] = "padding-top: {$padding['top']};";
+                if (isset($padding['right'])) $paddingParts[] = "padding-right: {$padding['right']};";
+                if (isset($padding['bottom'])) $paddingParts[] = "padding-bottom: {$padding['bottom']};";
+                if (isset($padding['left'])) $paddingParts[] = "padding-left: {$padding['left']};";
+                $wrapperStyles .= " " . implode(" ", $paddingParts);
+            }
+        }
+
+        // Handle spacing (margin)
+        if (isset($style['spacing']['margin'])) {
+            $margin = $style['spacing']['margin'];
+            if (is_string($margin)) {
+                $paragraphStyles .= " margin: {$margin};";
+            } elseif (is_array($margin)) {
+                if (isset($margin['top'])) $paragraphStyles .= " margin-top: {$margin['top']};";
+                if (isset($margin['right'])) $paragraphStyles .= " margin-right: {$margin['right']};";
+                if (isset($margin['bottom'])) $paragraphStyles .= " margin-bottom: {$margin['bottom']};";
+                if (isset($margin['left'])) $paragraphStyles .= " margin-left: {$margin['left']};";
+            }
+        }
+
+        // Handle border
+        if (isset($style['border'])) {
+            $border = $style['border'];
+
+            if (isset($border['width'])) {
+                $wrapperStyles .= " border-width: {$border['width']};";
+            }
+            if (isset($border['style'])) {
+                $wrapperStyles .= " border-style: {$border['style']};";
+            }
+            if (isset($border['color'])) {
+                $wrapperStyles .= " border-color: {$this->getColorFromSlug($border['color'])};";
+            }
+            if (isset($border['radius'])) {
+                $borderRadius = $border['radius'];
+                if (is_string($borderRadius)) {
+                    $wrapperStyles .= " border-radius: {$borderRadius};";
+                } elseif (is_array($borderRadius)) {
+                    if (isset($borderRadius['topLeft'])) $wrapperStyles .= " border-top-left-radius: {$borderRadius['topLeft']};";
+                    if (isset($borderRadius['topRight'])) $wrapperStyles .= " border-top-right-radius: {$borderRadius['topRight']};";
+                    if (isset($borderRadius['bottomLeft'])) $wrapperStyles .= " border-bottom-left-radius: {$borderRadius['bottomLeft']};";
+                    if (isset($borderRadius['bottomRight'])) $wrapperStyles .= " border-bottom-right-radius: {$borderRadius['bottomRight']};";
+                }
+            }
+
+            // Individual borders
+            if (isset($border['top'])) {
+                $wrapperStyles .= " border-top: {$border['top']['width']} {$border['top']['style']} {$this->getColorFromSlug($border['top']['color'])};";
+            }
+            if (isset($border['right'])) {
+                $wrapperStyles .= " border-right: {$border['right']['width']} {$border['right']['style']} {$this->getColorFromSlug($border['right']['color'])};";
+            }
+            if (isset($border['bottom'])) {
+                $wrapperStyles .= " border-bottom: {$border['bottom']['width']} {$border['bottom']['style']} {$this->getColorFromSlug($border['bottom']['color'])};";
+            }
+            if (isset($border['left'])) {
+                $wrapperStyles .= " border-left: {$border['left']['width']} {$border['left']['style']} {$this->getColorFromSlug($border['left']['color'])};";
+            }
+        }
+
+        // Handle borderColor attribute
+        if (isset($attrs['borderColor'])) {
+            $wrapperStyles .= " border-color: {$this->getColorFromSlug($attrs['borderColor'])};";
+        }
+
+        // Handle link colors
+        $linkColor = null;
+        if (isset($style['elements']['link']['color']['text'])) {
+            $linkColorValue = $style['elements']['link']['color']['text'];
+            $linkColor = $this->getColorFromSlug($linkColorValue);
+        }
+
+        // If no specific link color, use text color
+        if (!$linkColor && $textColor) {
+            $linkColor = $textColor;
+        }
+
+        // Apply link styles to anchor tags
+        if ($linkColor) {
+            $innerContent = preg_replace_callback(
+                    '/<a([^>]*)>/i',
+                    function($matches) use ($linkColor) {
+                        $existingAttrs = $matches[1];
+                        if (preg_match('/style=["\']([^"\']*)["\']/', $existingAttrs, $styleMatch)) {
+                            $existingStyle = $styleMatch[1];
+                            $newStyle = $existingStyle . " color: {$linkColor};";
+                            return '<a' . preg_replace('/style=["\'][^"\']*["\']/', 'style="' . $newStyle . '"', $existingAttrs) . '>';
+                        } else {
+                            return '<a' . $existingAttrs . ' style="color: ' . $linkColor . ';">';
+                        }
+                    },
+                    $innerContent
+            );
+        }
+
+        $classAttr = 'fluent-paragraph';
+
+        return "<table role=\"presentation\" class=\"{$classAttr}\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">
     <tr>
-        <td style=\"padding: 0;\">
-        <p style=\"display: block; margin: 0; font-size: inherit;line-height: inherit;\">{$innerContent}</p>
+        <td style=\"{$wrapperStyles}\">
+            <p style=\"{$paragraphStyles}\">{$innerContent}</p>
         </td>
     </tr>
 </table>";
@@ -348,7 +721,8 @@ class FluentBlockParser
         $align = $attrs['align'] ?? 'left';
         $style = $attrs['style'] ?? [];
 
-        $fontSize = [
+        // Default font sizes
+        $defaultFontSize = [
             1 => '32px',
             2 => '28px',
             3 => '24px',
@@ -357,12 +731,158 @@ class FluentBlockParser
             6 => '16px'
         ][$level] ?? '24px';
 
+        // Base styles
         $styles = "margin: 0 0 16px 0; padding: 0; font-weight: bold;";
-        $styles .= " font-size: {$fontSize}; line-height: 1.3;";
+        $styles .= " font-size: {$defaultFontSize}; line-height: 1.3;";
         $styles .= " text-align: {$align};";
 
+        // Handle text color
+        $textColor = null;
+        if (isset($attrs['textColor'])) {
+            $textColor = $this->getColorFromSlug($attrs['textColor']);
+            $styles .= " color: {$textColor};";
+        }
         if (!empty($style['color']['text'])) {
-            $styles .= " color: {$style['color']['text']};";
+            $textColor = $this->getColorFromSlug($style['color']['text']);
+            $styles .= " color: {$textColor};";
+        }
+
+        // Handle background color
+        if (isset($attrs['backgroundColor'])) {
+            $styles .= " background-color: {$this->getColorFromSlug($attrs['backgroundColor'])};";
+        }
+        if (!empty($style['color']['background'])) {
+            $styles .= " background-color: {$this->getColorFromSlug($style['color']['background'])};";
+        }
+
+        // Handle gradient background
+        if (!empty($style['color']['gradient'])) {
+            $styles .= " background: {$style['color']['gradient']};";
+            $styles .= " -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;";
+        }
+
+        // Handle typography
+        if (isset($style['typography'])) {
+            $typography = $style['typography'];
+
+            if (isset($typography['fontSize'])) {
+                $styles .= " font-size: {$typography['fontSize']};";
+            }
+            if (isset($typography['fontFamily'])) {
+                $styles .= " font-family: {$typography['fontFamily']};";
+            }
+            if (isset($typography['fontWeight'])) {
+                $styles .= " font-weight: {$typography['fontWeight']};";
+            }
+            if (isset($typography['lineHeight'])) {
+                $styles .= " line-height: {$typography['lineHeight']};";
+            }
+            if (isset($typography['textTransform'])) {
+                $styles .= " text-transform: {$typography['textTransform']};";
+            }
+            if (isset($typography['letterSpacing'])) {
+                $styles .= " letter-spacing: {$typography['letterSpacing']};";
+            }
+            if (isset($typography['textDecoration'])) {
+                $styles .= " text-decoration: {$typography['textDecoration']};";
+            }
+            if (isset($typography['fontStyle'])) {
+                $styles .= " font-style: {$typography['fontStyle']};";
+            }
+        }
+
+        // Handle font size preset (using theme font sizes)
+        if (isset($attrs['fontSize'])) {
+            $fontSize = $this->getFontSizeFromSlug($attrs['fontSize']);
+            $styles .= " font-size: {$fontSize};";
+        }
+
+        // Handle spacing (padding)
+        if (isset($style['spacing']['padding'])) {
+            $padding = $style['spacing']['padding'];
+            if (is_string($padding)) {
+                $styles .= " padding: {$padding};";
+            } elseif (is_array($padding)) {
+                if (isset($padding['top'])) $styles .= " padding-top: {$padding['top']};";
+                if (isset($padding['right'])) $styles .= " padding-right: {$padding['right']};";
+                if (isset($padding['bottom'])) $styles .= " padding-bottom: {$padding['bottom']};";
+                if (isset($padding['left'])) $styles .= " padding-left: {$padding['left']};";
+            }
+        }
+
+        // Handle spacing (margin)
+        if (isset($style['spacing']['margin'])) {
+            $margin = $style['spacing']['margin'];
+            if (is_string($margin)) {
+                $styles .= " margin: {$margin};";
+            } elseif (is_array($margin)) {
+                if (isset($margin['top'])) $styles .= " margin-top: {$margin['top']};";
+                if (isset($margin['right'])) $styles .= " margin-right: {$margin['right']};";
+                if (isset($margin['bottom'])) $styles .= " margin-bottom: {$margin['bottom']};";
+                if (isset($margin['left'])) $styles .= " margin-left: {$margin['left']};";
+            }
+        }
+
+        // Handle border
+        if (isset($style['border'])) {
+            $border = $style['border'];
+
+            // Border width
+            if (isset($border['width'])) {
+                $styles .= " border-width: {$border['width']};";
+            }
+
+            // Border style
+            if (isset($border['style'])) {
+                $styles .= " border-style: {$border['style']};";
+            }
+
+            // Border color
+            if (isset($border['color'])) {
+                $styles .= " border-color: {$this->getColorFromSlug($border['color'])};";
+            }
+
+            // Border radius
+            if (isset($border['radius'])) {
+                $borderRadius = $border['radius'];
+                if (is_string($borderRadius)) {
+                    $styles .= " border-radius: {$borderRadius};";
+                } elseif (is_array($borderRadius)) {
+                    if (isset($borderRadius['topLeft'])) $styles .= " border-top-left-radius: {$borderRadius['topLeft']};";
+                    if (isset($borderRadius['topRight'])) $styles .= " border-top-right-radius: {$borderRadius['topRight']};";
+                    if (isset($borderRadius['bottomLeft'])) $styles .= " border-bottom-left-radius: {$borderRadius['bottomLeft']};";
+                    if (isset($borderRadius['bottomRight'])) $styles .= " border-bottom-right-radius: {$borderRadius['bottomRight']};";
+                }
+            }
+
+            // Individual borders
+            if (isset($border['top'])) {
+                $styles .= " border-top: {$border['top']['width']} {$border['top']['style']} {$this->getColorFromSlug($border['top']['color'])};";
+            }
+            if (isset($border['right'])) {
+                $styles .= " border-right: {$border['right']['width']} {$border['right']['style']} {$this->getColorFromSlug($border['right']['color'])};";
+            }
+            if (isset($border['bottom'])) {
+                $styles .= " border-bottom: {$border['bottom']['width']} {$border['bottom']['style']} {$this->getColorFromSlug($border['bottom']['color'])};";
+            }
+            if (isset($border['left'])) {
+                $styles .= " border-left: {$border['left']['width']} {$border['left']['style']} {$this->getColorFromSlug($border['left']['color'])};";
+            }
+        }
+
+        // Handle borderColor attribute
+        if (isset($attrs['borderColor'])) {
+            $styles .= " border-color: {$this->getColorFromSlug($attrs['borderColor'])};";
+        }
+
+        // Handle text shadow
+        if (isset($style['typography']['textShadow'])) {
+            $styles .= " text-shadow: {$style['typography']['textShadow']};";
+        }
+
+        // Handle custom CSS
+        if (isset($style['css'])) {
+            $styles .= " {$style['css']};";
         }
 
         // Extract content if it's wrapped in heading tags
@@ -370,6 +890,38 @@ class FluentBlockParser
             $innerContent = $matches[1];
         } else {
             $innerContent = $content;
+        }
+
+        // Handle anchor tags - apply link color styles
+        $linkColor = null;
+        if (isset($style['elements']['link']['color']['text'])) {
+            $linkColor = $this->getColorFromSlug($style['elements']['link']['color']['text']);
+        }
+
+        // If no specific link color is set, use the heading text color or a default
+        if (!$linkColor && $textColor) {
+            $linkColor = $textColor;
+        }
+
+        if ($linkColor) {
+            // Add inline styles to all anchor tags
+            $innerContent = preg_replace_callback(
+                    '/<a([^>]*)>/i',
+                    function($matches) use ($linkColor) {
+                        $existingAttrs = $matches[1];
+                        // Check if style attribute already exists
+                        if (preg_match('/style=["\']([^"\']*)["\']/', $existingAttrs, $styleMatch)) {
+                            // Append to existing style
+                            $existingStyle = $styleMatch[1];
+                            $newStyle = $existingStyle . " color: {$linkColor}; text-decoration: underline;";
+                            return '<a' . preg_replace('/style=["\'][^"\']*["\']/', 'style="' . $newStyle . '"', $existingAttrs) . '>';
+                        } else {
+                            // Add new style attribute
+                            return '<a' . $existingAttrs . ' style="color: ' . $linkColor . '; text-decoration: underline;">';
+                        }
+                    },
+                    $innerContent
+            );
         }
 
         return $this->wrapInTable("<h{$level} style=\"{$styles}\">{$innerContent}</h{$level}>");
@@ -559,6 +1111,11 @@ class FluentBlockParser
                 $rawText = $matches[2];
                 // Remove all HTML tags but keep the text
                 $text = trim(preg_replace('/<[^>]*>/', '', $rawText));
+            } elseif (preg_match('/<a[^>]*>(.*?)<\/a>/s', $content, $matches)) {
+                $rawText = $matches[1];
+                // Remove all HTML tags but keep the text
+                $text = trim(preg_replace('/<[^>]*>/', '', $rawText));
+                // URL stays as '#' (default)
             }
         }
 
@@ -575,55 +1132,165 @@ class FluentBlockParser
             $text = 'Button';
         }
 
-        $backgroundColor = $attrs['backgroundColor'] ?? '';
-        $textColor = $attrs['textColor'] ?? '';
+
         $style = $attrs['style'] ?? [];
         $className = $attrs['className'] ?? '';
+
+        // Default button styles
+        $buttonStyles = "display: inline-block; text-align:center; padding: 12px 24px; text-decoration: none; font-weight: bold;";
 
         // Default colors
         $bgColor = '#0073aa';
         $txtColor = '#ffffff';
 
-        // Priority order for background color:
-        // 1. Inline style from content HTML
-        // 2. style.color.background from attrs
-        // 3. backgroundColor slug from attrs
-
-        if (!empty($content) && preg_match('/background-color:\s*([^;"\'>]+)/i', $content, $bgMatch)) {
-            $bgColor = trim($bgMatch[1]);
-        } elseif (!empty($style['color']['background'])) {
-            $bgColor = $style['color']['background'];
-        } elseif (!empty($backgroundColor)) {
-            $bgColor = $this->getColorFromSlug($backgroundColor);
+        // Handle background color
+        if (isset($attrs['backgroundColor'])) {
+            $bgColor = $this->getColorFromSlug($attrs['backgroundColor']);
+        }
+        if (!empty($style['color']['background'])) {
+            $bgColor = $this->getColorFromSlug($style['color']['background']);
         }
 
-        // Priority order for text color:
-        // 1. Inline style from content HTML  
-        // 2. style.color.text from attrs
-        // 3. textColor slug from attrs
-
-        if (!empty($content) && preg_match('/(?:^|;|\s)color:\s*([^;"\'>]+)/i', $content, $colorMatch)) {
-            $txtColor = trim($colorMatch[1]);
-        } elseif (!empty($style['color']['text'])) {
-            $txtColor = $style['color']['text'];
-        } elseif (!empty($textColor)) {
-            $txtColor = $this->getColorFromSlug($textColor);
+        // Handle text color
+        if (isset($attrs['textColor'])) {
+            $txtColor = $this->getColorFromSlug($attrs['textColor']);
         }
+        if (!empty($style['color']['text'])) {
+            $txtColor = $this->getColorFromSlug($style['color']['text']);
+        }
+
+        // Handle gradient background
+        $hasGradient = false;
+        if (!empty($style['color']['gradient'])) {
+            $hasGradient = true;
+            $bgColor = $style['color']['gradient'];
+        }
+
 
         // Check if it's an outline button
         $isOutline = strpos($className, 'is-style-outline') !== false;
 
+        // Apply base background and text color
         if ($isOutline) {
-            $buttonStyles = "display: inline-block; padding: 12px 24px; margin: 5px;";
-            $buttonStyles .= " background-color: transparent; color: {$bgColor};";
-            $buttonStyles .= " border: 2px solid {$bgColor};";
-            $buttonStyles .= " text-decoration: none; border-radius: 4px; font-weight: bold;";
+            $buttonStyles .= " background-color: transparent; color: {$txtColor};";
+            $buttonStyles .= " border: 2px solid {$txtColor};";
         } else {
-            $buttonStyles = "display: inline-block; padding: 12px 24px; margin: 5px;";
-            $buttonStyles .= " background-color: {$bgColor}; color: {$txtColor};";
-            $buttonStyles .= " text-decoration: none; border-radius: 4px; font-weight: bold;";
+            if ($hasGradient) {
+                $buttonStyles .= " background: {$bgColor}; color: {$txtColor};";
+            } else {
+                $buttonStyles .= " background-color: {$bgColor}; color: {$txtColor};";
+            }
         }
 
+        // Handle typography
+        if (isset($style['typography'])) {
+            $typography = $style['typography'];
+
+            if (isset($typography['fontSize'])) {
+                $buttonStyles .= " font-size: {$typography['fontSize']};";
+            }
+            if (isset($typography['fontFamily'])) {
+                $buttonStyles .= " font-family: {$typography['fontFamily']};";
+            }
+            if (isset($typography['fontWeight'])) {
+                $buttonStyles .= " font-weight: {$typography['fontWeight']};";
+            }
+            if (isset($typography['lineHeight'])) {
+                $buttonStyles .= " line-height: {$typography['lineHeight']};";
+            }
+            if (isset($typography['textTransform'])) {
+                $buttonStyles .= " text-transform: {$typography['textTransform']};";
+            }
+            if (isset($typography['letterSpacing'])) {
+                $buttonStyles .= " letter-spacing: {$typography['letterSpacing']};";
+            }
+            if (isset($typography['textDecoration'])) {
+                $buttonStyles .= " text-decoration: {$typography['textDecoration']};";
+            }
+        }
+
+        // Handle font size preset
+        if (isset($attrs['fontSize'])) {
+            $fontSize = $this->getFontSizeFromSlug($attrs['fontSize']);
+            $buttonStyles .= " font-size: {$fontSize};";
+        }
+
+        // Handle border
+        if (isset($style['border'])) {
+            $border = $style['border'];
+
+            if (isset($border['width']) && !$isOutline) {
+                $buttonStyles .= " border-width: {$border['width']};";
+            }
+            if (isset($border['style']) && !$isOutline) {
+                $buttonStyles .= " border-style: {$border['style']};";
+            }
+            if (isset($border['color']) && !$isOutline) {
+                $buttonStyles .= " border-color: {$this->getColorFromSlug($border['color'])};";
+            }
+
+            // Border radius
+            if (isset($border['radius'])) {
+                $borderRadius = $border['radius'];
+                if (is_string($borderRadius)) {
+                    $buttonStyles .= " border-radius: {$borderRadius};";
+                } elseif (is_array($borderRadius)) {
+                    if (isset($borderRadius['topLeft'])) $buttonStyles .= " border-top-left-radius: {$borderRadius['topLeft']};";
+                    if (isset($borderRadius['topRight'])) $buttonStyles .= " border-top-right-radius: {$borderRadius['topRight']};";
+                    if (isset($borderRadius['bottomLeft'])) $buttonStyles .= " border-bottom-left-radius: {$borderRadius['bottomLeft']};";
+                    if (isset($borderRadius['bottomRight'])) $buttonStyles .= " border-bottom-right-radius: {$borderRadius['bottomRight']};";
+                }
+            }
+        } else {
+            // Default border radius if not specified
+            $buttonStyles .= " border-radius: 9999px;";
+        }
+
+        // Handle borderColor attribute
+        if (isset($attrs['borderColor']) && !$isOutline) {
+            $buttonStyles .= " border-color: {$this->getColorFromSlug($attrs['borderColor'])};";
+        }
+
+        // Handle spacing (padding)
+        if (isset($style['spacing']['padding'])) {
+            $padding = $style['spacing']['padding'];
+            if (is_string($padding)) {
+                $buttonStyles .= " padding: {$padding};";
+            } elseif (is_array($padding)) {
+                if (isset($padding['top'])) $buttonStyles .= " padding-top: {$padding['top']};";
+                if (isset($padding['right'])) $buttonStyles .= " padding-right: {$padding['right']};";
+                if (isset($padding['bottom'])) $buttonStyles .= " padding-bottom: {$padding['bottom']};";
+                if (isset($padding['left'])) $buttonStyles .= " padding-left: {$padding['left']};";
+            }
+        }
+
+        // Handle spacing (margin) - though margins on inline elements can be tricky in email
+        if (isset($style['spacing']['margin'])) {
+            $margin = $style['spacing']['margin'];
+            if (is_string($margin)) {
+                $buttonStyles .= " margin: {$margin};";
+            } elseif (is_array($margin)) {
+                if (isset($margin['top'])) $buttonStyles .= " margin-top: {$margin['top']};";
+                if (isset($margin['right'])) $buttonStyles .= " margin-right: {$margin['right']};";
+                if (isset($margin['bottom'])) $buttonStyles .= " margin-bottom: {$margin['bottom']};";
+                if (isset($margin['left'])) $buttonStyles .= " margin-left: {$margin['left']};";
+            }
+        }
+
+        // Handle box shadow - using the new helper method
+        if (isset($style['shadow'])) {
+            $shadowValue = $this->getShadowFromSlug($style['shadow']);
+            if ($shadowValue !== 'none') {
+                $buttonStyles .= " box-shadow: {$shadowValue};";
+            }
+        }
+
+        // Handle width
+        if (isset($attrs['width'])) {
+            $buttonStyles .= " width: {$attrs['width']}%;";
+        }
+
+        // Wrap button in a table for better email client compatibility
         return "<a href=\"{$url}\" style=\"{$buttonStyles}\">{$text}</a>";
     }
 
@@ -639,7 +1306,7 @@ class FluentBlockParser
         $columnCount = count($innerBlocks);
         $columnWidth = floor(100 / $columnCount);
 
-        $columnsHtml = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 20px 0;"><tr>';
+        $columnsHtml = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>';
 
         foreach ($innerBlocks as $column) {
             $columnsHtml .= '<td width="' . $columnWidth . '%" style="vertical-align: top; padding: 0 10px;">';
@@ -760,21 +1427,41 @@ class FluentBlockParser
     {
         $style = $attrs['style'] ?? [];
         $layout = $attrs['layout'] ?? [];
-        $backgroundColor = '';
+        $tdStyles = '';
 
         if (!empty($style['color']['background'])) {
-            $backgroundColor = "background-color: {$style['color']['background']};";
+            $tdStyles .= "background-color: {$style['color']['background']};";
         }
 
-        $groupStyles = "padding: 20px; {$backgroundColor}";
+        if (!empty($style['border']['radius'])) {
+            $tdStyles .= "border-radius: {$style['border']['radius']};";
+        }
+
+        if (!empty($style['spacing']['padding'])) {
+            $padding = $style['spacing']['padding'];
+            if (!empty($padding['top'])) {
+                $tdStyles .= "padding-top: {$padding['top']};";
+            }
+            if (!empty($padding['bottom'])) {
+                $tdStyles .= "padding-bottom: {$padding['bottom']};";
+            }
+            if (!empty($padding['left'])) {
+                $tdStyles .= "padding-left: {$padding['left']};";
+            }
+            if (!empty($padding['right'])) {
+                $tdStyles .= "padding-right: {$padding['right']};";
+            }
+        } else {
+            $tdStyles .= "padding: 20px;";
+        }
 
         // Check if it's a flex layout
         $isFlex = isset($layout['type']) && $layout['type'] === 'flex';
 
         if ($isFlex) {
-            $groupStyles .= " display: flex; flex-wrap: wrap; gap: 10px;";
+            $tdStyles .= " display: flex; flex-wrap: wrap; gap: 10px;";
             $justifyContent = $layout['justifyContent'] ?? 'flex-start';
-            $groupStyles .= " justify-content: {$justifyContent};";
+            $tdStyles .= " justify-content: {$justifyContent};";
         }
 
         $content = '';
@@ -797,7 +1484,7 @@ class FluentBlockParser
 
         return "<table class=\"{$tableClass}\" role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">
     <tr>
-        <td style=\"padding: 0;\">
+        <td style=\"{$tdStyles}\">
             {$content}
         </td>
     </tr>
@@ -807,10 +1494,130 @@ class FluentBlockParser
     /**
      * Render table block
      */
-    private function renderTable($content, $attrs)
-    {
-        $styles = "width: 100%; border-collapse: collapse; margin: 20px 0;";
-        $cellStyles = "border: 1px solid #ddd; padding: 12px; text-align: center;";
+    private function renderTable($content, $attrs) {
+
+        // Base styles
+        $tableStyles = "width: 100%; border-collapse: collapse; margin: 20px 0;";
+        $cellStyles = "padding: 12px;";
+        $thStyles = "font-weight: bold;";
+
+        // Handle border styles
+        if (isset($attrs['style']['border'])) {
+            $border = $attrs['style']['border'];
+            $borderWidth = $border['width'] ?? '1px';
+            $borderStyle = $border['style'] ?? 'solid';
+            $borderColor = isset($attrs['borderColor']) ? $this->getColorFromSlug($attrs['borderColor']) : '#ddd';
+
+            $cellStyles .= " border: {$borderWidth} {$borderStyle} {$borderColor};";
+        } else {
+            $cellStyles .= " border: 1px solid #ddd;";
+        }
+
+        // Handle background color
+        if (isset($attrs['backgroundColor'])) {
+            $tableStyles .= " background-color: {$this->getColorFromSlug($attrs['backgroundColor'])};";
+        }
+        if (isset($attrs['style']['color']['background'])) {
+            $tableStyles .= " background-color: {$this->getColorFromSlug($attrs['style']['color']['background'])};";
+        }
+
+        // Handle text color
+        if (isset($attrs['textColor'])) {
+            $tableStyles .= " color: {$this->getColorFromSlug($attrs['textColor'])};";
+        }
+        if (isset($attrs['style']['color']['text'])) {
+            $tableStyles .= " color: {$this->getColorFromSlug($attrs['style']['color']['text'])};";
+        }
+
+        // Handle typography
+        if (isset($attrs['style']['typography'])) {
+            $typography = $attrs['style']['typography'];
+
+            if (isset($typography['fontSize'])) {
+                $tableStyles .= " font-size: {$this->getFontSizeFromSlug($typography['fontSize'])};";
+            }
+            if (isset($typography['fontFamily'])) {
+                $tableStyles .= " font-family: {$typography['fontFamily']};";
+            }
+            if (isset($typography['fontWeight'])) {
+                $tableStyles .= " font-weight: {$typography['fontWeight']};";
+            }
+            if (isset($typography['lineHeight'])) {
+                $tableStyles .= " line-height: {$typography['lineHeight']};";
+            }
+            if (isset($typography['textTransform'])) {
+                $tableStyles .= " text-transform: {$typography['textTransform']};";
+            }
+            if (isset($typography['letterSpacing'])) {
+                $tableStyles .= " letter-spacing: {$typography['letterSpacing']};";
+            }
+        }
+
+        // Handle font size (direct attribute)
+        if (isset($attrs['fontSize'])) {
+            $tableStyles .= " font-size: {$this->getFontSizeFromSlug($attrs['fontSize'])}";
+        }
+        if (isset($attrs['style']['fontSize'])) {
+            $tableStyles .= " font-size: {$this->getFontSizeFromSlug($attrs['style']['fontSize'])};";
+        }
+
+        // Handle alignment
+        if (isset($attrs['align'])) {
+            $alignment = $attrs['align'];
+            if (in_array($alignment, ['left', 'center', 'right'])) {
+                $tableStyles .= " margin-left: " . ($alignment === 'center' ? 'auto' : '0') . ";";
+                $tableStyles .= " margin-right: " . ($alignment === 'center' ? 'auto' : '0') . ";";
+            }
+            if ($alignment === 'wide') {
+                $tableStyles .= " width: 100%; max-width: var(--wp--style--global--wide-size, 1280px);";
+            }
+            if ($alignment === 'full') {
+                $tableStyles .= " width: 100%;";
+            }
+        }
+
+        // Handle spacing (padding)
+        if (isset($attrs['style']['spacing']['padding'])) {
+            $padding = $attrs['style']['spacing']['padding'];
+            if (is_string($padding)) {
+                $tableStyles .= " padding: {$padding};";
+            } elseif (is_array($padding)) {
+                if (isset($padding['top'])) $tableStyles .= " padding-top: {$padding['top']};";
+                if (isset($padding['right'])) $tableStyles .= " padding-right: {$padding['right']};";
+                if (isset($padding['bottom'])) $tableStyles .= " padding-bottom: {$padding['bottom']};";
+                if (isset($padding['left'])) $tableStyles .= " padding-left: {$padding['left']};";
+            }
+        }
+
+        // Handle spacing (margin)
+        if (isset($attrs['style']['spacing']['margin'])) {
+            $margin = $attrs['style']['spacing']['margin'];
+            if (is_string($margin)) {
+                $tableStyles .= " margin: {$margin};";
+            } elseif (is_array($margin)) {
+                if (isset($margin['top'])) $tableStyles .= " margin-top: {$margin['top']};";
+                if (isset($margin['right'])) $tableStyles .= " margin-right: {$margin['right']};";
+                if (isset($margin['bottom'])) $tableStyles .= " margin-bottom: {$margin['bottom']};";
+                if (isset($margin['left'])) $tableStyles .= " margin-left: {$margin['left']};";
+            }
+        }
+
+        // Handle hasFixedLayout
+        if (isset($attrs['hasFixedLayout']) && $attrs['hasFixedLayout']) {
+            $tableStyles .= " table-layout: fixed;";
+        }
+
+        // Handle cell alignment for header and body
+        $headerAlign = isset($attrs['style']['elements']['th']['typography']['textAlign'])
+                ? $attrs['style']['elements']['th']['typography']['textAlign']
+                : (isset($attrs['align']) ? 'center' : 'left');
+
+        $bodyAlign = isset($attrs['style']['elements']['td']['typography']['textAlign'])
+                ? $attrs['style']['elements']['td']['typography']['textAlign']
+                : 'center';
+
+        $cellStyles .= " text-align: {$bodyAlign};";
+        $thStyles .= " text-align: {$headerAlign};";
 
         // Extract table content
         if (preg_match('/<table[^>]*>(.*?)<\/table>/s', $content, $matches)) {
@@ -818,9 +1625,9 @@ class FluentBlockParser
 
             // Add styles to table cells
             $tableContent = preg_replace('/<td([^>]*)>/', '<td$1 style="' . $cellStyles . '">', $tableContent);
-            $tableContent = preg_replace('/<th([^>]*)>/', '<th$1 style="' . $cellStyles . ' font-weight: bold;">', $tableContent);
+            $tableContent = preg_replace('/<th([^>]*)>/', '<th$1 style="' . $cellStyles . ' ' . $thStyles . '">', $tableContent);
 
-            return $this->wrapInTable("<table style=\"{$styles}\">{$tableContent}</table>");
+            return $this->wrapInTable("<table style=\"{$tableStyles}\">{$tableContent}</table>");
         }
 
         return $this->wrapInTable($content);
@@ -994,12 +1801,54 @@ class FluentBlockParser
     }
 
     /**
-     * Get color from WordPress color slug
+     * Parse CSS variable format and extract the slug
+     * Handles formats like:
+     * - var:preset|color|accent-4
+     * - var(--wp--preset--color--accent-4)
+     * - accent-4 (plain slug)
      */
-    private function getColorFromSlug($slug)
+    private function parseColorSlug($value)
     {
-        // Debug: Uncomment to see what colors your theme provides
-        // $this->debugThemeColors();
+        if (empty($value)) {
+            return '';
+        }
+
+        // If it's already a hex color, return as is
+        if (preg_match('/^#[a-f0-9]{3,8}$/i', $value)) {
+            return $value;
+        }
+
+        // If it's an rgb/rgba color, return as is
+        if (preg_match('/^rgba?\(/i', $value)) {
+            return $value;
+        }
+
+        // Handle var:preset|color|slug-name format
+        if (strpos($value, 'var:preset|color|') === 0) {
+            return substr($value, strlen('var:preset|color|'));
+        }
+
+        // Handle var(--wp--preset--color--slug-name) format
+        if (preg_match('/^var\(--wp--preset--color--([^)]+)\)$/', $value, $matches)) {
+            return $matches[1];
+        }
+
+        // Return as is (plain slug or other format)
+        return $value;
+    }
+
+    /**
+     *  Get color from WordPress color slug
+     * */
+    public function getColorFromSlug($slug)
+    {
+        // Parse the slug to handle CSS variable formats
+        $parsedSlug = $this->parseColorSlug($slug);
+
+        // If it's already a valid color value (hex, rgb), return it
+        if (preg_match('/^#[a-f0-9]{3,8}$/i', $parsedSlug) || preg_match('/^rgba?\(/i', $parsedSlug)) {
+            return $parsedSlug;
+        }
 
         // First, try to get from FluentCart Helper (which reads theme.json and editor-color-palette)
         static $colorMap = null;
@@ -1028,8 +1877,8 @@ class FluentBlockParser
         }
 
         // Check our color map first
-        if (isset($colorMap[$slug])) {
-            return $colorMap[$slug];
+        if (isset($colorMap[$parsedSlug])) {
+            return $colorMap[$parsedSlug];
         }
 
         // Try to get theme color from WordPress theme.json or global settings
@@ -1037,7 +1886,7 @@ class FluentBlockParser
             $settings = wp_get_global_settings();
             if (!empty($settings['color']['palette']['theme'])) {
                 foreach ($settings['color']['palette']['theme'] as $color) {
-                    if (isset($color['slug']) && $color['slug'] === $slug && !empty($color['color'])) {
+                    if (isset($color['slug']) && $color['slug'] === $parsedSlug && !empty($color['color'])) {
                         return $color['color'];
                     }
                 }
@@ -1051,7 +1900,7 @@ class FluentBlockParser
                 $settings = $theme_json->get_settings();
                 if (!empty($settings['color']['palette'])) {
                     foreach ($settings['color']['palette'] as $palette) {
-                        if (isset($palette['slug']) && $palette['slug'] === $slug && !empty($palette['color'])) {
+                        if (isset($palette['slug']) && $palette['slug'] === $parsedSlug && !empty($palette['color'])) {
                             return $palette['color'];
                         }
                     }
@@ -1100,10 +1949,10 @@ class FluentBlockParser
             'pale-cyan-blue'        => '#8ed1fc',
         ];
 
-        return $colors[$slug] ?? '#0073aa';
+        return $colors[$parsedSlug] ?? '#0073aa';
     }
 
-    private function getThemeColorPalette()
+    public function getThemeColorPalette()
     {
         $color_palette = current((array)get_theme_support('editor-color-palette'));
         $theme_json_path = get_theme_file_path('theme.json');
@@ -1122,95 +1971,14 @@ class FluentBlockParser
         return (array)$color_palette;
     }
 
-    private function getThemePrefScheme()
+    public function getThemePrefScheme()
     {
         static $pref;
         if (!$pref) {
 
-            $color_palette = [
-                [
-                    "name"  => __("Black", "fluent-cart"),
-                    "slug"  => "black",
-                    "color" => "#000000"
-                ],
-                [
-                    "name"  => __("Cyan bluish gray", "fluent-cart"),
-                    "slug"  => "cyan-bluish-gray",
-                    "color" => "#abb8c3"
-                ],
-                [
-                    "name"  => __("White", "fluent-cart"),
-                    "slug"  => "white",
-                    "color" => "#ffffff"
-                ],
-                [
-                    "name"  => __("Pale pink", "fluent-cart"),
-                    "slug"  => "pale-pink",
-                    "color" => "#f78da7"
-                ],
-                [
-                    "name"  => __("Luminous vivid orange", "fluent-cart"),
-                    "slug"  => "luminous-vivid-orange",
-                    "color" => "#ff6900"
-                ],
-                [
-                    "name"  => __("Luminous vivid amber", "fluent-cart"),
-                    "slug"  => "luminous-vivid-amber",
-                    "color" => "#fcb900"
-                ],
-                [
-                    "name"  => __("Light green cyan", "fluent-cart"),
-                    "slug"  => "light-green-cyan",
-                    "color" => "#7bdcb5"
-                ],
-                [
-                    "name"  => __("Vivid green cyan", "fluent-cart"),
-                    "slug"  => "vivid-green-cyan",
-                    "color" => "#00d084"
-                ],
-                [
-                    "name"  => __("Pale cyan blue", "fluent-cart"),
-                    "slug"  => "pale-cyan-blue",
-                    "color" => "#8ed1fc"
-                ],
-                [
-                    "name"  => __("Vivid cyan blue", "fluent-cart"),
-                    "slug"  => "vivid-cyan-blue",
-                    "color" => "#0693e3"
-                ],
-                [
-                    "name"  => __("Vivid purple", "fluent-cart"),
-                    "slug"  => "vivid-purple",
-                    "color" => "#9b51e0"
-                ]
-            ];
+            $color_palette = BlockEditorHelper::getDefaultPreset('color');
 
-            $font_sizes = [
-                [
-                    'name'      => __('Small', 'fluent-cart'),
-                    'shortName' => 'S',
-                    'size'      => 14,
-                    'slug'      => 'small'
-                ],
-                [
-                    'name'      => __('Medium', 'fluent-cart'),
-                    'shortName' => 'M',
-                    'size'      => 18,
-                    'slug'      => 'medium'
-                ],
-                [
-                    'name'      => __('Large', 'fluent-cart'),
-                    'shortName' => 'L',
-                    'size'      => 24,
-                    'slug'      => 'large'
-                ],
-                [
-                    'name'      => __('Larger', 'fluent-cart'),
-                    'shortName' => 'XL',
-                    'size'      => 32,
-                    'slug'      => 'larger'
-                ]
-            ];
+            $font_sizes = BlockEditorHelper::getDefaultPreset('font-size');
 
             /**
              * Filter the theme preferences for FluentCart.
@@ -1234,6 +2002,45 @@ class FluentBlockParser
 
         return $pref;
 
+    }
+
+    public function getFontSizeFromSlug($slug) {
+        $font_sizes = [
+            'small'   => '14px',
+            'medium'  => '18px',
+            'large'   => '24px',
+            'larger'  => '32px',
+            'xxlarge' => '42px',
+        ];
+
+        // Get font sizes from theme defined
+        $theme_font_sizes = $this->getThemeFontSizes();
+        if (!empty($theme_font_sizes)) {
+            foreach ($theme_font_sizes as $size) {
+                if (isset($size['slug']) && $size['slug'] === $slug && !empty($size['size'])) {
+                    return $size['size'];
+                }
+            }
+        }
+
+        return $font_sizes[$slug] ?? '16px';
+    }
+
+
+    public static function getThemeFontSizes()
+    {
+        $font_sizes = current((array)get_theme_support('editor-font-sizes'));
+        $theme_json_path = get_theme_file_path('theme.json');
+
+        if (file_exists($theme_json_path)) {
+            $theme_json = json_decode(file_get_contents($theme_json_path), true);
+
+            if (isset($theme_json['settings']['typography']['fontSizes'])) {
+                $font_sizes = $theme_json['settings']['typography']['fontSizes'];
+            }
+        }
+
+        return $font_sizes;
     }
 
     /**
@@ -1438,8 +2245,18 @@ class FluentBlockParser
             }
 
             .fluent-paragraph {
-                padding-bottom: 16px;
                 line-height: 1.4;
+            }
+
+            .wp-block-button__link {
+                display: inline-block;
+                padding: 12px 24px;
+                text-decoration: none;
+                font-weight: bold;
+                border-radius: 9999px;
+                text-align: center;
+                color: #ffffff;
+                background-color: #0073aa;
             }
 
             <?php foreach ($color_palette as $item): ?>
@@ -1475,6 +2292,102 @@ class FluentBlockParser
         ];
 
         return str_replace(array_keys($replaces), array_values($replaces), $content);
+    }
+
+    /**
+     * Resolve a spacing value that might be a CSS variable reference
+     *
+     * @param string $value The spacing value
+     * @return string Resolved pixel value
+     */
+    public function resolveSpacingValue($value)
+    {
+        if (strpos($value, 'var:preset|spacing|') === 0) {
+            $slug = substr($value, strlen('var:preset|spacing|'));
+            return $this->getSpacingFromSlug($slug);
+        }
+
+        if (preg_match('/^var\(--wp--preset--spacing--(.+)\)$/', $value, $m)) {
+            return $this->getSpacingFromSlug($m[1]);
+        }
+
+        return $value;
+    }
+
+    private function getSpacingFromSlug($slug)
+    {
+        if (function_exists('wp_get_global_settings')) {
+            $settings = wp_get_global_settings();
+            $presets = $settings['spacing']['spacingSizes']['default'] ?? ($settings['spacing']['spacingSizes'] ?? []);
+            foreach ($presets as $preset) {
+                if (isset($preset['slug']) && $preset['slug'] === $slug && !empty($preset['size'])) {
+                    return $preset['size'];
+                }
+            }
+        }
+
+        $defaults = [
+            '20' => '20px', '30' => '30px', '40' => '40px',
+            '50' => '50px', '60' => '60px', '70' => '70px', '80' => '80px',
+            'fluent-20' => '20px', 'fluent-30' => '30px', 'fluent-40' => '40px',
+            'fluent-50' => '50px', 'fluent-60' => '60px', 'fluent-70' => '70px', 'fluent-80' => '80px',
+        ];
+
+        return isset($defaults[$slug]) ? $defaults[$slug] : '20px';
+    }
+
+    /**
+     * Get shadow value from slug or preset
+     */
+    private function getShadowFromSlug($slug)
+    {
+        // Parse preset format: var:preset|shadow|slug-name
+        if (strpos($slug, 'var:preset|shadow|') === 0) {
+            $slug = substr($slug, strlen('var:preset|shadow|'));
+        }
+
+        // If it's already a valid box-shadow value, return it
+        if (preg_match('/^\d+px\s+\d+px/', $slug)) {
+            return $slug;
+        }
+
+        // Try to get from WordPress theme settings
+        if (function_exists('wp_get_global_settings')) {
+            $settings = wp_get_global_settings();
+            if (!empty($settings['shadow']['presets'])) {
+                foreach ($settings['shadow']['presets'] as $shadow) {
+                    if (isset($shadow['slug']) && $shadow['slug'] === $slug && !empty($shadow['shadow'])) {
+                        return $shadow['shadow'];
+                    }
+                }
+            }
+        }
+
+        // Try WP_Theme_JSON for block themes
+        if (class_exists('WP_Theme_JSON_Resolver')) {
+            $theme_json = \WP_Theme_JSON_Resolver::get_merged_data();
+            if ($theme_json) {
+                $settings = $theme_json->get_settings();
+                if (!empty($settings['shadow']['presets'])) {
+                    foreach ($settings['shadow']['presets'] as $shadow) {
+                        if (isset($shadow['slug']) && $shadow['slug'] === $slug && !empty($shadow['shadow'])) {
+                            return $shadow['shadow'];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback shadow presets (common WordPress shadows)
+        $shadows = [
+                'natural'   => '6px 6px 9px rgba(0, 0, 0, 0.2)',
+                'deep'      => '12px 12px 50px rgba(0, 0, 0, 0.4)',
+                'sharp'     => '6px 6px 0px rgba(0, 0, 0, 0.2)',
+                'outlined'  => '6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1)',
+                'crisp'     => '6px 6px 0px rgba(0, 0, 0, 1)',
+        ];
+
+        return $shadows[$slug] ?? 'none';
     }
 
 

@@ -807,9 +807,9 @@ class InnerBlocks
 
         if (!empty($innerBlocksContent)) {
             return sprintf(
-                    "<div class='fct-product-image-wrap' style='position: relative; overflow: hidden;'>
+                    "<div class='fct-product-image-wrap' style='position: relative; overflow: clip;'>
                        %s
-                       <div style='position: absolute; inset: 0; pointer-events: none;'>
+                       <div class='fct-product-image-inner-blocks'>
                             %s
                        </div>
                 </div>",
@@ -1093,7 +1093,7 @@ class InnerBlocks
         return 'fluent_cart_products_inner_blocks';
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
                 $this->getLocalizationKey()      => [
@@ -1112,12 +1112,12 @@ class InnerBlocks
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['public/single-product/single-product.scss'];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         $scripts = [
                 [

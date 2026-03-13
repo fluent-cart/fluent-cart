@@ -23,8 +23,14 @@ class EmailNotifications
         $settings = static::getDefaultNotifications();
         $settings = apply_filters('fluent_cart/email_notifications', $settings);
         $config = Arr::get(static::cachedSettings(), 'notification_config', []);
+
         foreach ($settings as $key => &$setting) {
             $setting['name'] = $key;
+
+            if (empty($setting['group_label'])) {
+                $setting['group_label'] = __('Other Actions', 'fluent-cart');
+            }
+
             $keyConfig = Arr::get($config, $key, []);
             if (!$keyConfig) {
                 continue;
@@ -45,11 +51,18 @@ class EmailNotifications
          * Order Renewal -> fluent_cart/subscription_renewed (customer + admin)
          * Order Refunded -> fluent_cart/order_fully_refunded (customer + admin)
          * Order Shipping Status Changed => fluent_cart/shipping_status_changed (customer + admin)
+         * Reminder Events:
+         * - fluent_cart/invoice_reminder_due (@todo uncomment when invoice feature is deployed)
+         * - fluent_cart/invoice_reminder_overdue (used for payment reminders)
+         * - fluent_cart/subscription_renewal_reminder
+         * - fluent_cart/subscription_trial_end_reminder
          */
 
         return [
             'order_paid_admin'              => [
                 'event'            => 'order_paid_done',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to admin after New Order Paid', 'fluent-cart'),
                 'description'      => __('This email will be sent to the admin after an order is placed.', 'fluent-cart'),
                 'recipient'        => 'admin',
@@ -66,6 +79,8 @@ class EmailNotifications
             ],
             'order_paid_customer'           => [
                 'event'            => 'order_paid',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Purchase receipt to customer', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer after an order is placed.', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -81,6 +96,8 @@ class EmailNotifications
             ],
             'subscription_renewal_customer' => [
                 'event'            => 'subscription_renewed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
                 'title'            => __('Send mail to customer after a subscription renewed', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer after a renewal payment made', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -96,6 +113,8 @@ class EmailNotifications
             ],
             'subscription_renewal_admin'    => [
                 'event'            => 'subscription_renewed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
                 'title'            => __('Send mail to admin after a subscription renewed', 'fluent-cart'),
                 'description'      => __('This email will be sent to the admin after a renewal payment made', 'fluent-cart'),
                 'recipient'        => 'admin',
@@ -110,8 +129,45 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
+            'subscription_canceled_customer' => [
+                'event'            => 'subscription_canceled',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Send mail to customer when a subscription is canceled', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when their subscription is canceled.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.canceled.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Subscription Canceled on {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_canceled_admin'    => [
+                'event'            => 'subscription_canceled',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Send mail to admin when a subscription is canceled', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin when a subscription is canceled.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.canceled.admin',
+                'pre_header'       => 'A subscription has been canceled. Review the details in this email or visit FluentCart Dashboard to manage the subscription.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Subscription Canceled - {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
             'order_refunded_admin'          => [
                 'event'            => 'order_refunded',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to admin after a refund.', 'fluent-cart'),
                 'description'      => __('This email will be sent to the admin after an order is refunded (partial / full).', 'fluent-cart'),
                 'recipient'        => 'admin',
@@ -127,6 +183,8 @@ class EmailNotifications
             ],
             'order_refunded_customer'       => [
                 'event'            => 'order_refunded',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to customer after a refund.', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer after an order is refunded (partial / full).', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -142,6 +200,8 @@ class EmailNotifications
             ],
             'order_shipped_customer'        => [
                 'event'            => 'shipping_status_changed_to_shipped',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to customer when shipping status changed to shipped.', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer after an order is marked as shipped', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -157,6 +217,8 @@ class EmailNotifications
             ],
             'order_delivered_customer'      => [
                 'event'            => 'shipping_status_changed_to_delivered',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to customer when shipping status changed to delivered.', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer after an order is marked as delivered', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -172,6 +234,8 @@ class EmailNotifications
             ],
             'order_placed_admin'            => [
                 'event'            => 'order_placed_offline',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Send mail to admin after New Order Placed (Offline Payment)', 'fluent-cart'),
                 'description'      => __('This email will be sent to the admin when an order is placed using offline payment method.', 'fluent-cart'),
                 'recipient'        => 'admin',
@@ -179,6 +243,7 @@ class EmailNotifications
                 'template_path'    => 'order.placed.admin',
                 'is_async'         => false,
                 'manage_toggle'    => 'no',
+                'toggle_label'     => __('Auto-enabled for offline payments', 'fluent-cart'),
                 'pre_header'       => 'You have a new order on your shop placed with offline payment. Please review the order details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.',
                 'settings'         => [
                     'subject'         => __('New Order on {{settings.store_name}} (Offline Payment)', 'fluent-cart'),
@@ -188,6 +253,8 @@ class EmailNotifications
             ],
             'order_placed_customer'         => [
                 'event'            => 'order_placed_offline',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
                 'title'            => __('Order confirmation to customer (Offline Payment)', 'fluent-cart'),
                 'description'      => __('This email will be sent to the customer when an order is placed using offline payment method.', 'fluent-cart'),
                 'recipient'        => 'customer',
@@ -195,8 +262,129 @@ class EmailNotifications
                 'template_path'    => 'order.placed.customer',
                 'is_async'         => false,
                 'manage_toggle'    => 'no',
+                'toggle_label'     => __('Auto-enabled for offline payments', 'fluent-cart'),
                 'settings'         => [
                     'subject'         => __('Order Confirmation #{{order.invoice_no}} (Offline Payment)', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            // @todo uncomment when invoice feature is deployed
+            // 'invoice_reminder_due_customer' => [
+            //     'event'            => 'invoice_reminder_due',
+            //     'title'            => __('Invoice due reminder to customer', 'fluent-cart'),
+            //     'description'      => __('This email will be sent before/at invoice due date when payment is pending.', 'fluent-cart'),
+            //     'recipient'        => 'customer',
+            //     'smartcode_groups' => [],
+            //     'template_path'    => 'order.reminder.due.customer',
+            //     'is_async'         => false,
+            //     'settings'         => [
+            //         'active'          => 'yes',
+            //         'subject'         => __('Payment Reminder #{{order.invoice_no}}', 'fluent-cart'),
+            //         'is_default_body' => 'yes',
+            //         'email_body'      => '',
+            //     ]
+            // ],
+            // 'invoice_reminder_due_admin'    => [
+            //     'event'            => 'invoice_reminder_due',
+            //     'title'            => __('Invoice due reminder copy to admin', 'fluent-cart'),
+            //     'description'      => __('This email will be sent to admin when a due reminder is sent to customer.', 'fluent-cart'),
+            //     'recipient'        => 'admin',
+            //     'smartcode_groups' => [],
+            //     'template_path'    => 'order.reminder.due.admin',
+            //     'pre_header'       => 'An invoice due reminder was sent to a customer. Review the order details in this email or visit FluentCart Dashboard.',
+            //     'is_async'         => false,
+            //     'settings'         => [
+            //         'active'          => 'no',
+            //         'subject'         => __('Invoice Reminder Sent #{{order.invoice_no}}', 'fluent-cart'),
+            //         'is_default_body' => 'yes',
+            //         'email_body'      => '',
+            //     ]
+            // ],
+            'invoice_reminder_overdue_customer' => [
+                'event'            => 'invoice_reminder_overdue',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Payment reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent to remind customer about pending payment.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.overdue.customer',
+                'is_async'         => false,
+                'manage_toggle'    => 'no',
+                'toggle_label'     => __('On demand', 'fluent-cart'),
+                'settings'         => [
+                    'subject'         => __('Payment Reminder - Order #{{order.id}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_renewal_reminder_customer' => [
+                'event'            => 'subscription_renewal_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Upcoming renewal reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent before subscription auto-renewal date.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.reminder.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Upcoming Renewal Reminder from {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_renewal_reminder_admin' => [
+                'event'            => 'subscription_renewal_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Upcoming renewal reminder copy to admin', 'fluent-cart'),
+                'description'      => __('This email will be sent to admin when an upcoming renewal reminder is sent.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.reminder.admin',
+                'pre_header'       => 'A subscription renewal reminder was sent to a customer. Review subscription details from FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Renewal Reminder Sent for {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_trial_end_reminder_customer' => [
+                'event'            => 'subscription_trial_end_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Trial ending soon reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent before a trial period ends and converts to a paid subscription.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.trial_end.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Your Trial is Ending Soon - {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_trial_end_reminder_admin' => [
+                'event'            => 'subscription_trial_end_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Trial ending soon reminder copy to admin', 'fluent-cart'),
+                'description'      => __('This email will be sent to admin when a trial ending reminder is sent to a customer.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.trial_end.admin',
+                'pre_header'       => 'A trial ending soon reminder was sent to a customer. Review subscription details from FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Trial Ending Soon - {{order.customer.full_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
                 ]
@@ -223,8 +411,8 @@ class EmailNotifications
 
             $settings = Arr::get($notification, 'settings');
 
-            // Skip active check for order_placed notifications - they should always be active for offline payments
-            if (in_array($notification['event'], ['order_placed_offline']) || Arr::get($settings, 'active') === 'yes') {
+            // Skip active check for on-demand notifications (offline payments, payment reminders)
+            if (in_array($notification['event'], ['order_placed_offline', 'invoice_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
                 // Continue with normal flow
             } else {
                 continue;
@@ -235,7 +423,6 @@ class EmailNotifications
                 continue;
             }
 
-            $recipient = Arr::get($notification, 'recipient');
             if ($recipient === 'admin') {
                 $toEmail = Arr::get($mailingSettings, 'admin_email', '');
             } else {
@@ -314,6 +501,10 @@ class EmailNotifications
             $config[$key] = Arr::get($data, $key, $defaultValue);
         }
 
+        // When switching back to default body, clear the custom email body unless draft mode is enabled
+        if (Arr::get($config, 'is_default_body') === 'yes' && !apply_filters('fluent_cart/keep_email_body_draft', false, ['notification_name' => $name])) {
+            $config['email_body'] = '';
+        }
 
         Arr::set($allConfig, 'notification_config.' . $name, $config);
 
@@ -328,7 +519,6 @@ class EmailNotifications
             static::updateCache();
         }
 
-
         return static::getNotification($name);
     }
 
@@ -341,7 +531,7 @@ class EmailNotifications
             'reply_to_email'    => '',
             'email_footer'      => '',
             'show_email_footer' => 'yes',
-            'admin_email'       => '{{wp.admin_email}}'
+            'admin_email'       => '{{wp.admin_email}}',
         ];
     }
 

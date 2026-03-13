@@ -14,7 +14,7 @@ class PricingTableBlockEditor extends BlockEditor
 
     protected static string $editorName = 'product-pricing-table';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         if (!App::isDevMode()) {
             return [];
@@ -27,12 +27,12 @@ class PricingTableBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['admin/BlockEditor/PricingTable/style/pricing-table-block-editor.scss'];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [

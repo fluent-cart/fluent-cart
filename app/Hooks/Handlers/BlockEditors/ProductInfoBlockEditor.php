@@ -17,7 +17,7 @@ class ProductInfoBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'product-info';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -27,14 +27,14 @@ class ProductInfoBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/ProductInfo/style/product-info-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

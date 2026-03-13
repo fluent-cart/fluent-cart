@@ -11,7 +11,7 @@ class SearchBarBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'fluent-products-search-bar';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -21,12 +21,12 @@ class SearchBarBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['admin/BlockEditor/SearchBar/style/searchbar-block-editor.css'];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [

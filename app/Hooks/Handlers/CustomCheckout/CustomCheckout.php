@@ -7,9 +7,6 @@ use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Models\Subscription;
-use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\ProductItemService;
 use FluentCart\Framework\Support\Arr;
 
@@ -47,52 +44,47 @@ class CustomCheckout
         }
 
         if ($order->type === Status::ORDER_TYPE_SUBSCRIPTION) {
-
             $orderItem = $order->order_items->filter(function ($item) {
                 return $item->payment_type !== 'signup_fee';
-            })->first()->toArray();
+            })->first();
+
+            if (!$orderItem) {
+                die('Subscription order item not found!');
+            }
 
             $subscriptionItemData = ProductItemService::getItem([
-                'order_id'         => Arr::get($orderItem, 'order_id'),
-                'product_id'       => Arr::get($orderItem, 'post_id'),
-                'variation_id'     => Arr::get($orderItem, 'object_id'),
+                'order_id'     => $orderItem->order_id,
+                'product_id'   => $orderItem->post_id,
+                'variation_id' => $orderItem->object_id,
             ]);
 
             if (!$subscriptionItemData || !$subscriptionItemData->variation) {
                 die('Failed to load product data for custom checkout!');
             }
-            $subscriptionItem = $subscriptionItemData->variation->toArray();
 
-            $subscriptionModel = Subscription::query()->where('parent_order_id', $order->id)->first();
+            $newItem = $subscriptionItemData->variation->toArray();
+            $isCustom = $subscriptionItemData->is_custom;
 
-            $totalSignup = Arr::get($orderItem, 'other_info.signup_fee', 0) - Arr::get($orderItem, 'other_info.signup_discount', 0);
-            $firstPrice = $orderItem['subtotal'] + $totalSignup - Arr::get($orderItem, 'discount_total', 0);
-            $recurringPrice = $orderItem['subtotal'] + $orderItem['tax_amount'];
+            Arr::set($newItem, 'item_price', $orderItem->unit_price);
 
-            if ($firstPrice < $recurringPrice) {
-                Arr::set($subscriptionItem, 'other_info.trial_days', $subscriptionModel->trial_days);
-                Arr::set($subscriptionItem, 'other_info.signup_fee', $subscriptionModel->signup_fee);
-                Arr::set($subscriptionItem, 'other_info.manage_setup_fee', 'yes');
-                Arr::set($subscriptionItem, 'other_info.original_signup_fee', Arr::get($orderItem, 'other_info.signup_fee', 0));
-            } else if ($firstPrice > $recurringPrice) {
-                Arr::set($subscriptionItem, 'other_info.signup_fee', $subscriptionModel->signup_fee);
-                Arr::set($subscriptionItem, 'other_info.manage_setup_fee', 'yes');
-                Arr::set($subscriptionItem, 'other_info.trial_days', 0);
-                Arr::set($subscriptionItem, 'other_info.original_signup_fee', Arr::get($orderItem, 'other_info.signup_fee', 0));
+            // Keep the variation's other_info as-is (trial_days, signup_fee, repeat_interval, times).
+            // The variation's other_info has the clean product-level config that CheckoutProcessor
+            // expects when processing the cart.
+
+            if ($isCustom) {
+                Arr::set($newItem, 'post_title', $subscriptionItemData->variation->post_title);
+                Arr::set($newItem, 'variation_type', $subscriptionItemData->variation->variation_type);
+            } else {
+                Arr::set($newItem, 'post_title', $subscriptionItemData->variation->product->post_title);
+                Arr::set($newItem, 'variation_type', $subscriptionItemData->variation->product_detail->variation_type);
             }
 
-            if ($order->manual_discount_total) {
-                Arr::set($subscriptionItem, 'manual_discount', ceil($order->manual_discount_total));
+            if ($order->coupon_discount_total > 0 || $order->manual_discount_total > 0) {
+                Arr::set($newItem, 'coupon_discount', (int) $order->coupon_discount_total);
+                Arr::set($newItem, 'manual_discount', (int) $order->manual_discount_total);
             }
 
-            if (Arr::get($subscriptionItem, 'other_info.trial_days', 0) > 0) {
-
-                $isTrialDaysSimulated = Arr::get($subscriptionModel, 'config.is_trial_days_simulated', ) == 'yes' ? true : false;
-                Arr::set($subscriptionItem, 'other_info.is_trial_days_simulated', $isTrialDaysSimulated ? 'yes' : 'no');
-
-            }
-
-            $instantCart = CartHelper::generateCartFromCustomVariation($subscriptionItem, 1);
+            $instantCart = CartHelper::generateCartFromCustomVariation($newItem, $orderItem->quantity);
 
         } else {
             $items = [];
@@ -108,14 +100,16 @@ class CustomCheckout
                 $item = $itemData->variation->toArray();
 
 
-                Arr::set($item, 'discount_total', (string)($orderItem->discount_total));
+                Arr::set($item, 'coupon_discount', (string)($orderItem->discount_total)); // item discount total is always coupon discount + manual discount
                 Arr::set($item, 'tax_amount', $orderItem->tax_amount);
                 Arr::set($item, 'post_title', $orderItem->post_title);
 
                 if ($order->manual_discount_total) {
                     $subtotal = Arr::get($orderItem, 'subtotal');
                     $manualDiscount = ($subtotal * $order->manual_discount_total) / $order->subtotal;
+                    $couponDiscount = max(0, $orderItem->discount_total - $manualDiscount);
                     Arr::set($item, 'manual_discount', $manualDiscount);
+                    Arr::set($item, 'coupon_discount', $couponDiscount);
                 }
 
                 $items[] = CartHelper::generateCartItemCustomItem($item, $orderItem->quantity);

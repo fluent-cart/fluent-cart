@@ -376,6 +376,9 @@ class Processor
                 'module_name' => 'order',
                 'module_id'   => $order->id,
             ]);
+            if ($subscriptionModel) {
+                $subscriptionModel->addLog('PayPal Subscription Activated', 'Subscription activated, transaction & order statuses will be synced on webhook receive.');
+            }
         }
 
         return $subscriptionModel;

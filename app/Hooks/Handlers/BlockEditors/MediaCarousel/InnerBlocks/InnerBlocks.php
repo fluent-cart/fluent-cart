@@ -464,7 +464,7 @@ class InnerBlocks
         return 'fluent_cart_media_carousel_inner_blocks';
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [
@@ -478,14 +478,14 @@ class InnerBlocks
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/single-product/single-product.scss',
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         $scripts = [
             [

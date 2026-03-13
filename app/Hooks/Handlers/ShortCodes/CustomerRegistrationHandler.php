@@ -37,7 +37,7 @@ class CustomerRegistrationHandler extends ShortCode
         }, 10);
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -57,7 +57,7 @@ class CustomerRegistrationHandler extends ShortCode
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             'fluentcart_checkout_info' => [

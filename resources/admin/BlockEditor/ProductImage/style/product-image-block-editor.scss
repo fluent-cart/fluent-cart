@@ -1,5 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
-
 @config "./product-image-block-editor.config.js";
 @tailwind utilities;
-@tailwind base;
+
+// === Frontend: Product Image Block with overlay badges ===
+// overflow: clip clips to border-radius like overflow: hidden but doesn't
+// create a scroll container, avoiding interference with CSS anchor positioning.
+// The wrapper is NOT a grid/flex container — overlay elements (badges, title)
+// position themselves via their own position: absolute classes.
+.fct-product-image-block,
+.fct-product-image-wrap {
+    position: relative;
+    overflow: clip;
+
+    img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+}
+
+// CSS Anchor Positioning — name the product image as an anchor
+// so badges/overlays can position relative to it regardless of DOM nesting
+.fct-product-image-block img,
+.fct-product-card img {
+    anchor-name: --product-image;
+}
+
+// Editor: anchor the image inside the product-image block
+[data-type="fluent-cart/product-image"] img {
+    anchor-name: --product-image;
+}
+
+// Inner blocks wrapper for badges/titles overlaying the image.
+// NOT positioned — so badges' position: absolute uses .fct-product-image-block
+// as containing block. This is required for CSS anchor positioning: the anchor
+// (img) must be a descendant of the positioned element's containing block.
+.fct-product-image-inner-blocks {
+    pointer-events: none;
+
+    .fct-sale-badge,
+    .fct-sold-out-badge,
+    .fct-product-card-title {
+        pointer-events: auto;
+    }
+
+    // Product title overlay — anchored to the top of the image
+    .fct-product-card-title {
+        @apply absolute top-2 left-2 right-2 m-0;
+        position-anchor: --product-image;
+        top: calc(anchor(top) + 8px);
+        left: calc(anchor(left) + 8px);
+        right: calc(anchor(right) + 8px);
+    }
+}
+
+// === Editor: Fix badge overlay positioning ===
+// Gutenberg wraps each inner block in a block wrapper with position: relative.
+// Without these overrides, badges (which use position: absolute) would position
+// relative to their small wrapper instead of the full image area.
+// CSS Grid stacks all blocks in the same cell so each stretches to fill the image.
+[data-type="fluent-cart/product-image"] {
+    .block-editor-inner-blocks {
+        height: 100%;
+    }
+
+    .block-editor-block-list__layout {
+        display: grid !important;
+        grid-template: 1fr / 1fr;
+        height: 100%;
+
+        > * {
+            grid-row: 1;
+            grid-column: 1;
+        }
+    }
+}

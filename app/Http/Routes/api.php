@@ -478,7 +478,7 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
             'permissions' => 'orders/can_refund'
         ]);
 
-    $router->post('/{order_id}/change-customer', [OrderController::class, 'changeCustomer'])->meta([
+    $router->post('/{order_id}/change-customer', [OrderController::class, 'changeCustomer'])->int('order_id')->meta([
         'permissions' => 'orders/manage'
     ]);
 
@@ -671,9 +671,11 @@ $router->prefix('email-notification')->withPolicy('StoreSensitivePolicy')->group
     $router->get('/get-short-codes', [EmailNotificationController::class, 'getShortCodes']);
     $router->get('/get-settings', [EmailNotificationController::class, 'getSettings']);
     $router->post('/save-settings', [EmailNotificationController::class, 'saveSettings']);
+    $router->get('/reminders', [EmailNotificationController::class, 'getSchedulingSettings']);
+    $router->post('/reminders', [EmailNotificationController::class, 'saveSchedulingSettings']);
     $router->post('/enable-notification/{name}', [EmailNotificationController::class, 'enableNotification']);
-    $router->post('/get-template', [EmailNotificationController::class, 'getTemplate']);
-
+    $router->post('/send-manual-reminder', [EmailNotificationController::class, 'sendManualReminder']);
+    $router->post('/preview-default-template', [EmailNotificationController::class, 'previewDefaultTemplate']);
     $router->get('/{notification}', [EmailNotificationController::class, 'find']);
     $router->put('/{notification}', [EmailNotificationController::class, 'update']);
 

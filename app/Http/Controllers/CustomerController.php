@@ -77,7 +77,6 @@ class CustomerController extends Controller
 
     public function findOrder(Request $request, $customerId)
     {
-
         return ['data' => CustomerResource::findOrder($customerId)];
     }
 
@@ -154,7 +153,6 @@ class CustomerController extends Controller
 
     public function getCustomerOrders(Request $request, $customerId): array
     {
-        $data = $request->all();
         $orderFilter = OrderFilter::fromRequest($request);
         $orderFilter->query = $orderFilter->query->where('customer_id', $customerId);
         return [

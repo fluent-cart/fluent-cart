@@ -65,6 +65,12 @@ class Confirmations
                 'module_name' => 'order',
                 'module_id'   => $transaction->order_id,
             ]);
+            if ($transaction->subscription_id) {
+                $subscription = Subscription::query()->find($transaction->subscription_id);
+                if ($subscription) {
+                    $subscription->addLog(__('Stripe Session Retrieval Failed', 'fluent-cart'), $session->get_error_message(), 'error');
+                }
+            }
             return;
         }
 
@@ -529,12 +535,20 @@ class Confirmations
                 'is_dispute_actionable' => in_array(Arr::get($retreiveDispute, 'status'), ['needs_response']),
                 'is_charge_refundable' => Arr::get($retreiveDispute, 'is_charge_refundable', false)
             ]);
-            
+
             fluent_cart_warning_log('Stripe charge disputed', 'This payment was disputed (' . $charge['id'] . ')', [
                 'module_name' => 'order',
                 'module_id' => $order->id,
                 'log_type' => 'api'
             ]);
+            if ($transaction->subscription_id) {
+                fluent_cart_warning_log('Stripe charge disputed', 'This payment was disputed (' . $charge['id'] . ')', [
+                    'module_type' => 'FluentCart\App\Models\Subscription',
+                    'module_id'   => $transaction->subscription_id,
+                    'module_name' => 'subscription',
+                    'log_type'    => 'api'
+                ]);
+            }
         }
 
         $transaction->fill($transactionUpdateData);
@@ -544,6 +558,13 @@ class Confirmations
             'module_name' => 'order',
             'module_id'   => $order->id,
         ]);
+        if ($transaction->subscription_id) {
+            fluent_cart_add_log(__('Stripe Payment Confirmation', 'fluent-cart'), __('Payment confirmation received from Stripe. Transaction ID:', 'fluent-cart') . ' ' . $intentId, 'info', [
+                'module_type' => 'FluentCart\App\Models\Subscription',
+                'module_id'   => $transaction->subscription_id,
+                'module_name' => 'subscription',
+            ]);
+        }
 
         $billingDetails = Arr::get($charge, 'billing_details', []);
         $paymentMethodDetails = Arr::get($charge, 'payment_method_details', []);

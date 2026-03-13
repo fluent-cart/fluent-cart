@@ -220,9 +220,9 @@
       @apply text-right grid gap-0.5 flex-shrink-0;
     }
     .list-image{
-      @apply max-h-10 max-w-10 flex-shrink-0;
+      @apply h-10 w-10 overflow-hidden rounded-sm flex-shrink-0;
       img {
-        @apply w-full rounded-sm;
+        @apply block h-full w-full object-cover;
       }
     }
     .list-title{

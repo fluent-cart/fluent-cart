@@ -485,12 +485,12 @@ class TaxModule
                                     <?php echo esc_html__('Apply', 'fluent-cart'); ?>
                                 </button>
                             </div>
+                            <span data-fluent-cart-checkout-page-tax-loading class="fct_tax_loading"></span>
+                            <span data-fluent-cart-checkout-page-form-error class="fct_form_error"></span>
+                            <?php $this->renderValidNote($checkoutData); ?>
                         </div>
                     </div>
                 </div>
-                <span data-fluent-cart-checkout-page-tax-loading class="fct_tax_loading"></span>
-                <span data-fluent-cart-checkout-page-form-error class="fct_form_error"></span>
-                <?php $this->renderValidNote($checkoutData); ?>
             <?php endif; ?>
         </div>
         <?php
@@ -521,7 +521,10 @@ class TaxModule
         <div class="fct_vat_valid_note <?php echo !$isValid ? 'is-hidden' : ''; ?>"
              data-fluent-cart-tax-valid-note-wrapper>
                 <span data-fluent-cart-tax-valid-note>
-                    <?php echo esc_html(Arr::get($checkoutData, 'tax_data.name', '')); ?>
+                    <?php echo esc_html__('Valid VAT number', 'fluent-cart'); ?>
+                    <?php $name = Arr::get($checkoutData, 'tax_data.name', ''); if ($name): ?>
+                        — <?php echo esc_html($name); ?>
+                    <?php endif; ?>
                 </span>
 
                 <?php if (Arr::get($checkoutData, 'tax_data.tax_total') != 0): ?>

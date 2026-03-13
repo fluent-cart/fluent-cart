@@ -271,6 +271,21 @@ class Subscription extends Model
         return Helper::generateSubscriptionInfo($otherInfo, $recurringTotal) ?? '';
     }
 
+    public function addLog($title, $description = '', $type = 'info', $by = '')
+    {
+        $logData = [
+            'module_type' => 'FluentCart\App\Models\Subscription',
+            'module_id'   => $this->id,
+            'module_name' => 'subscription',
+        ];
+
+        if ($by) {
+            $logData['created_by'] = $by;
+        }
+
+        fluent_cart_add_log($title, $description, $type, $logData);
+    }
+
     public function getDownloads()
     {
         if (!$this->variation_id || $this->status !== Status::SUBSCRIPTION_ACTIVE) {

@@ -33,26 +33,39 @@ class TransactionParser extends BaseParser
         if (empty($this->transaction)) {
             return $code;
         }
+        // Handle _formatted suffix for cent columns
+        $formattedSuffix = '_formatted';
+        if (Str::endsWith($accessor, $formattedSuffix)) {
+            $baseAccessor = substr($accessor, 0, -strlen($formattedSuffix));
+            if (in_array($baseAccessor, $this->centColumns)) {
+                $amount = Arr::get($this->transaction, $baseAccessor);
+                if (!is_numeric($amount)) {
+                    return (string) $amount;
+                }
+                return CurrencySettings::getPriceHtml($amount, Arr::get($this->transaction, 'currency'));
+            }
+        }
+
         if (in_array($accessor, $this->centColumns)) {
             $amount = Arr::get($this->transaction, $accessor);
             if (!is_numeric($amount)) {
-                return $amount;
+                return (string) $amount;
             }
-            return CurrencySettings::getPriceHtml(
-                $amount,
-                Arr::get($this->transaction, 'currency')
-            );
+            return (string) ($amount / 100);
         }
         return $this->get($accessor, $code);
     }
 
-    public function getRefundAmount()
+    public function getRefundAmount(): string
     {
-        $refundAmount = Arr::get($this->transaction, 'total', 0);
-        return CurrencySettings::getPriceHtml(
-            $refundAmount,
-            Arr::get($this->transaction, 'currency')
-        );
+        $amount = (int) Arr::get($this->transaction, 'total', 0);
+        return (string) ($amount / 100);
+    }
+
+    public function getRefundAmountFormatted(): string
+    {
+        $amount = Arr::get($this->transaction, 'total', 0);
+        return CurrencySettings::getPriceHtml($amount, Arr::get($this->transaction, 'currency'));
     }
 
 }

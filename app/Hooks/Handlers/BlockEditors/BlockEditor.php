@@ -33,7 +33,7 @@ abstract class BlockEditor
                     ['wp-blocks', 'wp-components']
                 );
             }
-            static::$isReactSupportAdded = false;
+            static::$isReactSupportAdded = true;
         }
     }
 
@@ -86,6 +86,7 @@ abstract class BlockEditor
         $blockArgs = [
             'api_version'      => 3,
             'version'          => 3,
+            'category'         => 'fluent-cart',
             'editor_script'    => $this->getScriptName(),
             'editor_css'       => $this->getStyleName(),
             'render_callback'  => [$this, 'render_block'],
@@ -94,12 +95,44 @@ abstract class BlockEditor
             'supports'         => $this->supports()
         ];
 
+        $attributes = $this->blockAttributes();
+        if (!empty($attributes)) {
+            $blockArgs['attributes'] = $attributes;
+        }
+
         if ($this->skipInnerBlocks()) {
             $blockArgs['skip_inner_blocks'] = true;
         }
 
         register_block_type($this->slugPrefix . '/' . static::getEditorName(), $blockArgs);
 
+    }
+
+    public function blockAttributes(): array
+    {
+        return [];
+    }
+
+    /**
+     * Register just the block type (render callback, attributes, supports)
+     * without editor scripts/styles. Used for email-only blocks that handle
+     * asset enqueuing through the email editor handler instead of globally.
+     */
+    public function registerBlockType(): void
+    {
+        $blockArgs = [
+            'api_version'     => 3,
+            'category'        => 'fluent-cart',
+            'render_callback' => [$this, 'render_block'],
+            'supports'        => $this->supports(),
+        ];
+
+        $attributes = $this->blockAttributes();
+        if (!empty($attributes)) {
+            $blockArgs['attributes'] = $attributes;
+        }
+
+        register_block_type($this->slugPrefix . '/' . static::getEditorName(), $blockArgs);
     }
 
     public function supports(): array
@@ -172,7 +205,7 @@ abstract class BlockEditor
     }
 
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [];
     }

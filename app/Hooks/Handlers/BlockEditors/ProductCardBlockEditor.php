@@ -14,7 +14,7 @@ class ProductCardBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'product-card';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -24,12 +24,12 @@ class ProductCardBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return ['admin/BlockEditor/ProductCard/style/product-card-block-editor.scss'];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         $currencyCode = Helper::shopConfig('currency');
         $currencySign = CurrenciesHelper::getCurrencySign($currencyCode);

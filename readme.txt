@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.14
+Stable tag: 1.3.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,22 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+== 1.3.15 (Mar 13, 2026) ==
+- Adds Schedule reminder email for payment and subscriptions
+- Adds Email preview for default template
+- Adds Email editor guttenberg
+- Adds Email for Subscription cancel 
+- Adds Subscription activity logs in subscription page
+- Enhanced EU VAT reverse experience in checkout
+- Fixes CRM integration missing fields phone, postcode, state
+- Fixes Custom checkout discount calculation issue
+- Fixes Address validation issue
+- Fixes Customer first_name and last_name change update WP user data
+- Fixes Order payment calculation issue on amount updates
+- Fixes Timezone issue for customer email
+- Fixes Modal checkout issue with billing field
+
 
 = 1.3.14 (Mar 04, 2026) =
 - Adds Flutterwave for fluentCart

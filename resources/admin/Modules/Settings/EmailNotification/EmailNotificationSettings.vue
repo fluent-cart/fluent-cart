@@ -1,23 +1,46 @@
 <script setup>
 import * as Card from "@/Bits/Components/Card/Card.js";
-import {getCurrentInstance, onMounted, ref} from "vue";
+import {computed, getCurrentInstance, onMounted, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {$confirm, handleSuccess, handleError} from "@/Bits/common";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Str from "@/utils/support/Str";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
+import CardHeader from "@/Bits/Components/Card/CardHeader.vue";
+import CardBody from "@/Bits/Components/Card/CardBody.vue";
 
 
-const selfRef = getCurrentInstance().ctx;
 const loading = ref(true);
 const notifications = ref([]);
 const router = useRouter();
 const route = useRoute();
+
+const groupedNotifications = computed(() => {
+  if (!notifications.value.length) {
+    return [];
+  }
+
+  const grouped = {};
+
+  notifications.value.forEach((notification) => {
+    const groupKey = notification?.group || 'other';
+    if (!grouped[groupKey]) {
+      grouped[groupKey] = {
+        key: groupKey,
+        label: notification?.group_label || translate('Other Actions'),
+        items: []
+      };
+    }
+
+    grouped[groupKey].items.push(notification);
+  });
+
+  return Object.values(grouped);
+});
 
 const getNotifications = () => {
   loading.value = true;
@@ -51,51 +74,6 @@ const enableNotification = (active, name) => {
       });
 };
 
-const handleResetNotifications = () => {
-  loading.value = true;
-  Rest
-      .post("email-notification/reset")
-      .then((response) => {
-        notifications.value = Object.values(response.data);
-        Notify.success(response.message);
-      })
-      .catch((errors) => {
-        if (errors.status_code == '422') {
-          Notify.validationErrors(errors);
-        } else {
-          Notify.error(errors.data?.message);
-        }
-      })
-      .finally(() => {
-        loading.value = false;
-      });
-
-}
-
-const deleteNotification = (id, name) => {
-  $confirm(`Are you sure you want to delete "${name}"?`, "Confirm Delete!", {
-    confirmButtonText: "Yes, Delete!",
-    cancelButtonText: "Cancel",
-    type: "warning",
-  })
-      .then(() => {
-        selfRef.$post("email-notification/delete/" + id)
-            .then((response) => {
-              selfRef.handleSuccess(response);
-              getNotifications();
-            })
-            .catch((error) => {
-            })
-            .finally(() => {
-              loading.value = false;
-            });
-      })
-      .catch(() => {
-      });
-};
-
-const dialogVisible = ref(false);
-
 
 onMounted(() => {
   getNotifications();
@@ -107,94 +85,120 @@ onMounted(() => {
 
   <div class="setting-wrap">
     <SettingsHeader
-        :heading="translate('Notifications')"
+        :heading="translate('Email Notifications')"
         :show-save-button="false"
     >
-      <template #action>
-        <div v-if="false">
-          <el-popconfirm
-              :width="235"
-              :confirm-button-text="translate('Yes')"
-              :cancel-button-text="translate('No, Thanks')"
-              icon-color="red"
-              :title="translate('Are you sure to reset all notifications?')"
-              @confirm="handleResetNotifications"
-          >
-            <template #reference>
-              <el-button size="small" plain>
-                <DynamicIcon name="Refresh"/>
-                {{ translate('Reset') }}
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </div>
-      </template>
     </SettingsHeader>
 
     <div class="setting-wrap-inner">
-      <el-dialog
-          v-model="dialogVisible"
-          :title="translate('Coming Soon')"
-          width="300"
-
-      >
-        <span>{{ translate('Editing this email will be available later') }}</span>
-
-      </el-dialog>
-      <Card.Container class="overflow-hidden">
-        <Card.Header
-            :title="translate('Email Notifications')"
+      <div v-if="loading" class="fct-all-notification-table-wrap">
+        <div
+            v-for="i in 2"
+            :key="i"
+            class="fct-card fct-notification-group mx-5 mb-4 rounded border border-solid border-gray-divider overflow-hidden dark:border-dark-400"
         >
-        </Card.Header>
-        <Card.Body class="px-0 pb-0">
-          <el-skeleton class="px-5 pb-5" :loading="loading" :rows="5" animated/>
-          <div v-if="!loading" class="fct-all-notification-table-wrap">
-            <el-table :data="notifications">
+          <el-skeleton animated>
+            <template #template>
+              <div class="fct-card-header">
+                <div class="w-full pb-2">
+                  <div class="flex items-center justify-between gap-2 pb-2">
+                    <el-skeleton-item variant="text" style="width: 140px; height: 16px;"/>
+                    <el-skeleton-item variant="text" style="width: 100px; height: 14px;"/>
+                  </div>
+                </div>
+              </div>
+              <div v-for="n in 4" :key="n" class="flex items-center gap-4 px-4 py-4 border-t border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400">
+                <div class="flex-1">
+                  <el-skeleton-item variant="text" style="width: 50%; height: 14px; display: block; margin-bottom: 8px;"/>
+                  <el-skeleton-item variant="text" style="width: 75%; height: 12px; display: block;"/>
+                </div>
+                <div style="width: 120px;">
+                  <el-skeleton-item variant="text" style="width: 70px; height: 14px; display: block;"/>
+                </div>
+                <div class="flex items-center justify-between gap-3" style="width: 220px;">
+                  <el-skeleton-item variant="text" style="width: 40px; height: 20px; border-radius: 10px; display: block;"/>
+                  <el-skeleton-item variant="text" style="width: 28px; height: 28px; border-radius: 6px; display: block;"/>
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
+        </div>
+      </div>
+      <div v-else class="fct-all-notification-table-wrap">
+        <template v-if="groupedNotifications.length">
+          <div
+              v-for="group in groupedNotifications"
+              :key="group.key"
+              class="fct-card fct-notification-group mx-5 mb-4 last:mb-0 rounded border border-solid border-gray-divider overflow-hidden dark:border-dark-400"
+          >
+
+            <div class="fct-card-header">
+              <div class="w-full pb-2">
+                <div class="flex items-center justify-between gap-2 pb-2">
+                  <h4 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ group.label }}</h4>
+                  <span class="text-xs text-system-mid dark:text-gray-300">
+                      {{ group.items.length }} {{ translate('Notifications') }}
+                    </span>
+                </div>
+                <p
+                    v-if="group.key === 'scheduler'"
+                    class="m-0 mt-0 leading-5 text-system-mid dark:text-gray-300"
+                >
+                  {{ translate('This notification trigger is controlled from the Reminders section. You can configure it from') }}
+                  <router-link
+                      :to="{ path: '/settings/email_mailing_settings/reminders' }"
+                      class="underline hover:no-underline font-medium text-inherit hover:text-inherit"
+                  >
+                    {{ translate('reminder settings') }}
+                  </router-link>
+                </p>
+              </div>
+
+            </div>
+            <el-table :data="group.items" :show-header="true">
               <el-table-column
                   prop="title"
                   :label="translate('Notification Name')"
-                  width="250"
+                  min-width="320"
               >
                 <template #default="scope">
                   <h4 class="m-0 mb-1">{{ scope.row.title }}</h4>
-                  <p class="m-0">{{scope.row.description}}</p>
+                  <p class="m-0 text-xs leading-5 text-system-mid dark:text-gray-300">{{ scope.row.description }}</p>
                 </template>
               </el-table-column>
 
               <el-table-column
                   prop="recipient"
                   :label="translate('Recipient')"
-                  width="100"
+                  min-width="120"
               >
                 <template #default="scope">
-                  <p class="m-0">{{ Str.headline(scope.row.recipient) }}</p>
+                  <p class="m-0 text-sm">{{ Str.headline(scope.row.recipient) }}</p>
                 </template>
               </el-table-column>
 
-              <el-table-column :label="translate('Enabled')" width="80">
+              <el-table-column :label="translate('Enabled')" min-width="220">
                 <template #default="scope">
-                  <div class="fct-all-notification-actions flex items-center gap-3">
+                  <div class="fct-all-notification-actions flex items-center justify-between gap-3">
                     <el-switch
                         v-if="scope.row?.manage_toggle !== 'no'"
-                        autocomplete="rutjfkde"
                         @change="value => enableNotification(value, scope.row.name)"
                         v-model="scope.row.settings.active"
                         active-value="yes"
                         inactive-value="no"
                     ></el-switch>
-                    <!-- Show a text indicator for order_placed notifications -->
-                    <span v-if="scope.row?.manage_toggle === 'no'" class="text-gray-500 text-sm">
-                    {{ translate('Auto-enabled for offline payments') }}
-                  </span>
-                    <div class="fct-btn-group sm">
+                    <span v-if="scope.row?.manage_toggle === 'no'" class="text-system-mid text-xs leading-5 dark:text-gray-300">
+                        {{ scope.row?.toggle_label || translate('Auto-enabled') }}
+                      </span>
+                    <div class="fct-btn-group sm flex-shrink-0">
                       <el-tooltip effect="dark" :content="translate('Edit')" placement="top"
                                   popper-class="fct-tooltip">
 
                         <IconButton
                             :to="{
-                            name: 'email_notifications/edit',
-                            params: { name: scope.row.name },
-                          }"
+                                name: 'email_notifications/edit',
+                                params: { name: scope.row.name },
+                              }"
                             size="x-small"
                             hover="primary">
                           <DynamicIcon name="Edit"/>
@@ -204,15 +208,17 @@ onMounted(() => {
                   </div>
                 </template>
               </el-table-column>
-
-              <template #empty>
-                <Empty icon="Empty/EmailNotification" :has-dark="true"
-                       :text="translate('No email notifications available! Please reactivate FluentCart!')"/>
-              </template>
             </el-table>
           </div>
-        </Card.Body>
-      </Card.Container>
+        </template>
+
+        <Empty
+            v-else
+            icon="Empty/EmailNotification"
+            :has-dark="true"
+            :text="translate('No email notifications available! Please reactivate FluentCart!')"
+        />
+      </div>
     </div>
   </div>
 </template>

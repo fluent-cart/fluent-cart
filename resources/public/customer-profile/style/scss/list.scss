@@ -43,6 +43,6 @@
 
 .fct-more-option-wrap{
     .more-btn{
-        @apply flex items-center justify-center p-0 bg-transparent text-system-dark w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
+        @apply border-0 flex items-center justify-center p-0 bg-transparent text-system-dark w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
     }
 }

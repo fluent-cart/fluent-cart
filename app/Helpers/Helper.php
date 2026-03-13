@@ -1105,10 +1105,10 @@ class Helper
             return '';
         }
 
-
-        if ($originalSetupFee = Arr::get($otherInfo, 'original_signup_fee', 0)) {
+        if (isset($otherInfo['original_signup_fee'])) {
+            $originalSetupFee = $otherInfo['original_signup_fee'];
             if ($fee != $originalSetupFee) {
-                return __('Adjusted setup fee', 'fluent-cart') . CurrencySettings::getPriceHtml($fee, null, true, true);
+                return __('Adjusted first time price: ', 'fluent-cart') . CurrencySettings::getPriceHtml($fee, null, true, true);
             }
         }
 

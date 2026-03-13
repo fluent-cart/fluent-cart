@@ -15,7 +15,7 @@ class DirectCheckoutShortcode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_cart_checkout_button';
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/buttons/direct-checkout/style/style.scss'

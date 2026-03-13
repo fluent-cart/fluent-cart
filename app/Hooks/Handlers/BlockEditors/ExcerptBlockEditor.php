@@ -54,7 +54,7 @@ class ExcerptBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -64,14 +64,14 @@ class ExcerptBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/Excerpt/style/excerpt-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [
@@ -94,7 +94,9 @@ class ExcerptBlockEditor extends BlockEditor
 
         if ($insideProductInfo === 'yes' || $queryType === 'default') {
             $product = fluent_cart_get_current_product();
-        } else {
+        }
+
+        if (!$product) {
             $productId = Arr::get($shortCodeAttribute, 'product_id', false);
             if ($productId) {
                 $product = Product::query()->with(['detail', 'variants'])->find($productId);

@@ -10,7 +10,7 @@ export default class ModalCheckoutHandler {
     #loaderElement = null;
     #fadeTimeout = 300;
     #messageListener = null;
-    #checkoutFormInner = null;
+    #iframeContentObserver = null;
 
     constructor() {
         this.translate = window.fluentcart?.$t || ((key) => key);
@@ -100,15 +100,65 @@ export default class ModalCheckoutHandler {
 
     #handleIframeLoad = () => {
         this.#hideLoader();
-        const iframeDoc = this.#iframe.contentDocument || this.#iframe.contentWindow.document;
-        const height = iframeDoc.body.scrollHeight;
-        const checkoutFormInner = iframeDoc.querySelector('[data-fct-modal-checkout-form-inner]');
+        this.#syncIframeHeight();
+        this.#observeIframeContent();
+    }
 
-        if (checkoutFormInner) {
-            checkoutFormInner.style.height = height + 120 + 'px';
+    #syncIframeHeight = () => {
+        try {
+            const iframeDoc = this.#iframe.contentDocument || this.#iframe.contentWindow.document;
+            const formInner = iframeDoc.querySelector('[data-fct-modal-checkout-form-inner]');
+
+            let height = iframeDoc.body.scrollHeight;
+
+            // In flex row layout, body.scrollHeight may not capture the taller panel
+            // when the left panel is shorter. Measure each panel individually.
+            if (formInner) {
+                for (const child of formInner.children) {
+                    height = Math.max(height, child.scrollHeight);
+                }
+            }
+
+            // Account for default body margin (8px top + bottom)
+            height += 20;
+
+            const newHeight = height + 'px';
+            if (this.#iframe.style.height !== newHeight) {
+                this.#iframe.style.height = newHeight;
+            }
+        } catch {
+            // cross-origin iframe — safely ignored
         }
+    }
 
-        this.#iframe.style.height = height + 120 + 'px';
+    #observeIframeContent = () => {
+        this.#disconnectIframeObserver();
+        try {
+            const iframeDoc = this.#iframe.contentDocument || this.#iframe.contentWindow.document;
+            let rafId = null;
+            this.#iframeContentObserver = new MutationObserver(() => {
+                if (rafId) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = null;
+                    this.#syncIframeHeight();
+                });
+            });
+            this.#iframeContentObserver.observe(iframeDoc.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'style'],
+            });
+        } catch {
+            // cross-origin iframe — safely ignored
+        }
+    }
+
+    #disconnectIframeObserver = () => {
+        if (this.#iframeContentObserver) {
+            this.#iframeContentObserver.disconnect();
+            this.#iframeContentObserver = null;
+        }
     }
 
     #handleMessage = (e) => {
@@ -179,6 +229,7 @@ export default class ModalCheckoutHandler {
         this.#currentModal.classList.remove('fct-checkout-modal-open');
 
         setTimeout(() => {
+            this.#disconnectIframeObserver();
             if (this.#iframe) {
                 this.#iframe.src = '';
             }

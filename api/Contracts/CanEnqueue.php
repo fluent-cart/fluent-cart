@@ -20,7 +20,7 @@ trait CanEnqueue
         return $this->generateEnqueueSlug() . '_js';
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [];
     }
@@ -53,7 +53,7 @@ trait CanEnqueue
         );
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [];
     }
@@ -91,7 +91,7 @@ trait CanEnqueue
     }
 
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [];
     }

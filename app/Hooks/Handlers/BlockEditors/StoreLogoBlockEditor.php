@@ -10,7 +10,7 @@ class StoreLogoBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'store-logo';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -20,12 +20,12 @@ class StoreLogoBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         $renderer = new StoreLogoRenderer();
 

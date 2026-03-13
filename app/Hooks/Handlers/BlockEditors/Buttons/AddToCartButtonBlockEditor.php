@@ -18,7 +18,7 @@ class AddToCartButtonBlockEditor extends BlockEditor
 
 
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -28,7 +28,7 @@ class AddToCartButtonBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/Buttons/style/button-block-editor.scss'
@@ -62,7 +62,7 @@ class AddToCartButtonBlockEditor extends BlockEditor
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [

@@ -22,6 +22,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         'fluent-cart/products',
         'fluent-cart/product-carousel',
         'fluent-cart/product-image',
+        'fluent-cart/shopapp-product-image',
     ],
     attributes: {
         badge_text: {

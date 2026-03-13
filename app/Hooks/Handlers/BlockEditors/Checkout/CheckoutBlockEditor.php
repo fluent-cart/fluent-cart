@@ -21,7 +21,7 @@ class CheckoutBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'checkout';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
                 [
@@ -31,7 +31,7 @@ class CheckoutBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
                 'admin/BlockEditor/Checkout/style/checkout-block-editor.scss',
@@ -51,7 +51,7 @@ class CheckoutBlockEditor extends BlockEditor
         InnerBlocks::register();
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
 
         return [
