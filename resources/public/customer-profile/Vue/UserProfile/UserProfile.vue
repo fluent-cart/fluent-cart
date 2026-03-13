@@ -61,7 +61,7 @@
             type="primary"
             size="small"
             @click="updateCustomerProfile"
-            :disabled="!isProfileChanged"
+            :loading="loading"
             :aria-label="translate('Save Profile')"
         >
           {{ translate('Save Profile') }}

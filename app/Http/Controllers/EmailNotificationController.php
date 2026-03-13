@@ -3,11 +3,18 @@
 namespace FluentCart\App\Http\Controllers;
 
 use FluentCart\App\App;
+use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\EditorShortCodeHelper;
 use FluentCart\App\Http\Requests\EmailNotificationRequest;
 use FluentCart\App\Http\Requests\EmailSettingsRequest;
+use FluentCart\App\Http\Requests\SchedulingSettingsRequest;
 use FluentCart\App\Models\Meta;
+use FluentCart\App\Services\Email\EmailNotificationMailer;
 use FluentCart\App\Services\Email\EmailNotifications;
+use FluentCart\App\Services\Email\FluentBlockParser;
+use FluentCart\App\Services\Reminders\ReminderService;
+use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
+use FluentCart\App\Services\Email\EmailPreviewService;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
@@ -54,6 +61,13 @@ class EmailNotificationController extends Controller
 
         $settings = Arr::get($data, 'settings', []);
 
+        // Strip custom template data in free; pro filter restores it
+        $settingsWithoutTemplate = $settings;
+        unset($settingsWithoutTemplate['email_body']);
+        $settingsWithoutTemplate['is_default_body'] = 'yes';
+
+        $settings = apply_filters('fluent_cart/prepare_email_template_data', $settingsWithoutTemplate, $settings);
+
         $updated = EmailNotifications::updateNotification($notification, $settings);
         if ($updated) {
             return $this->sendSuccess([
@@ -98,16 +112,35 @@ class EmailNotificationController extends Controller
         ]);
     }
 
-    public function getTemplate(Request $request)
+    public function previewDefaultTemplate(Request $request)
     {
-        $template = $request->get('template');
-        $view = TemplateService::getTemplateByPathName($template);
+        $template = sanitize_text_field($request->get('template'));
+        $previewService = new EmailPreviewService();
+        $data = $previewService->getPreviewData($template);
+
+        $body = TemplateService::getTemplateByPathName($template, $data);
+
+        // Wrap in the same outer email template used by actual emails
+        $header = (string) App::make('view')->make('emails.parts.order_header', $data);
+        $mailer = new EmailNotificationMailer();
+        $view = (string) App::make('view')->make('emails.general_template', [
+            'emailBody'   => $body,
+            'preheader'   => '',
+            'header'      => $header,
+            'emailFooter' => $mailer->getEmailFooter(),
+        ]);
+
+        // Resolve shortcodes (e.g., {{ settings.store_brand }}, {{order.created_at}})
+        $view = ShortcodeTemplateBuilder::make($view, $data);
+
+        // Disable all links/buttons in the preview so they are not clickable
+        $view .= '<style>a, button, [role="button"] { pointer-events: none !important; cursor: default !important; }</style>';
+
         return $this->sendSuccess([
             'data' => [
                 'content' => $view
             ],
         ]);
-
     }
 
     public function getTemplateFiles()
@@ -132,7 +165,7 @@ class EmailNotificationController extends Controller
     {
         return $this->sendSuccess([
             'data'       => EmailNotifications::getSettings(),
-            'shortcodes' => EditorShortCodeHelper::getEmailSettingsShortcodes()
+            'shortcodes' => EditorShortCodeHelper::getEmailSettingsShortcodes(),
         ]);
     }
 
@@ -157,4 +190,63 @@ class EmailNotificationController extends Controller
         }
     }
 
+    public function getSchedulingSettings(StoreSettings $storeSettings): array
+    {
+        $tab = 'reminders';
+        $currentTabFields = Arr::get($storeSettings->fields(), 'setting_tabs.schema.' . $tab);
+
+        return [
+            'settings' => $storeSettings->get(),
+            'fields'   => [
+                $tab => $currentTabFields
+            ]
+        ];
+    }
+
+    public function saveSchedulingSettings(SchedulingSettingsRequest $request, StoreSettings $storeSettings): \WP_REST_Response
+    {
+        try {
+            $sanitizedData = $request->getSafe($request->sanitize());
+
+            $data = array_merge(
+                $storeSettings->get(),
+                $sanitizedData
+            );
+
+            $updated = $storeSettings->save($data);
+
+            return $this->sendSuccess([
+                'data'    => $updated,
+                'message' => __('Scheduling settings saved successfully', 'fluent-cart')
+            ]);
+        } catch (\Throwable $e) {
+            return $this->sendError([
+                'message' => __('Failed to save scheduling settings', 'fluent-cart')
+            ], 423);
+        }
+    }
+
+    public function sendManualReminder(Request $request): \WP_REST_Response
+    {
+        $event = sanitize_text_field(Arr::get($request->all(), 'event', ''));
+        $entityId = absint(Arr::get($request->all(), 'entity_id', 0));
+
+        if (empty($event) || empty($entityId)) {
+            return $this->sendError([
+                'message' => __('Event type and entity ID are required', 'fluent-cart')
+            ]);
+        }
+
+        $result = (new ReminderService())->sendManualReminder($event, $entityId);
+
+        if ($result['success']) {
+            return $this->sendSuccess([
+                'message' => $result['message']
+            ]);
+        }
+
+        return $this->sendError([
+            'message' => $result['message']
+        ]);
+    }
 }

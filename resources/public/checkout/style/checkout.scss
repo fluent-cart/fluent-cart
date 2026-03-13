@@ -977,7 +977,7 @@ ul.fct_summary_items_list {
     @apply text-xs text-success-500;
   }
   button {
-    @apply bg-transparent text-xs text-red-500 cursor-pointer hover:underline;
+    @apply bg-transparent text-xs text-red-500 cursor-pointer hover:underline hover:bg-transparent border-none p-0 shadow-none hover:shadow-none;
   }
 }
 

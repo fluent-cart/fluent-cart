@@ -202,6 +202,12 @@ class IPN
             'module_id'   => $order->id,
             'log_type'    => 'api'
         ]);
+        if ($transactionModel->subscription_id) {
+            $subscription = Subscription::query()->find($transactionModel->subscription_id);
+            if ($subscription) {
+                $subscription->addLog('This payment was disputed', 'Disputed claimed for this payment due to ' . $reason, 'warning');
+            }
+        }
 
         return true;
 
@@ -255,6 +261,12 @@ class IPN
                 'module_id'   => $order->id,
                 'log_type'    => 'api'
             ]);
+            if ($transactionModel->subscription_id) {
+                $subscription = Subscription::query()->find($transactionModel->subscription_id);
+                if ($subscription) {
+                    $subscription->addLog($title, $content);
+                }
+            }
             return true;
 
         } else if ($status == 'lost') {
@@ -271,6 +283,12 @@ class IPN
                 'module_id'   => $order->id,
                 'log_type'    => 'api'
             ]);
+            if ($transactionModel->subscription_id) {
+                $subscription = Subscription::query()->find($transactionModel->subscription_id);
+                if ($subscription) {
+                    $subscription->addLog('Dispute lost', 'Dispute lost for this payment . ' . $transactionModel->vendor_charge_id);
+                }
+            }
 
             $newPaidAmount = intval($transactionModel->order->total_paid - $transactionModel->total);
             $transactionModel->order->update([

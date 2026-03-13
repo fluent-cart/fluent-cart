@@ -7,6 +7,7 @@ use FluentCart\App\Http\Controllers\Controller;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Subscriptions\Services\EarlyPaymentFeature;
+use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Modules\Subscriptions\Services\Filter\SubscriptionFilter;
 
@@ -26,12 +27,15 @@ class SubscriptionController extends Controller
 
         $subscription = Subscription::with([
             'labels',
+            'activities.user',
             'customer.shipping_address' => function ($query) {
                 $query->where('is_primary', 1);
             },
             'customer.billing_address'  => function ($query) {
                 $query->where('is_primary', 1);
             },
+            'order.billing_address',
+            'order.shipping_address',
         ])
             ->find($subscriptionOrderId);
 
@@ -43,6 +47,9 @@ class SubscriptionController extends Controller
             );
         }
 
+        // Attach parent order's addresses directly to subscription for consistent access
+        $subscription->billing_address = $subscription->order->billing_address ?? null;
+        $subscription->shipping_address = $subscription->order->shipping_address ?? null;
 
         $subscription->related_orders = Order::query()
             ->with(['order_items' => function ($query) {
@@ -56,9 +63,12 @@ class SubscriptionController extends Controller
 
         $subscription = apply_filters('fluent_cart/subscription/view', $subscription, []);
 
+        $reminderPermissions = (new ReminderService())->getSubscriptionReminderPermissions($subscription);
+
         return $this->sendSuccess([
-            'subscription'    => $subscription,
-            'selected_labels' => $subscription->labels->pluck('label_id'),
+            'subscription'         => $subscription,
+            'selected_labels'      => $subscription->labels->pluck('label_id'),
+            'reminder_permissions' => $reminderPermissions,
         ]);
 
     }

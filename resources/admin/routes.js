@@ -484,6 +484,16 @@ export var routes = {
                 },
             },
             {
+                name: 'reminders',
+                path: 'email_mailing_settings/reminders',
+                component: StoreSettings,
+                meta: {
+                    active_menu: 'settings',
+                    title: 'Reminders',
+                    permission: "store/sensitive"
+                }
+            },
+            {
                 path: 'email_notifications/:name/',  // Fixed: removed the leading '/'
                 name: 'email_notifications/edit',
                 component: EditEmailNotification,

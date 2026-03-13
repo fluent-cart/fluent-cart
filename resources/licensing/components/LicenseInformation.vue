@@ -149,7 +149,7 @@
               </div>
 
               <span v-if="!isActivationLimitEnable" class="text">
-                {{ translateNumber(activations?.length) }} / {{ limit != 0 ? limit : translate('Unlimited') }}
+                {{ translateNumber(license.activation_count) }} / {{ limit != 0 ? limit : translate('Unlimited') }}
               </span>
 
               <span class="separator" v-if="!isActivationLimitEnable"></span>
@@ -297,7 +297,7 @@
             </div>
 
             <span v-if="!isActivationLimitEnable" class="text">
-                {{ activations?.length }} / {{ limit != 0 ? limit : translate('Unlimited') }}
+                {{ translateNumber(license.activation_count) }} / {{ limit != 0 ? limit : translate('Unlimited') }}
               </span>
 
             <span class="separator" v-if="!isActivationLimitEnable"></span>

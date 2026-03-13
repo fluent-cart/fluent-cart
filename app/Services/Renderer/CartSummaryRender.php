@@ -269,7 +269,7 @@ class CartSummaryRender
                             data-remove-coupon
                             data-coupon="<?php echo esc_attr($couponCode); ?>"
                         >
-                            <?php echo esc_html('Remove', 'fluent-cart'); ?>
+                            <?php echo esc_html__('Remove', 'fluent-cart'); ?>
                         </a>
                     </div>
                     <div class="fct_coupon_price">

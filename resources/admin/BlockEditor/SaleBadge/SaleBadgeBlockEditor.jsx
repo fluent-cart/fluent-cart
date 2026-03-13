@@ -13,7 +13,7 @@ const {useSelect} = wp.data;
 const {store: blockEditorStore} = wp.blockEditor;
 
 const blockEditorData = window.fluent_cart_sale_badge_data;
-const rest = window['fluentCartRestVars'].rest;
+const rest = window['fluentCartRestVars']?.rest;
 
 /**
  * Compute sale info from product data.
@@ -95,7 +95,6 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
 
         const singleProductData = useSingleProductData();
 
@@ -131,15 +130,18 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         }, [clientId]);
 
         const fetchProduct = () => {
+            if (!rest?.url) return;
             apiFetch({
-                path: addQueryArgs(fetchUrl, {
+                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
                     with: ['detail', 'variants']
                 }),
                 headers: {
-                    'X-WP-Nonce': rest.nonce
+                    'X-WP-Nonce': rest?.nonce
                 }
             }).then((response) => {
                 setSelectedProduct(response?.product || {});
+            }).catch(() => {
+                setSelectedProduct({});
             });
         };
 
@@ -153,9 +155,13 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             }
         }, [attributes.product_id, singleProductData?.product]);
 
-        // Clear badge_position when not inside a visual container so it won't be saved
+        // Sync badge_position with container context:
+        // - Inside visual container: ensure position is saved (even if default)
+        // - Outside: clear it so badge renders inline without absolute positioning
         useEffect(() => {
-            if (!isInsideVisualContainer && attributes.badge_position) {
+            if (isInsideVisualContainer && !attributes.badge_position) {
+                setAttributes({ badge_position: 'top-left' });
+            } else if (!isInsideVisualContainer && attributes.badge_position) {
                 setAttributes({ badge_position: '' });
             }
         }, [isInsideVisualContainer]);

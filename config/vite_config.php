@@ -238,6 +238,7 @@
             'resources/admin/Bits/Components/Icons/InActive.vue',
             'resources/admin/Bits/Components/Icons/Information.vue',
             'resources/admin/Bits/Components/Icons/InformationFill.vue',
+            'resources/admin/Bits/Components/Icons/Insert.vue',
             'resources/admin/Bits/Components/Icons/Integrations.vue',
             'resources/admin/Bits/Components/Icons/InventoryFill.vue',
             'resources/admin/Bits/Components/Icons/Invoice.vue',
@@ -1895,6 +1896,16 @@
             '__plugin-vue_export-helper.js'
         ]
     ],
+    'resources/admin/Bits/Components/Icons/Insert.vue' => [
+        'file' => 'chunks/Insert.js',
+        'name' => 'Insert',
+        'src' => 'resources/admin/Bits/Components/Icons/Insert.vue',
+        'isDynamicEntry' => true,
+        'imports' => [
+            '_vue.esm-bundler.js',
+            '__plugin-vue_export-helper.js'
+        ]
+    ],
     'resources/admin/Bits/Components/Icons/Integrations.vue' => [
         'file' => 'chunks/Integrations2.js',
         'name' => 'Integrations',
@@ -3019,6 +3030,7 @@
             '_BlockEditorTranslator.js',
             '_index4.js',
             '_SelectProductModal.js',
+            '_CustomSelect.js',
             '_EditorPanel.js',
             '_EditorPanelRow.js',
             '_SingleProductContext.js',
@@ -3417,6 +3429,25 @@
     'resources/admin/BlockEditor/ShopApp/style/shop-app-block-editor.css' => [
         'file' => 'assets/shop-app-block-editor.css',
         'src' => 'resources/admin/BlockEditor/ShopApp/style/shop-app-block-editor.css',
+        'isEntry' => true
+    ],
+    'resources/admin/BlockEditor/SoldOutBadge/SoldOutBadgeBlockEditor.jsx' => [
+        'file' => 'SoldOutBadgeBlockEditor.js',
+        'name' => 'SoldOutBadgeBlockEditor',
+        'src' => 'resources/admin/BlockEditor/SoldOutBadge/SoldOutBadgeBlockEditor.jsx',
+        'isEntry' => true,
+        'imports' => [
+            '_BlockEditorTranslator.js',
+            '_EditorPanel.js',
+            '_EditorPanelRow.js',
+            '_SingleProductContext.js',
+            '_Icons.js',
+            '_ErrorBoundary.js'
+        ]
+    ],
+    'resources/admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss' => [
+        'file' => 'assets/sold-out-badge-block-editor.css',
+        'src' => 'resources/admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss',
         'isEntry' => true
     ],
     'resources/admin/BlockEditor/Stock/StockBlock.jsx' => [

@@ -15,7 +15,7 @@
 <?php
 
 use FluentCart\Framework\Support\Arr;
-    $orderItems = $order->order_items->toArray();
+    $orderItems = $order->order_items ? $order->order_items->toArray() : [];
     $transaction = $order->getLatestTransaction();
     $isRefund = $is_refund ?? false;
 ?>
@@ -201,7 +201,7 @@ use FluentCart\Framework\Support\Arr;
                     </td>
                     <td style="width:30%;text-align:right">
                         <p style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                            <?php echo esc_html($transaction->getPaymentMethodText()); ?>
+                            <?php echo esc_html($transaction ? $transaction->getPaymentMethodText() : ''); ?>
                         </p>
                     </td>
                 </tr>

@@ -10,7 +10,7 @@ class ProductCategoriesListBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'product-categories-list';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -20,7 +20,7 @@ class ProductCategoriesListBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/ProductCategoriesList/style/product-categories-list-block-editor.scss'
@@ -44,7 +44,7 @@ class ProductCategoriesListBlockEditor extends BlockEditor
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         $categories = ProductCategoriesListRenderer::getCategories();
 

@@ -17,7 +17,7 @@ class ProductCarouselBlockEditor extends BlockEditor
 
     protected ?string $localizationKey = 'fluent_cart_product_carousel_block_editor_data';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -33,7 +33,7 @@ class ProductCarouselBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/ShopApp/style/shop-app-block-editor.css',
@@ -54,7 +54,7 @@ class ProductCarouselBlockEditor extends BlockEditor
         InnerBlocks::register();
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [

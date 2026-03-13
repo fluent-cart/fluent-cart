@@ -14,7 +14,7 @@ class AddToCartShortcode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_cart_add_to_cart_button';
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/buttons/add-to-cart/style/style.scss',

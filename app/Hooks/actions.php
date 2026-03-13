@@ -23,6 +23,7 @@ use FluentCart\App\Http\Routes\WebRoutes;
 (new \FluentCart\App\Hooks\Handlers\AdminMenuBarHandler)->register();
 (new \FluentCart\App\Hooks\Handlers\FluentCartHandler)->register();
 (new \FluentCart\App\Hooks\Handlers\RetentionSnapshotHandler)->register();
+(new \FluentCart\App\Hooks\Handlers\ReminderHandler)->register();
 
 (new \FluentCart\App\Hooks\Handlers\ShortCodes\ShopAppHandler)->register();
 (new \FluentCart\App\Hooks\Handlers\ExportHandler)->register();
@@ -40,7 +41,6 @@ use FluentCart\App\Http\Routes\WebRoutes;
 
 // Register Addon Gateways
 (new \FluentCart\App\Hooks\Handlers\AddonGatewaysHandler())->register();
-
 
 // Web Checkout
 (new \FluentCart\App\Hooks\Cart\WebCheckoutHandler())->register();
@@ -209,5 +209,7 @@ add_action('after_setup_theme', function () {
  */
 
 add_action('init', function () {
-    WebRoutes::renderModalCheckout();
+    if (!is_admin()) {
+        WebRoutes::renderModalCheckout();
+    }
 });

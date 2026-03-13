@@ -3,6 +3,8 @@
 namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\App;
+use FluentCart\App\Models\Product;
+use FluentCart\App\Models\ProductVariation;
 
 class DefaultReportService extends ReportService
 {
@@ -24,12 +26,22 @@ class DefaultReportService extends ReportService
 
         $query = $this->applyFilters($query, $params);
 
-        $topSoldProducts = $query->limit(20)->get()->map(fn ($item) => [
+        $topSoldProducts = $query->limit(20)->get();
+
+        // Product images live in serialized post meta. A SQL join can only fetch the
+        // raw meta blob, while the actual thumbnail URL still has to be extracted in
+        // PHP. We keep the sales aggregate query lean and hydrate images in one
+        // batched lookup instead of mixing metrics with meta decoding.
+        $productImages = $this->getProductImages(
+            $topSoldProducts->pluck('product_id')->all()
+        );
+
+        $topSoldProducts = $topSoldProducts->map(fn ($item) => [
             'product_id'    => (int) $item->product_id,
             'product_name'  => $item->product_name,
             'quantity_sold' => (int) $item->quantity_sold,
             'total_amount'  => round((float) $item->total_amount, 2),
-            'media'         => null,
+            'media'         => $productImages[(int) $item->product_id] ?? null,
         ]);
 
         return [
@@ -57,14 +69,31 @@ class DefaultReportService extends ReportService
 
         $query = $this->applyFilters($query, $params);
 
-        $topSoldVariants = $query->limit(10)->get()->map(fn ($item) => [
+        $topSoldVariants = $query->limit(10)->get();
+
+        // Variant thumbnails come from JSON product meta while the fallback product
+        // image comes from serialized post meta. A single SQL query would still need
+        // to pull raw meta payloads and leave first-image extraction to PHP, so we
+        // keep the aggregate query focused on sales metrics and hydrate both image
+        // maps in batched follow-up queries.
+        $variationImages = $this->getVariationImages(
+            $topSoldVariants->pluck('variation_id')->all()
+        );
+
+        $productImages = $this->getProductImages(
+            $topSoldVariants->pluck('product_id')->all()
+        );
+
+        $topSoldVariants = $topSoldVariants->map(fn ($item) => [
             'product_id'     => (int) $item->product_id,
             'product_name'   => $item->product_name,
             'variation_id'   => (int) $item->variation_id,
             'variation_name' => $item->variation_name,
             'quantity'       => (int) $item->quantity_sold,
             'total_amount'   => round((float) $item->total_amount, 2),
-            'media_url'      => null,
+            'media_url'      => $variationImages[(int) $item->variation_id]
+                ?? $productImages[(int) $item->product_id]
+                ?? null,
         ]);
 
         return [
@@ -100,6 +129,44 @@ class DefaultReportService extends ReportService
         }
 
         return $currentValue > 0 ? 100 : 0;
+    }
+
+    private function getProductImages(array $productIds): array
+    {
+        $productIds = array_values(array_unique(array_filter(array_map('intval', $productIds))));
+
+        if (!$productIds) {
+            return [];
+        }
+
+        return Product::query()
+            ->whereIn('ID', $productIds)
+            ->with(['detail.galleryImage'])
+            ->get()
+            ->reduce(function ($images, Product $product) {
+                $images[(int) $product->ID] = $product->thumbnail ?: null;
+
+                return $images;
+            }, []);
+    }
+
+    private function getVariationImages(array $variationIds): array
+    {
+        $variationIds = array_values(array_unique(array_filter(array_map('intval', $variationIds))));
+
+        if (!$variationIds) {
+            return [];
+        }
+
+        return ProductVariation::query()
+            ->whereIn('id', $variationIds)
+            ->with(['media'])
+            ->get()
+            ->reduce(function ($images, ProductVariation $variation) {
+                $images[(int) $variation->id] = $variation->thumbnail ?: null;
+
+                return $images;
+            }, []);
     }
 
     public function getAllGraphMetricsSeparate($params = [])

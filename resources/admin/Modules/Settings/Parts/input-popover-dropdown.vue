@@ -53,7 +53,7 @@ defineOptions({
 })
 
 const props = defineProps({
-  data: Array,
+  data: [Array, Object],
   close_on_insert: {
     type: Boolean,
     default() {

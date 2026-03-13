@@ -471,6 +471,11 @@
                         :shouldEnableEditing="isEditingItem"
                         @update:custom-discount="updateCustomDiscount"
                     />
+                    <tr v-if="!hasCoupon && order.coupon_discount_total > 0">
+                      <td>{{ translate("Coupon Discount") }}</td>
+                      <td></td>
+                      <td>- {{ formatNumber(order.coupon_discount_total) }}</td>
+                    </tr>
                     <tr v-if="order.tax_total">
                       <td>
                         {{ translate("Tax") }}
@@ -595,6 +600,10 @@
 
                           <el-dropdown-item command="mark-order-paid">
                             {{ translate("Mark order as paid") }}
+                          </el-dropdown-item>
+
+                          <el-dropdown-item v-if="canSendPaymentReminder" command="send-payment-reminder" :disabled="sendingPaymentReminder">
+                            {{ translate("Send Payment Reminder") }}
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -936,7 +945,7 @@ import {
   getUniqueOrderItemCount
 } from "../../Bits/productService";
 import Badge from "@/Bits/Components/Badge.vue";
-import {Refresh} from "@element-plus/icons-vue";
+import {Refresh, Promotion} from "@element-plus/icons-vue";
 import {ElMessageBox} from "element-plus";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import Notes from "../Parts/Notes/Note.vue";
@@ -976,7 +985,8 @@ export default {
     UtmDetails,
     OrderUpDownIndicator,
     TransactionMobile,
-    BundleProducts
+    BundleProducts,
+    Promotion
   },
 
   provide() {
@@ -1053,6 +1063,8 @@ export default {
       otherShippingMethods: [],
       uniqueItemsCount: 0,
       markingOrderAsPaid: false,
+      sendingPaymentReminder: false,
+      canSendPaymentReminderFlag: false,
       isMobile: window.innerWidth < 768,
       taxId: 0
     };
@@ -1093,8 +1105,42 @@ export default {
     placeholderImage() {
       return `${AppConfig.get('asset_url')}images/empty-image.svg`;
     },
+    canSendPaymentReminder() {
+      return this.canSendPaymentReminderFlag;
+    },
   },
   methods: {
+    confirmSendPaymentReminder() {
+      ElMessageBox.confirm(
+          translate('Are you sure you want to send a payment reminder email for this order?'),
+          translate('Send Payment Reminder'),
+          {
+            type: "info",
+            icon: markRaw(Promotion),
+            cancelButtonText: translate("Cancel"),
+            confirmButtonText: translate("Send Now"),
+            beforeClose: async (action, instance, done) => {
+              if (action === "confirm") {
+                try {
+                  instance.confirmButtonLoading = true;
+                  this.sendingPaymentReminder = true;
+                  const response = await this.$post('email-notification/send-manual-reminder', {
+                    event: 'invoice_reminder_overdue',
+                    entity_id: this.order.id
+                  });
+                  Notify.success(response.message || translate("Payment reminder sent successfully"));
+                } catch (e) {
+                  Notify.error(e.data?.message || translate("Failed to send payment reminder"));
+                } finally {
+                  instance.confirmButtonLoading = false;
+                  this.sendingPaymentReminder = false;
+                  done();
+                }
+              } else done();
+            }
+          }
+      );
+    },
     triggerChange(){
       this.changes_made = 1;
     },
@@ -1149,6 +1195,8 @@ export default {
     handleCommand(command) {
       if (command === "custom-payment-link") {
         this.nextInvoiceModal = true;
+      } else if (command === "send-payment-reminder") {
+        this.confirmSendPaymentReminder();
       } else {
         this.transactionMedium = true;
       }
@@ -1364,6 +1412,7 @@ export default {
             this.appliedCoupons = this.coupons.map((obj) => obj.coupon_id);
             this.order = response.order;
             this.order.order_items = this.formatOrderItems(response.order.order_items);
+            this.canSendPaymentReminderFlag = !!response.can_send_payment_reminder;
 
             this.isSubscription =
                 this.order?.subscriptions && this.order.subscriptions.length > 0;

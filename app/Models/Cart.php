@@ -754,7 +754,7 @@ class Cart extends Model
 
         if (Arr::get($this->checkout_data, 'custom_checkout') === 'yes' && !$shippingTotal) {
             $customShippingAmount = (int)Arr::get($this->checkout_data, 'custom_checkout_data.shipping_total', 0);
-            // $customerDiscountAmount = (int)Arr::get($this->checkout_data, 'custom_checkout_data.discount_total', 0);
+            // $customerDiscountAmount = (int)Arr::get($this->checkout_data, 'custom_checkout_data.discount_total', 0); // discount is already calculated in via getItemsAmountTotal
             // $total -= $customerDiscountAmount;
             $total += $customShippingAmount;
         }

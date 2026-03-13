@@ -31,9 +31,10 @@
       <div class="single-page-body">
         <div class="fct-single-subscription">
           <div class="fct-single-subscription-main">
-            <SubscriptionDetails 
-              :subscription="subscription" 
+            <SubscriptionDetails
+              :subscription="subscription"
               :orderId="parentOrder?.id"
+              :reminderPermissions="reminderPermissions"
               @fetchOrder="$emit('fetchSubscription')"
               @reload="reload()"
             />
@@ -47,6 +48,11 @@
             <CardContainer v-if="subscription.licenses" class="overflow-hidden">
               <CardHeader class="pb-4" :title="$t('Related Licenses')" title_size="small"/>
               <license-table :licenses="subscription.licenses" :columns="[]"/>
+            </CardContainer>
+
+            <CardContainer v-if="subscription.activities && subscription.activities.length" class="overflow-hidden mb-0">
+              <CardHeader class="pb-4" :title="$t('Activity')" title_size="small"/>
+              <Activity :activities="subscription.activities"/>
             </CardContainer>
           </div>
           <div class="fct-single-subscription-aside">
@@ -67,7 +73,7 @@
             <div class="fct-admin-sidebar">
               <OrderCustomerInformation
                   v-if="subscription.customer"
-                  :order="subscription"
+                  :subscription="subscription"
                   :shouldEnableEditing="true"
               />
 
@@ -188,6 +194,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import ChangeOrderCustomer from "@/Modules/Orders/Components/ChangeOrderCustomer.vue";
 import CustomerPurchaseValue from "@/Modules/Customers/parts/CustomerPurchaseValue.vue";
 import OrderCustomerInformation from "@/Modules/Orders/OrderCustomerInformation.vue";
+import Activity from "@/Modules/Orders/Activity.vue";
 import Notify from "@/utils/Notify";
 export default {
   name: 'SingleSubscription',
@@ -207,7 +214,8 @@ export default {
       ArrowRight: markRaw(ArrowRight),
       parentOrder: null,
       selectedLabels: [],
-      changeCustomer: false
+      changeCustomer: false,
+      reminderPermissions: {}
     }
   },
   watch: {
@@ -226,6 +234,7 @@ export default {
     }
   },
   components: {
+    Activity,
     ChangeOrderCustomer,
     DynamicIcon,
     ConvertedTime,
@@ -255,6 +264,7 @@ export default {
           .then((response) => {
             this.subscription = response.subscription;
             this.selectedLabels = response.selected_labels;
+            this.reminderPermissions = response.reminder_permissions || {};
             this.getParentOrder();
           })
           .catch((errors) => {

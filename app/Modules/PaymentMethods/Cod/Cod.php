@@ -50,7 +50,8 @@ class Cod extends AbstractPaymentGateway
     public function __construct()
     {
         parent::__construct(
-            new CodSettingsBase()
+            new CodSettingsBase(),
+            new CodSubscriptions()
         );
     }
 

@@ -892,7 +892,7 @@ class WebCheckoutHandler
             $addressRender = ob_get_clean();
 
             $fragments[] = [
-                'selector' => '[data-fluent-cart-checkout-page-form-address-info-wrapper]',
+                'selector' => '#' . $type . '_address_wrapper [data-fluent-cart-checkout-page-form-address-info-wrapper]',
                 'content' => $addressRender,
                 'type' => 'replace'
             ];

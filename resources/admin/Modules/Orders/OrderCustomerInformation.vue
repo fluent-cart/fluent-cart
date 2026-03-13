@@ -3,7 +3,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Rest from "@/utils/http/Rest";
-import {onMounted, ref, watch} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import Notify from "@/utils/Notify";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import NewCustomerModal from "@/Modules/Orders/Modals/NewCustomerModal.vue";
@@ -16,7 +16,11 @@ import {formatNumber} from "@/Bits/productService";
 const props = defineProps({
   order: {
     type: Object,
-    default: () => ({}),
+    default: null,
+  },
+  subscription: {
+    type: Object,
+    default: null,
   },
   shouldEnableEditing: {
     type: Boolean,
@@ -24,17 +28,26 @@ const props = defineProps({
   },
 });
 
+// Use order if available, otherwise subscription, both have every property needed here in same pattern
+const entity = computed(() => props.order || props.subscription || {});
+
+const orderId = computed(() => {
+  if (props.order) return props.order.id;
+  if (props.subscription) return props.subscription.parent_order_id;
+  return null;
+});
+
 const preFetchedCustomer = ref([]);
 const currentlySelectedCustomer = ref(
-    props.order?.customer?.id ? props.order.customer : null
+    entity.value?.customer?.id ? entity.value.customer : null
 );
 
 const currentBillingAddress = ref(
-    props.order?.billing_address ? props.order.billing_address : null
+    entity.value?.billing_address ? entity.value.billing_address : null
 );
 
 const currentShippingAddress = ref(
-    props.order?.shipping_address ? props.order.shipping_address : null
+    entity.value?.shipping_address ? entity.value.shipping_address : null
 );
 
 const emit = defineEmits(["onAddressSelected", "onAddressRemove"]);
@@ -58,8 +71,8 @@ const commandHandler = (command) => {
 };
 
 const resetCustomer = () => {
-  props.order.customer_id = "";
-  props.order.customer = {};
+  entity.value.customer_id = "";
+  entity.value.customer = {};
   currentlySelectedCustomer.value = null;
   currentBillingAddress.value = null;
   currentShippingAddress.value = null;
@@ -121,8 +134,8 @@ const selectCustomer = (formattedCustomer) => {
 
 const setCustomer = (customer) => {
   currentlySelectedCustomer.value = customer;
-  props.order.customer = customer;
-  props.order.customer_id = customer.id;
+  entity.value.customer = customer;
+  entity.value.customer_id = customer.id;
   if (currentlySelectedCustomer.value !== null) {
     setBillingAddress();
     setShippingAddress();
@@ -171,7 +184,7 @@ const setAddress = (address) => {
   if (!address) {
     return;
   }
-  Rest.post(`orders/${props.order.id}/update-address-id`, {
+  Rest.post(`orders/${orderId.value}/update-address-id`, {
     address_id: address.id,
     address_type: address.type,
   }).then((response) => {
@@ -308,7 +321,7 @@ const refreshAddress = (showModal, address) => {
   customerAddressModalInfos.value.showManageAddressModal = true;
   setAddress(address);
 };
-watch(props.order, (newVal, oldVal) => {
+watch(() => entity.value, (newVal, oldVal) => {
   if (newVal.customer_id !== oldVal.customer_id) {
     resetCustomer();
   }
@@ -351,14 +364,14 @@ onMounted(() => {
                 </el-dropdown-item>
 
                 <el-dropdown-item
-                    v-if="order.id"
+                    v-if="orderId"
                     command="change_customer"
                 >
                   {{ translate("Change customer") }}
                 </el-dropdown-item>
 
                 <el-dropdown-item
-                    v-if="!order.id"
+                    v-if="!orderId"
                     command="remove_customer"
                 >
                   {{ translate("Remove customer") }}
@@ -377,7 +390,7 @@ onMounted(() => {
           <el-autocomplete
               popper-class="fct-customer-autocomplete-dropdown"
               clearable
-              v-model="order.customer.full_name"
+              v-model="entity.customer.full_name"
               :fetch-suggestions="searchCustomer"
               :placeholder="translate('Search or create a customer')"
               :disabled="false"
@@ -439,10 +452,10 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="user-info mt-2" v-if="order.customer.user_link">
-              {{translate('WP User:')}} <a :href="order.customer.user_link" target="_blank"
+            <div class="user-info mt-2" v-if="entity.customer.user_link">
+              {{translate('WP User:')}} <a :href="entity.customer.user_link" target="_blank"
                           class="inline-flex items-center gap-1 dark:text-gray-100 text-primary-500 focus:shadow-none hover:!underline">
-              #{{ translateNumber(order.customer.user_id) }}
+              #{{ translateNumber(entity.customer.user_id) }}
               <DynamicIcon name="Redirect" class="w-2.5 h-2.5 text-primary-500 dark:text-gray-200"/>
             </a>
             </div>
@@ -454,7 +467,7 @@ onMounted(() => {
             <ul class="fct-contact-info-list">
               <li>
                 <div class="flex items-center justify-between gap-2">
-                  <a class="text" :href="'mailto:' + order.customer?.email">
+                  <a class="text" :href="'mailto:' + entity.customer?.email">
                     {{ currentlySelectedCustomer.email }}
                   </a>
                   <CopyToClipboard
@@ -601,7 +614,7 @@ onMounted(() => {
     "
       :showAddressModal="customerAddressModalInfos.showManageAddressModal"
       :customer_id="currentlySelectedCustomer?.id"
-      :order_id="order.id"
+      :order_id="orderId"
       @addNewAddress="addNewAddress"
   />
 
@@ -635,7 +648,7 @@ onMounted(() => {
           :address="customerAddressModalInfos.address"
           :showAddressModal="customerAddressModalInfos.showModal"
           :showSetAsAlsoCheckbox="shouldShowSetAsAlsoCheckbox"
-          :order_id="order?.id"
+          :order_id="orderId"
           @close-modal="
           () => {
             customerAddressModalInfos.showModal = false;
@@ -646,7 +659,7 @@ onMounted(() => {
     </div>
   </el-dialog>
 
-  <el-dialog v-if="order.id" v-model="showCustomerChangeModal" :title="$t('Change Customer')">
-    <ChangeOrderCustomer :order-id="order.id" @close="showCustomerChangeModal = false"/>
+  <el-dialog v-if="orderId" v-model="showCustomerChangeModal" :title="$t('Change Customer')">
+    <ChangeOrderCustomer :order-id="orderId" @close="showCustomerChangeModal = false"/>
   </el-dialog>
 </template>

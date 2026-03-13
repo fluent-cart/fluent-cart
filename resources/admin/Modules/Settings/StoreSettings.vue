@@ -110,6 +110,8 @@ const validationErrors = ref({});
 const route = useRoute();
 const currentRouteName = ref(route.name);
 const currentRouteTitle = ref(route.meta.title || 'Store Settings');
+const isRemindersSettingsRoute = () => currentRouteName.value === 'reminders';
+const getSettingsEndpoint = () => isRemindersSettingsRoute() ? 'email-notification/reminders' : 'settings/store';
 
 
 const saveSettings = () => {
@@ -123,9 +125,11 @@ const saveSettings = () => {
     value['store_logo'] = value['store_logo']?.[0];
   }
 
-  value['settings_name'] = currentRouteName.value;
+  if (!isRemindersSettingsRoute()) {
+    value['settings_name'] = currentRouteName.value;
+  }
 
-  Rest.post("settings/store", {
+  Rest.post(getSettingsEndpoint(), {
     ...value,
   })
       .then((response) => {
@@ -164,9 +168,9 @@ const hasFormFieldsError = ref(false);
 const getSettings = () => {
   loading.value = true;
   hasFormFieldsError.value = false;
-  Rest.get("settings/store", {
-    settings_name: currentRouteName.value
-  }).then((response) => {
+  const payload = isRemindersSettingsRoute() ? {} : {settings_name: currentRouteName.value};
+
+  Rest.get(getSettingsEndpoint(), payload).then((response) => {
     form.setSchema(response.fields).setDefaults(response.settings).initForm();
     settings.value = response.settings;
     fields.value = response.fields;

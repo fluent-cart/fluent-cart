@@ -14,6 +14,7 @@
             <el-table-column :label="$t('Site URL')" width="360">
               <template #default="scope">
                 <span>{{ scope.row.site_url }}</span>
+                <Badge v-if="scope.row.is_local && scope.row.is_local != '0'" status="warning" size="small" :hide-icon="true" :text="$t('local')" style="margin-left: 10px;"/>
               </template>
             </el-table-column>
 

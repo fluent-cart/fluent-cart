@@ -22,7 +22,7 @@ class BuyNowButtonBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'buy-now-button';
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -58,7 +58,7 @@ class BuyNowButtonBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/Buttons/style/button-block-editor.scss'
@@ -66,7 +66,7 @@ class BuyNowButtonBlockEditor extends BlockEditor
     }
 
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [
@@ -77,6 +77,9 @@ class BuyNowButtonBlockEditor extends BlockEditor
                 'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
+            'fluent_cart_block_editor_asset' => [
+                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+            ],
         ];
     }
 

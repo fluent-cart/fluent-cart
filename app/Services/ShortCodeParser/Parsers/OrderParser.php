@@ -49,6 +49,11 @@ class OrderParser extends BaseParser
 //        'payment_receipt' => 'getPaymentReceipt',
 //    ];
 
+    protected array $methodMap = [
+        'item_count'  => 'getItemCount',
+        'is_digital'  => 'getIsDigital',
+    ];
+
     protected array $attributeMap = [
         'id'         => 'order.id',
         'status'     => 'order.status',
@@ -66,7 +71,6 @@ class OrderParser extends BaseParser
         'shipping_total',
         'tax_total',
         'total_paid',
-        'discount_total',
         'total_refund'
     ];
 
@@ -90,12 +94,25 @@ class OrderParser extends BaseParser
             return Helper::translateNumber($date);
         }
 
+        // Handle _formatted suffix for cent columns (e.g. total_amount_formatted)
+        $formattedSuffix = '_formatted';
+        if (Str::endsWith($accessor, $formattedSuffix)) {
+            $baseAccessor = substr($accessor, 0, -strlen($formattedSuffix));
+            if (in_array($baseAccessor, $this->centColumns)) {
+                $amount = Arr::get($this->order, $baseAccessor);
+                if (!is_numeric($amount)) {
+                    return (string) $amount;
+                }
+                return CurrencySettings::getPriceHtml($amount, $this->order['currency']);
+            }
+        }
+
         if (in_array($accessor, $this->centColumns)) {
             $amount = Arr::get($this->order, $accessor);
             if (!is_numeric($amount)) {
-                return $amount;
+                return (string) $amount;
             }
-            return CurrencySettings::getPriceHtml($amount, $this->order['currency']);
+            return (string) ($amount / 100);
         }
 
         // $html parsers
@@ -199,6 +216,13 @@ class OrderParser extends BaseParser
         if (empty($address)) {
             return "";
         }
+
+        $formattedFields = ['city', 'state', 'country'];
+        if (in_array($accessor, $formattedFields) && method_exists($address, 'getFormattedAddress')) {
+            $formatted = $address->getFormattedAddress();
+            return Arr::get($formatted, $accessor) ?: '';
+        }
+
         return Arr::get($address, $accessor) ?: '';
     }
 
@@ -260,6 +284,22 @@ class OrderParser extends BaseParser
         return ob_get_clean();
 
 
+    }
+
+    public function getDiscountTotal(): string
+    {
+        return (string) ($this->getDiscountTotalInCents() / 100);
+    }
+
+    public function getDiscountTotalFormatted(): string
+    {
+        return CurrencySettings::getPriceHtml($this->getDiscountTotalInCents(), $this->order['currency']);
+    }
+
+    private function getDiscountTotalInCents(): int
+    {
+        return (int) Arr::get($this->order, 'coupon_discount_total', 0)
+             + (int) Arr::get($this->order, 'manual_discount_total', 0);
     }
 
     public function getCustomerDashboardAnchorLink($accessor, $code = null, $conditions = [])
@@ -369,6 +409,28 @@ class OrderParser extends BaseParser
     public function getLicenseCount(): string
     {
         return (string)$this->licenses->count();
+    }
+
+    public function getIsDigital(): string
+    {
+        if (!$this->order) {
+            return 'no';
+        }
+
+        $fulfillmentType = Arr::get($this->order, 'fulfillment_type');
+
+        return $fulfillmentType === 'digital' ? 'yes' : 'no';
+    }
+
+    public function getItemCount(): string
+    {
+        $orderItems = $this->order ? $this->order->order_items : null;
+
+        if ($orderItems) {
+            return (string)$orderItems->count();
+        }
+
+        return '0';
     }
 
     public function getSubscriptions()

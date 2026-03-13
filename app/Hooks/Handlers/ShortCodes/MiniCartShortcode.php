@@ -19,7 +19,7 @@ class MiniCartShortcode extends ShortCode
 {
     protected static string $shortCodeName = 'fluent_cart_mini_cart';
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/cart-drawer/mini-cart.scss',

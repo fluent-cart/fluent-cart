@@ -197,14 +197,33 @@ class CustomerProfileController extends BaseFrontendController
 
         // Validate the request data for customer and addresses
         $validatedData = $request->getSafe($request->sanitize());
+        $firstName = Arr::get($validatedData, 'first_name');
+        $lastName = Arr::get($validatedData, 'last_name');
+
         // Update the customer with the validated data
-        $customer->first_name = Arr::get($validatedData, 'first_name');
-        $customer->last_name = Arr::get($validatedData, 'last_name');
+        $customer->first_name = $firstName;
+        $customer->last_name = $lastName;
         $customerUpdate = $customer->save();
+
 
         if (is_wp_error($customerUpdate)) {
             return $this->sendError([
                 'message' => $customerUpdate->get_error_message()
+            ]);
+        }
+
+        // Also update the WordPress user profile
+        $name = trim($firstName . ' ' . $lastName);
+        $wpResult = wp_update_user([
+            'ID'           => $customer->user_id,
+            'first_name'   => $firstName,
+            'last_name'    => $lastName,
+            'display_name' => $name,
+        ]);
+
+        if (is_wp_error($wpResult)) {
+            return $this->sendError([
+                'message' => $wpResult->get_error_message()
             ]);
         }
 

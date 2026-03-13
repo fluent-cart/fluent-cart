@@ -27,6 +27,10 @@ trait ValueTransformer
             $value = apply_filters($this->hookPrefix . 'smartcode_fallback', $value, $code, $data, $conditions);
         }
 
+        if (empty($value) && !empty($defaultValue)) {
+            $value = $defaultValue;
+        }
+
         if (empty($transformer)) {
             return $value;
         }

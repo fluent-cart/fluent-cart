@@ -171,13 +171,15 @@ class EditorShortCodeHelper
     public static function getTransactionShortCodes(): array
     {
         $orderProperties = [
-            '{{transaction.total}}'          => __('Total Amount', 'fluent-cart'),
-            '{{transaction.refund_amount}}'  => __('Refund Amount', 'fluent-cart'),
-            '{{transaction.payment_method}}' => __('Payment Method', 'fluent-cart'),
-            '{{transaction.card_last_4}}'    => __('Card Last 4', 'fluent-cart'),
-            '{{transaction.card_brand}}'     => __('Card Brand', 'fluent-cart'),
-            '{{transaction.status}}'         => __('Status', 'fluent-cart'),
-            '{{transaction.currency}}'       => __('Currency', 'fluent-cart'),
+            '{{transaction.total}}'                   => __('Total Amount', 'fluent-cart'),
+            '{{transaction.total_formatted}}'         => __('Total Amount (Formatted)', 'fluent-cart'),
+            '{{transaction.refund_amount}}'           => __('Refund Amount', 'fluent-cart'),
+            '{{transaction.refund_amount_formatted}}' => __('Refund Amount (Formatted)', 'fluent-cart'),
+            '{{transaction.payment_method}}'          => __('Payment Method', 'fluent-cart'),
+            '{{transaction.card_last_4}}'             => __('Card Last 4', 'fluent-cart'),
+            '{{transaction.card_brand}}'              => __('Card Brand', 'fluent-cart'),
+            '{{transaction.status}}'                  => __('Status', 'fluent-cart'),
+            '{{transaction.currency}}'                => __('Currency', 'fluent-cart'),
         ];
 
         return [
@@ -223,14 +225,28 @@ class EditorShortCodeHelper
                 '{{order.payment_method_title}}'    => __('Order Payment Method Title', 'fluent-cart'),
                 '{{order.payment_status}}'          => __('Order Payment Status', 'fluent-cart'),
                 '{{order.currency}}'                => __('Order Currency', 'fluent-cart'),
-                '{{order.subtotal}}'                => __('Order Subtotal', 'fluent-cart'),
-                '{{order.discount_tax}}'            => __('Order Discount Tax', 'fluent-cart'),
-                '{{order.discount_total}}'          => __('Order Discount Total', 'fluent-cart'),
-                '{{order.shipping_tax}}'            => __('Order Shipping Tax', 'fluent-cart'),
-                '{{order.shipping_total}}'          => __('Order Shipping Total', 'fluent-cart'),
-                '{{order.tax_total}}'               => __('Order Tax Total', 'fluent-cart'),
-                '{{order.total_amount}}'            => __('Order Total Amount', 'fluent-cart'),
-                '{{order.total_paid}}'              => __('Order Total Paid', 'fluent-cart'),
+                '{{order.subtotal}}'                         => __('Order Subtotal', 'fluent-cart'),
+                '{{order.subtotal_formatted}}'               => __('Order Subtotal (Formatted)', 'fluent-cart'),
+                '{{order.discount_tax}}'                     => __('Order Discount Tax', 'fluent-cart'),
+                '{{order.discount_tax_formatted}}'           => __('Order Discount Tax (Formatted)', 'fluent-cart'),
+                '{{order.discount_total}}'                   => __('Order Discount Total', 'fluent-cart'),
+                '{{order.discount_total_formatted}}'         => __('Order Discount Total (Formatted)', 'fluent-cart'),
+                '{{order.manual_discount_total}}'            => __('Manual Discount Total', 'fluent-cart'),
+                '{{order.manual_discount_total_formatted}}'  => __('Manual Discount Total (Formatted)', 'fluent-cart'),
+                '{{order.coupon_discount_total}}'            => __('Coupon Discount Total', 'fluent-cart'),
+                '{{order.coupon_discount_total_formatted}}'  => __('Coupon Discount Total (Formatted)', 'fluent-cart'),
+                '{{order.shipping_tax}}'                     => __('Order Shipping Tax', 'fluent-cart'),
+                '{{order.shipping_tax_formatted}}'           => __('Order Shipping Tax (Formatted)', 'fluent-cart'),
+                '{{order.shipping_total}}'                   => __('Order Shipping Total', 'fluent-cart'),
+                '{{order.shipping_total_formatted}}'         => __('Order Shipping Total (Formatted)', 'fluent-cart'),
+                '{{order.tax_total}}'                        => __('Order Tax Total', 'fluent-cart'),
+                '{{order.tax_total_formatted}}'              => __('Order Tax Total (Formatted)', 'fluent-cart'),
+                '{{order.total_amount}}'                     => __('Order Total Amount', 'fluent-cart'),
+                '{{order.total_amount_formatted}}'           => __('Order Total Amount (Formatted)', 'fluent-cart'),
+                '{{order.total_paid}}'                       => __('Order Total Paid', 'fluent-cart'),
+                '{{order.total_paid_formatted}}'             => __('Order Total Paid (Formatted)', 'fluent-cart'),
+                '{{order.total_refund}}'                     => __('Order Total Refund', 'fluent-cart'),
+                '{{order.total_refund_formatted}}'           => __('Order Total Refund (Formatted)', 'fluent-cart'),
                 '{{order.rate}}'                    => __('Order Rate', 'fluent-cart'),
                 '{{order.note}}'                    => __('Order Note', 'fluent-cart'),
                 '{{order.ip_address}}'              => __('Order Ip Address', 'fluent-cart'),
@@ -241,6 +257,8 @@ class EditorShortCodeHelper
                 '{{order.payment_summary}}'         => __('Payment Summary', 'fluent-cart'),
                 '{{order.downloads}}'               => __('Order Downloads', 'fluent-cart'),
                 '{{order.created_at}}'              => __('Order Create Date', 'fluent-cart'),
+                '{{order.item_count}}'              => __('Order Item Count', 'fluent-cart'),
+                '{{order.is_digital}}'              => __('Is Digital Order', 'fluent-cart'),
             ],
         ];
     }
@@ -249,11 +267,12 @@ class EditorShortCodeHelper
     {
 
         $shortCodes = [
-            'order'       => static::getOrderShortCodes(),
-            'general'     => static::getGeneralShortCodes(),
-            'customer'    => static::getCustomerShortCodesForOrder(),
-            'transaction' => static::getTransactionShortCodes(),
-            'settings'    => static::getSettingsShortCodes()
+            'order'        => static::getOrderShortCodes(),
+            'general'      => static::getGeneralShortCodes(),
+            'customer'     => static::getCustomerShortCodesForOrder(),
+            'transaction'  => static::getTransactionShortCodes(),
+            'settings'     => static::getSettingsShortCodes(),
+            'license'      => static::getLicenseShortCodes(),
         ];
         return apply_filters('fluent_cart/editor_shortcodes', $shortCodes);
     }
@@ -264,6 +283,83 @@ class EditorShortCodeHelper
         return [
             static::getGeneralShortCodes(),
             static::getSettingsShortCodes()
+        ];
+    }
+
+    public static function getItemShortCodes(): array
+    {
+        return [
+            'title'      => __('Order Item (Loop)', 'fluent-cart'),
+            'key'        => 'item',
+            'shortcodes' => [
+                '{{item.sl}}'           => __('Serial Number', 'fluent-cart'),
+                '{{item.name}}'         => __('Product Name', 'fluent-cart'),
+                '{{item.variant}}'      => __('Variant Name', 'fluent-cart'),
+                '{{item.quantity}}'     => __('Quantity', 'fluent-cart'),
+                '{{item.unit_price}}'           => __('Unit Price', 'fluent-cart'),
+                '{{item.unit_price_formatted}}' => __('Unit Price (Formatted)', 'fluent-cart'),
+                '{{item.price}}'                => __('Total Price', 'fluent-cart'),
+                '{{item.price_formatted}}'      => __('Total Price (Formatted)', 'fluent-cart'),
+                '{{item.subtotal}}'             => __('Subtotal', 'fluent-cart'),
+                '{{item.subtotal_formatted}}'   => __('Subtotal (Formatted)', 'fluent-cart'),
+                '{{item.payment_info}}' => __('Payment Info', 'fluent-cart'),
+                '{{item.payment_type}}' => __('Payment Type', 'fluent-cart'),
+            ],
+        ];
+    }
+
+    public static function getLicenseShortCodes(): array
+    {
+        return [
+            'title'      => __('License (Loop)', 'fluent-cart'),
+            'key'        => 'license',
+            'shortcodes' => [
+                '{{license.sl}}'               => __('Serial Number', 'fluent-cart'),
+                '{{license.key}}'              => __('License Key', 'fluent-cart'),
+                '{{license.status}}'           => __('Status', 'fluent-cart'),
+                '{{license.product_name}}'     => __('Product Name', 'fluent-cart'),
+                '{{license.variant}}'          => __('Variant', 'fluent-cart'),
+                '{{license.limit}}'            => __('Activation Limit', 'fluent-cart'),
+                '{{license.activation_count}}' => __('Activation Count', 'fluent-cart'),
+                '{{license.expiration_date}}'  => __('Expiration Date', 'fluent-cart'),
+            ],
+        ];
+    }
+
+    public static function getDownloadShortCodes(): array
+    {
+        return [
+            'title'      => __('Download (Loop)', 'fluent-cart'),
+            'key'        => 'download',
+            'shortcodes' => [
+                '{{download.sl}}'           => __('Serial Number', 'fluent-cart'),
+                '{{download.title}}'        => __('File Title', 'fluent-cart'),
+                '{{download.product_name}}' => __('Product Name', 'fluent-cart'),
+                '{{download.url}}'          => __('Download URL', 'fluent-cart'),
+                '{{download.file_size}}'    => __('File Size', 'fluent-cart'),
+            ],
+        ];
+    }
+
+    public static function getSubscriptionShortCodes(): array
+    {
+        return [
+            'title'      => __('Subscription (Loop)', 'fluent-cart'),
+            'key'        => 'subscription',
+            'shortcodes' => [
+                '{{subscription.sl}}'                => __('Serial Number', 'fluent-cart'),
+                '{{subscription.item_name}}'         => __('Item Name', 'fluent-cart'),
+                '{{subscription.status}}'            => __('Status', 'fluent-cart'),
+                '{{subscription.billing_interval}}'  => __('Billing Interval', 'fluent-cart'),
+                '{{subscription.recurring_amount}}'           => __('Recurring Amount', 'fluent-cart'),
+                '{{subscription.recurring_amount_formatted}}' => __('Recurring Amount (Formatted)', 'fluent-cart'),
+                '{{subscription.payment_info}}'      => __('Payment Info', 'fluent-cart'),
+                '{{subscription.next_billing_date}}' => __('Next Billing Date', 'fluent-cart'),
+                '{{subscription.bill_times}}'        => __('Bill Times', 'fluent-cart'),
+                '{{subscription.bill_count}}'        => __('Bill Count', 'fluent-cart'),
+                '{{subscription.trial_days}}'        => __('Trial Days', 'fluent-cart'),
+                '{{subscription.expire_at}}'         => __('Expiration Date', 'fluent-cart'),
+            ],
         ];
     }
 

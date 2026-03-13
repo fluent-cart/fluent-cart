@@ -44,7 +44,7 @@ class SaleBadgeBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -54,14 +54,14 @@ class SaleBadgeBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/SaleBadge/style/sale-badge-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [
@@ -88,7 +88,11 @@ class SaleBadgeBlockEditor extends BlockEditor
             $badgeStyle = 'badge';
         }
 
-        $badgePosition = Arr::get($shortCodeAttribute, 'badge_position', '');
+        // Default to 'top-left' but allow empty string to pass through — when the block
+        // is used outside a visual container (e.g. inline in a column), the JS editor clears
+        // badge_position to '' so the badge renders inline without absolute positioning.
+        // This differs intentionally from SoldOutBadgeBlockEditor which always forces a position.
+        $badgePosition = Arr::get($shortCodeAttribute, 'badge_position', 'top-left');
         if ($badgePosition && !in_array($badgePosition, ['top-left', 'top-right', 'bottom-left', 'bottom-right'], true)) {
             $badgePosition = '';
         }
@@ -105,7 +109,7 @@ class SaleBadgeBlockEditor extends BlockEditor
         // 2. Get product — explicit product_id takes priority, then current context
         $productId = absint(Arr::get($shortCodeAttribute, 'product_id', 0));
         if ($productId) {
-            $product = Product::query()->with(['detail', 'variants'])->find($productId);
+            $product = Product::query()->where('post_status', 'publish')->with(['detail', 'variants'])->find($productId);
         } else {
             $product = fluent_cart_get_current_product();
         }
@@ -127,14 +131,14 @@ class SaleBadgeBlockEditor extends BlockEditor
 
             if ($variant && $variant->compare_price > $variant->item_price && $variant->compare_price > 0) {
                 $isOnSale = true;
-                $discountPercent = round((($variant->compare_price - $variant->item_price) / $variant->compare_price) * 100);
+                $discountPercent = max(0, min(100, round((($variant->compare_price - $variant->item_price) / $variant->compare_price) * 100)));
             }
         } else {
             // best_discount — scan all variants, use highest discount
             foreach ($product->variants as $variant) {
                 if ($variant->compare_price > $variant->item_price && $variant->compare_price > 0) {
                     $isOnSale = true;
-                    $discount = round((($variant->compare_price - $variant->item_price) / $variant->compare_price) * 100);
+                    $discount = max(0, min(100, round((($variant->compare_price - $variant->item_price) / $variant->compare_price) * 100)));
                     if ($discount > $discountPercent) {
                         $discountPercent = $discount;
                     }

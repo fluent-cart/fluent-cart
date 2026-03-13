@@ -11,18 +11,6 @@ module.exports = {
         './resources/admin/BlockEditor/ProductImage/**/*.*',
     ],
 
-    safelist: [
-        {
-            pattern: /grid-cols-(1|2|3|4|5|6|7|8|9|10|)/,
-            variants: ['xl', 'sm', 'md', 'lg', 'xl'],
-        },
-
-        {
-            pattern: /col-span-(1|2|3|4|5|6|7|8|9|10|)/,
-            variants: ['xl', 'sm', 'md', 'lg', 'xl'],
-        }
-    ],
-
     corePlugins: {
         preflight: false,
     },

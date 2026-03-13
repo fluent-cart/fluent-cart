@@ -42,6 +42,9 @@ class SettingsParser extends BaseParser
     public function getStoreLogo(): ?string
     {
         $storeLogo = $this->storeSettings->get('store_logo.url');
+        if(empty($storeLogo)){
+            return '';
+        }
         $storeName = $this->getStoreName();
         return "<img style='max-height: 50px' src='{$storeLogo}' alt='{$storeName}'>";
     }

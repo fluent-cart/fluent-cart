@@ -40,6 +40,7 @@ use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Payments\PaymentHelper;
+use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\Refund;
 use FluentCart\App\Services\URL;
@@ -612,6 +613,7 @@ class OrderController extends Controller
             $data['tax_id'] =  $meta->meta_value;
         }
 
+        $data['can_send_payment_reminder'] = (new ReminderService())->canSendPaymentReminder($data['order']);
 
         return $data;
     }

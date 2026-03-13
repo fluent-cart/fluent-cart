@@ -274,7 +274,6 @@ class InnerBlocks
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
             $blockContext = $block->context;
-            $innerBlocksContent .= '<div class="fct-product-image-inner-blocks">';
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
                     $innerContext = array_merge($inner_block->context, $blockContext);
@@ -282,7 +281,6 @@ class InnerBlocks
                     $innerBlocksContent .= $instance->render();
                 }
             }
-            $innerBlocksContent .= '</div>';
         }
         ob_start();
         $render->renderProductImage();
@@ -290,10 +288,9 @@ class InnerBlocks
 
         if (!empty($innerBlocksContent)) {
             return sprintf(
-                "<div class='fct-product-image-wrap' style='position: relative;'>
-                    <div>%s</div>
-                    
-                    <div style='position: absolute; top: 0; left: 0; width: 100%%; height: 100%%;'>
+                "<div class='fct-product-image-wrap' style='position: relative; overflow: clip;'>
+                    %s
+                    <div class='fct-product-image-inner-blocks'>
                         %s
                     </div>
                 </div>",
@@ -485,7 +482,7 @@ class InnerBlocks
         return 'fluent_cart_product_carousel_inner_blocks';
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()      => [
@@ -504,14 +501,14 @@ class InnerBlocks
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/single-product/single-product.scss',
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         $scripts = [
             [

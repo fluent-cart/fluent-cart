@@ -12,8 +12,7 @@ const {useSelect} = wp.data;
 const {store: blockEditorStore} = wp.blockEditor;
 
 const blockEditorData = window.fluent_cart_product_image_data;
-const placeholderImage = blockEditorData.placeholder_image;
-const rest = window['fluentCartRestVars'].rest;
+const rest = window['fluentCartRestVars']?.rest;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     apiVersion: 3,
@@ -40,7 +39,6 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
 
         const singleProductData = useSingleProductData();
 
@@ -69,26 +67,25 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         }, [isInsideProductInfo]);
 
         const fetchProduct = () => {
+            if (!rest?.url) return;
             apiFetch({
-                path: addQueryArgs(fetchUrl, {
+                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
                     with: ['detail', 'variants']
                 }),
                 headers: {
-                    'X-WP-Nonce': rest.nonce
+                    'X-WP-Nonce': rest?.nonce
                 }
             }).then((response) => {
-                setSelectedProduct(response.product || {});
-            }).finally(() => {
-
+                setSelectedProduct(response?.product || {});
+            }).catch(() => {
+                setSelectedProduct({});
             });
         }
 
         useEffect(() => {
             if (singleProductData?.product) {
                 setSelectedProduct(singleProductData.product);
-            }
-
-            if (!isInsideProductInfo && attributes.product_id) {
+            } else if (!isInsideProductInfo && attributes.product_id) {
                 fetchProduct();
             }
         }, [attributes.product_id, singleProductData?.product]);
@@ -112,7 +109,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                 <div className="relative group-[.list]:flex-shrink-0">
                     <img src={getImage()}
                          className={'w-full aspect-square object-cover rounded-md group-[.list]:w-[214px] pointer-events-none'}
-                         alt={selectedProduct.product ? selectedProduct.product.post_title : 'Product'}/>
+                         alt={selectedProduct.post_title || 'Product'}/>
                     <div className="absolute inset-0" style={{pointerEvents: 'auto'}}>
                         <InnerBlocks
                             allowedBlocks={[

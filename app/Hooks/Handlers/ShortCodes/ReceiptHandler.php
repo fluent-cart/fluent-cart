@@ -127,7 +127,8 @@ class ReceiptHandler
             'vat_tax_id'           => $vatTaxId,
             'order_operation'      => $operation,
             'is_first_time'        => $isFirstTime,
-            'default_banner_image' => $defaultBannerImage
+            'default_banner_image' => $defaultBannerImage,
+            'user_tz'              => Arr::get($order->config, 'user_tz', wp_timezone_string()),
         ];
         if ($isReceipt) {
             (new ReceiptRenderer($config))->render();

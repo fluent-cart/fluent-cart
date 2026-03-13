@@ -31,7 +31,7 @@ class PricingTableShortCode extends ShortCode
     }
 
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -42,7 +42,7 @@ class PricingTableShortCode extends ShortCode
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'public/pricing-table/pricing-table.scss'
@@ -105,7 +105,7 @@ class PricingTableShortCode extends ShortCode
         return ob_get_clean();
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             'fluentcart_pricing_table_vars' => [

@@ -42,7 +42,7 @@ class TemplateController extends Controller
         foreach ($templates as $template) {
             $key     = sanitize_key(Arr::get($template, 'key'));
             $content = wp_kses_post(Arr::get($template, 'content'));
-            fluent_cart_update_option($key, $content, '', 'template');
+            fluent_cart_update_option($key, $content);
         }
         return $this->sendSuccess([
             'message' => __('Template saved successfully', 'fluent-cart')

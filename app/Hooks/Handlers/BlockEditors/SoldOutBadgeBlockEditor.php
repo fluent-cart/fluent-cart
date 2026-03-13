@@ -45,7 +45,7 @@ class SoldOutBadgeBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getScripts(): array
+    public function getScripts(): array
     {
         return [
             [
@@ -55,14 +55,14 @@ class SoldOutBadgeBlockEditor extends BlockEditor
         ];
     }
 
-    protected function getStyles(): array
+    public function getStyles(): array
     {
         return [
             'admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss'
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return [
             $this->getLocalizationKey()     => [
@@ -89,9 +89,9 @@ class SoldOutBadgeBlockEditor extends BlockEditor
             $badgeStyle = 'badge';
         }
 
-        $badgePosition = Arr::get($shortCodeAttribute, 'badge_position', '');
-        if ($badgePosition && !in_array($badgePosition, ['top-left', 'top-right', 'bottom-left', 'bottom-right'], true)) {
-            $badgePosition = '';
+        $badgePosition = Arr::get($shortCodeAttribute, 'badge_position', 'top-left');
+        if (!in_array($badgePosition, ['top-left', 'top-right', 'bottom-left', 'bottom-right'], true)) {
+            $badgePosition = 'top-left';
         }
 
         $badgeText = sanitize_text_field(Arr::get($shortCodeAttribute, 'badge_text', __('Out of Stock', 'fluent-cart')));
@@ -99,7 +99,7 @@ class SoldOutBadgeBlockEditor extends BlockEditor
         // Get product — explicit product_id takes priority, then current context
         $productId = absint(Arr::get($shortCodeAttribute, 'product_id', 0));
         if ($productId) {
-            $product = Product::query()->with(['detail', 'variants'])->find($productId);
+            $product = Product::query()->where('post_status', 'publish')->with(['detail'])->find($productId);
         } else {
             $product = fluent_cart_get_current_product();
         }
@@ -119,9 +119,7 @@ class SoldOutBadgeBlockEditor extends BlockEditor
         // Build CSS classes (values are pre-validated via in_array above)
         $classes = ['fct-sold-out-badge'];
         $classes[] = 'fct-sold-out-badge--' . esc_attr($badgeStyle);
-        if ($badgePosition) {
-            $classes[] = 'fct-sold-out-badge--' . esc_attr($badgePosition);
-        }
+        $classes[] = 'fct-sold-out-badge--' . esc_attr($badgePosition);
 
         $wrapper_attributes = get_block_wrapper_attributes([
             'class' => implode(' ', $classes),

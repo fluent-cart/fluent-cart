@@ -31,7 +31,6 @@ const emailShortCodes = ref([
   { label: "Customer Email", value: "{order.customer.email}" },
   { label: "User Email", value: "{user.user_email}" },
 ]);
-const emailTemplateEditor = ref(true);
 const templates = ref({});
 const buttons = ref({});
 const router = useRouter();
@@ -45,7 +44,7 @@ const validationErrors = ref({});
 
 const saveShortcut = useSaveShortcut();
 saveShortcut.onSave(() => {
-    addNotification(event);
+    addNotification();
 });
 
 const getTemplate = (selectedTemplate) => {
@@ -66,8 +65,6 @@ const resetTemplate = () => {
   wpEditor.value?.setContent("");
 };
 
-const showErrors = (fieldKey) => {};
-
 const getShortCodes = () => {
   loading.value = true;
   selfRef
@@ -86,7 +83,7 @@ const getShortCodes = () => {
 };
 
 const addNotification = (event) => {
-  event.preventDefault();
+  if (event) event.preventDefault();
   validationErrors.value = {};
   loading.value = true;
   selfRef
@@ -105,17 +102,6 @@ const addNotification = (event) => {
     .finally(() => {
       loading.value = false;
     });
-};
-
-const showPreviewModal = ref(false);
-let previewContent = "";
-
-const setPreviewContent = () => {
-  if (hasWpEditor.value) {
-    previewContent = wp.editor.getContent(props.editor_id);
-    return;
-  }
-  previewContent = plainContent.value;
 };
 
 const showPreview = () => {

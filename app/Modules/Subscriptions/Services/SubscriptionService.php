@@ -377,7 +377,9 @@ class SubscriptionService
 
         (new StatusHelper($transaction->order))->syncOrderStatuses($transaction);
 
-        (new SubscriptionRenewed($subscriptionModel, $renewalOrder, $subscriptionModel->order, $renewalOrder->customer))->dispatch();
+        if ($transaction->total > 0) {
+            (new SubscriptionRenewed($subscriptionModel, $renewalOrder, $subscriptionModel->order, $renewalOrder->customer))->dispatch();
+        }
 
         return $subscriptionModel;
     }

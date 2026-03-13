@@ -379,7 +379,7 @@ class CustomerProfileHandler extends ShortCode
         ];
     }
 
-    protected function localizeData(): array
+    public function localizeData(): array
     {
         return static::getLocalizationData($this->shortCodeAttributes);
     }

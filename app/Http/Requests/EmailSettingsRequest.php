@@ -51,7 +51,7 @@ class EmailSettingsRequest extends RequestGuard
             },
             'email_footer'      => 'wp_kses_post',
             'admin_email'       => 'sanitize_text_field',
-            'show_email_footer' => 'sanitize_text_field'
+            'show_email_footer' => 'sanitize_text_field',
         ];
     }
 }

@@ -12,7 +12,11 @@ return [
         //'billing' => OrderParser::class,
         'order'       => Parsers\OrderParser::class,
         'settings'    => Parsers\SettingsParser::class,
-        'transaction' => Parsers\TransactionParser::class,
+        'transaction'  => Parsers\TransactionParser::class,
+        'item'         => Parsers\ItemParser::class,
+        'license'      => Parsers\LicenseParser::class,
+        'download'     => Parsers\DownloadParser::class,
+        'subscription' => Parsers\SubscriptionParser::class,
     ],
     'parser_references'   => [
 

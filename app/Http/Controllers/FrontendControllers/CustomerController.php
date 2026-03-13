@@ -260,117 +260,117 @@ class CustomerController extends Controller
     {
         $type = sanitize_text_field(Arr::get($data, 'type'));
         $fulfillmentType = sanitize_text_field(Arr::get($data, 'product_type'));
-        $isDifferentShipping = sanitize_text_field(Arr::get($data, 'is_different_shipping', false));
 
-        $validations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements($type, $fulfillmentType, !$isDifferentShipping));
+        // Address creation validates against its own type's rules only — no shipping merge
+        $validations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements($type, $fulfillmentType, false));
+
+        // Name fields are validated via basic_info, not address sections
+        unset($validations['full_name'], $validations['first_name'], $validations['last_name'], $validations['company_name']);
 
         $address = [];
         foreach ($validations as $key => $validation) {
-            $address[$key] = Arr::get($data, $type.'_' . $key, '');
+            $address[$key] = Arr::get($data, $type . '_' . $key, '');
         }
 
-
+        $country = $this->resolveCountryForValidation($address, $type);
         $errors = [];
-        $hasError = false;
-
 
         foreach ($validations as $key => $rule) {
             $value = Arr::get($address, $key, '');
             $prefixedKey = $type . '_' . $key;
             $titledKey = Str::headline($key);
 
-            if ($key === 'state') {
-                $validateStateDate = $this->validateState($value, $key, $address, $rule, $prefixedKey, $titledKey);
-                if (!empty($validateStateDate)) {
-                    $errors[$prefixedKey] = $validateStateDate;
-                }
-                continue;
+            $fieldErrors = $this->validateAddressField($key, $value, $rule, $titledKey, $country);
+            if (!empty($fieldErrors)) {
+                $errors[$prefixedKey] = $fieldErrors;
             }
-
-            if ($key === 'country') {
-                $countries = LocalizationManager::getInstance()->countries();
-
-                if ($rule === 'required' && empty($value)) {
-                    if (!isset($errors[$key])) {
-                        $errors[$prefixedKey] = [];
-                    }
-                    $errors[$prefixedKey]['required'] = sprintf(
-                    /* translators: 1: attribute name */
-                        __('%s is required.', 'fluent-cart'),
-                        $titledKey
-                    );
-                    continue;
-                }
-
-                if (!Arr::has($countries, $value)) {
-                    if (!isset($errors[$key])) {
-                        $errors[$prefixedKey] = [];
-                    }
-                    $errors[$prefixedKey]['invalid'] = sprintf(
-                    /* translators: 1: attribute name */
-                        __('%s is invalid.', 'fluent-cart'),
-                        $titledKey
-                    );
-                    continue;
-                }
-            }
-
-            if ($rule === 'required' && empty($value)) {
-                if (!isset($errors[$key])) {
-                    $errors[$prefixedKey] = [];
-                }
-                $errors[$prefixedKey]['required'] = sprintf(
-                    /* translators: 1: attribute name */
-                    __('%s is required.', 'fluent-cart'),
-                    $titledKey
-                );
-            }
-
-
         }
 
-        if (count($errors) > 0) {
+        if (!empty($errors)) {
             return new \Wp_Error('validation_error', __('Validation error', 'fluent-cart'), $errors);
         }
 
         return $data;
-
-
     }
 
-    private function validateState($value, $key, $address, $rule, $prefixedKey, $titledKey)
+    private function resolveCountryForValidation(array $address, string $addressType): string
     {
         $country = Arr::get($address, 'country', '');
-        $states = LocalizationManager::getInstance()->statesOptions($country);
+        if (!empty($country)) {
+            return $country;
+        }
 
+        // Fall back to store country only when the country field is disabled by admin
+        $fieldSettings = CheckoutFieldsSchema::getFieldsSettings();
+        $countryEnabled = Arr::get($fieldSettings, $addressType . '_address.country.enabled', 'no') === 'yes';
+
+        if (!$countryEnabled) {
+            return (new \FluentCart\Api\StoreSettings())->get('store_country') ?: '';
+        }
+
+        return '';
+    }
+
+    private function validateAddressField(string $field, $value, string $rule, string $label, string $country): array
+    {
+        $localization = LocalizationManager::getInstance();
+
+        switch ($field) {
+            case 'country':
+                return $this->validateCountryField($value, $rule, $label, $localization);
+            case 'state':
+                return $this->validateStateField($value, $rule, $label, $country, $localization);
+            case 'postcode':
+                if ($rule === 'required' && empty($value)) {
+                    return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
+                }
+                if (!empty($value) && !empty($country) && $localization->postcode->isValid($value, $country) === false) {
+                    return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
+                }
+                return [];
+            default:
+                if ($rule === 'required' && empty($value)) {
+                    return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
+                }
+                return [];
+        }
+    }
+
+    private function validateCountryField($value, string $rule, string $label, LocalizationManager $localization): array
+    {
+        if ($rule === 'required' && empty($value)) {
+            return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
+        }
+
+        if (!empty($value) && !Arr::has($localization->countries(), $value)) {
+            return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
+        }
+
+        return [];
+    }
+
+    private function validateStateField($value, string $rule, string $label, string $country, LocalizationManager $localization): array
+    {
+        if (empty($country)) {
+            return [];
+        }
+
+        $states = $localization->statesOptions($country);
         if (empty($states)) {
             return [];
         }
 
-        $errors = [];
+        $stateValues = array_column($states, 'value');
 
-        if ($rule === 'required') {
-            if (empty($value)) {
-                if (!isset($errors[$key])) {
-                    $errors = [];
-                }
-                $errors['required'] = sprintf(
-                /* translators: 1: attribute name */
-                    __('%s is required.', 'fluent-cart'),
-                    $titledKey
-                );
-            } else {
-                if ( !in_array($value, array_column($states, 'value'))) {
-                    $errors['invalid'] = sprintf(
-                    /* translators: 1: attribute name */
-                        __('%s is invalid.', 'fluent-cart'),
-                        $titledKey
-                    );
-                }
-            }
+        if ($rule === 'required' && empty($value)) {
+            return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
         }
 
-        return $errors;
+        if (!empty($value) && !in_array($value, $stateValues)) {
+            return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
+        }
+
+        return [];
     }
 
     public function updateAddress(CustomerAddressRequest $request)

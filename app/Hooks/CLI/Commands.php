@@ -7,6 +7,10 @@ use FluentCart\App\Models\AppliedCoupon;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Services\Email\EmailNotificationMailer;
+use FluentCart\App\Services\Email\EmailNotifications;
+use FluentCart\App\Services\Email\FluentBlockParser;
+use FluentCart\App\Services\Email\Mailer;
 use FluentCart\Database\DBMigrator;
 use FluentCart\Database\DBSeeder;
 use FluentCart\Framework\Support\Arr;
@@ -1128,6 +1132,364 @@ class Commands
         $command->generate($args, $assoc_args);
     }
 
+
+    /**
+     * Send a test email for any notification type
+     *
+     * ## OPTIONS
+     *
+     * [<notification-name>]
+     * : The notification name to send (e.g. order_paid_customer)
+     *
+     * [--order_id=<id>]
+     * : Use a real order for email data
+     *
+     * [--to=<email>]
+     * : Override recipient email address
+     *
+     * [--list]
+     * : List all available notification names
+     *
+     * [--all]
+     * : Send all notifications at once (requires --to)
+     *
+     * [--render-only]
+     * : Skip sending, just render and save the HTML file to .debug-emails/
+     *
+     * ## EXAMPLES
+     *
+     *     wp fluent_cart test_email --list
+     *     wp fluent_cart test_email order_paid_customer --order_id=42
+     *     wp fluent_cart test_email order_paid_customer --order_id=42 --to=dev@example.com
+     *     wp fluent_cart test_email order_paid_customer --to=dev@example.com
+     *     wp fluent_cart test_email order_paid_customer --render-only
+     *     wp fluent_cart test_email order_paid_customer --render-only --order_id=42
+     *     wp fluent_cart test_email --all --to=dev@example.com
+     *     wp fluent_cart test_email --all --to=dev@example.com --order_id=42
+     */
+    public function test_email($args, $assoc_args)
+    {
+        $notifications = EmailNotifications::getNotifications();
+
+        // --list flag: show all available notifications
+        if (isset($assoc_args['list'])) {
+            $rows = [];
+            foreach ($notifications as $name => $notification) {
+                $settings = Arr::get($notification, 'settings', []);
+                $rows[] = [
+                    'Name'      => $name,
+                    'Title'     => Arr::get($notification, 'title', ''),
+                    'Recipient' => Arr::get($notification, 'recipient', ''),
+                    'Active'    => Arr::get($settings, 'active', 'no'),
+                ];
+            }
+            \WP_CLI\Utils\format_items('table', $rows, ['Name', 'Title', 'Recipient', 'Active']);
+            return;
+        }
+
+        // --all flag: send every notification
+        if (isset($assoc_args['all'])) {
+            $to = Arr::get($assoc_args, 'to');
+            if (empty($to)) {
+                \WP_CLI::error('--all requires --to=<email> to specify the recipient.');
+                return;
+            }
+
+            $data = $this->resolveEmailData($assoc_args);
+            $mailer = new EmailNotificationMailer();
+            $sent = 0;
+            $failed = 0;
+
+            foreach ($notifications as $name => $notification) {
+                try {
+                    $formatted = EmailNotifications::formatNotification($notification, $data);
+                    list($body, $subject, $_to) = $mailer->parseEmailContent($formatted, $data);
+
+                    $result = Mailer::make()->to(sanitize_email($to))->subject($subject)->body($body)->send(true);
+
+                    if ($result) {
+                        \WP_CLI::line(sprintf('[OK]   %s — %s', $name, $subject));
+                        $sent++;
+                    } else {
+                        \WP_CLI::warning(sprintf('[FAIL] %s — wp_mail returned false', $name));
+                        $failed++;
+                    }
+                } catch (\Throwable $e) {
+                    \WP_CLI::warning(sprintf('[ERROR] %s — %s', $name, $e->getMessage()));
+                    $failed++;
+                }
+            }
+
+            \WP_CLI::success(sprintf('Done. Sent: %d, Failed: %d, Total: %d', $sent, $failed, $sent + $failed));
+            return;
+        }
+
+        // Validate notification name
+        if (empty($args[0])) {
+            \WP_CLI::error('Please provide a notification name. Use --list to see available names, or --all to send all.');
+            return;
+        }
+
+        $emailName = $args[0];
+        if (!isset($notifications[$emailName])) {
+            \WP_CLI::error(sprintf(
+                "Unknown notification: '%s'. Available: %s",
+                $emailName,
+                implode(', ', array_keys($notifications))
+            ));
+            return;
+        }
+
+        // Build email data
+        $data = $this->resolveEmailData($assoc_args);
+
+        // Format the notification and render email
+        $mailer = new EmailNotificationMailer();
+
+        $notification = EmailNotifications::getNotification($emailName);
+        $notification = EmailNotifications::formatNotification($notification, $data);
+
+        list($body, $subject, $to) = $mailer->parseEmailContent($notification, $data);
+
+        // Save debug HTML file
+        $debugDir = FLUENTCART_PLUGIN_PATH . '.debug-emails';
+        if (!is_dir($debugDir)) {
+            mkdir($debugDir, 0755, true);
+        }
+        $debugFile = $debugDir . '/' . $emailName . '.html';
+        file_put_contents($debugFile, $body);
+
+        \WP_CLI::line('Subject: ' . $subject);
+        \WP_CLI::line('Debug HTML: ' . $debugFile);
+
+        // --render-only: skip sending, just output the rendered HTML file
+        if (isset($assoc_args['render-only'])) {
+            \WP_CLI::success('Rendered to ' . $debugFile);
+            return;
+        }
+
+        // Override recipient if --to provided
+        $toOverride = Arr::get($assoc_args, 'to');
+        if ($toOverride) {
+            $to = sanitize_email($toOverride);
+        }
+
+        if (empty($to)) {
+            \WP_CLI::error('No recipient email resolved. Use --to=<email> to specify one.');
+            return;
+        }
+
+        // Send
+        $result = Mailer::make()->to($to)->subject($subject)->body($body)->send(true);
+
+        \WP_CLI::line('To: ' . $to);
+
+        if ($result) {
+            \WP_CLI::success('Email sent successfully.');
+        } else {
+            \WP_CLI::warning('wp_mail() returned false. Check your mail configuration.');
+        }
+    }
+
+    /**
+     * Render raw block markup through FluentBlockParser and save as HTML.
+     *
+     * Useful for testing individual block renderers without a full notification.
+     *
+     * <file>
+     * : Path to a file containing block markup
+     *
+     * [--order_id=<id>]
+     * : Use a real order for shortcode data
+     *
+     * [--out=<path>]
+     * : Output file path (default: .debug-emails/render_blocks.html)
+     *
+     * [--wrapper]
+     * : Wrap in email template (default: yes). Use --no-wrapper to skip.
+     *
+     * ## EXAMPLES
+     *
+     *     wp fluent_cart render_blocks blocks.html
+     *     wp fluent_cart render_blocks blocks.html --order_id=42
+     *     wp fluent_cart render_blocks blocks.html --out=test-output.html
+     *     wp fluent_cart render_blocks blocks.html --no-wrapper
+     */
+    public function render_blocks($args, $assoc_args)
+    {
+        if (empty($args[0])) {
+            \WP_CLI::error('Please provide a file path containing block markup.');
+            return;
+        }
+
+        $file = $args[0];
+        if (!file_exists($file)) {
+            \WP_CLI::error("File not found: {$file}");
+            return;
+        }
+
+        $blockMarkup = file_get_contents($file);
+        if (empty(trim($blockMarkup))) {
+            \WP_CLI::error("File is empty: {$file}");
+            return;
+        }
+
+        // Resolve data for shortcode replacement
+        $data = $this->resolveEmailData($assoc_args);
+
+        // Parse blocks through FluentBlockParser
+        $rendered = (new FluentBlockParser($data))->parse($blockMarkup);
+
+        // Optionally wrap in the email template (--no-wrapper to skip)
+        $useWrapper = Arr::get($assoc_args, 'wrapper', true);
+        if ($useWrapper) {
+            $mailer = new EmailNotificationMailer();
+            $rendered = apply_filters('fluent_cart/render_block_email_template', $rendered, [
+                'emailBody'   => $rendered,
+                'preheader'   => '',
+                'emailFooter' => $mailer->getEmailFooter(),
+            ]);
+        }
+
+        // Replace shortcodes
+        $rendered = \FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder::make($rendered, $data);
+
+        // Determine output path
+        $outPath = Arr::get($assoc_args, 'out');
+        if (!$outPath) {
+            $debugDir = FLUENTCART_PLUGIN_PATH . '.debug-emails';
+            if (!is_dir($debugDir)) {
+                mkdir($debugDir, 0755, true);
+            }
+            $outPath = $debugDir . '/render_blocks.html';
+        }
+
+        file_put_contents($outPath, $rendered);
+        \WP_CLI::success('Rendered to ' . $outPath);
+    }
+
+    /**
+     * Resolve order/mock data for test emails.
+     *
+     * @param array $assoc_args
+     * @return array
+     */
+    private function resolveEmailData($assoc_args)
+    {
+        $order = null;
+        $orderId = Arr::get($assoc_args, 'order_id');
+
+        if ($orderId) {
+            $order = Order::query()
+                ->with(['customer', 'shipping_address', 'billing_address', 'transactions', 'order_items'])
+                ->find(absint($orderId));
+
+            if (!$order) {
+                \WP_CLI::warning("Order #{$orderId} not found. Using mock data.");
+            }
+        }
+
+        if (!$order) {
+            $order = Order::query()
+                ->with(['customer', 'shipping_address', 'billing_address', 'transactions', 'order_items'])
+                ->latest()
+                ->first();
+        }
+
+        if ($order) {
+            $transaction = [];
+            if (!empty($order->transactions)) {
+                $transaction = $order->transactions->first();
+            }
+
+            // Load subscription if one exists for this order
+            $subscription = Subscription::where('parent_order_id', $order->id)->first();
+
+            \WP_CLI::line(sprintf('Using order #%d (%s)', $order->id, $order->invoice_no));
+            $data = [
+                'order'       => $order,
+                'customer'    => $order->customer !== null ? $order->customer : [],
+                'transaction' => $transaction ? $transaction : [],
+            ];
+
+            if ($subscription) {
+                $data['subscription'] = $subscription;
+                \WP_CLI::line(sprintf('Using subscription #%d (%s)', $subscription->id, $subscription->status));
+            }
+
+            return $data;
+        }
+
+        \WP_CLI::line('No orders found. Using mock data.');
+        return $this->getMockEmailData();
+    }
+
+    private function getMockEmailData()
+    {
+        $faker = \Faker\Factory::create();
+        $now = current_time('mysql');
+
+        $customer = new Customer();
+        $customer->id = 999;
+        $customer->first_name = $faker->firstName;
+        $customer->last_name = $faker->lastName;
+        $customer->email = $faker->safeEmail;
+        $customer->phone = $faker->phoneNumber;
+        $customer->city = $faker->city;
+        $customer->state = $faker->state;
+        $customer->postcode = $faker->postcode;
+        $customer->country = $faker->countryCode;
+
+        $item1 = new \FluentCart\App\Models\OrderItem();
+        $item1->id = 1;
+        $item1->post_title = 'Sample Product One';
+        $item1->item_price = 4900;
+        $item1->quantity = 1;
+        $item1->line_total = 4900;
+
+        $item2 = new \FluentCart\App\Models\OrderItem();
+        $item2->id = 2;
+        $item2->post_title = 'Sample Product Two';
+        $item2->item_price = 2500;
+        $item2->quantity = 2;
+        $item2->line_total = 5000;
+
+        $orderItems = new \FluentCart\Framework\Support\Collection([$item1, $item2]);
+
+        $order = new Order();
+        $order->id = 9999;
+        $order->invoice_no = 'FC-MOCK-9999';
+        $order->total = 9900;
+        $order->subtotal = 9900;
+        $order->discount_total = 0;
+        $order->tax_total = 0;
+        $order->total_paid = 9900;
+        $order->total_refund = 0;
+        $order->payment_status = 'paid';
+        $order->currency = 'USD';
+        $order->customer_id = 999;
+        $order->created_at = $now;
+        $order->updated_at = $now;
+        $order->setRelation('customer', $customer);
+        $order->setRelation('order_items', $orderItems);
+        $order->setRelation('orderTaxRates', new \FluentCart\Framework\Support\Collection());
+        $order->setRelation('transactions', new \FluentCart\Framework\Support\Collection());
+        $order->setRelation('shipping_address', null);
+        $order->setRelation('billing_address', null);
+
+        $transaction = new \FluentCart\App\Models\OrderTransaction();
+        $transaction->id = 1;
+        $transaction->total = 9900;
+        $transaction->payment_method = 'stripe';
+        $transaction->status = 'paid';
+        $transaction->created_at = $now;
+
+        return [
+            'order'       => $order,
+            'customer'    => $customer,
+            'transaction' => $transaction,
+        ];
+    }
 
     public function sync_stripe_renwals($args, $assoc_args)
     {
