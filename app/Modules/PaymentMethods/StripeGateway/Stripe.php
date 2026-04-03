@@ -56,7 +56,7 @@ class Stripe extends AbstractPaymentGateway
     public function meta(): array
     {
         return [
-            'title'              => 'Card',
+            'title'              => __('Card', 'fluent-cart'),
             'route'              => 'stripe',
             'slug'               => 'stripe',
             'label'              => 'Stripe',

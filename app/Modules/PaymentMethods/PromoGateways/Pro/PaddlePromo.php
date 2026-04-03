@@ -22,7 +22,7 @@ class PaddlePromo extends AbstractPaymentGateway
             'title' => 'Paddle',
             'route' => 'paddle',
             'slug' => 'paddle',
-            'description' => 'Accept credit cards and PayPal payments securely with Paddle. Available in FluentCart Pro.',
+            'description' => __('Accept credit cards and PayPal payments securely with Paddle. Available in FluentCart Pro.', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/paddle-logo.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/paddle-logo.svg"),
             'brand_color' => '#7c3aed',

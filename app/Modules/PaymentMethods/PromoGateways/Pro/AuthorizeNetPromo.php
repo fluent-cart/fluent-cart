@@ -28,7 +28,7 @@ class AuthorizeNetPromo extends AbstractPaymentGateway
             'title' => 'Authorize.Net',
             'route' => 'authorize_dot_net',
             'slug' => 'authorize_dot_net',
-            'description' => 'Pay securely with Authorize.Net - Credit and Debit Cards',
+            'description' => __('Pay securely with Authorize.Net - Credit and Debit Cards', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/authorize_dot_net-logo.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/authorize_dot_net-logo.svg"),
             'brand_color' => '#0066cc',
