@@ -41,7 +41,7 @@ class FlutterwaveAddon extends AbstractPaymentGateway
             'title' => 'Flutterwave',
             'route' => 'flutterwave',
             'slug' => 'flutterwave',
-            'description' => 'Pay securely with Flutterwave - Card, Bank Transfer, Mobile Money, and more',
+            'description' => __('Pay securely with Flutterwave - Card, Bank Transfer, Mobile Money, and more', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/flutterwave-logo.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/flutterwave-logo.svg"),
             'brand_color' => '#F5A623',
