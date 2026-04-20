@@ -46,7 +46,7 @@
       <el-table-column :width="125">
         <template #default="scope">
           <div class="flex items-center gap-2 justify-between">
-            <a :href="scope.row.receipt_url" target="_blank"
+            <a :href="scope.row.receipt_download_url" target="_blank"
                class="underline-link-button" :aria-label="$t('Download Receipt for Invoice') + ' ' + scope.row.invoice_no"
                 rel="noopener noreferrer">
               <DynamicIcon name="Download" class="w-4 h-4" aria-hidden="true"/>
@@ -66,6 +66,8 @@
                 </span>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item v-if="scope.row.receipt_view_url" command="view_receipt">{{ translate('View Receipt') }}
+                  </el-dropdown-item>
                   <el-dropdown-item command="edit_billing_address">{{ translate('Edit Billing Address') }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -181,6 +183,10 @@ export default {
     translate,
     dateTimeI18,
     handleTransactionCommand(command, row) {
+      if (command === 'view_receipt') {
+        window.open(row.receipt_view_url, '_blank', 'noopener,noreferrer');
+        return;
+      }
       if (command === 'edit_billing_address') {
         this.selectedTransaction = row;
         this.isEditingBillingAddressModal = true;

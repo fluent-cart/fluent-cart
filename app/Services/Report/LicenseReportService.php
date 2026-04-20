@@ -68,16 +68,12 @@ class LicenseReportService extends ReportService
                 break;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Query is prepared with date placeholders
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT %s, COUNT(*) AS license_count FROM %s WHERE created_at BETWEEN %s AND %s GROUP BY %s ORDER BY %s",
-                $dateFormat,
-                "{$wpdb->prefix}fct_licenses",
+                "SELECT {$dateFormat}, COUNT(*) AS license_count FROM {$wpdb->prefix}fct_licenses WHERE created_at BETWEEN %s AND %s GROUP BY {$groupBy} ORDER BY {$groupBy}",
                 $startDate->format('Y-m-d 00:00:00'),
-                $endDate->format('Y-m-d 23:59:59'),
-                $groupBy,
-                $groupBy
+                $endDate->format('Y-m-d 23:59:59')
             )
         );
 

@@ -12,6 +12,16 @@ class SoldOutBadgeBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'sold-out-badge';
 
+    public function ancestor(): array
+    {
+        return [
+            'fluent-cart/products',
+            'fluent-cart/product-carousel',
+            'fluent-cart/product-info',
+            'fluent-cart/related-product',
+        ];
+    }
+
     public function supports(): array
     {
         return [

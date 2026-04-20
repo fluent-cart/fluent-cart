@@ -170,6 +170,14 @@ class CheckoutApi
         $shippingTax = (int)Arr::get($cart->checkout_data, 'tax_data.shipping_tax', 0);
         $taxBehavior = apply_filters('fluent_cart/cart/tax_behavior', 0, ['cart' => $cart]);
 
+        // Ensure cart has the current payment method before recalculating fees
+        $checkoutData = $cart->checkout_data ?? [];
+        $checkoutData['payment_method'] = $paymentMethod;
+        $cart->checkout_data = $checkoutData;
+
+        $cart->clearFeeCache();
+        $fees = $cart->getFees();
+
         $checkoutProcessor = new CheckoutProcessor($cartCheckoutHelper->getItems(), [
             'customer_id'               => $customer->id,
             'user_tz'                   => $userTz,
@@ -188,6 +196,7 @@ class CheckoutApi
             'ip_address'                => AddressHelper::getIpAddress(),
             'note'                      => Arr::get($orderData, 'others.order_notes', ''),
             'tax_id'                    => Arr::get($validatedData, 'billing_tax_id', 0),
+            'fees'                      => $fees,
         ]);
 
         $createdOrder = $checkoutProcessor->createDraftOrder($prevOrder);
@@ -198,6 +207,12 @@ class CheckoutApi
                 'data'    => $createdOrder->get_error_data()
             ], 423);
         }
+
+        do_action('fluent_cart/order/after_items_calculated', [
+            'order'      => $createdOrder,
+            'cart'       => $cart,
+            'cart_items' => $cartCheckoutHelper->getItems(),
+        ]);
 
         // prepare other data if any module needs to add data to the order data
         do_action('fluent_cart/checkout/prepare_other_data', [
@@ -910,7 +925,7 @@ class CheckoutApi
         $shipping_state = Arr::get($data, 'shipping_state');
 
 
-        $methods = ShippingMethod::query()->applicableToCountry($shipping_country, $shipping_state)->get()->keyBy('id');
+        $methods = ShippingMethod::getApplicableForCountry($shipping_country, $shipping_state)->keyBy('id');
         if ($methods->count() === 0 || \FluentCart\App\App::isDevMode()) {
             return true;
         }

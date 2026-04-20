@@ -239,10 +239,14 @@ class FluentCRMConnect extends BaseIntegrationManager
         $contactData['timezone'] = Arr::get($order->config, 'user_tz', '');
         $contactData = array_filter($contactData);
 
-        // check exits
+        // When double opt-in is disabled, mark as subscribed immediately
         if (!$doubleOptIn) {
             $contactData['status'] = 'subscribed';
+        } else {
+            // When double opt-in is enabled, keep as pending until they confirm
+            $contactData['status'] = 'pending';
         }
+
 
         $contact = FluentCrmApi('contacts')->createOrUpdate($contactData, !$doubleOptIn);
         if ($doubleOptIn && $contact->status != 'subscribed') {

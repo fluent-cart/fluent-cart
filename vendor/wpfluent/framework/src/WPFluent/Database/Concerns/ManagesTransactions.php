@@ -5,16 +5,14 @@ namespace FluentCart\Framework\Database\Concerns;
 use Closure;
 use Throwable;
 use RuntimeException;
-use FluentCart\Framework\Database\DeadlockException;
 
 trait ManagesTransactions
 {
     /**
-     * @template TReturn of mixed
-     *
      * Execute a Closure within a transaction.
      *
-     * @param  (\Closure(static): TReturn)  $callback
+     * @template TReturn
+     * @param  \Closure(static): TReturn  $callback
      * @param  int  $attempts
      * @return TReturn
      *
@@ -23,10 +21,11 @@ trait ManagesTransactions
     public function transaction(Closure $callback, $attempts = 1)
     {
         for ($currentAttempt = 1; $currentAttempt <= $attempts; $currentAttempt++) {
+
             $this->beginTransaction();
 
             try {
-                $callbackResult = $callback($this);
+                $result = $callback($this);
             } catch (Throwable $e) {
                 $this->handleTransactionException($e, $currentAttempt, $attempts);
                 continue;
@@ -49,60 +48,31 @@ trait ManagesTransactions
                 );
             }
 
-            $this->fireConnectionEvent('committed');
-
-            return $callbackResult;
+            return $result;
         }
     }
 
     /**
-     * Handle an exception encountered when running a transacted statement.
-     *
-     * @param  \Throwable  $e
-     * @param  int  $currentAttempt
-     * @param  int  $maxAttempts
-     * @return void
-     *
-     * @throws \Throwable
-     */
-    protected function handleTransactionException(
-        Throwable $e,
-        $currentAttempt,
-        $maxAttempts
-    )
-    {
-        $this->rollBack();
-
-        throw $e;
-    }
-
-    /**
-     * Start a new database transaction.
-     *
-     * @return void
-     *
-     * @throws \Throwable
+     * Begin transaction or create savepoint.
      */
     public function beginTransaction()
     {
         if ($this->inTransaction()) {
-            // Nested transaction -> savepoint
+
             $this->transactions++;
 
-            $this->createSavepoint();
+            if ($this->supportsSavepoints()) {
+                $this->createSavepoint();
+            }
 
             if ($this->transactionsManager) {
                 $this->transactionsManager->begin(
-                    $this->getName(), $this->transactions
+                    $this->getName(),
+                    $this->transactions
                 );
             }
 
-            $this->fireConnectionEvent('beganTransaction');
             return;
-        }
-
-        foreach ($this->beforeStartingTransaction as $callback) {
-            $callback($this);
         }
 
         $this->transactions++;
@@ -111,70 +81,39 @@ trait ManagesTransactions
 
         if ($this->transactionsManager) {
             $this->transactionsManager->begin(
-                $this->getName(), $this->transactions
+                $this->getName(),
+                $this->transactions
             );
         }
-
-        $this->fireConnectionEvent('beganTransaction');
     }
 
     /**
-     * Create a transaction within the database.
-     *
-     * @return void
-     *
-     * @throws \Throwable
+     * Create root transaction.
      */
     protected function createTransaction()
     {
-        // Only call START TRANSACTION if no transaction active
-        if ($this->transactions === 1) {
-            try {
-                $this->unprepared("START TRANSACTION;");
-            } catch (Throwable $e) {
-                $this->handleBeginTransactionException($e);
+        try {
+            if ($this->isSqlite()) {
+                $this->unprepared('BEGIN;');
+            } else {
+                $this->unprepared('START TRANSACTION;');
             }
+        } catch (Throwable $e) {
+            $this->handleBeginTransactionException($e);
         }
     }
 
     /**
-     * Create a save point within the database.
-     *
-     * @return void
-     *
-     * @throws \Throwable
+     * Create savepoint.
      */
     protected function createSavepoint()
     {
-        $savepointName = 'trans' . $this->transactions;
-        $sql = $this->queryGrammar->compileSavepoint($savepointName);
-        $this->unprepared($sql);
+        $name = $this->getSavepointName($this->transactions);
+        $this->unprepared("SAVEPOINT {$name};");
     }
 
     /**
-     * Handle an exception from a transaction beginning.
-     *
-     * @param  \Throwable  $e
-     * @return void
-     *
-     * @throws \Throwable
-     */
-    protected function handleBeginTransactionException(Throwable $e)
-    {
-        if ($this->causedByLostConnection($e)) {
-            $this->reconnect();
-            $this->getPdo()->beginTransaction();
-        } else {
-            throw $e;
-        }
-    }
-
-    /**
-     * Commit the active database transaction.
-     *
-     * @return void
-     *
-     * @throws \Throwable
+     * Commit transaction or release savepoint.
      */
     public function commit()
     {
@@ -183,12 +122,13 @@ trait ManagesTransactions
         }
 
         if ($this->transactions === 1) {
-            $this->fireConnectionEvent('committing');
-            $this->unprepared("COMMIT;");
-        } elseif ($this->queryGrammar->supportsSavepoints()) {
-            $savepointName = 'trans' . $this->transactions;
-            $sql = $this->queryGrammar->compileSavepointRelease($savepointName);
-            $this->unprepared($sql);
+
+            $this->unprepared('COMMIT;');
+
+        } elseif ($this->supportsSavepoints()) {
+
+            $name = $this->getSavepointName($this->transactions);
+            $this->unprepared("RELEASE SAVEPOINT {$name};");
         }
 
         [$levelBeingCommitted, $this->transactions] = [
@@ -203,38 +143,10 @@ trait ManagesTransactions
                 $this->transactions
             );
         }
-
-        $this->fireConnectionEvent('committed');
     }
 
     /**
-     * Handle an exception encountered when committing a transaction.
-     *
-     * @param  \Throwable  $e
-     * @param  int  $currentAttempt
-     * @param  int  $maxAttempts
-     * @return void
-     *
-     * @throws \Throwable
-     */
-    protected function handleCommitTransactionException(Throwable $e, $currentAttempt, $maxAttempts)
-    {
-        $this->transactions = max(0, $this->transactions - 1);
-
-        if ($this->causedByLostConnection($e)) {
-            $this->transactions = 0;
-        }
-
-        throw $e;
-    }
-
-    /**
-     * Rollback the active database transaction.
-     *
-     * @param  int|null  $toLevel
-     * @return void
-     *
-     * @throws \Throwable
+     * Rollback transaction.
      */
     public function rollBack($toLevel = null)
     {
@@ -260,63 +172,94 @@ trait ManagesTransactions
                 $this->transactions
             );
         }
-
-        $this->fireConnectionEvent('rollingBack');
     }
 
     /**
-     * Perform a rollback within the database.
-     *
-     * @param  int  $toLevel
-     * @return void
-     *
-     * @throws \Throwable
+     * Perform rollback.
      */
     protected function performRollBack($toLevel)
     {
         if ($toLevel === 0) {
-            if ($this->inTransaction()) {
-                $transaction = $this->unprepared("ROLLBACK;");
-                if ($transaction !== false) {
-                    $this->transactions--;
-                }
-            }
-        } elseif ($this->queryGrammar->supportsSavepoints()) {
-            // Rollback to the savepoint created at transaction level $toLevel + 1
-            $savepointName = 'trans' . ($toLevel + 1);
-            $sql = $this->queryGrammar->compileSavepointRollBack($savepointName);
-            $this->unprepared($sql);
+
+            $this->unprepared('ROLLBACK;');
+
+        } elseif ($this->supportsSavepoints()) {
+
+            $name = $this->getSavepointName($toLevel + 1);
+            $this->unprepared("ROLLBACK TO SAVEPOINT {$name};");
         }
     }
 
     /**
-     * Handle an exception from a rollback.
-     *
-     * @param  \Throwable  $e
-     * @return void
-     *
-     * @throws \Throwable
+     * Determine if savepoints are supported.
      */
-    protected function handleRollBackException(Throwable $e)
+    protected function supportsSavepoints()
     {
+        // SQLite under WordPress does NOT support savepoints
+        if ($this->isSqlite()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Handle transaction exception.
+     */
+    protected function handleTransactionException(Throwable $e, $currentAttempt, $maxAttempts)
+    {
+        $this->rollBack();
+        throw $e;
+    }
+
+    /**
+     * Handle commit exception.
+     */
+    protected function handleCommitTransactionException(Throwable $e, $currentAttempt, $maxAttempts)
+    {
+        $this->transactions = max(0, $this->transactions - 1);
+
         if ($this->causedByLostConnection($e)) {
             $this->transactions = 0;
-
-            if ($this->transactionsManager) {
-                $this->transactionsManager->rollback(
-                    $this->getName(),
-                    $this->transactions
-                );
-            }
         }
 
         throw $e;
     }
 
     /**
-     * Get the number of active transactions.
-     *
-     * @return int
+     * Handle begin exception.
+     */
+    protected function handleBeginTransactionException(Throwable $e)
+    {
+        if ($this->causedByLostConnection($e)) {
+            $this->reconnect();
+        } else {
+            throw $e;
+        }
+    }
+
+    /**
+     * Handle rollback exception.
+     */
+    protected function handleRollBackException(Throwable $e)
+    {
+        if ($this->causedByLostConnection($e)) {
+            $this->transactions = 0;
+        }
+
+        throw $e;
+    }
+
+    /**
+     * Get savepoint name.
+     */
+    protected function getSavepointName($level)
+    {
+        return 'trans' . $level;
+    }
+
+    /**
+     * Transaction nesting level.
      */
     public function transactionLevel()
     {
@@ -324,17 +267,11 @@ trait ManagesTransactions
     }
 
     /**
-     * Execute the callback after a transaction commits.
-     *
-     * @param  callable  $callback
-     * @return void
-     *
-     * @throws \RuntimeException
+     * After commit callback.
      */
     public function afterCommit($callback)
     {
         if ($this->transactionsManager) {
-            // @phpstan-ignore-next-line
             return $this->transactionsManager->addCallback($callback);
         }
 
@@ -342,9 +279,7 @@ trait ManagesTransactions
     }
 
     /**
-     * Determine if the connection is in a "transaction".
-     * 
-     * @return bool
+     * In transaction?
      */
     public function inTransaction()
     {
@@ -352,22 +287,16 @@ trait ManagesTransactions
     }
 
     /**
-     * Set the transaction manager instance on the connection.
-     *
-     * @param  \FluentCart\Framework\Database\DatabaseTransactionsManager  $manager
-     * @return $this
+     * Set transaction manager.
      */
     public function setTransactionManager($manager)
     {
         $this->transactionsManager = $manager;
-
         return $this;
     }
 
     /**
-     * Unset the transaction manager for this connection.
-     *
-     * @return void
+     * Unset transaction manager.
      */
     public function unsetTransactionManager()
     {

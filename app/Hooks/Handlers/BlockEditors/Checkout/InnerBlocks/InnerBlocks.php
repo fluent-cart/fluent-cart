@@ -421,6 +421,17 @@ class InnerBlocks
                 ],
             ],
             [
+                'title'     => __('Fees', 'fluent-cart'),
+                'slug'      => 'fluent-cart/checkout-fees',
+                'callback'  => [$this, 'renderCheckoutFees'],
+                'component' => 'CheckoutFeesBlock',
+                'icon'      => 'editor-code',
+                'supports'  => static::textBlockSupport(),
+                'parent'    => [
+                    'fluent-cart/checkout-summary-footer'
+                ],
+            ],
+            [
                 'title'     => __('Coupon', 'fluent-cart'),
                 'slug'      => 'fluent-cart/checkout-coupon',
                 'callback'  => [$this, 'renderCheckoutCoupon'],
@@ -548,7 +559,11 @@ class InnerBlocks
         ob_start();
         ?>
         <div <?php echo $atts; ?>>
-            <?php (new CheckoutRenderer($cart))->renderNameFields(); ?>
+            <?php
+            $renderer = new CheckoutRenderer($cart);
+            $renderer->renderNameFields();
+            $renderer->renderCreateAccountField();
+            ?>
         </div>
         <?php
         return ob_get_clean();
@@ -556,24 +571,7 @@ class InnerBlocks
 
     public function renderCheckoutCreateAccountField($attributes, $content, $block)
     {
-
-        $atts = get_block_wrapper_attributes();
-        $cart = $this->getCart();
-        $title = Arr::get($attributes, 'create_account_title');
-        if (empty(Arr::get($cart, 'cart_data', []))) {
-            return '';
-        }
-        ob_start();
-        ?>
-        <div <?php echo $atts; ?>>
-            <?php (new CheckoutRenderer($cart))->renderCreateAccountField([
-                    'title'       => $title,
-                    'wrapper_atts'=> $atts,
-            ]); ?>
-        </div>
-        <?php
-
-        return ob_get_clean();
+        return '';
     }
 
     public function renderCheckoutAddressFields($attributes, $content, $block)
@@ -631,7 +629,7 @@ class InnerBlocks
         $atts = get_block_wrapper_attributes();
         $cart = $this->getCart();
         $addressTitle = Arr::get($attributes, 'addressTitle');
-        if (empty(Arr::get($cart, 'cart_data', []))) {
+        if (empty(Arr::get($cart, 'cart_data', [])) || !$cart->requireShipping()) {
             return '';
         }
         ob_start();
@@ -650,7 +648,7 @@ class InnerBlocks
         $atts = get_block_wrapper_attributes();
         $cart = $this->getCart();
         $title = Arr::get($attributes, 'ship_to_different_title');
-        if (empty(Arr::get($cart, 'cart_data', []))) {
+        if (empty(Arr::get($cart, 'cart_data', [])) || !$cart->requireShipping()) {
             return '';
         }
         ob_start();
@@ -791,53 +789,15 @@ class InnerBlocks
             'class' => 'fct_checkout_summary'
         ]);
 
-//        ob_start();
-//        (new CartSummaryRender($cart))->render();
-//        return ob_get_clean();
-
-        $hasOrderSummaryBlock = false;
-        $innerBlocksContent = '';
-        if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
-            ob_start();
-            ?>
-            <div <?php echo $atts; ?>>
-                <div class="fct_summary active" data-fluent-cart-checkout-page-checkout-form-order-summary>
-                    <div class="fct_summary_box" data-fluent-cart-checkout-page-cart-items-wrapper>
-                        <div class="fct_checkout_form_section">
-                            <?php
-                            // Check if block fluent-cart/checkout-order-summary exists
-                            foreach ($block->inner_blocks as $inner_block) {
-                                if (
-                                    isset($inner_block->parsed_block['blockName']) &&
-                                    $inner_block->parsed_block['blockName'] === 'fluent-cart/checkout-order-summary'
-                                ) {
-                                    $hasOrderSummaryBlock = true;
-                                    break;
-                                }
-                            }
-
-                            if ($hasOrderSummaryBlock) {
-                                (new CartSummaryRender($cart))->renderOrderSummarySectionHeading();
-                            }
-                            ?>
-                            <div id="order_summary_panel" class="fct_form_section_body">
-                                <div class="fct_form_section_body_inner">
-                                    <?php
-                                    foreach ($block->inner_blocks as $inner_block) {
-                                        if (isset($inner_block->parsed_block)) {
-                                            echo $inner_block->render();
-                                        }
-                                    } ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        ob_start();
+        ?>
+        <div <?php echo $atts; ?>>
+            <div class="fct_summary active" data-fluent-cart-checkout-page-checkout-form-order-summary>
+                <?php (new CartSummaryRender($cart))->render(); ?>
             </div>
-            <?php
-            $innerBlocksContent = ob_get_clean();
-        }
-        return $innerBlocksContent;
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     public function renderCheckoutOrderSummary($attributes, $content, $block)
@@ -851,7 +811,6 @@ class InnerBlocks
                 'data-fluent-cart-checkout-item-wrapper' => ''
         ]);
         ob_start();
-//        (new CartSummaryRender($cart))->render();
         ?>
         <div <?php echo $atts; ?>>
             <?php
@@ -875,10 +834,23 @@ class InnerBlocks
             <div class="fct_summary_items">
                 <ul class="fct_summary_items_list">
                     <?php
+                    $hasFeeBlock = false;
                     foreach ($block->inner_blocks as $inner_block) {
                         if (isset($inner_block->parsed_block)) {
+                            if (Arr::get($inner_block->parsed_block, 'blockName') === 'fluent-cart/checkout-fees') {
+                                $hasFeeBlock = true;
+                            }
+                            // Auto-render fees before the Coupon block if no explicit fees block exists
+                            if (!$hasFeeBlock && Arr::get($inner_block->parsed_block, 'blockName') === 'fluent-cart/checkout-coupon') {
+                                (new CartSummaryRender($cart))->renderFees();
+                                $hasFeeBlock = true;
+                            }
                             echo $inner_block->render();
                         }
+                    }
+                    // Fallback: render fees at the end if no fees block and no coupon block existed
+                    if (!$hasFeeBlock) {
+                        (new CartSummaryRender($cart))->renderFees();
                     }
                     ?>
                 </ul>
@@ -914,6 +886,17 @@ class InnerBlocks
         ]);
         ob_start();
         (new CartSummaryRender($cart))->renderShipping($atts);
+        return ob_get_clean();
+    }
+
+    public function renderCheckoutFees($attributes, $content, $block)
+    {
+        $cart = $this->getCart();
+        if (empty(Arr::get($cart, 'cart_data', []))) {
+            return '';
+        }
+        ob_start();
+        (new CartSummaryRender($cart))->renderFees();
         return ob_get_clean();
     }
 

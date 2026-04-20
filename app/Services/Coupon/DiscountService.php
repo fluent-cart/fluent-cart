@@ -207,7 +207,10 @@ class DiscountService
 
     public function apply(Coupon $coupon)
     {
-        $cartItems = $this->cartItems;
+        $cartItems = apply_filters('fluent_cart/discount/pre_apply', $this->cartItems, [
+            'coupon' => $coupon,
+            'cart'   => $this->cart,
+        ]);
 
         $canUseCheck = $this->checkCanUseCoupon($coupon, $cartItems);
         if (is_wp_error($canUseCheck)) {

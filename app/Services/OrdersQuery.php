@@ -58,7 +58,12 @@ class OrdersQuery
 
                     $queryGroup->{$method}(function ($q) use ($group) {
                         foreach ($group as $providerName => $items) {
-                            do_action_ref_array('fluentcart/orders_filter_' . $providerName, [&$q, $items]);
+                            $oldHook = 'fluentcart/orders_filter_' . $providerName;
+                            if (has_action($oldHook)) {
+                                _deprecated_hook($oldHook, '1.3.16', 'fluent_cart/orders_filter_' . $providerName, 'Use fluent_cart/orders_filter_' . $providerName . ' instead of ' . $oldHook . '.');
+                                do_action_ref_array($oldHook, [&$q, $items]);
+                            }
+                            do_action_ref_array('fluent_cart/orders_filter_' . $providerName, [&$q, $items]);
                         }
                     });
                 }

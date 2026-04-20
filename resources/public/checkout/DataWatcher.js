@@ -90,14 +90,13 @@ export default class DataWatcher {
         }
 
 
-        // Radio input(s)
-        const radioInputs = document.querySelectorAll('input[name="_fct_pay_method"]');
-        radioInputs.forEach((radio) => {
-            radio.addEventListener('change', (event) => {
-                if (event.target.checked) {
-                    this.saveCustomerData('_fct_pay_method', event.target.value);
-                }
-            });
+        // Payment method radios — use event delegation so it survives DOM replacement
+        // (when address/state changes trigger fragment re-render of payment methods)
+        window.addEventListener('change', (event) => {
+            const target = event.target;
+            if (target && target.name === '_fct_pay_method' && target.checked) {
+                this.saveCustomerData('_fct_pay_method', target.value);
+            }
         });
 
         // const shippingMethods = document.querySelectorAll('input[name="fc_shipping_method"]');
@@ -174,7 +173,6 @@ export default class DataWatcher {
         fetch(url, {
             method: "POST",
             headers: {
-                //"Content-Type": "application/json",
                 'Content-Type': 'application/x-www-form-urlencoded',
                 "X-WP-Nonce": this.#nonce,
             },

@@ -1,4 +1,4 @@
-import Arr from "@/utils/support/Arr";
+
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
 
@@ -69,13 +69,6 @@ class TaxesTable extends Table {
         return 'taxes_table';
     }
 
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.tax_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return [];
-    }
 
     with() {
         return [

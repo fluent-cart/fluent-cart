@@ -36,7 +36,7 @@ if($downloads) {
     \FluentCart\App\App::make('view')->render('emails.parts.downloads', [
         'order'         => $order,
         'heading'       => __('Downloads', 'fluent-cart'),
-        'downloadItems' => $order->getDownloads() ?: [],
+        'downloadItems' => $downloads,
     ]);
 }
 

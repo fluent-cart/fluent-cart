@@ -91,6 +91,29 @@ class ReceiptHandler
             return $this->renderNotFoundPage();
         }
 
+        // Handle PDF download when FluentPDF is active and download=1 is requested
+        $isDownload = (bool) $request->get('download', false);
+        if ($isDownload && App::isProActive() && defined('FLUENT_PDF')) {
+            $order->loadMissing(['customer', 'order_items', 'billing_address', 'shipping_address', 'transactions', 'orderTaxRates.tax_rate']);
+            $pdfPath = apply_filters('fluent_cart/pdf/generate_receipt', null, [
+                'order'       => $order,
+                'template_id' => 'order_receipt',
+            ]);
+
+            if ($pdfPath && file_exists($pdfPath)) {
+                $fileName = sanitize_file_name('receipt-' . $order->invoice_no . '.pdf');
+                header('Content-Type: application/pdf');
+                header("Content-Disposition: attachment; filename=\"" . $fileName . "\"; filename*=UTF-8''" . rawurlencode($fileName));
+                header('Content-Length: ' . filesize($pdfPath));
+                header('Cache-Control: no-cache');
+                header('X-Content-Type-Options: nosniff');
+                readfile($pdfPath);
+                @unlink($pdfPath);
+                die();
+            }
+            // If PDF generation failed, fall through to render HTML receipt
+        }
+
         $lastTransaction = OrderTransaction::query()
             ->where('order_id', $order->id)
             ->where('transaction_type', '=', Status::TRANSACTION_TYPE_CHARGE)

@@ -9,7 +9,6 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\Email\EmailNotificationMailer;
 use FluentCart\App\Services\Email\EmailNotifications;
-use FluentCart\App\Services\Email\FluentBlockParser;
 use FluentCart\App\Services\Email\Mailer;
 use FluentCart\Database\DBMigrator;
 use FluentCart\Database\DBSeeder;
@@ -1337,8 +1336,13 @@ class Commands
         // Resolve data for shortcode replacement
         $data = $this->resolveEmailData($assoc_args);
 
-        // Parse blocks through FluentBlockParser
-        $rendered = (new FluentBlockParser($data))->parse($blockMarkup);
+        // Parse blocks through the pro block parser filter
+        $rendered = apply_filters('fluent_cart/parse_email_block_content', '', $blockMarkup, $data);
+
+        if (empty($rendered)) {
+            \WP_CLI::error('Block parsing requires FluentCart Pro. Please ensure the pro plugin is active.');
+            return;
+        }
 
         // Optionally wrap in the email template (--no-wrapper to skip)
         $useWrapper = Arr::get($assoc_args, 'wrapper', true);

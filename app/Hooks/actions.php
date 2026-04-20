@@ -120,7 +120,9 @@ if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
 
 (new \FluentCart\App\Hooks\Handlers\UserHandler())->register();
 
-add_action('fluent_cart/order_paid_ansyc_private_handle', function ($data) {
+// Corrected hook name: fluent_cart/order_paid_async_private_handle
+// Legacy (typo'd) listener kept for any pending Action Scheduler jobs
+$orderPaidAsyncHandler = function ($data) {
     $orderId = \FluentCart\Framework\Support\Arr::get($data, 'order_id');
 
     if (!$orderId) {
@@ -155,7 +157,9 @@ add_action('fluent_cart/order_paid_ansyc_private_handle', function ($data) {
 
     do_action('fluent_cart/order_paid_done', $eventData);
 
-}, 1, 1);
+};
+add_action('fluent_cart/order_paid_async_private_handle', $orderPaidAsyncHandler, 1, 1);
+add_action('fluent_cart/order_paid_ansyc_private_handle', $orderPaidAsyncHandler, 1, 1);
 
 
 //

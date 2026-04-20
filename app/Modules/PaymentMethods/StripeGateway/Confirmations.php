@@ -23,7 +23,7 @@ class Confirmations
         add_action('wp_ajax_nopriv_fluent_cart_confirm_stripe_payment', [$this, 'confirmStripePayment']);
         add_action('wp_ajax_fluent_cart_confirm_stripe_payment', [$this, 'confirmStripePayment']);
 
-        add_filter('fluent_cart_form_disable_stripe_connect', function ($value, $args) {
+        add_filter('fluent_cart/form_disable_stripe_connect', function ($value, $args) {
             if (defined('FCT_STRIPE_LIVE_PUBLIC_KEY') || defined('FCT_STRIPE_TEST_PUBLIC_KEY')) {
                 return true;
             }

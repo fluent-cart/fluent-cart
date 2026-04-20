@@ -56,7 +56,7 @@ class StripeSubscriptions extends AbstractSubscriptionModule
 
         foreach ($invoices as $key => $invoice) {
             //$invoice is array
-            if (Arr::get($invoice, 'amount_paid') == 0 || Arr::get($invoice, 'charge') == '') {
+            if (Arr::get($invoice, 'amount_paid') == 0) {
                 continue;
             }
 
@@ -103,9 +103,15 @@ class StripeSubscriptions extends AbstractSubscriptionModule
 
                 if (!is_wp_error($paymentIntent) && Arr::get($paymentIntent, 'latest_charge')) {
                     $transactionData['created_at'] = DateTime::anyTimeToGmt(Arr::get($paymentIntent, 'latest_charge.created'))->format('Y-m-d H:i:s');
-                    $transactionData['payment_method_type'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.type', '');
-                    $transactionData['card_last_4'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.last4', '');
-                    $transactionData['card_brand'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.brand', '');
+                    $paymentMethodType = Arr::get($paymentIntent, 'latest_charge.payment_method_details.type', '');
+                    $transactionData['payment_method_type'] = $paymentMethodType;
+                    if ($paymentMethodType === 'sepa_debit') {
+                        $transactionData['card_last_4'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.sepa_debit.last4', '');
+                        $transactionData['card_brand'] = 'sepa_debit';
+                    } else {
+                        $transactionData['card_last_4'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.last4', '');
+                        $transactionData['card_brand'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.brand', '');
+                    }
                 } else {
                     $activePaymentMethod = $subscriptionModel->getMeta('active_payment_method', []);
                     if (!$activePaymentMethod || !is_array($activePaymentMethod)) {

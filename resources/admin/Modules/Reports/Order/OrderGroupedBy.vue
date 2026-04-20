@@ -35,7 +35,7 @@ const getData = () => {
 const groupKeys = [
   { label: translate("Billing Country"), value: "billing_country" },
   { label: translate("Shipping Country"), value: "shipping_country" },
-  { label: translate("Payment Method"), value: "payment_method_title" },
+  { label: translate("Payment Method"), value: "payment_method" },
 ];
 
 const formatPercentage = (value) => {
@@ -80,13 +80,13 @@ onMounted(() => {
         class="max-h-[350px] overflow-y-auto"
       >
         <el-table-column
-          prop="payment_method_title"
-          label="Payment Method Title"
+          prop="payment_method"
+          :label="translate('Payment Method')"
           min-width="150"
-          v-if="selectedGroupKey === 'payment_method_title'"
+          v-if="selectedGroupKey === 'payment_method'"
         >
           <template #default="scope">
-            {{ scope.row.payment_method_title }}
+            {{ scope.row.payment_method }}
           </template>
         </el-table-column>
 

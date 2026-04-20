@@ -401,7 +401,7 @@ class Router
             $route->after($this->middleware['after']);
         }
 
-        return $route;
+        return $route->preparefrontendHandlers();
     }
 
     /**

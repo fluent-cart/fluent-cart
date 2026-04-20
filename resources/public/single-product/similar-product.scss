@@ -60,6 +60,12 @@
   .fluent-cart-single-product-page-product-variant-title{
     @apply max-w-[200px];
   }
+  .fct-product-sku {
+    @apply block;
+    &::before {
+        display: none;
+    }
+  }
 }
 
 .fluent-cart-similar-product-list {

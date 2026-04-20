@@ -26,6 +26,9 @@ class ShippingZoneController extends Controller
     {
         $data = $request->getSafe($request->sanitize());
 
+        if (empty($data['shipping_class_id'])) {
+            $data['shipping_class_id'] = null;
+        }
 
         $shippingZone = ShippingZone::query()->create($data);
 
@@ -63,11 +66,21 @@ class ShippingZoneController extends Controller
     {
         $shippingZone = ShippingZone::findOrFail($id);
 
-        // Delete associated shipping methods
-        ShippingMethod::where('zone_id', $id)->delete();
+        $DB = App::db();
+        $DB->beginTransaction();
+        try {
+            // Delete associated shipping methods
+            ShippingMethod::where('zone_id', $id)->delete();
 
-        // Delete the shipping zone
-        $shippingZone->delete();
+            // Delete the shipping zone
+            $shippingZone->delete();
+            $DB->commit();
+        } catch (\Exception $e) {
+            $DB->rollBack();
+            return $this->sendError([
+                'message' => __('Failed to delete shipping zone', 'fluent-cart')
+            ]);
+        }
 
         return $this->sendSuccess([
             'message' => __('Shipping zone has been deleted successfully', 'fluent-cart')
@@ -84,8 +97,20 @@ class ShippingZoneController extends Controller
             ]);
         }
 
-        foreach ($zones as $index => $zoneId) {
-            ShippingZone::where('id', $zoneId)->update(['order' => $index]);
+        $zones = array_slice($zones, 0, 200);
+
+        $DB = App::db();
+        $DB->beginTransaction();
+        try {
+            foreach ($zones as $index => $zoneId) {
+                ShippingZone::where('id', intval($zoneId))->update(['order' => $index]);
+            }
+            $DB->commit();
+        } catch (\Exception $e) {
+            $DB->rollBack();
+            return $this->sendError([
+                'message' => __('Failed to update zone order', 'fluent-cart')
+            ]);
         }
 
         return $this->sendSuccess([
@@ -101,6 +126,37 @@ class ShippingZoneController extends Controller
 
         return $this->sendSuccess([
             'data' => $countryInfo
+        ]);
+    }
+
+    public function getCountriesByContinent()
+    {
+        $continents = LocalizationManager::getContinents();
+        $allCountries = LocalizationManager::getCountries();
+
+        $grouped = [];
+        foreach ($continents as $code => $continent) {
+            $countryCodes = Arr::get($continent, 'countries', []);
+            $countries = [];
+            foreach ($countryCodes as $countryCode) {
+                if (isset($allCountries[$countryCode])) {
+                    $countries[] = [
+                        'code' => $countryCode,
+                        'name' => $allCountries[$countryCode],
+                    ];
+                }
+            }
+            if (!empty($countries)) {
+                $grouped[] = [
+                    'code'      => $code,
+                    'name'      => Arr::get($continent, 'name', $code),
+                    'countries' => $countries,
+                ];
+            }
+        }
+
+        return $this->sendSuccess([
+            'continents' => $grouped,
         ]);
     }
 }

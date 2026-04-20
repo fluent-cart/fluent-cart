@@ -652,6 +652,89 @@
   }
 }
 
+/* Coverage selector — shipping zone coverage radio cards */
+.fct-coverage-selector {
+  @apply m-0 p-0 list-none flex flex-col w-full gap-2.5;
+
+  li {
+    @apply text-system-mid flex mb-0 py-3 px-4 justify-between items-start cursor-pointer border border-solid border-gray-outline rounded-[12px] text-sm transition-all dark:border-dark-400 dark:text-gray-50;
+
+    &:hover {
+      @apply border-gray-300 dark:border-dark-300;
+    }
+
+    &.active {
+      @apply bg-gray-25 border-primary-500 dark:border-gray-800 dark:bg-primary-500;
+
+      .fct-coverage-selector-dot {
+        @apply border-primary-500 dark:border-gray-800;
+
+        &:before {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  &-content {
+    @apply flex flex-col gap-0.5;
+  }
+
+  &-title {
+    @apply text-sm font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &-desc {
+    @apply text-xs text-system-mid dark:text-gray-400;
+  }
+
+  &-dot {
+    @apply w-4 h-4 border border-solid border-gray-outline rounded-full relative transition-all flex-shrink-0 mt-0.5 dark:border-dark-400;
+
+    &:before {
+      @apply w-2 h-2 bg-primary-500 rounded-full absolute top-[50%] left-[50%] transition-all dark:bg-gray-50;
+      content: "";
+      transform: translate(-50%, -50%) scale(0.6);
+      opacity: 0;
+    }
+
+    &-wrap {
+      @apply flex items-center justify-center;
+    }
+  }
+}
+
+/* Country tree-select — dropdown + collapsed tags tooltip */
+.fct-country-tree-popper {
+  /* Dropdown panel */
+  .el-select-dropdown {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .el-tree-node__content {
+    @apply h-8;
+  }
+
+  /* Collapsed tags tooltip (also gets fct-country-tree-popper via popper-class) */
+  &.el-tooltip {
+    max-width: var(--fct-country-input-width, 100%);
+    @apply p-3;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
+
+
+.fct-coverage-hint {
+  @apply text-xs text-system-mid mt-2 dark:text-gray-400;
+
+  &.is-warning {
+    @apply text-warning-500;
+  }
+}
+
 // Responsive
 @media (max-width: 1024px) {
   .fct-setting-menu-toggle {
@@ -667,6 +750,9 @@
   }
   .fct-setting-container {
     @apply relative h-auto;
+  }
+  .folded .fct-settings-nav-container {
+    left: -100%
   }
 
   .fct-settings-nav-container {

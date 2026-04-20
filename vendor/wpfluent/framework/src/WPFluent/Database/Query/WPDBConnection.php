@@ -215,10 +215,9 @@ class WPDBConnection implements ConnectionInterface
      *
      * @param string $query
      * @param array $bindings
-     * @param bool $useReadPdo
      * @return mixed
      */
-    public function selectOne($query, $bindings = [], $useReadPdo = true)
+    public function selectOne($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
             $query = $this->bindParams($query, $bindings);
@@ -240,14 +239,13 @@ class WPDBConnection implements ConnectionInterface
      *
      * @param string $query
      * @param array $bindings
-     * @param bool $useReadPdo
      * @return mixed
      *
      * @throws \FluentCart\Framework\Database\MultipleColumnsSelectedException
      */
-    public function scalar($query, $bindings = [], $useReadPdo = true)
+    public function scalar($query, $bindings = [])
     {
-        $record = $this->selectOne($query, $bindings, $useReadPdo);
+        $record = $this->selectOne($query, $bindings);
 
         if (is_null($record)) {
             return null;
@@ -269,10 +267,9 @@ class WPDBConnection implements ConnectionInterface
      *
      * @param string $query
      * @param array $bindings
-     * @param bool $useReadPdo
      * @return array
      */
-    public function select($query, $bindings = [], $useReadPdo = true)
+    public function select($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
             $query = $this->bindParams($query, $bindings);
@@ -290,76 +287,36 @@ class WPDBConnection implements ConnectionInterface
     }
 
     /**
-     * A hacky way to emulate bind parameters into SQL query
+     * Bind the parameters into SQL query
      *
      * @param $query
      * @param $bindings
-     *
-     * @return mixed
+     * @return string
      */
-    protected function bindParams($query, $bindings, $update = false)
+    protected function bindParams(string $query, array $bindings)
     {
         $query = str_replace('"', '`', $query);
 
         $bindings = $this->prepareBindings($bindings);
 
-        if (!$bindings) {
+        if (empty($bindings)) {
             return $query;
         }
 
-        $bindings = array_map(function ($replace) {
+        $query = str_replace(['%', '?'], ['%%', '%s'], $query);
 
-            if (is_string($replace)) {
-                $replace = "'" . esc_sql($replace) . "'";
-            } elseif ($replace === null) {
-                $replace = "null";
-            }
-
-            return $replace;
-
-        }, $bindings);
-
-        $query = str_replace(array('%', '?'), array('%%', '%s'), $query);
-
-        $query = vsprintf($query, $bindings);
-
-        return $query;
-    }
-
-    /**
-     * A hacky way to emulate bind parameters into SQL query for mysqli
-     * Only used to run a cursor query using the underlying mysqli instance.
-     *
-     * @param $query
-     * @param $bindings
-     *
-     * @return mixed
-     */
-    protected function bindParamsForSqli($query, $bindings, $update = false)
-    {
-        $query = str_replace('"', '`', $query);
-
-        $bindings = $this->prepareBindings($bindings);
-
-        if (!$bindings) {
-            return $query;
+        if ($this->wpdb->dbh instanceof \mysqli) {
+            return $this->wpdb->prepare($query, ...$bindings);
         }
 
-        $bindings = array_map(function ($replace) {
-
-            if (is_string($replace)) {
-                $replace = "'" . esc_sql($replace) . "'";
-            } elseif ($replace === null) {
-                $replace = "null";
-            }
-
-            return $replace;
-
+        $bindings = array_map(function ($value) {
+            if ($value === null) return 'NULL';
+            if (is_bool($value)) return $value ? '1' : '0';
+            if (is_string($value)) return "'" . esc_sql($value) . "'";
+            return (string) $value;
         }, $bindings);
 
-        $query = vsprintf($query, $bindings);
-
-        return $query;
+        return vsprintf($query, $bindings);
     }
 
     /**
@@ -367,13 +324,12 @@ class WPDBConnection implements ConnectionInterface
      *
      * @param string $query
      * @param array $bindings
-     * @param bool $useReadPdo
      * @return \Generator
-     * @throws \FluentCart\Framework\Database\QueryException
+     * @throws \FluentAccount\Framework\Database\QueryException
      */
-    public function cursor($query, $bindings = [], $useReadPdo = true)
+    public function cursor($query, $bindings = [])
     {
-        // If not mysqli, just mimic the cursor but does not do the cursor query
+        // If not mysqli (e.g., SQLite), fallback to standard select
         if (!$this->wpdb->dbh instanceof \mysqli) {
             foreach ($this->select($query, $bindings) as $row) {
                 yield $row;
@@ -381,7 +337,12 @@ class WPDBConnection implements ConnectionInterface
             return;
         }
 
-        // Flush previous queries and check connection
+        $preparedQuery = str_replace('"', '`', $query);
+
+        $preparedQuery = str_replace('%', '%%', $preparedQuery);
+
+        $bindings = $this->prepareBindings($bindings);
+
         $this->wpdb->flush();
         $this->wpdb->insert_id = 0;
         $this->wpdb->check_current_query = true;
@@ -389,7 +350,7 @@ class WPDBConnection implements ConnectionInterface
         if (!$this->wpdb->check_connection()) {
             throw new QueryException(
                 $query, $bindings, new Exception(
-                    $this->wpdb->last_error || 'Error reconnecting to the database.'
+                    $this->wpdb->last_error ?: 'Error reconnecting to database.'
                 )
             );
         }
@@ -398,12 +359,8 @@ class WPDBConnection implements ConnectionInterface
             $this->wpdb->timer_start();
         }
 
-        // Prepare the statement
-        $statement = $this->wpdb->dbh->prepare(
-            $this->bindParamsForSqli($query, $bindings)
-        );
+        $statement = $this->wpdb->dbh->prepare($preparedQuery);
 
-        // Check if the statement preparation failed
         if ($statement === false) {
             throw new QueryException(
                 $query, $bindings, new Exception(
@@ -412,39 +369,37 @@ class WPDBConnection implements ConnectionInterface
             );
         }
 
-        // Bind parameters if necessary
-        if ($bindings) {
+        if (!empty($bindings)) {
             $types = '';
             foreach ($bindings as $binding) {
-                $types .= is_int($binding) ? 'i' : (
-                    is_double($binding) ? 'd' : 's'
-                );
+                if (is_int($binding)) {
+                    $types .= 'i';
+                } elseif (is_double($binding)) {
+                    $types .= 'd';
+                } else {
+                    $types .= 's';
+                }
             }
 
             $statement->bind_param($types, ...$bindings);
         }
 
-        // Execute the statement and check if it's successful
         if ($statement->execute()) {
-            // Check if the statement has a result set
-            if ($result = $statement->get_result()) {
-                $i = 0;
+            $result = $statement->get_result();
+            
+            if ($result) {
                 while ($row = $result->fetch_assoc()) {
-                    $this->wpdb->last_result[$i] = $row;
-                    $i++;
-                    yield $row;
+                    yield (object) $row;
                 }
-
                 $result->free();
             } else {
-                // Handle the case where no result is returned
-                throw new QueryException(
-                    $query, $bindings, new Exception(
-                        'No result set returned from query.'
-                    )
-                );
+                if ($statement->errno) {
+                    throw new QueryException(
+                        $query, $bindings, new Exception($statement->error)
+                    );
+                }
             }
-
+            $statement->close();
             return;
         }
 
@@ -468,40 +423,33 @@ class WPDBConnection implements ConnectionInterface
      * @param  string $query
      * @param  array  $bindings
      * @return \Generator
-     * @throws \FluentCart\Framework\Database\QueryException
+     * @throws \FluentAccount\Framework\Database\QueryException
      */
     public function rawCursor($query, $bindings = [])
     {
-        // Sanitize bindings manually
         if (!empty($bindings)) {
-            foreach ($bindings as $binding) {
-                $escaped = $this->wpdb->dbh->real_escape_string($binding);
-                // Replace the first occurrence of ? with the escaped binding
-                $query = preg_replace('/\?/', "'{$escaped}'", $query, 1);
-            }
+            $query = str_replace(['%', '?'], ['%%', '%s'], $query);
+            $query = $this->wpdb->prepare($query, ...$bindings);
         }
 
-        // If not mysqli, mimic cursor
         if (!$this->wpdb->dbh instanceof \mysqli) {
-            foreach ($this->select($query) as $row) {
-                yield $row;
-            }
+            foreach ($this->select($query) as $row) { yield $row; }
             return;
         }
 
-        // Real raw cursor
         $stmt = $this->wpdb->dbh->query($query, MYSQLI_USE_RESULT);
 
-        if ($stmt) {
-            while ($row = $stmt->fetch_assoc()) {
-                yield $row;
+        if ($stmt instanceof \mysqli_result) {
+            try {
+                while ($row = $stmt->fetch_assoc()) {
+                    yield (object) $row;
+                }
+            } finally {
+                $stmt->free();
             }
-        } else {
-            $err = $this->wpdb->dbh->error;
+        } elseif ($this->wpdb->dbh->error) {
             throw new QueryException(
-                $query, $bindings, new Exception(
-                    $err ? $err : 'MySQL Error: ' . $this->wpdb->dbh->errno
-                )
+                $query, $bindings, new Exception($this->wpdb->dbh->error)
             );
         }
     }

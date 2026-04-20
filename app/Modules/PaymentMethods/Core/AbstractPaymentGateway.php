@@ -129,7 +129,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         // validate if the settings/credentials are correct
         if ('yes' === $is_active) {
             $response = static::validateSettings($settings);
-            if (isset($reponse['status']) && $response['status'] === 'failed') {
+            if (isset($response['status']) && $response['status'] === 'failed') {
                 wp_send_json(
                     [
                         'status'  => 'failed',
@@ -438,7 +438,9 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
     {
         $this->beforeRenderPaymentMethod($hasSubscription);
         $this->render($mode);
-        do_action('fluent-cart/after_render_payment_method_' . $this->getMeta('route'));
+        $route = $this->getMeta('route');
+        do_action_deprecated('fluent-cart/after_render_payment_method_' . $route, [], '1.3.16', 'fluent_cart/after_render_payment_method_' . $route, 'Use fluent_cart/after_render_payment_method_' . $route . ' instead of fluent-cart/after_render_payment_method_' . $route . '.');
+        do_action('fluent_cart/after_render_payment_method_' . $route);
     }
 
     public function render($mode = 'logo')

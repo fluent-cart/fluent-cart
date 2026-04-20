@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class ProductMetaMigrator extends Migrator
 {
 
@@ -22,5 +20,16 @@ class ProductMetaMigrator extends Migrator
                 `updated_at` DATETIME NULL,
 
                  INDEX `{$indexPrefix}_meta_key` (`meta_key` ASC),";
+    }
+
+    public static function migrated()
+    {
+        static::dropCompositeUniqueIndex();
+    }
+
+    public static function dropCompositeUniqueIndex()
+    {
+        // "ALTER TABLE %i DROP INDEX %i" (index: {prefix}fct_pm__comp_unq)
+        static::dropIndexIfExists(static::getDbPrefix() . 'fct_pm__comp_unq');
     }
 }

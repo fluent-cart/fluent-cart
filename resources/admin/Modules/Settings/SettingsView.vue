@@ -24,6 +24,8 @@
           >
             <el-button
                 @click="toggleCollapse"
+                :aria-label="translate('Toggle settings navigation')"
+                :aria-expanded="!isSidebarCollapsed"
             >
               <DynamicIcon name="Window" />
 
@@ -190,10 +192,6 @@ const routes = ref([
         url: '/settings/email_mailing_settings'
       },
       {
-        name: translate('Reminders'),
-        url: '/settings/email_mailing_settings/reminders'
-      },
-      {
         name: translate('Notifications'),
         url: '/settings/email_notifications'
       }
@@ -231,6 +229,11 @@ if (router.hasRoute('shipping')) {
         name: translate('Shipping Classes'),
         permission: ["store/sensitive"],
         url: '/settings/shipping/shipping_classes'
+      },
+      {
+        name: translate('Packages'),
+        permission: ["store/sensitive"],
+        url: '/settings/shipping/packages'
       }
     ]
   });

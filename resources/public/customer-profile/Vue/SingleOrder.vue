@@ -21,6 +21,25 @@
         <template v-if="order">
             <h1 :id="orderTitleId" class="sr-only">{{ $t('Order Details') }} <span v-if="order.invoice_no">#{{ order.invoice_no }}</span></h1>
 
+            <el-alert
+                v-if="order.custom_payment_link && (order.total_amount - order.total_paid - order.total_refund) > 0"
+                class="mb-4"
+                :title="$t('This order has some due amount. Please complete the payment.')"
+                type="error"
+                :show-icon="true"
+                :closable="false"
+            >
+                <el-button
+                    class="el-button--x-small"
+                    tag="a"
+                    :href="order.custom_payment_link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {{ $t('Pay Now') }}
+                </el-button>
+            </el-alert>
+
             <article class="fct-single-order-box" role="region" aria-labelledby="order-summary-title">
                 <div v-if="sectionParts.before_summary" v-html="sectionParts.before_summary"></div>
                 <div class="fct-single-order-body">
@@ -56,7 +75,7 @@
 
                             <div class="fct-order-summary-body">
                                 <ul class="fct-order-summary-items" role="list">
-                                    <li v-for="(filteredOrderItem, i) in order.order_items" :key="i"
+                                    <li v-for="(filteredOrderItem, i) in productItems" :key="i"
                                      class="fct-order-summary-item" role="listitem">
                                         <div class="fct-product-info-card">
                                             <div class="fct-product-info-card-inner">
@@ -123,7 +142,7 @@
                                     </li>
                                 </ul>
                                 <div
-                                    v-if="(order.manual_discount_total + order.coupon_discount_total) > 0 || order.shipping_total > 0 || (order.manual_discount_total + order.coupon_discount_total) > 0 || order.tax_total > 0"
+                                    v-if="(order.manual_discount_total + order.coupon_discount_total) > 0 || order.shipping_total > 0 || order.fee_total > 0 || order.tax_total > 0"
                                     class="fct-order-summary-order-calculation">
                                     <div v-if="(order.manual_discount_total + order.coupon_discount_total) || order.subtotal > 0"
                                          class="tr">
@@ -135,6 +154,12 @@
                                             formatNumber(order.shipping_total)
                                         }}</span>
                                     </div>
+
+                                    <template v-if="order.fee_total > 0">
+                                        <div v-for="feeItem in feeItems" :key="'fee-' + feeItem.id" class="tr">
+                                            {{ feeItem.title }} <span>{{ formatNumber(feeItem.subtotal) }}</span>
+                                        </div>
+                                    </template>
 
                                     <div v-if="order.tax_total > 0" class="tr">
                                         {{ $t('Tax') }} {{order.tax_behavior == 2 ? $t('(Included)') : $t('(Excluded)')}} <span>{{
@@ -305,7 +330,15 @@ export default {
     computed: {
         ArrowRight() {
             return ArrowRight;
-        }
+        },
+        productItems() {
+            if (!this.order || !this.order.order_items) return [];
+            return this.order.order_items.filter(item => !['fee', 'signup_fee'].includes(item.payment_type));
+        },
+        feeItems() {
+            if (!this.order || !this.order.order_items) return [];
+            return this.order.order_items.filter(item => item.payment_type === 'fee');
+        },
     },
     methods: {
         formatOrderItems,

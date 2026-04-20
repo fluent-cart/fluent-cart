@@ -1,6 +1,10 @@
 import AllCustomers from './Modules/Customers/AllCustomers.vue';
 import AllOrders from './Modules/Orders/AllOrders.vue';
 import InvoicePacking from "./Modules/Settings/InvoicePacking.vue";
+import PdfTemplateRoute from "./Modules/Settings/PdfTemplate/PdfTemplateRoute.vue";
+import PdfTemplateIndex from "./Modules/Settings/PdfTemplate/PdfTemplateIndex.vue";
+import PdfTemplateEdit from "./Modules/Settings/PdfTemplate/PdfTemplateEdit.vue";
+import PdfTemplateSettings from "./Modules/Settings/PdfTemplate/PdfTemplateSettings.vue";
 import CustomersRoute from './Modules/Customers/CustomersRoute.vue';
 import Dashboard from './Pages/Dashboard/Dashboard.vue';
 import FeedEditor from "./Modules/Integrations/FeedEditor.vue";
@@ -555,6 +559,49 @@ export var routes = {
                     title: 'Invoice & Packing',
                     permission: "is_super_admin"
                 },
+            },
+            {
+                name: 'pdf-template',
+                path: 'pdf-template',
+                component: PdfTemplateRoute,
+                meta: {
+                    active_menu: 'settings',
+                    title: 'PDF Templates',
+                    permission: "is_super_admin"
+                },
+                children: [
+                    {
+                        name: 'pdf-template-list',
+                        path: '',
+                        component: PdfTemplateIndex,
+                        meta: {
+                            active_menu: 'settings',
+                            title: 'PDF Templates',
+                            permission: "is_super_admin"
+                        },
+                    },
+                    {
+                        name: 'pdf-template-settings',
+                        path: 'settings',
+                        component: PdfTemplateSettings,
+                        meta: {
+                            active_menu: 'settings',
+                            title: 'PDF Template Settings',
+                            permission: "is_super_admin"
+                        },
+                    },
+                    {
+                        name: 'edit-pdf-template',
+                        path: ':template/edit',
+                        component: PdfTemplateEdit,
+                        props: true,
+                        meta: {
+                            active_menu: 'settings',
+                            title: 'Edit PDF Template',
+                            permission: "is_super_admin"
+                        },
+                    },
+                ],
             },
 
             {

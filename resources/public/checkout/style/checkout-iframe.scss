@@ -234,6 +234,13 @@ html, body {
     line-height: 1.5;
   }
 
+  .fct-modal-cs-payment-info {
+     font-size: 12px;
+     font-weight: 400;
+     color: var(--fct-modal-checkout-secondary-text-color);
+     margin-top: 6px;
+  }
+
   .fct-modal-cs-item-name {
     color: var(--fct-modal-checkout-primary-text-color);
     font-weight: 500;

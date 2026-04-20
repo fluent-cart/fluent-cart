@@ -34,6 +34,9 @@ use FluentCart\App\Helpers\Helper;
     <tbody>
     <?php
         foreach ($order->order_items as $item) {
+            if (in_array($item->payment_type, ['fee', 'signup_fee'])) {
+                continue;
+            }
             $product = $item->product;
             echo wp_kses_post(App::view()->make('invoice.parts.table_row',[
                 'product' => $product,

@@ -30,7 +30,7 @@ const currencySign = computed(() => {
 const groupKeys = [
   { label: "Billing Country", value: "billing_country" },
   { label: "Shipping Country", value: "shipping_country" },
-  { label: "Payment Method", value: "payment_method_title" },
+  { label: "Payment Method", value: "payment_method" },
 ];
 
 const paymentMethodMap = ref({
@@ -117,7 +117,7 @@ const getPaymentMethodLabel = (paymentMethod) => {
           prop="payment_method"
           :label="$t('Payment Method')"
           min-width="150"
-          v-if="selectedGroupKey === 'payment_method_title'"
+          v-if="selectedGroupKey === 'payment_method'"
         >
           <template #default="scope">
             {{ scope.row.payment_method }}

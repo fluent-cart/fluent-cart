@@ -11,6 +11,7 @@ use FluentCart\App\Services\OrderService;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\ArrayableInterface;
 use FluentCart\Framework\Support\Str;
+use FluentCart\App\Services\Permission\PermissionManager;
 
 class StoreSettings implements ArrayableInterface
 {
@@ -83,7 +84,9 @@ class StoreSettings implements ArrayableInterface
             'enable_early_payment_for_installment' => 'yes',
             'modules_settings'                     => [],
             'min_receipt_number'                   => '1',
-            'inv_prefix'                           => 'INV-'
+            'inv_prefix'                           => 'INV-',
+            'weight_unit'                          => 'kg',
+            'dimension_unit'                       => 'cm'
         ];
 
         return apply_filters('fluent_cart/store_settings/values', $defaultSettings, []);
@@ -406,6 +409,7 @@ class StoreSettings implements ArrayableInterface
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
                             ],
+
 
                             'checkout_style_grid' => [
                                 'type'            => 'grid',
@@ -1138,6 +1142,59 @@ class StoreSettings implements ArrayableInterface
         ];
 
 
+        // Only show weight/dimension unit fields to users with shipping-sensitive permission
+        if (PermissionManager::hasPermission(['store/sensitive'])) {
+            $storeSchema = &$fields['setting_tabs']['schema']['store_setup']['schema'];
+            $storeSchema['weight_unit_grid'] = [
+                'type'            => 'grid',
+                'columns'         => ['default' => 1, 'md' => 3],
+                'disable_nesting' => true,
+                'schema'          => [
+                    'label'       => [
+                        'type'  => 'html',
+                        'value' => '<span class="setting-label">' . __('Weight Unit', 'fluent-cart') . '</span>
+                                    <div class="form-note">' . __('Unit used for product weight measurements.', 'fluent-cart') . '</div>'
+                    ],
+                    'weight_unit' => [
+                        'wrapperClass' => 'col-span-2 flex items-center',
+                        'label'        => '',
+                        'type'         => 'select',
+                        'options'      => [
+                            ['label' => __('kg', 'fluent-cart'), 'value' => 'kg'],
+                            ['label' => __('g', 'fluent-cart'), 'value' => 'g'],
+                            ['label' => __('lbs', 'fluent-cart'), 'value' => 'lbs'],
+                            ['label' => __('oz', 'fluent-cart'), 'value' => 'oz'],
+                        ],
+                        'value'        => 'kg'
+                    ],
+                ]
+            ];
+            $storeSchema['dimension_unit_grid'] = [
+                'type'            => 'grid',
+                'columns'         => ['default' => 1, 'md' => 3],
+                'disable_nesting' => true,
+                'schema'          => [
+                    'label'          => [
+                        'type'  => 'html',
+                        'value' => '<span class="setting-label">' . __('Dimension Unit', 'fluent-cart') . '</span>
+                                    <div class="form-note">' . __('Unit used for product dimension measurements.', 'fluent-cart') . '</div>'
+                    ],
+                    'dimension_unit' => [
+                        'wrapperClass' => 'col-span-2 flex items-center',
+                        'label'        => '',
+                        'type'         => 'select',
+                        'options'      => [
+                            ['label' => __('cm', 'fluent-cart'), 'value' => 'cm'],
+                            ['label' => __('mm', 'fluent-cart'), 'value' => 'mm'],
+                            ['label' => __('in', 'fluent-cart'), 'value' => 'in'],
+                            ['label' => __('m', 'fluent-cart'), 'value' => 'm'],
+                        ],
+                        'value'        => 'cm'
+                    ],
+                ]
+            ];
+        }
+
         return apply_filters("fluent_cart/store_settings/fields", $fields, []);
     }
 
@@ -1485,7 +1542,9 @@ class StoreSettings implements ArrayableInterface
         if (!empty($themeSetup) && is_array($themeSetup)) {
             foreach ($themeSetup as $key => $value) {
                 if (!empty($value)) {
-                    $colors .= "$key: $value;";
+                    $safeKey = preg_replace('/[^a-zA-Z0-9\-_]/', '', $key);
+                    $safeValue = preg_replace('/[;\{\}]/', '', $value);
+                    $colors .= "$safeKey: $safeValue;";
                 }
             }
         }

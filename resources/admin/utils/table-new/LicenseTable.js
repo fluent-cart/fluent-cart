@@ -1,6 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-import Arr from "@/utils/support/Arr";
+
 
 class LicenseTable extends Table {
 
@@ -79,14 +79,6 @@ class LicenseTable extends Table {
 
     getTableName() {
         return 'licenses';
-    }
-
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.license_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.license_filter_options.guide');
     }
 
     with() {

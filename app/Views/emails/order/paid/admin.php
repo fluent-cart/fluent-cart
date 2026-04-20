@@ -3,19 +3,9 @@
 /**
  * @var $order \FluentCart\App\Models\Order
  */
-$celebration = \FluentCart\App\Services\TemplateService::getCelebration('order');
-?>
-
-<?php
-if (!empty($celebration)) {
-    \FluentCart\App\App::make('view')->render('emails.parts.celebration', [
-        'text' => $celebration
-    ]);
-}
 ?>
 
 <div class="space_bottom_30">
-    <p><?php echo esc_html__('Hey there 🙌,', 'fluent-cart'); ?></p>
     <p>
         <?php
         printf(

@@ -342,10 +342,16 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
-        $subscription->cancelRemoteSubscription([
+        $result = $subscription->cancelRemoteSubscription([
             'reason' => 'cancelled_by_customer',
             'note'   => __('Cancelled by Customer from customer portal', 'fluent-cart'),
         ]);
+
+        if (is_wp_error($result)) {
+            return $this->sendError([
+                'message' => __('Unable to cancel subscription at this time. Please try again later or contact support.', 'fluent-cart')
+            ]);
+        }
 
         return [
             'message' => __('Your subscription has been successfully cancelled', 'fluent-cart')

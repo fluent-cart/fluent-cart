@@ -83,7 +83,7 @@ class ModalCheckoutRenderer
     public function render() 
     {
         ?>
-            <div class="fct-checkout-modal-container" data-fct-checkout-modal-container>
+            <div class="fct-checkout-modal-container" data-fct-checkout-modal-container style="opacity: 0; visibility: hidden;">
                 <div class="fct-checkout-modal" data-fct-checkout-modal>
                     <div class="fct-checkout-modal-loader" data-fct-checkout-modal-loader>
                         <div class="fct-checkout-modal-loader-spinner"></div>
@@ -183,6 +183,8 @@ class ModalCheckoutRenderer
                         </span>
                     </div>
 
+                    <?php $this->renderPaymentTypeInfo(); ?>
+
                     <?php if($this->matchedVariation) :?>
                         <div class="fct-modal-cs-license">
                             <?php
@@ -203,6 +205,42 @@ class ModalCheckoutRenderer
 
         <?php
 
+    }
+
+    public function renderPaymentTypeInfo() {
+        $otherInfo = Arr::get($this->cart->cart_data, '0.other_info', []);
+        $paymentType = Arr::get($otherInfo, 'payment_type', '');
+        $itemPrice = Arr::get($this->cart->cart_data, '0.unit_price', 0);
+
+
+        if ($paymentType === 'subscription') {
+            $subscriptionInfo = Helper::generateSubscriptionInfo($otherInfo, $itemPrice);
+            $setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo);
+            $trialInfo = Helper::generateTrialInfo($otherInfo);
+            ?>
+                <div class="fct-modal-cs-payment-info">
+                    <span class="sr-only">
+                        <?php esc_html_e('Payment information', 'fluent-cart'); ?>
+                    </span>
+
+                    <span>
+                        <?php echo wp_kses($subscriptionInfo, ['del' => true]); ?>&#44;
+                    </span>
+
+                    <?php if ($trialInfo): ?>
+                        <span class="trial-days">
+                            <?php echo esc_html($trialInfo); ?>&#44;
+                        </span>
+                    <?php endif; ?>
+
+                    <?php if (!empty($setupFeeInfo)): ?>
+                        <span class="setup-fee">
+                            <?php echo esc_html($setupFeeInfo); ?>
+                        </span>
+                    <?php endif; ?>
+                </div>
+            <?php
+        }
     }
 
     public function renderPromoCode() {
@@ -566,11 +604,13 @@ class ModalCheckoutRenderer
         $route = $method->getMeta('route');
         $methodTitle = $method->getMeta('title');
         $methodStyle = Arr::get($config, 'style', 'logo');
-        $paymentMethodClass = apply_filters('fluent_cart_payment_method_list_class', '',[
-                'route' => $route,
-                'method_title' => $methodTitle,
-                'method_style' => $methodStyle,
-        ]);
+        $pmContext = [
+            'route' => $route,
+            'method_title' => $methodTitle,
+            'method_style' => $methodStyle,
+        ];
+        $paymentMethodClass = apply_filters_deprecated('fluent_cart_payment_method_list_class', ['', $pmContext], '1.3.16', 'fluent_cart/payment_method_list_class', 'Use fluent_cart/payment_method_list_class instead of fluent_cart_payment_method_list_class.');
+        $paymentMethodClass = apply_filters('fluent_cart/payment_method_list_class', $paymentMethodClass, $pmContext);
 
         ?>
         <div class="fluent-cart-checkout_embed_payment_wrapper">

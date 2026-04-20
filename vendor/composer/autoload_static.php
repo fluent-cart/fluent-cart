@@ -12,12 +12,14 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
     );
 
     public static $prefixLengthsPsr4 = array (
+        'P' =>
+        array (
+            'Psr\\Container\\' => 14,
+        ),
         'F' =>
         array (
-            'FluentCart\\Psr\\Container\\' => 25,
             'FluentCart\\OpenSpout\\' => 21,
             'FluentCart\\Framework\\' => 21,
-            'FluentCart\\Faker\\' => 17,
             'FluentCart\\Dev\\' => 15,
             'FluentCart\\App\\' => 15,
             'FluentCart\\Api\\' => 15,
@@ -25,7 +27,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
     );
 
     public static $prefixDirsPsr4 = array (
-        'FluentCart\\Psr\\Container\\' =>
+        'Psr\\Container\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
@@ -36,10 +38,6 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\Framework\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
-        ),
-        'FluentCart\\Faker\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/fakerphp/faker/src/Faker',
         ),
         'FluentCart\\Dev\\' =>
         array (
@@ -127,6 +125,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Events\\Order\\OrderCanceled' => __DIR__ . '/../..' . '/app/Events/Order/OrderCanceled.php',
         'FluentCart\\App\\Events\\Order\\OrderCreated' => __DIR__ . '/../..' . '/app/Events/Order/OrderCreated.php',
         'FluentCart\\App\\Events\\Order\\OrderDeleted' => __DIR__ . '/../..' . '/app/Events/Order/OrderDeleted.php',
+        'FluentCart\\App\\Events\\Order\\OrderDeleting' => __DIR__ . '/../..' . '/app/Events/Order/OrderDeleting.php',
         'FluentCart\\App\\Events\\Order\\OrderPaid' => __DIR__ . '/../..' . '/app/Events/Order/OrderPaid.php',
         'FluentCart\\App\\Events\\Order\\OrderPaymentFailed' => __DIR__ . '/../..' . '/app/Events/Order/OrderPaymentFailed.php',
         'FluentCart\\App\\Events\\Order\\OrderRefund' => __DIR__ . '/../..' . '/app/Events/Order/OrderRefund.php',
@@ -358,6 +357,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Listeners\\Order\\OrderBulkAction' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderBulkAction.php',
         'FluentCart\\App\\Listeners\\Order\\OrderCreated' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderCreated.php',
         'FluentCart\\App\\Listeners\\Order\\OrderDeleted' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderDeleted.php',
+        'FluentCart\\App\\Listeners\\Order\\OrderDeleting' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderDeleting.php',
         'FluentCart\\App\\Listeners\\Order\\OrderPaid' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderPaid.php',
         'FluentCart\\App\\Listeners\\Order\\OrderPaymentFailed' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderPaymentFailed.php',
         'FluentCart\\App\\Listeners\\Order\\OrderRefunded' => __DIR__ . '/../..' . '/app/Listeners/Order/OrderRefunded.php',
@@ -547,7 +547,6 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\Async\\DummyProductService' => __DIR__ . '/../..' . '/app/Services/Async/DummyProductService.php',
         'FluentCart\\App\\Services\\Async\\ImageAttachService' => __DIR__ . '/../..' . '/app/Services/Async/ImageAttachService.php',
         'FluentCart\\App\\Services\\AuthService' => __DIR__ . '/../..' . '/app/Services/AuthService.php',
-        'FluentCart\\App\\Services\\BlockParser' => __DIR__ . '/../..' . '/app/Services/BlockParser.php',
         'FluentCart\\App\\Services\\BulkProductInsertService' => __DIR__ . '/../..' . '/app/Services/BulkProductInsertService.php',
         'FluentCart\\App\\Services\\BulkProductUpdateService' => __DIR__ . '/../..' . '/app/Services/BulkProductUpdateService.php',
         'FluentCart\\App\\Services\\Cache' => __DIR__ . '/../..' . '/app/Services/Cache.php',
@@ -562,43 +561,10 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\DateTime\\CanExtractTimeZone' => __DIR__ . '/../..' . '/app/Services/DateTime/CanExtractTimeZone.php',
         'FluentCart\\App\\Services\\DateTime\\DateTime' => __DIR__ . '/../..' . '/app/Services/DateTime/DateTime.php',
         'FluentCart\\App\\Services\\Email\\BlockEditorHelper' => __DIR__ . '/../..' . '/app/Services/Email/BlockEditorHelper.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\AddressContainerBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/AddressContainerBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\BaseBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/BaseBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ButtonBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ButtonBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ButtonsBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ButtonsBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\CodeBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/CodeBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ColumnBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ColumnBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ColumnsBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ColumnsBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ConditionContentBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ConditionContentBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ConditionFallbackBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ConditionFallbackBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\CoverBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/CoverBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\DownloadDetailsLoopBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/DownloadDetailsLoopBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\EmailRowBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/EmailRowBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\GroupBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/GroupBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\HeadingBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/HeadingBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ImageBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ImageBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\LicenseDetailsLoopBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/LicenseDetailsLoopBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ListBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ListBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ListItemBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ListItemBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\MediaTextBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/MediaTextBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\OrderAddressesBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/OrderAddressesBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\OrderItemsLoopBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/OrderItemsLoopBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ParagraphBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ParagraphBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\PreformattedBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/PreformattedBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\PullquoteBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/PullquoteBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\QuoteBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/QuoteBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\SeparatorBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/SeparatorBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\ShortcodeConditionBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/ShortcodeConditionBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\SocialLinksBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/SocialLinksBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\SpacerBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/SpacerBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\SubscriptionDetailsLoopBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/SubscriptionDetailsLoopBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\TableBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/TableBlock.php',
-        'FluentCart\\App\\Services\\Email\\Blocks\\VerseBlock' => __DIR__ . '/../..' . '/app/Services/Email/Blocks/VerseBlock.php',
         'FluentCart\\App\\Services\\Email\\ConditionPresets' => __DIR__ . '/../..' . '/app/Services/Email/ConditionPresets.php',
         'FluentCart\\App\\Services\\Email\\EmailNotificationMailer' => __DIR__ . '/../..' . '/app/Services/Email/EmailNotificationMailer.php',
         'FluentCart\\App\\Services\\Email\\EmailNotifications' => __DIR__ . '/../..' . '/app/Services/Email/EmailNotifications.php',
         'FluentCart\\App\\Services\\Email\\EmailPreviewService' => __DIR__ . '/../..' . '/app/Services/Email/EmailPreviewService.php',
-        'FluentCart\\App\\Services\\Email\\FluentBlockParser' => __DIR__ . '/../..' . '/app/Services/Email/FluentBlockParser.php',
         'FluentCart\\App\\Services\\Email\\Mailer' => __DIR__ . '/../..' . '/app/Services/Email/Mailer.php',
         'FluentCart\\App\\Services\\FileSystem\\DownloadService' => __DIR__ . '/../..' . '/app/Services/FileSystem/DownloadService.php',
         'FluentCart\\App\\Services\\FileSystem\\Drivers\\BaseDriver' => __DIR__ . '/../..' . '/app/Services/FileSystem/Drivers/BaseDriver.php',
@@ -624,7 +590,6 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\Filter\\TaxFilter' => __DIR__ . '/../..' . '/app/Services/Filter/TaxFilter.php',
         'FluentCart\\App\\Services\\Filter\\VariationFilter' => __DIR__ . '/../..' . '/app/Services/Filter/VariationFilter.php',
         'FluentCart\\App\\Services\\FrontendView' => __DIR__ . '/../..' . '/app/Services/FrontendView.php',
-        'FluentCart\\App\\Services\\GutenbergEmailParser' => __DIR__ . '/../..' . '/app/Services/GutenbergEmailParser.php',
         'FluentCart\\App\\Services\\Integration' => __DIR__ . '/../..' . '/app/Services/Integration.php',
         'FluentCart\\App\\Services\\Libs\\Emogrifier\\Emogrifier' => __DIR__ . '/../..' . '/app/Services/Libs/Emogrifier/Emogrifier.php',
         'FluentCart\\App\\Services\\Libs\\Emogrifier\\EmogrifierPhp7' => __DIR__ . '/../..' . '/app/Services/Libs/Emogrifier/EmogrifierPhp7.php',
@@ -632,6 +597,9 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\Localization\\PostcodeVerification' => __DIR__ . '/../..' . '/app/Services/Localization/PostcodeVerification.php',
         'FluentCart\\App\\Services\\OrderService' => __DIR__ . '/../..' . '/app/Services/OrderService.php',
         'FluentCart\\App\\Services\\OrdersQuery' => __DIR__ . '/../..' . '/app/Services/OrdersQuery.php',
+        'FluentCart\\App\\Services\\PDF\\DefaultPdfStructures' => __DIR__ . '/../..' . '/app/Services/PDF/DefaultPdfStructures.php',
+        'FluentCart\\App\\Services\\PDF\\PdfGeneratorService' => __DIR__ . '/../..' . '/app/Services/PDF/PdfGeneratorService.php',
+        'FluentCart\\App\\Services\\PDF\\ReceiptPdfTemplateService' => __DIR__ . '/../..' . '/app/Services/PDF/ReceiptPdfTemplateService.php',
         'FluentCart\\App\\Services\\Payments\\PaymentHelper' => __DIR__ . '/../..' . '/app/Services/Payments/PaymentHelper.php',
         'FluentCart\\App\\Services\\Payments\\PaymentInstance' => __DIR__ . '/../..' . '/app/Services/Payments/PaymentInstance.php',
         'FluentCart\\App\\Services\\Payments\\PaymentReceipt' => __DIR__ . '/../..' . '/app/Services/Payments/PaymentReceipt.php',
@@ -675,7 +643,6 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\Renderer\\ShippingMethodsRender' => __DIR__ . '/../..' . '/app/Services/Renderer/ShippingMethodsRender.php',
         'FluentCart\\App\\Services\\Renderer\\ShopAppRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/ShopAppRenderer.php',
         'FluentCart\\App\\Services\\Renderer\\StoreLogoRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/StoreLogoRenderer.php',
-        'FluentCart\\App\\Services\\Report\\CartReportService' => __DIR__ . '/../..' . '/app/Services/Report/CartReportService.php',
         'FluentCart\\App\\Services\\Report\\Concerns\\CanParseAddressField' => __DIR__ . '/../..' . '/app/Services/Report/Concerns/CanParseAddressField.php',
         'FluentCart\\App\\Services\\Report\\Concerns\\HasRange' => __DIR__ . '/../..' . '/app/Services/Report/Concerns/HasRange.php',
         'FluentCart\\App\\Services\\Report\\Concerns\\Subscription\\CanCalculateChurnRateTrend' => __DIR__ . '/../..' . '/app/Services/Report/Concerns/Subscription/CanCalculateChurnRateTrend.php',
@@ -814,6 +781,8 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\Framework\\Database\\Events\\TransactionCommitting' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionCommitting.php',
         'FluentCart\\Framework\\Database\\Events\\TransactionRolledBack' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionRolledBack.php',
         'FluentCart\\Framework\\Database\\LazyLoadingViolationException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/LazyLoadingViolationException.php',
+        'FluentCart\\Framework\\Database\\Migration\\Blueprint' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Migration/Blueprint.php',
+        'FluentCart\\Framework\\Database\\Migration\\ColumnDefinition' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Migration/ColumnDefinition.php',
         'FluentCart\\Framework\\Database\\MultipleColumnsSelectedException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/MultipleColumnsSelectedException.php',
         'FluentCart\\Framework\\Database\\MultipleRecordsFoundException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/MultipleRecordsFoundException.php',
         'FluentCart\\Framework\\Database\\Orm\\Builder' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Orm/Builder.php',
@@ -928,6 +897,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\Framework\\Http\\Request\\InteractsWithCleaningTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/InteractsWithCleaningTrait.php',
         'FluentCart\\Framework\\Http\\Request\\InteractsWithFilesTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/InteractsWithFilesTrait.php',
         'FluentCart\\Framework\\Http\\Request\\InteractsWithHeadersTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/InteractsWithHeadersTrait.php',
+        'FluentCart\\Framework\\Http\\Request\\InteractsWithIPTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/InteractsWithIPTrait.php',
         'FluentCart\\Framework\\Http\\Request\\Request' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/Request.php',
         'FluentCart\\Framework\\Http\\Request\\WPUserProxy' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Request/WPUserProxy.php',
         'FluentCart\\Framework\\Http\\Response' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Response.php',
@@ -1162,6 +1132,9 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\OpenSpout\\Writer\\XLSX\\Manager\\WorkbookManager' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Manager/WorkbookManager.php',
         'FluentCart\\OpenSpout\\Writer\\XLSX\\Manager\\WorksheetManager' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Manager/WorksheetManager.php',
         'FluentCart\\OpenSpout\\Writer\\XLSX\\Writer' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Writer.php',
+        'Psr\\Container\\ContainerExceptionInterface' => __DIR__ . '/..' . '/psr/container/src/ContainerExceptionInterface.php',
+        'Psr\\Container\\ContainerInterface' => __DIR__ . '/..' . '/psr/container/src/ContainerInterface.php',
+        'Psr\\Container\\NotFoundExceptionInterface' => __DIR__ . '/..' . '/psr/container/src/NotFoundExceptionInterface.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

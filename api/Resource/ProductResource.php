@@ -208,6 +208,14 @@ class ProductResource extends BaseResourceApi
 
                 $variantData = $variant;
 
+                // Remove empty sku and shipping_class to prevent unique constraint violation
+                if (array_key_exists('sku', $variantData) && empty($variantData['sku'])) {
+                    unset($variantData['sku']);
+                }
+                if (array_key_exists('shipping_class', $variantData) && empty($variantData['shipping_class'])) {
+                    unset($variantData['shipping_class']);
+                }
+
                 // Handle other_info
                 if (!empty($otherInfo)) {
                     if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
@@ -304,19 +312,18 @@ class ProductResource extends BaseResourceApi
         static::updateWpPost($postId, $product);
         if (Arr::has($product, 'gallery')) {
             update_post_meta($postId, FluentProducts::CPT_NAME . '-gallery-image', $gallery);
-        }
 
-
-        if (isset($gallery[0])) {
-            set_post_thumbnail($postId, Arr::get($gallery, '0.id'));
-            $thumbnailImageId = get_post_meta($postId, '_thumbnail_id', true);
-            $thumbnail = wp_prepare_attachment_for_js($thumbnailImageId);
-            $thumbUrl = Arr::get($thumbnail, 'url');
-            if (!empty($thumbUrl) && Arr::get($gallery, '0.id') !== $thumbnailImageId) {
-                update_post_meta($postId, '_thumbnail_id', $thumbnailImageId);
+            if (isset($gallery[0])) {
+                set_post_thumbnail($postId, Arr::get($gallery, '0.id'));
+                $thumbnailImageId = get_post_meta($postId, '_thumbnail_id', true);
+                $thumbnail = wp_prepare_attachment_for_js($thumbnailImageId);
+                $thumbUrl = Arr::get($thumbnail, 'url');
+                if (!empty($thumbUrl) && Arr::get($gallery, '0.id') !== $thumbnailImageId) {
+                    update_post_meta($postId, '_thumbnail_id', $thumbnailImageId);
+                }
+            } else {
+                delete_post_thumbnail($postId);
             }
-        } else {
-            delete_post_thumbnail($postId);
         }
 
         $product = static::getQuery()->with('variants')->addAppends([

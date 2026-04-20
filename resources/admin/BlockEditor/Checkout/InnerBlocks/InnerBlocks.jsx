@@ -13,6 +13,7 @@ import CheckoutOrderSummaryBlock from "@/BlockEditor/Checkout/InnerBlocks/Checko
 import CheckoutSummaryFooterBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutSummaryFooterBlock";
 import CheckoutSubtotalBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutSubtotalBlock";
 import CheckoutShippingBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutShippingBlock";
+import CheckoutFeesBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutFeesBlock";
 import CheckoutCouponBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutCouponBlock";
 import CheckoutManualDiscountBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutManualDiscountBlock";
 import CheckoutTaxBlock from "@/BlockEditor/Checkout/InnerBlocks/CheckoutTaxBlock";
@@ -39,6 +40,7 @@ const componentsMap = {
     CheckoutSummaryFooterBlock,
     CheckoutSubtotalBlock,
     CheckoutShippingBlock,
+    CheckoutFeesBlock,
     CheckoutCouponBlock,
     CheckoutManualDiscountBlock,
     CheckoutTaxBlock,
@@ -75,6 +77,7 @@ blockEditorData.blocks.forEach(block => {
         parent: parent.length > 0 ? parent : null,
         edit: Component?.edit || (() => blocktranslate("No edit found")),
         save: Component?.save || (() => null),
+        deprecated: Component?.deprecated || [],
         supports: block?.supports || {},
         usesContext: Component?.usesContext || [],
         attributes: Component?.attributes || {},

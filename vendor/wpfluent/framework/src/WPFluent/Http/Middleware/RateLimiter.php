@@ -4,99 +4,141 @@ namespace FluentCart\Framework\Http\Middleware;
 
 use FluentCart\Framework\Foundation\App;
 
+/**
+ * Class RateLimiter
+ *
+ * Handles per-IP and per-endpoint rate limiting for REST requests.
+ *
+ * Features:
+ * - IP + endpoint aware
+ * - Retry-After header for 429 responses
+ * - X-RateLimit-Limit and X-RateLimit-Remaining headers
+ * - Optional bypass for admin users
+ * - Transient-based storage, safe for PHP 7.4+
+ */
 class RateLimiter
 {
     /**
-     * The maximum number of requests allowed within the interval.
+     * Maximum requests allowed per interval.
      *
      * @var int
      */
     protected $limit;
 
     /**
-     * The time interval for the rate limit in seconds.
+     * Interval in seconds for rate limiting.
      *
      * @var int
      */
     protected $interval;
 
     /**
-     * Constructor to initialize the rate limiter.
+     * Constructor.
      *
-     * @param int $limit    Maximum number of requests allowed.
-     * @param int $interval Time interval for the rate limit in seconds.
+     * @param int $limit
+     * @param int $interval
      */
     public function __construct($limit, $interval)
     {
-        $this->limit = $limit;
-        $this->interval = $interval;
+        $this->limit = (int) $limit;
+        $this->interval = (int) $interval;
     }
 
     /**
-     * Handle an incoming request and apply rate limiting.
+     * Handle incoming request.
      *
      * @param \FluentCart\Framework\Http\Request\Request $request
      * @param callable $next
-     * 
      * @return mixed
      */
     public function handle($request, $next)
     {
+        // Bypass safe requests or admin users
         if ($this->shouldAllow($request)) {
             return $next($request);
         }
 
-        $settings = $this->getSettings($request, $currentTime = time());
+        $currentTime = time();
+        $settings = $this->getSettings($request, $currentTime);
 
+        // Reset interval if expired, otherwise increment
         if ($this->isIntervalExpired($settings, $currentTime)) {
             $settings = $this->resetRateLimit($currentTime);
         } else {
             $settings['count']++;
         }
 
-        $this->updateSettings($request, $settings);
+        // Update transient with correct TTL
+        $this->updateSettings($request, $settings, $currentTime);
 
+        // Check if limit exceeded
         if ($this->isRateLimitExceeded($settings)) {
-            return $request->abort(429, 'Too many requests.');
+            $retryAfter = $this->interval - ($currentTime - $settings['firstTime']);
+            $response = $request->abort(429, 'Too many requests.');
+            $response->header('Retry-After', max(1, $retryAfter));
+            $response->header('X-RateLimit-Limit', $this->limit);
+            $response->header('X-RateLimit-Remaining', 0);
+            return $response;
         }
+
+        // Inject rate limit headers into the actual route response via WP hook,
+        // because $next() in a before-middleware returns bool (permission check
+        // result), not the WP_REST_Response produced by the route callback.
+        $limit = $this->limit;
+        $remaining = max(0, $this->limit - $settings['count']);
+
+        add_filter('rest_post_dispatch', function ($response) use ($limit, $remaining) {
+            $response->header('X-RateLimit-Limit', $limit);
+            $response->header('X-RateLimit-Remaining', $remaining);
+            return $response;
+        });
 
         return $next($request);
     }
 
     /**
-     * Determine if the request should bypass rate limiting.
+     * Determine if request should bypass rate limiting.
      *
      * @param \FluentCart\Framework\Http\Request\Request $request
-     * 
      * @return bool
      */
     protected function shouldAllow($request)
     {
-        return is_user_logged_in() || in_array(
-            $request->method(), ['HEAD', 'OPTIONS']
+        return $this->isCookieAuthenticated() || in_array(
+            $request->method(),
+            ['HEAD', 'OPTIONS']
         );
     }
 
     /**
-     * Get the current rate limit settings for the request.
+     * Check if user is authenticated in admin (optional bypass).
+     *
+     * @return bool
+     */
+    protected function isCookieAuthenticated()
+    {
+        return is_user_logged_in() && !empty($GLOBALS['wp_rest_auth_cookie']);
+    }
+
+    /**
+     * Get current rate limit settings from transient.
      *
      * @param \FluentCart\Framework\Http\Request\Request $request
      * @param int $currentTime
-     * 
      * @return array
      */
     protected function getSettings($request, $currentTime)
     {
-        $settings = $this->getTransient($request);
+        $settings = get_transient($this->makeTransientKey($request));
+
         return $settings ?: ['count' => 0, 'firstTime' => $currentTime];
     }
 
     /**
-     * Check if the rate limit interval has expired.
+     * Check if interval expired.
      *
      * @param array $settings
      * @param int $currentTime
-     * 
      * @return bool
      */
     protected function isIntervalExpired($settings, $currentTime)
@@ -105,10 +147,9 @@ class RateLimiter
     }
 
     /**
-     * Reset the rate limit for a new interval.
+     * Reset rate limit for a new interval.
      *
      * @param int $currentTime
-     * 
      * @return array
      */
     protected function resetRateLimit($currentTime)
@@ -117,10 +158,9 @@ class RateLimiter
     }
 
     /**
-     * Check if the rate limit has been exceeded.
+     * Check if limit exceeded.
      *
      * @param array $settings
-     * 
      * @return bool
      */
     protected function isRateLimitExceeded($settings)
@@ -129,43 +169,35 @@ class RateLimiter
     }
 
     /**
-     * Retrieve the transient data for the current request's rate limit.
-     *
-     * @param \FluentCart\Framework\Http\Request\Request $request
-     * 
-     * @return array|null
-     */
-    protected function getTransient($request)
-    {
-        return get_transient($this->makeTransientKey($request));
-    }
-
-    /**
-     * Update the rate limit settings in the transient storage.
+     * Update transient with proper TTL.
      *
      * @param \FluentCart\Framework\Http\Request\Request $request
      * @param array $settings
-     * 
-     * @return void
+     * @param int $currentTime
      */
-    protected function updateSettings($request, $settings)
+    protected function updateSettings($request, $settings, $currentTime)
     {
-        $key = $this->makeTransientKey($request);
-
-        set_transient($key, $settings, $this->interval);
+        $ttl = $this->interval - ($currentTime - $settings['firstTime']);
+        
+        set_transient(
+            $this->makeTransientKey($request),
+            $settings,
+            max(1, $ttl)
+        );
     }
 
     /**
-     * Generate a unique transient key for the current request.
+     * Generate a unique transient key per IP + endpoint.
      *
      * @param \FluentCart\Framework\Http\Request\Request $request
-     * 
      * @return string
      */
     protected function makeTransientKey($request)
     {
         $slug = App::config()->get('app.slug');
+        
+        $endpoint = $request->getRoute() ?: 'unknown';
 
-        return "{$slug}_rate_limit_" . md5($request->getIp());
+        return "{$slug}_rate_limit_" . md5($request->getIp() . '|' . $endpoint);
     }
 }

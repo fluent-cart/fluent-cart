@@ -1,6 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-import Arr from "@/utils/support/Arr";
+
 
 class SubscriptionTable extends Table {
 
@@ -85,14 +85,6 @@ class SubscriptionTable extends Table {
 
     getTableName() {
         return 'subscriptions';
-    }
-
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.subscription_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.subscription_filter_options.guide');
     }
 
     with() {

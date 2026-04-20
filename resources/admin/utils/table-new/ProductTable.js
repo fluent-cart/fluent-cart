@@ -1,6 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-import Arr from "@/utils/support/Arr";
+
 import {useRoute} from 'vue-router'
 
 class ProductTable extends Table {
@@ -85,18 +85,6 @@ class ProductTable extends Table {
 
     getTableName() {
         return 'product_table';
-    }
-
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.product_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.product_filter_options.guide');
-    }
-
-    getCustomColumns() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.product_filter_options.columns') || {};
     }
 
     with() {

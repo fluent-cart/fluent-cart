@@ -18,14 +18,14 @@ class FluentProducts
 
     public function register()
     {
-        add_filter( 'get_edit_post_link', function ($link, $postId) {
-            if($this->showStandaloneMenu) {
+        add_filter('get_edit_post_link', function ($link, $postId) {
+            if ($this->showStandaloneMenu) {
                 return $link;
             }
 
             $post = get_post($postId);
             if ($post && $post->post_type === 'fluent-products') {
-                return URL::getDashboardUrl('products/' . $postId );
+                return URL::getDashboardUrl('products/' . $postId);
             }
 
             return $link;
@@ -39,6 +39,7 @@ class FluentProducts
             $this->registerPostType();
             $this->registerProductTaxonomies();
         });
+
         add_action('admin_enqueue_scripts', function () {
             if ($this->showStandaloneMenu) {
                 return;
@@ -106,8 +107,8 @@ class FluentProducts
 
 
             wp_add_inline_script(
-                    'wp-blocks',
-                    "
+                'wp-blocks',
+                "
         wp.domReady( function() {
             // Force fullscreen mode
             wp.data.dispatch( 'core/edit-post' ).toggleFeature( 'fullscreenMode', true );
@@ -179,6 +180,9 @@ class FluentProducts
     {
         $productSlug = (new StoreSettings())->get('product_slug') ?? 'item';
         $urlSlug = apply_filters('fluent_cart/front_url_slug', $productSlug, []);
+        $urlWithFront = apply_filters('fluent_cart/product_url_with_front', true, [
+            'slug' => $urlSlug
+        ]);
 
         $singularName = __('Product', 'fluent-cart');
 
@@ -187,7 +191,7 @@ class FluentProducts
         }
 
         register_post_type(self::CPT_NAME, [
-                'capability_type'       => 'post',
+            'capability_type'       => 'post',
 //            'capabilities'          => [
 //                'edit_post'          => 'edit_your_post_type',
 //                'read_post'          => 'read_your_post_type',
@@ -198,49 +202,49 @@ class FluentProducts
 //                'read_private_posts' => 'read_private_your_post_types',
 //            ],
 //            'map_meta_cap'          => true,
-                'label'                 => __('Products', 'fluent-cart'),
-                'labels'                => [
-                        'name'          => __('Products', 'fluent-cart'),
-                        'singular_name' => $singularName,
-                        'add_new'       => _x('Add New Product', 'product', 'fluent-cart'),
-                        'add_new_item'  => __('Add New Product', 'fluent-cart'),
-                        'edit_item'     => __('Edit Product', 'fluent-cart'),
-                        'view_item'     => __('View Product', 'fluent-cart'),
-                        'search_items'  => __('Search products', 'fluent-cart'),
-                ],
+            'label'                 => __('Products', 'fluent-cart'),
+            'labels'                => [
+                'name'          => __('Products', 'fluent-cart'),
+                'singular_name' => $singularName,
+                'add_new'       => _x('Add New Product', 'product', 'fluent-cart'),
+                'add_new_item'  => __('Add New Product', 'fluent-cart'),
+                'edit_item'     => __('Edit Product', 'fluent-cart'),
+                'view_item'     => __('View Product', 'fluent-cart'),
+                'search_items'  => __('Search products', 'fluent-cart'),
+            ],
             //'_edit_link' => 'admin.php?page=fluent-cart#/products/%d/pricing',
-                'description'           => __('FluentCart products post type', 'fluent-cart'),
-                'public'                => true,
-                'hierarchical'          => false,
-                'exclude_from_search'   => false,
-                'publicly_queryable'    => true,
-                'show_ui'               => true,
-                'show_in_menu'          => $this->showStandaloneMenu,
-                'show_in_nav_menus'     => true,
-                'show_in_admin_bar'     => true,
-                'menu_position'         => 24,
-                'has_archive'           => true,
-                'show_in_rest'          => true,
+            'description'           => __('FluentCart products post type', 'fluent-cart'),
+            'public'                => true,
+            'hierarchical'          => false,
+            'exclude_from_search'   => false,
+            'publicly_queryable'    => true,
+            'show_ui'               => true,
+            'show_in_menu'          => $this->showStandaloneMenu,
+            'show_in_nav_menus'     => true,
+            'show_in_admin_bar'     => true,
+            'menu_position'         => 24,
+            'has_archive'           => true,
+            'show_in_rest'          => true,
 //            'rest_base'             => $urlSlug, // Optional: customize REST API base
-                'rest_controller_class' => 'WP_REST_Posts_Controller', // Optional: use default controller
-                'supports'              => [
-                        'title',
-                        'editor',
-                        'excerpt',
-                        'thumbnail',
-                        'author',
-                        'revisions',
-                        'custom-fields',
-                ],
-                'rewrite'               => [
-                        'slug'       => $urlSlug,
-                        'with_front' => true,
-                        'feeds'      => true,
-                        'pages'      => true,
-                ],
-                'query_var'             => $urlSlug,
-                'can_export'            => true,
-                'delete_with_user'      => false
+            'rest_controller_class' => 'WP_REST_Posts_Controller', // Optional: use default controller
+            'supports'              => [
+                'title',
+                'editor',
+                'excerpt',
+                'thumbnail',
+                'author',
+                'revisions',
+                'custom-fields',
+            ],
+            'rewrite'               => [
+                'slug'       => $urlSlug,
+                'with_front' => $urlWithFront,
+                'feeds'      => true,
+                'pages'      => true,
+            ],
+            'query_var'             => $urlSlug,
+            'can_export'            => true,
+            'delete_with_user'      => false
         ]);
 
         $this->disableCreateAndEditForFluentProducts();
@@ -253,10 +257,16 @@ class FluentProducts
             if ((defined('DOING_AJAX') && DOING_AJAX) || (defined('REST_REQUEST') && REST_REQUEST)) {
                 return;
             }
+
             global $pagenow;
+
+            if ($pagenow != 'post-new.php') {
+                return;
+            }
+
             // disable direct create product
-            $postType = App::request()->get('post_type');
-            if ($pagenow == 'post-new.php' && $postType == self::CPT_NAME) {
+            $postType = $_GET['post_type'] ?? '';
+            if ($postType == self::CPT_NAME) {
                 wp_redirect(admin_url('admin.php?page=fluent-cart#/products/?add-new=true'));
                 exit;
             }
@@ -266,49 +276,49 @@ class FluentProducts
     public function registerProductTaxonomies()
     {
         register_taxonomy('product-categories', self::CPT_NAME, [
-                'hierarchical'      => true,
-                'show_ui'           => true,
-                'show_admin_column' => true,
-                'show_in_rest'      => true,
-                'query_var'         => true,
-                'rewrite'           => ['slug' => 'product-categories'],
-                'labels'            => [
-                        'name'              => __('Categories', 'fluent-cart'),
-                        'singular_name'     => __('Category', 'fluent-cart'),
-                        'search_items'      => __('Search Categories', 'fluent-cart'),
-                        'all_items'         => __('All Categories', 'fluent-cart'),
-                        'parent_item'       => __('Parent Category', 'fluent-cart'),
-                        'parent_item_colon' => __('Parent Category:', 'fluent-cart'),
-                        'edit_item'         => __('Edit Category', 'fluent-cart'),
-                        'update_item'       => __('Update Category', 'fluent-cart'),
-                        'add_new_item'      => __('Add New Category', 'fluent-cart'),
-                        'new_item_name'     => __('New Category Name', 'fluent-cart'),
-                        'menu_name'         => __('Product Category', 'fluent-cart'),
-                        'not_found'         => __('No categories found.', 'fluent-cart'),
-                ],
+            'hierarchical'      => true,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'show_in_rest'      => true,
+            'query_var'         => true,
+            'rewrite'           => ['slug' => 'product-categories'],
+            'labels'            => [
+                'name'              => __('Categories', 'fluent-cart'),
+                'singular_name'     => __('Category', 'fluent-cart'),
+                'search_items'      => __('Search Categories', 'fluent-cart'),
+                'all_items'         => __('All Categories', 'fluent-cart'),
+                'parent_item'       => __('Parent Category', 'fluent-cart'),
+                'parent_item_colon' => __('Parent Category:', 'fluent-cart'),
+                'edit_item'         => __('Edit Category', 'fluent-cart'),
+                'update_item'       => __('Update Category', 'fluent-cart'),
+                'add_new_item'      => __('Add New Category', 'fluent-cart'),
+                'new_item_name'     => __('New Category Name', 'fluent-cart'),
+                'menu_name'         => __('Product Category', 'fluent-cart'),
+                'not_found'         => __('No categories found.', 'fluent-cart'),
+            ],
         ]);
 
         register_taxonomy('product-brands', self::CPT_NAME, [
-                'hierarchical'      => true,
-                'show_ui'           => true,
-                'show_in_rest'      => true,
-                'show_admin_column' => false,
-                'query_var'         => true,
-                'rewrite'           => ['slug' => 'product-brands'],
-                'labels'            => [
-                        'name'          => __('Brands', 'fluent-cart'),
-                        'singular_name' => __('Brand', 'fluent-cart'),
-                        'search_items'  => __('All Brand', 'fluent-cart'),
-                        'all_items'     => __('All Brands', 'fluent-cart'),
-                        'parent_item'   => __('Parent Brand', 'fluent-cart'),
-                        'edit_item'     => __('Edit Brand', 'fluent-cart'),
-                        'update_item'   => __('Update Brand', 'fluent-cart'),
-                        'add_new_item'  => __('Add New Brand', 'fluent-cart'),
-                        'new_item_name' => __('New Brand Name', 'fluent-cart'),
-                        'menu_name'     => __('Product Brand', 'fluent-cart'),
-                        'view_item'     => __('View Brand', 'fluent-cart'),
-                        'not_found'     => __('No Brand found', 'fluent-cart'),
-                ],
+            'hierarchical'      => true,
+            'show_ui'           => true,
+            'show_in_rest'      => true,
+            'show_admin_column' => false,
+            'query_var'         => true,
+            'rewrite'           => ['slug' => 'product-brands'],
+            'labels'            => [
+                'name'          => __('Brands', 'fluent-cart'),
+                'singular_name' => __('Brand', 'fluent-cart'),
+                'search_items'  => __('All Brand', 'fluent-cart'),
+                'all_items'     => __('All Brands', 'fluent-cart'),
+                'parent_item'   => __('Parent Brand', 'fluent-cart'),
+                'edit_item'     => __('Edit Brand', 'fluent-cart'),
+                'update_item'   => __('Update Brand', 'fluent-cart'),
+                'add_new_item'  => __('Add New Brand', 'fluent-cart'),
+                'new_item_name' => __('New Brand Name', 'fluent-cart'),
+                'menu_name'     => __('Product Brand', 'fluent-cart'),
+                'view_item'     => __('View Brand', 'fluent-cart'),
+                'not_found'     => __('No Brand found', 'fluent-cart'),
+            ],
         ]);
     }
 
@@ -316,15 +326,15 @@ class FluentProducts
     {
 
         Vite::enqueueScript('fluent_cart_admin_global_js',
-                'admin/global.js',
+            'admin/global.js',
         );
 
         Vite::enqueueStyle('fluent_cart_admin_app_css',
-                'styles/tailwind/style.css',
+            'styles/tailwind/style.css',
         );
 
         Vite::enqueueStyle('fluent_cart_taxonomy_css',
-                'styles/tailwind/taxonomy.scss',
+            'styles/tailwind/taxonomy.scss',
         );
 
         add_action('in_admin_header', function () {
@@ -364,9 +374,9 @@ class FluentProducts
         //get thumbnail image with all info like title id and url
         $currentThumbnail = wp_prepare_attachment_for_js($currentThumbnailId);
         $currentThumbnail = [
-                'id'   => $currentThumbnailId,
-                'url'  => Arr::get($currentThumbnail, 'url'),
-                'name' => Arr::get($currentThumbnail, 'title')
+            'id'   => $currentThumbnailId,
+            'url'  => Arr::get($currentThumbnail, 'url'),
+            'name' => Arr::get($currentThumbnail, 'title')
         ];
 
         $currentThumbnailId = Arr::get($currentThumbnail, 'id');

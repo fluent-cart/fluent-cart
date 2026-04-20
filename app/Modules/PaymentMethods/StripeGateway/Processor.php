@@ -39,7 +39,8 @@ class Processor
             return $stripeCustomer;
         }
 
-        $initialAmount = (int)$subscriptionModel->signup_fee + $paymentInstance->getExtraAddonAmount();
+        $feeTotal = $orderType !== 'renewal' ? (int)$paymentInstance->order->fee_total : 0;
+        $initialAmount = (int)$subscriptionModel->signup_fee + $paymentInstance->getExtraAddonAmount() + $feeTotal;
 
         if ($orderType == 'renewal') {
             $stripePlan = Plan::getStripePricing([
@@ -434,8 +435,9 @@ class Processor
         }
 
 
-        $initialAmount = (int)$subscriptionModel->signup_fee + $paymentInstance->getExtraAddonAmount();
-        
+        $feeTotal = $orderType !== 'renewal' ? (int)$paymentInstance->order->fee_total : 0;
+        $initialAmount = (int)$subscriptionModel->signup_fee + $paymentInstance->getExtraAddonAmount() + $feeTotal;
+
         if ($orderType == 'renewal') {
             $initialAmount = 0;
         }

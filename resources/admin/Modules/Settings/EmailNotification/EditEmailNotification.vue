@@ -41,11 +41,14 @@ const notificationData = ref({
         is_default_body: 'yes',
         email_body: '',
         subject: '',
+        attach_pdf_template: '',
     }
 });
 const editorFrameRef = ref(null);
 const shortCodes = ref({});
 const focusSubjectInput = ref(false);
+const hasFluentPdf = ref(false);
+const pdfTemplates = ref([]);
 
 // Preview
 const previewVisible = ref(false);
@@ -61,6 +64,7 @@ const onPreviewRequest = () => {
 
     Rest.post('email-notification/preview', {
         notification_name: name.value,
+        block_content: notificationData.value.settings.email_body || '',
     })
         .then((response) => {
             previewHtml.value = response.html;
@@ -135,6 +139,9 @@ const getNotification = () => {
         .then((response) => {
             notificationData.value = response.data;
             shortCodes.value = response.shortcodes;
+            hasFluentPdf.value = response.has_fluent_pdf || false;
+            pdfTemplates.value = response.pdf_templates || [];
+
             if (notificationData.value.settings.is_default_body === 'yes') {
                 loadDefaultTemplate();
             }
@@ -342,6 +349,30 @@ onMounted(() => {
             </CardBody>
           </Card>
         </template>
+
+        <div v-if="hasFluentPdf && pdfTemplates.length" class="mb-4">
+          <Card>
+            <CardBody>
+              <el-form label-position="top">
+                <el-form-item :label="translate('Attach PDF Template')">
+                  <el-select
+                      v-model="notificationData.settings.attach_pdf_template"
+                      :placeholder="translate('No PDF attachment')"
+                      clearable
+                      style="width: 100%; max-width: 360px;"
+                  >
+                    <el-option
+                        v-for="tmpl in pdfTemplates"
+                        :key="tmpl.id"
+                        :label="tmpl.title"
+                        :value="tmpl.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-form>
+            </CardBody>
+          </Card>
+        </div>
 
         <div class="setting-save-action">
           <el-button

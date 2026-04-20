@@ -8,10 +8,9 @@ use FluentCart\App\Helpers\EditorShortCodeHelper;
 use FluentCart\App\Http\Requests\EmailNotificationRequest;
 use FluentCart\App\Http\Requests\EmailSettingsRequest;
 use FluentCart\App\Http\Requests\SchedulingSettingsRequest;
-use FluentCart\App\Models\Meta;
 use FluentCart\App\Services\Email\EmailNotificationMailer;
 use FluentCart\App\Services\Email\EmailNotifications;
-use FluentCart\App\Services\Email\FluentBlockParser;
+use FluentCart\App\Services\PDF\ReceiptPdfTemplateService;
 use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\App\Services\Email\EmailPreviewService;
@@ -44,9 +43,25 @@ class EmailNotificationController extends Controller
 
 
         if ($notification) {
+            $hasFluentPdf = defined('FLUENT_PDF');
+            $fontsReady = false;
+            $setupUrl = '';
+
+            if ($hasFluentPdf && class_exists('FluentPdf\Classes\Controller\FontDownloader')) {
+                $fontDownloader = new \FluentPdf\Classes\Controller\FontDownloader();
+                $fontsReady = empty($fontDownloader->getDownloadableFonts());
+                $setupUrl = admin_url('admin.php?page=fluent_pdf.php');
+            }
+
+            $pdfTemplates = $hasFluentPdf ? (new ReceiptPdfTemplateService())->getTemplateList() : [];
+
             return $this->sendSuccess([
-                'data'       => $notification,
-                'shortcodes' => EditorShortCodeHelper::getEmailNotificationShortcodes(),
+                'data'           => $notification,
+                'shortcodes'     => EditorShortCodeHelper::getEmailNotificationShortcodes(),
+                'has_fluent_pdf' => $hasFluentPdf,
+                'fonts_ready'    => $fontsReady,
+                'setup_url'      => $setupUrl,
+                'pdf_templates'  => $pdfTemplates,
             ]);
         }
 

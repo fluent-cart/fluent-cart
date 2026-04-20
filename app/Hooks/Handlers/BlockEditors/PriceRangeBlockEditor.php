@@ -15,6 +15,16 @@ class PriceRangeBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'price-range';
 
+    public function ancestor(): array
+    {
+        return [
+            'fluent-cart/products',
+            'fluent-cart/product-carousel',
+            'fluent-cart/product-info',
+            'fluent-cart/related-product',
+        ];
+    }
+
     public function supports(): array
     {
         return [

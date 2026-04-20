@@ -12,6 +12,7 @@ use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\DirectCheckoutShortcode;
+use FluentCart\App\Modules\Templating\AssetLoader;
 
 class SingleProductShortCode extends ShortCode
 {
@@ -91,6 +92,7 @@ class SingleProductShortCode extends ShortCode
 
     public function render(?array $viewData = null)
     {
+        AssetLoader::markFrontendAssetsRequired();
         if (empty($viewData['product'])) {
             return 'Product not found';
         } else {

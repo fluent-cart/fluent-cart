@@ -22,9 +22,11 @@ class ShippingClassRequest extends RequestGuard
     public function rules()
     {
         return [
-            'name' => 'required|string|maxLength:192',
-            'cost' => 'required|numeric|min:0',
-            'type' => 'required|string|in:fixed,percentage',
+            'name'        => 'required|string|maxLength:192',
+            'description' => 'nullable|string|maxLength:500',
+            'cost'        => 'required|numeric|min:0',
+            'type'        => 'required|string|in:fixed,percentage',
+            'per_item'    => 'nullable|integer|in:0,1',
         ];
     }
 
@@ -46,10 +48,11 @@ class ShippingClassRequest extends RequestGuard
     public function sanitize()
     {
         return [
-            'name'     => 'sanitize_text_field',
-            'cost'     => 'sanitize_text_field',
-            'type'     => 'sanitize_text_field',
-            'per_item' => 'intval'
+            'name'        => 'sanitize_text_field',
+            'description' => 'sanitize_textarea_field',
+            'cost'        => 'sanitize_text_field',
+            'type'        => 'sanitize_text_field',
+            'per_item'    => 'intval'
         ];
     }
 

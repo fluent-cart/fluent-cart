@@ -1,6 +1,6 @@
 <script setup>
 import Filters from "@/Bits/Components/TableNew/Components/AdvancedFilter/_Filters.vue";
-import {defineProps} from "vue";
+import {defineProps, computed} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import TransitionAccordion from "@/Bits/Components/TransitionAccordion.vue";
 
@@ -8,7 +8,13 @@ const props = defineProps({
   table: Object
 });
 
+const hasFilters = computed(() => {
+  return (props.table.data.advanceFilters || []).some(group => Array.isArray(group) && group.length > 0);
+});
 
+const saveView = () => {
+  props.table.promptAndSaveView();
+};
 </script>
 
 <template>
@@ -61,6 +67,16 @@ const props = defineProps({
             class="el-button--x-small"
         >
           {{ $t("Apply") }}
+        </el-button>
+
+        <el-button
+            @click="saveView"
+            text
+            class="el-button--x-small"
+            :disabled="!hasFilters"
+        >
+          <DynamicIcon name="Plus"/>
+          {{ $t("Save as view") }}
         </el-button>
       </div>
     </div>

@@ -357,7 +357,7 @@ class IntegrationEventListener
         }
 
         if ($order->type != 'renewal') {
-            do_action('fluent_cart/order_paid_ansyc_private_handle', [
+            do_action('fluent_cart/order_paid_async_private_handle', [
                 'order_id' => $order->id
             ]);
         }

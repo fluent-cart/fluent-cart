@@ -117,19 +117,41 @@ class CartSummaryRender
                     ?>
                 <?php endif ?>
 
+                <?php $this->renderFees(); ?>
+
+                <?php
+                $extraLines = apply_filters('fluent_cart/checkout/summary_extra_lines', [], [
+                    'cart' => $this->cart,
+                ]);
+
+                if (!is_array($extraLines)) {
+                    $extraLines = [];
+                }
+
+                foreach ($extraLines as $extraLine) :
+                    if (!is_array($extraLine) || !isset($extraLine['label'], $extraLine['amount'])) {
+                        continue;
+                    }
+                ?>
+                    <li>
+                        <span class="fct_summary_label"><?php echo esc_html($extraLine['label']); ?></span>
+                        <span class="fct_summary_value"><?php echo esc_html(Helper::toDecimal($extraLine['amount'])); ?></span>
+                    </li>
+                <?php endforeach; ?>
+
                 <li data-fluent-cart-checkout-page-applied-coupon>
                     <?php $this->showCouponApplied(); ?>
                 </li>
 
                 <?php $this->showManualDiscount(); ?>
 
-                <?php do_action('fluent_cart/checkout/before_summary_total', [ 'cart' => $this->cart ]); ?>
-
                 <?php if (!$hideCouponField): ?>
                     <li>
                         <?php $this->showCouponField(); ?>
                     </li>
                 <?php endif ?>
+
+                <?php do_action('fluent_cart/checkout/before_summary_total', [ 'cart' => $this->cart ]); ?>
 
                 <?php
                     $this->renderTotal();
@@ -167,6 +189,24 @@ class CartSummaryRender
             </span>
         <?php
         echo '</li>';
+    }
+
+    public function renderFees()
+    {
+        $fees = $this->cart->getFees();
+        if (empty($fees)) {
+            return;
+        }
+        foreach ($fees as $fee) {
+            ?>
+            <li class="fct_fee_row" data-fluent-cart-checkout-fee="<?php echo esc_attr($fee['key']); ?>">
+                <span class="fct_summary_label"><?php echo esc_html($fee['label']); ?></span>
+                <span class="fct_summary_value" data-fluent-cart-checkout-fee-amount="<?php echo esc_attr($fee['key']); ?>">
+                    <?php echo esc_html(Helper::toDecimal($fee['amount'])); ?>
+                </span>
+            </li>
+            <?php
+        }
     }
 
     public function renderTotal($atts = '')

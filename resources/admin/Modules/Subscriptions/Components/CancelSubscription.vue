@@ -106,7 +106,7 @@ export default {
             Notify.error(error.data?.message);
           }
         }).finally(() => {
-          this.cancelling = true;
+          this.cancelling = false;
           this.cancelSubscriptionModal = false;
         })
     },

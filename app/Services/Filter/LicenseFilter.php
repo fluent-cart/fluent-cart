@@ -10,15 +10,14 @@ use FluentCartPro\App\Modules\Licensing\Models\License;
 class LicenseFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-
-        $isApplied = $this->applySimpleOperatorFilter();
+        $isApplied = $this->applySimpleOperatorFilter($search);
         if ($isApplied) {
             return;
         }
 
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
             // If search is an array, implode it
             $search = is_array($search) ? implode(' ', $search) : $search;
 
@@ -68,11 +67,12 @@ class LicenseFilter extends BaseFilter
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
+        $activeView = $activeView ?? $this->activeView;
         $tabsMap = $this->tabsMap();
 
-        $this->query->when($this->activeView, function ($query, $activeView) use ($tabsMap) {
+        $this->query->when($activeView, function ($query, $activeView) use ($tabsMap) {
 
             $validStatuses = [
                 'active',

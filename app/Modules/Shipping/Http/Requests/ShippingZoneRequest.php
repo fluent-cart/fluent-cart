@@ -15,6 +15,13 @@ class ShippingZoneRequest extends RequestGuard
         $data = $this->all();
         $data['region'] = Arr::get($data, 'region', '');
         $data['order'] = Arr::get($data, 'order', '');
+
+        // Only include shipping_class_id if explicitly submitted — prevents wiping on edit
+        if (array_key_exists('shipping_class_id', $data)) {
+            $classId = $data['shipping_class_id'];
+            $data['shipping_class_id'] = $classId ? intval($classId) : null;
+        }
+
         return $data;
     }
 
@@ -28,7 +35,13 @@ class ShippingZoneRequest extends RequestGuard
             'name'   => 'required|string|maxLength:192',
             'region' => function ($attr, $value) {
                 if ($value === 'all') {
+                    $shippingClassId = Arr::get($this->all(), 'shipping_class_id', null);
                     $zone = \FluentCart\App\Models\ShippingZone::query()->where('region', 'all');
+                    if ($shippingClassId) {
+                        $zone = $zone->where('shipping_class_id', $shippingClassId);
+                    } else {
+                        $zone = $zone->whereNull('shipping_class_id');
+                    }
                     if($this->id){
                         $zone = $zone->where('id', '!=', $this->id);
                     }
@@ -39,8 +52,11 @@ class ShippingZoneRequest extends RequestGuard
                 }
                 return null;
             },
-            'order'  => 'nullable|integer',
-
+            'order'             => 'nullable|integer',
+            'shipping_class_id' => 'nullable|integer',
+            'meta'              => 'nullable|array',
+            'meta.countries'    => 'nullable|array',
+            'meta.selection_type' => 'nullable|string|in:included,excluded',
         ];
     }
 
@@ -62,9 +78,23 @@ class ShippingZoneRequest extends RequestGuard
     public function sanitize()
     {
         return [
-            'name'   => 'sanitize_text_field',
-            'region' => 'sanitize_text_field',
-            'order'  => 'intval'
+            'name'              => 'sanitize_text_field',
+            'region'            => 'sanitize_text_field',
+            'order'             => 'intval',
+            'shipping_class_id' => function ($value) {
+                return $value ? intval($value) : null;
+            },
+            'meta'              => function ($value) {
+                if (!is_array($value)) return [];
+                $sanitized = [];
+                if (isset($value['countries']) && is_array($value['countries'])) {
+                    $sanitized['countries'] = array_map('sanitize_text_field', $value['countries']);
+                }
+                if (isset($value['selection_type'])) {
+                    $sanitized['selection_type'] = sanitize_text_field($value['selection_type']);
+                }
+                return $sanitized;
+            }
         ];
     }
 }

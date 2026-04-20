@@ -41,10 +41,22 @@ class SubscriptionEOT extends EventDispatcher
 
     public function beforeDispatch()
     {
-        $this->subscription->cancelRemoteSubscription([
+        $result = $this->subscription->cancelRemoteSubscription([
             'reason'     => 'end_of_term',
             'fire_hooks' => false
         ]);
+
+        if (is_wp_error($result)) {
+            fluent_cart_add_log(
+                'Remote subscription cancellation failed on EOT',
+                'Subscription #' . $this->subscription->id . ': ' . $result->get_error_message(),
+                'error',
+                [
+                    'module' => 'subscription',
+                    'module_id' => $this->subscription->id
+                ]
+            );
+        }
     }
 
     public function getActivityEventModel()

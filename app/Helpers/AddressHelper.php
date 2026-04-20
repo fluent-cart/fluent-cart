@@ -325,7 +325,7 @@ class AddressHelper
             ];
         }
 
-        $availableShippingMethods = ShippingMethod::applicableToCountry($countryCode, $state)->get();
+        $availableShippingMethods = ShippingMethod::getApplicableForCountry($countryCode, $state);
 
         if (!$availableShippingMethods || $availableShippingMethods->isEmpty()) {
             $settingView = '<div class="fct-empty-state">'
@@ -364,9 +364,7 @@ class AddressHelper
             return new \WP_Error('no_country', __('Please provide your shipping address to get shipping options', 'fluent-cart'));
         }
 
-        $shippingMethods = ShippingMethod::applicableToCountry($country, $state)
-            ->orderBy('amount', 'DESC')
-            ->get();
+        $shippingMethods = ShippingMethod::getApplicableForCountry($country, $state);
 
         // let's filter the shipping methods
         $formattedMethods = [];
@@ -401,44 +399,120 @@ class AddressHelper
         return $formattedMethods;
     }
 
+    /**
+     * Get shipping methods for a specific shipping class (or General if null).
+     *
+     * @param string $country Country code
+     * @param string|null $state State code
+     * @param int|null $shippingClassId Shipping class ID (null for General zones)
+     * @return array|\WP_Error
+     */
+    public static function getShippingMethodsForClass($country, $state = null, $shippingClassId = null)
+    {
+        if (!$country) {
+            return new \WP_Error('no_country', __('Please provide your shipping address to get shipping options', 'fluent-cart'));
+        }
+
+        $shippingMethods = ShippingMethod::applicableToCountry($country, $state, $shippingClassId)
+            ->orderBy('amount', 'DESC')
+            ->get();
+
+        $formattedMethods = [];
+        foreach ($shippingMethods as $shippingMethod) {
+            if (!$shippingMethod->states) {
+                $formattedMethods[] = $shippingMethod;
+                continue;
+            }
+            if ($state && in_array($state, $shippingMethod->states)) {
+                $formattedMethods[] = $shippingMethod;
+            }
+        }
+
+        return $formattedMethods;
+    }
+
     public static function getCustomerValidatedAddresses($config, $customer): array
     {
-        $type = Arr::get($config, 'type', 'billing');
+        $type = Arr::get($config, 'type', 'billing'); // billing or shipping
+
+        $addressValidations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements($type, 'physical'));
         $storeCountry = (new StoreSettings())->get('store_country');
-        $localization = LocalizationManager::getInstance();
+
         $requirementsFields = CheckoutFieldsSchema::getCheckoutFieldsRequirements(
             $type,
             Arr::get($config, 'product_type'),
             Arr::get($config, 'with_shipping')
         );
-
-        // Name fields are validated via basic_info, not address sections
-        unset($requirementsFields['full_name'], $requirementsFields['first_name'],
-            $requirementsFields['last_name'], $requirementsFields['company_name']);
-
-        // Country field is enabled if it's present in requirements (disabled fields are excluded)
-        $countryFieldEnabled = isset($requirementsFields['country']);
+        if ($type === 'billing') {
+            unset($requirementsFields['full_name']);
+            unset($requirementsFields['first_name']);
+            unset($requirementsFields['last_name']);
+            unset($requirementsFields['company_name']);
+        }
 
         $addresses = CustomerAddressResource::get([
-            'type'        => $type,
+            'type' => $type,
             'customer_id' => $customer->id,
-            'status'      => 'active'
+            'status' => 'active'
         ]);
 
         $allowedAddresses = [];
 
         foreach ($addresses as $address) {
-            $address = static::resolveAddressNameFields($address);
+            $isValid = true;
 
-            // When country field is disabled, filter out addresses with a different country than store
-            if (!$countryFieldEnabled && $storeCountry) {
-                $addressCountry = Arr::get($address, 'country');
-                if (!empty($addressCountry) && $addressCountry !== $storeCountry) {
-                    continue;
+
+            // Resolve name fields for validation from available sources
+            $addressName = trim(Arr::get($address, 'name') ?? '');
+            $metaFirstName = trim(Arr::get($address, 'meta.other_data.first_name') ?? '');
+            $metaLastName = trim(Arr::get($address, 'meta.other_data.last_name') ?? '');
+
+            if (empty(Arr::get($address, 'first_name'))) {
+                if ($metaFirstName) {
+                    $address['first_name'] = $metaFirstName;
+                    $address['last_name'] = $metaLastName;
+                } else if ($addressName) {
+                    $nameParts = static::guessFirstNameAndLastName($addressName);
+                    $address['first_name'] = Arr::get($nameParts, 'first_name', '');
+                    $address['last_name'] = Arr::get($nameParts, 'last_name', '');
                 }
             }
 
-            if (static::isAddressFieldsValid($address, $requirementsFields, $localization)) {
+            if (empty(Arr::get($address, 'full_name'))) {
+                if ($addressName) {
+                    $address['full_name'] = $addressName;
+                } else if ($metaFirstName) {
+                    $address['full_name'] = trim($metaFirstName . ' ' . $metaLastName);
+                }
+            }
+
+            // If country is not required in checkout fields, only allow addresses matching store country
+            if (!isset($addressValidations['country']) && $storeCountry) {
+                $addressCountry = Arr::get($address, 'country');
+                if ($addressCountry !== $storeCountry) {
+                    continue; // Skip this address
+                }
+            }
+
+            foreach ($requirementsFields as $key => $requirement) {
+
+                if ($key === 'state') {
+                    $country = Arr::get($address, 'country');
+                    if ($country) {
+                        $states = LocalizationManager::getInstance()->statesOptions($country);
+                        if (!empty($states) && !in_array(Arr::get($address, 'state'), array_column($states, 'value'))) {
+                            $isValid = false;
+                            break;
+                        }
+                    }
+                    //continue;
+                } else if ($requirement === 'required' && empty(Arr::get($address, $key))) {
+                    $isValid = false;
+                    break;
+                }
+            }
+
+            if ($isValid) {
                 $id = Arr::get($address, 'id');
                 if ($id) {
                     $allowedAddresses[$id] = $address;
@@ -447,101 +521,6 @@ class AddressHelper
         }
 
         return $allowedAddresses;
-    }
-
-    private static function resolveAddressNameFields(array $address): array
-    {
-        $addressName = trim(Arr::get($address, 'name') ?? '');
-        $metaFirstName = trim(Arr::get($address, 'meta.other_data.first_name') ?? '');
-        $metaLastName = trim(Arr::get($address, 'meta.other_data.last_name') ?? '');
-
-        if (empty(Arr::get($address, 'first_name'))) {
-            if ($metaFirstName) {
-                $address['first_name'] = $metaFirstName;
-                $address['last_name'] = $metaLastName;
-            } else if ($addressName) {
-                $nameParts = static::guessFirstNameAndLastName($addressName);
-                $address['first_name'] = Arr::get($nameParts, 'first_name', '');
-                $address['last_name'] = Arr::get($nameParts, 'last_name', '');
-            }
-        }
-
-        if (empty(Arr::get($address, 'full_name'))) {
-            if ($addressName) {
-                $address['full_name'] = $addressName;
-            } else if ($metaFirstName) {
-                $address['full_name'] = trim($metaFirstName . ' ' . $metaLastName);
-            }
-        }
-
-        return $address;
-    }
-
-    private static function isAddressFieldsValid(array $address, array $requirementsFields, LocalizationManager $localization): bool
-    {
-        // Use only the address's actual country for locale-dependent validations
-        $country = Arr::get($address, 'country');
-        $country = !empty($country) ? $country : null;
-
-        foreach ($requirementsFields as $field => $requirement) {
-            $value = Arr::get($address, $field);
-
-            if (!static::isFieldValid($field, $value, $requirement, $country, $localization)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static function isFieldValid(string $field, $value, string $requirement, ?string $country, LocalizationManager $localization): bool
-    {
-        switch ($field) {
-            case 'country':
-                if ($requirement === 'required' && empty($value)) {
-                    return false;
-                }
-                return empty($value) || Arr::has($localization->countries(), $value);
-
-            case 'state':
-                return static::isStateValid($value, $requirement, $country, $localization);
-
-            case 'postcode':
-                if ($requirement === 'required' && empty($value)) {
-                    return false;
-                }
-                if (!empty($value) && $country) {
-                    return $localization->postcode->isValid($value, $country) !== false;
-                }
-                return true;
-
-            default:
-                return $requirement !== 'required' || !empty($value);
-        }
-    }
-
-    private static function isStateValid($value, string $requirement, ?string $country, LocalizationManager $localization): bool
-    {
-        if (!$country) {
-            return true;
-        }
-
-        $states = $localization->statesOptions($country);
-        if (empty($states)) {
-            return true;
-        }
-
-        $stateValues = array_column($states, 'value');
-
-        if ($requirement === 'required' && empty($value)) {
-            return false;
-        }
-
-        if (!empty($value) && !in_array($value, $stateValues)) {
-            return false;
-        }
-
-        return true;
     }
 
     public static function getPrimaryAddress(array $addresses, array $config, $customer, $type = 'billing')
@@ -594,8 +573,6 @@ class AddressHelper
 
             if ($addressModel && $addressModel->customer_id == $currentCustomer->id) {
                 $addressData = $addressModel->getFormattedDataForCheckout($type . '_');
-
-                //  dd($addressData, $addressModel->id);
 
                 foreach ($addressData as $key => $value) {
                     if (!isset($data[$key]) || $data[$key] === '' || $data[$key] !== $value) {

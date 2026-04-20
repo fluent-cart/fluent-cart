@@ -34,9 +34,8 @@
         @current-change="changePage"
         :page-sizes="page_sizes"
         :total="pagination.total"
-        :page-count="pagination.last_page"
         :pager-count="pager_count"
-        v-model:page-size="pagination.per_page"
+        :page-size="pagination.per_page"
     >
       <template #default=" currentPage ">
         {{ currentPage }}
@@ -97,6 +96,7 @@ export default {
     return {
       currentPage: 1,
       pickerObserver: null,
+      paginationUpdating: false,
     };
   },
 
@@ -134,6 +134,17 @@ export default {
           this.translatePickerElements();
         }, 400)
       }
+    },
+    'pagination.last_page': {
+      handler(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          this.paginationUpdating = true;
+          this.$nextTick(() => {
+            this.paginationUpdating = false;
+          });
+        }
+      },
+      flush: 'sync'
     }
   },
 
@@ -141,6 +152,7 @@ export default {
     translateNumber,
     translate,
     changePage(page) {
+      if (this.paginationUpdating) return;
 
       let currentPageCount = this.getCurrentPageCount(page, this.pagination.per_page);
       this.currentPage = page;

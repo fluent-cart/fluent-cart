@@ -42,6 +42,18 @@ class Cart extends Model
     private static $cache = [];
 
     /**
+     * Per-request cache for computed fees.
+     * @var array|null
+     */
+    private $cachedFees = null;
+
+    /**
+     * Recursion guard for getFees() to prevent infinite loops.
+     * @var bool
+     */
+    private $isCalculatingFees = false;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -720,9 +732,319 @@ class Cart extends Model
     public function getShippingTotal()
     {
         if ($this->requireShipping()) {
-            return (int)Arr::get($this->checkout_data ?? [], 'shipping_data.shipping_charge', 0);
+            $shippingTotal = (int)Arr::get($this->checkout_data ?? [], 'shipping_data.shipping_charge', 0);
+            return apply_filters('fluent_cart/cart/shipping_total', $shippingTotal, [
+                'cart' => $this,
+            ]);
         }
         return 0;
+    }
+
+    /**
+     * Get all fees for this cart.
+     * Reads persistent fees from checkout_data.fees and merges with
+     * dynamically computed fees from the fluent_cart/cart/fees filter.
+     * Uses per-request caching to avoid redundant DB reads and filter evaluations.
+     *
+     * @return array Validated fee items
+     */
+    public function getFees(): array
+    {
+        if ($this->cachedFees !== null) {
+            return $this->cachedFees;
+        }
+
+        // Recursion guard — if a filter callback calls getFees(), return stored fees only
+        if ($this->isCalculatingFees) {
+            return $this->getStoredFees();
+        }
+
+        $this->isCalculatingFees = true;
+
+        // Start with persistent (stored) fees
+        $storedFees = $this->getStoredFees();
+
+        // Custom payment: preserves the original order's charges.
+        // Reactivation: renewals should not pick up dynamic fees.
+        $isRenewal = Arr::get($this->checkout_data, 'renew_data.is_renewal') === 'yes';
+        if ($this->isLocked() || $isRenewal) {
+            $this->isCalculatingFees = false;
+            $this->cachedFees = $this->validateFees($storedFees);
+            return $this->cachedFees;
+        }
+
+        // Resolve payment method: prefer explicit key, fall back to form data
+        $paymentMethod = Arr::get($this->checkout_data, 'payment_method')
+            ?: Arr::get($this->checkout_data, 'form_data._fct_pay_method');
+
+        // Let addons add dynamic (computed) fees via filter
+        $allFees = apply_filters('fluent_cart/cart/fees', $storedFees, [
+            'cart'           => $this,
+            'cart_items'     => $this->cart_data ?? [],
+            'cart_subtotal'  => $this->getItemsSubtotal(),
+            'shipping_total' => $this->getShippingTotal(),
+            'customer_id'    => $this->customer_id,
+            'payment_method' => $paymentMethod,
+            'checkout_data'  => $this->checkout_data,
+        ]);
+
+        if (!is_array($allFees)) {
+            $allFees = $storedFees;
+        }
+
+        // Validate and deduplicate (last wins — dynamic fees override stored)
+        $validFees = $this->validateFees($allFees);
+
+        $this->isCalculatingFees = false;
+        $this->cachedFees = $validFees;
+
+        return $validFees;
+    }
+
+    /**
+     * Get only the persistent (stored) fees from checkout_data.
+     *
+     * @return array
+     */
+    public function getStoredFees(): array
+    {
+        return (array) Arr::get($this->checkout_data ?? [], 'fees', []);
+    }
+
+    /**
+     * Add a fee to the cart. Persists immediately to the database.
+     * If a fee with the same source:key already exists, it will be updated.
+     *
+     * Usage:
+     *   $cart->addFee([
+     *       'key'     => 'processing_fee',
+     *       'label'   => 'Processing Fee',
+     *       'amount'  => 450,           // cents, must be positive
+     *       'source'  => 'dynamic-pricing',
+     *       'taxable' => false,
+     *       'meta'    => ['rule_id' => 42],
+     *   ]);
+     *
+     * @param array $fee Fee data with required keys: key, label, amount
+     * @return bool Whether the fee was added successfully
+     */
+    public function addFee(array $fee): bool
+    {
+        if (empty($fee['key']) || empty($fee['label']) || empty($fee['amount'])) {
+            return false;
+        }
+
+        $amount = (int) $fee['amount'];
+        if ($amount <= 0) {
+            return false;
+        }
+
+        $validatedFee = [
+            'key'     => sanitize_key($fee['key']),
+            'label'   => sanitize_text_field($fee['label']),
+            'amount'  => $amount,
+            'taxable' => !empty($fee['taxable']),
+            'source'  => sanitize_key($fee['source'] ?? 'custom'),
+            'meta'    => (array) ($fee['meta'] ?? []),
+        ];
+
+        $checkoutData = $this->checkout_data ?? [];
+        $fees = (array) Arr::get($checkoutData, 'fees', []);
+
+        // Replace if same source:key exists, otherwise append
+        $compositeKey = $validatedFee['source'] . ':' . $validatedFee['key'];
+        $replaced = false;
+
+        foreach ($fees as $index => $existingFee) {
+            $existingComposite = Arr::get($existingFee, 'source', 'custom') . ':' . Arr::get($existingFee, 'key', '');
+            if ($existingComposite === $compositeKey) {
+                $fees[$index] = $validatedFee;
+                $replaced = true;
+                break;
+            }
+        }
+
+        if (!$replaced) {
+            $fees[] = $validatedFee;
+        }
+
+        $checkoutData['fees'] = array_values($fees);
+        $this->checkout_data = $checkoutData;
+        $this->clearFeeCache();
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Remove a fee from the cart by key (and optionally source).
+     * Persists immediately to the database.
+     *
+     * @param string $key The fee key to remove
+     * @param string|null $source Optional source filter. If null, removes all fees with this key.
+     * @return bool Whether any fee was removed
+     */
+    public function removeFee(string $key, ?string $source = null): bool
+    {
+        $checkoutData = $this->checkout_data ?? [];
+        $fees = (array) Arr::get($checkoutData, 'fees', []);
+        $originalCount = count($fees);
+
+        $fees = array_filter($fees, function ($fee) use ($key, $source) {
+            if (Arr::get($fee, 'key') !== $key) {
+                return true; // keep — different key
+            }
+            if ($source !== null && Arr::get($fee, 'source', 'custom') !== $source) {
+                return true; // keep — different source
+            }
+            return false; // remove
+        });
+
+        if (count($fees) === $originalCount) {
+            return false; // nothing was removed
+        }
+
+        $checkoutData['fees'] = array_values($fees);
+        $this->checkout_data = $checkoutData;
+        $this->clearFeeCache();
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Remove all fees from a specific source.
+     * Useful for addons to clear their fees before recalculating.
+     *
+     * @param string $source The source identifier
+     * @return void
+     */
+    public function removeFeesBySource(string $source): void
+    {
+        $checkoutData = $this->checkout_data ?? [];
+        $fees = (array) Arr::get($checkoutData, 'fees', []);
+
+        $fees = array_filter($fees, function ($fee) use ($source) {
+            return Arr::get($fee, 'source', 'custom') !== $source;
+        });
+
+        $checkoutData['fees'] = array_values($fees);
+        $this->checkout_data = $checkoutData;
+        $this->clearFeeCache();
+        $this->save();
+    }
+
+    /**
+     * Get the total of all fees in cents.
+     *
+     * @return int
+     */
+    public function getFeeTotal(): int
+    {
+        return array_reduce($this->getFees(), function ($carry, $fee) {
+            return $carry + (int) $fee['amount'];
+        }, 0);
+    }
+
+    /**
+     * Build cart-data-compatible items for fee items.
+     * Used by the tax module to calculate tax on taxable fees
+     * through the same pipeline as product items.
+     *
+     * @return array
+     */
+    public function getFeeCartItems(): array
+    {
+        $items = [];
+        foreach ($this->getFees() as $fee) {
+            $items[] = self::buildFeeCartItem($fee);
+        }
+        return $items;
+    }
+
+    /**
+     * Convert a validated fee array into a cart-data-compatible line item.
+     * Single source of truth for fee item structure — used by both
+     * getFeeCartItems() and TaxModule::calculateCartTax().
+     *
+     * @param array $fee Validated fee array
+     * @return array Cart-data-compatible item
+     */
+    public static function buildFeeCartItem(array $fee): array
+    {
+        $amount = (int) ($fee['amount'] ?? 0);
+
+        return [
+            'object_id'        => 0,
+            'post_id'          => 0,
+            'quantity'         => 1,
+            'unit_price'       => $amount,
+            'price'            => $amount,
+            'subtotal'         => $amount,
+            'line_total'       => $amount,
+            'discount_total'   => 0,
+            'coupon_discount'  => 0,
+            'tax_amount'       => 0,
+            'title'            => $fee['label'] ?? '',
+            'post_title'       => '',
+            'payment_type'     => 'fee',
+            'is_fee'           => true,
+            'fulfillment_type' => 'digital',
+            'other_info'       => [
+                'payment_type' => 'fee',
+                'fee_key'      => $fee['key'] ?? '',
+                'source'       => $fee['source'] ?? 'custom',
+                'taxable'      => !empty($fee['taxable']),
+            ],
+        ];
+    }
+
+    /**
+     * Clear the per-request fee cache.
+     * Call this after modifying fees or cart data.
+     *
+     * @return void
+     */
+    public function clearFeeCache(): void
+    {
+        $this->cachedFees = null;
+    }
+
+    /**
+     * Validate and deduplicate an array of fees.
+     *
+     * @param array $fees Raw fee items
+     * @return array Validated fee items
+     */
+    private function validateFees(array $fees): array
+    {
+        $validFees = [];
+
+        foreach ($fees as $fee) {
+            if (empty($fee['key']) || empty($fee['label']) || empty($fee['amount'])) {
+                continue;
+            }
+
+            $amount = (int) $fee['amount'];
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $source = sanitize_key($fee['source'] ?? 'custom');
+            $compositeKey = $source . ':' . sanitize_key($fee['key']);
+
+            // Last wins — later entries (from filter) override earlier ones (stored)
+            $validFees[$compositeKey] = [
+                'key'     => sanitize_key($fee['key']),
+                'label'   => sanitize_text_field($fee['label']),
+                'amount'  => $amount,
+                'taxable' => !empty($fee['taxable']),
+                'source'  => $source,
+                'meta'    => (array) ($fee['meta'] ?? []),
+            ];
+        }
+
+        return array_values($validFees);
     }
 
     public function getItemsSubtotal()
@@ -735,9 +1057,26 @@ class Cart extends Model
         return OrderService::getItemsAmountWithoutDiscount($items);
     }
 
+    private static bool $calculatingTotal = false;
+
     public function getEstimatedTotal($extraAmount = 0)
     {
-        $checkoutItems = new CheckoutService($this->cart_data);
+        // Recursion guard: if a hook calls getEstimatedTotal(), skip hooks to avoid infinite loop
+        if (self::$calculatingTotal) {
+            return $this->getEstimatedTotalRaw($extraAmount);
+        }
+
+        self::$calculatingTotal = true;
+
+        do_action('fluent_cart/cart/before_totals_calculation', [
+            'cart' => $this,
+        ]);
+
+        $cartData = apply_filters('fluent_cart/cart/item_dynamic_discount', $this->cart_data, [
+            'cart' => $this,
+        ]);
+
+        $checkoutItems = new CheckoutService($cartData);
 
         $subscriptionItems = $checkoutItems->subscriptions;
         $onetimeItems = $checkoutItems->onetime;
@@ -752,6 +1091,11 @@ class Cart extends Model
             $total += $shippingTotal;
         }
 
+        $feeTotal = $this->getFeeTotal();
+        if ($feeTotal > 0) {
+            $total += $feeTotal;
+        }
+
         if (Arr::get($this->checkout_data, 'custom_checkout') === 'yes' && !$shippingTotal) {
             $customShippingAmount = (int)Arr::get($this->checkout_data, 'custom_checkout_data.shipping_total', 0);
             // $customerDiscountAmount = (int)Arr::get($this->checkout_data, 'custom_checkout_data.discount_total', 0); // discount is already calculated in via getItemsAmountTotal
@@ -763,8 +1107,62 @@ class Cart extends Model
             $total = 0;
         }
 
-        return apply_filters('fluent_cart/cart/estimated_total', $total, [
+        $finalTotal = apply_filters('fluent_cart/cart/estimated_total', $total, [
             'cart' => $this
+        ]);
+
+        do_action('fluent_cart/cart/after_totals_calculation', [
+            'cart'  => $this,
+            'total' => $finalTotal,
+        ]);
+
+        self::$calculatingTotal = false;
+
+        return $finalTotal;
+    }
+
+    /**
+     * Raw total calculation without hooks (used for recursion guard).
+     */
+    private function getEstimatedTotalRaw($extraAmount = 0)
+    {
+        $checkoutItems = new CheckoutService($this->cart_data);
+        $items = array_merge($checkoutItems->onetime, $checkoutItems->subscriptions);
+        $total = OrderService::getItemsAmountTotal($items, false, false, $extraAmount);
+
+        $shippingTotal = (int)Arr::get($this->checkout_data ?? [], 'shipping_data.shipping_charge', 0);
+        if ($shippingTotal) {
+            $total += $shippingTotal;
+        }
+
+        $feeTotal = $this->getFeeTotal();
+        if ($feeTotal > 0) {
+            $total += $feeTotal;
+        }
+
+        return max(0, $total);
+    }
+
+    /**
+     * Get full cart context data for dynamic pricing and other addons.
+     */
+    public function getContextData(): array
+    {
+        $cartData = $this->cart_data ?? [];
+        $customerId = $this->customer_id;
+
+        $context = [
+            'cart_subtotal'       => $this->getItemsSubtotal(),
+            'cart_item_count'     => count($cartData),
+            'cart_total_quantity'  => array_sum(array_column($cartData, 'quantity')),
+            'shipping_method'     => Arr::get($this->checkout_data, 'shipping_data.method_id'),
+            'payment_method'      => Arr::get($this->checkout_data, 'payment_method'),
+            'customer_id'         => $customerId,
+            'order_type'          => Arr::get($this->checkout_data, 'order_type', 'initial'),
+        ];
+
+        return apply_filters('fluent_cart/cart/context_data', $context, [
+            'cart' => $this,
         ]);
     }
 

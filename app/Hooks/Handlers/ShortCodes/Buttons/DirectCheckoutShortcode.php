@@ -97,6 +97,7 @@ class DirectCheckoutShortcode extends ShortCode
             'text'                 => $buttonText,
             'is_shortcode'         => true,
             'enable_modal_checkout'=> $instantCheckout,
+            'variant_ids'          => [$variationId],
         ];
 
         if ($buttonClass) {

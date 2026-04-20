@@ -227,6 +227,7 @@ export default {
       this.$emit('removeItem');
     },
     getProviderLabel(provider) {
+      if (!provider) return '';
       // replace _ and - with space
       provider = provider.replace(/_/g, ' ').replace(/-/g, ' ');
 

@@ -34,7 +34,7 @@ class PaymentReceipt
 
         foreach ($orderItems as $key => $item) {
 
-            if (Arr::get($item, 'payment_type') == 'signup_fee') {
+            if (in_array(Arr::get($item, 'payment_type'), ['signup_fee', 'fee'])) {
                 unset($orderItems[$key]);
             }
 

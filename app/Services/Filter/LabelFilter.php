@@ -10,9 +10,9 @@ use FluentCart\Framework\Support\Arr;
 class LabelFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        $this->query = $this->query->when($this->search, function ($query, $search) {
+        $this->query = $this->query->when($search ?? $this->search, function ($query, $search) {
             return $query->where('value', 'LIKE', "%{$search}%");
         });
     }
@@ -33,7 +33,7 @@ class LabelFilter extends BaseFilter
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
 
     }

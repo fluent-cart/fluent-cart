@@ -99,35 +99,29 @@
             }
           }
         }
+
         &-total {
           @apply bg-[rgb(249,250,251)] p-4 rounded m-0 w-full max-w-[290px] ml-auto;
-          &-discount,
-          &-shipping,
-          &-tax,
-          &-shipping-tax,
-          &-refund,
-          &-total,
-          &-payment-method,
-          &-subtotal {
-            @apply flex items-center justify-between;
-          }
-          &-label {
-            @apply text-sm text-[rgb(55,65,81)] leading-[24px] m-0;
-          }
-          &-value {
-            @apply text-[13px] text-[rgb(55,65,81)] m-0 leading-[24px] text-right;
-          }
           &-total {
             .fct-thank-you-page-order-items-total-label {
               @apply text-base font-bold;
-            }
-            .fct-thank-you-page-order-items-total-value {
-              @apply text-sm;
             }
           }
         }
       }
     }
+
+    .fct-meta-line {
+      @apply flex items-center justify-between;
+      margin-bottom: 5px;
+      &-label {
+        @apply text-sm text-[rgb(55,65,81)] leading-[24px] m-0;
+      }
+      &-value {
+        @apply text-[13px] text-[rgb(55,65,81)] m-0 leading-[24px] text-right;
+      }
+    }
+
     &-addresses {
       @apply grid gap-5 mt-5 grid-cols-[repeat(auto-fit,minmax(200px,1fr))];
       .fct-thank-you-page-order-items {

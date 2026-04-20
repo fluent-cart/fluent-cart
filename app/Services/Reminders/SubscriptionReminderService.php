@@ -607,7 +607,16 @@ class SubscriptionReminderService extends ReminderService
             return false;
         }
 
-        return !empty($subscription->next_billing_date);
+        if (empty($subscription->next_billing_date)) {
+            return false;
+        }
+
+        // Skip if the subscription has been upgraded to a new plan (subscription or lifetime)
+        if (Arr::get($subscription->config, 'upgraded_to_order_id')) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function isTrialSubscription(Subscription $subscription): bool

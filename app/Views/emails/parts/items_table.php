@@ -15,7 +15,13 @@
 <?php
 
 use FluentCart\Framework\Support\Arr;
-    $orderItems = $order->order_items ? $order->order_items->toArray() : [];
+    $allOrderItems = $order->order_items ? $order->order_items->toArray() : [];
+    $orderItems = array_filter($allOrderItems, function ($item) {
+        return !in_array($item['payment_type'] ?? '', ['signup_fee', 'fee']);
+    });
+    $feeItems = array_filter($allOrderItems, function ($item) {
+        return ($item['payment_type'] ?? '') === 'fee';
+    });
     $transaction = $order->getLatestTransaction();
     $isRefund = $is_refund ?? false;
 ?>
@@ -120,6 +126,20 @@ use FluentCart\Framework\Support\Arr;
                         </td>
                     </tr>
                 <?php endif; ?>
+                <?php foreach ($feeItems as $feeItem): ?>
+                    <tr style="width:100%">
+                        <td style="width:70%">
+                            <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
+                                <?php echo esc_html($feeItem['title']); ?>
+                            </p>
+                        </td>
+                        <td style="width:30%;text-align:right">
+                            <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
+                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($feeItem['subtotal'])); ?>
+                            </p>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
                 <?php if ($order->manual_discount_total + $order->coupon_discount_total > 0): ?>
                     <tr style="width:100%">
                         <td style="width:70%">
@@ -143,7 +163,7 @@ use FluentCart\Framework\Support\Arr;
                             </p>
                         </td>
                         <td style="width:30%;text-align:right">
-                            <p style="font-size:14px;color=rgb(55,65,81);margin:0;line-height:24px;">
+                            <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
                                 <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->tax_total)); ?>
                             </p>
                         </td>

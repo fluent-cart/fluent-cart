@@ -2,6 +2,7 @@
   <el-drawer
     v-model="drawerVisible"
     :title="isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class')"
+    :aria-label="isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class')"
     width="500px"
     append-to-body
     :close-on-click-modal="true"
@@ -14,6 +15,13 @@
           <LabelHint :title="translate('Class Name')" :content="translate('Give the shipping class a friendly name to help identify it when setting up shipping rates for your products. For instance: Bulky Items, Fragile Goods, and so on.')" placement="bottom"/>
         </template>
         <el-input v-model="form.name" :placeholder="translate('Enter class name')"></el-input>
+      </el-form-item>
+
+      <el-form-item prop="description">
+        <template #label>
+          <LabelHint :title="translate('Description')" :content="translate('Optional description of this shipping class for internal reference.')" placement="bottom"/>
+        </template>
+        <el-input v-model="form.description" type="textarea" :rows="2" :placeholder="translate('Enter description (optional)')"></el-input>
       </el-form-item>
 
       <el-form-item prop="cost">
@@ -72,6 +80,7 @@ const props = defineProps({
     type: Object,
     default: () => ({
       name: '',
+      description: '',
       cost: 0,
       type: 'fixed',
       per_item: 0
@@ -113,6 +122,7 @@ watch(() => props.classData, (newVal) => {
   if (newVal) {
     form.value = {
       name: newVal.name,
+      description: newVal.description || '',
       cost: newVal.cost,
       type: newVal.type,
       per_item: newVal.per_item || 0
@@ -138,7 +148,7 @@ const saveClass = () => {
         closeDrawer();
       })
       .catch(error => {
-        console.error('Error saving shipping class:', error);
+        // Error shown via Notify
         Notify.error(translate('Failed to save shipping class'));
       })
       .finally(() => {
@@ -155,6 +165,7 @@ const onDrawerClosed = () => {
   if (!isEdit.value) {
     form.value = {
       name: '',
+      description: '',
       cost: 0,
       type: 'fixed',
       per_item: 0

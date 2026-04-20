@@ -40,11 +40,6 @@ class ProductEditModel extends ProductBaseModel {
         this.data.onProductUpdatedListener[name] = callback;
     }
 
-
-    addOnProductUpdatedListener(name, callback) {
-        this.data.onProductUpdatedListener[name] = callback;
-    }
-
     setProductDownloadableModel(model) {
         this.data.productDownloadableModel = model;
     }
@@ -108,7 +103,7 @@ class ProductEditModel extends ProductBaseModel {
 
     setProduct(product) {
         let productBadge = document.querySelector('.fct-admin-product-info .badge');
-        if (product.post_status === 'future') {
+        if (productBadge && product.post_status === 'future') {
             /* translators: %s is the post date */
             productBadge.innerText = translate('Publishes on: %s', formatDate(product.post_date, true));
             productBadge.classList.add('warning');
@@ -184,6 +179,9 @@ class ProductEditModel extends ProductBaseModel {
                 signup_fee_name: '',
                 signup_fee: '',
                 setup_fee_per_item: 'no',
+                package_slug: '',
+                weight: null,
+                weight_unit: window.fluentCartAdminApp?.shop?.weight_unit || 'kg',
                 //purchasable: 'yes',
             },
             downloadable: 'true',
@@ -308,7 +306,7 @@ class ProductEditModel extends ProductBaseModel {
         row['created_at'] = row['created_at'] ?? (
             new Date().toLocaleDateString() + '' + new Date().toLocaleTimeString()
         )
-        if (index !== undefined & index != null) {
+        if (index !== undefined && index != null) {
             this.product.variants[index] = row;
         } else {
             row.rowId = this.variantsLength() > 0 ?
@@ -432,7 +430,7 @@ class ProductEditModel extends ProductBaseModel {
     updatePricingOtherValue = (name, value, index = null, variant, modeType = '') => {
         this.ensureVariationIndex(index);
 
-        if (['payment_type', 'times', 'repeat_interval', 'manage_setup_fee', 'signup_fee_name', 'signup_fee', 'billing_summary', 'setup_fee_per_item', 'purchasable'].includes(name)) {
+        if (['payment_type', 'times', 'repeat_interval', 'manage_setup_fee', 'signup_fee_name', 'signup_fee', 'billing_summary', 'setup_fee_per_item', 'purchasable', 'weight', 'length', 'width', 'height', 'package_slug', 'weight_unit', 'manage_stock'].includes(name)) {
             if (index !== undefined) {
                 this.clearValidationError(`${index}.other_info.${name}`)
             }
@@ -509,26 +507,24 @@ class ProductEditModel extends ProductBaseModel {
 
     deletePricing = (id, index) => {
 
-        Confirmation.ofDelete(
+        return Confirmation.ofDelete(
             translate("Are you sure, you want to delete this price?")
         ).then(() => {
             if (id !== undefined) {
-                Rest.delete(`products/variants/${id}`)
+                return Rest.delete(`products/variants/${id}`)
                     .then(response => {
                         Notify.success(response.message);
                         this.afterDeletingPricing(index)
                     })
                     .catch((errors) => {
-                        if (errors.status_code == '422') {
+                        if (errors?.status_code == '422') {
                             Notify.validationErrors(errors);
                         } else {
                             Notify.error(errors?.data);
                         }
+                        throw errors;
                     })
             }
-
-        }).catch(() => {
-
         });
     }
 
@@ -841,8 +837,13 @@ class ProductEditModel extends ProductBaseModel {
                     formattedVariants.push({
                         id: variant.id,
                         variation_title: variant.variation_title,
+                        sku: variant.sku,
                         item_price: variant.item_price,
                         compare_price: variant.compare_price,
+                        item_cost: variant.item_cost,
+                        manage_cost: variant.manage_cost,
+                        fulfillment_type: variant.fulfillment_type,
+                        shipping_class: variant.shipping_class,
                         other_info: variant.other_info,
                         manage_stock: variant.manage_stock,
                         serial_index: variant.serial_index,
@@ -852,6 +853,9 @@ class ProductEditModel extends ProductBaseModel {
                         on_hold: variant.on_hold,
                         stock_status: variant.stock_status,
                         sold_individually: variant.sold_individually,
+                        media: variant.media,
+                        downloadable: variant.downloadable,
+                        payment_type: variant.payment_type,
                     });
                 });
 
@@ -873,28 +877,32 @@ class ProductEditModel extends ProductBaseModel {
 
             Notify.success(successMessage || response.message);
             this.setHasChange(false);
-            productBadge.innerText = response.data.post_status;
+            if (productBadge) {
+                productBadge.innerText = response.data.post_status;
+            }
             this.product.view_url = response.data.viewUrl;
             //this.product.post_name = response.data.post_name;
 
-            if (response.data.post_status === 'publish') {
+            if (productBadge && response.data.post_status === 'publish') {
                 productBadge.classList.remove('warning');
                 productBadge.classList.add('success');
             }
 
-            if (response.data.post_status === 'future') {
+            if (productBadge && response.data.post_status === 'future') {
                 /* translators: %s is the post date */
                 productBadge.innerText = translate('Publishes on: %s', formatDate(response.data.post_date, true));
                 productBadge.classList.remove('success');
                 productBadge.classList.add('warning');
             }
 
-            if (response.data.post_status === 'draft') {
-                productBadge.classList.remove('success');
-                productBadge.classList.add('info');
-            } else {
-                productBadge.classList.remove('info');
-                productBadge.classList.add('success');
+            if (productBadge) {
+                if (response.data.post_status === 'draft') {
+                    productBadge.classList.remove('success');
+                    productBadge.classList.add('info');
+                } else {
+                    productBadge.classList.remove('info');
+                    productBadge.classList.add('success');
+                }
             }
 
             if (this.product.detail.variation_type === 'simple') {
@@ -923,12 +931,11 @@ class ProductEditModel extends ProductBaseModel {
 
             //this.saveSnapshot();
         }).catch((errors) => {
-            console.log(errors)
-            if (errors.status_code.toString() === '422') {
+            if (errors?.status_code?.toString() === '422') {
                 Notify.validationErrors(errors);
                 this.setValidationErrors(errors)
             } else {
-                Notify.error(errors.data?.message);
+                Notify.error(errors?.data?.message || errors?.message || translate('Failed to save product'));
             }
         })
             .finally(async () => {

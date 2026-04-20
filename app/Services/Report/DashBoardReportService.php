@@ -69,13 +69,6 @@ class DashBoardReportService extends ReportService
         $this->totalOrders = $this->data->count();
         $this->totalPaidOrders = $this->data->where('payment_status', 'paid')->count();
 
-        $totalOrderItems = 0;
-
-        foreach ($this->data as $order) {
-            $totalOrderItems += count($order->order_items);
-        }
-
-        $this->totalOrderItems = $totalOrderItems;
         $this->totalOrderItems = $this->data->where('payment_status', 'paid')->sum('order_items_count');
         $this->totalOrderValue = $this->data->where('payment_status', 'paid')->sum('subtotal');
     }
@@ -92,43 +85,53 @@ class DashBoardReportService extends ReportService
     {
         global $wpdb;
 
+        $currency = $this->filters['currency'] ?? null;
+        $currencyFilter = $currency ? 'AND currency = ?' : '';
+
         $query = "
-        SELECT 
+        SELECT
             COUNT(*) AS total_orders,
             SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) AS paid_orders,
             (SELECT COUNT(*) FROM {$wpdb->prefix}fct_order_items WHERE order_id IN (
-                SELECT id FROM {$wpdb->prefix}fct_orders WHERE payment_status = 'paid' 
+                SELECT id FROM {$wpdb->prefix}fct_orders WHERE payment_status = 'paid'
                 AND created_at BETWEEN ? AND ?
+                {$currencyFilter}
             )) AS total_paid_order_items,
             SUM(CASE WHEN payment_status = 'paid' THEN total_paid ELSE 0 END) AS total_paid_amounts
         FROM {$wpdb->prefix}fct_orders
         WHERE created_at BETWEEN ? AND ?
-        AND currency = '{$this->filters['currency']}'
+        {$currencyFilter}
     ";
 
-        $bindings = [
-            $startDate->format('Y-m-d'),
-            $endDate->format('Y-m-d 23:59:59'),
+        $currentBindings = [
             $startDate->format('Y-m-d'),
             $endDate->format('Y-m-d 23:59:59'),
         ];
-
-        foreach ($bindings as $binding) {
-            $binding = is_numeric($binding) ? $binding : "'$binding'";
-            $query = preg_replace('/\?/', $binding, $query, 1);
+        if ($currency) {
+            $currentBindings[] = $currency;
+        }
+        $currentBindings[] = $startDate->format('Y-m-d');
+        $currentBindings[] = $endDate->format('Y-m-d 23:59:59');
+        if ($currency) {
+            $currentBindings[] = $currency;
         }
 
-        $currentStats = App::db()->select($query, $bindings)[0];
+        $currentStats = App::db()->select($query, $currentBindings)[0];
 
-        $bindings = [
-            $previousStartDate->format('Y-m-d'),
-            $previousEndDate->format('Y-m-d 23:59:59'),
+        $previousBindings = [
             $previousStartDate->format('Y-m-d'),
             $previousEndDate->format('Y-m-d 23:59:59'),
         ];
+        if ($currency) {
+            $previousBindings[] = $currency;
+        }
+        $previousBindings[] = $previousStartDate->format('Y-m-d');
+        $previousBindings[] = $previousEndDate->format('Y-m-d 23:59:59');
+        if ($currency) {
+            $previousBindings[] = $currency;
+        }
 
-
-        $previousStats = App::db()->select($query, $bindings)[0];
+        $previousStats = App::db()->select($query, $previousBindings)[0];
         $this->dashBoardStats = [
             'total_orders'           => [
                 'title'         => __('All Orders', 'fluent-cart'),
@@ -258,35 +261,6 @@ class DashBoardReportService extends ReportService
             ->toArray();
         return [
             'recentOrders' => $recentOrders
-        ];
-    }
-
-    public static function getUnfulfilledOrders()
-    {
-        global $wpdb;
-
-        // Query to fetch orders that are not 'canceled', 'failed', or 'completed'
-        $prefix = $wpdb->prefix;
-
-        $unfulfilledOrders = App::db()->table("fct_orders as o")
-            ->select([
-                'o.id',
-                'o.customer_id',
-                App::db()->raw("CONCAT(c.first_name, ' ', c.last_name) AS customer_name"),
-                App::db()->raw("o.total_amount / 100 AS total_amount"),
-                'o.created_at',
-                App::db()->raw("(SELECT COUNT(*) FROM {$prefix}fct_order_items WHERE order_id = o.id) AS order_items_count"),
-            ])
-            ->join("fct_customers as c", 'o.customer_id', '=', 'c.id')
-            ->whereNotIn('o.status', ['canceled', 'failed', 'completed'])
-            ->orderBy('o.created_at', 'desc')
-            ->get()
-            ->map(fn($item) => (array)$item) // convert each object to associative array
-            ->toArray();
-
-
-        return [
-            'unfulfilledOrders' => $unfulfilledOrders
         ];
     }
 

@@ -312,7 +312,7 @@ class SubscriptionService
 
         /**
          * lists of hooks for this action
-         * fluent_cart/payments/subscription_cancelled
+         * fluent_cart/payments/subscription_canceled
          * fluent_cart/payments/subscription_active
          * fluent_cart/payments/subscription_paused
          * fluent_cart/payments/subscription_expired

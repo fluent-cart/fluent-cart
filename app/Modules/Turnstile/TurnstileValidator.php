@@ -39,7 +39,7 @@ class TurnstileValidator
         if (empty($turnstileToken)) {
             return new \WP_Error(
                 'turnstile_missing',
-                __('Security verification failed. Please refresh the page and try again.', 'fluent-cart')
+                __('Security check failed. Please refresh the page and try again.', 'fluent-cart')
             );
         }
 
@@ -48,7 +48,7 @@ class TurnstileValidator
         if (!$isValidToken) {
             return new \WP_Error(
                 'turnstile_invalid',
-                __('Security verification failed. Please try again.', 'fluent-cart')
+                __('Security check failed. Please try again or refresh the page.', 'fluent-cart')
             );
         }
 

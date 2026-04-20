@@ -178,6 +178,13 @@ abstract class BaseFilter
      */
     public ?string $userTz = null;
 
+    /**
+     * The resolved SavedView model when active_view is a saved view slug.
+     *
+     * @var SavedView|null
+     */
+    protected $activeSavedView = null;
+
 
     /**
      * BaseFilter constructor.
@@ -319,13 +326,51 @@ abstract class BaseFilter
 
     /**
      * Parses and validates the accepted view.
+     * First checks static tabs; if not found, fires a filter so Pro can resolve
+     * the slug to a saved view (returns an object/array with query_params).
      *
      * @return string|null
      */
     protected function parseAcceptedView(): ?string
     {
         $activeView = Arr::get($this->args, $this->getParsableKey('active_view'), $this->activeView);
-        return Arr::has($this->tabsMap(), $activeView) ? $activeView : null;
+
+        if (empty($activeView)) {
+            return null;
+        }
+
+        // Static tab takes priority
+        if (Arr::has($this->tabsMap(), $activeView)) {
+            return $activeView;
+        }
+
+        // Ask Pro to resolve the slug for the current filter only.
+        $resolvedView = apply_filters('fluent_cart/filter_resolve_saved_view', null, [
+            'slug'        => $activeView,
+            'filter_name' => static::getFilterName(),
+            'user_id'     => get_current_user_id(),
+        ]);
+
+        if (is_array($resolvedView) || is_object($resolvedView)) {
+            $this->activeSavedView = $resolvedView;
+            return null;
+        }
+
+        // Backward compatibility for older Pro versions that only inject the admin table config blob.
+        $tableConfig = apply_filters('fluent_cart/admin_table_saved_views', [], [
+            'filterOptions' => []
+        ]);
+        foreach ($tableConfig as $entry) {
+            $savedViews = isset($entry['saved_views']) ? $entry['saved_views'] : [];
+            foreach ($savedViews as $view) {
+                if (Arr::get($view, 'slug') === $activeView) {
+                    $this->activeSavedView = $view;
+                    break 2;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -333,16 +378,16 @@ abstract class BaseFilter
      *
      * @return array
      */
-    protected function parseSearchGroups(): array
+    protected function parseSearchGroups(?string $json = null): array
     {
+        if ($json === null) {
+            $json = Arr::get($this->args, $this->getParsableKey('advanced_filters'), '[]');
+        }
+
         $filters = [];
 
-
         try {
-            $filters = json_decode(
-                Arr::get($this->args, $this->getParsableKey('advanced_filters'), '[]'),
-                true
-            );
+            $filters = json_decode($json, true);
         } catch (\Exception $exception) {
             // Ignore exception, return empty filters
         }
@@ -412,16 +457,77 @@ abstract class BaseFilter
     public function buildQuery(): Builder
     {
         $this->buildCommonQuery();
+        $this->applyCurrentFilterLayer();
 
+        if ($this->activeSavedView) {
+            $this->applySavedViewFilter();
+        }
+
+        return $this->query;
+    }
+
+    protected function applyCurrentFilterLayer(): void
+    {
         if ($this->filterType == 'simple') {
             $this->applyActiveViewFilter();
             $this->applySimpleFilter();
         } else if ($this->filterType == 'advanced') {
             $this->applyAdvancedFilter();
         }
+    }
 
-        return $this->query;
-        //$this->filterType == 'simple' ? $this->applySimpleFilter() : $this->applyAdvancedFilter();
+    protected function applySavedViewFilter(?array $params = null): void
+    {
+        $params = $params ?? $this->getSavedViewParams();
+
+        if (empty($params)) {
+            return;
+        }
+
+        $this->query->where(function ($savedQuery) use ($params) {
+            $originalQuery = $this->query;
+            $this->query = $savedQuery;
+
+            $savedFilterType = Arr::get($params, 'filter_type', 'simple');
+
+            if ($savedFilterType === 'advanced') {
+                $savedGroups = $this->getSavedViewSearchGroups($params);
+                if (!empty($savedGroups)) {
+                    $this->applyAdvancedFilter($savedGroups);
+                }
+            } else {
+                $savedActiveView = Arr::get($params, 'active_view');
+                if ($savedActiveView && Arr::has($this->tabsMap(), $savedActiveView)) {
+                    $this->applyActiveViewFilter($savedActiveView);
+                }
+
+                $savedSearch = Arr::get($params, 'search', '');
+                if (!empty($savedSearch)) {
+                    $this->applySimpleFilter($savedSearch);
+                }
+            }
+
+            $this->query = $originalQuery;
+        });
+    }
+
+    protected function getSavedViewParams(): array
+    {
+        $savedView = $this->activeSavedView;
+
+        return is_array($savedView)
+            ? Arr::get($savedView, 'query_params', [])
+            : (is_object($savedView) ? $savedView->query_params : []);
+    }
+
+    protected function getSavedViewSearchGroups(array $params): array
+    {
+        $json = Arr::get($params, 'advanced_filters', '[]');
+        if (is_array($json)) {
+            $json = wp_json_encode($json);
+        }
+
+        return $this->parseSearchGroups($json);
     }
 
     /**
@@ -522,14 +628,14 @@ abstract class BaseFilter
      *
      * @return void
      */
-    protected function applyAdvancedFilter()
+    protected function applyAdvancedFilter(?array $searchGroups = null): void
     {
 
         if (!App::isProActive()) {
             return;
         }
 
-        $filtersGroups = $this->searchGroups;
+        $filtersGroups = $searchGroups ?? $this->searchGroups;
         if (empty($filtersGroups)) {
             return;
         }
@@ -682,9 +788,9 @@ abstract class BaseFilter
      * @return void
      */
 
-    public abstract function applySimpleFilter();
+    public abstract function applySimpleFilter(?string $search = null): void;
 
-    public abstract function applyActiveViewFilter();
+    public abstract function applyActiveViewFilter(?string $activeView = null): void;
 
     /**
      * Return the maps of [table-column, tabs-name]
@@ -742,14 +848,14 @@ abstract class BaseFilter
         );
     }
 
-    public function applySimpleOperatorFilter(): bool
+    public function applySimpleOperatorFilter(?string $search = null): bool
     {
         $operators = $this->getSimpleOperators();
 
         // check if search has an operator with regexp
         $operatorPattern = '/\s*(' . implode('|', $operators) . ')\s*/';
 
-        $search = trim($this->search);
+        $search = trim($search ?? $this->search);
         if (preg_match($operatorPattern, $search, $matches)) {
             $operator = $matches[1];
             $searchParts = explode($operator, $search);

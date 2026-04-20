@@ -5,7 +5,9 @@ namespace FluentCart\Api\Resource;
 use FluentCart\Api\Orders;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
+use FluentCart\App\Events\Order\OrderDeleting;
 use FluentCart\App\Events\Order\OrderDeleted;
+use FluentCart\App\Events\Order\RenewalOrderDeleted;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Events\Order\OrderUpdated;
 use FluentCart\App\Events\StockChanged;
@@ -13,13 +15,24 @@ use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\AdminOrderProcessor;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Models\Activity;
+use FluentCart\App\Models\AppliedCoupon;
+use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\CustomerAddresses;
+use FluentCart\App\Models\LabelRelationship;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderAddress;
 use FluentCart\App\Models\OrderItem;
+use FluentCart\App\Models\OrderDownloadPermission;
+use FluentCart\App\Models\OrderMeta;
+use FluentCart\App\Models\OrderOperation;
+use FluentCart\App\Models\OrderTaxRate;
+use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Query\QueryParser;
 use FluentCart\App\Models\Query\Sort;
+use FluentCart\App\Models\Subscription;
+use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -689,37 +702,58 @@ class OrderResource extends BaseResourceApi
     public static function delete($id, $params = [])
     {
         $DB = App::db();
-        $DB->beginTransaction();
 
         try {
             /** @var Order $order */
             $order = static::getQuery()->with("order_items")->find($id);
-            $deletedOrder = clone $order;
-            $deletedOrderItems = json_decode(json_encode(Arr::get($order, 'order_items', [])), true);
-            // $getOrderNoActionableStatuses = ['unshippable'];
-            // if(in_array($deletedOrder->shipping_status, $getOrderNoActionableStatuses)) {
-            //     $deletedOrder->shipping_status = OrderMetaResource::find($deletedOrder->id, ['meta_key' => 'shipping_previous_status']);
-            // }
-            if (!empty($order)) {
-                if ($order->mode !== Status::ORDER_MODE_TEST && $order->status === Status::ORDER_COMPLETED) {
-                    return static::makeErrorResponse([
-                        ['code' => 400, 'message' => __('This order cannot be deleted because order status is completed.', 'fluent-cart')]
-                    ]);
-                }
-                $order->orderMeta()->delete();
-                $order->order_items()->delete();
-                $order->transactions()->delete();
-                $order->orderTaxRates()->delete();
-                $order->orderOperation()->delete();
-                $order->delete();
+            if (!$order) {
+                return static::makeErrorResponse([
+                    ['code' => 404, 'message' => __('Order not found', 'fluent-cart')]
+                ]);
             }
 
-            AppliedCouponResource::delete($order->id);
+            $canBeDeleted = $order->canBeDeleted();
+            if (is_wp_error($canBeDeleted)) {
+                return $canBeDeleted;
+            }
+
+            $deletedOrder = clone $order;
+            $deletedOrderItems = json_decode(json_encode(Arr::get($order, 'order_items', [])), true);
+            $connectedOrderIds = [$order->id];
+            $isTestMode = $order->mode === Status::ORDER_MODE_TEST;
+
+            if ($order->type === 'subscription') {
+                $childOrderIds = Order::query()->where('parent_id', $order->id)->pluck('id')->toArray();
+                $connectedOrderIds = array_merge($childOrderIds, $connectedOrderIds);
+            }
+
+            $DB->beginTransaction();
+
+            if ($order->type === 'subscription') {
+                $subscriptionIds = Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->pluck('id')->toArray();
+                if ($subscriptionIds) {
+                    SubscriptionMeta::query()->whereIn('subscription_id', $subscriptionIds)->delete();
+                }
+
+                Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->delete();
+            }
+
+            // Dispatch inside transaction so stock restore is atomic with deletion.
+            // Must run before deleteOrderRelatedData() which removes stock_movement meta and order items.
+            (new OrderDeleting($order, $connectedOrderIds, $isTestMode, $order->type))->dispatch();
+
+            // Pre-load relations before cleanup so the OrderDeleted event has address data
+            $deletedOrder->load('customer', 'shipping_address', 'billing_address');
+
+            static::deleteOrderRelatedData($connectedOrderIds, $isTestMode);
             $DB->commit();
 
-
             if (!empty($deletedOrder)) {
-                (new OrderDeleted($deletedOrder))->dispatch();
+                if ($order->type === 'renewal') {
+                    (new RenewalOrderDeleted($deletedOrder))->dispatch();
+                } else {
+                    (new OrderDeleted($deletedOrder, $connectedOrderIds))->dispatch();
+                }
             }
             if (!empty($deletedOrderItems)) {
                 static::triggerEventsOnStockChanged($deletedOrderItems);
@@ -736,6 +770,28 @@ class OrderResource extends BaseResourceApi
                 ['code' => 400, 'message' => __('Failed to delete', 'fluent-cart')]
             ]);
         }
+    }
+
+    protected static function deleteOrderRelatedData(array $orderIds, bool $isTestMode = false): void
+    {
+        OrderTransaction::query()->whereIn('order_id', $orderIds)->delete();
+        OrderAddress::query()->whereIn('order_id', $orderIds)->delete();
+        OrderItem::query()->whereIn('order_id', $orderIds)->delete();
+        OrderMeta::query()->whereIn('order_id', $orderIds)->delete();
+        OrderTaxRate::query()->whereIn('order_id', $orderIds)->delete();
+        OrderOperation::query()->whereIn('order_id', $orderIds)->delete();
+        AppliedCoupon::query()->whereIn('order_id', $orderIds)->delete();
+        Cart::query()->whereIn('order_id', $orderIds)->delete();
+        OrderDownloadPermission::query()->whereIn('order_id', $orderIds)->delete();
+        LabelRelationship::query()->where('labelable_type', Order::class)
+            ->whereIn('labelable_id', $orderIds)->delete();
+
+        if ($isTestMode) {
+            Activity::query()->where('module_type', Order::class)
+                ->whereIn('module_id', $orderIds)->delete();
+        }
+
+        Order::query()->whereIn('id', $orderIds)->delete();
     }
 
     /**
@@ -1138,19 +1194,36 @@ class OrderResource extends BaseResourceApi
         }
 
         if (count($failedOrderIds) > 0) {
-            $failedOrderIds = implode(' , ', $failedOrderIds);
+            $failedOrderIdsString = implode(' , ', $failedOrderIds);
             return count($deletedOrderIds) > 0
-                ? static::makeSuccessResponse('', sprintf(
+                ? static::makeSuccessResponse([
+                    'deleted_order_ids' => $deletedOrderIds,
+                    'deleted_count'     => count($deletedOrderIds),
+                    'failed_order_ids'  => $failedOrderIds,
+                    'failed_count'      => count($failedOrderIds)
+                ], sprintf(
                     /* translators: %s: The order ID(s) that could not be deleted. */
-                    __("The order ID - %s cannot be deleted at the moment as these orders status is not canceled. And remaining order and its associated data have been deleted", 'fluent-cart'), $failedOrderIds))
+                    __("The order ID - %s cannot be deleted at the moment as these orders status is not canceled. And remaining order and its associated data have been deleted", 'fluent-cart'), $failedOrderIdsString))
                 : static::makeErrorResponse([['code' => 400, 'message' => sprintf(
                     /* translators: %s: The order ID(s) that could not be deleted. */
-                    __("The order ID - %s cannot be deleted at the moment as these orders status is not canceled.", 'fluent-cart'), $failedOrderIds)]]);
+                    __("The order ID - %s cannot be deleted at the moment as these orders status is not canceled.", 'fluent-cart'), $failedOrderIdsString)]]);
         }
 
         if (count($deletedOrderIds) > 0 && count($failedOrderIds) < 1) {
-            return static::makeSuccessResponse('', __('Selected order and associated data have been deleted', 'fluent-cart'));
+            return static::makeSuccessResponse([
+                'deleted_order_ids' => $deletedOrderIds,
+                'deleted_count'     => count($deletedOrderIds),
+                'failed_order_ids'  => [],
+                'failed_count'      => 0
+            ], __('Selected order and associated data have been deleted', 'fluent-cart'));
         }
+
+        return static::makeSuccessResponse([
+            'deleted_order_ids' => [],
+            'deleted_count'     => 0,
+            'failed_order_ids'  => [],
+            'failed_count'      => 0
+        ], __('No orders were deleted', 'fluent-cart'));
     }
 
     public static function updatePaymentStatus(array $params = [])

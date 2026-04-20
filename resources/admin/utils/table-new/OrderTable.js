@@ -1,6 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-import Arr from "@/utils/support/Arr";
+
 
 class OrderTable extends Table {
 
@@ -88,18 +88,6 @@ class OrderTable extends Table {
 
     getTableName() {
         return 'order_table';
-    }
-
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.order_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.order_filter_options.guide');
-    }
-
-    getCustomColumns() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.order_filter_options.columns') || {};
     }
 
     with() {

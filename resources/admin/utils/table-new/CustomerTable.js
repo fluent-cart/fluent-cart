@@ -1,6 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-import Arr from "@/utils/support/Arr";
+
 
 class CustomerTable extends Table {
 
@@ -69,14 +69,6 @@ class CustomerTable extends Table {
 
     getTableName() {
         return 'customers';
-    }
-
-    getAdvanceFilterOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.customer_filter_options.advance');
-    }
-
-    getSearchGuideOptions() {
-        return Arr.get(window, 'fluentCartAdminApp.filter_options.customer_filter_options.guide');
     }
 
     useFullWidthSearch() {

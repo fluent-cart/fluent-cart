@@ -7,6 +7,10 @@ import Notify from "@/utils/Notify";
 import Badge from "@/Bits/Components/Badge.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import WeightTiersEditor from "@/Modules/Shipping/Components/WeightTiersEditor.vue";
+import AppConfig from "@/utils/Config/AppConfig";
+
+const storeWeightUnit = AppConfig.get('shop.weight_unit') || 'kg';
 
 // Props
 const props = defineProps({
@@ -50,7 +54,7 @@ const methodForm = ref({
 });
 const fetchingStateZones = ref(false);
 const stateZones = ref([]);
-const isWorldZone = computed(() => props.country === 'all');
+const isWorldZone = computed(() => props.country === 'all' || props.country === 'selection');
 
 const methodRules = ref({
   title: [
@@ -71,7 +75,8 @@ const addShippingMethod = () => {
     type: 'flat_rate',
     settings: {
       configure_rate: 'per_item',
-      class_aggregation: 'sum_all'
+      class_aggregation: 'sum_all',
+      weight_tiers: []
     },
     amount: 0,
     is_enabled: 1,
@@ -84,8 +89,26 @@ const addShippingMethod = () => {
 };
 
 
+const validateWeightTiers = () => {
+  if (methodForm.value.type === 'free_shipping' || methodForm.value.settings.configure_rate !== 'per_weight') {
+    return true;
+  }
+  const tiers = methodForm.value.settings.weight_tiers || [];
+  if (!tiers.length) {
+    Notify.error(translate('Please add at least one weight tier'));
+    return false;
+  }
+  const hasAllZeroCost = tiers.every(t => !t.cost || t.cost <= 0);
+  if (hasAllZeroCost) {
+    Notify.error(translate('Weight tiers must have a cost greater than zero'));
+    return false;
+  }
+  return true;
+};
+
 // Add this method after other methods
 const saveShippingMethod = () => {
+  if (!validateWeightTiers()) return;
 
   savingMethod.value = true;
   Rest.post('shipping/methods', methodForm.value)
@@ -106,7 +129,7 @@ const saveShippingMethod = () => {
         if (!message) {
           message = translate('Failed to save shipping method');
         }
-        console.error('Error saving shipping method:', errors);
+        // Validation errors shown via Notify
         Notify.error(message);
       })
       .finally(() => {
@@ -115,6 +138,7 @@ const saveShippingMethod = () => {
 };
 
 const updateShippingMethod = () => {
+  if (!validateWeightTiers()) return;
   savingMethod.value = true;
   Rest.put('shipping/methods', methodForm.value)
       .then(response => {
@@ -123,10 +147,11 @@ const updateShippingMethod = () => {
         emit('fetchShippingMethods');
       })
       .catch(error => {
-        console.error('Error updating shipping method:', error);
+        // Error shown via Notify
         Notify.error(translate('Failed to update shipping method'));
       })
       .finally(() => {
+        savingMethod.value = false;
       });
 };
 
@@ -137,7 +162,7 @@ const deleteShippingMethod = (methodId) => {
         emit('fetchShippingMethods');
       })
       .catch(error => {
-        console.error('Error deleting shipping method:', error);
+        // Error shown via Notify
         Notify.error(translate('Failed to delete shipping method'));
       });
 };
@@ -155,9 +180,11 @@ const editShippingMethod = (row) => {
     method_id: row.id,
     title: row.title,
     type: row.type,
-    settings: row.settings || {
+    settings: {
       configure_rate: 'per_item',
-      class_aggregation: 'sum_all'
+      class_aggregation: 'sum_all',
+      weight_tiers: [],
+      ...(row.settings || {})
     },
     amount: row.amount,
     is_enabled: row.is_enabled ? 1 : 0,
@@ -176,6 +203,8 @@ const configureRateHelpText = computed(() => {
     return translate('Charge per item in the cart.');
   } else if (methodForm.value.settings.configure_rate === 'per_price') {
     return translate('Percentage of the total amount of the order');
+  } else if (methodForm.value.settings.configure_rate === 'per_weight') {
+    return translate('Cost based on total weight of items in the cart.');
   }
 });
 
@@ -194,11 +223,13 @@ const getConfigureTitle = (rate) => {
     return translate('Per Item');
   } else if (rate === 'per_price') {
     return translate('Per Price');
+  } else if (rate === 'per_weight') {
+    return translate('Per Weight');
   }
 };
 
 const fetchStateZones = () => {
-  if (!props.country || props.country === 'all') {
+  if (!props.country || props.country === 'all' || props.country === 'selection') {
     return;
   }
 
@@ -215,7 +246,7 @@ const fetchStateZones = () => {
         }
       })
       .catch(error => {
-        console.error('Error fetching state zones:', error);
+        Notify.error(translate('Failed to load states'));
       })
       .finally(() => {
         fetchingStateZones.value = false;
@@ -263,7 +294,7 @@ const fetchStateZones = () => {
             </el-table-column>
             <el-table-column prop="type" :label="translate('Method Type')">
               <template #default="scope">
-                {{ methodTypes.find(type => type.value === scope.row.type).label }}
+                {{ methodTypes.find(type => type.value === scope.row.type)?.label ?? scope.row.type }}
               </template>
             </el-table-column>
             <el-table-column prop="amount" :label="translate('Amount')" width="100px">
@@ -309,6 +340,7 @@ const fetchStateZones = () => {
               <template #default="scope">
                 <div class="flex items-center gap-1">
                   <icon-button size="small" class="cursor-pointer" hover="primary" bg="transparent"
+                               :aria-label="translate('Edit')"
                                @click="editShippingMethod(scope.row)">
                     <DynamicIcon name="Edit"/>
                   </icon-button>
@@ -317,7 +349,8 @@ const fetchStateZones = () => {
                       @confirm="deleteShippingMethod(scope.row.id)"
                   >
                     <template #reference>
-                      <icon-button size="small" class="cursor-pointer" hover="danger" bg="transparent">
+                      <icon-button size="small" class="cursor-pointer" hover="danger" bg="transparent"
+                                   :aria-label="translate('Delete')">
                         <DynamicIcon name="Delete"/>
                       </icon-button>
                     </template>
@@ -346,7 +379,8 @@ const fetchStateZones = () => {
     <!-- Add this before the closing </div> tag in the template -->
     <el-drawer
         v-model="showMethodModal"
-        :title="translate('Add Shipping Method')"
+        :title="methodForm.method_id ? translate('Edit Shipping Method') : translate('Add Shipping Method')"
+        :aria-label="methodForm.method_id ? translate('Edit Shipping Method') : translate('Add Shipping Method')"
         width="500px"
         append-to-body
         :close-on-click-modal="true"
@@ -423,10 +457,17 @@ const fetchStateZones = () => {
                   <el-option :label="translate('Per Order')" value="per_order"></el-option>
                   <el-option :label="translate('Per Item')" value="per_item"></el-option>
                   <el-option :label="translate('Percentage')" value="per_price"></el-option>
+                  <el-option :label="translate('Per Weight')" value="per_weight"></el-option>
                 </el-select>
                 <div v-if="methodForm.settings.configure_rate" class="form-help-text mt-1">
                   {{ configureRateHelpText }}
                 </div>
+              </el-form-item>
+            </el-col>
+
+            <el-col v-if="methodForm.settings.configure_rate === 'per_weight'" :lg="24">
+              <el-form-item :label="translate('Weight Tiers')">
+                <WeightTiersEditor v-model="methodForm.settings.weight_tiers" :weight-unit="storeWeightUnit" />
               </el-form-item>
             </el-col>
 

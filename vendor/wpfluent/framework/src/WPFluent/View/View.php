@@ -188,6 +188,16 @@ class View
 	}
 
 	/**
+	 * Reset all shared view data (useful for test isolation).
+	 * 
+	 * @return void
+	 */
+	public static function resetSharedData()
+	{
+		static::$sharedData = [];
+	}
+
+	/**
 	 * Provides a fluent interface to set data
 	 * @param  array|string $name
 	 * @param  mixed $data

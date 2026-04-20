@@ -15,14 +15,14 @@ use FluentCart\Framework\Support\Str;
 
 class SubscriptionFilter extends BaseFilter
 {
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        $isApplied = $this->applySimpleOperatorFilter();
+        $isApplied = $this->applySimpleOperatorFilter($search);
         if ($isApplied) {
             return;
         }
 
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
             return $query->where(function ($query) use ($search) {
                 if (in_array(strtolower($search), ['canceled', 'cancelled'])) {
                     $query->orWhere('status', 'canceled');
@@ -76,11 +76,12 @@ class SubscriptionFilter extends BaseFilter
         return 'subscriptions';
     }
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
+        $activeView = $activeView ?? $this->activeView;
         $tabsMap = $this->tabsMap();
         //Apply Active Tab view
-        $this->query = $this->query->when($this->activeView, function (Builder $query, $activeView) use ($tabsMap) {
+        $this->query = $this->query->when($activeView, function (Builder $query, $activeView) use ($tabsMap) {
             $query->where(function ($query) use ($tabsMap, $activeView) {
                 if ('canceled' === $activeView && $tabsMap[$activeView] === 'status') {
                     // active(Collection paused) is also considered as canceled

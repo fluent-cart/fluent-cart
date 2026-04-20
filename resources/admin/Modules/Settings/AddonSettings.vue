@@ -94,12 +94,12 @@
                           :disabled="installingAddon === addonKey"
                           @click="installAddon(addon, addonKey)"
                       >
-                        {{ translate('Install & Activate') }}
+                        {{ hasPro ? translate('Install & Activate') : translate('Download') }}
                       </el-button>
 
-                      <!-- Installed but not active: Show Activate button -->
+                      <!-- Installed but not active: Show Activate button (hidden without pro for github-sourced addons) -->
                       <el-button
-                          v-else-if="addon.is_installed && !addon.is_active"
+                          v-else-if="addon.is_installed && !addon.is_active && (hasPro || addon.source_type !== 'github')"
                           type="success"
                           size="small"
                           :loading="activatingAddon === addonKey"
@@ -108,6 +108,15 @@
                       >
                         {{ translate('Activate') }}
                       </el-button>
+
+                      <router-link
+                          v-if="addon.is_active && addonKey === 'fluent-pdf'"
+                          :to="{ path: '/settings/pdf-template' }"
+                      >
+                        <el-icon class="text-gray-500 hover:text-primary cursor-pointer" :size="18">
+                          <Setting />
+                        </el-icon>
+                      </router-link>
 
                     </template>
 
@@ -143,6 +152,7 @@ import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import SettingsHeader from "./Parts/SettingsHeader.vue";
 import ClipBoard from "@/utils/Clipboard";
+import {Setting} from '@element-plus/icons-vue';
 import AppConfig from "@/utils/Config/AppConfig";
 
 const settingsModel = useSettingsModel();

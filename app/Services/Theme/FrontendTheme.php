@@ -8,11 +8,11 @@ use FluentCart\Framework\Support\Arr;
 class FrontendTheme {
 
 	public static function applyTheme() {
-		add_action( 'wp_enqueue_scripts', function () {
-			if ( ! is_admin() ) {
-				( new static() )->apply();
-			}
-		} );
+		// add_action( 'wp_enqueue_scripts', function () {
+		// 	if ( ! is_admin() ) {
+		// 		( new static() )->apply();
+		// 	}
+		// } );
 	}
 
 	protected function apply() {

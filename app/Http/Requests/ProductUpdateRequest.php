@@ -412,7 +412,9 @@ class ProductUpdateRequest extends RequestGuard
                     "variants.$index.manage_cost"      => 'sanitize_text_field',
                     "variants.$index.total_stock"      => 'intval',
                     "variants.$index.available"        => 'intval',
-                    "variants.$index.shipping_class"   => 'intval',
+                    "variants.$index.shipping_class"   => function ($value) {
+                        return $value ? intval($value) : null;
+                    },
                     "variants.$index.committed"        => 'intval',
                     "variants.$index.on_hold"          => 'intval',
                     "variants.$index.manage_stock"     => 'intval',
@@ -420,7 +422,9 @@ class ProductUpdateRequest extends RequestGuard
                     "variants.$index.serial_index"     => 'intval',
                     "variants.$index.downloadable"     => 'sanitize_text_field',
                     "variants.$index.fulfillment_type"  => 'sanitize_text_field',
-                    "variants.$index.sku"  => 'sanitize_text_field',
+                    "variants.$index.sku"  => function ($value) {
+                        return empty($value) ? null : sanitize_text_field($value);
+                    },
                 ];
 
                 foreach ($variantFieldMap as $field => $sanitizer) {

@@ -24,7 +24,7 @@
         &__header{
             @apply py-4 px-5 flex justify-between items-center mr-0 border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 dark:border-dark-400;
             .el-dialog__title {
-                @apply text-base text-system-dark font-medium dark:text-gray-50;
+                @apply text-base text-system-dark font-semibold dark:text-gray-50;
             }
         }
         &__title{
@@ -99,7 +99,7 @@
 }
 
 .dialog-footer{
-    @apply text-right block border border-solid border-gray-divider pt-4 mt-5 border-x-0 border-b-0 -mx-5 px-5 dark:border-dark-400;
+    @apply flex justify-end border border-solid border-gray-divider pt-4 mt-5 border-x-0 border-b-0 -mx-5 px-5 dark:border-dark-400;
 }
 
 .fct-discount-modal {

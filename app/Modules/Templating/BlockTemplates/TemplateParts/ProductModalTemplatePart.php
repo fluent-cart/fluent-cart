@@ -242,15 +242,19 @@ class ProductModalTemplatePart
         }
 
         // Apply filters before rendering (allows other plugins to modify)
-        $content = apply_filters('fluent_cart_template_part_content', $content, self::SLUG, $args);
-        $content = apply_filters('fluent_cart_template_part_content_' . self::SLUG, $content, $args);
+        $content = apply_filters_deprecated('fluent_cart_template_part_content', [$content, self::SLUG, $args], '1.3.16', 'fluent_cart/template_part_content', 'Use fluent_cart/template_part_content instead of fluent_cart_template_part_content.');
+        $content = apply_filters_deprecated('fluent_cart_template_part_content_' . self::SLUG, [$content, $args], '1.3.16', 'fluent_cart/template_part_content_' . self::SLUG, 'Use fluent_cart/template_part_content_' . self::SLUG . ' instead of fluent_cart_template_part_content_' . self::SLUG . '.');
+        $content = apply_filters('fluent_cart/template_part_content', $content, self::SLUG, $args);
+        $content = apply_filters('fluent_cart/template_part_content_' . self::SLUG, $content, $args);
 
         // Parse and render blocks
         $output = do_blocks($content);
 
         // Apply filters after rendering
-        $output = apply_filters('fluent_cart_template_part_output', $output, self::SLUG, $args);
-        $output = apply_filters('fluent_cart_template_part_output_' . self::SLUG, $output, $args);
+        $output = apply_filters_deprecated('fluent_cart_template_part_output', [$output, self::SLUG, $args], '1.3.16', 'fluent_cart/template_part_output', 'Use fluent_cart/template_part_output instead of fluent_cart_template_part_output.');
+        $output = apply_filters_deprecated('fluent_cart_template_part_output_' . self::SLUG, [$output, $args], '1.3.16', 'fluent_cart/template_part_output_' . self::SLUG, 'Use fluent_cart/template_part_output_' . self::SLUG . ' instead of fluent_cart_template_part_output_' . self::SLUG . '.');
+        $output = apply_filters('fluent_cart/template_part_output', $output, self::SLUG, $args);
+        $output = apply_filters('fluent_cart/template_part_output_' . self::SLUG, $output, $args);
 
         return $output;
     }

@@ -66,7 +66,7 @@ class OrderPaid extends EventDispatcher
          * 3rd party devs: Please do not use this hook to add any action that
          * use: fluent_cart/order_paid_done
          */
-        $id = as_enqueue_async_action('fluent_cart/order_paid_ansyc_private_handle', [
+        $id = as_enqueue_async_action('fluent_cart/order_paid_async_private_handle', [
             [
                 'order_id' => $this->order->id
             ]

@@ -3,6 +3,7 @@ import AllShippingZones from "./AllShippingZones.vue";
 import SingleShippingZone from "./SingleShippingZone.vue";
 import AllShippingClasses from "./AllShippingClasses.vue";
 import SingleShippingClass from "./SingleShippingClass.vue";
+import AllShippingPackages from "./AllShippingPackages.vue";
 import translate from "@/utils/translator/Translator";
 
 
@@ -69,6 +70,16 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
                 meta: {
                     active_menu: 'settings',
                     title: translate('Add Shipping Class'),
+                    permission: ["store/settings", 'store/sensitive']
+                }
+            },
+            {
+                name: 'shipping_packages',
+                path: 'shipping/packages',
+                component: AllShippingPackages,
+                meta: {
+                    active_menu: 'settings',
+                    title: translate('Packages'),
                     permission: ["store/settings", 'store/sensitive']
                 }
             }

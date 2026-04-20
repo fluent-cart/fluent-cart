@@ -178,12 +178,6 @@ const getCountryHeatMap = () => {
   });
 };
 
-// const getUnfulfilledOrders = () => {
-//   dashBoardReport.getUnfulfilledOrders({
-//     params: null,
-//   });
-// };
-
 const getTopSoldProducts = () => {
   const [startDate, endDate] = [
     dayjs().subtract(1, 'month').format("YYYY-MM-DD 00:00:00"),
@@ -222,7 +216,6 @@ onMounted(() => {
   getSalesGrowth();
   getCountryHeatMap();
   getRecentOrders();
-  // getUnfulfilledOrders();
   getCongratsPopover();
   getTopSoldProducts();
 });

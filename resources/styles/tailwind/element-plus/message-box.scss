@@ -13,6 +13,7 @@
         @apply text-base text-system-dark font-medium dark:text-gray-50;
     }
     &__message {
+        @apply text-sm leading-[20px] text-system-mid dark:text-gray-300;
         p{
             @apply text-sm leading-[20px] text-system-mid dark:text-gray-300;
         }

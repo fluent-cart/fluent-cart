@@ -9,10 +9,32 @@ use FluentCart\Framework\Support\Arr;
 
 class ShippingZoneFilter extends BaseFilter
 {
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        if (!empty($this->search)) {
-            $this->query->whereLike('name', $this->search);
+        $search = $search ?? $this->search;
+        if (!empty($search)) {
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $this->query->whereLike('name', $escaped);
+        }
+
+        $request = \FluentCart\App\App::request();
+        $classId = $request->get('shipping_class_id', '__not_set__');
+        if ($classId !== '__not_set__') {
+            if ($classId && $classId !== '0') {
+                $this->query->where('shipping_class_id', (int) $classId);
+            } else {
+                $this->query->whereNull('shipping_class_id');
+            }
+        }
+
+        $request = \FluentCart\App\App::request();
+        $classId = $request->get('shipping_class_id', '__not_set__');
+        if ($classId !== '__not_set__') {
+            if ($classId && $classId !== '0') {
+                $this->query->where('shipping_class_id', (int) $classId);
+            } else {
+                $this->query->whereNull('shipping_class_id');
+            }
         }
     }
 
@@ -44,20 +66,13 @@ class ShippingZoneFilter extends BaseFilter
         ];
     }
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
-        // TODO: Implement applyActiveViewFilter() method.
+        // No active view filters for shipping zones
     }
 
     public function tabsMap(): array
     {
-        return [
-            'publish'          => 'post_status',
-            'draft'            => 'post_status',
-            'physical'         => 'fulfillment_type',
-            'digital'          => 'fulfillment_type',
-            'subscribable'     => 'has_subscription',
-            'not_subscribable' => 'has_subscription',
-        ];
+        return [];
     }
 }

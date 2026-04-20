@@ -30,6 +30,8 @@ const props = defineProps({
   showUrlTab: { type: Boolean, default: true },
   // Dialog title
   title: { type: String, default: '' },
+  // Featured mode: shows first image prominently + "+N images" count tag for extras
+  featured: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'change']);
@@ -114,9 +116,32 @@ const removeUrlImage = (url) => {
 </script>
 
 <template>
-  <div class="fct-media-picker" :class="{ 'is-compact': compact }" @click="openModal">
+  <div class="fct-media-picker" :class="{ 'is-compact': compact, 'is-featured': featured }" @click="openModal">
+    <!-- Featured mode: single prominent image + count tag -->
+    <template v-if="featured">
+      <button type="button" v-if="modelValue && modelValue.length" class="fmp-featured" :aria-label="translate('Edit media')">
+        <img
+          :src="modelValue[0].url"
+          :alt="modelValue[0].title || ''"
+          class="fmp-featured__image"
+          :class="{ 'is-hidden': failedUrls.has(modelValue[0].url) }"
+          @error="onThumbError(modelValue[0].url)"
+          @load="onThumbLoad(modelValue[0].url)"
+        />
+        <span class="fmp-featured__edit-icon">
+          <DynamicIcon name="Edit" />
+        </span>
+        <el-tag v-if="modelValue.length > 1" class="fmp-featured__count" size="small" round>
+          {{ modelValue.length }} {{ $t('images') }}
+        </el-tag>
+      </button>
+      <el-button v-else class="fct-mp-add-featured">
+        <DynamicIcon name="GalleryAdd"/>
+      </el-button>
+    </template>
+
     <!-- Compact inline: avatar stack (for table cells) -->
-    <template v-if="compact">
+    <template v-else-if="compact">
       <div v-if="modelValue && modelValue.length" class="fmp-stack">
         <span
           v-for="(img, i) in modelValue.slice(0, maxThumbs)"
@@ -253,4 +278,52 @@ const removeUrlImage = (url) => {
     </div>
   </el-dialog>
 </template>
+
+<style scoped lang="scss">
+.fmp-featured {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  overflow: hidden;
+  background: none;
+  padding: 0;
+
+  .fmp-featured__image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    display: block;
+
+    &.is-hidden {
+      visibility: hidden;
+    }
+  }
+
+  .fmp-featured__edit-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  &:hover .fmp-featured__edit-icon,
+  &:focus-visible .fmp-featured__edit-icon {
+    opacity: 1;
+  }
+
+  .fmp-featured__count {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+  }
+}
+</style>
 

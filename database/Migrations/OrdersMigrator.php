@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class OrdersMigrator extends Migrator
 {
 
@@ -34,6 +32,7 @@ class OrdersMigrator extends Migrator
                 `coupon_discount_total` BIGINT NOT NULL DEFAULT '0',
                 `shipping_tax` BIGINT NOT NULL DEFAULT '0',
                 `shipping_total` BIGINT NOT NULL DEFAULT '0',
+                `fee_total` BIGINT NOT NULL DEFAULT '0',
                 `tax_total` BIGINT NOT NULL DEFAULT '0',
                 `total_amount` BIGINT NOT NULL DEFAULT '0',
                 `total_paid` BIGINT NOT NULL DEFAULT '0',
@@ -53,5 +52,44 @@ class OrdersMigrator extends Migrator
                 INDEX `{$indexPrefix}_status_type` (`type` ASC),
                 INDEX `{$indexPrefix}_customer_id` (`customer_id` ASC),
                 INDEX `{$indexPrefix}_date_created_completed` (`created_at` ASC, `completed_at` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addFeeTotalColumn();
+        static::addTaxBehaviorColumn();
+        static::addReceiptNumberColumn();
+        static::renameDiscountTotalColumn();
+        static::addPaymentStatusIndex();
+    }
+
+    public static function addFeeTotalColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `fee_total` BIGINT NOT NULL DEFAULT '0' AFTER `shipping_total`"
+        static::addColumnIfNotExists('fee_total', "BIGINT NOT NULL DEFAULT '0'", 'shipping_total');
+    }
+
+    public static function addTaxBehaviorColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `tax_behavior` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '...' AFTER `rate`"
+        static::addColumnIfNotExists('tax_behavior', "TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0 => no_tax, 1 => exclusive, 2 => inclusive'", 'rate');
+    }
+
+    public static function addReceiptNumberColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `receipt_number` BIGINT NULL AFTER `parent_id`"
+        static::addColumnIfNotExists('receipt_number', 'BIGINT NULL', 'parent_id');
+    }
+
+    public static function renameDiscountTotalColumn()
+    {
+        // "ALTER TABLE %i CHANGE `discount_total` `manual_discount_total` BIGINT NOT NULL DEFAULT '0'"
+        static::renameColumnIfExists('discount_total', 'manual_discount_total', "BIGINT NOT NULL DEFAULT '0'");
+    }
+
+    public static function addPaymentStatusIndex()
+    {
+        // "ALTER TABLE %i ADD INDEX `fct_payment_status` (`payment_status`, `id`)"
+        static::addIndexIfNotExists('fct_payment_status', ['payment_status', 'id']);
     }
 }

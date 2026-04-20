@@ -24,6 +24,30 @@ class TemplateActions
         add_action('fluent_cart/template/product_archive', [$this, 'renderProductArchive']);
         add_action('fluent_cart/product/render_product_header', [$this, 'renderProductHeader']);
 
+        // Universal hook for after_product_content — fires on both classic and block themes
+        // Block themes render <!-- wp:post-content --> which runs the_content filter
+        add_filter('the_content', function ($content) {
+            if (!is_singular('fluent-products')) {
+                return $content;
+            }
+
+            global $post;
+
+            if (!$post || $post->post_type !== FluentProducts::CPT_NAME) {
+                return $content;
+            }
+
+            ob_start();
+            do_action('fluent_cart/product/after_product_content', $post->ID);
+            $extra = ob_get_clean();
+
+            if ($extra) {
+                $content .= $extra;
+            }
+
+            return $content;
+        }, 999);
+
         add_shortcode('fluent_cart_product_header', function ($atts = []) {
             $atts = shortcode_atts([
                 'id' => 0,
@@ -207,6 +231,24 @@ class TemplateActions
 
             return $title;
         }, 10, 2);
+        add_filter('get_the_excerpt', function ($excerpt, $post) {
+            if (apply_filters('fluent_cart/disable_auto_single_product_page', false)) {
+                return $excerpt;
+            }
+
+            global $wp_query;
+
+            if (
+                $wp_query->is_main_query()
+                && $post->ID == $wp_query->get_queried_object_id()
+                && $post->post_type === FluentProducts::CPT_NAME
+            ) {
+                return '';
+            }
+
+            return $excerpt;
+        }, 10, 2);
+
         add_filter('the_content', [$this, 'filterSingleProductContent'], 999);
     }
 
@@ -228,11 +270,6 @@ class TemplateActions
         do_action('fluent_cart/product/render_product_header', $post->ID);
         $headerContent = ob_get_clean();
         $content = $headerContent . $content;
-
-        ob_start();
-        do_action('fluent_cart/product/after_product_content', $post->ID);
-        $productContent = ob_get_clean();
-        $content .= $productContent;
 
         $storeSettings = new StoreSettings();
 

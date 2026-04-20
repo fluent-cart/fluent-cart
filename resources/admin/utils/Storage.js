@@ -13,7 +13,7 @@ export default class Storage {
         let value = localStorage.getItem(generator(key));
 
         if (value && ['{', '['].indexOf(value[0]) !== -1) {
-            value = JSON.parse(value);
+            try { value = JSON.parse(value); } catch { return defaultValue; }
         } else if (value === "true") {
             return true;
         } else if (value === "false") {

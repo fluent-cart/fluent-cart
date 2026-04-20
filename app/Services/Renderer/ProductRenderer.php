@@ -207,14 +207,13 @@ class ProductRenderer
     public function render()
     {
         ?>
-        <div class="fct-single-product-page" data-fluent-cart-single-product-page>
+        <div class="fct-single-product-page" data-fluent-cart-single-product-page data-product-id="<?php echo esc_attr($this->product->ID); ?>">
             <div class="fct-single-product-page-row">
                 <?php $this->renderGallery(); ?>
                 <div class="fct-product-summary">
                     <?php
                     $this->renderTitle();
-                    $this->renderStockAvailability();
-                    $this->renderSku();
+                    $this->renderProductMeta();
                     $this->renderExcerpt();
                     $this->renderPrices();
 
@@ -229,6 +228,16 @@ class ProductRenderer
                 </div>
             </div>
         </div>
+        <?php
+    }
+
+    public function renderProductMeta() {
+        ?>
+            <div class="fct-product-meta">
+                <?php $this->renderStockAvailability(); ?>
+                <?php $this->renderSku(); ?>
+            </div>
+
         <?php
     }
 
@@ -367,6 +376,8 @@ class ProductRenderer
         ?>
 
         <div class="fct-gallery-thumb-controls"
+             role="toolbar"
+             aria-label="<?php echo esc_attr__('Product image thumbnails', 'fluent-cart'); ?>"
              data-fluent-cart-single-product-page-product-thumbnail-controls
              data-all-gallery-images="<?php echo esc_attr(wp_json_encode($allGalleryImages) ?: '[]'); ?>">
 
@@ -476,6 +487,7 @@ class ProductRenderer
                 esc_attr(sprintf(__('View %s image', 'fluent-cart'), $itemTitle));
                 ?>"
                 aria-pressed="<?php echo $isSelected ? 'true' : 'false'; ?>"
+                tabindex="<?php echo $isSelected ? '0' : '-1'; ?>"
         >
             <img
                     class="fct-gallery-control-thumb"
@@ -559,7 +571,7 @@ class ProductRenderer
                 '<div class="fct-product-stock %1$s" role="status" aria-live="polite">
                     <div %2$s>
                         <span class="fct-stock-label">%3$s</span>
-                        <span class="fct-stock-status fct-stock-badge fct_status_badge_%1$s" data-fluent-cart-product-stock>
+                        <span class="fct-stock-badge fct_status_badge_%1$s" data-fluent-cart-product-stock>
                             %4$s
                         </span>
                     </div>
@@ -616,6 +628,19 @@ class ProductRenderer
 
     }
 
+    public function renderDescription()
+    {
+        $post = get_post($this->product->ID);
+        if (!$post || empty($post->post_content)) {
+            return;
+        }
+        ?>
+        <div class="fct-product-description">
+            <?php echo apply_filters('the_content', $post->post_content); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+        </div>
+        <?php
+    }
+
     public function renderPrices()
     {
         if ($this->product->detail->variation_type === 'simple') {
@@ -624,7 +649,12 @@ class ProductRenderer
             $first_price = $this->product->variants()->first();
 
             $itemPrice = $first_price ? $first_price->item_price : 0;
-            $comparePrice = $first_price ? $first_price->compare_price : 0;
+            $itemPrice = apply_filters('fluent_cart/product/display_price', $itemPrice, [
+                'product'   => $this->product,
+                'variation' => $first_price,
+            ]);
+            $itemPrice = (int)$itemPrice;
+            $comparePrice = $first_price ? (int)$first_price->compare_price : 0;
             if ($comparePrice <= $itemPrice) {
                 $comparePrice = 0;
             }

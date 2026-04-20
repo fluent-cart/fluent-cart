@@ -2709,13 +2709,24 @@ class Builder
      * Add an "order by" clause to the query.
      *
      * @param  \Closure|\FluentCart\Framework\Database\Orm\Builder|\FluentCart\Framework\Database\Query\Builder|\FluentCart\Framework\Database\Query\Expression|string  $column
-     * @param  string  $direction
+     * @param  string $direction
+     * @param  array  $allowedColumns
      * @return $this
      *
      * @throws \InvalidArgumentException
      */
-    public function orderBy($column, $direction = 'asc')
+    public function orderBy($column, $direction = 'asc', $allowedColumns = [])
     {
+        if (!empty($allowedColumns) && !in_array($column, $allowedColumns, true)) {
+            throw new LogicException(
+                "Ordering by `$column` is not allowed for this query."
+            );
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_\.]+$/', $column)) {
+            throw new LogicException("Invalid column name `$column`.");
+        }
+
         if ($this->isQueryable($column)) {
             [$query, $bindings] = $this->createSub($column);
 
@@ -2727,7 +2738,9 @@ class Builder
         $direction = strtolower($direction);
 
         if (! in_array($direction, ['asc', 'desc'], true)) {
-            throw new InvalidArgumentException('Order direction must be "asc" or "desc".');
+            throw new InvalidArgumentException(
+                'Order direction must be "asc" or "desc".'
+            );
         }
 
         $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
@@ -2793,7 +2806,9 @@ class Builder
     {
         $type = 'Raw';
 
-        $this->{$this->unions ? 'unionOrders' : 'orders'}[] = compact('type', 'sql');
+        $this->{$this->unions ? 'unionOrders' : 'orders'}[] = compact(
+            'type', 'sql'
+        );
 
         $this->addBinding($bindings, $this->unions ? 'unionOrder' : 'order');
 

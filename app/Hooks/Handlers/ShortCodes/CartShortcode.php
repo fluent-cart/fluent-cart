@@ -10,6 +10,7 @@ use FluentCart\App\Hooks\Cart\CartLoader;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Api\Resource\FrontendResource\CartResource;
+use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\CartRenderer;
 
 class CartShortcode extends ShortCode
@@ -35,6 +36,7 @@ class CartShortcode extends ShortCode
 
     public function render(?array $viewData = null)
     {
+        AssetLoader::markFrontendAssetsRequired();
         $storeSettings = new StoreSettings();
         $cart = CartHelper::getCart();
         $cartItems = $cart->cart_data ?? [];

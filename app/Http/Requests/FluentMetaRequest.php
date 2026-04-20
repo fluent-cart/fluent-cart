@@ -4,6 +4,7 @@ namespace FluentCart\App\Http\Requests;
 
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Permission\PermissionManager;
 
 class FluentMetaRequest extends RequestGuard
 {
@@ -116,6 +117,24 @@ class FluentMetaRequest extends RequestGuard
             'product_slug'                         => 'sanitize_text_field',
             'min_receipt_number'                   => 'sanitize_text_field',
             'inv_prefix'                           => 'sanitize_text_field',
+            'weight_unit'                          => function ($value) {
+                if (!PermissionManager::hasPermission(['store/sensitive'])) {
+                    $stored = get_option('fluent_cart_store_settings', []);
+                    return $stored['weight_unit'] ?? 'kg';
+                }
+                $value = sanitize_text_field($value);
+                $allowed = ['kg', 'g', 'lbs', 'oz'];
+                return in_array($value, $allowed, true) ? $value : 'kg';
+            },
+            'dimension_unit'                       => function ($value) {
+                if (!PermissionManager::hasPermission(['store/sensitive'])) {
+                    $stored = get_option('fluent_cart_store_settings', []);
+                    return $stored['dimension_unit'] ?? 'cm';
+                }
+                $value = sanitize_text_field($value);
+                $allowed = ['cm', 'mm', 'in', 'm'];
+                return in_array($value, $allowed, true) ? $value : 'cm';
+            },
             'enable_image_zoom_in_single_product'  => 'sanitize_text_field',
             'enable_image_zoom_in_modal'           => 'sanitize_text_field',
             'theme_setup'                          => function ($value) {

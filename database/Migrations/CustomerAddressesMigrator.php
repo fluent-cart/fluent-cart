@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class CustomerAddressesMigrator extends Migrator
 {
 
@@ -34,6 +32,17 @@ class CustomerAddressesMigrator extends Migrator
                  INDEX `{$indexPrefix}_customer_is_primary` (`customer_id` ASC, `is_primary` ASC),
                  INDEX `{$indexPrefix}_type` (`type` ASC),
                  INDEX `{$indexPrefix}_status` (`status` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addMetaColumn();
+    }
+
+    public static function addMetaColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `meta` JSON DEFAULT NULL AFTER `country`"
+        static::addColumnIfNotExists('meta', 'JSON DEFAULT NULL', 'country');
     }
 }
 

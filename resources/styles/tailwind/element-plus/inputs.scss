@@ -421,14 +421,14 @@
 // input group
 .el-input-group{
     .el-button{
-        @apply bg-[inherit] border-0 rounded-none hover:bg-[inherit] dark:bg-[inherit] dark:border-[inherit] dark:hover:bg-[inherit] dark:hover:border-[inhert] #{!important};
+        @apply bg-[inherit] border-0 rounded-none hover:bg-[inherit] dark:bg-[inherit] dark:border-[inherit] dark:hover:bg-[inherit] dark:hover:border-[inherit] #{!important};
     }
     .el-input-group{
         &__prepend{
-            @apply h-10 bg-gray-neutral border border-solid border-gray-outline border-r-0 rounded-tl rounded-bl shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
+            @apply h-9 bg-gray-neutral border border-solid border-gray-outline border-r-0 rounded-tl rounded-bl shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
         }
         &__append{
-            @apply h-10 bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
+            @apply h-9 bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
         }
         &__prepend{
             @apply bg-gray-neutral border border-solid border-gray-outline border-r-0 rounded-tl rounded-bl shadow-none hover:bg-gray-50 dark:bg-primary-500 dark:border-dark-400;
@@ -546,8 +546,19 @@
     }
     .el-tooltip__trigger{
         @apply p-2.5;
+        svg {
+            @apply w-3.5 h-3.5;
+        }
     }
 }
+
+.fct-stock-adjuster-trigger {
+    @apply border-0 bg-transparent p-0;
+    svg {
+        @apply w-3.5 h-3.5;
+    }
+}
+
 
 //.el-input-group{
 //    &__append{

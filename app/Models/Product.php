@@ -629,7 +629,17 @@ class Product extends Model
                 $detailData = $this->detail->toArray();
 
                 unset($detailData['id'], $detailData['created_at'], $detailData['updated_at']);
+                // Remove appended/computed attributes and relations that are not actual DB columns
+                unset($detailData['featured_media'], $detailData['formatted_min_price'], $detailData['formatted_max_price'], $detailData['gallery_image']);
                 $detailData['post_id'] = $newProductId;
+
+                // Ensure JSON columns have valid JSON values (MySQL rejects empty strings)
+                if (empty($detailData['default_media'])) {
+                    $detailData['default_media'] = [];
+                }
+                if (empty($detailData['other_info'])) {
+                    $detailData['other_info'] = [];
+                }
 
                 if (!$importStockManagement) {
                     $detailData['manage_stock'] = 0;
@@ -671,8 +681,10 @@ class Product extends Model
                     $variantData = $originalVariant->toArray();
 
                     unset($variantData['id'], $variantData['created_at'], $variantData['updated_at']);
+                    // Remove appended/computed attributes and relations that are not actual DB columns
+                    unset($variantData['thumbnail'], $variantData['media']);
                     $variantData['post_id'] = $newProductId;
-                    $variantData['sku'] = null; // Use NULL to avoid unique constraint violations (empty string '' would conflict)
+                    unset($variantData['sku']); // Remove SKU to avoid unique constraint violations
 
                     if (!$importStockManagement) {
                         $variantData['manage_stock'] = 0;

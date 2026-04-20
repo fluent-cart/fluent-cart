@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class OrderTaxRateMigrator extends Migrator
 {
 
@@ -21,5 +19,23 @@ class OrderTaxRateMigrator extends Migrator
                 `filed_at` DATETIME NULL,
                 `created_at` DATETIME NULL,
                 `updated_at` DATETIME NULL";
+    }
+
+    public static function migrated()
+    {
+        static::addMetaColumn();
+        static::addFiledAtColumn();
+    }
+
+    public static function addMetaColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `meta` JSON"
+        static::addColumnIfNotExists('meta', 'JSON');
+    }
+
+    public static function addFiledAtColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `filed_at` DATETIME NULL AFTER `meta`"
+        static::addColumnIfNotExists('filed_at', 'DATETIME NULL', 'meta');
     }
 }

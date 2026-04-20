@@ -112,9 +112,11 @@ class ApiRequest
         if ('charges' === $api && 'POST' === $method) {
             $customer = !empty($request['customer']) ? $request['customer'] : '';
             $source = !empty($request['source']) ? $request['source'] : $customer;
-            $idempotency_key = apply_filters('fluent_cart_stripe_idempotency_key', Arr::get($request, 'metadata.fluentcart_tid') . '-' . $source . '-' . $api, [
-                'request' => $request
-            ]);
+            $idempotency_key = apply_filters_deprecated('fluent_cart_stripe_idempotency_key', [
+                Arr::get($request, 'metadata.fluentcart_tid') . '-' . $source . '-' . $api,
+                ['request' => $request]
+            ], '1.3.16', 'fluent_cart/stripe_idempotency_key', 'Use fluent_cart/stripe_idempotency_key instead of fluent_cart_stripe_idempotency_key.');
+            $idempotency_key = apply_filters('fluent_cart/stripe_idempotency_key', $idempotency_key, ['request' => $request]);
             $headers['Idempotency-Key'] = $idempotency_key;
         }
 
@@ -123,9 +125,10 @@ class ApiRequest
             array(
                 'method'  => $method,
                 'headers' => $headers,
-                'body'    => apply_filters('fluent_cart_stripe_request_body', $request, [
-                    'api' => $api
-                ]),
+                'body'    => (function() use ($request, $api) {
+                    $body = apply_filters_deprecated('fluent_cart_stripe_request_body', [$request, ['api' => $api]], '1.3.16', 'fluent_cart/stripe_request_body', 'Use fluent_cart/stripe_request_body instead of fluent_cart_stripe_request_body.');
+                    return apply_filters('fluent_cart/stripe_request_body', $body, ['api' => $api]);
+                })(),
                 'timeout' => 50,
             )
         );

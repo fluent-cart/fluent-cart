@@ -1,9 +1,10 @@
 import Model from "@/utils/model/Model";
-import {getCurrentInstance, h, onBeforeMount, ref} from "vue";
+import {onBeforeMount, ref} from "vue";
 import Storage from "@/utils/Storage";
 import Rest from "@/utils/http/Rest";
 import {useRoute} from "vue-router";
 import Url from "@/utils/support/Url";
+import Arr from "@/utils/support/Arr";
 import translate from "@/utils/translator/Translator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -74,7 +75,11 @@ export default class Table extends Model {
         inputRef: ref(null),
         nextPageCount: 10,
         user_tz: null,
-        showDeleteBulkAction: false
+        showDeleteBulkAction: false,
+        savedViews: [],
+        activeSavedViewId: null,
+        savedViewQueryParams: null,
+        showSaveViewDialog: false
     }
 
     /**
@@ -87,6 +92,7 @@ export default class Table extends Model {
         this.setupInitialAdvanceFilter();
         this.setupInitialSearch();
         this.setupInitialPagination();
+        this.setupSavedViews();
     }
 
     setupInitialSearch() {
@@ -116,17 +122,56 @@ export default class Table extends Model {
 
         const tabs = this.getTabsCount() ? this.getTabs() : {};
 
-        if (routerActiveView && tabs.hasOwnProperty(routerActiveView)) {
-            this.data.selectedView = routerActiveView;
+        // URL always wins — supports custom links like ?active_view=draft
+        if (routerActiveView) {
+            // URL points to a static tab
+            if (tabs.hasOwnProperty(routerActiveView)) {
+                this.data.selectedView = routerActiveView;
+                return;
+            }
+            // URL points to something else — could be a saved view (checked later in setupSavedViews)
+            this.data.pendingViewFromUrl = routerActiveView;
+            this.data.selectedView = this.getDefaultView();
             return;
         }
 
+        // No URL param — fall back to localStorage
         const storageTab = Storage.get(this.getTabStorageName());
 
-        if (tabs.hasOwnProperty(storageTab)) {
+        if (typeof storageTab === 'string' && tabs.hasOwnProperty(storageTab)) {
             this.data.selectedView = storageTab;
-        } else {
-            this.data.selectedView = this.getDefaultView();
+            return;
+        }
+
+        // Could be a saved view slug in storage — defer to setupSavedViews
+        if (typeof storageTab === 'string' && storageTab !== '') {
+            this.data.pendingViewFromStorage = storageTab;
+        }
+
+        this.data.selectedView = this.getDefaultView();
+    }
+
+    setupSavedViews() {
+        // Load saved views from table config
+        this.data.savedViews = Arr.get(window, `fluentCartAdminApp.table_config.${this.getTableName()}.saved_views`) || [];
+
+        // Resolve pending view — URL takes priority over storage
+        const pendingId = this.data.pendingViewFromUrl || this.data.pendingViewFromStorage;
+        delete this.data.pendingViewFromUrl;
+        delete this.data.pendingViewFromStorage;
+
+        if (pendingId) {
+            const view = this.data.savedViews.find(v => v.slug === pendingId || String(v.id) === String(pendingId));
+            if (view) {
+                this.data.activeSavedViewId = view.slug;
+                this.data.savedViewQueryParams = view.query_params;
+                this._resetLiveFilter();
+                this.data.selectedView = this.getDefaultView();
+            } else {
+                this.data.selectedView = this.getDefaultView();
+                Storage.set(this.getTabStorageName(), this.getDefaultView());
+                Url.pushToVueUrl(null, {active_view: this.getDefaultView()});
+            }
         }
     }
 
@@ -135,8 +180,15 @@ export default class Table extends Model {
      * @param {string} currentView - The selected tab view.
      */
     handleTabChanged(currentView) {
+        const wasOnSavedView = !!this.data.activeSavedViewId;
 
-        if (currentView === this.data.selectedView) {
+        if (wasOnSavedView) {
+            this.data.activeSavedViewId = null;
+            this.data.savedViewQueryParams = null;
+            this._resetLiveFilter();
+        }
+
+        if (currentView === this.data.selectedView && !wasOnSavedView) {
             return;
         }
 
@@ -144,10 +196,7 @@ export default class Table extends Model {
         this.data.paginate.current_page = 1;
         this.setCurrentPage(1);
 
-        Storage.set(
-            this.getTabStorageName(),
-            this.data.selectedView
-        )
+        Storage.set(this.getTabStorageName(), this.data.selectedView);
         Url.pushToVueUrl(null, {active_view: this.data.selectedView});
         this.fetch();
     }
@@ -184,9 +233,17 @@ export default class Table extends Model {
 
     /**
      * Enables search mode and fetches new data.
+     * If a saved view is active, pre-fill the filter UI with its stored params on first open.
      */
     openSearch() {
-        this.data.searching = true;
+        if (
+            this.data.activeSavedViewId &&
+            this.data.savedViewQueryParams &&
+            this.data.savedViewQueryParams.filter_type !== 'advanced'
+        ) {
+            this._prefillFiltersFromParams(this.data.savedViewQueryParams);
+        }
+        this.data.searching = !this.isUsingAdvanceFilter();
 
         Storage.set(
             this.getToggleSearchingStorageName(),
@@ -246,7 +303,7 @@ export default class Table extends Model {
         }
         if (this.isRouteActiveViewApplied() || this.isRouteSearchApplied()) {
             this.data.filterType = 'simple';
-            // return;
+            return;
         }
 
         const storageFilterType = Storage.get(
@@ -280,10 +337,17 @@ export default class Table extends Model {
 
 
     onFilterTypeChanged(filterType) {
+        // Do not deactivate the saved view — it stays active as a backend scope
+        // regardless of which filter mode the user switches to.
 
         if (filterType === 'advanced') {
             this.data.searching = false;
             this.data.search = '';
+            // Pre-fill advanced filters from the saved view if it stored advanced params
+            if (this.data.activeSavedViewId && this.data.savedViewQueryParams &&
+                this.data.savedViewQueryParams.filter_type === 'advanced') {
+                this._prefillFiltersFromParams(this.data.savedViewQueryParams);
+            }
         }
 
         //If a user enables the simple filter, we don't need to refetch
@@ -372,7 +436,11 @@ export default class Table extends Model {
     }
 
     getAdvanceFilterOptions() {
-        return null;
+        return Arr.get(window, `fluentCartAdminApp.table_config.${this.getTableName()}.filters.advance`);
+    }
+
+    getSearchGuideOptions() {
+        return Arr.get(window, `fluentCartAdminApp.table_config.${this.getTableName()}.filters.guide`) || [];
     }
 
     isAdvanceFilterEnabled() {
@@ -386,7 +454,6 @@ export default class Table extends Model {
     buildQueryParams() {
 
         const params = {
-            filter_type: this.data.filterType,
             per_page: this.data.paginate.per_page,
             page: this.data.paginate.current_page,
             sort_by: this.data.sorting.sortBy,
@@ -395,14 +462,20 @@ export default class Table extends Model {
             scopes: this.scopes()
         };
 
-        if (this.isUsingAdvanceFilter()) {
-            params['advanced_filters'] = JSON.stringify(
-                this.data.advanceFilters
-            );
-        } else {
-            params['search'] = this.data.search;
+        if (this.data.activeSavedViewId) {
+            params['active_view'] = this.data.activeSavedViewId;
+        } else if (!this.isUsingAdvanceFilter()) {
             params['active_view'] = this.data.selectedView;
         }
+
+        if (this.isUsingAdvanceFilter()) {
+            params['filter_type'] = 'advanced';
+            params['advanced_filters'] = JSON.stringify(this.data.advanceFilters);
+        } else {
+            params['filter_type'] = 'simple';
+            params['search'] = this.data.search;
+        }
+
         return params;
     }
 
@@ -427,7 +500,6 @@ export default class Table extends Model {
                 this.data.paginate.last_page = parsedResponse.last_page;
                 this.data.paginate.from = parsedResponse.from;
                 this.data.paginate.to = parsedResponse.to;
-                this.data.loading = false;
 
                 this.data.nextPageCount = this.guessNextPageCount(parsedResponse);
 
@@ -482,6 +554,8 @@ export default class Table extends Model {
     }
 
     handlePerPageChange() {
+        this.data.paginate.current_page = 1;
+        this.setCurrentPage(1);
         Storage.set(
             this.getPerPageStorageName(),
             this.data.paginate.per_page
@@ -502,7 +576,7 @@ export default class Table extends Model {
     }
 
     getCurrentPage() {
-        Storage.get(
+        return Storage.get(
             this.getCurrentPageStorageName()
         )
     }
@@ -540,6 +614,213 @@ export default class Table extends Model {
     }
 
 
+    // ── Saved Views ─────────────────────────────────────
+
+    getSavedViews() {
+        return this.data.savedViews;
+    }
+
+    getActiveSavedViewId() {
+        return this.data.activeSavedViewId;
+    }
+
+    getCurrentUserId() {
+        return AppConfig.get('me.id');
+    }
+
+    isViewOwner(view) {
+        return view.owner_id === this.getCurrentUserId();
+    }
+
+    promptAndSaveView() {
+        if (!this.isProActive()) {
+            Message.showFeaturesCTA(
+                translate('Saved Views'),
+                translate('Saved views is only available in pro version'),
+                [],
+                this.data.vueInstance
+            );
+            return;
+        }
+        this.data.showSaveViewDialog = true;
+    }
+
+    /**
+     * Pre-fills the live filter state from saved view params so the user can see
+     * what the view contains when they open the filter panel.
+     * Uses the saved view's own filter_type so the correct panel is shown.
+     */
+    _resetLiveFilter() {
+        this.data.search = '';
+        this.data.searching = false;
+        this.data.advanceFilters = [[]];
+        this.data.filterType = 'simple';
+        Storage.set(this.getFilterTypeStorageName(), 'simple');
+    }
+
+    _prefillFiltersFromParams(params) {
+        if (!params) return;
+
+        if (params.filter_type === 'advanced' && params.advanced_filters) {
+            let filters;
+            try {
+                filters = typeof params.advanced_filters === 'string'
+                    ? JSON.parse(params.advanced_filters)
+                    : params.advanced_filters;
+            } catch (e) {
+                filters = [[]];
+            }
+            this.data.advanceFilters = Array.isArray(filters) ? filters : [[]];
+            this.data.search = '';
+            this.data.searching = false;
+            this.data.filterType = 'advanced';
+        } else {
+            this.data.search = params.search || '';
+            this.data.advanceFilters = [[]];
+            this.data.searching = !!(params.search);
+            this.data.filterType = 'simple';
+            if (params.active_view) {
+                this.data.selectedView = params.active_view;
+            }
+        }
+
+        Storage.set(this.getFilterTypeStorageName(), this.data.filterType);
+    }
+
+    _buildViewQueryParams() {
+        const queryParams = {filter_type: this.data.filterType};
+        if (this.data.filterType === 'advanced') {
+            queryParams['advanced_filters'] = JSON.stringify(this.data.advanceFilters);
+        } else {
+            queryParams['search'] = this.data.search;
+            queryParams['active_view'] = this.data.selectedView;
+        }
+        return queryParams;
+    }
+
+    saveCurrentView(name, description, isPublic) {
+        if (this.data.savedViews.length >= 20) {
+            Notify.error(translate('Maximum of 20 saved views reached'));
+            return null;
+        }
+
+        const queryParams = this._buildViewQueryParams();
+
+        return Rest.post('saved-views', {
+            object_type: this.getTableName(),
+            name: name,
+            description: description || '',
+            is_public: isPublic || false,
+            query_params: queryParams,
+        }).then(response => {
+            const view = response.view;
+            view.object_type = this.getTableName();
+            this.data.savedViews.push(view);
+            this._syncGlobalSavedViews();
+
+            // Activate the new saved view as a tab; backend applies its filters
+            this.data.activeSavedViewId = view.slug;
+            this.data.savedViewQueryParams = view.query_params;
+            this._resetLiveFilter();
+            this.data.selectedView = this.getDefaultView();
+            Storage.set(this.getTabStorageName(), view.slug);
+            Url.pushToVueUrl(null, {active_view: view.slug});
+        }).catch(errors => {
+            Notify.error(errors.data?.message || translate('Failed to save view'));
+        });
+    }
+
+    applySavedView(viewId) {
+        const view = this.data.savedViews.find(v => v.slug === viewId);
+        if (!view) return;
+
+        this.data.activeSavedViewId = viewId;
+        this.data.savedViewQueryParams = view.query_params;
+        this._resetLiveFilter();
+        this.data.selectedView = this.getDefaultView();
+
+        this.data.paginate.current_page = 1;
+        this.setCurrentPage(1);
+        Storage.set(this.getTabStorageName(), viewId);
+        Url.pushToVueUrl(null, {active_view: viewId});
+        this.fetch();
+    }
+
+    updateSavedView(viewId) {
+        const view = this.data.savedViews.find(v => v.slug === viewId);
+        if (!view) return;
+
+        const queryParams = this._buildViewQueryParams();
+
+        Rest.put('saved-views/' + view.id, {
+            query_params: queryParams,
+        }).then(response => {
+            view.query_params = queryParams;
+        }).catch(errors => {
+            Notify.error(errors.data?.message || translate('Failed to update view'));
+        });
+    }
+
+    deleteSavedView(viewId) {
+        const view = this.data.savedViews.find(v => v.slug === viewId);
+        if (!view) return;
+
+        Rest.delete('saved-views/' + view.id)
+            .then(() => {
+                const index = this.data.savedViews.findIndex(v => v.slug === viewId);
+                if (index !== -1) {
+                    this.data.savedViews.splice(index, 1);
+                }
+                this._syncGlobalSavedViews();
+
+                if (this.data.activeSavedViewId === viewId) {
+                    this.data.activeSavedViewId = null;
+                    this.data.savedViewQueryParams = null;
+                    this.data.selectedView = this.getDefaultView();
+                    this.data.filterType = 'simple';
+                    this.data.advanceFilters = [[]];
+                    this.data.search = '';
+                    this.data.searching = false;
+                    Storage.set(this.getFilterTypeStorageName(), 'simple');
+                    Storage.set(this.getTabStorageName(), this.getDefaultView());
+                    Url.pushToVueUrl(null, {active_view: this.getDefaultView()});
+                    this.fetch();
+                }
+            })
+            .catch(errors => {
+                Notify.error(errors.data?.message || translate('Failed to delete view'));
+            });
+    }
+
+    renameSavedView(viewId, newName) {
+        const view = this.data.savedViews.find(v => v.slug === viewId);
+        if (!view) return;
+
+        Rest.put('saved-views/' + view.id, {
+            name: newName,
+        }).then(response => {
+            view.name = newName;
+            this._syncGlobalSavedViews();
+        }).catch(errors => {
+            Notify.error(errors.data?.message || translate('Failed to rename view'));
+        });
+    }
+
+    /**
+     * Syncs the local saved views back to the global localized config
+     * so other table instances pick up changes without a page reload.
+     */
+    _syncGlobalSavedViews() {
+        if (window.fluentCartAdminApp && window.fluentCartAdminApp.table_config) {
+            const tableName = this.getTableName();
+            if (!window.fluentCartAdminApp.table_config[tableName]) {
+                window.fluentCartAdminApp.table_config[tableName] = {};
+            }
+            window.fluentCartAdminApp.table_config[tableName].saved_views = this.data.savedViews;
+        }
+    }
+
+
     /**
      * Checks if a column is visible.
      * @param {string} column - Column name
@@ -564,10 +845,8 @@ export default class Table extends Model {
     }
 
     getTabsCount() {
-        if (this.getTabs() === null) {
-            return 0;
-        }
-        return Object.values(this.getTabs()).length;
+        const tabs = this.getTabs();
+        return tabs ? Object.keys(tabs).length : 0;
     }
 
     getToggleableColumns() {
@@ -675,13 +954,12 @@ export default class Table extends Model {
         if (filter) {
             return this.emptyMessageFiltered(filter);
         } else {
-            this.getEmptyMessage()
+            return this.getEmptyMessage()
         }
     }
 
     getCustomColumns() {
-        return {};
+        return Arr.get(window, `fluentCartAdminApp.table_config.${this.getTableName()}.filters.columns`) || {};
     }
 
 }
-

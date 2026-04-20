@@ -18,7 +18,6 @@ class DashBoardReportModel extends Model {
         fluctuations: [],
         dashBoardStats: [],
         recentOrders: [],
-        unfulfilledOrders:[],
         recentActivities: [],
         topSoldProducts: [],
         currencySign: AppConfig.get('shop.currency_sign'),
@@ -27,7 +26,6 @@ class DashBoardReportModel extends Model {
             fluctuations: false,
             dashBoardStats: false,
             recentOrders: false,
-            unfulfilledOrders: false,
             countryHeatMap: false,
             salesGrowthChart: true,
             topSoldProducts: true
@@ -95,15 +93,6 @@ class DashBoardReportModel extends Model {
             query,
             "recentOrders",
             "recentOrders"
-        );
-    }
-
-    getUnfulfilledOrders(query = {}) {
-        return this.makeRequest(
-            "get-unfulfilled-orders",
-            query,
-            "unfulfilledOrders",
-            "unfulfilledOrders"
         );
     }
 

@@ -194,13 +194,10 @@ class OverviewReportController extends Controller
         $net_revenue_column = 'SUM(o.total_paid - o.total_refund - o.tax_total - o.shipping_tax) AS net_revenue';
         $gross_revenue_column = 'SUM(o.total_paid) AS gross_revenue';
 
-        $currency_filter = '';
-        if ($currency) {
-            $currency_filter = $wpdb->prepare(' AND o.currency = %s', esc_sql($currency));
-        }
+        $currencyFilter = $currency ? 'AND o.currency = ?' : '';
 
         $top_countries_query = "WITH monthly_country_revenue AS (
-            SELECT 
+            SELECT
                 DATE_FORMAT(o.created_at, '%Y-%m') AS month,
                 a.country,
                 $net_revenue_column,
@@ -208,17 +205,17 @@ class OverviewReportController extends Controller
                 RANK() OVER (PARTITION BY DATE_FORMAT(o.created_at, '%Y-%m') ORDER BY SUM(o.total_paid - o.total_refund) DESC) AS revenue_rank
             FROM {$wpdb->prefix}fct_orders o
             INNER JOIN {$wpdb->prefix}fct_order_addresses a ON o.id = a.order_id
-            WHERE 
+            WHERE
                 o.payment_status IN ('paid', 'partially-paid', 'refunded', 'partially-refunded')
                 AND o.created_at >= ?
                 AND o.created_at < ?
                 AND a.type = 'billing'
                 AND a.country IS NOT NULL
                 AND a.country != ''
-                $currency_filter
+                {$currencyFilter}
             GROUP BY DATE_FORMAT(o.created_at, '%Y-%m'), a.country
         )
-        SELECT 
+        SELECT
             month,
             country,
             net_revenue,
@@ -228,7 +225,12 @@ class OverviewReportController extends Controller
         WHERE revenue_rank <= 5
         ORDER BY month, revenue_rank";
 
-        $top_countries_results = App::db()->select(App::db()->raw($top_countries_query), [$start_date, $end_date]);
+        $bindings = [$start_date, $end_date];
+        if ($currency) {
+            $bindings[] = $currency;
+        }
+
+        $top_countries_results = App::db()->select(App::db()->raw($top_countries_query), $bindings);
 
         $grossByMonth = [];
         $netByMonth = [];

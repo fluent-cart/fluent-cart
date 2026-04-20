@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\Renderer;
 
 use FluentCart\App\Helpers\CartCheckoutHelper;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\Framework\Support\Arr;
 
 class MiniCartRenderer
@@ -48,7 +49,7 @@ class MiniCartRenderer
 
 
 
-        $subtotal = CartCheckoutHelper::make()->getItemsAmountSubtotal(true, true);
+        $subtotal = empty($this->cartItems) ? Helper::toDecimal(0, true) : CartCheckoutHelper::make()->getItemsAmountSubtotal(true, true);
         $aria_label = sprintf(
         /* translators: 1: Total price */
             __('Total cart price: %1$s', 'fluent-cart'),

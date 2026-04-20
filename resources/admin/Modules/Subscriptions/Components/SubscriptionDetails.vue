@@ -126,58 +126,34 @@
           </div>
         </li>
 
-        <li>
-          <div class="fct-single-subscription-details-label">
-            {{ $t("Vendor Subscription ID") }}
-          </div>
-          <div class="fct-single-subscription-details-value">
-            <div class="flex items-center justify-between gap-2 w-full"
-                 v-if="subscription.vendor_subscription_id">
-              <el-tooltip class="w-full" :content="subscription.vendor_subscription_id" placement="top"
-                          popper-class="fct-tooltip">
-                            <span
-                                class="truncate w-[calc(100%-2rem)] overflow-hidden text-ellipsis whitespace-nowrap block">
-                              {{ subscription.vendor_subscription_id }}
-                            </span>
-              </el-tooltip>
-              <CopyToClipboard :text="subscription.vendor_subscription_id" showMode="basic_copy_btn"
-                               tooltipText="Copy"/>
-            </div>
-            <span v-else class="text-system-light dark:text-gray-300">
-              {{ $t('n/a') }}
-            </span>
-          </div>
-        </li>
-        <li v-if="subscription?.vendor_subscription_id">
-          <div class="fct-single-subscription-details-label">
-            View on {{ subscription?.current_payment_method }}:
-          </div>
-          <a target="_blank" class="fct-single-subscription-details-value !underline focus:shadow-none" :href="subscription?.url">{{ subscription?.vendor_subscription_id }}
-          </a>
-        </li>
-        <li>
-          <div class="fct-single-subscription-details-label">
-            {{ $t("Vendor Customer ID") }}
-          </div>
-          <div class="fct-single-subscription-details-value">
-            <div class="flex items-center justify-between"
-                 v-if="subscription?.vendor_customer_id">
-              <el-tooltip class="w-full" :content="subscription?.vendor_customer_id" placement="top"
-                          popper-class="fct-tooltip">
-                            <span
-                                class="truncate w-[calc(100%-2rem)] overflow-hidden text-ellipsis whitespace-nowrap block">
-                              {{ subscription?.vendor_customer_id }}
-                            </span>
-              </el-tooltip>
-              <CopyToClipboard :text="subscription?.vendor_customer_id" showMode="basic_copy_btn"
-                               tooltipText="Copy"/>
-            </div>
-            <span v-else class="text-system-light dark:text-gray-300">
-              {{ $t('n/a') }}
-            </span>
-          </div>
-        </li>
       </ul>
+      <div class="fct-vendor-ids" v-if="subscription.vendor_subscription_id || subscription?.vendor_customer_id">
+        <div v-if="subscription.vendor_subscription_id">
+          <div class="fct-vendor-ids__label">{{ $t("Vendor Subscription ID") }}</div>
+          <div class="fct-vendor-ids__value">
+            <a v-if="subscription.url" :href="subscription.url" target="_blank"
+               class="fct-vendor-ids__link">
+              {{ subscription.vendor_subscription_id }}
+            </a>
+            <span v-else class="fct-vendor-ids__text">
+              {{ subscription.vendor_subscription_id }}
+            </span>
+            <CopyToClipboard :text="subscription.vendor_subscription_id" showMode="basic_copy_btn"
+                             tooltipText="Copy"/>
+          </div>
+        </div>
+        <div v-if="subscription?.vendor_customer_id">
+          <div class="fct-vendor-ids__label">{{ $t("Vendor Customer ID") }}</div>
+          <div class="fct-vendor-ids__value">
+            <span class="fct-vendor-ids__text">
+              {{ subscription.vendor_customer_id }}
+            </span>
+            <CopyToClipboard :text="subscription?.vendor_customer_id" showMode="basic_copy_btn"
+                             tooltipText="Copy"/>
+          </div>
+        </div>
+        <div></div>
+      </div>
     </CardBody>
     <CancelSubscription
       :subscription="subscription"

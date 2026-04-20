@@ -3,19 +3,150 @@
 namespace FluentCart\Framework\Http;
 
 use Exception;
+use InvalidArgumentException;
 use FluentCart\Framework\Support\Util;
 use FluentCart\Framework\Foundation\App;
-use FluentCart\Framework\Support\DateTime;
 use FluentCart\Framework\Support\UriTemplate;
 
 class URL
 {
-	protected $encrypter = null;
+	/**
+	 * The full URL string.
+	 *
+	 * @var string
+	 */
+	protected $url = '';
 
-	public function __construct($encrypter = null)
+	/**
+	 * URL generator instance used for signing and route generation.
+	 *
+	 * @var UrlGenerator|null
+	 */
+	protected $generator = null;
+
+	/**
+	 * URL scheme (e.g., 'http', 'https').
+	 *
+	 * @var string
+	 */
+	protected $scheme = '';
+
+	/**
+	 * URL host (e.g., 'example.com').
+	 *
+	 * @var string|null
+	 */
+	protected $host = null;
+
+	/**
+	 * URL port (e.g., 80, 443).
+	 *
+	 * @var int|null
+	 */
+	protected $port = null;
+
+	/**
+	 * URL path (e.g., '/users/view').
+	 *
+	 * @var string
+	 */
+	protected $path = '';
+
+	/**
+	 * URL query parameters as an associative array.
+	 *
+	 * @var array
+	 */
+	protected $query = [];
+
+	/**
+	 * URL fragment (e.g., 'top' in '#top').
+	 *
+	 * @var string|null
+	 */
+	protected $fragment = null;
+
+	/**
+	 * URL username for authentication (if any).
+	 *
+	 * @var string|null
+	 */
+	protected $user = null;
+
+	/**
+	 * URL password for authentication (if any).
+	 *
+	 * @var string|null
+	 */
+	protected $pass = null;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string|null $url       Optional URL to initialize. Defaults to current URL.
+	 * @param UrlGenerator|null $generator Optional generator instance for signing/routes.
+	 *
+	 * @throws InvalidArgumentException If the given URL is invalid.
+	 */
+	public function __construct($url = '', $generator = null)
 	{
-		$this->encrypter = $encrypter ?: App::make('encrypter');
+	    $this->prepareRfcProperties(
+	        $this->url = $url ?: $this->current()
+	    );
+
+	    $this->generator = $generator ?: new UrlGenerator();
 	}
+
+	/**
+	 * Parse a URL according to RFC 3986 and populate internal components.
+	 *
+	 * @param string $url The URL to parse.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException If the URL cannot be parsed.
+	 */
+	protected function prepareRfcProperties($url)
+	{
+	    // --- Parse URL according to RFC3986 ---
+	    $parts = parse_url($url);
+
+	    if ($parts === false) {
+	        throw new InvalidArgumentException("Invalid URL: {$url}");
+	    }
+
+	    $this->scheme   = $parts['scheme']   ?? '';
+	    $this->host     = $parts['host']     ?? null;
+	    $this->port     = $parts['port']     ?? null;
+	    $this->path     = $parts['path']     ?? null;
+	    $this->user     = $parts['user']     ?? null;
+	    $this->pass     = $parts['pass']     ?? null;
+	    $this->fragment = $parts['fragment'] ?? null;
+
+	    if (isset($parts['query'])) {
+	        parse_str($parts['query'], $query);
+	        $this->query = $query;
+	    } else {
+	        $this->query = [];
+	    }
+	}
+
+    /**
+     * Create a new URL instance.
+     * 
+     * @param  string $uri
+     * @return static
+     */
+    public static function of($uri)
+    {
+        $parts = parse_url($uri);
+
+        if ($parts === false) {
+            throw new InvalidArgumentException("Invalid URI: {$uri}");
+        }
+
+        return new static($uri);
+    }
 
 	/**
 	 * Get the current URL
@@ -24,7 +155,7 @@ class URL
 	 */
 	public function current()
 	{
-		return get_site_url() . rtrim($_SERVER['REQUEST_URI'], '/');
+		return rtrim(get_site_url(), '/') . $_SERVER['REQUEST_URI'];
 	}
 
 	/**
@@ -59,115 +190,19 @@ class URL
 	 */
 	public function sign($url, $params = [])
 	{
-		if (!preg_match('#^(http|https)://#', $url)) {
-			$config = App::config();
-			$slug = $config->get('app.slug');
-			$version = $config->get('app.rest_version');
-	        $url = sprintf('%s%s/%s/%s',rest_url(), $slug, $version, $url);
-	    }
-
-		$parts = parse_url($url);
-
-		$url = $parts['scheme'] . '://' . $parts['host'] . $parts['path'];
-
-		parse_str($parts['query'] ?? '', $query);
-		
-		$params = $this->validateExpiryTime($params + $query);
-
-        $params = $this->encrypter->encrypt(http_build_query($params));
-        
-        $signature = hash_hmac('sha256', $params, $this->encrypter->getKey());
-        
-        return $url . '?_data=' . $params . '&_signature=' . $signature;
+		return $this->generator->sign($url, $params);
 	}
 
 	/**
-	 * Normalize the expiry time.
-	 * 
-	 * @param  array $params
-	 * @return array
-	 * @throws Exception
-	 */
-	public function validateExpiryTime($params)
-	{
-	    if (isset($params['expires_at'])) {
-	        if (is_string($params['expires_at'])) {
-	            $params['expires_at'] = strtotime($params['expires_at']);
-	        } elseif ($params['expires_at'] instanceof DateTime) {
-	            $params['expires_at'] = $params['expires_at']->getTimestamp();
-	        } elseif (is_numeric($params['expires_at'])) {
-	            if ($params['expires_at'] <= time()) {
-	                $params['expires_at'] = time() + (int) $params['expires_at'];
-	            }
-	        } else {
-                throw new Exception('The expiry time is invalid or has passed.');
-	        }
-	    }
-
-	    return $params;
-	}
-
-	/**
-	 * Validate a URL
-	 * 
-	 * @param  string $url
-	 * @return mixed (false or array)
-	 */
-	public function validate($url)
-	{
-		if (!$query = $this->parseUrlAndGetQuery($url)) {
-			return false;
-		}
-
-		if (!isset($query['_data']) || !isset($query['_signature'])) {
-			return false;
-		}
-
-        return $this->verifySignature($query['_data'], $query['_signature']);
-	}
-
-	/**
-	 * Parse query string from the url.
-	 * 
-	 * @param  string $url
-	 * @return mixed (bool or array)
-	 */
-	public function parseUrlAndGetQuery($url)
-	{
-		$parts = parse_url($url);
-
-        if (!isset($parts['query'])) {
-            return false;
-        }
-
-        parse_str($parts['query'], $query);
-
-        return $query;
-	}
-
-	/**
-	 * Verify the signature.
-	 * 
-	 * @param  array $data
-	 * @param  string $signature
-	 * @return mixed (bool or array)
-	 */
-	public function verifySignature($data, $signature)
-	{
-		$expected = hash_hmac('sha256', $data, $this->encrypter->getKey());
-
-        if (!hash_equals($expected, $signature)) return false;
-
-        parse_str($this->encrypter->decrypt($data), $params);
-
-        $expiresAt = $params['expires_at'] ?? null;
-
-		if (is_numeric($expiresAt) && time() > (int) $expiresAt) {
-		    return false;
-		}
-
-        return empty($params) ? true : $params;
-	}
+     * Validate a URL
+     * 
+     * @param  string $url
+     * @return mixed (false or array)
+     */
+    public function validate($url)
+    {
+    	return $this->generator->validate($url);
+    }
 
 	/**
 	 * Helper method for home_url.
@@ -266,11 +301,12 @@ class URL
 	 * Generate a URL from a file path.
 	 * 
 	 * @param  string $path
+	 * @param  bool   $checkFile Whether to check if the file exists
 	 * @return string
 	 */
-	public function fromFile($path)
+	public function fromFile(string $path, bool $checkFile = false): string
 	{
-		return Util::pathToUrl($path);
+	    return Util::pathToUrl($path, $checkFile);
 	}
 
 	/**
@@ -283,16 +319,191 @@ class URL
 	 */
 	public function route($name, $params = [], $query = [])
 	{
-	    return (new UrlGenerator)->route($name, $params, $query);
+	    return $this->generator->route($name, $params, $query);
 	}
 
 	/**
-	 * Returns the string representation of the URL object
+	 * Return a clone of the URL with a new path.
+	 *
+	 * @param string $path
+	 * @return $this
+	 */
+	public function withPath($path)
+	{
+	    $clone = clone $this;
+	    $clone->path = $path;
+	    return $clone;
+	}
+
+	/**
+	 * Return a clone of the URL with a new query.
+	 *
+	 * @param array|string $query  An array of query params or a query string
+	 * @return $this
+	 */
+	public function withQuery($query)
+	{
+	    $clone = clone $this;
+
+	    if (is_string($query)) {
+	        parse_str($query, $query);
+	    }
+
+	    $clone->query = $query;
+	    return $clone;
+	}
+
+	/**
+	 * Return a clone of the URL with a new fragment.
+	 *
+	 * @param string $fragment
+	 * @return $this
+	 */
+	public function withFragment($fragment)
+	{
+	    $clone = clone $this;
+	    $clone->fragment = $fragment;
+	    return $clone;
+	}
+
+	/**
+	 * Return a clone of the URL with a new scheme.
+	 *
+	 * @param string $scheme
+	 * @return $this
+	 */
+	public function withScheme($scheme)
+	{
+	    $clone = clone $this;
+	    $clone->scheme = $scheme;
+	    return $clone;
+	}
+
+	/**
+	 * Get the URL scheme (e.g., 'http' or 'https').
+	 *
+	 * @return string
+	 */
+	public function scheme()
+	{
+	    return $this->scheme;
+	}
+
+	/**
+	 * Get the URL host.
+	 *
+	 * @return string|null
+	 */
+	public function host()
+	{
+	    return $this->host;
+	}
+
+	/**
+	 * Get the URL port.
+	 *
+	 * @return int|null
+	 */
+	public function port()
+	{
+	    return $this->port;
+	}
+
+	/**
+	 * Get the URL path.
+	 *
+	 * @return string
+	 */
+	public function path()
+	{
+	    return $this->path;
+	}
+
+	/**
+	 * Get the URL query as an array.
+	 *
+	 * @return array
+	 */
+	public function query()
+	{
+	    return $this->query;
+	}
+
+	/**
+	 * Get the URL fragment.
+	 *
+	 * @return string|null
+	 */
+	public function fragment()
+	{
+	    return $this->fragment;
+	}
+
+	/**
+	 * Get the URL pass.
+	 * 
+	 * @return string|null
+	 */
+	public function pass()
+	{
+		return $this->pass;
+	}
+
+	/**
+	 * Get the URL user.
+	 * 
+	 * @return string
+	 */
+	public function user()
+	{
+		return $this->user;
+	}
+
+	/**
+	 * Returns the string representation of the URL object.
 	 * 
 	 * @return string Current URL.
 	 */
 	public function __toString()
 	{
-		return $this->current();
+	    $url = '';
+
+		if ($this->scheme) {
+		    $url .= "{$this->scheme}://";
+		}
+
+		if ($this->user) {
+		    $url .= $this->user;
+		    if ($this->pass) {
+		        $url .= ":{$this->pass}";
+		    }
+		    $url .= '@';
+		}
+
+		if ($this->host) {
+		    $url .= $this->host;
+		}
+
+		if ($this->port) {
+		    $url .= ":{$this->port}";
+		}
+
+		if ($this->path !== null) {
+		    $url .= $this->path === '' || str_starts_with($this->path, '/')
+		        ? $this->path
+		        : '/' . $this->path;
+		}
+
+		if (!empty($this->query)) {
+		    $url .= '?' . http_build_query(
+		    	$this->query, '', '&', PHP_QUERY_RFC3986
+		    );
+		}
+
+		if ($this->fragment) {
+		    $url .= "#{$this->fragment}";
+		}
+
+		return $url;
 	}
 }

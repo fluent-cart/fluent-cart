@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class CustomersMigrator extends Migrator
 {
 
@@ -37,5 +35,16 @@ class CustomersMigrator extends Migrator
 
                 INDEX `{$indexPrefix}_email` (`email` ASC),
                 INDEX `{$indexPrefix}_user_id` (`user_id` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addLtvColumn();
+    }
+
+    public static function addLtvColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `ltv` BIGINT NOT NULL DEFAULT '0' AFTER `purchase_count`"
+        static::addColumnIfNotExists('ltv', "BIGINT NOT NULL DEFAULT '0'", 'purchase_count');
     }
 }

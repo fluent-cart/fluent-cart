@@ -11,15 +11,14 @@ use FluentCartPro\App\Modules\Promotional\Models\OrderPromotion;
 class OrderBumpFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-
-        $isApplied = $this->applySimpleOperatorFilter();
+        $isApplied = $this->applySimpleOperatorFilter($search);
         if ($isApplied) {
             return;
         }
 
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
             // If search is an array, implode it
             $search = is_array($search) ? implode(' ', $search) : $search;
 
@@ -56,10 +55,10 @@ class OrderBumpFilter extends BaseFilter
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
-
-        $this->query->when($this->activeView, function ($query, $activeView) {
+        $activeView = $activeView ?? $this->activeView;
+        $this->query->when($activeView, function ($query, $activeView) {
             $validStatuses = [
                 'active',
                 'draft'

@@ -337,15 +337,58 @@ export default class ImageGallery {
                 this.#handleThumbnailChange(control);
             });
         });
+
+        if (this.#thumbnailControlsWrapper) {
+            this.#thumbnailControlsWrapper.addEventListener('keydown', (event) => {
+                this.#handleThumbnailKeydown(event);
+            });
+        }
+    }
+
+    #getVisibleThumbnails() {
+        return Array.from(
+            this.#thumbnailControlsWrapper?.querySelectorAll('[data-fluent-cart-thumb-control-button]:not(.is-hidden)') || []
+        );
+    }
+
+    #handleThumbnailKeydown(event) {
+        const isVertical = this.container.classList.contains('thumb-pos-left') || this.container.classList.contains('thumb-pos-right');
+        const nextKeys = isVertical ? ['ArrowDown'] : ['ArrowRight'];
+        const prevKeys = isVertical ? ['ArrowUp'] : ['ArrowLeft'];
+
+        // Support both axes regardless of layout for convenience
+        const isNext = nextKeys.includes(event.key) || (!isVertical && event.key === 'ArrowDown');
+        const isPrev = prevKeys.includes(event.key) || (!isVertical && event.key === 'ArrowUp');
+
+        if (!isNext && !isPrev) return;
+
+        event.preventDefault();
+        const visible = this.#getVisibleThumbnails();
+        if (visible.length === 0) return;
+
+        const currentIndex = visible.indexOf(document.activeElement);
+        let nextIndex;
+
+        if (isNext) {
+            nextIndex = currentIndex < visible.length - 1 ? currentIndex + 1 : 0;
+        } else {
+            nextIndex = currentIndex > 0 ? currentIndex - 1 : visible.length - 1;
+        }
+
+        const target = visible[nextIndex];
+        target.focus();
+        this.#handleThumbnailChange(target);
     }
 
     #handleThumbnailChange(control) {
         this.#thumbnailControls.forEach(ctrl => {
             ctrl.classList.remove('active');
             ctrl.setAttribute('aria-pressed', 'false');
+            ctrl.setAttribute('tabindex', '-1');
         });
         control.classList.add('active');
         control.setAttribute('aria-pressed', 'true');
+        control.setAttribute('tabindex', '0');
 
         // Update current variation ID based on clicked thumbnail
         const variationId = control.dataset.variationId;

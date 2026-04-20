@@ -6,14 +6,13 @@
 ?>
 
 <div class="space_bottom_30">
-    <p><?php echo esc_html__('Hey there 🙌,', 'fluent-cart'); ?></p>
     <p>
-<?php
-printf(
-        /* translators: %s is the customer's full name */
-        esc_html__('%s just placed a new order using offline payment method. Here are the details:', 'fluent-cart'),
-        esc_html($order->customer->first_name . ' ' . $order->customer->last_name)
-    );
+        <?php
+        printf(
+            /* translators: %s is the customer's full name */
+            esc_html__('%s just placed a new order using offline payment method. Here are the details:', 'fluent-cart'),
+            esc_html($order->customer->full_name)
+        );
         ?>
     </p>
 </div>

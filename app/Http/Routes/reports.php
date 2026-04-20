@@ -77,12 +77,8 @@ $router->prefix('reports')
         $router->get('sales-growth-chart', [ReportingController::class, 'getSalesGrowthChart']);
         $router->get('country-heat-map', [ReportingController::class, 'getCountryHeatMap']);
         $router->get('get-recent-orders', [ReportingController::class, 'getRecentOrders']);
-        $router->get('get-unfulfilled-orders', [ReportingController::class, 'getUnfulfilledOrders']);
         $router->get('get-recent-activities', [ReportingController::class, 'getRecentActivities']);
         $router->get('get-dashboard-summary', [ReportingController::class, 'getDashBoardSummary']);
-        //Cart
-        $router->get('cart-report', [ReportingController::class, 'getAbandonedCartItems']);
-        
         //Subscription
         $router->get('subscription-chart', [SubscriptionReportController::class, 'getSubscriptionChart']); //d    
         $router->get('daily-signups', [SubscriptionReportController::class, 'getDailySignups']); //d

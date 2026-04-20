@@ -10,6 +10,10 @@ const CheckoutNameFieldsBlock = {
         return <div { ...props } {...blockProps}>
             <input type="text" readOnly disabled placeholder={blocktranslate('Name')}/>
             <input type="text" readOnly disabled placeholder={blocktranslate('Email')}/>
+            <label htmlFor="allow_create_account">
+                <input type="checkbox" name="allow_create_account" readOnly disabled/>
+                <span>{blocktranslate('Create an Account?')}</span>
+            </label>
         </div>;
     },
     save: (props) => {
