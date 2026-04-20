@@ -525,6 +525,7 @@ class ReceiptRenderer
                 <?php $this->renderSubtotal(); ?>
                 <?php $this->renderDiscount(); ?>
                 <?php $this->renderShipping(); ?>
+                <?php $this->renderFees(); ?>
                 <?php $this->renderTaxTotal(); ?>
                 <?php $this->renderShippingTax(); ?>
                 <?php $this->renderRefund(); ?>
@@ -580,6 +581,25 @@ class ReceiptRenderer
                 </td>
             </tr>
         <?php endif;
+    }
+
+    public function renderFees()
+    {
+        $order = Arr::get($this->config, 'order', null);
+        if (!$order || $order->fee_total <= 0) {
+            return;
+        }
+        $feeItems = $order->feeItems()->get();
+        foreach ($feeItems as $feeItem): ?>
+            <tr>
+                <td style="padding: 8px 20px 8px 0;text-align: right;border: none;">
+                    <?php echo esc_html($feeItem->title); ?>
+                </td>
+                <td style="padding: 8px 8px 8px 0;width: 100px;text-align: right;border: none;">
+                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($feeItem->subtotal)); ?>
+                </td>
+            </tr>
+        <?php endforeach;
     }
 
     public function renderTaxTotal()

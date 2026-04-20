@@ -9,6 +9,7 @@ const {Placeholder, Button} = wp.components;
 const blockEditorData = window.fluent_cart_store_logo_data;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
+    apiVersion: 3,
     title: blockEditorData.title,
     description: blockEditorData.description,
     icon: {

@@ -88,6 +88,12 @@ class ProductVariationRequest extends RequestGuard
             'variants.manage_cost'      => 'nullable|sanitizeText|maxLength:10',
             'variants.item_cost'        => 'required_if:variants.manage_cost,true',
             'variants.fulfillment_type' => 'required|sanitizeText|maxLength:100',
+            'variants.shipping_class'  => function ($attr, $value) {
+                if ($value && !(\FluentCart\App\Models\ShippingClass::find(intval($value)))) {
+                    return __('The selected shipping class does not exist.', 'fluent-cart');
+                }
+                return null;
+            },
 
             'variants.manage_stock' => 'nullable|numeric',
             'variants.stock_status' => 'required_if:variants.manage_stock,1|sanitizeText|maxLength:50',
@@ -118,6 +124,12 @@ class ProductVariationRequest extends RequestGuard
             'variants.other_info.manage_setup_fee' => 'required_if:variants.other_info.payment_type,subscription|sanitizeText|maxLength:100',
             'variants.other_info.signup_fee'       => 'required_if:variants.other_info.manage_setup_fee,yes',
             'variants.other_info.signup_fee_name'  => 'required_if:variants.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+            'variants.other_info.package_slug'     => 'nullable|sanitizeText|maxLength:100',
+            'variants.other_info.weight'           => 'nullable|numeric',
+            'variants.other_info.weight_unit'      => 'nullable|sanitizeText|maxLength:10',
+            'variants.other_info.length'           => 'nullable|numeric',
+            'variants.other_info.width'            => 'nullable|numeric',
+            'variants.other_info.height'           => 'nullable|numeric',
 
             'variants.downloadable' => 'nullable|sanitizeText|maxLength:10',
         ];
@@ -190,6 +202,9 @@ class ProductVariationRequest extends RequestGuard
             'variants.committed'        => 'intval',
             'variants.on_hold'          => 'intval',
             'variants.manage_stock'     => 'intval',
+            'variants.shipping_class'   => function ($value) {
+                return $value ? intval($value) : null;
+            },
             'variants.stock_status'     => 'sanitize_key',
             'variants.serial_index'     => 'intval',
             'variants.media.*.id'       => 'intval',
@@ -216,6 +231,12 @@ class ProductVariationRequest extends RequestGuard
             'variants.other_info.manage_setup_fee' => 'sanitize_text_field',
             'variants.other_info.signup_fee'       => 'floatval',
             'variants.other_info.signup_fee_name'  => 'sanitize_text_field',
+            'variants.other_info.package_slug'     => 'sanitize_text_field',
+            'variants.other_info.weight'           => 'floatval',
+            'variants.other_info.weight_unit'      => 'sanitize_text_field',
+            'variants.other_info.length'           => 'floatval',
+            'variants.other_info.width'            => 'floatval',
+            'variants.other_info.height'           => 'floatval',
             //'variants.other_info.purchasable'      => 'sanitize_text_field',
         ];
 

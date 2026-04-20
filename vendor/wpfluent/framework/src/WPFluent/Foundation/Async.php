@@ -108,7 +108,7 @@ class Async
 				$this->execute(self::$app, $class, $action['params'] ?? []);
 
 			} catch (Exception $e) {
-
+				error_log($e->getMessage());
 			}
 		}
 	}

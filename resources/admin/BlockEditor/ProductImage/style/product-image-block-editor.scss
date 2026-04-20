@@ -8,13 +8,14 @@
 // position themselves via their own position: absolute classes.
 .fct-product-image-block,
 .fct-product-image-wrap {
-    position: relative;
+    @apply -mx-1 -mt-1 aspect-square relative;
     overflow: clip;
 
     img {
-        display: block;
-        width: 100%;
-        height: auto;
+        @apply block w-full h-auto;
+    }
+    .fct-product-card-image-wrap {
+        @apply m-0;
     }
 }
 

@@ -31,7 +31,7 @@ class OrderDeleted extends EventDispatcher
     {
         $this->order = $order;
         $this->connectedOrderIds = $connectedOrderIds ?? [];
-        $this->order->load('customer','shipping_address','billing_address');
+        $this->order->loadMissing('customer', 'shipping_address', 'billing_address');
     }
 
     public function toArray(): array
@@ -46,5 +46,10 @@ class OrderDeleted extends EventDispatcher
     public function getActivityEventModel()
     {
         return $this->order;
+    }
+
+    public function shouldCreateActivity(): bool
+    {
+        return $this->order->mode !== \FluentCart\App\Helpers\Status::ORDER_MODE_TEST;
     }
 }

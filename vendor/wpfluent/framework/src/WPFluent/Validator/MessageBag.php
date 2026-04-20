@@ -47,6 +47,8 @@ trait MessageBag
         'required_if' => 'The :attribute field is required when :other is :value.',
         'required_with' => 'The :attribute field is required when the :other field is present.',
         'required_with_all' => 'The :attribute field is required when the :other field is present.',
+        'required_without' => 'The :attribute field is required when the :other field is not present.',
+        'required_without_all' => 'The :attribute field is required when the :other fields are not present.',
         'same'        => 'The :attribute and :other must match.',
         'size'        => [
             'numeric' => 'The :attribute must be :size.',
@@ -353,6 +355,80 @@ trait MessageBag
         }
 
         $text = 'The :attribute field is required when :other field(s) are present.';
+
+        return str_replace(
+            [':attribute', ':other'],
+            [$attribute, $other],
+            $text
+        );
+    }
+
+        /**
+     * Replace all place-holders for the required without rule.
+     *
+     * @param string $attribute
+     * @param array $parameters
+     * @param string $originalKey
+     * @return string
+     */
+    protected function replaceRequiredWithout($attribute, $parameters, $originalKey)
+    {
+        if (preg_match('/\.\d\./', $attribute, $matches)) {
+            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
+        }
+
+        $text = $this->getReplacementText($attribute . '.required_without', 'required_without', $originalKey);
+
+        $other = '';
+
+        if (count($parameters) === 1) {
+            $other = $parameters[0];
+        } elseif (count($parameters) === 2) {
+            $other = implode(' or ', $parameters);
+        } else {
+            $last = array_pop($parameters);
+            $other = implode(', ', $parameters) . ' or ' . $last;
+        }
+
+        // Default message
+        $text = 'The :attribute field is required when :other field(s) are not present.';
+
+        return str_replace(
+            [':attribute', ':other'],
+            [$attribute, $other],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the required without all rule.
+     *
+     * @param string $attribute
+     * @param array $parameters
+     * @param string $originalKey
+     * @return string
+     */
+    protected function replaceRequiredWithoutAll($attribute, $parameters, $originalKey)
+    {
+        if (preg_match('/\.\d\./', $attribute, $matches)) {
+            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
+        }
+
+        $text = $this->getReplacementText($attribute . '.required_without_all', 'required_without_all', $originalKey);
+
+        $other = '';
+
+        if (count($parameters) === 1) {
+            $other = $parameters[0];
+        } elseif (count($parameters) === 2) {
+            $other = $parameters[0] . ' and ' . $parameters[1];
+        } else {
+            $last = array_pop($parameters);
+            $other = 'all ' . implode(', ', $parameters) . ' and ' . $last;
+        }
+
+        // Default message
+        $text = 'The :attribute field is required when :other field(s) are all missing.';
 
         return str_replace(
             [':attribute', ':other'],

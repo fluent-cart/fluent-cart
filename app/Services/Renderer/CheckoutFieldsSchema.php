@@ -60,6 +60,7 @@ class CheckoutFieldsSchema
         }
 
         $fieldsSchema = self::getFieldsSettings();
+
         $titleMap = static::titleMap();
         $nameFields = [];
         foreach (Arr::get($fieldsSchema, 'basic_info') as $fieldKey => $basicField) {
@@ -87,6 +88,7 @@ class CheckoutFieldsSchema
             'cart'  => $cart,
             'scope' => $scope
         ]);
+
 
         return [
             'type'   => 'section',
@@ -366,8 +368,8 @@ class CheckoutFieldsSchema
 
             if (static::isLastNameEnabled()) {
                 $basicSchema['last_name'] = [
-                    'billing'  => static::isLastNameRequired()?'required':'',
-                    'shipping' => static::isLastNameRequired()?'required':''
+                    'billing'  => static::isLastNameRequired() ? 'required' : '',
+                    'shipping' => static::isLastNameRequired() ? 'required' : ''
                 ];
             }
         }
@@ -663,8 +665,15 @@ class CheckoutFieldsSchema
             return $defaults;
         }
 
+        $groupFields = ['basic_info', 'billing_address', 'shipping_address'];
+
         foreach ($defaults as $key => $default) {
-            $defaults[$key] = wp_parse_args(Arr::get($savedConfig, $key, []), $default);
+            $savedValues = Arr::get($savedConfig, $key, []);
+            if (in_array($key, $groupFields)) {
+                $savedValues = Arr::only($savedValues, array_keys($default));
+            }
+
+            $defaults[$key] = wp_parse_args($savedValues, $default);
         }
 
         return $defaults;

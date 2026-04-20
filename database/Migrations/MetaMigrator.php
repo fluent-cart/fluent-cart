@@ -24,6 +24,24 @@ class MetaMigrator extends Migrator
     }
 
 
+    public static function migrated()
+    {
+        static::renameKeyToMetaKey();
+        static::renameValueToMetaValue();
+    }
+
+    public static function renameKeyToMetaKey()
+    {
+        // "ALTER TABLE %i CHANGE `key` `meta_key` VARCHAR(192)"
+        static::renameColumnIfExists('key', 'meta_key', 'VARCHAR(192)');
+    }
+
+    public static function renameValueToMetaValue()
+    {
+        // "ALTER TABLE %i CHANGE `value` `meta_value` LONGTEXT"
+        static::renameColumnIfExists('value', 'meta_value', 'LONGTEXT');
+    }
+
     public static function dropTable()
     {
 

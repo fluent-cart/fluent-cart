@@ -1,8 +1,7 @@
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {Header as CardHeader, Body as CardBody} from '@/Bits/Components/Card/Card.js';
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
-import {nextTick, ref, useTemplateRef, defineProps, onMounted, onBeforeUnmount} from "vue";
+import {nextTick, reactive, useTemplateRef} from "vue";
 import Pagination from "@/Bits/Components/Pagination.vue";
 import ColumnVisibility from "@/Bits/Components/TableNew/ColumnVisibility.vue";
 import ColumnSort from "@/Bits/Components/TableNew/ColumnSort.vue";
@@ -10,6 +9,8 @@ import FilterTabs from "@/Bits/Components/TableNew/FilterTabs.vue";
 import SearchGuide from "@/Bits/Components/TableNew/SearchGuide.vue";
 import AdvancedFilter from "@/Bits/Components/TableNew/Components/AdvancedFilter/AdvancedFilter.vue";
 import FilterTabsMobile from "@/Bits/Components/TableNew/FilterTabsMobile.vue";
+import translate from "@/utils/translator/Translator";
+import Notify from "@/utils/Notify";
 
 const props = defineProps({
   table: Object,
@@ -25,6 +26,41 @@ const openSearch = () => {
     inputRef.value.focus()
   })
 }
+
+// Save View Dialog
+const saveViewForm = reactive({
+  name: '',
+  description: '',
+  is_public: false
+});
+
+const saveView = () => {
+  saveViewForm.name = '';
+  saveViewForm.description = '';
+  saveViewForm.is_public = false;
+  props.table.promptAndSaveView();
+};
+
+const confirmSaveView = () => {
+  if (!saveViewForm.name || !saveViewForm.name.trim()) {
+    Notify.error(translate('Name is required'));
+    return;
+  }
+  if (saveViewForm.name.trim().length > 50) {
+    Notify.error(translate('Name must be 50 characters or fewer'));
+    return;
+  }
+  const result = props.table.saveCurrentView(
+      saveViewForm.name.trim(),
+      saveViewForm.description.trim(),
+      saveViewForm.is_public
+  );
+  if (result && result.then) {
+    result.then(() => {
+      props.table.data.showSaveViewDialog = false;
+    });
+  }
+};
 
 </script>
 
@@ -51,7 +87,7 @@ const openSearch = () => {
                     effect="light"
                     :content="$t('Search')"
                     placement="top"
-                    v-if="!table.isSearching() & !table.useFullWidthSearch()"
+                    v-if="!table.isSearching() && !table.useFullWidthSearch()"
                     popper-class="fct-tooltip"
                 >
                   <IconButton tag="button"
@@ -89,9 +125,20 @@ const openSearch = () => {
                 </el-input>
 
               </div>
-              <div class="text-xs text-system-light pt-1 dark:text-gray-300">
-                {{ table.getSearchHint() }}
-                <SearchGuide :table="table" v-if="table.getSearchGuideOptions()?.length" />
+              <div class="flex items-center justify-between pt-1">
+                <div class="text-xs text-system-light dark:text-gray-300">
+                  {{ table.getSearchHint() }}
+                  <SearchGuide :table="table" v-if="table.getSearchGuideOptions()?.length" />
+                </div>
+                <el-button
+                    text
+                    class="el-button--x-small"
+                    @click="saveView"
+                    :disabled="!table.data.search"
+                >
+                  <DynamicIcon name="Plus"/>
+                  {{ $t('Save as view') }}
+                </el-button>
               </div>
             </div>
           </div>
@@ -118,7 +165,7 @@ const openSearch = () => {
                   effect="light"
                   :content="$t('Search')"
                   placement="top"
-                  v-if="!table.isSearching() & !table.useFullWidthSearch()"
+                  v-if="!table.isSearching() && !table.useFullWidthSearch()"
                   popper-class="fct-tooltip"
               >
                 <IconButton tag="button"
@@ -156,9 +203,20 @@ const openSearch = () => {
                 <DynamicIcon name="Search"/>
               </template>
             </el-input>
-            <div class="text-xs text-system-light pt-2 dark:text-gray-300">
-              {{ table.getSearchHint() }}
-              <SearchGuide :table="table"/>
+            <div class="flex items-center justify-between pt-2">
+              <div class="text-xs text-system-light dark:text-gray-300">
+                {{ table.getSearchHint() }}
+                <SearchGuide :table="table"/>
+              </div>
+              <el-button
+                  text
+                  class="el-button--x-small"
+                  @click="saveView"
+                  :disabled="!table.data.search"
+              >
+                <DynamicIcon name="Plus"/>
+                {{ $t('Save as view') }}
+              </el-button>
             </div>
           </div>
 
@@ -196,6 +254,44 @@ const openSearch = () => {
 
     </div><!-- end of card -->
 
+    <!-- Save View Dialog -->
+    <el-dialog
+        v-model="table.data.showSaveViewDialog"
+        :title="$t('Save View')"
+        width="420px"
+        :close-on-click-modal="false"
+        append-to="#fct_admin_app_wrapper"
+    >
+      <el-form label-position="top" @submit.prevent="confirmSaveView">
+        <el-form-item :label="$t('Name')">
+          <el-input
+              v-model="saveViewForm.name"
+              :placeholder="$t('View name')"
+              maxlength="50"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('Description')">
+          <el-input
+              v-model="saveViewForm.description"
+              :placeholder="$t('Optional description')"
+              type="textarea"
+              :rows="2"
+          />
+        </el-form-item>
+        <el-form-item>
+          <div class="flex items-center gap-2">
+            <el-switch v-model="saveViewForm.is_public" size="small" />
+            <span class="text-sm text-system-mid dark:text-gray-300">{{ $t('Make public (visible to all users)') }}</span>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="table.data.showSaveViewDialog = false">{{ $t('Cancel') }}</el-button>
+          <el-button type="primary" @click="confirmSaveView">{{ $t('Save') }}</el-button>
+        </div>
+      </template>
+    </el-dialog>
 
   </div>
 </template>

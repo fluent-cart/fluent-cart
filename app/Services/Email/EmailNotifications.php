@@ -37,6 +37,12 @@ class EmailNotifications
             }
 
             $setting['settings'] = wp_parse_args($keyConfig, $setting['settings']);
+
+            // Backward compat: migrate old attach_pdf to attach_pdf_template
+            if (empty($setting['settings']['attach_pdf_template']) && !empty($setting['settings']['attach_pdf']) && $setting['settings']['attach_pdf'] === 'yes') {
+                $setting['settings']['attach_pdf_template'] = 'order_receipt';
+            }
+            unset($setting['settings']['attach_pdf']);
         }
 
         return $settings;
@@ -69,12 +75,13 @@ class EmailNotifications
                 'smartcode_groups' => [],
                 'template_path'    => 'order.paid.admin',
                 'is_async'         => false,
-                'pre_header'       => 'You got a new order on your shop. Congratulations! Checkout all the details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.',
+                'pre_header'       => __('You got a new order on your shop. Congratulations! Checkout all the details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.', 'fluent-cart'),
                 'settings'         => [
                     'active'          => 'yes',
                     'subject'         => __('New Sales On {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_paid_customer'           => [
@@ -92,6 +99,7 @@ class EmailNotifications
                     'subject'         => __('Purchase Receipt #{{order.invoice_no}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'subscription_renewal_customer' => [
@@ -109,6 +117,7 @@ class EmailNotifications
                     'subject'         => __('Renewal Confirmation on {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'subscription_renewal_admin'    => [
@@ -120,13 +129,14 @@ class EmailNotifications
                 'recipient'        => 'admin',
                 'smartcode_groups' => [],
                 'template_path'    => 'subscription.renewal.admin',
-                'pre_header'       => 'You got a new Renewal on your shop. Congratulations! Checkout all the details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.',
+                'pre_header'       => __('You got a new Renewal on your shop. Congratulations! Checkout all the details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.', 'fluent-cart'),
                 'is_async'         => false,
                 'settings'         => [
                     'active'          => 'yes',
                     'subject'         => __('New Renewal On {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'subscription_canceled_customer' => [
@@ -155,7 +165,7 @@ class EmailNotifications
                 'recipient'        => 'admin',
                 'smartcode_groups' => [],
                 'template_path'    => 'subscription.canceled.admin',
-                'pre_header'       => 'A subscription has been canceled. Review the details in this email or visit FluentCart Dashboard to manage the subscription.',
+                'pre_header'       => __('A subscription has been canceled. Review the details in this email or visit FluentCart Dashboard to manage the subscription.', 'fluent-cart'),
                 'is_async'         => false,
                 'settings'         => [
                     'active'          => 'yes',
@@ -179,6 +189,7 @@ class EmailNotifications
                     'subject'         => __('Refund sent to {{order.customer.full_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_refunded_customer'       => [
@@ -196,6 +207,7 @@ class EmailNotifications
                     'subject'         => __('Refund Confirmation from {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_shipped_customer'        => [
@@ -213,6 +225,7 @@ class EmailNotifications
                     'subject'         => __('Order has been shipped #{{order.invoice_no}} 📦', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_delivered_customer'      => [
@@ -230,6 +243,7 @@ class EmailNotifications
                     'subject'         => __('Order has been delivered #{{order.invoice_no}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_placed_admin'            => [
@@ -244,11 +258,12 @@ class EmailNotifications
                 'is_async'         => false,
                 'manage_toggle'    => 'no',
                 'toggle_label'     => __('Auto-enabled for offline payments', 'fluent-cart'),
-                'pre_header'       => 'You have a new order on your shop placed with offline payment. Please review the order details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.',
+                'pre_header'       => __('You have a new order on your shop placed with offline payment. Please review the order details in this email. You can also go to FluentCart Dashboard to view the order details and manage it. Thank you for using FluentCart.', 'fluent-cart'),
                 'settings'         => [
                     'subject'         => __('New Order on {{settings.store_name}} (Offline Payment)', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             'order_placed_customer'         => [
@@ -267,6 +282,7 @@ class EmailNotifications
                     'subject'         => __('Order Confirmation #{{order.invoice_no}} (Offline Payment)', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
+                    'attach_pdf_template' => '',
                 ]
             ],
             // @todo uncomment when invoice feature is deployed
@@ -345,7 +361,7 @@ class EmailNotifications
                 'recipient'        => 'admin',
                 'smartcode_groups' => [],
                 'template_path'    => 'subscription.reminder.admin',
-                'pre_header'       => 'A subscription renewal reminder was sent to a customer. Review subscription details from FluentCart Dashboard.',
+                'pre_header'       => __('A subscription renewal reminder was sent to a customer. Review subscription details from FluentCart Dashboard.', 'fluent-cart'),
                 'is_async'         => false,
                 'settings'         => [
                     'active'          => 'no',
@@ -380,7 +396,7 @@ class EmailNotifications
                 'recipient'        => 'admin',
                 'smartcode_groups' => [],
                 'template_path'    => 'subscription.trial_end.admin',
-                'pre_header'       => 'A trial ending soon reminder was sent to a customer. Review subscription details from FluentCart Dashboard.',
+                'pre_header'       => __('A trial ending soon reminder was sent to a customer. Review subscription details from FluentCart Dashboard.', 'fluent-cart'),
                 'is_async'         => false,
                 'settings'         => [
                     'active'          => 'no',
@@ -460,12 +476,13 @@ class EmailNotifications
             Arr::get($settings, 'email_body');
 
         return [
-            'to'       => $toEmail,
-            'body'     => $emailBody,
+            'to'         => $toEmail,
+            'body'       => $emailBody,
             'pre_header' => Arr::get($notification, 'pre_header', ''),
-            'is_async' => $notification['is_async'],
-            'subject'  => Arr::get($settings, 'subject'),
-            'is_custom' => !$isDefaultEmailBody
+            'is_async'   => $notification['is_async'],
+            'subject'    => Arr::get($settings, 'subject'),
+            'is_custom'  => !$isDefaultEmailBody,
+            'settings'   => $settings,
         ];
     }
 
@@ -491,7 +508,8 @@ class EmailNotifications
             'active',
             'subject',
             'email_body',
-            'is_default_body'
+            'is_default_body',
+            'attach_pdf_template'
         ];
         $allConfig = static::getSettings();
         $config = static::getNotificationConfig($name);

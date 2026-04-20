@@ -11,6 +11,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Hooks\Cart\WebCheckoutHandler;
 use FluentCart\App\Models\OrderTransaction;
+use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\Webhook;
@@ -147,14 +148,53 @@ class PayPal extends AbstractPaymentGateway
         }
 
         $paidAmount = 0;
+        $paidCurrency = '';
         foreach (Arr::get($payment_intent, 'purchase_units', []) as $unit) {
             $paidAmount += Helper::toCent(Arr::get($unit, 'amount.value', 0));
+            if (!$paidCurrency) {
+                $paidCurrency = strtoupper(Arr::get($unit, 'amount.currency_code', ''));
+            }
         }
 
         if ($paidAmount != $transaction->total) {
+            fluent_cart_warning_log(
+                __('PayPal Amount Mismatch Attempt', 'fluent-cart'),
+                sprintf(
+                    /* translators: %1$s: expected amount, %2$s: received amount */
+                    __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. This may indicate payment tampering.', 'fluent-cart'),
+                    Helper::toDecimal($transaction->total),
+                    Helper::toDecimal($paidAmount)
+                ),
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $transaction->order_id,
+                    'log_type'    => 'api'
+                ]
+            );
             wp_send_json([
                 'status'  => 'failed',
                 'message' => __('Paid amount does not match with transaction amount!', 'fluent-cart')
+            ], 422);
+        }
+
+        if ($paidCurrency && $transaction->currency && strtoupper($transaction->currency) !== $paidCurrency) {
+            fluent_cart_warning_log(
+                __('PayPal Currency Mismatch Attempt', 'fluent-cart'),
+                sprintf(
+                    /* translators: %1$s: expected currency, %2$s: received currency */
+                    __('Payment currency mismatch detected. Expected: %1$s, Received: %2$s. This may indicate payment tampering.', 'fluent-cart'),
+                    $transaction->currency,
+                    $paidCurrency
+                ),
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $transaction->order_id,
+                    'log_type'    => 'api'
+                ]
+            );
+            wp_send_json([
+                'status'  => 'failed',
+                'message' => __('Payment currency does not match with transaction currency!', 'fluent-cart')
             ], 422);
         }
 
@@ -222,7 +262,37 @@ class PayPal extends AbstractPaymentGateway
             ], 404);
         }
 
+        // Verify the PayPal subscription's plan matches the expected plan
+        $localSubscription = Subscription::query()->where('id', $transaction->subscription_id)->first();
+
+        if ($localSubscription && $localSubscription->vendor_plan_id) {
+            $paypalPlanId = Arr::get($paypalSubscription, 'plan_id', '');
+            if ($paypalPlanId && $paypalPlanId !== $localSubscription->vendor_plan_id) {
+                fluent_cart_add_log(
+                    'PayPal Subscription Plan Mismatch',
+                    'The PayPal subscription plan ID does not match the expected plan ID for this subscription. This may indicate a configuration issue or potential tampering.',
+                    [
+                        'module_name' => 'subscription',
+                        'module_id'   => $localSubscription->id,
+                        'log_type'    => 'api'
+                    ]
+                );
+                
+                wp_send_json([
+                    'status'  => 'failed',
+                    'message' => __('PayPal subscription plan does not match the expected plan.', 'fluent-cart')
+                ], 422);
+            }
+        }
+
         $subscriptionModel = (new Processor())->activateSubscription($paypalSubscription, $transaction);
+
+        if (!$subscriptionModel || !in_array($subscriptionModel->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING], true)) {
+            wp_send_json([
+                'status'  => 'failed',
+                'message' => __('Subscription activation failed.', 'fluent-cart')
+            ], 422);
+        }
 
         wp_send_json([
             'status'       => 'success',
@@ -545,6 +615,7 @@ class PayPal extends AbstractPaymentGateway
                     'No Subscription ID' => __('No Subscription ID', 'fluent-cart'),
                     'no processing' => __('no processing', 'fluent-cart'),
                     'not proper order handler' => __('not proper order handler', 'fluent-cart'),
+                    'Payment confirmation failed' => __('Payment confirmation failed', 'fluent-cart'),
                 ]
             ]
         ];

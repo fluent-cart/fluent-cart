@@ -432,3 +432,59 @@
   @apply hidden;
 }
 
+/*=== Delete Test Orders ===*/
+.el-dialog.fct-delete-test-orders-modal {
+    @apply w-[490px];
+}
+.fct-delete-test-orders-title {
+    @apply mb-1 text-sm font-medium text-system-dark dark:text-gray-50;
+}
+.fct-delete-test-orders-text {
+    @apply text-xs text-system-mid dark:text-gray-300;
+}
+
+.fct-delete-test-orders-meta {
+    @apply flex items-center gap-2.5;
+}
+
+.fct-delete-test-orders-loading {
+    @apply flex items-center justify-between gap-1 mt-5;
+    .fct-test-orders-loading-content {
+        @apply flex items-center gap-2 text-system-dark dark:text-gray-50;
+    }
+    .fct-delete-test-orders-percentage {
+        @apply text-xs font-medium text-system-mid dark:text-gray-300;
+    }
+}
+
+.fct-delete-test-orders-progress {
+    @apply mt-4;
+}
+
+.fct-delete-test-orders-message {
+  @apply mt-5 mb-0 text-sm font-medium text-system-dark dark:text-gray-50;
+}
+
+.fct-delete-test-orders-stats {
+    @apply mt-5 flex gap-3;
+}
+
+.fct-delete-test-orders-stat-row {
+  @apply flex-1 grid bg-gray-50 rounded p-4 dark:bg-dark-500;
+}
+.fct-delete-test-orders-stat-icon {
+    @apply mb-2.5;
+}
+.fct-delete-test-orders-stat-label {
+    @apply text-sm mb-1.5 font-medium text-system-mid dark:text-gray-300;
+}
+
+.fct-delete-test-orders-stat-value {
+  @apply text-lg font-semibold text-system-dark dark:text-gray-50;
+  &.is-success {
+    @apply text-success-500;
+  }
+  &.is-danger {
+    @apply text-red-500;
+  }
+}

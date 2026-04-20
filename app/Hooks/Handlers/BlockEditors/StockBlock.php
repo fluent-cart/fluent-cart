@@ -85,7 +85,7 @@ class StockBlock extends BlockEditor
 
         $wrapper_attributes = get_block_wrapper_attributes(
             [
-                'class' => 'fct-product-card-title wc-block-grid__product-title',
+                'class' => 'fct-product-stock wc-block-grid__product-stock',
             ]
         );
 

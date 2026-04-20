@@ -11,6 +11,30 @@
   }
 }
 
+.fct-vendor-ids {
+  @apply mt-7.5 pt-5 border-t border-solid border-gray-divider border-x-0 border-b-0 grid grid-cols-3 gap-7.5 dark:border-dark-400;
+
+  &__label {
+    @apply text-xs font-medium text-system-mid mb-1 dark:text-gray-300;
+  }
+
+  &__value {
+    @apply flex items-center gap-2 text-sm font-medium text-system-dark dark:text-gray-50;
+  }
+
+  &__link {
+    @apply underline truncate;
+    text-decoration: underline !important;
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  &__text {
+    @apply truncate;
+  }
+}
+
 .fct-single-subscription-pricing-addi-info{
   @apply grid gap-1;
   .title{

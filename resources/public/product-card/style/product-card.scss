@@ -79,9 +79,7 @@
     }
 
     &.out-of-stock {
-      background: #fff;
-      box-shadow: none;
-      @apply text-[var(--fct-card-primary-text-color)] font-semibold border border-solid border-[var(--fct-card-border-color)] cursor-not-allowed pointer-events-none;
+      @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color)];
     }
   }
 
@@ -92,7 +90,7 @@
     @apply m-0;
   }
   .fct-product-card-excerpt{
-    @apply px-3 mb-2 text-sm;
+    @apply px-3 mb-2 text-sm hidden;
   }
 
 
@@ -111,9 +109,7 @@
   }
 
   &.out-of-stock {
-    background: #fff;
-    box-shadow: none;
-    @apply text-[var(--fct-card-primary-text-color)] border border-solid border-[var(--fct-card-border-color)] cursor-not-allowed pointer-events-none;
+    @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color)];
   }
 }
 

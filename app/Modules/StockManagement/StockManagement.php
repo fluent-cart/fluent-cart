@@ -114,7 +114,7 @@ class StockManagement
         }
 
         $orderItems = $orderItems->filter(function ($item) {
-            return $item->payment_type !== 'signup_fee';
+            return !in_array($item->payment_type, ['signup_fee', 'fee']);
         });
 
         $pluckVariationIds = $orderItems->pluck('object_id')->toArray();
@@ -125,7 +125,7 @@ class StockManagement
         }
 
         $variations = ProductVariation::query()
-            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock')
+            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'other_info')
             ->with('product_detail')
             ->whereIn('id', $pluckVariationIds)
             ->where('manage_stock', 1)
@@ -246,7 +246,7 @@ class StockManagement
         }
 
         $orderItems = $orderItems->filter(function ($item) {
-            return $item->payment_type !== 'signup_fee';
+            return !in_array($item->payment_type, ['signup_fee', 'fee']);
         });
 
         $pluckVariationIds = $orderItems->pluck('object_id')->toArray();
@@ -257,7 +257,7 @@ class StockManagement
         }
 
         $variations = ProductVariation::query()
-            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type')
+            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type', 'other_info')
             ->with('product_detail')
             ->whereIn('id', $pluckVariationIds)
             ->where('manage_stock', 1)
@@ -375,7 +375,7 @@ class StockManagement
 
 
         $orderItems = $orderItems->filter(function ($item) {
-            return $item->payment_type !== 'signup_fee';
+            return !in_array($item->payment_type, ['signup_fee', 'fee']);
         });
 
         $pluckVariationIds = $orderItems->pluck('object_id')->toArray();
@@ -392,7 +392,7 @@ class StockManagement
         $stockMovement = $existingMeta ? $existingMeta : [];
 
         $variations = ProductVariation::query()
-            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type')
+            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type', 'other_info')
             ->with('product_detail')
             ->whereIn('id', $pluckVariationIds)
             ->where('manage_stock', 1)
@@ -822,7 +822,7 @@ class StockManagement
         }
 
         $orderItems = $orderItems->filter(function ($item) {
-            return $item->payment_type !== 'signup_fee';
+            return !in_array($item->payment_type, ['signup_fee', 'fee']);
         });
 
         $pluckVariationIds = $orderItems->pluck('object_id')->toArray();
@@ -833,7 +833,7 @@ class StockManagement
         }
 
         $variations = ProductVariation::query()
-            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type')
+            ->select('id', 'post_id', 'available', 'committed', 'on_hold', 'manage_stock', 'fulfillment_type', 'other_info')
             ->with('product_detail')
             ->whereIn('id', $pluckVariationIds)
             ->where('manage_stock', 1)
@@ -923,7 +923,7 @@ class StockManagement
         }
 
         $orderItems = $orderItems->filter(function ($item) {
-            return $item->payment_type !== 'signup_fee';
+            return !in_array($item->payment_type, ['signup_fee', 'fee']);
         });
 
         // Map by object_id for easier comparison
@@ -961,7 +961,8 @@ class StockManagement
 
             // Fetch variation
             $item = ProductVariation::query()
-                ->select('id', 'post_id', 'available', 'on_hold', 'committed', 'manage_stock', 'fulfillment_type')
+                ->select('id', 'post_id', 'available', 'on_hold', 'committed', 'manage_stock', 'fulfillment_type', 'other_info')
+                ->with('product_detail')
                 ->where('id', $variationId)
                 ->first();
 

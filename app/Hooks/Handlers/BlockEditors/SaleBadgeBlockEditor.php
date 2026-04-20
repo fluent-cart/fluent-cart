@@ -11,6 +11,16 @@ class SaleBadgeBlockEditor extends BlockEditor
 {
     protected static string $editorName = 'sale-badge';
 
+    public function ancestor(): array
+    {
+        return [
+            'fluent-cart/products',
+            'fluent-cart/product-carousel',
+            'fluent-cart/product-info',
+            'fluent-cart/related-product',
+        ];
+    }
+
     public function supports(): array
     {
         return [

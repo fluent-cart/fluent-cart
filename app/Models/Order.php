@@ -82,6 +82,7 @@ class Order extends Model
         'coupon_discount_total',
         'shipping_tax',
         'shipping_total',
+        'fee_total',
         'tax_total',
         'tax_behavior',
         'total_amount',
@@ -117,6 +118,7 @@ class Order extends Model
         'coupon_discount_total' => 'double',
         'shipping_tax'          => 'double',
         'shipping_total'        => 'double',
+        'fee_total'             => 'double',
         'tax_total'             => 'double',
         'total_amount'          => 'double',
         'customer_id'           => 'integer',
@@ -145,6 +147,46 @@ class Order extends Model
     public function order_items(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'order_id', 'id');
+    }
+
+    /**
+     * Get only product order items (excludes fees, signup fees, and other non-product items).
+     * Use this in all display contexts where product line items are shown.
+     *
+     * @return \FluentCart\Framework\Support\Collection
+     */
+    public function getProductItems()
+    {
+        return $this->order_items()->whereNotIn('payment_type', ['fee', 'signup_fee'])->get();
+    }
+
+    /**
+     * Get fee order items for this order.
+     *
+     * @return HasMany
+     */
+    public function feeItems(): HasMany
+    {
+        return $this->order_items()->where('payment_type', 'fee');
+    }
+
+    /**
+     * Get applied fees as a simple array (for display purposes).
+     *
+     * @return array
+     */
+    public function getAppliedFees(): array
+    {
+        return $this->feeItems()->get()->map(function ($item) {
+            $otherInfo = is_array($item->other_info) ? $item->other_info : [];
+            return [
+                'key'     => Arr::get($otherInfo, 'fee_key', ''),
+                'label'   => $item->title,
+                'amount'  => (int) $item->subtotal,
+                'source'  => Arr::get($otherInfo, 'source', 'custom'),
+                'item_id' => $item->id,
+            ];
+        })->toArray();
     }
 
     public function setConfigAttribute($value)
@@ -613,7 +655,7 @@ class Order extends Model
         $alreadyAdded = [];
 
         foreach ($order->order_items as $item) {
-            if ($item->payment_type === 'signup_fee') {
+            if (in_array($item->payment_type, ['signup_fee', 'fee'])) {
                 continue;
             }
 
@@ -686,13 +728,17 @@ class Order extends Model
         return $order->getDownloads();
     }
 
-    public function getReceiptUrl()
+    public function getReceiptViewUrl()
     {
         return add_query_arg([
             'fluent-cart' => 'receipt',
             'order_hash'  => $this->uuid,
-            'download'    => 1
         ], home_url());
+    }
+
+    public function getReceiptDownloadUrl()
+    {
+        return add_query_arg(['download' => 1], $this->getReceiptViewUrl());
     }
 
     public function addLog($title, $description = '', $type = 'info', $by = '')
@@ -727,13 +773,60 @@ class Order extends Model
             return $this;
         }
 
-        $this->receipt_number = OrderService::getNextReceiptNumber();
-        $this->invoice_no = OrderService::getInvoicePrefix() . $this->receipt_number;
-        $this->save();
+        // Re-check from database — another process may have already generated the number
+        $fresh = static::query()
+            ->where('id', $this->id)
+            ->select(['id', 'receipt_number', 'invoice_no'])
+            ->first();
 
-        do_action('fluent_cart/order/invoice_number_added', [
-            'order' => $this
-        ]);
+        if ($fresh && $fresh->receipt_number) {
+            $this->receipt_number = $fresh->receipt_number;
+            $this->invoice_no = $fresh->invoice_no;
+            return $this;
+        }
+
+        // Note: if a concurrent request wins the claim below, this number goes unused
+        // and creates a gap in the receipt sequence. Gaps are acceptable — correctness
+        // (no duplicates) is the priority, and the primary guard in StatusHelper
+        // prevents this race path from being reached in normal operation.
+        $receiptNumber = OrderService::getNextReceiptNumber();
+        $invoiceNo = OrderService::getInvoicePrefix() . $receiptNumber;
+
+        // Atomic: only set receipt_number if still NULL in the database.
+        // Prevents duplicate receipt numbers when concurrent requests
+        // (webhook + browser confirmation) race to generate one.
+        // invoice_no defaults to '' (empty string) in the schema, not NULL,
+        // so we must match both NULL and '' to correctly identify unset invoices.
+        $claimed = static::query()
+            ->where('id', $this->id)
+            ->whereNull('receipt_number')
+            ->where(function ($q) {
+                $q->whereNull('invoice_no')->orWhere('invoice_no', '');
+            })
+            ->update([
+                'receipt_number' => $receiptNumber,
+                'invoice_no'    => $invoiceNo,
+            ]);
+
+        if ($claimed) {
+            $this->receipt_number = $receiptNumber;
+            $this->invoice_no = $invoiceNo;
+
+            do_action('fluent_cart/order/invoice_number_added', [
+                'order' => $this
+            ]);
+        } else {
+            // Another process already generated it — use theirs
+            $fresh = static::query()
+                ->where('id', $this->id)
+                ->select(['id', 'receipt_number', 'invoice_no'])
+                ->first();
+
+            if ($fresh && $fresh->receipt_number) {
+                $this->receipt_number = $fresh->receipt_number;
+                $this->invoice_no = $fresh->invoice_no;
+            }
+        }
 
         return $this;
     }

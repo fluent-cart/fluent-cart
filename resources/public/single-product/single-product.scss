@@ -217,6 +217,10 @@
     @apply border-[var(--fct-single-product-active-border-color)];
   }
 
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
+  }
+
   &:hover {
     img {
       @apply opacity-100;
@@ -281,7 +285,7 @@
 
 /* Stock + SKU inline when adjacent (works for both classic and block editor paths) */
 .fct-product-stock + .fct-product-sku {
-  @apply inline-flex items-center m-0;
+  @apply inline-flex items-center;
 
   &::before {
     content: '|';
@@ -303,31 +307,19 @@
   @apply p-0 m-0 mb-0 list-none inline-flex items-center gap-1.5;
 
   .fct-stock-badge {
-    @apply inline-block text-xs font-medium tracking-wide px-3 py-1.5 rounded-full leading-none;
+    @apply inline-block text-xs font-medium tracking-wide px-2 py-1 rounded-[6px] leading-[1.1];
   }
 
   .fct_status_badge_in-stock {
-    @apply bg-green-50 text-green-700 border border-solid border-green-200;
+    @apply bg-success-50 text-success-500;
   }
 
   .fct_status_badge_out-of-stock {
-    @apply bg-red-50 text-red-500 border-0;
+    @apply bg-red-50 text-red-500;
   }
 
   .fct-stock-label {
     @apply text-[15px] font-semibold text-[var(--fct-single-product-primary-text-color)];
-  }
-
-  .fct-stock-status {
-    @apply text-[15px] font-medium;
-  }
-
-  .fct_status_badge_in-stock {
-    @apply text-blue-500;
-  }
-
-  .fct_status_badge_out-of-stock {
-    @apply text-red-500;
   }
 
 }
@@ -514,7 +506,7 @@
 /* disabled out-of-stock buttons */
 .fluent-cart-add-to-cart-button.out-of-stock,
 button.out-of-stock {
-  @apply cursor-not-allowed pointer-events-none;
+  @apply cursor-not-allowed;
 }
 
 // responsive breakpoint

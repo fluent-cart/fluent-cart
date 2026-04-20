@@ -8,6 +8,7 @@ use FluentCart\Api\Resource\OrderResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Events\Order\OrderBulkAction;
 use FluentCart\App\Events\Order\OrderCreated;
+use FluentCart\App\Events\Order\OrderDeleting;
 use FluentCart\App\Events\Order\OrderDeleted;
 use FluentCart\App\Events\Order\OrderPaid;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
@@ -52,6 +53,12 @@ use FluentCartPro\App\Hooks\Handlers\OrderActionsHandler;
 
 class OrderController extends Controller
 {
+    protected function getTestOrdersQuery()
+    {
+        return Order::query()
+            ->where('mode', Status::ORDER_MODE_TEST);
+    }
+
     public function index(Request $request): \WP_REST_Response
     {
         $orders = OrderFilter::fromRequest($request)->paginate();
@@ -413,7 +420,7 @@ class OrderController extends Controller
             $connectedOrderIds = array_merge($parentOrderIdsOrders, $connectedOrderIds);
 
         } else if ($order->type == 'subscription') {
-            $childOrderIds = Order::query()->where('parent_id', $order->id)->get()->pluck('id')->toArray();
+            $childOrderIds = Order::query()->where('parent_id', $order->id)->pluck('id')->toArray();
             $connectedOrderIds = array_merge($childOrderIds, $connectedOrderIds);
         }
         Order::query()->whereIn('id', $connectedOrderIds)->update(['customer_id' => $customerId]);
@@ -485,48 +492,52 @@ class OrderController extends Controller
         }
 
 
+        $DB = \FluentCart\App\App::db();
         $connectedOrderIds = [$order->id];
         $isTestMode = $order->mode === Status::ORDER_MODE_TEST;
 
         if ($order->type === 'subscription') {
-            $childOrderIds = Order::query()->where('parent_id', $order->id)->get()->pluck('id')->toArray();
+            $childOrderIds = Order::query()->where('parent_id', $order->id)->pluck('id')->toArray();
             $connectedOrderIds = array_merge($childOrderIds, $connectedOrderIds);
-
-            // Delete subscription meta before subscriptions
-            $subscriptionIds = Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->pluck('id')->toArray();
-            if ($subscriptionIds) {
-                SubscriptionMeta::query()->whereIn('subscription_id', $subscriptionIds)->delete();
-            }
-
-            Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->delete();
-        } else if ($order->type === 'renewal') {
-
-            $this->deleteOrderRelatedData([$order->id], $order->type, $isTestMode);
-
-            (new RenewalOrderDeleted($order))->dispatch();
-
-            return $this->sendSuccess([
-                'message' => sprintf(
-                    /* translators: %s is the order/invoice number */
-                    __('Order %s deleted successfully', 'fluent-cart'), $order_id),
-                'data'    => [
-                    'order_id'   => $order_id,
-                    'invoice_no' => $order->invoice_no,
-                    'status'     => 'success'
-                ],
-                'errors'  => []
-            ]);
-
         }
 
+        try {
+            $DB->beginTransaction();
 
-        $this->deleteOrderRelatedData($connectedOrderIds, $order->type, $isTestMode);
+            if ($order->type === 'subscription') {
+                $subscriptionIds = Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->pluck('id')->toArray();
+                if ($subscriptionIds) {
+                    SubscriptionMeta::query()->whereIn('subscription_id', $subscriptionIds)->delete();
+                }
 
-        (new OrderDeleted($order, $connectedOrderIds))->dispatch();
+                Subscription::query()->whereIn('parent_order_id', $connectedOrderIds)->delete();
+            }
+
+            // Dispatch inside transaction so stock restore is atomic with deletion.
+            // Must run before deleteOrderRelatedData() which removes stock_movement meta and order items.
+            (new OrderDeleting($order, $connectedOrderIds, $isTestMode, $order->type))->dispatch();
+
+            // Pre-load relations before cleanup so the delete events have address data
+            $order->load('customer', 'shipping_address', 'billing_address');
+
+            $this->deleteOrderRelatedData($connectedOrderIds, $isTestMode);
+            $DB->commit();
+        } catch (\Exception $e) {
+            $DB->rollBack();
+            return $this->sendError([
+                'message' => __('Failed to delete order', 'fluent-cart'),
+            ], 400);
+        }
+
+        if ($order->type === 'renewal') {
+            (new RenewalOrderDeleted($order))->dispatch();
+        } else {
+            (new OrderDeleted($order, $connectedOrderIds))->dispatch();
+        }
 
         return $this->sendSuccess([
             'message' => sprintf(
-                /* translators: %s is the order id */
+                /* translators: %s is the order/invoice number */
                 __('Order %s deleted successfully', 'fluent-cart'), $order_id),
             'data'    => [
                 'order_id'   => $order_id,
@@ -541,12 +552,10 @@ class OrderController extends Controller
     /**
      * Delete order related data (transactions, items, meta, addresses, orders)
      */
-    private function deleteOrderRelatedData(array $orderIds, $type = 'renewal', $isTestMode = false)
+    private function deleteOrderRelatedData(array $orderIds, bool $isTestMode = false): void
     {
         OrderTransaction::query()->whereIn('order_id', $orderIds)->delete();
-        if ($type !== 'renewal') {
-            OrderAddress::query()->whereIn('order_id', $orderIds)->delete();
-        }
+        OrderAddress::query()->whereIn('order_id', $orderIds)->delete();
         OrderItem::query()->whereIn('order_id', $orderIds)->delete();
         OrderMeta::query()->whereIn('order_id', $orderIds)->delete();
         OrderTaxRate::query()->whereIn('order_id', $orderIds)->delete();
@@ -763,6 +772,10 @@ class OrderController extends Controller
         $action = sanitize_text_field($request->get('action', ''));
         $orderIds = $request->get('order_ids', []);
 
+        if ($action == 'delete_test_orders') {
+            return $this->handleDeleteTestOrdersBulkAction($request);
+        }
+
         $orderIds = array_map(function ($id) {
             return (int)$id;
         }, $orderIds);
@@ -977,6 +990,75 @@ class OrderController extends Controller
 
     }
 
+    protected function handleDeleteTestOrdersBulkAction(Request $request)
+    {
+        $batchSize = max(1, (int)apply_filters('fluent_cart/order/delete_test_orders_batch_size', 50));
+        $lastOrderId = max(0, (int)$request->get('last_order_id', 0));
+        $totalCount = (int)$this->getTestOrdersQuery()->count();
+
+        $testOrders = $this->getTestOrdersQuery()
+            ->select('id')
+            ->orderBy('id')
+            ->when($lastOrderId > 0, function ($query) use ($lastOrderId) {
+                return $query->where('id', '>', $lastOrderId);
+            })
+            ->limit($batchSize)
+            ->get();
+
+        $batchOrderIds = $testOrders->pluck('id')->map(function ($id) {
+            return (int)$id;
+        })->toArray();
+
+        if (!$batchOrderIds) {
+            return $this->sendSuccess([
+                'message' => $lastOrderId
+                    ? __('Test order deletion completed.', 'fluent-cart')
+                    : __('No test orders found to delete', 'fluent-cart'),
+                'total_count' => $totalCount,
+                'batch_size' => $batchSize,
+                'batch_count' => 0,
+                'deleted_count' => 0,
+                'failed_count' => 0,
+                'deleted_order_ids' => [],
+                'failed_order_ids' => [],
+                'last_attempted_order_id' => $lastOrderId,
+                'has_more' => false
+            ]);
+        }
+
+        $isDeleted = OrderResource::bulkDeleteByOrderIds($batchOrderIds);
+
+        if (is_wp_error($isDeleted)) {
+            $deletedOrderIds = [];
+            $failedOrderIds = $batchOrderIds;
+        } else {
+            $deletedOrderIds = array_values(array_unique(array_map('intval', Arr::get($isDeleted, 'data.deleted_order_ids', []))));
+            $failedOrderIds = array_values(array_unique(array_map('intval', Arr::get($isDeleted, 'data.failed_order_ids', []))));
+        }
+
+        $deletedCount = count($deletedOrderIds);
+        $failedCount = count($failedOrderIds);
+        $lastAttemptedOrderId = (int)end($batchOrderIds);
+        $hasMore = $this->getTestOrdersQuery()
+            ->where('id', '>', $lastAttemptedOrderId)
+            ->exists();
+
+        return $this->sendSuccess([
+            'message'       => $hasMore
+                ? __('Deleting test orders...', 'fluent-cart')
+                : __('Test order deletion completed.', 'fluent-cart'),
+            'total_count' => $totalCount,
+            'batch_size' => $batchSize,
+            'batch_count' => count($batchOrderIds),
+            'deleted_count' => $deletedCount,
+            'failed_count'  => $failedCount,
+            'deleted_order_ids' => $deletedOrderIds,
+            'failed_order_ids'  => $failedOrderIds,
+            'last_attempted_order_id' => $lastAttemptedOrderId,
+            'has_more' => $hasMore
+        ]);
+    }
+
     public function updateTransactionStatus(Request $request, $order, OrderTransaction $transaction)
     {
 
@@ -1027,9 +1109,7 @@ class OrderController extends Controller
             ]);
         }
 
-        $applicableMethods = ShippingMethod::query()
-            ->applicableToCountry($countryCode, $state)
-            ->get();
+        $applicableMethods = ShippingMethod::getApplicableForCountry($countryCode, $state);
 
         $applicableIds = $applicableMethods->pluck('id')->toArray();
 

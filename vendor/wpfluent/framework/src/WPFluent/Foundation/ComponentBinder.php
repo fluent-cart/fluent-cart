@@ -6,6 +6,7 @@ use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\View\View;
 use FluentCart\Framework\Cache\Cache;
 use FluentCart\Framework\Http\URL;
+use FluentCart\Framework\Http\UrlGenerator;
 use FluentCart\Framework\Support\Mail;
 use FluentCart\Framework\Support\Pipeline;
 use FluentCart\Framework\Http\Router;
@@ -271,7 +272,7 @@ class ComponentBinder
     protected function bindUrl()
     {
         $this->app->bind(URL::class, function($app) {
-            return new URL($app->make(Encrypter::class));
+            return new URL('', new UrlGenerator($app));
         });
 
         $this->app->alias(URL::class, 'url');

@@ -33,7 +33,7 @@ if($downloads) {
     \FluentCart\App\App::make('view')->render('emails.parts.downloads', [
         'order'         => $order,
         'heading'       => esc_html__('Downloads', 'fluent-cart'),
-        'downloadItems' => $order->getDownloads() ?: [],
+        'downloadItems' => $downloads,
     ]);
 }
 

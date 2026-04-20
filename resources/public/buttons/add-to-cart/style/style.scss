@@ -36,7 +36,10 @@
   }
 
   &.out-of-stock{
-    @apply cursor-not-allowed pointer-events-none;
+    @apply cursor-not-allowed text-system-light;
+    &:hover {
+        background-color: inherit;
+    }
   }
   &.fct-loading {
     .fluent-cart-loader {

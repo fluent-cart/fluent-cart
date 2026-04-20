@@ -5,6 +5,7 @@ namespace FluentCart\App\Helpers;
 use FluentCart\App\Events\Order\OrderPaid;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Models\Cart;
+use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Support\Arr;
@@ -135,7 +136,37 @@ class StatusHelper
         $this->order->payment_status = $orderPaymentStatus;
         $this->order->total_paid = $transactionPaidTotal;
         $this->order->total_refund = $refundedTotal;
-        $this->order->save();
+
+        // When transitioning to PAID, use an atomic UPDATE to prevent concurrent requests
+        // (e.g., payment gateway webhook + browser confirmation) from both processing
+        // the same payment — which would dispatch OrderPaid twice, generating duplicate
+        // invoice numbers and sending duplicate emails.
+        // The WHERE condition ensures only one process can claim the transition.
+        if ($orderPaymentStatus == Status::PAYMENT_PAID && $oldPaymentStatus != Status::PAYMENT_PAID) {
+            $claimed = Order::query()
+                ->where('id', $this->order->id)
+                ->where(function ($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', '!=', Status::PAYMENT_PAID);
+                })
+                ->update([
+                    'status'         => $orderStatus,
+                    'payment_status' => $orderPaymentStatus,
+                    'total_paid'     => $transactionPaidTotal,
+                    'total_refund'   => $refundedTotal,
+                ]);
+
+            if (!$claimed) {
+                // Another process already transitioned this order to paid
+                $this->order = Order::query()->where('id', $this->order->id)->first();
+                return $this->order;
+            }
+
+            // Refresh in-memory model to stay in sync with the DB after query-builder update
+            $this->order = Order::query()->where('id', $this->order->id)->first();
+        } else {
+            $this->order->save();
+        }
 
         if (($this->order->type === 'renewal') || ($oldPaymentStatus != $this->order->payment_status && $this->order->payment_status == Status::PAYMENT_PAID)) {
             if (!$latestTransaction) {

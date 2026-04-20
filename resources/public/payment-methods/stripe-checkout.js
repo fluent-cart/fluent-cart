@@ -224,24 +224,36 @@ class StripeCheckout {
                             xhr.onreadystatechange = function () {
                                 if (xhr.readyState === 4) {
                                     if (xhr.status >= 200 && xhr.status < 300) {
-                                        that.paymentLoader?.changeLoaderStatus('redirecting');
-                                        let responseJSON = JSON.parse(xhr.responseText);
-                                        if (responseJSON) {
-                                            that.paymentLoader.triggerPaymentCompleteEvent(responseJSON);
-                                            if (responseJSON.redirect_url) {
-                                                successUrl = responseJSON.redirect_url;
+                                        try {
+                                            let responseJSON = JSON.parse(xhr.responseText);
+                                            if (responseJSON) {
+                                                that.paymentLoader.triggerPaymentCompleteEvent(responseJSON);
+                                                if (responseJSON.redirect_url) {
+                                                    successUrl = responseJSON.redirect_url;
+                                                }
                                             }
-                                        }
 
-                                        // Handle redirect based on checkout mode (modal or single page)
-                                        if (window.CheckoutHelper) {
-                                            window.CheckoutHelper.handleCheckoutRedirect(successUrl);
-                                        } else {
-                                            // Fallback if CheckoutHelper is not available
-                                            window.location.href = successUrl;
+                                            that.paymentLoader?.changeLoaderStatus('redirecting');
+                                            // Handle redirect based on checkout mode (modal or single page)
+                                            if (window.CheckoutHelper) {
+                                                window.CheckoutHelper.handleCheckoutRedirect(successUrl);
+                                            } else {
+                                                // Fallback if CheckoutHelper is not available
+                                                window.location.href = successUrl;
+                                            }
+                                        } catch (e) {
+                                            that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
+                                            setTimeout(function () {
+                                                that.paymentLoader?.hideLoader();
+                                                that.paymentLoader?.enableCheckoutButton(submitButton?.text);
+                                            }, 1000);
                                         }
                                     } else {
-                                        console.log(xhr.responseText, 'failed');
+                                        that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
+                                        setTimeout(function () {
+                                            that.paymentLoader?.hideLoader();
+                                            that.paymentLoader?.enableCheckoutButton(submitButton?.text);
+                                        }, 1000);
                                     }
                                 }
                             };
@@ -259,7 +271,7 @@ class StripeCheckout {
                 }).catch(error => {
                     console.log(error, 'failed');
                     loaderElement.classList.remove('active');
-                    that.paymentLoader?.changeLoaderStatus('failed');
+                    that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
                     that.paymentLoader?.hideLoader();
                     // window.location.href = `${customPaymentUrl}&status=failed&method=stripe&reason=${error?.message}`;
                 });

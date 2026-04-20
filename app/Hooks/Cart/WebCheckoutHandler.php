@@ -322,6 +322,12 @@ class WebCheckoutHandler
 
         $totalPrice = $checkOutHelper->getItemsAmountTotal(false) + $shippingCharge;
 
+        // Include fee total
+        $feeTotal = $cart->getFeeTotal();
+        if ($feeTotal > 0) {
+            $totalPrice += $feeTotal;
+        }
+
         if (!empty($cart->checkout_data['tax_data'])) {
             $taxTotal = (int) Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
             $totalPrice += $taxTotal;
@@ -810,6 +816,7 @@ class WebCheckoutHandler
         }
 
         $cart->fill($fillData);
+        $cart->clearFeeCache();
 
         $cart = CartHelper::getCart();
         $sanitizedUtmData = UtmHelper::getUtmDataOfRequest();
@@ -860,6 +867,31 @@ class WebCheckoutHandler
                 'content'  => $modalCheckoutRender->getFragment('summary_group'),
                 'type'     => 'replace'
             ];
+        }
+
+        // Re-render cart summary on payment method change (fees may depend on payment method)
+        if (isset($normalizeData['_fct_pay_method'])) {
+            $hasSummaryFragment = false;
+            foreach ($fragments as $fragment) {
+                if (Arr::get($fragment, 'selector') === '[data-fluent-cart-checkout-page-cart-items-wrapper]') {
+                    $hasSummaryFragment = true;
+                    break;
+                }
+            }
+
+            if (!$hasSummaryFragment) {
+                $fragments[] = [
+                    'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
+                    'content'  => $cartRender->getFragment('cart_summary_fragment'),
+                    'type'     => 'replace'
+                ];
+
+                $fragments[] = [
+                    'selector' => '[data-fct-modal-checkout-summary-group]',
+                    'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                    'type'     => 'replace'
+                ];
+            }
         }
 
         if (($dataKey === 'billing_address_id' || $dataKey === 'shipping_address_id') && $dataValue !== '') {

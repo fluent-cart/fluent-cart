@@ -78,7 +78,7 @@ class CheckoutBlockEditor extends BlockEditor
 //        return '[fluent_cart_checkout]';
         global $wp;
         $current_url = home_url(add_query_arg([], $wp->request));
-        $current_url = add_query_arg($_GET, $current_url);
+        $current_url = add_query_arg(array_map('sanitize_text_field', wp_unslash($_GET)), $current_url);
         $cart = CartHelper::getCart();
 
         if (!$cart || empty(Arr::get($cart, 'cart_data', []))) {

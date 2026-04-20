@@ -8,9 +8,12 @@ class RevenueReportService extends ReportService
 {
     public function revenueByGroup(array $params = []): array
     {
+        $itemsSub = App::db()->table('fct_order_items')
+            ->selectRaw('order_id, SUM(quantity) AS total_items')
+            ->groupBy('order_id');
+
         $query = App::db()->table('fct_orders as o')
-            ->leftJoin('fct_order_items as oi', 'o.id', '=', 'oi.order_id')
-            ->when($params['variationIds'], fn($q) => $q->whereIn('oi.object_id', $params['variationIds']));
+            ->leftJoinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $query = $this->applyFilters($query, $params);
 
@@ -25,7 +28,7 @@ class RevenueReportService extends ReportService
 
             $groupKeyExpression = "COALESCE(a.country, 'Uncategorized') AS `{$params['groupKey']}`";
         } elseif ($params['groupKey'] === 'payment_method') {
-            $groupKeyExpression = "COALESCE(o.payment_method_title, 'Unknown') AS `{$params['groupKey']}`";
+            $groupKeyExpression = "COALESCE(o.payment_method, 'Unknown') AS `{$params['groupKey']}`";
         } else {
             $groupKeyExpression = "COALESCE(o.{$params['groupKey']}, 'Unknown') AS `{$params['groupKey']}`";
         }
@@ -34,7 +37,6 @@ class RevenueReportService extends ReportService
 
             COUNT(o.id) AS orders,
 
-            -- COUNT(CASE WHEN o.total_paid = o.total_refund AND o.total_paid > 0 THEN 1 END) AS refunded_orders,
             COUNT(CASE WHEN o.total_refund > 0 THEN 1 END) AS refunded_orders,
 
             SUM(o.total_paid) / 100 AS gross_sale,
@@ -61,15 +63,13 @@ class RevenueReportService extends ReportService
                 ) / COUNT(o.id) / 100
             END AS average_order_net,
 
-            SUM(oi.quantity) AS items,
+            SUM(COALESCE(oi_sum.total_items, 0)) AS items,
 
             SUM(o.shipping_total) / 100 AS shipping_total,
 
             SUM(o.tax_total + o.shipping_tax) / 100 AS total_tax,
 
             SUM(o.total_refund) / 100 AS total_refunds,
-
-            MAX(o.payment_method_title) AS payment_method,
 
             COUNT(DISTINCT o.customer_id) AS customer_count");
 

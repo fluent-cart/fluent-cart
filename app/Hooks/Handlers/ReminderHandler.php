@@ -25,7 +25,7 @@ class ReminderHandler
         add_action('fluent_cart/order_paid', [$this, 'clearOrderReminderState'], 10, 1);
         add_action('fluent_cart/order_refunded', [$this, 'clearOrderReminderState'], 10, 1);
 
-        add_action('fluent_cart/payments/subscription_cancelled', [$this, 'clearSubscriptionReminderState'], 10, 1);
+        add_action('fluent_cart/payments/subscription_canceled', [$this, 'clearSubscriptionReminderState'], 10, 1);
         add_action('fluent_cart/payments/subscription_expired', [$this, 'clearSubscriptionReminderState'], 10, 1);
     }
 

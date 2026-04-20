@@ -252,6 +252,57 @@ trait ValidatesAttributes
     }
 
     /**
+     * Validate that an attribute is required only if **any** of the
+     * other specified fields are **not present**.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     * @param array $parameters
+     * @return bool
+     */
+    protected function validateRequiredWithout($attribute, $value, $parameters)
+    {
+        $this->requireParameterCount(1, $parameters, 'required_without');
+
+        foreach ($parameters as $field) {
+            if (!$this->isPresent($field) && !$this->isPresent($attribute)) {
+                return $this->validateRequired($attribute, $value);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that an attribute is required only if **all** of the
+     * other specified fields are **not present**.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     * @param array $parameters
+     * @return bool
+     */
+    protected function validateRequiredWithoutAll($attribute, $value, $parameters)
+    {
+        $this->requireParameterCount(1, $parameters, 'required_without_all');
+
+        $allMissing = true;
+
+        foreach ($parameters as $field) {
+            if ($this->isPresent($field)) {
+                $allMissing = false;
+                break;
+            }
+        }
+
+        if ($allMissing && !$this->isPresent($attribute)) {
+            return $this->validateRequired($attribute, $value);
+        }
+
+        return true;
+    }
+
+    /**
      * Determine if the given attribute is present.
      * 
      * @param  string  $attribute

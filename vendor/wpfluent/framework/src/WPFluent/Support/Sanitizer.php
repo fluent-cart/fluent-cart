@@ -107,6 +107,28 @@ class Sanitizer
     }
 
     /**
+     * Sanitize an integer.
+     * 
+     * @param  string $arg
+     * @return integer
+     */
+    public static function sanitizeInt($arg)
+    {
+        return intval($arg);
+    }
+
+    /**
+     * Sanitize an float.
+     * 
+     * @param  string $arg
+     * @return float
+     */
+    public static function sanitizeFloat($arg)
+    {
+        return floatval($arg);
+    }
+
+    /**
      * Sanitize a text field.
      *
      * @param string $arg
@@ -115,6 +137,17 @@ class Sanitizer
     public static function sanitizeTextField($arg)
     {
         return sanitize_text_field($arg);
+    }
+
+    /**
+     * Sanitize a text field.
+     *
+     * @param string $arg
+     * @return string
+     */
+    public static function sanitizeText($arg)
+    {
+        return static::sanitizeTextField($arg);
     }
 
     /**
@@ -379,18 +412,13 @@ class Sanitizer
      * @param  string|null|\DateTimeZone  $tz
      * @return \FluentCart\Framework\Support\DateTime|null
      */
-    public function sanitizeDate($key, $format = null, $tz = null)
+    public static function sanitizeDate($value, $format, $tz)
     {
-        if (!$value = $this->get($key)) {
-            return null;
-        }
-
         $result = is_null($format)
             ? DateTime::parse($value, $tz)
             : DateTime::createFromFormat($format, $value, $tz);
 
         return $result ?: null;
-
     }
 
     /**

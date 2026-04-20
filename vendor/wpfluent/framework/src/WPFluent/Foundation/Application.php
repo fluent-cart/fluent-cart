@@ -1,4 +1,13 @@
 <?php
+/**
+ * @package WPFluent
+ * @author  Sheikh Heera <heera.sheikh77@gmail.com> (https://heera.it)
+ * @author  Sheikh Heera <mail@heera.it>
+ * @author  Sheikh Heera <heera@authlab.io>
+ * @link    https://github.com/wpfluent/framework2x
+ * @license MIT https://opensource.org/licenses/MIT
+ * @license GPL-2.0-or-later https://www.gnu.org/licenses/gpl-2.0.html
+ */
 
 namespace FluentCart\Framework\Foundation;
 
@@ -331,9 +340,9 @@ class Application extends Container
 
         require_once $this->basePath . 'app/Hooks/actions.php';
         require_once $this->basePath . 'app/Hooks/filters.php';
-
-        if (file_exists($includes = $this->basePath . 'app/Hooks/includes.php')) {
-            require_once $includes;
+        
+        if (file_exists($f = $this->basePath . 'app/Hooks/includes.php')) {
+            require_once $f;
         }
     }
 
@@ -523,8 +532,10 @@ class Application extends Container
      */
     protected function callPluginReadyCallbacks()
     {
-        while ($callback = array_pop($this->onReady)) {
-            $callback($this);
-        }
+        $this->addAction('init', function() {
+            while ($callback = array_pop($this->onReady)) {
+                $callback($this);
+            }
+        });
     }
 }

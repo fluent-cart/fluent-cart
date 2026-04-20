@@ -173,6 +173,11 @@ class ProductCardRender
             $firstVariant = $this->product->variants->first();
             if ($firstVariant) {
                 $minPrice = $firstVariant->item_price;
+                $minPrice = apply_filters('fluent_cart/product/display_price', $minPrice, [
+                    'product'   => $this->product,
+                    'variation' => $firstVariant,
+                ]);
+                $minPrice = (int)$minPrice;
                 if ($firstVariant->compare_price > $minPrice) {
                     $comparePrice = $firstVariant->compare_price;
                 }

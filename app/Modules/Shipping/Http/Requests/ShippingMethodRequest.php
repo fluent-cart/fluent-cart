@@ -21,12 +21,15 @@ class ShippingMethodRequest extends RequestGuard
     public function rules()
     {
         return [
-            'zone_id'  => 'required',
-            'title'    => 'required|string|maxLength:192',
-            'amount'   => 'nullable',
-            'type'     => 'required|string|maxLength:192',
-            'settings' => 'nullable|array',
-            'states'   => 'nullable|array'
+            'zone_id'    => 'required',
+            'title'      => 'required|string|maxLength:192',
+            'amount'     => 'nullable',
+            'type'       => 'required|string|maxLength:192',
+            'settings'   => 'nullable|array',
+            'states'     => 'nullable|array',
+            'is_enabled' => 'nullable|integer|in:0,1',
+            'method_id'  => 'nullable|integer',
+            'meta'       => 'nullable|array',
         ];
     }
 
@@ -62,6 +65,18 @@ class ShippingMethodRequest extends RequestGuard
             },
             'settings.configure_rate'    => 'sanitize_text_field',
             'settings.class_aggregation' => 'sanitize_text_field',
+            'settings.weight_tiers'      => function ($value) {
+                if (!is_array($value)) {
+                    return [];
+                }
+                return array_map(function ($tier) {
+                    return [
+                        'min'  => floatval($tier['min'] ?? 0),
+                        'max'  => floatval($tier['max'] ?? 0),
+                        'cost' => floatval($tier['cost'] ?? 0),
+                    ];
+                }, $value);
+            },
             'meta'                       => function ($value) {
                 if (!is_array($value)) {
                     return [];

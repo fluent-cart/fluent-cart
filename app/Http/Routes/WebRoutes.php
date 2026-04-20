@@ -36,9 +36,13 @@ class WebRoutes
     }
 
     public static function renderModalCheckout() {
-        AssetLoader::loadModalCheckoutAssets();
-
         add_action('wp_footer', function () {
+            if (!AssetLoader::isFrontendAssetsMarked() && !AssetLoader::isFluentCartContext()) {
+                return;
+            }
+
+            AssetLoader::loadModalCheckoutAssets();
+
             if (
                 isset($_SERVER['HTTP_SEC_FETCH_DEST']) &&
                 $_SERVER['HTTP_SEC_FETCH_DEST'] === 'iframe'
@@ -54,9 +58,6 @@ class WebRoutes
 
             (new ModalCheckoutRenderer($cart))->render();
         });
-
-        // Stop rendering when loaded inside an iframe
-
     }
 
     public static function registerRoutes()
@@ -195,7 +196,8 @@ class WebRoutes
         }
 
         if (has_action('fluent_cart_action_' . $page)) {
-            do_action('fluent_cart_action_' . $page, App::request()->all());
+            $requestData = App::request()->all();
+            do_action('fluent_cart_action_' . $page, $requestData);
             die();
         }
 

@@ -28,7 +28,7 @@ class RenewalOrderDeleted extends EventDispatcher
     public function __construct(Order $order)
     {
         $this->order = $order;
-        $this->order->load('customer','shipping_address','billing_address');
+        $this->order->loadMissing('customer', 'shipping_address', 'billing_address');
     }
 
     public function toArray(): array
@@ -42,5 +42,10 @@ class RenewalOrderDeleted extends EventDispatcher
     public function getActivityEventModel()
     {
         return $this->order;
+    }
+
+    public function shouldCreateActivity(): bool
+    {
+        return $this->order->mode !== \FluentCart\App\Helpers\Status::ORDER_MODE_TEST;
     }
 }

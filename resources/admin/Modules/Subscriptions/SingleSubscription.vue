@@ -51,8 +51,10 @@
             </CardContainer>
 
             <CardContainer v-if="subscription.activities && subscription.activities.length" class="overflow-hidden mb-0">
-              <CardHeader class="pb-4" :title="$t('Activity')" title_size="small"/>
-              <Activity :activities="subscription.activities"/>
+              <CardHeader :title="$t('Activity')" title_size="small" border_bottom/>
+              <CardBody>
+                <Activity :activities="subscription.activities"/>
+              </CardBody>
             </CardContainer>
           </div>
           <div class="fct-single-subscription-aside">

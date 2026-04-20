@@ -62,7 +62,7 @@ class CustomerOrderController extends BaseFrontendController
         $search = $request->getSafe('search', 'sanitize_text_field');
 
         $orders = Order::query()
-            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'uuid', 'type', 'status', 'created_at'])
+            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'fee_total', 'uuid', 'type', 'status', 'created_at'])
             ->with(['order_items' => function ($query) {
                 $query->select('id', 'order_id', 'post_title', 'title', 'quantity', 'payment_type', 'line_meta');
             }])
@@ -171,6 +171,26 @@ class CustomerOrderController extends BaseFrontendController
                 continue; // Skip signup fee items
             }
 
+            // Fee items: include with minimal data for frontend display
+            if ($item->payment_type === 'fee') {
+                $orderItems[] = [
+                    'id'            => $item->id,
+                    'post_title'    => '',
+                    'title'         => $item->title,
+                    'quantity'      => 1,
+                    'unit_price'    => $item->unit_price,
+                    'subtotal'      => $item->subtotal,
+                    'payment_type'  => 'fee',
+                    'meta_lines'    => [],
+                    'extra_amount'  => 0,
+                    'image'         => '',
+                    'variant_image' => '',
+                    'url'           => '',
+                    'line_meta'     => [],
+                ];
+                continue;
+            }
+
             $metaLines = [];
             $extraAmount = 0;
 
@@ -216,6 +236,7 @@ class CustomerOrderController extends BaseFrontendController
             'status'           => $order->status,
             'payment_status'   => $order->payment_status,
             'shipping_status'  => $order->shipping_status,
+            'fee_total' => $order->fee_total,
 
             'billing_address_text'  => $order->billing_address ? $order->billing_address->getAddressAsText(true, false) : '',
             'shipping_address_text' => $order->shipping_address ? $order->shipping_address->getAddressAsText(true, false) : '',
@@ -231,6 +252,7 @@ class CustomerOrderController extends BaseFrontendController
             'tax_behavior'          => $order->tax_behavior,
             'shipping_tax'          => $order->shipping_tax,
             'payment_method'        => $order->payment_method,
+            'custom_payment_link'   => $this->getCustomPaymentLink($order),
         ];
 
         $formattedOrderData['subscriptions'] = $order->subscriptions

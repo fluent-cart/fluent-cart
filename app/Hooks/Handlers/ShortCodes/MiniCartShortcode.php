@@ -32,13 +32,16 @@ class MiniCartShortcode extends ShortCode
         $data = $viewData ?? $this->shortCodeAttributes ?? [];
 
         (new CartLoader())->registerDependency();
-        $cart = CartHelper::getCart(null, false);
         $itemCount = 0;
         $cartData = [];
 
-        if ($cart) {
-            $cartData= $cart->cart_data ?? [];
-            $itemCount = count($cartData);
+        // Hide mini cart count during instant checkout to avoid confusion
+        if (!CartHelper::doingInstantCheckout()) {
+            $cart = CartHelper::getCart(null, false);
+            if ($cart) {
+                $cartData = $cart->cart_data ?? [];
+                $itemCount = count($cartData);
+            }
         }
 
         $miniCartRenderer = new MiniCartRenderer($cartData, [

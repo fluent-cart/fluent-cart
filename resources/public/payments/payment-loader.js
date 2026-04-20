@@ -270,36 +270,38 @@ export default class PaymentLoader {
 
     load(paymentMethod) {
         if (paymentMethod === undefined || paymentMethod === null) {
-            const firstPaymentMethodInput = this.#form.querySelector('input[name="_fct_pay_method"]');
-            if (firstPaymentMethodInput) {
-                paymentMethod = firstPaymentMethodInput.value;
+            // Use the already-determined payment method (from checked radio) before falling back to first
+            const resolvedMethod = this.payMethod || null;
 
-                firstPaymentMethodInput.checked = true;
+            const targetInput = resolvedMethod
+                ? this.#form.querySelector('input[name="_fct_pay_method"][value="' + resolvedMethod + '"]')
+                : this.#form.querySelector('input[name="_fct_pay_method"]');
+
+            if (targetInput) {
+                paymentMethod = targetInput.value;
+
+                targetInput.checked = true;
 
                 this.#form.querySelectorAll('input[name="_fct_pay_method"]').forEach(el => {
                     el.parentNode.classList.remove('active');
                 });
 
-                firstPaymentMethodInput.parentNode.classList.add('active');
+                targetInput.parentNode.classList.add('active');
 
-                const firstPaymentMethodEmbed = document.querySelector('.fluent-cart-checkout_embed_payment_container_' + firstPaymentMethodInput.value);
-                if (firstPaymentMethodEmbed) {
-                    firstPaymentMethodEmbed.parentNode.classList.add('active');
+                const embed = document.querySelector('.fluent-cart-checkout_embed_payment_container_' + targetInput.value);
+                if (embed) {
+                    embed.parentNode.classList.add('active');
                 }
 
-                const initialWrapper = firstPaymentMethodInput.parentNode;
-
-                const initialInstructions = initialWrapper.querySelector('.fct_payment_method_instructions');
-                if (initialInstructions) {
-                    document.querySelectorAll('.fct_payment_method_instructions').forEach(instruction => {
-                        instruction.style.display = 'none';
+                const wrapper = targetInput.parentNode;
+                const instructions = wrapper.querySelector('.fct_payment_method_instructions');
+                if (instructions) {
+                    document.querySelectorAll('.fct_payment_method_instructions').forEach(i => {
+                        i.style.display = 'none';
                     });
-                    initialInstructions.style.display = 'block';
+                    instructions.style.display = 'block';
                 }
-
-                //console.log('FluentCart: Loading first payment method in order:', paymentMethod);
             } else {
-                //console.warn('FluentCart: No payment methods found');
                 return;
             }
         }

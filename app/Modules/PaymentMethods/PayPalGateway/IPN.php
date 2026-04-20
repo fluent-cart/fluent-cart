@@ -147,12 +147,76 @@ class IPN
         $paypalOrderId = Arr::get($charge, 'supplementary_data.related_ids.order_id', '');
         $paypalIntent = API::verifyPayment($paypalOrderId);
 
+        if (is_wp_error($paypalIntent)) {
+            fluent_cart_add_log(
+                __('PayPal Webhook Verification Failed', 'fluent-cart'),
+                __('Could not verify PayPal payment from webhook. Charge ID: ', 'fluent-cart') . $vendorChargeId,
+                'error',
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $transaction->order_id,
+                    'log_type'    => 'webhook'
+                ]
+            );
+            return;
+        }
+
+        // Verify that the paid amount and currency match the expected transaction
+        $paidAmount = 0;
+        $paidCurrency = '';
+        foreach (Arr::get($paypalIntent, 'purchase_units', []) as $unit) {
+            $paidAmount += Helper::toCent(Arr::get($unit, 'amount.value', 0));
+            if (!$paidCurrency) {
+                $paidCurrency = strtoupper(Arr::get($unit, 'amount.currency_code', ''));
+            }
+        }
+
+        if ($paidCurrency && $transaction->currency && strtoupper($transaction->currency) !== $paidCurrency) {
+            fluent_cart_add_log(
+                __('PayPal Webhook Currency Mismatch', 'fluent-cart'),
+                sprintf(
+                    /* translators: %1$s: expected currency, %2$s: received currency, %3$s: transaction UUID */
+                    __('Payment currency mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Order not confirmed.', 'fluent-cart'),
+                    $transaction->currency,
+                    $paidCurrency,
+                    $transaction->uuid
+                ),
+                'error',
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $transaction->order_id,
+                    'log_type'    => 'webhook'
+                ]
+            );
+            return;
+        }
+
+        if ($transaction->total > 0 && $paidAmount != $transaction->total) {
+            fluent_cart_add_log(
+                __('PayPal Webhook Amount Mismatch', 'fluent-cart'),
+                sprintf(
+                    /* translators: %1$s: expected amount, %2$s: received amount, %3$s: transaction UUID */
+                    __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Order not confirmed.', 'fluent-cart'),
+                    Helper::toDecimal($transaction->total),
+                    Helper::toDecimal($paidAmount),
+                    $transaction->uuid
+                ),
+                'error',
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $transaction->order_id,
+                    'log_type'    => 'webhook'
+                ]
+            );
+            return;
+        }
+
         // All Verified! Let's update the transaction and order
         (new Processor())->confirmPaymentSuccessByCharge($transaction, [
             'vendor_charge_id'    => $vendorChargeId,
-//            'payment_method_type' => Arr::get($charge, 'payee.email_address', 'PayPal'),
             'payment_method_type' => 'PayPal',
             'status'              => Status::TRANSACTION_SUCCEEDED,
+            'total'               => $paidAmount,
             'payment_source'      => Arr::get($paypalIntent, 'payment_source', []),
             'meta'               => [
                 'payer' => Arr::get($paypalIntent, 'payer', [])
@@ -388,6 +452,34 @@ class IPN
             return true;
         }
 
+        // Fetch PayPal subscription data once — used for plan verification and renewal processing
+        $paypalSubscription = $vendorSubscriptionId ? API::getResource('billing/subscriptions/' . $vendorSubscriptionId) : null;
+
+        // Verify the PayPal subscription plan matches the expected plan
+        if ($subscriptionModel->vendor_plan_id && $paypalSubscription && !is_wp_error($paypalSubscription)) {
+            $paypalPlanId = Arr::get($paypalSubscription, 'plan_id', '');
+            if ($paypalPlanId && $paypalPlanId !== $subscriptionModel->vendor_plan_id) {
+                fluent_cart_add_log(
+                    __('PayPal Recurring Plan Mismatch', 'fluent-cart'),
+                    sprintf(
+                        /* translators: %1$s: expected plan ID, %2$s: received plan ID, %3$d: subscription ID */
+                        __('Recurring payment plan mismatch. Expected: %1$s, Received: %2$s. Subscription ID: %3$d. Payment not recorded.', 'fluent-cart'),
+                        $subscriptionModel->vendor_plan_id,
+                        $paypalPlanId,
+                        $subscriptionModel->id
+                    ),
+                    'error',
+                    [
+                        'module_type' => 'FluentCart\App\Models\Subscription',
+                        'module_id'   => $subscriptionModel->id,
+                        'module_name' => 'subscription',
+                        'log_type'    => 'webhook'
+                    ]
+                );
+                return false;
+            }
+        }
+
         // Let's see if this is our first transaction that we did not capture
         $latestTransaction = $subscriptionModel->getLatestTransaction();
 
@@ -410,10 +502,8 @@ class IPN
             'vendor_subscription_id' => $vendorSubscriptionId
         ];
 
-        // get the subscription data from paypal
-        $paypalSubscription = API::getResource('billing/subscriptions/' . $vendorSubscriptionId);
-        $payer = Arr::get($paypalSubscription, 'subscriber', []);
-        if (!is_wp_error($paypalSubscription)) {
+        $payer = ($paypalSubscription && !is_wp_error($paypalSubscription)) ? Arr::get($paypalSubscription, 'subscriber', []) : [];
+        if ($paypalSubscription && !is_wp_error($paypalSubscription)) {
             $nextBillingDate = Arr::get($paypalSubscription, 'billing_info.next_billing_time');
             if ($nextBillingDate) {
                 $subscriptionUpdateData['next_billing_date'] = gmdate('Y-m-d H:i:s', strtotime($nextBillingDate));

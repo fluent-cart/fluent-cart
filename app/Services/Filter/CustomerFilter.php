@@ -11,13 +11,13 @@ use FluentCart\Framework\Support\Str;
 class CustomerFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        $isApplied = $this->applySimpleOperatorFilter();
+        $isApplied = $this->applySimpleOperatorFilter($search);
         if ($isApplied) {
             return;
         }
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
 
             return $query
                 ->where(function ($query) use ($search) {
@@ -54,7 +54,7 @@ class CustomerFilter extends BaseFilter
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
 
     }

@@ -27,6 +27,8 @@ class Mailer
 
     private bool $isHtml = true;
 
+    private array $attachments = [];
+
     public function __construct($to = '', string $subject = '', string $body = '')
     {
         $this->to = $to;
@@ -124,6 +126,18 @@ class Mailer
         return $this;
     }
 
+    public function addAttachment(string $filePath): Mailer
+    {
+        $this->attachments[] = $filePath;
+        return $this;
+    }
+
+    public function setAttachments(array $attachments): Mailer
+    {
+        $this->attachments = $attachments;
+        return $this;
+    }
+
     public function send($cssInliner = false)
     {
         if (!$this->to && !$this->cc && !$this->bcc) {
@@ -158,7 +172,7 @@ class Mailer
             $headers[] = 'Reply-To: ' . $this->replyTo;
         }
 
-        return wp_mail($this->to, $this->subject, $this->body, $headers);
+        return wp_mail($this->to, $this->subject, $this->body, $headers, $this->attachments);
     }
 
     public function wrapWithFooter($content): string

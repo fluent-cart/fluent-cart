@@ -7,7 +7,6 @@ use FluentCart\App\Models\Product;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-use FluentCart\App\Models\Subscription;
 use FluentCart\Database\Migrations\AttributeGroupsMigrator;
 use FluentCart\Database\Migrations\AttributeObjectRelationsMigrator;
 use FluentCart\Database\Migrations\AttributeTermsMigrator;
@@ -336,20 +335,7 @@ class DBMigrator
                 ));
             }
 
-            $subscriptions = fluentCart('db')->table('fct_subscriptions')->select('id')->where('uuid', '')->orWhereNull('uuid');
-            if ($subscriptions && $subscriptions->count() > 0) {
-                $subscriptions = fluentCart('db')->table('fct_subscriptions')->select('id')->get()->keyBy('id')->toArray();
-                $uuids = [];
-                foreach ($subscriptions as $id => $subscription) {
-                    $uuids[] = [
-                        'id'   => $id,
-                        'uuid' => md5(time() . wp_generate_uuid4())
-                    ];
-
-                }
-
-                (new Subscription())->batchUpdate($uuids);
-            }
+            SubscriptionsMigrator::backfillEmptyUuids();
 
             if (!Schema::hasColumn('meta', 'fct_order_addresses')) {
                 $table_name = $wpdb->prefix . 'fct_order_addresses';
@@ -442,37 +428,10 @@ class DBMigrator
 
             }
 
-            // Add payment_status index for reminder scan performance
-            $ordersTable = $wpdb->prefix . 'fct_orders';
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $existingIndex = $wpdb->get_results($wpdb->prepare(
-                "SHOW INDEX FROM %i WHERE Key_name = 'fct_payment_status'",
-                $ordersTable
-            ));
-            if (empty($existingIndex)) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                $wpdb->query($wpdb->prepare(
-                    "ALTER TABLE %i ADD INDEX `fct_payment_status` (`payment_status`, `id`)",
-                    $ordersTable
-                ));
-            }
-
-            if (!Schema::hasColumn('sku', 'fct_product_variations')) {
-                $table_name = $wpdb->prefix . 'fct_product_variations';
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                $wpdb->query($wpdb->prepare(
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                    "ALTER TABLE %i ADD COLUMN `sku` VARCHAR(30) NULL DEFAULT NULL AFTER `variation_identifier`",
-                    $table_name
-                ));
-
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                $wpdb->query($wpdb->prepare(
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                    "ALTER TABLE %i ADD UNIQUE INDEX `sku_unique` (`sku` ASC)",
-                    $table_name
-                ));
-            }
+            // Shipping schema upgrades — also run here so plugin updates
+            // without deactivation/reactivation still apply new columns
+            \FluentCart\Database\Migrations\ShippingZonesMigrator::migrated();
+            \FluentCart\Database\Migrations\ShippingClassesMigrator::migrated();
 
         }
     }

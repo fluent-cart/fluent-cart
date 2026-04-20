@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class OrderAddressesMigrator extends Migrator
 {
     public static string $tableName = 'fct_order_addresses';
@@ -23,5 +21,16 @@ class OrderAddressesMigrator extends Migrator
                 `meta` JSON DEFAULT NULL,
                 `created_at` DATETIME NULL,
                 `updated_at` DATETIME NULL";
+    }
+
+    public static function migrated()
+    {
+        static::addMetaColumn();
+    }
+
+    public static function addMetaColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `meta` JSON DEFAULT NULL AFTER `country`"
+        static::addColumnIfNotExists('meta', 'JSON DEFAULT NULL', 'country');
     }
 }

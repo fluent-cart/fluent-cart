@@ -9,15 +9,15 @@ use FluentCart\App\Services\Localization\LocalizationManager;
 
 class TaxFilter extends BaseFilter
 {
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        $isApplied = $this->applySimpleOperatorFilter();
+        $isApplied = $this->applySimpleOperatorFilter($search);
 
         if ($isApplied) {
             return;
         }
 
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
             return $query
                 ->where(function ($query) use ($search) {
                     $search = trim($search);
@@ -55,13 +55,14 @@ class TaxFilter extends BaseFilter
         return 'taxes';
     }
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
-        if (!$this->activeView) {
+        $activeView = $activeView ?? $this->activeView;
+        if (!$activeView) {
             return;
         }
 
-        $whereMethod = $this->activeView === 'filed' ? 'whereNotNull' : 'whereNull';
+        $whereMethod = $activeView === 'filed' ? 'whereNotNull' : 'whereNull';
 
         $this->query->{$whereMethod}('filed_at');
     }

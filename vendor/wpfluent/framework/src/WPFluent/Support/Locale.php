@@ -57,7 +57,7 @@ class Locale
         if ($userIdOrLocale) {
             if (is_int($userIdOrLocale)) {
                 $this->locale = get_user_locale($userIdOrLocale);
-            } elseif (is_string($userIdOrLocale)) {
+            } else {
                 $this->locale = $userIdOrLocale;
             }
         } else {

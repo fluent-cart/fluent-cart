@@ -34,6 +34,14 @@ class PaypalCheckout {
         }
     }
 
+    handleConfirmFailed(message) {
+        this.paymentLoader?.changeLoaderStatus(message || this.$t('Payment confirmation failed'));
+        setTimeout(() => {
+            this.paymentLoader?.hideLoader();
+            this.paymentLoader?.enableCheckoutButton();
+        }, 1000);
+    }
+
     async onetimePaymentHandler(ref, paymentData, orderData, paypalButtonContainer) {
         const that = this;
         const params = new URLSearchParams(window.location.search);
@@ -87,12 +95,15 @@ class PaypalCheckout {
                                             // Fallback if CheckoutHelper is not available
                                             window.location.href = res.redirect_url;
                                         }
+                                    } else {
+                                        that.handleConfirmFailed(res?.message || that.$t('Payment confirmation failed'));
                                     }
                                 } catch (error) {
                                     console.error('An error occurred while parsing the response:', error?.message);
+                                    that.handleConfirmFailed(that.$t('Payment confirmation failed'));
                                 }
                             } else {
-                                console.error('Network response was not ok');
+                                that.handleConfirmFailed(that.$t('Payment confirmation failed'));
                             }
                         };
 
@@ -212,12 +223,15 @@ class PaypalCheckout {
                                         // Fallback if CheckoutHelper is not available
                                         window.location.href = res.redirect_url;
                                     }
+                                } else {
+                                    that.handleConfirmFailed(res?.message || that.$t('Payment confirmation failed'));
                                 }
                             } catch (error) {
                                 console.error('An error occurred while parsing the response:', error);
+                                that.handleConfirmFailed(that.$t('Payment confirmation failed'));
                             }
                         } else {
-                            console.error('Network response was not ok');
+                            that.handleConfirmFailed(that.$t('Payment confirmation failed'));
                         }
                     };
                     xhr.send(params.toString());

@@ -1,6 +1,7 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php
 
+use FluentCart\Database\DBMigrator;
 use FluentCart\Framework\Foundation\Application;
 use FluentCart\App\Hooks\Handlers\ActivationHandler;
 use FluentCart\App\Hooks\Handlers\DeactivationHandler;
@@ -32,6 +33,10 @@ return function ($file) {
         (new FluentCart\App\Modules\Data\ProductDataSetup())->boot();
 
         add_action('init', function () use ($app) {
+
+            // maybe database changes
+            DBMigrator::maybeMigrateDBChanges();
+
             do_action('fluent_cart/init', $app);
 
             if (defined('DATABASE_TYPE') && DATABASE_TYPE === 'sqlite') {
@@ -43,6 +48,8 @@ return function ($file) {
                     <?php
                 });
             }
+
+
         });
 
         if (defined('FLUENTCART_PRO_PLUGIN_VERSION')) {

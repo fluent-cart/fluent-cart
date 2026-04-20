@@ -216,6 +216,8 @@ export default class ModalCheckoutHandler {
 
         // Show modal
         this.#modalContainer.classList.add('fct-checkout-modal-open');
+        this.#modalContainer.style.opacity = '1';
+        this.#modalContainer.style.visibility = 'visible';
 
         // Dispatch event
         window.dispatchEvent(new CustomEvent('fluentCartModalCheckoutOpened', {
@@ -227,6 +229,8 @@ export default class ModalCheckoutHandler {
         if (!this.#currentModal) return;
 
         this.#currentModal.classList.remove('fct-checkout-modal-open');
+        this.#modalContainer.style.opacity = '0';
+        this.#modalContainer.style.visibility = 'hidden';
 
         setTimeout(() => {
             this.#disconnectIframeObserver();

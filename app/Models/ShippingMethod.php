@@ -65,7 +65,11 @@ class ShippingMethod extends Model
     {
 
         $query = $query->whereHas('zone', function ($query) use ($country) {
-            $query->whereIn('region', [$country, 'all']);
+            $query->where(function ($q) use ($country) {
+                $q->whereIn('region', [$country, 'all'])
+                  ->orWhere('region', 'selection');
+            });
+            $query->whereNull('shipping_class_id');
         });
 
         // SQLite-compatible substring extraction
@@ -79,7 +83,9 @@ class ShippingMethod extends Model
 
             if ($state) {
                 // Check if the state exists in the array (simple string search)
-                $q->orWhere('states', 'LIKE', '%"' . $state . '"%');
+                // Escape LIKE wildcards to prevent wildcard injection on public endpoint
+                $escapedState = str_replace(['%', '_'], ['\\%', '\\_'], $state);
+                $q->orWhere('states', 'LIKE', '%"' . $escapedState . '"%');
             }
         });
         } else {
@@ -98,6 +104,28 @@ class ShippingMethod extends Model
         return $query->where('is_enabled', 1);
     }
 
+    /**
+     * Get shipping methods applicable to a country, with post-filtering for multi-country selection zones.
+     *
+     * @param string $country
+     * @param string|null $state
+     * @return \FluentCart\Framework\Database\Orm\Collection
+     */
+    public static function getApplicableForCountry(string $country, $state = null)
+    {
+        $methods = static::applicableToCountry($country, $state)
+            ->with('zone')
+            ->get();
+
+        // Post-filter 'selection' zones that don't actually match this country
+        return $methods->filter(function ($method) use ($country) {
+            if (!$method->zone || $method->zone->region !== 'selection') {
+                return true;
+            }
+            return $method->zone->appliesToCountry($country);
+        });
+    }
+
     public function getFormattedStatesAttribute()
     {
 
@@ -114,7 +142,7 @@ class ShippingMethod extends Model
     {
 
         if ($value) {
-            $decoded = \json_encode($value, true);
+            $decoded = \json_encode($value);
             if (!($decoded)) {
                 $decoded = '[]';
             }

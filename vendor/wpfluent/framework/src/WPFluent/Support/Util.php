@@ -2,6 +2,8 @@
 
 namespace FluentCart\Framework\Support;
 
+use RuntimeException;
+
 class Util
 {
 	/**
@@ -40,11 +42,11 @@ class Util
 	 * @param  string $filePath
 	 * @return string
 	 */
-	public static function pathToUrl($filePath = '')
-    {
-        if (!file_exists($filePath)) {
-            throw new \RuntimeException("File does not exist: {$filePath}");
-        }
+	public static function pathToUrl($filePath = '', $checkFile = false)
+	{
+	    if ($checkFile && !file_exists($filePath)) {
+	        throw new RuntimeException("File does not exist: {$filePath}");
+	    }
 
         $url = str_replace(
             wp_normalize_path(untrailingslashit(ABSPATH)),

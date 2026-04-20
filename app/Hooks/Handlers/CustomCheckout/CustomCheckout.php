@@ -45,7 +45,7 @@ class CustomCheckout
 
         if ($order->type === Status::ORDER_TYPE_SUBSCRIPTION) {
             $orderItem = $order->order_items->filter(function ($item) {
-                return $item->payment_type !== 'signup_fee';
+                return !in_array($item->payment_type, ['signup_fee', 'fee']);
             })->first();
 
             if (!$orderItem) {
@@ -88,7 +88,10 @@ class CustomCheckout
 
         } else {
             $items = [];
-            foreach ($order->order_items as $orderItem) {
+            $productItems = $order->order_items->filter(function ($orderItem) {
+                return !in_array($orderItem->payment_type, ['fee', 'signup_fee']);
+            });
+            foreach ($productItems as $orderItem) {
                 $itemData = ProductItemService::getItem([
                     'order_id'         => $orderItem->order_id,
                     'product_id'       => $orderItem->post_id,
@@ -133,11 +136,31 @@ class CustomCheckout
         $instantCart->order_id = $order->id;
         $instantCart->cart_hash = md5('custom_payment_cart_' . wp_generate_uuid4() . time());
 
+        // Preserve original order fees so the custom payment checkout
+        // shows exactly what was charged, not whatever the current filter returns
+        $originalFees = [];
+        $feeOrderItems = $order->order_items->filter(function ($item) {
+            return $item->payment_type === 'fee';
+        });
+
+        foreach ($feeOrderItems as $feeItem) {
+            $otherInfo = $feeItem->other_info ?? [];
+            $originalFees[] = [
+                'key'     => Arr::get($otherInfo, 'fee_key', ''),
+                'label'   => $feeItem->title,
+                'amount'  => (int) $feeItem->unit_price,
+                'source'  => Arr::get($otherInfo, 'source', 'custom'),
+                'taxable' => !empty(Arr::get($otherInfo, 'taxable')),
+                'meta'    => Arr::get($otherInfo, 'meta', []),
+            ];
+        }
+
         $instantCart->checkout_data = [
             'is_locked' => 'yes',
             'disable_coupons' => 'yes',
             'custom_checkout' => 'yes',
             'form_data' => $primaryBillingAddress,
+            'fees' => $originalFees,
             'custom_checkout_data' => [
                 'coupon_discount_total' => $order->coupon_discount_total,
                 'manual_discount_total' => $order->manual_discount_total,

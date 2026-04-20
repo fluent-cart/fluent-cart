@@ -23,7 +23,7 @@ class RefundReportService extends ReportService
 
         $query = $this->applyFilters($query, $params);
 
-        if (in_array($groupKey, ['payment_method_type', 'payment_method_title'])) {
+        if ($groupKey === 'payment_method') {
             $query = $query->selectRaw("COALESCE(NULLIF(o.{$groupKey}, ''), 'Uncategorized') as group_key")->groupBy("o.{$groupKey}");
         } else {
             $type = $groupKey === 'billing_country' ? 'billing' : 'shipping';

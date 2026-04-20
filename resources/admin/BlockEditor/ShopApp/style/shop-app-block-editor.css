@@ -185,6 +185,11 @@
                             grid-template-columns: repeat(5, minmax(0, 1fr));
                         }
                     }
+                    &.grid-columns-6 {
+                        @media (min-width: 768px) {
+                            grid-template-columns: repeat(6, minmax(0, 1fr));
+                        }
+                    }
                 }
                 .wp-block-fluent-cart-shopapp-product-view-switcher {
                     grid-column: span 5 / span 5;

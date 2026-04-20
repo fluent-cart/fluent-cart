@@ -57,7 +57,7 @@ class TaxCalculator
 
         if ($lineItems) {
             $this->lineItems = $lineItems;
-            $this->productIds = array_values(array_unique(array_column($lineItems, 'post_id')));
+            $this->productIds = array_values(array_unique(array_filter(array_column($lineItems, 'post_id'))));
 
             if ($this->productIds) {
                 $this->products = \FluentCart\App\Models\Product::query()->whereIn('id', $this->productIds)
@@ -88,8 +88,19 @@ class TaxCalculator
 
         $formattedLineItems = [];
         foreach ($this->lineItems as $lineItem) {
+            $isFee = !empty($lineItem['is_fee']);
             $productId = Arr::get($lineItem, 'post_id');
-            $rates = Arr::get($this->taxMaps, $productId, []);
+
+            // Fee items (post_id = 0) use the first product's tax rates
+            if ($isFee) {
+                $isTaxable = Arr::get($lineItem, 'other_info.taxable', false);
+                $firstProductId = Arr::first(array_keys($this->taxMaps));
+                $rates = ($isTaxable && $firstProductId !== null)
+                    ? Arr::get($this->taxMaps, $firstProductId, [])
+                    : [];
+            } else {
+                $rates = Arr::get($this->taxMaps, $productId, []);
+            }
             $taxLines = [];
             $signupFeeTaxLines = [];
             $lineTaxTotal = 0;

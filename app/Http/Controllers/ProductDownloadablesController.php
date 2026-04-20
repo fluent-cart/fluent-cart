@@ -75,8 +75,8 @@ class ProductDownloadablesController extends Controller
 
             $file['download_identifier'] = Str::uuid();
             $file['post_id'] = $productId;
-            $file['file_path'] = $file['file_name'];
-            $file['file_url'] = $file['file_name'];
+            $file['file_path'] = !empty($file['file_path']) ? $file['file_path'] : $file['file_name'];
+            $file['file_url'] = !empty($file['file_url']) ? $file['file_url'] : $file['file_name'];
             $file['product_variation_id'] = json_encode(
                 Arr::get($file, 'product_variation_id', [])
             );
@@ -139,8 +139,8 @@ class ProductDownloadablesController extends Controller
 
         $fileName = Arr::get($data, 'file_name');
 
-        $filePath = $fileName;
-        $fileUrl = $fileName;
+        $filePath = Arr::get($data, 'file_path') ?: $fileName;
+        $fileUrl = Arr::get($data, 'file_url') ?: $fileName;
         $productVariationId = Arr::get($data, 'product_variation_id', []);
         $fileName = explode('_____fluent-cart_____', $fileName)[0];
         $fileName = explode('__fluent-cart__', $fileName)[0];

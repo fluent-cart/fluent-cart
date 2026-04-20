@@ -30,7 +30,43 @@ class ShippingFrontendController extends Controller
             ];
         }
 
-        $availableShippingMethods = ShippingMethod::applicableToCountry($countryCode, $state)->get();
+        // Single query: get all applicable methods from both general and class-specific zones
+        $availableShippingMethods = ShippingMethod::query()
+            ->whereHas('zone', function ($query) use ($countryCode) {
+                $query->where(function ($q) use ($countryCode) {
+                    $q->whereIn('region', [$countryCode, 'all'])
+                      ->orWhere('region', 'selection');
+                });
+            })
+            ->where('is_enabled', 1)
+            ->where(function ($q) use ($state) {
+                // State filter (same logic as scopeApplicableToCountry)
+                $isSqlite = defined('DB_ENGINE') && DB_ENGINE === 'sqlite';
+                if ($isSqlite) {
+                    $q->where('states', '[]')
+                      ->orWhereNull('states');
+                    if ($state) {
+                        $escapedState = str_replace(['%', '_'], ['\\%', '\\_'], $state);
+                        $q->orWhere('states', 'LIKE', '%"' . $escapedState . '"%');
+                    }
+                } else {
+                    $q->whereJsonLength('states', 0);
+                    if ($state) {
+                        $q->orWhereJsonContains('states', $state);
+                    }
+                }
+            })
+            ->orderBy('amount', 'DESC')
+            ->with('zone')
+            ->get();
+
+        // Post-filter selection zones that don't match this country
+        $availableShippingMethods = $availableShippingMethods->filter(function ($method) use ($countryCode) {
+            if (!$method->zone || $method->zone->region !== 'selection') {
+                return true;
+            }
+            return $method->zone->appliesToCountry($countryCode);
+        })->values();
 
         if (!$availableShippingMethods || $availableShippingMethods->isEmpty()) {
             $settingView = '<div class="fct-empty-state">'
@@ -39,7 +75,7 @@ class ShippingFrontendController extends Controller
             if (current_user_can('manage_options')) {
                 $settingsPageUrl = admin_url('admin.php?page=fluent-cart#/settings/shipping');
 
-                $settingsLink = '<a href="' . esc_url($settingsPageUrl??'') . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
+                $settingsLink = '<a href="' . esc_url($settingsPageUrl ?? '') . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
 
                 $settingView .= ' ' . $settingsLink;
             }

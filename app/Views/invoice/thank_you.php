@@ -136,7 +136,7 @@ if ($order->payment_status !== 'paid') {
 
                                     <div>
                                         <?php
-                                        $orderItems = $order->order_items->toArray();
+                                        $orderItems = $order->getProductItems()->toArray();
                                         $transaction = $order->getLatestTransaction();
 
                                         foreach ($orderItems as $item) :
@@ -206,6 +206,19 @@ if ($order->payment_status !== 'paid') {
                                                         style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;text-align: right"><?php echo esc_html(Helper::toDecimal($order->shipping_total)); ?></div>
                                                 </div>
                                             <?php endif; ?>
+                                            <?php
+                                            $feeItems = $order->feeItems()->get();
+                                            foreach ($feeItems as $feeItem): ?>
+                                                <div
+                                                    style="display: flex;align-items: center; justify-content: space-between;">
+                                                    <div
+                                                        style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
+                                                        <?php echo esc_html($feeItem->title); ?>
+                                                    </div>
+                                                    <div
+                                                        style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;text-align: right"><?php echo esc_html(Helper::toDecimal($feeItem->subtotal)); ?></div>
+                                                </div>
+                                            <?php endforeach; ?>
                                             <?php if ($order->tax_total > 0): ?>
                                                 <div
                                                     style="display: flex;align-items: center; justify-content: space-between;">

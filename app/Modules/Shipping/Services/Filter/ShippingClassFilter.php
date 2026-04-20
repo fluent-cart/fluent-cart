@@ -8,11 +8,13 @@ use FluentCart\Framework\Database\Orm\Builder;
 
 class ShippingClassFilter extends BaseFilter
 {
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        if (!empty($this->search)) {
-            $this->query->where(function (Builder $query) {
-                $query->where('name', 'LIKE', '%' . $this->search . '%');
+        $search = $search ?? $this->search;
+        if (!empty($search)) {
+            $this->query->where(function (Builder $query) use ($search) {
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+                $query->where('name', 'LIKE', '%' . $escaped . '%');
             });
         }
     }
@@ -32,7 +34,7 @@ class ShippingClassFilter extends BaseFilter
         return 'shipping_classes';
     }
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
         // No tabs for shipping classes at this time
     }

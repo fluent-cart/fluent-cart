@@ -16,7 +16,7 @@
       <el-table v-else :data="tableData" height="330">
         <el-table-column :prop="selectedGroupKey" :label="translate(selectedGroupLabel)" min-width="150">
           <template #default="scope">
-            <span v-if="selectedGroupKey !== 'payment_method_type' && selectedGroupKey !== 'payment_method_title'"> {{ toCountryName(scope.row[selectedGroupKey]) }} </span>
+            <span v-if="selectedGroupKey !== 'payment_method'"> {{ toCountryName(scope.row[selectedGroupKey]) }} </span>
             <span v-else> {{ scope.row[selectedGroupKey] }} </span>
           </template>
         </el-table-column>
@@ -82,7 +82,7 @@ const dateRange = ref([]);
 const groupKeys = ref([
   { label: translate("Billing Country"), value: "billing_country" },
   { label: translate("Shipping Country"), value: "shipping_country" },
-  { label: translate("Payment Method Title"), value: "payment_method_title" },
+  { label: translate("Payment Method"), value: "payment_method" },
 ]);
 const selectedGroupKey = ref("billing_country");
 

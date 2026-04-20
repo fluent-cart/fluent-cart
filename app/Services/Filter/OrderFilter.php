@@ -15,23 +15,27 @@ use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 
 class OrderFilter extends BaseFilter
 {
-
-    public function applySimpleFilter()
+    protected static function statusFilterKeys(): array
     {
-        $isApplied = $this->applySimpleOperatorFilter();
+        return ['payment_statuses', 'order_statuses', 'shipping_statuses'];
+    }
+
+    public function applySimpleFilter(?string $search = null): void
+    {
+        $search = $search ?? $this->search;
+        $isApplied = $this->applySimpleOperatorFilter($search);
         if ($isApplied) {
             return;
         }
 
-        foreach (['payment_statuses', 'order_statuses', 'shipping_statuses'] as $key => $status) {
-            $this->query->when(Arr::get($this->args, $status), function ($query) use ($status) {
-                return $query->whereIn($status, $status);
+        foreach (static::statusFilterKeys() as $statusKey) {
+            $this->query->when(Arr::get($this->args, $statusKey), function ($query, $values) use ($statusKey) {
+                return $query->whereIn($statusKey, Arr::wrap($values));
             });
         }
 
-
-        if (!empty($this->search)) {
-            $search = trim($this->search);
+        if (!empty($search)) {
+            $search = trim($search);
             $searchLike = addcslashes($search, '\\%_');
 
             $this->query->where(function ($query) use ($search, $searchLike) {
@@ -81,18 +85,18 @@ class OrderFilter extends BaseFilter
     {
         return array_merge(
             parent::parseableKeys(),
-            ['payment_statuses', 'order_statuses', 'shipping_statuses']
+            static::statusFilterKeys()
         );
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
-
+        $activeView = $activeView ?? $this->activeView;
         $tabsMap = $this->tabsMap();
 
         //Apply Active Tab view
-        $this->query = $this->query->when($this->activeView, function (Builder $query, $activeView) use ($tabsMap) {
+        $this->query = $this->query->when($activeView, function (Builder $query, $activeView) use ($tabsMap) {
 
             if ($activeView === 'upgraded_to') {
                 return $query

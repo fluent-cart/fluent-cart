@@ -368,10 +368,10 @@ class CustomerProfileHandler extends ShortCode
                     'photo'        =>  $currentCustomer ? $currentCustomer->photo : ''
 
                 ],
-                'logout_url' => wp_logout_url(home_url()),
-                'datei18'    => TransStrings::dateTimeStrings(),
-                'el_strings' => TransStrings::elStrings(),
-                'wp_locale'  => get_locale()
+                'logout_url'        => wp_logout_url(home_url()),
+                'datei18'           => TransStrings::dateTimeStrings(),
+                'el_strings'        => TransStrings::elStrings(),
+                'wp_locale'         => get_locale()
             ],
             'fluentCartRestVars'               => [
                 'rest' => Helper::getRestInfo(),

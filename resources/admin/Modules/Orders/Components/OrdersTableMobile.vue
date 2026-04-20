@@ -63,7 +63,7 @@ const getInvoiceUrl = (uuid) => {
 }
 
 const getFilteredItems = (orderItems) => {
-  return orderItems.filter(item => item.payment_type !== 'signup_fee');
+  return orderItems.filter(item => item.payment_type !== 'signup_fee' && item.payment_type !== 'fee');
 };
 const getOrderTypeText = (type) => {
   switch (type) {

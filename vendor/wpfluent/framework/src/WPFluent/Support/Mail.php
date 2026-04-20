@@ -167,39 +167,27 @@ class Mail
      * @return array
      */
     protected function prepareHeaders()
-	{
-	    $headers = [];
+    {
+        $headers = [];
 
-	    // Add content-type header
-	    $headers[] = "Content-Type: {$this->contentType}; charset=UTF-8";
+        // Note: We removed Content-Type and From from here 
+        // because we handle them via filters in send() now.
+        // This prevents duplicate headers which triggers some spam filters.
 
-	    if ($this->from) {
-	        $fromName = $this->fromName ?: $this->from;
-	        $headers[] = "From: {$fromName} <{$this->from}>";
-	    } else {
-	        $fromEmail = apply_filters('wp_mail_from', get_bloginfo('admin_email'));
-	        $fromName  = apply_filters('wp_mail_from_name', get_bloginfo('name'));
-	        $headers[] = "From: {$fromName} <{$fromEmail}>";
-	    }
+        if (!empty($this->cc)) {
+            $headers[] = 'Cc: ' . implode(', ', $this->cc);
+        }
 
-	    if (!empty($this->cc)) {
-	        $headers[] = 'Cc: ' . implode(', ', $this->cc);
-	    }
+        if (!empty($this->bcc)) {
+            $headers[] = 'Bcc: ' . implode(', ', $this->bcc);
+        }
 
-	    if (!empty($this->bcc)) {
-	        $headers[] = 'Bcc: ' . implode(', ', $this->bcc);
-	    }
+        foreach ($this->headers as $key => $value) {
+            $headers[] = is_int($key) ? $value : "{$key}: {$value}";
+        }
 
-	    foreach ($this->headers as $key => $value) {
-	        if (is_int($key)) {
-	            $headers[] = $value;
-	        } else {
-	            $headers[] = "{$key}: {$value}";
-	        }
-	    }
-
-	    return $headers;
-	}
+        return $headers;
+    }
 
     /**
      * Send the email immediately.
@@ -210,21 +198,43 @@ class Mail
     {
         if (empty($this->to)) {
             throw new InvalidArgumentException(
-            	"At least one recipient (to) must be specified."
+                "At least one recipient (to) must be specified."
             );
         }
 
-        $to = implode(', ', $this->to);
+        // 1. Set Content Type Filter
+        $contentType = function() { return $this->contentType; };
+        add_filter('wp_mail_content_type', $contentType);
+
+        // 2. Set From Filters (if provided)
+        $fromEmailFilter = fn() => $this->from ?: get_bloginfo('admin_email');
+        $fromNameFilter  = fn() => $this->fromName ?: get_bloginfo('name');
         
+        if ($this->from) {
+            add_filter('wp_mail_from', $fromEmailFilter);
+            add_filter('wp_mail_from_name', $fromNameFilter);
+        }
+
+        $to = implode(', ', $this->to);
         $headers = $this->prepareHeaders();
 
-        return wp_mail(
-        	$to,
-        	$this->subject,
-        	$this->body,
-        	$headers,
-        	$this->attachments
+        $result = wp_mail(
+            $to,
+            $this->subject,
+            $this->body,
+            $headers,
+            $this->attachments
         );
+
+        // 3. Clean up filters so we don't affect other emails
+        remove_filter('wp_mail_content_type', $contentType);
+        
+        if ($this->from) {
+            remove_filter('wp_mail_from', $fromEmailFilter);
+            remove_filter('wp_mail_from_name', $fromNameFilter);
+        }
+
+        return $result;
     }
 
     /**

@@ -25,6 +25,56 @@ use FluentCart\Api\Resource\FrontendResource\CartResource;
 class AssetLoader
 {
     static $loadedAssets = [];
+    protected static bool $frontendAssetsRequired = false;
+
+    public static function markFrontendAssetsRequired(): void
+    {
+        self::$frontendAssetsRequired = true;
+    }
+
+    public static function isFrontendAssetsMarked(): bool
+    {
+        return self::$frontendAssetsRequired;
+    }
+
+    public static function shouldLoadGlobalFrontendAssets(): bool
+    {
+        $shouldLoad = true;
+
+        return (bool) apply_filters('fluent_cart/frontend_assets/should_load_global', $shouldLoad, [
+            'page_type'             => TemplateService::getCurrentFcPageType(),
+            'is_marked'             => self::isFrontendAssetsMarked(),
+            'is_fluentcart_context' => self::isFluentCartContext(),
+            'is_instant_checkout'   => (bool) App::request()->get(Helper::INSTANT_CHECKOUT_URL_PARAM),
+            'is_modal_checkout'     => App::request()->get('fluent-cart') === 'modal_checkout',
+        ]);
+    }
+
+    public static function isFluentCartContext(): bool
+    {
+        if (self::isFrontendAssetsMarked()) {
+            return true;
+        }
+
+        $pageType = TemplateService::getCurrentFcPageType();
+        if (in_array($pageType, [
+            'single_product',
+            'product_taxonomy',
+            'shop',
+            'cart',
+            'checkout',
+            'registration',
+            'login'
+        ], true)) {
+            return true;
+        }
+
+        if (App::request()->get(Helper::INSTANT_CHECKOUT_URL_PARAM)) {
+            return true;
+        }
+
+        return App::request()->get('fluent-cart') === 'modal_checkout';
+    }
 
     public static function register()
     {
@@ -59,6 +109,7 @@ class AssetLoader
 
     public static function loadSingleProductAssets()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -109,6 +160,7 @@ class AssetLoader
 
     public static function loadAddToCartCss()
     {
+        self::markFrontendAssetsRequired();
         $singlePageStyles = [
             'public/buttons/add-to-cart/style/style.scss',
         ];
@@ -116,7 +168,7 @@ class AssetLoader
         Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-add-to-cart');
     }
 
-    public static function loadModalCheckoutAssets() 
+    public static function loadModalCheckoutAssets()
     {
         static $isLoaded = false;
         if ($isLoaded) {
@@ -141,6 +193,7 @@ class AssetLoader
 
     public static function loadProductCardAssets()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -169,6 +222,7 @@ class AssetLoader
 
     public static function loadProductArchiveAssets()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -300,6 +354,7 @@ class AssetLoader
 
     public static function loadCartAssets()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -319,6 +374,8 @@ class AssetLoader
         );
 
         $cart = CartHelper::getCart(null, false);
+
+        $isInstantCheckout = (bool) App::request()->get(Helper::INSTANT_CHECKOUT_URL_PARAM);
 
         $cartItemLayout = '';
         $emptyCartLayout = '';
@@ -356,7 +413,7 @@ class AssetLoader
                 'has_active_cart'      => !!$cart,
                 'is_drawer_hidden'     => CartLoader::shouldHideCartDrawer(),
                 'is_admin_bar_showing' => is_admin_bar_showing(),
-                'cart_item_count'      => $cart ? count($cart->cart_data ?? []) : 0,
+                'cart_item_count'      => $isInstantCheckout ? 0 : ($cart ? count($cart->cart_data ?? []) : 0),
             ],
             'fluentcart_utm_vars'    => [
                 'allowed_keys' => UtmHelper::allowedUtmParameterKey()
@@ -376,6 +433,7 @@ class AssetLoader
 
     public static function loadCheckoutAssets($cart = null)
     {
+        self::markFrontendAssetsRequired();
 
         static $isLoaded = false;
         if ($isLoaded) {
@@ -508,6 +566,7 @@ class AssetLoader
 
     public static function enqueueProductInfoFrontendStyles()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;
@@ -542,6 +601,7 @@ class AssetLoader
 
     public static function loadMiniCartAssets()
     {
+        self::markFrontendAssetsRequired();
         static $isLoaded = false;
         if ($isLoaded) {
             return;

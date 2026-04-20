@@ -281,7 +281,7 @@ class ThankYouRender
         ?>
         <div class="fct-thank-you-page-order-items-body">
             <?php
-            $orderItems = $order->order_items->toArray();
+            $orderItems = $order->getProductItems()->toArray();
             $orderItems = $this->buildBundleItemsTree($orderItems);
 
             foreach ($orderItems as $item) :
@@ -359,6 +359,7 @@ class ThankYouRender
             <?php $this->renderSubtotal(); ?>
             <?php $this->renderDiscount(); ?>
             <?php $this->renderShipping(); ?>
+            <?php $this->renderFees(); ?>
             <?php $this->renderTaxTotal(); ?>
             <?php $this->renderShippingTax(); ?>
 
@@ -385,11 +386,11 @@ class ThankYouRender
     {
         $order = Arr::get($this->config, 'order', null);
         if ($order->subtotal != $order->total_amount || $order->tax_total > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-subtotal">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-subtotal">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Subtotal', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($order->subtotal)); ?></div>
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($order->subtotal)); ?></div>
             </div>
         <?php endif;
     }
@@ -399,11 +400,11 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         if ($order->manual_discount_total + $order->coupon_discount_total > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-discount">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-discount">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Discount', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value">
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                     - <?php echo esc_html(Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); ?>
                 </div>
             </div>
@@ -415,13 +416,32 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         if ($order->shipping_total > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-shipping">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Shipping', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($order->shipping_total)); ?></div>
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($order->shipping_total)); ?></div>
             </div>
         <?php endif;
+    }
+
+    public function renderFees()
+    {
+        $order = Arr::get($this->config, 'order', null);
+        if (!$order || $order->fee_total <= 0) {
+            return;
+        }
+        $feeItems = $order->feeItems()->get();
+        foreach ($feeItems as $feeItem): ?>
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-fee">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
+                    <?php echo esc_html($feeItem->title); ?>
+                </div>
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
+                    <?php echo esc_html(Helper::toDecimal($feeItem->subtotal)); ?>
+                </div>
+            </div>
+        <?php endforeach;
     }
 
     public function renderTaxTotal()
@@ -429,12 +449,12 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         if ($order->tax_total > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-tax">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-tax">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Total Tax', 'fluent-cart'); ?>
                     <?php echo $order->tax_behavior == 2 ? esc_html__('(Included)', 'fluent-cart') : esc_html__('(Excluded)', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value">
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                     <?php echo esc_html(Helper::toDecimal($order->tax_total)); ?>
                 </div>
             </div>
@@ -446,12 +466,12 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         if ($order->shipping_tax > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-shipping-tax">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping-tax">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Shipping Tax', 'fluent-cart'); ?>
                     <?php echo $order->tax_behavior == 2 ? esc_html__('(Included)', 'fluent-cart') : esc_html__('(Excluded)', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value">
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                     <?php echo esc_html(Helper::toDecimal($order->shipping_tax)); ?>
                 </div>
             </div>
@@ -463,11 +483,11 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         if ($order->total_refund > 0): ?>
-            <div class="fct-thank-you-page-order-items-total-refund">
-                <div class="fct-thank-you-page-order-items-total-label">
+            <div class="fct-meta-line fct-thank-you-page-order-items-total-refund">
+                <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                     <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                 </div>
-                <div class="fct-thank-you-page-order-items-total-value">
+                <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                     - <?php echo esc_html(Helper::toDecimal($order->total_refund)); ?>
                 </div>
             </div>
@@ -478,11 +498,11 @@ class ThankYouRender
     {
         $order = Arr::get($this->config, 'order', null);
         ?>
-        <div class="fct-thank-you-page-order-items-total-total">
-            <div class="fct-thank-you-page-order-items-total-label">
+        <div class="fct-meta-line fct-thank-you-page-order-items-total-total">
+            <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                 <?php echo esc_html__('Total', 'fluent-cart'); ?>
             </div>
-            <div class="fct-thank-you-page-order-items-total-value">
+            <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                 <?php echo esc_html(Helper::toDecimal($order->total_amount - $order->total_refund)); ?>
             </div>
         </div>
@@ -494,11 +514,11 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
         $transaction = $order->getLatestTransaction();
         ?>
-        <div class="fct-thank-you-page-order-items-total-payment-method">
-            <div class="fct-thank-you-page-order-items-total-label">
+        <div class="fct-meta-line fct-thank-you-page-order-items-total-payment-method">
+            <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                 <?php echo esc_html__('Payment Method', 'fluent-cart'); ?>
             </div>
-            <div class="fct-thank-you-page-order-items-total-value">
+            <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
                 <?php if ($transaction->card_last_4) :
                     echo esc_html($transaction->card_brand) . ' ' . esc_html($transaction->card_last_4);
                 else:

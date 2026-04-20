@@ -103,6 +103,13 @@ body.fct-bulk-page #wpcontent {
   }
 }
 
+.fct-mp-add-featured {
+    @apply w-[80px] h-[80px] border-dashed text-system-light transition-all duration-150 dark:text-gray-300;
+    svg {
+      @apply w-5.5 h-5.5 !important;
+    }
+}
+
 // ── Column resizer ───────────────────────────────────────────
 
 .resizer {
@@ -765,4 +772,42 @@ html.dark {
 
 .el-overlay .el-dialog.fct-bulk-import-dialog {
   @apply w-[810px];
+}
+
+/* Featured media picker mode */
+.fct-media-picker.is-featured {
+  @apply cursor-pointer flex-shrink-0;
+  .fmp-featured {
+    @apply relative inline-flex items-center;
+    &__image {
+      @apply w-[80px] h-[80px] rounded object-cover;
+      &.is-hidden {
+        @apply hidden;
+      }
+    }
+    &__edit-icon {
+      @apply absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 rounded;
+      background-color: rgba(0, 0, 0, 0.35);
+      color: #fff;
+      svg {
+        @apply w-5 h-5;
+      }
+    }
+    &__count {
+      @apply absolute bottom-1 right-1 left-1 transition-opacity duration-150 font-medium !important;
+      background-color: rgba(0, 0, 0, 0.48);
+      color: #fff;
+      .el-tag__content {
+        @apply flex items-center;
+      }
+    }
+    &:hover {
+      .fmp-featured__edit-icon {
+        @apply opacity-100;
+      }
+      .fmp-featured__count {
+        @apply opacity-0;
+      }
+    }
+  }
 }

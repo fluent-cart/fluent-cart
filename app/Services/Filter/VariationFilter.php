@@ -8,10 +8,10 @@ use FluentCart\Framework\Database\Orm\Builder;
 class VariationFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
 
-        $this->query = $this->query->when($this->search, function ($query, $search) {
+        $this->query = $this->query->when($search ?? $this->search, function ($query, $search) {
             return $query->where('post_title', 'LIKE', "%{$search}%")
                 ->orWhereHas('variants', function (Builder $query) use ($search) {
                     $query->where('variation_title', 'LIKE', "%{$search}%");
@@ -48,7 +48,7 @@ class VariationFilter extends BaseFilter
         return 'product_variation';
     }
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
 
     }

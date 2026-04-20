@@ -21,13 +21,6 @@ const DEFAULT_TEMPLATE = [
     ['core/columns', {}, [
         ['core/column', {width: 65}, [
             ['fluent-cart/checkout-name-fields', {lock: {remove: true, move: false}}],
-            ['fluent-cart/checkout-create-account-field', {
-                style: {
-                    typography: {
-                        fontSize: '14px'
-                    }
-                }
-            }],
             ['fluent-cart/checkout-address-fields'],
             ['fluent-cart/checkout-agree-terms-field', {
                 style: {
@@ -42,26 +35,7 @@ const DEFAULT_TEMPLATE = [
             ['fluent-cart/checkout-submit-button']
         ]],
         ['core/column', {width: 35}, [
-            [
-                'fluent-cart/checkout-summary',
-                {},
-                [
-                    ['fluent-cart/checkout-order-summary'],
-                    [
-                        'fluent-cart/checkout-summary-footer',
-                        {},
-                        [
-                            ['fluent-cart/checkout-subtotal'],
-                            ['fluent-cart/checkout-shipping'],
-                            ['fluent-cart/checkout-coupon'],
-                            ['fluent-cart/checkout-manual-discount'],
-                            ['fluent-cart/checkout-tax'],
-                            ['fluent-cart/checkout-shipping-tax'],
-                            ['fluent-cart/checkout-total']
-                        ]
-                    ]
-                ]
-            ],
+            ['fluent-cart/checkout-summary'],
             [
                 'fluent-cart/checkout-order-notes-field'
             ],

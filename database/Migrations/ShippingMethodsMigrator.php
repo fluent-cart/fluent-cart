@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class ShippingMethodsMigrator extends Migrator
 {
     public static string $tableName = 'fct_shipping_methods';
@@ -18,7 +16,7 @@ class ShippingMethodsMigrator extends Migrator
                 `settings` LONGTEXT NULL,
                 `is_enabled` TINYINT(1) NOT NULL DEFAULT 1,
                 `states` json DEFAULT NULL,
-                `amount` BIGINT UNSIGNED NULL DEFAULT 0,
+                `amount` DECIMAL(10, 2) NULL DEFAULT 0.00,
                 `order` INT UNSIGNED NOT NULL DEFAULT 0,
                 `meta` json DEFAULT NULL,
                 `created_at` DATETIME NULL,
@@ -26,5 +24,37 @@ class ShippingMethodsMigrator extends Migrator
 
                 INDEX `{$indexPrefix}_zone_id_idx` (`zone_id` ASC),
                 INDEX `{$indexPrefix}_order_idx` (`order` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addStatesColumn();
+        static::modifyStatesToJson();
+        static::addMetaColumn();
+        static::changeAmountToDecimal();
+    }
+
+    public static function addStatesColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `states` JSON NULL AFTER `is_enabled`"
+        static::addColumnIfNotExists('states', 'JSON NULL', 'is_enabled');
+    }
+
+    public static function modifyStatesToJson()
+    {
+        // "ALTER TABLE %i MODIFY COLUMN `states` JSON NULL"
+        static::modifyColumnIfExists('states', 'JSON NULL');
+    }
+
+    public static function addMetaColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `meta` JSON NULL AFTER `order`"
+        static::addColumnIfNotExists('meta', 'JSON NULL', 'order');
+    }
+
+    public static function changeAmountToDecimal()
+    {
+        // "ALTER TABLE %i MODIFY COLUMN `amount` DECIMAL(10, 2) NULL DEFAULT 0.00"
+        static::modifyColumnIfExists('amount', 'DECIMAL(10, 2) NULL DEFAULT 0.00');
     }
 }

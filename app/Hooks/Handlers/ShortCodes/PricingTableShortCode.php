@@ -10,6 +10,7 @@ use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
+use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\PricingTableRenderer;
 
 class PricingTableShortCode extends ShortCode
@@ -100,6 +101,7 @@ class PricingTableShortCode extends ShortCode
 
     public function render(?array $viewData = null)
     {
+        AssetLoader::markFrontendAssetsRequired();
         ob_start();
         (new PricingTableRenderer($viewData))->render();
         return ob_get_clean();

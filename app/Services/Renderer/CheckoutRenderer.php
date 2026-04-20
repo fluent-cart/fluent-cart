@@ -159,9 +159,11 @@ class CheckoutRenderer
         <div <?php RenderHelper::renderAtts($atts); ?> role="main"
             aria-label="<?php esc_attr_e('Checkout Page', 'fluent-cart'); ?>">
             <?php
-            do_action('fluent_cart/afrer_checkout_page_start', [
+            $hookData = [
                 'cart' => $this->cart
-            ]);
+            ];
+            do_action_deprecated('fluent_cart/afrer_checkout_page_start', [$hookData], '1.3.16', 'fluent_cart/after_checkout_page_start', 'Use fluent_cart/after_checkout_page_start instead of fluent_cart/afrer_checkout_page_start.');
+            do_action('fluent_cart/after_checkout_page_start', $hookData);
     }
 
     public function renderNotices()
@@ -638,6 +640,22 @@ class CheckoutRenderer
         }
     }
 
+    /**
+     * Get available shipping methods considering cart's shipping classes.
+     * This is used by the frontend to display profile-aware methods.
+     */
+    public function getProfileAwareShippingMethods($countryCode, $stateCode)
+    {
+        // Get general methods (backward compatible)
+        $methods = AddressHelper::getShippingMethods($countryCode, $stateCode);
+
+        if (is_wp_error($methods) || empty($methods)) {
+            return $methods;
+        }
+
+        return $methods;
+    }
+
     public function renderPaymentMethods($atts = [])
     {
         if ($this->cart->getEstimatedTotal() <= 0) {
@@ -794,11 +812,13 @@ class CheckoutRenderer
                 <?php endif; ?>
                 <div class="fluent-cart-checkout_embed_payment_wrapper">
                     <?php
-                    $paymentMethodClass = apply_filters('fluent_cart_payment_method_list_class', '', [
+                    $pmContext = [
                         'route' => $route,
                         'method_title' => $methodTitle,
                         'method_style' => $methodStyle,
-                    ]);
+                    ];
+                    $paymentMethodClass = apply_filters_deprecated('fluent_cart_payment_method_list_class', ['', $pmContext], '1.3.16', 'fluent_cart/payment_method_list_class', 'Use fluent_cart/payment_method_list_class instead of fluent_cart_payment_method_list_class.');
+                    $paymentMethodClass = apply_filters('fluent_cart/payment_method_list_class', $paymentMethodClass, $pmContext);
 
                     ?>
                     <div class="<?php echo "fluent-cart-checkout_embed_payment_container fluent-cart-checkout_embed_payment_container_" . esc_attr($route . ' ' . $paymentMethodClass); ?>"

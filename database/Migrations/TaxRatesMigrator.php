@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class TaxRatesMigrator extends Migrator
 {
 
@@ -31,5 +29,16 @@ class TaxRatesMigrator extends Migrator
 
                  INDEX `{$indexPrefix}_txr_class_idx` (`class_id` ASC),
                  INDEX `{$indexPrefix}_priority_idx` (`priority` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addGroupColumn();
+    }
+
+    public static function addGroupColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `group` VARCHAR(45) NULL AFTER `name`"
+        static::addColumnIfNotExists('group', 'VARCHAR(45) NULL', 'name');
     }
 }

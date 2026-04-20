@@ -24,6 +24,10 @@ class Sort
             if (empty($key)) {
                 continue;
             }
+            // Validate column name to prevent SQL injection — only allow alphanumeric, underscores, and dots (for table.column)
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_.]*$/', $key)) {
+                continue;
+            }
             $order = Arr::get($criteria, 'order') === 'descending' ? 'desc' : 'asc';
             $query->orderBy($key, $order);
         }

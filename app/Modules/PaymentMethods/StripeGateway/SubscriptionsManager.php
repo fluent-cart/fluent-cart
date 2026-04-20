@@ -52,6 +52,10 @@ class SubscriptionsManager
             'usage'                => 'off_session'
         ]);
 
+        if (is_wp_error($setupIntent)) {
+            static::sendError($setupIntent->get_error_message());
+        }
+
         $status = Arr::get($setupIntent, 'status');
 
         if ('requires_action' === $status) {

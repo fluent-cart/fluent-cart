@@ -67,14 +67,17 @@
     @apply box-border;
   }
 
-  @apply z-[999999] bg-[var(--fct-cart-drawer-bg)] fixed w-[500px] max-w-full left-full bottom-0 h-screen transition-all shadow-lg;
+  @apply z-[999999] bg-[var(--fct-cart-drawer-bg)] fixed w-[500px] max-w-full left-full bottom-0 transition-all shadow-lg;
+  height: 100vh;
+  height: 100dvh;
 
   &.open {
     @apply left-[calc(100%-min(100%,500px))];
   }
 
   &.admin_bar_enabled {
-    @apply h-[calc(100vh-32px)]
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
   }
   .fct-cart-total-wrapper {
     @apply p-5;
@@ -423,6 +426,7 @@
 @media (max-width: 768px){
   .fct-cart-drawer.admin_bar_enabled {
     height: 100vh;
+    height: 100dvh;
   }
 }
 

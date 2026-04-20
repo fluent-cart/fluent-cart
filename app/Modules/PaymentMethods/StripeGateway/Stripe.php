@@ -167,6 +167,7 @@ class Stripe extends AbstractPaymentGateway
                     'redirecting for action' => __('redirecting for action', 'fluent-cart'),
                     'You will be redirected to Stripe to complete your payment securely.' => __('You will be redirected to Stripe to complete your payment securely.', 'fluent-cart'),
                     'Something went wrong' => __('Something went wrong', 'fluent-cart'),
+                    'Payment confirmation failed' => __('Payment confirmation failed', 'fluent-cart'),
                 ]
             ]
         ];
@@ -261,6 +262,9 @@ class Stripe extends AbstractPaymentGateway
 
     public function fields(): array
     {
+        $disabled = apply_filters_deprecated('fluent_cart_form_disable_stripe_connect', [false, []], '1.3.16', 'fluent_cart/form_disable_stripe_connect', 'Use fluent_cart/form_disable_stripe_connect instead of fluent_cart_form_disable_stripe_connect.');
+        $providerValue = apply_filters('fluent_cart/form_disable_stripe_connect', $disabled, []) ? 'api_keys' : 'connect';
+
         return array(
             'notice'              => [
                 'value' => $this->renderStoreModeNotice(),
@@ -285,7 +289,7 @@ class Stripe extends AbstractPaymentGateway
                 ]
             ],
             'provider'            => array(
-                'value' => apply_filters('fluent_cart_form_disable_stripe_connect', false, []) ? 'api_keys' : 'connect',
+                'value' => $providerValue,
                 'label' => __('Provider', 'fluent-cart'),
                 'type'  => 'provider'
             ),
@@ -374,7 +378,7 @@ class Stripe extends AbstractPaymentGateway
          *         )
          *     );
          * }
-         * add_filter('fluent_cart_stripe_appearance', 'stripe_appearance', 10, 1);
+         * add_filter('fluent_cart/stripe_appearance', 'stripe_appearance', 10, 1);
          * 
          * @see https://docs.stripe.com/elements/appearance-api for all available options
          * @param array $appearance The appearance configuration
@@ -424,9 +428,10 @@ class Stripe extends AbstractPaymentGateway
         $paymentArgs['public_key'] = $publicKey;
 
         // Allow filtering the appearance configuration for Stripe Elements
-        $appearance = apply_filters('fluent_cart_stripe_appearance', [
-            'theme' => 'stripe'
-        ]);
+        $appearance = apply_filters_deprecated('fluent_cart_stripe_appearance', [
+            ['theme' => 'stripe']
+        ], '1.3.16', 'fluent_cart/stripe_appearance', 'Use fluent_cart/stripe_appearance instead of fluent_cart_stripe_appearance.');
+        $appearance = apply_filters('fluent_cart/stripe_appearance', $appearance);
 
         $storeCurrency = CurrencySettings::get('currency');
         $intentAmount = (int)$totalPrice;

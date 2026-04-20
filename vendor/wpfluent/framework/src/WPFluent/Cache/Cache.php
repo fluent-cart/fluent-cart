@@ -169,7 +169,7 @@ class Cache
                 return $value;
             }
         } catch (Throwable $e) {
-
+            error_log("Cache callback error [{$key}]: " . $e->getMessage());
         }
     }
 
@@ -290,6 +290,7 @@ class Cache
                 'expiration' => time() + $expiration,
             ]);
         } catch (Throwable $e) {
+            error_log(__METHOD__ .' - '. $e->getMessage());
             throw $e;
         }
 

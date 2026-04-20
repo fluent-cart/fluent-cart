@@ -2,8 +2,6 @@
 import {computed, getCurrentInstance, onMounted, ref} from "vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import ProductPricingForm from "./ProductPricingForm.vue";
-import {CopyDocument} from '@element-plus/icons-vue'
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import LabelHint from "@/Bits/Components/LabelHint.vue";
 
@@ -18,11 +16,17 @@ const props = defineProps({
   productEditModel: Object,
 })
 
-const showModal = ref(false)
+const emit = defineEmits(['open-editor']);
+
 let index = ref(null)
 const minimumPricingCount = ref(1);
-const modeType = ref('');
-const showLinkCopyModal = ref(false);
+
+const openEditor = (nextModeType = 'update') => {
+  emit('open-editor', {
+    modeType: nextModeType,
+    index: props.index ?? null
+  });
+};
 
 const dropdownContext = computed(() => {
   return {
@@ -31,8 +35,7 @@ const dropdownContext = computed(() => {
     index: props.index,
     productEditModel: props.productEditModel,
     openPricingModal: (nextModeType) => {
-      modeType.value = nextModeType;
-      showModal.value = true;
+      openEditor(nextModeType);
     },
     vueContext: getCurrentInstance().ctx
   };
@@ -95,12 +98,9 @@ const actionMenuHandler = (command) => {
 
   if (command === 'duplicate_pricing') {
     // Call the function to duplicate pricing when the command is 'duplicate_pricing'.
-    index.value = null;
-    modeType.value = 'duplicate';
-    showModal.value = true
+    openEditor('duplicate');
   } else if (command === 'delete_variant') {
     // Call the function to delete a variant when the command is 'delete_variant'.
-    modeType.value = 'delete';
     props.productEditModel.deletePricing(props.variant.id, props.index);
   }
 }
@@ -112,10 +112,7 @@ const actionMenuHandler = (command) => {
       <el-button
         v-if="product.detail.variation_type !== 'simple'"
         text type="primary"
-        @click="()=>{
-          modeType = 'create'
-          showModal = true;
-        }"
+        @click="openEditor('create')"
       >
         <DynamicIcon name="Plus"/>
         {{ product.variants.length > 0 ? $t('Add more') : $t('Add Pricing') }}
@@ -123,10 +120,7 @@ const actionMenuHandler = (command) => {
     </div><!-- .fct-product-add-more-price-wrap -->
 
     <div class="fct-btn-group sm" v-if="props.modeType == 'action'">
-      <IconButton class="hide-on-mobile" size="small" tag="button" @click="()=>{
-          modeType = 'update';
-          showModal = true;
-      }">
+      <IconButton class="hide-on-mobile" size="small" tag="button" @click="openEditor('update')">
         <DynamicIcon name="Edit"/>
       </IconButton>
 
@@ -146,10 +140,7 @@ const actionMenuHandler = (command) => {
               </el-checkbox>
             </el-dropdown-item>
 
-            <el-dropdown-item class="show-on-mobile" @click="()=>{
-                modeType = 'update';
-                showModal = true;
-            }">
+            <el-dropdown-item class="show-on-mobile" @click="openEditor('update')">
                <DynamicIcon name="Edit"/>
               {{ $t('Edit') }}
             </el-dropdown-item>
@@ -208,31 +199,5 @@ const actionMenuHandler = (command) => {
         </template>
       </el-dropdown>
     </div>
-
-    <el-drawer
-        :show-close="true"
-        v-model="showModal"
-        :title="$t('Pricing')"
-        size="500px"
-        :append-to-body="true"
-        :close-on-click-modal="true"
-        :close-on-press-escape="false"
-        :destroy-on-close="true"
-        @before-close="() => {}"
-        class="fct-variant-drawer"
-    >
-      <ProductPricingForm
-        :index="props.index"
-        :modeType="modeType"
-        :fieldKey="'variants'"
-        :product="product"
-        :productEditModel="productEditModel"
-        @createOrUpdateVariant="showModal = false"
-        @closeModal="(() => {
-          productEditModel.setValidationErrors({})
-          showModal = false
-        })">
-      </ProductPricingForm>
-    </el-drawer>
   </div>
 </template>

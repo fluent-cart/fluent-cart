@@ -23,7 +23,7 @@ class Cod extends AbstractPaymentGateway
     public function boot()
     {
         add_action('fluent_cart/payment_paid', [$this, 'handlePaymentPaid'], 10, 1);
-        add_filter('fluent_cart_payment_method_list_class', [$this, 'getPaymentMethodClass'], 10, 2);
+        add_filter('fluent_cart/payment_method_list_class', [$this, 'getPaymentMethodClass'], 10, 2);
     }
 
     public function getPaymentMethodClass($class, $data): string

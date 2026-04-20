@@ -179,6 +179,7 @@
                               class="fct-media-content-list-item px-0"
                               v-if="
                               product.payment_type !== 'signup_fee' &&
+                              product.payment_type !== 'fee' &&
                               product?.other_info?.item_status !== 'adjusted' &&
                               shouldSkipAdjustmentItem(product)
                             "
@@ -254,7 +255,7 @@
                                     </router-link>
                                   </div>
 
-                                  <div class="product-variation-title m-0">
+                                  <div v-if="product?.title !== product?.post_title" class="product-variation-title m-0">
                                     &#8211; {{ product?.title }}
                                   </div>
 
@@ -449,6 +450,13 @@
                         :shippingMethodsProps="shippingMethods"
                         :otherShippingMethodsProps="otherShippingMethods"
                     />
+                    <template v-if="order.fee_total > 0">
+                      <tr v-for="feeItem in feeItems" :key="'fee-' + feeItem.id">
+                        <td>{{ feeItem.title }}</td>
+                        <td></td>
+                        <td>{{ formatNumber(feeItem.subtotal) }}</td>
+                      </tr>
+                    </template>
                     <Coupon
                         v-if="
                           order.order_items.length > 0 &&
@@ -1107,6 +1115,10 @@ export default {
     },
     canSendPaymentReminder() {
       return this.canSendPaymentReminderFlag;
+    },
+    feeItems() {
+      if (!this.order || !this.order.order_items) return [];
+      return this.order.order_items.filter(item => item.payment_type === 'fee');
     },
   },
   methods: {

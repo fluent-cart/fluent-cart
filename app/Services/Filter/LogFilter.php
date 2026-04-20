@@ -8,9 +8,9 @@ use FluentCart\Framework\Support\Str;
 class LogFilter extends BaseFilter
 {
 
-    public function applySimpleFilter()
+    public function applySimpleFilter(?string $search = null): void
     {
-        $this->query->when($this->search, function ($query, $search) {
+        $this->query->when($search ?? $this->search, function ($query, $search) {
             return $query
                 ->where(function ($query) use ($search) {
                     $searchOptions = [];
@@ -57,11 +57,12 @@ class LogFilter extends BaseFilter
     }
 
 
-    public function applyActiveViewFilter()
+    public function applyActiveViewFilter(?string $activeView = null): void
     {
+        $activeView = $activeView ?? $this->activeView;
         $tabsMap = $this->tabsMap();
 
-        $this->query->when($this->activeView, function ($query, $activeView) use ($tabsMap) {
+        $this->query->when($activeView, function ($query, $activeView) use ($tabsMap) {
             $query->where($tabsMap[$activeView], $activeView);
         });
     }

@@ -129,7 +129,6 @@ const getData = async (params) => {
 
   await defaultReport.getTopSoldVariants(params);
   // defaultReport.getTopSoldVariants(params);
-  // cartReportModel.getAbandonedCartItems();
 };
 
 onMounted(() => {

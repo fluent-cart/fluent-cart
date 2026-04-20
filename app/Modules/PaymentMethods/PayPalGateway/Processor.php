@@ -140,7 +140,8 @@ class Processor
     {
         $orderType = $paymentInstance->order->type;
         $subscription = $paymentInstance->subscription;
-        $initialAmount = (int)$subscription->signup_fee + $paymentInstance->getExtraAddonAmount();
+        $feeTotal = $orderType !== 'renewal' ? (int)$paymentInstance->order->fee_total : 0;
+        $initialAmount = (int)$subscription->signup_fee + $paymentInstance->getExtraAddonAmount() + $feeTotal;
         $status = Status::SUBSCRIPTION_INTENDED;
 
         if ($orderType == 'renewal') {
@@ -279,17 +280,35 @@ class Processor
     {
         $order = $transaction->order;
 
-        $parentOrderId = $order->id;
-        if ($transaction->order_type === Status::ORDER_TYPE_RENEWAL) {
-            $parentOrderId = $transaction->order->parent_id;
-        };
-
         if (!$subscriptionModel) {
-            $subscriptionModel = Subscription::query()->where('parent_order_id', $parentOrderId)->first();
+            $subscriptionModel = Subscription::query()->where('id', $transaction->subscription_id)->first();
         }
 
         if (!$subscriptionModel || $subscriptionModel->status === Status::SUBSCRIPTION_ACTIVE) {
             return $subscriptionModel; // already active or invalid
+        }
+
+        // Verify the PayPal subscription's plan matches the expected plan
+        if ($subscriptionModel->vendor_plan_id) {
+            $paypalPlanId = Arr::get($paypalSubscription, 'plan_id', '');
+            if ($paypalPlanId && $paypalPlanId !== $subscriptionModel->vendor_plan_id) {
+                fluent_cart_add_log(
+                    __('PayPal Subscription Plan Mismatch', 'fluent-cart'),
+                    sprintf(
+                        /* translators: %1$s: expected plan ID, %2$s: received plan ID */
+                        __('PayPal subscription plan mismatch. Expected: %1$s, Received: %2$s. Subscription not activated.', 'fluent-cart'),
+                        $subscriptionModel->vendor_plan_id,
+                        $paypalPlanId
+                    ),
+                    'error',
+                    [
+                        'module_name' => 'order',
+                        'module_id'   => $order->id,
+                        'log_type'    => 'api'
+                    ]
+                );
+                return $subscriptionModel; // Do not activate
+            }
         }
 
         $nextBillingDate = Arr::get($paypalSubscription, 'billing_info.next_billing_time') ?? null;
@@ -311,6 +330,25 @@ class Processor
 
         $transactionUpdateData = [];
         $lastTransactionAmount = Helper::toCent(Arr::get($paypalSubscription, 'billing_info.last_payment.amount.value', 0));
+
+        if ($lastTransactionAmount && $transaction->total > 0 && $lastTransactionAmount != $transaction->total) {
+            fluent_cart_add_log(
+                __('PayPal Subscription Amount Mismatch', 'fluent-cart'),
+                sprintf(
+                    /* translators: %1$s: expected amount, %2$s: received amount */
+                    __('PayPal subscription billing amount mismatch. Expected: %1$s, Received: %2$s. Subscription not activated.', 'fluent-cart'),
+                    Helper::toDecimal($transaction->total),
+                    Helper::toDecimal($lastTransactionAmount)
+                ),
+                'error',
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $order->id,
+                    'log_type'    => 'api'
+                ]
+            );
+            return $subscriptionModel; // Do not activate
+        }
 
         if (($lastTransactionAmount && $transaction->total == $lastTransactionAmount) || $transaction->total == 0) {
             $transactionUpdateData = [

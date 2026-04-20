@@ -74,7 +74,7 @@ class ShippingModule
 
         $changes = Arr::get($data, 'changes', []);
         if (!array_intersect(array_keys($changes), $watchingKeys)) {
-//            dd('No Changed');
+            // No changes detected
             return $fillData;
         }
 
@@ -116,9 +116,23 @@ class ShippingModule
                     break;
                 }
             }
-        } 
+        }
 
-        $calculations = CartHelper::calculateShippingMethodCharge($shippingMethod, $fillData['cart_data'], 'items');
+        // Use profile-aware calculation if any cart items have shipping classes
+        $cartData = Arr::get($fillData, 'cart_data', []);
+        $hasShippingClasses = $this->cartHasShippingClasses($cartData);
+
+        if ($hasShippingClasses && $shippingCountry) {
+            $calculations = CartHelper::calculateShippingByProfile(
+                $shippingMethod->id,
+                $cartData,
+                $shippingCountry,
+                $shippingState,
+                'items'
+            );
+        } else {
+            $calculations = CartHelper::calculateShippingMethodCharge($shippingMethod, $cartData, 'items');
+        }
 
         $newCharge = Arr::get($calculations, 'shipping_amount', 0);
         $items = Arr::get($calculations, 'items', []);
@@ -129,6 +143,31 @@ class ShippingModule
         Arr::set($fillData, 'checkout_data.shipping_data.shipping_method_id', $shippingMethod->id);
 
         return $fillData;
+    }
+
+    private function cartHasShippingClasses($cartData)
+    {
+        if (empty($cartData)) {
+            return false;
+        }
+
+        $postIds = array_unique(array_column($cartData, 'post_id'));
+        if (empty($postIds)) {
+            return false;
+        }
+
+        $products = \FluentCart\App\Models\Product::query()
+            ->whereIn('ID', $postIds)
+            ->with(['detail'])
+            ->get();
+
+        foreach ($products as $product) {
+            if ($product->detail && !empty($product->detail->other_info['shipping_class'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

@@ -2,8 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
 class ProductVariationMigrator extends Migrator
 {
     public static string $tableName = 'fct_product_variations';
@@ -41,5 +39,18 @@ class ProductVariationMigrator extends Migrator
                 INDEX `{$indexPrefix}_post_id_idx` (`post_id` ASC),
                 UNIQUE INDEX `sku_unique` (`sku` ASC),
                 INDEX `{$indexPrefix}_stock_status_idx` (`stock_status` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addSkuColumn();
+    }
+
+    public static function addSkuColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `sku` VARCHAR(30) NULL DEFAULT NULL AFTER `variation_identifier`"
+        static::addColumnIfNotExists('sku', 'VARCHAR(30) NULL DEFAULT NULL', 'variation_identifier');
+        // "ALTER TABLE %i ADD UNIQUE INDEX `sku_unique` (`sku` ASC)"
+        static::addIndexIfNotExists('sku_unique', 'sku', true);
     }
 }

@@ -23,6 +23,7 @@ class ShippingClass extends Model
      */
     protected $fillable = [
         'name',
+        'description',
         'cost',
         'type',
         'per_item'
@@ -37,12 +38,8 @@ class ShippingClass extends Model
         'cost' => 'float'
     ];
 
-    /**
-     * Get products that belong to this shipping class
-     * This relationship will need to be implemented once you add the shipping_class_id to products
-     */
-    // public function products()
-    // {
-    //     return $this->hasMany(Product::class, 'shipping_class_id', 'id');
-    // }
+    public function zones(): \FluentCart\Framework\Database\Orm\Relations\HasMany
+    {
+        return $this->hasMany(ShippingZone::class, 'shipping_class_id', 'id');
+    }
 }

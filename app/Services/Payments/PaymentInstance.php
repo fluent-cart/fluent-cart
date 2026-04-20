@@ -64,7 +64,7 @@ class PaymentInstance
         }
 
         $extraItems = $this->order->order_items->filter(function ($item) {
-            return $item->payment_type !== 'subscription' && $item->payment_type !== 'signup_fee';
+            return $item->payment_type !== 'subscription' && $item->payment_type !== 'signup_fee' && $item->payment_type !== 'fee';
         });
 
         $extraAmount = 0;

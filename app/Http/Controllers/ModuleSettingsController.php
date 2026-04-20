@@ -178,6 +178,60 @@ class ModuleSettingsController extends Controller
         ]);
     }
 
+    public function verifyTurnstileKeys(Request $request): \WP_REST_Response
+    {
+        $siteKey = $request->getSafe('site_key', 'sanitize_text_field');
+        $secretKey = $request->getSafe('secret_key', 'sanitize_text_field');
+
+        $token = $request->getSafe('token', 'sanitize_text_field');
+
+        if (empty($siteKey) || empty($secretKey)) {
+            return $this->sendError([
+                'message' => __('Both Site Key and Secret Key are required.', 'fluent-cart')
+            ]);
+        }
+
+        if (empty($token)) {
+            return $this->sendError([
+                'message' => __('Could not get a Turnstile token. Please check your Site Key and ensure this domain is allowed in Cloudflare.', 'fluent-cart')
+            ]);
+        }
+
+        $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+            'body'    => [
+                'secret'   => $secretKey,
+                'response' => $token,
+            ],
+            'timeout' => 10
+        ]);
+
+        if (is_wp_error($response)) {
+            return $this->sendError([
+                'message' => __('Could not connect to Cloudflare. Please try again.', 'fluent-cart')
+            ]);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $result = json_decode($body, true);
+
+        if (!empty($result['success'])) {
+            return $this->sendSuccess([
+                'message' => __('Turnstile keys are valid and working.', 'fluent-cart')
+            ]);
+        }
+
+        $errorCodes = Arr::get($result, 'error-codes', []);
+        $errorMessage = __('Invalid Turnstile keys. Please check your Site Key and Secret Key.', 'fluent-cart');
+
+        if (in_array('invalid-input-secret', $errorCodes)) {
+            $errorMessage = __('The Secret Key is invalid. Please check it in your Cloudflare Dashboard.', 'fluent-cart');
+        }
+
+        return $this->sendError([
+            'message' => $errorMessage
+        ]);
+    }
+
     private function getRegisteredPluginAddons(): array
     {
         $addons = [
@@ -191,7 +245,17 @@ class ModuleSettingsController extends Controller
                 'source_type' => 'cdn',
                 'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-elementor-blocks.zip',
                 'upcoming' => false,
-                'repo_link' => 'https://fluentcart.com/fluentcart-addons'
+                'repo_link' => 'https://github.com/WPManageNinja/fluent-cart-elementor-blocks'
+            ],
+            'fluent-pdf' => [
+                'title'       => __('Fluent PDF', 'fluent-cart'),
+                'description' => __('Generate PDF receipts and attach them to email notifications.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/fluent-pdf/black.svg'),
+                'dark_logo'   => Vite::getAssetUrl('images/fluent-pdf/white.svg'),
+                'plugin_slug' => 'fluentforms-pdf',
+                'plugin_file' => 'fluentforms-pdf/fluentforms-pdf.php',
+                'source_type' => 'wordpress',
+                'upcoming'    => false,
             ]
         ];
 

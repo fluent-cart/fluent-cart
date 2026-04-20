@@ -131,7 +131,7 @@ class AdminOrderProcessor
                     'post_id'          => $item['post_id'],
                     'object_id'        => $item['object_id'],
                     'post_title'       => $item['post_title'],
-                    'title'            => __('Signup Fee', 'fluent-cart'),
+                    'title'            => Arr::get($checkoutItem, 'other_info.signup_fee_name', __('Signup Fee', 'fluent-cart')),
                     'fulfillment_type' => $item['fulfillment_type'],
                     'quantity'         => $quantity,
                     'cost'             => 0,
@@ -375,10 +375,10 @@ class AdminOrderProcessor
                 $cart->save();
                 $actions = Arr::get($cart->checkout_data, '__after_draft_created_actions__', []);
                 if ($actions) {
-                    foreach ($actions as $actioName) {
-                        $actioName = (string)$actioName;
-                        if (has_action($actioName)) {
-                            do_action($actioName, [
+                    foreach ($actions as $actionName) {
+                        $actionName = (string)$actionName;
+                        if (has_action($actionName)) {
+                            do_action($actionName, [
                                 'order' => $this->orderModel,
                                 'cart'  => $cart,
                             ]);

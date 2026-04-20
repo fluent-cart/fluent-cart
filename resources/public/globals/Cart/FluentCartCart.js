@@ -205,6 +205,11 @@ export default class FluentCartCart {
                                     }
 
                                 }
+                                // Check if drawer is now open after fragments are injected
+                                const drawer = document.querySelector('[data-fluent-cart-cart-drawer]');
+                                if (drawer && drawer.classList.contains(ref.#cartDrawerToggleClass)) {
+                                    ref.openModal();
+                                }
                             }
                             if (response && response?.data?.cart?.cart_data) {
                                 resolve(response.data.cart.cart_data);

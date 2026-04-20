@@ -4,6 +4,11 @@ import Arr from "@/utils/support/Arr";
 
 class ShippingZoneTable extends Table {
 
+    constructor(data) {
+        super(data);
+        this.shippingClassId = data?.shipping_class_id ?? undefined;
+    }
+
     setupInitialData() {
         super.setupInitialData();
         this.data.sorting.sortBy = "id";
@@ -42,6 +47,14 @@ class ShippingZoneTable extends Table {
 
     getSearchHint() {
         return translate("Search by zone name")
+    }
+
+    buildQueryParams() {
+        const params = super.buildQueryParams();
+        if (this.shippingClassId !== undefined) {
+            params['shipping_class_id'] = this.shippingClassId;
+        }
+        return params;
     }
 
     getFetchUrl() {

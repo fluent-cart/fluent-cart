@@ -4,6 +4,7 @@ namespace FluentCart\App\Services;
 
 use FluentCart\Api\ModuleSettings;
 use FluentCart\Api\StoreSettings;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Model;
@@ -185,9 +186,9 @@ class OrderService
             // get order_items from OrderItems
             $orderItems = $prevOrder->order_items;
 
-            // filter payment_type is not signup_fee
+            // filter payment_type is not signup_fee or fee
             $orderItems = $orderItems->filter(function ($item) {
-                return $item->payment_type !== 'signup_fee';
+                return !in_array($item->payment_type, ['signup_fee', 'fee']);
             });
 
             $stockMovement = OrderMeta::where('order_id', $prevOrder->id)
@@ -269,7 +270,7 @@ class OrderService
 
 
             $orderItems = $orderItems->filter(function ($item) {
-                return $item->payment_type !== 'signup_fee';
+                return !in_array($item->payment_type, ['signup_fee', 'fee']);
             });
 
             // get stock movement for this order
@@ -428,7 +429,15 @@ class OrderService
 
         $total += $shippingTotal;
 
-        return $formatted ? Helper::toDecimal($total, $withCurrency) : intval($total);
+        $total = apply_filters('fluent_cart/cart/items_total', $total, [
+            'items'          => $items,
+            'shipping_total' => $shippingTotal,
+        ]);
+
+        // Ensure filtered total is non-negative
+        $total = max(0, (int)round((float)$total));
+
+        return $formatted ? Helper::toDecimal($total, $withCurrency) : $total;
     }
 
     private static function calculateItemAmount(array $cartItem, $price, $paymentType, $formatted, $withCurrency)
@@ -610,7 +619,7 @@ class OrderService
 
     public static function transformTransaction(OrderTransaction $transaction)
     {
-        return [
+        $data = [
             'uuid'             => $transaction->uuid,
             'invoice_no'       => $transaction->order ? $transaction->order->invoice_no : 'n/a',
             'created_at'       => $transaction->created_at->format('Y-m-d H:i:s'),
@@ -623,8 +632,19 @@ class OrderService
             'card_last_4'      => $transaction->card_last_4,
             'vendor_charge_id' => $transaction->vendor_charge_id,
             'transaction_type' => $transaction->transaction_type,
-            'receipt_url'      => $transaction->order ? $transaction->order->getReceiptUrl() : '',
+            'receipt_download_url' => $transaction->order ? $transaction->order->getReceiptDownloadUrl() : '',
         ];
+
+        if ($transaction->order && self::canGenerateReceiptPdf()) {
+            $data['receipt_view_url'] = $transaction->order->getReceiptViewUrl();
+        }
+
+        return $data;
+    }
+
+    public static function canGenerateReceiptPdf(): bool
+    {
+        return App::isProActive() && defined('FLUENT_PDF');
     }
 
 }

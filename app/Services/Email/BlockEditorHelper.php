@@ -273,4 +273,54 @@ class BlockEditorHelper
 
         return $css;
     }
+
+    /**
+     * Get theme color palette from editor-color-palette support or theme.json.
+     *
+     * @return array
+     */
+    public static function getThemeColorPalette()
+    {
+        $color_palette = current((array)get_theme_support('editor-color-palette'));
+        $theme_json_path = get_theme_file_path('theme.json');
+
+        if (file_exists($theme_json_path)) {
+            $theme_json = json_decode(file_get_contents($theme_json_path), true);
+
+            if (isset($theme_json['settings']['color']['palette'])) {
+                $color_palette = $theme_json['settings']['color']['palette'];
+            }
+        }
+        if (!$color_palette) {
+            $color_palette = [];
+        }
+
+        return (array)$color_palette;
+    }
+
+    /**
+     * Get theme preference scheme (colors + font sizes).
+     *
+     * @return array
+     */
+    public static function getThemePrefScheme()
+    {
+        static $pref;
+        if (!$pref) {
+            $color_palette = self::getDefaultPreset('color');
+            $font_sizes = self::getDefaultPreset('font-size');
+
+            /**
+             * Filter the theme preferences for FluentCart.
+             *
+             * @param array $pref The theme preferences with colors and font_sizes.
+             */
+            $pref = apply_filters('fluent_cart/theme_pref', [
+                'colors'     => (array)$color_palette,
+                'font_sizes' => (array)$font_sizes
+            ]);
+        }
+
+        return $pref;
+    }
 }

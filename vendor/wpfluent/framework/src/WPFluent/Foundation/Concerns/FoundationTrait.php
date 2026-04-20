@@ -486,6 +486,10 @@ trait FoundationTrait
     public function user()
     {
         if (!did_action('init')) {
+            if ($this->isDebugOn()) {
+                error_log("User not available—'init' action hasn't fired.");
+            }
+            
             return new class {
                 public function __call($method, $args) {}
             };
@@ -504,5 +508,13 @@ trait FoundationTrait
         return class_exists($userModel)
             ? ($userModel::find($wpUser->ID) ?? new WPUserProxy($wpUser))
             : new WPUserProxy($wpUser);
+    }
+
+    public function enableApplicationPassword()
+    {
+        add_filter(
+            'wp_is_application_passwords_available',
+            fn() => !str_starts_with($this->env(), 'prod')
+        );
     }
 }

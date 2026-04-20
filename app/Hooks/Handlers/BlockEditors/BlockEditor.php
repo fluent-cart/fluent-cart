@@ -95,6 +95,11 @@ abstract class BlockEditor
             'supports'         => $this->supports()
         ];
 
+        $ancestor = $this->ancestor();
+        if (!empty($ancestor)) {
+            $blockArgs['ancestor'] = $ancestor;
+        }
+
         $attributes = $this->blockAttributes();
         if (!empty($attributes)) {
             $blockArgs['attributes'] = $attributes;
@@ -142,6 +147,11 @@ abstract class BlockEditor
             'innerBlocks' => true,
             'align'       => true,
         ];
+    }
+
+    public function ancestor(): array
+    {
+        return [];
     }
 
     public function provideContext()

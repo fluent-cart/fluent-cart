@@ -85,13 +85,16 @@ class MiniCartBlockEditor extends BlockEditor
         (new CartLoader())->registerDependency();
         AssetLoader::loadMiniCartAssets();
 
-        $cart = CartHelper::getCart(null, false);
         $itemCount = 0;
         $cartData = [];
 
-        if ($cart) {
-            $cartData= $cart->cart_data ?? [];
-            $itemCount = count($cartData);
+        // Hide mini cart count during instant checkout to avoid confusion
+        if (!CartHelper::doingInstantCheckout()) {
+            $cart = CartHelper::getCart(null, false);
+            if ($cart) {
+                $cartData = $cart->cart_data ?? [];
+                $itemCount = count($cartData);
+            }
         }
 
 

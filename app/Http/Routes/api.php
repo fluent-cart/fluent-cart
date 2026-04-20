@@ -386,6 +386,8 @@ $router->prefix('settings/')
 
 
         // Plugin addon management routes (must be before generic modules/ routes)
+        // PDF Template routes are registered by FluentCart Pro plugin
+
         $router->get('modules/plugin-addons', [ModuleSettingsController::class, 'getPluginAddons'])->meta([
             'permissions' => 'is_super_admin'
         ]);
@@ -393,6 +395,9 @@ $router->prefix('settings/')
             'permissions' => 'is_super_admin'
         ]);
         $router->post('modules/plugin-addons/activate', [ModuleSettingsController::class, 'activatePluginAddon'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('modules/turnstile/verify', [ModuleSettingsController::class, 'verifyTurnstileKeys'])->meta([
             'permissions' => 'is_super_admin'
         ]);
         $router->get('modules', [ModuleSettingsController::class, 'getSettings'])->meta([

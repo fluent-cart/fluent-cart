@@ -467,6 +467,24 @@ class Validator
     }
 
     /**
+     * Get the first validation error message, or null if none exist.
+     *
+     * @return string|null
+     */
+    public function firstError()
+    {
+        $firstAttributeErrors = Arr::first($this->messages, function($value) {
+            return !empty($value);
+        });
+
+        if (is_array($firstAttributeErrors)) {
+            return reset($firstAttributeErrors);
+        }
+
+        return $firstAttributeErrors;
+    }
+
+    /**
      * Get a single validation error message.
      *
      * @return array

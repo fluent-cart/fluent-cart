@@ -38,18 +38,19 @@ class CartLoader
             return;
         }
 
+        if (!AssetLoader::shouldLoadGlobalFrontendAssets()) {
+            return;
+        }
+
+        $this->registerDependency();
+
+        $loadedOnce = true;
+
         $enableNavFloatingButton = apply_filters('fluent_cart/buttons/enable_floating_cart_button', true, []);
 
         if (!$enableNavFloatingButton) {
             return;
         }
-
-
-
-        $loadedOnce = true;
-
-
-        $this->registerDependency();
 
         if (self::shouldHideCartDrawer()) {
             return;

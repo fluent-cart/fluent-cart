@@ -210,6 +210,8 @@ if (containers && containers.length > 0) {
                     msg = response;
                 } else if (response && response.message) {
                     msg = response.message;
+                } else if (response && response.data && response.data.message) {
+                    msg = response.data.message;
                 }
                 if (!msg) {
                     msg = 'Something is wrong!';

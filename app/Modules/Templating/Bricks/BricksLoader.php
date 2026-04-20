@@ -63,7 +63,7 @@ class BricksLoader
             return $view;
         }
 
-        do_action('fluent_community/bricks/rendering_ajax_collection');
+        do_action('fluent_cart/bricks/rendering_ajax_collection');
 
         ob_start();
         $post_index = 1;

@@ -2,8 +2,7 @@
 
 namespace FluentCart\Database\Migrations;
 
-use FluentCart\Framework\Database\Schema;
-
+use FluentCart\App\Models\Subscription;
 class SubscriptionsMigrator extends Migrator
 {
 
@@ -49,5 +48,53 @@ class SubscriptionsMigrator extends Migrator
                 `updated_at` DATETIME NULL,
 
                  INDEX `{$indexPrefix}_order_subscription_idx` (`parent_order_id` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::addUuidColumn();
+        static::renameInitialAmountToSignupFee();
+        static::backfillEmptyUuids();
+    }
+
+    public static function addUuidColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `uuid` VARCHAR(100) NOT NULL DEFAULT '' AFTER `id`"
+        static::addColumnIfNotExists('uuid', "VARCHAR(100) NOT NULL DEFAULT ''", 'id');
+    }
+
+    public static function renameInitialAmountToSignupFee()
+    {
+        // "ALTER TABLE %i CHANGE `initial_amount` `signup_fee` BIGINT UNSIGNED NOT NULL DEFAULT 0"
+        static::renameColumnIfExists('initial_amount', 'signup_fee', 'BIGINT UNSIGNED NOT NULL DEFAULT 0');
+    }
+
+    public static function backfillEmptyUuids()
+    {
+        $chunkSize = 500;
+
+        do {
+            $subscriptions = Subscription::select('id')
+                ->where(function ($query) {
+                    $query->where('uuid', '')
+                          ->orWhereNull('uuid');
+                })
+                ->limit($chunkSize)
+                ->get();
+
+            if ($subscriptions->isEmpty()) {
+                break;
+            }
+
+            $uuids = [];
+            foreach ($subscriptions as $subscription) {
+                $uuids[] = [
+                    'id'   => $subscription->id,
+                    'uuid' => md5(time() . wp_generate_uuid4())
+                ];
+            }
+
+            (new Subscription())->batchUpdate($uuids);
+        } while ($subscriptions->count() >= $chunkSize);
     }
 }

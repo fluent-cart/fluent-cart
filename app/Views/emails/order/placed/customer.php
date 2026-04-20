@@ -10,7 +10,7 @@
 printf(
         /* translators: %s is the customer's full name */
         esc_html__('Hello %s,', 'fluent-cart'),
-        esc_html($order->customer->first_name . ' ' . $order->customer->last_name)
+        esc_html($order->customer->full_name)
     );
         ?></p>
     <p><?php esc_html_e('Thank you for your order! We have received your order placed with offline payment method. We will process your order once payment is confirmed. Here are the details of your order:', 'fluent-cart'); ?></p>

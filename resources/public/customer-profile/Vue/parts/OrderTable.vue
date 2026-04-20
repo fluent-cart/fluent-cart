@@ -34,8 +34,8 @@ const filteredOrderItems = (order) => {
     const hasAdjustmentItem = order.order_items.some(item => item.payment_type === 'adjustment');
 
     return order.order_items.filter(item => {
-        // Skip signup_fee items
-        if (item.payment_type === 'signup_fee') {
+        // Skip signup_fee and fee items
+        if (item.payment_type === 'signup_fee' || item.payment_type === 'fee') {
             return false;
         }
 
@@ -252,7 +252,7 @@ const getStatusText = (status) => {
 
             <el-table-column :width="itemsColumnWidth" :label="translate('Items')" :aria-label="$t('Order items')">
                 <template #default="scope">
-                    <div class="fct-customer-orders-items">
+                    <div class="fct-customer-orders-items" :class="filteredOrderItems(scope.row).length === 1 ? 'grid' : ''">
                         <template v-if="filteredOrderItems(scope.row).length === 1">
                             <router-link
                                 :to="{
@@ -263,15 +263,19 @@ const getStatusText = (status) => {
                                 :aria-label="$t('View single item for this order')"
                             >
                                 {{ filteredOrderItems(scope.row)[0]?.post_title }}
-                                <span>
-                                     &#8211; {{ filteredOrderItems(scope.row)[0]?.title }}
-                                </span>
                             </router-link>
 
-                            <span class="fct-customer-orders-items-sub-title"
-                                  v-if="scope.row.renewals_count > 0">
-                              {{ pluralizeTranslate('%s Renewal', '%s Renewals', translateNumber(scope.row.renewals_count)) }}
-                            </span>
+                            <!-- Renewal and variant name -->
+                            <div class="inline-flex items-center gap-2">
+                                <span class="fct-customer-orders-items-sub-title leading-[1]">
+                                    &#8211; {{ filteredOrderItems(scope.row)[0]?.title }}
+                                </span>
+
+                                <Badge v-if="scope.row.renewals_count > 0" size="small" class="fct-renewal-badge">
+                                    <DynamicIcon name="Refresh"/>
+                                    {{ pluralizeTranslate('%s Renewal', '%s Renewals', translateNumber(scope.row.renewals_count)) }}
+                                </Badge>
+                            </div>
                         </template>
 
                         <router-link

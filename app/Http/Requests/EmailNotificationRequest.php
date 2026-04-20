@@ -17,6 +17,7 @@ class EmailNotificationRequest extends RequestGuard
             'settings.email_body'      => 'nullable|string',
             'settings.active'          => 'nullable|sanitizeText',
             'settings.is_default_body' => 'nullable|sanitizeText',
+            'settings.attach_pdf_template' => 'nullable|sanitizeText',
         ];
     }
 
@@ -39,7 +40,8 @@ class EmailNotificationRequest extends RequestGuard
             'settings.subject'         => 'sanitize_text_field',
             'settings.email_body'      => 'wp_kses_post',
             'settings.active'          => 'sanitize_text_field',
-            'settings.is_default_body' => 'sanitize_text_field'
+            'settings.is_default_body' => 'sanitize_text_field',
+            'settings.attach_pdf_template' => 'sanitize_text_field'
         ];
     }
 }

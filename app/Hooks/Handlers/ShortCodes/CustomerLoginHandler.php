@@ -8,6 +8,7 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\CartCheckoutHelper;
 use FluentCart\App\Helpers\Helper;
 
+
 class CustomerLoginHandler extends ShortCode
 {
     const SHORT_CODE = 'fluent_cart_login_form';

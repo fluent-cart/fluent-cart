@@ -21,9 +21,11 @@ class PaymentHelper
     public function listenerUrl($args = [])
     {
         $listener = '?fct_payment_listener=1&method=' . $this->slug;
-        return apply_filters('fluent_cart_ipn_url_' . $this->slug, [
-            'listener_url' => site_url($listener)
-        ]);
+        $data = apply_filters_deprecated('fluent_cart_ipn_url_' . $this->slug, [
+            ['listener_url' => site_url($listener)]
+        ], '1.3.16', 'fluent_cart/ipn_url_' . $this->slug, 'Use fluent_cart/ipn_url_' . $this->slug . ' instead of fluent_cart_ipn_url_' . $this->slug . '.');
+
+        return apply_filters('fluent_cart/ipn_url_' . $this->slug, $data);
     }
 
     public function successUrl($uuid, $args = null)
@@ -43,11 +45,14 @@ class PaymentHelper
             $receiptUrl = site_url();
         }
 
-        return apply_filters('fluentcart/payment/success_url', add_query_arg($queryArgs, $receiptUrl), [
+        $context = [
             'transaction_hash' => $uuid,
             'args' => $args,
             'payment_method' => $this->slug ?? ''
-        ]);
+        ];
+        $url = apply_filters_deprecated('fluentcart/payment/success_url', [add_query_arg($queryArgs, $receiptUrl), $context], '1.3.16', 'fluent_cart/payment/success_url', 'Use fluent_cart/payment/success_url instead of fluentcart/payment/success_url.');
+
+        return apply_filters('fluent_cart/payment/success_url', $url, $context);
     }
 
     public static function getCustomPaymentLink($orderHash): string

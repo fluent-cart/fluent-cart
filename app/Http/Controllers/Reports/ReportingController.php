@@ -13,7 +13,6 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Modules\ReportingModule\OrdersReport;
 use FluentCart\App\Modules\ReportingModule\SalesReport;
 use FluentCart\App\Services\DateTime\DateTime;
-use FluentCart\App\Services\Report\CartReportService;
 use FluentCart\App\Services\Report\DashBoardReportService;
 use FluentCart\App\Services\Report\ReportHelper;
 use FluentCart\Framework\Http\Request\Request;
@@ -148,12 +147,6 @@ class ReportingController extends Controller
         return DashBoardReportService::getRecentOrders();
     }
 
-    public function getUnfulfilledOrders(Request $request)
-    {
-
-        return DashBoardReportService::getUnfulfilledOrders();
-    }
-
     public function getRecentActivities(Request $request)
     {
 
@@ -256,43 +249,4 @@ class ReportingController extends Controller
 
     }
 
-    //Cart report controllers
-
-    public function getCartReport(Request $request)
-    {
-
-        $filters = [
-        ];
-        $startDate = $request->get('params.startDate', null);
-        $endDate = $request->get('params.endDate', null);
-
-        $groupKey = $request->get('params.groupKey', null);
-
-        $service = CartReportService::make($filters)
-            ->setSelects(['customer_id', 'user_id', 'order_id', 'cart_hash', 'cart_data', 'created_at', 'completed_at', 'updated_at', 'deleted_at'])
-            ->setRange($startDate && $endDate ? $startDate : null, $startDate && $endDate ? $endDate : null)
-            ->generate();
-
-
-        return $service->getAbandonedCartItems();
-    }
-
-    public function getAbandonedCartItems(Request $request)
-    {
-
-
-        $filters = [
-        ];
-        $startDate = $request->get('params.startDate', null);
-        $endDate = $request->get('params.endDate', null);
-
-        $groupKey = $request->get('params.groupKey', null);
-
-        $service = CartReportService::make($filters)
-            ->setSelects(['customer_id', 'user_id', 'order_id', 'cart_hash', 'cart_data', 'created_at', 'completed_at', 'updated_at', 'deleted_at'])
-            ->setRange($startDate && $endDate ? $startDate : null, $startDate && $endDate ? $endDate : null)
-            ->generate();
-
-        return $service->getAbandonedCartItems();
-    }
 }

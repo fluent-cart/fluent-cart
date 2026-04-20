@@ -453,8 +453,14 @@
 
 // folded settings menu
 .folded {
-  .fct-reports-view .fct-report-body {
+  .fct-reports-view.is-collapsed .fct-report-body {
     padding-left: 102px;
+    .fct-layout-width{
+        max-width: 100%;
+    }
+  }
+  .fct-reports-view .fct-report-body {
+    padding-left: 284px;
   }
 }
 

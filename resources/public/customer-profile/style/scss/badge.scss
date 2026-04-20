@@ -28,3 +28,13 @@
         @apply py-1 px-2;
     }
 }
+
+.badge.fct-renewal-badge {
+    @apply bg-blue-50 text-blue-700;
+    .icon {
+        @apply h-[13px] mr-1;
+        svg {
+            @apply w-2 h-2;
+        }
+    }
+}

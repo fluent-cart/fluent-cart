@@ -2,9 +2,6 @@
 
 namespace FluentCart\Database\Migrations;
 
-
-use FluentCart\Framework\Database\Schema;
-
 class OrderMetaMigrator extends Migrator
 {
 
@@ -21,5 +18,23 @@ class OrderMetaMigrator extends Migrator
                 `updated_at` DATETIME NULL,
 
                 INDEX `{$indexPrefix}_ord_id_idx` (`order_id` ASC)";
+    }
+
+    public static function migrated()
+    {
+        static::renameKeyToMetaKey();
+        static::renameValueToMetaValue();
+    }
+
+    public static function renameKeyToMetaKey()
+    {
+        // "ALTER TABLE %i CHANGE `key` `meta_key` VARCHAR(192)"
+        static::renameColumnIfExists('key', 'meta_key', 'VARCHAR(192)');
+    }
+
+    public static function renameValueToMetaValue()
+    {
+        // "ALTER TABLE %i CHANGE `value` `meta_value` LONGTEXT"
+        static::renameColumnIfExists('value', 'meta_value', 'LONGTEXT');
     }
 }

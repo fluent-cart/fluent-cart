@@ -9,7 +9,7 @@ import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 
 const router = useRouter();
 
-const shippingZoneTable = useShippingZoneTable();
+const shippingZoneTable = useShippingZoneTable({ shipping_class_id: 0 });
 </script>
 
 <template>
@@ -26,6 +26,9 @@ const shippingZoneTable = useShippingZoneTable();
     </SettingsHeader>
 
     <div class="setting-wrap-inner">
+      <p class="text-sm text-gray-500 mb-3">
+        {{ translate('These are the general shipping zones that apply to all products. For class-specific zones, visit the individual shipping class page.') }}
+      </p>
       <div class="fct-all-shipping-zones-wrap">
         <TableWrapper :table="shippingZoneTable">
           <ShippingZonesLoader v-if="shippingZoneTable.isLoading()" :shippingZoneTable="shippingZoneTable"

@@ -17,6 +17,7 @@ trait InputHelperMethodsTrait
      */
     public function getSafe($key, $callback = null, $default = null)
     {
+        $originalKey = $key;
         $array = $result = [];
         $expectsArray = true;
 
@@ -35,7 +36,7 @@ trait InputHelperMethodsTrait
             foreach ($key as $k => $v) {
                 if (is_int($k)) {
                     $k = $v;
-                    $v = fn($v) => $v;
+                    $v = fn($v) => $this->sanitizeByType($v);
                 }
 
                 $array[$k] = is_array($v) ? $v : [$v];
@@ -46,7 +47,37 @@ trait InputHelperMethodsTrait
 
         $result = $this->pickKeys(array_keys($array), $result);
 
-        return $expectsArray ? $result : reset($result);
+        if (is_array($originalKey)) {
+            return $expectsArray ? $result : reset($result);
+        }
+
+        // return Arr::get($result, $originalKey, $result);
+
+        $rootKey = strstr($originalKey, '.', true) ?: $originalKey;
+        return $result[$rootKey] ?? $default;
+    }
+
+    protected function sanitizeByType($value)
+    {
+        if (is_array($value)) {
+            foreach ($value as $k => $v) {
+                $value[$k] = $this->sanitizeByType($v);
+            }
+            return $value;
+        } elseif (is_int($value)) {
+            return intval($value);
+        } elseif (is_float($value)) {
+            return floatval($value);
+        } elseif (is_bool($value)) {
+            return boolval($value);
+        } elseif (is_string($value)) {
+            if (str_contains($value, "\n") || str_contains($value, "\r")) {
+                return sanitize_textarea_field($value);
+            }
+            return sanitize_text_field($value);
+        }
+
+        return $value;
     }
 
     /**
@@ -136,7 +167,7 @@ trait InputHelperMethodsTrait
      */
     public function getText($key, $default = null)
     {
-        return Sanitizer::sanitizeText($this->get($key, $default));
+        return Sanitizer::sanitizeTextField($this->get($key, $default));
     }
 
     /**
