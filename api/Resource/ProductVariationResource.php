@@ -98,16 +98,22 @@ class ProductVariationResource extends BaseResourceApi
     {
         $otherInfo = Arr::get($variant, 'other_info');
         if (Arr::get($otherInfo, 'payment_type') == 'onetime') {
-            $otherInfo = Arr::only($otherInfo, [
-                'payment_type',
-                'description',
-                'package_slug',
-                'weight',
-                'weight_unit',
-                'length',
-                'width',
-                'height',
-            ]);
+            $allowedKeys = apply_filters(
+                'fluent_cart/product_variation_other_info_keys',
+                [
+                    'payment_type',
+                    'description',
+                    'package_slug',
+                    'weight',
+                    'weight_unit',
+                    'length',
+                    'width',
+                    'height',
+                ],
+                $variant,
+                false
+            );
+            $otherInfo = Arr::only($otherInfo, $allowedKeys);
         }
         if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
             if (Arr::get($otherInfo, 'manage_setup_fee') == 'no') {
@@ -240,17 +246,23 @@ class ProductVariationResource extends BaseResourceApi
         $existingOtherInfo = $existingVariation->other_info ?? [];
 
         if (Arr::get($otherInfo, 'payment_type') == 'onetime') {
-            $otherInfo = Arr::only($otherInfo, [
-                'payment_type',
-                'description',
-                'bundle_child_ids',
-                'package_slug',
-                'weight',
-                'weight_unit',
-                'length',
-                'width',
-                'height',
-            ]);
+            $allowedKeys = apply_filters(
+                'fluent_cart/product_variation_other_info_keys',
+                [
+                    'payment_type',
+                    'description',
+                    'bundle_child_ids',
+                    'package_slug',
+                    'weight',
+                    'weight_unit',
+                    'length',
+                    'width',
+                    'height',
+                ],
+                $variant,
+                true
+            );
+            $otherInfo = Arr::only($otherInfo, $allowedKeys);
         }
         if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
             if (Arr::get($otherInfo, 'manage_setup_fee') == 'no') {
