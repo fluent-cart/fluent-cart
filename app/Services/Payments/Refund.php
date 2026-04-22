@@ -57,11 +57,6 @@ class Refund
             'uuid'                => md5(time() . wp_generate_uuid4())
         ];
 
-        $refundTransaction = OrderTransaction::query()->create($orderTransactions);
-
-        // update the main parent transaction meta
-        PaymentHelper::updateTransactionRefundedTotal($transaction, $refundAmount);
-
         $manualRefund = apply_filters('fluent_cart/order_refund_manually', [
             'status' => 'no',
             'source' => ''
@@ -80,17 +75,31 @@ class Refund
 
 
         if (Arr::get($manualRefund, 'status') !== 'yes') {
-            if ($gateway = App::gateway($transaction->payment_method)) {
-                if ($gateway->has('refund')) {
-                    $vendorRefundId = $gateway->processRefund($transaction, $refundAmount, $args);
-                }
+            $gateway = App::gateway($transaction->payment_method);
+
+            if (!$gateway || !$gateway->has('refund')) {
+                return new \WP_Error(
+                    'refund_not_supported',
+                    __('Refund process is not implemented for this payment gateway.', 'fluent-cart')
+                );
             }
 
-            if (!is_wp_error($vendorRefundId) && $vendorRefundId) {
-                $refundTransaction->vendor_charge_id = $vendorRefundId;
-                $refundTransaction->save();
+            $vendorRefundId = $gateway->processRefund($transaction, $refundAmount, $args);
+            if (is_wp_error($vendorRefundId)) {
+                return $vendorRefundId;
             }
         }
+
+        $refundTransaction = OrderTransaction::query()->create($orderTransactions);
+
+        if ($vendorRefundId) {
+            $refundTransaction->vendor_charge_id = $vendorRefundId;
+            $refundTransaction->save();
+        }
+
+        // update the main parent transaction meta only after the remote refund succeeded
+        // or the flow was explicitly marked as manual.
+        PaymentHelper::updateTransactionRefundedTotal($transaction, $refundAmount);
 
         $manageStock = filter_var(Arr::get($args, 'manageStock'), FILTER_VALIDATE_BOOLEAN);
 
