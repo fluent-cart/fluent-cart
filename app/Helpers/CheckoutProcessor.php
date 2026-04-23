@@ -564,6 +564,22 @@ class CheckoutProcessor
                 }
             }
 
+            // Snapshot package dimensions into other_info for email/PDF rendering
+            $packageSlug = Arr::get($args, 'package_slug', '');
+            if ($packageSlug) {
+                $package = Helper::getPackageBySlug($packageSlug);
+                if ($package) {
+                    $args['package_name']       = Arr::get($package, 'name', '');
+                    $args['package_type']       = Arr::get($package, 'type', '');
+                    $args['package_length']         = Arr::get($package, 'length', '');
+                    $args['package_width']          = Arr::get($package, 'width', '');
+                    $args['package_height']         = Arr::get($package, 'height', '');
+                    $args['package_dimension_unit'] = Arr::get($package, 'dimension_unit', 'cm');
+                    $args['package_weight']     = Arr::get($package, 'weight', 0);
+                    $args['package_weight_unit'] = Arr::get($package, 'weight_unit', 'kg');
+                }
+            }
+
             $item = [
                 'payment_type'     => $paymentType,
                 'post_id'          => Arr::get($cartItem, 'post_id'),

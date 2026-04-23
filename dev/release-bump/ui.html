@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FluentCart Release Bump</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f0f2f5;
+    --surface:  #ffffff;
+    --border:   #e2e8f0;
+    --text:     #1e293b;
+    --muted:    #64748b;
+    --primary:  #6c47ff;
+    --primary-h:#5533ee;
+    --success:  #16a34a;
+    --warn:     #d97706;
+    --danger:   #dc2626;
+    --term-bg:  #0d1117;
+    --term-fg:  #c9d1d9;
+    --radius:   10px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  header h1 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  #branch-badge {
+    font-size: 12px; background: #f1f5f9;
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; color: var(--muted);
+    display: flex; gap: 10px; align-items: center;
+  }
+  #branch-badge .branch-val { font-weight: 700; font-family: monospace; font-size: 11px; }
+  #branch-badge .branch-val.ok   { color: var(--success); }
+  #branch-badge .branch-val.warn { color: var(--warn); }
+  #version-badge {
+    font-size: 12px; background: #f1f5f9;
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; color: var(--muted);
+    display: flex; gap: 10px; align-items: center;
+  }
+  #version-badge b { color: var(--text); }
+  .wp-link {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    color: #3858e9; transition: opacity .15s;
+    flex-shrink: 0;
+  }
+  .wp-link:hover { opacity: .75; }
+
+  /* ── Layout: 2 columns ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 210px;
+    gap: 20px;
+    padding: 20px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* ── Step Cards ── */
+  .step-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .step-card.done   { border-color: var(--success); }
+  .step-card.active { border-color: var(--primary); }
+  .step-card.error  { border-color: var(--danger); }
+  .step-card.ready  { border-color: var(--warn); }
+
+  .step-head {
+    display: flex; align-items: center;
+    padding: 16px 20px; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #f1f5f9; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0; transition: all .2s;
+  }
+  .step-card.done   .step-num { background: var(--success); border-color: var(--success); color: white; }
+  .step-card.active .step-num { background: var(--primary); border-color: var(--primary); color: white; }
+  .step-card.error  .step-num { background: var(--danger);  border-color: var(--danger);  color: white; }
+  .step-card.ready  .step-num { background: var(--warn);    border-color: var(--warn);    color: white; }
+
+  .step-info { flex: 1; }
+  .step-title { font-weight: 700; font-size: 14px; }
+  .step-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .step-status {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    background: #f1f5f9; color: var(--muted); white-space: nowrap;
+  }
+  .step-card.done   .step-status { background: #dcfce7; color: var(--success); }
+  .step-card.error  .step-status { background: #fee2e2; color: var(--danger); }
+  .step-card.active .step-status { background: #ede9ff; color: var(--primary); }
+  .step-card.ready  .step-status { background: #fef3c7; color: var(--warn); }
+
+  .step-body { padding: 20px; }
+
+  .step-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-top: 1px solid var(--border);
+    background: #f8fafc; border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  /* ── Form elements (step 1) ── */
+  .form-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group:last-of-type { margin-bottom: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  input[type=text] {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 9px 12px; font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .15s;
+  }
+  input[type=text]:focus { border-color: var(--primary); }
+  input[type=text]:disabled { background: #f8fafc; color: var(--muted); }
+
+  .radio-group { display: flex; gap: 8px; }
+  .radio-btn {
+    flex: 1; border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 8px 6px; text-align: center; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--muted); user-select: none;
+    transition: all .15s;
+  }
+  .radio-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .radio-btn.active { border-color: var(--primary); background: #f0edff; color: var(--primary); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 7px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .toggle-row:hover { border-color: #94a3b8; }
+  .toggle-row.on { border-color: var(--warn); background: #fffbeb; }
+  .toggle-label { font-size: 13px; font-weight: 500; }
+  .toggle-pill {
+    width: 36px; height: 20px; border-radius: 10px; background: #cbd5e1;
+    position: relative; transition: background .2s;
+  }
+  .toggle-pill::after {
+    content: ''; position: absolute; left: 3px; top: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: white; transition: transform .2s;
+  }
+  .toggle-row.on .toggle-pill { background: var(--warn); }
+  .toggle-row.on .toggle-pill::after { transform: translateX(16px); }
+
+  textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 9px 12px; font-size: 13px; font-family: inherit;
+    resize: vertical; min-height: 100px; outline: none;
+    transition: border-color .15s; line-height: 1.5;
+  }
+  textarea:focus { border-color: var(--primary); }
+
+  .form-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 7px;
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    cursor: pointer; border: none; transition: all .15s;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: #f0edff; }
+  .btn-claude { background: #7c3aed; color: white; }
+  .btn-claude:hover:not(:disabled) { background: #6d28d9; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── Changes list ── */
+  .changes-wrap { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .changes-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+  .changes { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .change-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; font-size: 12px;
+    border-bottom: 1px solid var(--border); background: white;
+  }
+  .change-item:last-child { border-bottom: none; }
+  .change-file { font-weight: 600; }
+  .change-field { color: var(--muted); }
+  .change-icon { color: var(--success); }
+
+  /* ── Loco warning ── */
+  .loco-warning {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 14px; border-radius: 7px; font-size: 12px; line-height: 1.5;
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+    margin-bottom: 12px;
+  }
+  .loco-warning svg { flex-shrink: 0; margin-top: 1px; }
+  .loco-warning a { color: #1d4ed8; font-weight: 600; text-underline-offset: 2px; }
+
+  /* ── Terminal ── */
+  .terminal-wrap { margin-top: 12px; }
+  .terminal {
+    background: var(--term-bg); border-radius: 7px;
+    padding: 14px 16px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px; line-height: 1.6;
+    color: var(--term-fg); max-height: 340px;
+    overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .terminal:empty::before { content: 'Output will appear here…'; color: #4b5563; }
+
+  /* ── Build result ── */
+  .build-result {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 12px; padding: 10px 14px;
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 7px; font-size: 12px;
+  }
+  .build-filename { font-family: monospace; flex: 1; word-break: break-all; color: var(--text); }
+  .build-actions  { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* ── Verify ── */
+  .verify-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .verify-table th {
+    text-align: left; padding: 6px 8px;
+    background: #f8fafc; border-bottom: 2px solid var(--border);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  }
+  .verify-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .verify-table tr:last-child td { border-bottom: none; }
+  .v-ok   { color: var(--success); font-weight: 700; }
+  .v-fail { color: var(--danger);  font-weight: 700; }
+  .v-actual { font-family: monospace; font-size: 11.5px; }
+  .verify-summary {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: 7px; margin-top: 14px;
+    font-size: 13px; font-weight: 700;
+  }
+  .verify-summary.pass { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--success); }
+  .verify-summary.fail { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); }
+  .claude-verify-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; padding: 10px 14px;
+    background: #f5f3ff; border: 1px solid #ddd6fe;
+    border-radius: 7px; font-size: 12px;
+  }
+  .claude-verify-row span { flex: 1; color: #5b21b6; }
+
+  /* ── Steps Nav (right sidebar) ── */
+  .steps-nav {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    position: sticky;
+    top: 74px;
+  }
+  .nav-title {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    padding-left: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px; border-radius: 6px;
+    cursor: pointer; transition: background .15s;
+    user-select: none; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: #f1f5f9; }
+  .nav-item.nav-current { background: #f0edff; }
+  .nav-item.nav-current .nav-label { color: var(--primary); font-weight: 600; }
+  .nav-item.nav-current .nav-step-num { color: var(--primary); }
+
+  .nav-item.next-up { background: #fffbeb; outline: 1.5px solid #fde68a; }
+  .nav-item.next-up .nav-icon { color: var(--warn) !important; }
+  .nav-item.next-up .nav-label { color: var(--warn); font-weight: 600; }
+
+  .nav-icon {
+    font-size: 12px; width: 14px; text-align: center;
+    flex-shrink: 0; color: var(--muted);
+  }
+  .nav-step-num {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0; width: 10px;
+  }
+  .nav-label {
+    font-size: 12px; color: var(--text); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nav-item.done   .nav-icon  { color: var(--success); }
+  .nav-item.done   .nav-label { color: var(--success); font-weight: 600; }
+  .nav-item.active .nav-label { color: var(--primary); font-weight: 600; }
+  .nav-item.error  .nav-icon  { color: var(--danger); }
+  .nav-item.error  .nav-label { color: var(--danger); }
+  .nav-item.ready  .nav-icon  { color: var(--warn); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .nav-item.active .nav-icon {
+    color: var(--primary); display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+
+  /* ── Hidden ── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>📦</span> FluentCart Release Bump</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="branch-badge">
+      <span>free: <span class="branch-val" id="branch-free">—</span></span>
+      <span>pro: <span class="branch-val" id="branch-pro">—</span></span>
+    </div>
+    <div id="version-badge">
+      <span>Free: <b id="cur-free">—</b></span>
+      <span>Pro: <b id="cur-pro">—</b></span>
+      <span>DB: <b id="cur-db">—</b></span>
+    </div>
+    <a class="wp-link" href="https://wordpress.org/plugins/fluent-cart/" target="_blank" title="View on WordPress.org">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 122.52 122.523" fill="currentColor">
+        <path d="M8.708 61.26c0 20.803 12.088 38.779 29.605 47.287L13.605 39.813a52.56 52.56 0 0 0-4.897 21.447zM96.74 58.608c0-6.495-2.333-10.993-4.334-14.494-2.664-4.329-5.161-7.995-5.161-12.324 0-4.831 3.664-9.328 8.825-9.328.233 0 .454.029.681.042-9.35-8.566-21.807-13.796-35.489-13.796-18.36 0-34.513 9.42-43.91 23.688 1.233.037 2.395.063 3.382.063 5.497 0 14.006-.667 14.006-.667 2.833-.167 3.167 3.994.337 4.329 0 0-2.847.335-6.015.501l19.138 56.925 11.501-34.493-8.188-22.432c-2.83-.166-5.511-.501-5.511-.501-2.832-.166-2.5-4.496.332-4.329 0 0 8.679.667 13.843.667 5.496 0 14.006-.667 14.006-.667 2.835-.167 3.168 3.994.337 4.329 0 0-2.853.335-6.015.501l18.992 56.494 5.242-17.517c2.272-7.269 4.001-12.49 4.001-16.989zM61.262 65.99l-15.774 45.853a52.297 52.297 0 0 0 32.168-.836 4.658 4.658 0 0 1-.372-.717L61.262 65.99zm45.484-30.001a52.601 52.601 0 0 1 .457 6.931c0 6.832-1.278 14.494-5.133 24.091l-20.611 59.596C99.088 117.979 113.82 91.275 113.82 61.26a52.694 52.694 0 0 0-7.074-25.271zM61.26 0C27.468 0 0 27.468 0 61.26c0 33.795 27.468 61.263 61.26 61.263 33.794 0 61.263-27.468 61.263-61.263C122.523 27.468 95.054 0 61.26 0zm0 119.715c-32.23 0-58.453-26.223-58.453-58.455 0-32.23 26.222-58.451 58.453-58.451 32.229 0 58.45 26.221 58.45 58.451 0 32.232-26.221 58.455-58.45 58.455z"/>
+      </svg>
+    </a>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Center: One step at a time ── -->
+  <main>
+
+    <!-- Step 1: Release Config (visible on load) -->
+    <div class="step-card" id="step-1">
+      <div class="step-head">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title">Release Config</div>
+          <div class="step-desc">Set the version number, scope, and changelog entries</div>
+        </div>
+        <div class="step-status">Pending</div>
+      </div>
+      <div class="step-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Version</label>
+            <input type="text" id="new-version" placeholder="e.g. 1.3.21" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Scope</label>
+            <div class="radio-group">
+              <div class="radio-btn active" data-scope="both">Both</div>
+              <div class="radio-btn" data-scope="free">Free only</div>
+              <div class="radio-btn" data-scope="pro">Pro only</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" id="db-group">
+          <label>DB Migration</label>
+          <div class="toggle-row" id="db-toggle">
+            <span class="toggle-label">New migration in this release?</span>
+            <span class="toggle-pill"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Changelog Entries</label>
+          <textarea id="changelog" placeholder="- Adds new feature&#10;- Fixes something&#10;- Improves performance"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btn-update">▶ Update Files</button>
+        </div>
+        <div class="changes-wrap hidden" id="changes-wrap">
+          <div class="changes-label">Changes applied</div>
+          <div class="changes" id="changes-list"></div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Translate:all (hidden until step 1 done) -->
+    <div class="step-card hidden" id="step-2">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title">Run translate:all</div>
+          <div class="step-desc">Extracts translation strings from JS/Vue source files</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <button class="btn btn-primary btn-sm" id="btn-translate" disabled>▶ Run translate:all</button>
+        <div class="terminal-wrap hidden" id="term-2-wrap">
+          <div class="terminal" id="term-2"></div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Generate POT (Free) -->
+    <div class="step-card hidden" id="step-3">
+      <div class="step-head">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-title">Generate POT (Free)</div>
+          <div class="step-desc">Extracts PHP strings via Loco Translate and saves fluent-cart.pot</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <div class="loco-warning hidden" id="loco-warn-3">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+          <span id="loco-warn-3-msg"></span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-pot-free" disabled>▶ Generate POT</button>
+        <div class="terminal-wrap hidden" id="term-3-wrap">
+          <div class="terminal" id="term-3"></div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Generate POT (Pro) -->
+    <div class="step-card hidden" id="step-4">
+      <div class="step-head">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <div class="step-title">Generate POT (Pro)</div>
+          <div class="step-desc">Extracts PHP strings via Loco Translate and saves fluent-cart-pro.pot</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <div class="loco-warning hidden" id="loco-warn-4">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 000-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+          <span id="loco-warn-4-msg"></span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-pot-pro" disabled>▶ Generate POT</button>
+        <div class="terminal-wrap hidden" id="term-4-wrap">
+          <div class="terminal" id="term-4"></div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Build Free Plugin -->
+    <div class="step-card hidden" id="step-5">
+      <div class="step-head">
+        <div class="step-num">5</div>
+        <div class="step-info">
+          <div class="step-title">Build Free Plugin</div>
+          <div class="step-desc">npm run build:zip — bundles fluent-cart into a distributable ZIP</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <button class="btn btn-primary btn-sm" id="btn-build-free" disabled>▶ Build Free</button>
+        <div class="terminal-wrap hidden" id="term-5-wrap">
+          <div class="terminal" id="term-5"></div>
+        </div>
+        <div id="build-free-result" class="hidden"></div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Build Pro Plugin -->
+    <div class="step-card hidden" id="step-6">
+      <div class="step-head">
+        <div class="step-num">6</div>
+        <div class="step-info">
+          <div class="step-title">Build Pro Plugin</div>
+          <div class="step-desc">npm run build:zip — bundles fluent-cart-pro into a distributable ZIP</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <button class="btn btn-primary btn-sm" id="btn-build-pro" disabled>▶ Build Pro</button>
+        <div class="terminal-wrap hidden" id="term-6-wrap">
+          <div class="terminal" id="term-6"></div>
+        </div>
+        <div id="build-pro-result" class="hidden"></div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 7: Verify Release -->
+    <div class="step-card hidden" id="step-7">
+      <div class="step-head">
+        <div class="step-num">7</div>
+        <div class="step-info">
+          <div class="step-title">Verify Release</div>
+          <div class="step-desc">Confirms all version strings, stable tags, changelog, and builds are correct</div>
+        </div>
+        <div class="step-status">Waiting</div>
+      </div>
+      <div class="step-body">
+        <button class="btn btn-ghost btn-sm" id="btn-verify" disabled>🔍 Run Verification</button>
+        <div id="verify-result"></div>
+        <div id="verify-builds" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;"></div>
+        <div class="claude-verify-row hidden" id="claude-verify-row">
+          <span>🤖 Claude CLI detected — run a deeper AI-powered verification</span>
+          <button class="btn btn-claude btn-sm" id="btn-verify-claude">Verify with Claude</button>
+        </div>
+        <div class="terminal-wrap hidden" id="term-claude-wrap">
+          <div class="terminal" id="term-claude"></div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-ghost btn-sm btn-nav-back" onclick="goBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm btn-nav-next" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Right: Steps Progress Sidebar ── -->
+  <aside class="steps-nav">
+    <div class="nav-title">Steps</div>
+    <div class="nav-item nav-current" id="nav-1" onclick="showStep(1)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">1</span>
+      <span class="nav-label">Config</span>
+    </div>
+    <div class="nav-item" id="nav-2" onclick="showStep(2)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">2</span>
+      <span class="nav-label">Translate</span>
+    </div>
+    <div class="nav-item" id="nav-3" onclick="showStep(3)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">3</span>
+      <span class="nav-label">POT Free</span>
+    </div>
+    <div class="nav-item" id="nav-4" onclick="showStep(4)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">4</span>
+      <span class="nav-label">POT Pro</span>
+    </div>
+    <div class="nav-item" id="nav-5" onclick="showStep(5)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">5</span>
+      <span class="nav-label">Build Free</span>
+    </div>
+    <div class="nav-item" id="nav-6" onclick="showStep(6)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">6</span>
+      <span class="nav-label">Build Pro</span>
+    </div>
+    <div class="nav-item" id="nav-7" onclick="showStep(7)">
+      <span class="nav-icon">○</span>
+      <span class="nav-step-num">7</span>
+      <span class="nav-label">Verify</span>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let scope        = 'both';
+let dbBump       = false;
+let claudeAvail  = false;
+let currentStep  = 1;
+
+const NAV_ICONS = { '': '○', pending: '○', ready: '●', active: '↻', done: '✓', error: '✗' };
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+showStep(1); // set initial back/next button visibility
+
+fetch('/api/check-claude').then(r => r.json()).then(d => { claudeAvail = d.installed; });
+
+let _locoStatus = null; // cached { installed, activated }
+fetch('/api/check-loco').then(r => r.json()).then(d => {
+  _locoStatus = d;
+  applyLocoWarning(); // apply immediately if steps are already unlocked
+}).catch(() => { _locoStatus = { installed: null, activated: null }; });
+
+function applyLocoWarning() {
+  if (!_locoStatus) return;
+  const { installed, activated } = _locoStatus;
+  const ok = installed && activated !== false;
+  const wpLink = `<a href="https://wordpress.org/plugins/loco-translate/" target="_blank">Loco Translate</a>`;
+  let msg = '';
+  if (!installed) {
+    msg = `${wpLink} is not installed. Install and activate it to generate POT files.`;
+  } else if (activated === false) {
+    msg = `${wpLink} is installed but not activated. Please activate it in WordPress to generate POT files.`;
+  }
+  [3, 4].forEach(n => {
+    const warn = document.getElementById(`loco-warn-${n}`);
+    const msgEl = document.getElementById(`loco-warn-${n}-msg`);
+    if (!warn || !msgEl) return;
+    if (msg) {
+      msgEl.innerHTML = msg;
+      warn.classList.remove('hidden');
+    } else {
+      warn.classList.add('hidden');
+    }
+  });
+}
+
+fetch('/api/branches').then(r => r.json()).then(b => {
+  const set = (id, branch) => {
+    const el = document.getElementById(id);
+    el.textContent = branch || '—';
+    el.className = 'branch-val ' + (branch === 'development' ? 'ok' : 'warn');
+  };
+  set('branch-free', b.free);
+  set('branch-pro',  b.pro);
+});
+
+fetch('/api/versions').then(r => r.json()).then(v => {
+  document.getElementById('cur-free').textContent = v.free   || '—';
+  document.getElementById('cur-pro').textContent  = v.pro    || '—';
+  document.getElementById('cur-db').textContent   = v.freeDb || '—';
+  if (v.free) {
+    const parts = v.free.split('.');
+    parts[parts.length - 1] = String(parseInt(parts[parts.length - 1]) + 1);
+    document.getElementById('new-version').value = parts.join('.');
+  }
+});
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+function showStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-card').forEach(c => c.classList.add('hidden'));
+  const card = document.getElementById(`step-${n}`);
+  card?.classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('nav-current', 'next-up'));
+  document.getElementById(`nav-${n}`)?.classList.add('nav-current');
+
+  // Back/Next button visibility (use visibility so layout stays stable)
+  const prev = getPrevStep(n);
+  const next = getNextStep(n);
+  if (card) {
+    card.querySelector('.btn-nav-back').style.visibility = prev ? 'visible' : 'hidden';
+    card.querySelector('.btn-nav-next').style.visibility = next ? 'visible' : 'hidden';
+  }
+
+  // Refresh build files panel when entering the verify step
+  if (n === 7) refreshVerifyBuilds();
+}
+
+function markNextUp(n) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('next-up'));
+  if (n) document.getElementById(`nav-${n}`)?.classList.add('next-up');
+}
+
+function getActiveSteps() {
+  const hasFree = scope !== 'pro';
+  const hasPro  = scope !== 'free';
+  const steps = [1];
+  if (hasFree) steps.push(2, 3, 5);
+  if (hasPro)  steps.push(4, 6);
+  steps.push(7);
+  return steps.sort((a, b) => a - b);
+}
+
+function getNextStep(n) {
+  const active = getActiveSteps();
+  const idx = active.indexOf(n);
+  return idx >= 0 && idx < active.length - 1 ? active[idx + 1] : null;
+}
+
+function getPrevStep(n) {
+  const active = getActiveSteps();
+  const idx = active.indexOf(n);
+  return idx > 0 ? active[idx - 1] : null;
+}
+
+function goBack() { const n = getPrevStep(currentStep); if (n) showStep(n); }
+function goNext() { const n = getNextStep(currentStep); if (n) showStep(n); }
+
+// ─── Scope radio ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.radio-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    scope = btn.dataset.scope;
+    const hasFree = scope !== 'pro';
+    const hasPro  = scope !== 'free';
+    [2, 3, 5].forEach(n => document.getElementById(`nav-${n}`).classList.toggle('hidden', !hasFree));
+    [4, 6].forEach(n => document.getElementById(`nav-${n}`).classList.toggle('hidden', !hasPro));
+    document.getElementById('db-group').classList.toggle('hidden', !hasFree);
+  });
+});
+
+// ─── DB toggle ───────────────────────────────────────────────────────────────
+document.getElementById('db-toggle').addEventListener('click', () => {
+  dbBump = !dbBump;
+  document.getElementById('db-toggle').classList.toggle('on', dbBump);
+});
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function setStepState(n, state, statusText) {
+  const card = document.getElementById(`step-${n}`);
+  const wasHidden = card.classList.contains('hidden');
+  card.className = 'step-card' + (state ? ' ' + state : '');
+  if (wasHidden) card.classList.add('hidden');
+  card.querySelector('.step-status').textContent = statusText;
+  updateNav(n, state);
+}
+
+function updateNav(n, state) {
+  const item = document.getElementById(`nav-${n}`);
+  if (!item) return;
+  // Preserve nav-current and next-up classes
+  const isCurrent = item.classList.contains('nav-current');
+  const isNextUp  = item.classList.contains('next-up');
+  item.className = 'nav-item' + (state ? ' ' + state : '');
+  if (isCurrent) item.classList.add('nav-current');
+  if (isNextUp)  item.classList.add('next-up');
+  item.querySelector('.nav-icon').textContent = NAV_ICONS[state] || '○';
+}
+
+// Throttled scroll — one rAF per frame, prevents layout thrash on high-frequency SSE
+let _scrollRaf = null;
+function scrollTerm(el) {
+  if (_scrollRaf) cancelAnimationFrame(_scrollRaf);
+  _scrollRaf = requestAnimationFrame(() => {
+    el.scrollTop = el.scrollHeight;
+    _scrollRaf = null;
+  });
+}
+
+// Bounded terminal append — prevents page crash on large build output
+const TERM_MAX = 80_000;   // keep at most ~80 KB of text
+const TERM_TRIM = 60_000;  // trim back to this when limit hit
+function appendToTerm(term, text) {
+  term.textContent += text;
+  if (term.textContent.length > TERM_MAX) {
+    term.textContent = '[… earlier output truncated …]\n' + term.textContent.slice(-TERM_TRIM);
+  }
+}
+
+// ─── Step 1: Release Config ───────────────────────────────────────────────────
+document.getElementById('btn-update').addEventListener('click', async () => {
+  const version = document.getElementById('new-version').value.trim();
+  if (!version) { alert('Enter a version number.'); return; }
+
+  const btn = document.getElementById('btn-update');
+  btn.disabled = true;
+  btn.textContent = '⏳ Updating…';
+  setStepState(1, 'active', 'Running…');
+
+  try {
+    const res = await fetch('/api/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        newVersion: version, scope, bumpDb: dbBump,
+        changelog: document.getElementById('changelog').value,
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+    // Show changes
+    document.getElementById('changes-list').innerHTML = data.changes.map(c =>
+      `<div class="change-item">
+        <span class="change-icon">✓</span>
+        <span class="change-file">${c.file}</span>
+        <span class="change-field">— ${c.field}</span>
+      </div>`
+    ).join('');
+    document.getElementById('changes-wrap').classList.remove('hidden');
+    setStepState(1, 'done', '✓ Done');
+
+    // Lock form
+    btn.textContent = '✓ Updated';
+    document.getElementById('new-version').disabled = true;
+    document.querySelectorAll('.radio-btn').forEach(b => b.style.pointerEvents = 'none');
+    document.getElementById('db-toggle').style.pointerEvents = 'none';
+    document.getElementById('changelog').disabled = true;
+
+    // Unlock and navigate
+    unlockStepsAfterUpdate();
+
+  } catch (e) {
+    setStepState(1, 'error', '✗ Error');
+    btn.disabled = false;
+    btn.textContent = '▶ Update Files';
+    alert('Error: ' + e.message);
+  }
+});
+
+function unlockStepsAfterUpdate() {
+  applyLocoWarning();
+  const hasFree = scope !== 'pro';
+  const hasPro  = scope !== 'free';
+  if (hasFree) {
+    document.getElementById('btn-translate').disabled  = false;
+    document.getElementById('btn-pot-free').disabled   = false;
+    document.getElementById('btn-build-free').disabled = false;
+    setStepState(2, 'ready', 'Ready');
+    setStepState(3, 'ready', 'Ready');
+    setStepState(5, 'ready', 'Ready');
+  }
+  if (hasPro) {
+    document.getElementById('btn-pot-pro').disabled   = false;
+    document.getElementById('btn-build-pro').disabled = false;
+    setStepState(4, 'ready', 'Ready');
+    setStepState(6, 'ready', 'Ready');
+  }
+  document.getElementById('btn-verify').disabled = false;
+  setStepState(7, 'ready', 'Ready');
+
+  // Navigate to the first runnable step
+  const firstNext = getNextStep(1);
+  if (firstNext) {
+    setTimeout(() => showStep(firstNext), 400);
+    markNextUp(firstNext);
+  }
+}
+
+// ─── SSE runner ───────────────────────────────────────────────────────────────
+function runStep({ stepNum, apiStep, btnId, termId, termWrapId, onDone, customUrl }) {
+  const btn      = document.getElementById(btnId);
+  const term     = document.getElementById(termId);
+  const termWrap = document.getElementById(termWrapId);
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Running…';
+  term.textContent = '';
+  termWrap.classList.remove('hidden');
+  if (stepNum) setStepState(stepNum, 'active', 'Running…');
+
+  const es = new EventSource(customUrl || `/api/run?step=${apiStep}`);
+
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'line') {
+      appendToTerm(term, msg.text);
+      scrollTerm(term);
+    } else if (msg.type === 'done') {
+      es.close();
+      const ok = msg.text === '0';
+      if (stepNum) setStepState(stepNum, ok ? 'done' : 'error', ok ? '✓ Done' : '✗ Failed');
+      btn.textContent = ok ? '✓ Done' : '↺ Retry';
+      btn.disabled = ok;
+      if (ok && onDone) onDone();
+    } else if (msg.type === 'error') {
+      appendToTerm(term, '\n[error] ' + msg.text);
+      scrollTerm(term);
+    }
+  };
+
+  es.onerror = () => {
+    es.close();
+    if (stepNum) setStepState(stepNum, 'error', '✗ Error');
+    btn.textContent = '↺ Retry';
+    btn.disabled = false;
+  };
+}
+
+// ─── Wire up step buttons ─────────────────────────────────────────────────────
+document.getElementById('btn-translate').addEventListener('click', () =>
+  runStep({ stepNum: 2, apiStep: 'translate', btnId: 'btn-translate',
+    termId: 'term-2', termWrapId: 'term-2-wrap',
+    onDone: () => markNextUp(getNextStep(2)) }));
+
+document.getElementById('btn-pot-free').addEventListener('click', () =>
+  runStep({ stepNum: 3, apiStep: 'pot-free', btnId: 'btn-pot-free',
+    termId: 'term-3', termWrapId: 'term-3-wrap',
+    onDone: () => markNextUp(getNextStep(3)) }));
+
+document.getElementById('btn-pot-pro').addEventListener('click', () =>
+  runStep({ stepNum: 4, apiStep: 'pot-pro', btnId: 'btn-pot-pro',
+    termId: 'term-4', termWrapId: 'term-4-wrap',
+    onDone: () => markNextUp(getNextStep(4)) }));
+
+document.getElementById('btn-build-free').addEventListener('click', () =>
+  runStep({ stepNum: 5, apiStep: 'build-free', btnId: 'btn-build-free',
+    termId: 'term-5', termWrapId: 'term-5-wrap',
+    onDone: () => { showBuildResult('free', 'build-free-result'); markNextUp(getNextStep(5)); } }));
+
+document.getElementById('btn-build-pro').addEventListener('click', () =>
+  runStep({ stepNum: 6, apiStep: 'build-pro', btnId: 'btn-build-pro',
+    termId: 'term-6', termWrapId: 'term-6-wrap',
+    onDone: () => { showBuildResult('pro', 'build-pro-result'); markNextUp(getNextStep(6)); } }));
+
+// ─── Step 7: Verify ──────────────────────────────────────────────────────────
+document.getElementById('btn-verify').addEventListener('click', () => {
+  const version = document.getElementById('new-version').value.trim();
+  const btn = document.getElementById('btn-verify');
+  btn.disabled = true;
+  btn.textContent = '⏳ Checking…';
+  setStepState(7, 'active', 'Running…');
+
+  fetch(`/api/verify?version=${encodeURIComponent(version)}&scope=${scope}`)
+    .then(r => r.json())
+    .then(data => {
+      btn.textContent = '↺ Re-run';
+      btn.disabled = false;
+
+      const rows = data.checks.map(c => `
+        <tr>
+          <td class="${c.ok ? 'v-ok' : 'v-fail'}">${c.ok ? '✓' : '✗'}</td>
+          <td>${c.label}</td>
+          <td class="v-actual">${c.actual || '—'}</td>
+        </tr>`).join('');
+
+      document.getElementById('verify-result').innerHTML = `
+        <table class="verify-table">
+          <thead><tr><th></th><th>Check</th><th>Value found</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="verify-summary ${data.passed ? 'pass' : 'fail'}">
+          ${data.passed
+            ? `✓ All ${data.passCount} checks passed — v${data.version} looks good!`
+            : `✗ ${data.failCount} check(s) failed — review the table above`}
+        </div>`;
+
+      setStepState(7, data.passed ? 'done' : 'error',
+        data.passed ? '✓ Passed' : `✗ ${data.failCount} failed`);
+
+      if (claudeAvail) document.getElementById('claude-verify-row').classList.remove('hidden');
+    })
+    .catch(e => {
+      btn.disabled = false;
+      btn.textContent = '🔍 Run Verification';
+      setStepState(7, 'error', '✗ Error');
+      document.getElementById('verify-result').innerHTML =
+        `<p style="color:var(--danger);font-size:12px;margin-top:8px;">Error: ${e.message}</p>`;
+    });
+});
+
+document.getElementById('btn-verify-claude').addEventListener('click', () => {
+  const version = document.getElementById('new-version').value.trim();
+  runStep({
+    stepNum: 7, apiStep: null,
+    btnId: 'btn-verify-claude', termId: 'term-claude', termWrapId: 'term-claude-wrap',
+    customUrl: `/api/verify-claude?version=${encodeURIComponent(version)}&scope=${scope}`,
+  });
+});
+
+// ─── Build result ────────────────────────────────────────────────────────────
+function openInFinder(filePath, btn) {
+  const orig = btn.textContent;
+  btn.disabled = true;
+  fetch(`/api/open-finder?path=${encodeURIComponent(filePath)}`)
+    .then(r => r.json())
+    .then(d => { btn.textContent = d.ok ? '✓ Opened' : '✗ Failed'; })
+    .catch(() => { btn.textContent = '✗ Error'; })
+    .finally(() => { setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000); });
+}
+
+function buildResultHTML(b) {
+  const safe = b.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `
+    <span>📦</span>
+    <span class="build-filename">${b.name}</span>
+    <div class="build-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openInFinder('${safe}', this)">🗂 Show in Finder</button>
+    </div>`;
+}
+
+function showBuildResult(which, containerId) {
+  fetch('/api/builds').then(r => r.json()).then(builds => {
+    const b  = builds[which];
+    const el = document.getElementById(containerId);
+    if (b) {
+      el.className = 'build-result';
+      el.innerHTML = buildResultHTML(b);
+    }
+  });
+}
+
+function refreshVerifyBuilds() {
+  fetch('/api/builds').then(r => r.json()).then(builds => {
+    const el = document.getElementById('verify-builds');
+    if (!el) return;
+    const items = [builds.free, builds.pro].filter(Boolean);
+    if (!items.length) { el.innerHTML = ''; return; }
+    el.innerHTML = items.map(b => `<div class="build-result">${buildResultHTML(b)}</div>`).join('');
+  });
+}
+</script>
+</body>
+</html>

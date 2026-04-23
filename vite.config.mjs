@@ -159,6 +159,10 @@ const inputs = [
     'resources/admin/BlockEditor/ProductSku/ProductSkuBlockEditor.jsx',
     'resources/admin/BlockEditor/ProductSku/style/product-sku-block-editor.scss',
 
+    // Product Package Description
+    'resources/admin/BlockEditor/ProductPackageDescription/ProductPackageDescriptionBlockEditor.jsx',
+    'resources/admin/BlockEditor/ProductPackageDescription/style/product-package-description-block-editor.scss',
+
     "resources/admin/global.js",
     "resources/admin/admin_hooks.js",
     "resources/admin/utils/edit-wp-user-global.js",

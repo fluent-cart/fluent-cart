@@ -69,7 +69,10 @@ class ShippingMethod extends Model
                 $q->whereIn('region', [$country, 'all'])
                   ->orWhere('region', 'selection');
             });
-            $query->whereNull('shipping_class_id');
+            $query->where(function ($q) {
+                $q->whereNull('shipping_class_id')
+                  ->orWhere('shipping_class_id', 0);
+            });
         });
 
         // SQLite-compatible substring extraction

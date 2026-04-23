@@ -223,6 +223,7 @@ class ProductRenderer
                         }
                     }
 
+                    $this->renderPackageDescription();
                     $this->renderBuySection();
                     ?>
                 </div>
@@ -612,6 +613,70 @@ class ProductRenderer
                 $labelHtml,
                 esc_html($variant->sku)
         );
+    }
+
+    public function renderPackageDescription($wrapper_attributes = '', $showName = true, $showDimensions = true, $showProductWeight = true, $showTotalWeight = true, $variant = null)
+    {
+        $variant = $variant ?: ($this->defaultVariant ?: $this->product->variants->first());
+        (new ProductCardRender($this->product))->renderPackageDescription($wrapper_attributes, $showName, $showDimensions, $showProductWeight, $showTotalWeight, $variant);
+    }
+
+    /**
+     * Build a JSON string of package info for a variant (used as data attribute for JS switching).
+     */
+    private function getVariantPackageInfoJson(ProductVariation $variant)
+    {
+        $otherInfo = $variant->other_info ?: [];
+        $packageSlug = Arr::get($otherInfo, 'package_slug', '');
+        $package = Helper::getPackageBySlug($packageSlug);
+
+        if (!$package) {
+            return '';
+        }
+
+        static $storeWeightUnit = null;
+
+        if ($storeWeightUnit === null) {
+            $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
+        }
+
+        // Format dimensions
+        $length = Arr::get($package, 'length', '');
+        $width = Arr::get($package, 'width', '');
+        $height = Arr::get($package, 'height', '');
+        $dimensionUnit = Arr::get($package, 'dimension_unit', 'cm');
+        $dimensionParts = array_filter([$length, $width, $height], function ($val) {
+            return $val !== '' && $val !== null && $val != 0;
+        });
+        $formattedDimensions = $dimensionParts
+            ? implode(' × ', $dimensionParts) . ' ' . $dimensionUnit
+            : '';
+
+        // Calculate weights
+        $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
+        $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
+        $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
+
+        $packageWeight = floatval(Arr::get($package, 'weight', 0));
+        $packageWeightUnit = Arr::get($package, 'weight_unit', $storeWeightUnit);
+        $convertedPackageWeight = Helper::convertWeight($packageWeight, $packageWeightUnit, $storeWeightUnit);
+        $totalWeight = $convertedProductWeight + $convertedPackageWeight;
+
+        // Format weights
+        $formattedProductWeight = $convertedProductWeight
+            ? rtrim(rtrim(number_format($convertedProductWeight, 2), '0'), '.') . ' ' . $storeWeightUnit
+            : '';
+
+        $formattedShippingWeight = ($totalWeight && $convertedPackageWeight)
+            ? rtrim(rtrim(number_format($totalWeight, 2), '0'), '.') . ' ' . $storeWeightUnit
+            : '';
+
+        return wp_json_encode([
+            'name'            => Arr::get($package, 'name', ''),
+            'dimensions'      => $formattedDimensions,
+            'product_weight'  => $formattedProductWeight,
+            'shipping_weight' => $formattedShippingWeight,
+        ]);
     }
 
     public function renderExcerpt()
@@ -1453,6 +1518,7 @@ class ProductRenderer
                 'data-price-suffix'                => $priceSuffix,
                 'data-stock-management'            => ModuleSettings::isActive('stock_management') ? 'yes' : 'no',
                 'data-sku'                         => $variant->sku ?? '',
+                'data-package-info'                => $this->getVariantPackageInfoJson($variant),
         ];
 
         if ($paymentType === 'subscription') {

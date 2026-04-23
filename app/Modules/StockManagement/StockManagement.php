@@ -23,6 +23,12 @@ class StockManagement
                 'description' => __('Manage stock of your products easier than ever!', 'fluent-cart'),
                 'type'        => 'component',
                 'component'   => 'ModuleSettings',
+                'settings'    => [
+                    'enable_advanced_inventory' => [
+                        'label'   => __('Enable Advanced Inventory', 'fluent-cart'),
+                        'default' => 'no'
+                    ]
+                ]
             ];
             return $fields;
         }, 10, 2);
@@ -32,6 +38,11 @@ class StockManagement
             if (empty($values['stock_management']['active'])) {
                 $values['stock_management']['active'] = 'no';
             }
+
+            if (empty($values['stock_management']['enable_advanced_inventory'])) {
+                $values['stock_management']['enable_advanced_inventory'] = 'no';
+            }
+
             return $values;
         }, 10, 2);
 
@@ -208,7 +219,7 @@ class StockManagement
                 // get product details by $productId and get only id from it
                 $detail = ProductDetail::query()->where('post_id', $productId)->select('id')->first();
 
-                if (!$detail->id) {
+                if (!$detail || !$detail->id) {
                     continue;
                 }
                 $updatedProducts[] = [
@@ -487,9 +498,6 @@ class StockManagement
                     $remainingRefund -= $remove;
 
                     $stockMovement[$orderItemId]['on_hold'] = $oldOnHold - $remove;
-                    if ($stockMovement[$orderItemId]['on_hold'] <= 0) {
-//                        unset($stockMovement[$orderItemId]['on_hold']);
-                    }
                 }
 
                 if ($place === 'committed' && $oldCommitted > 0) {
@@ -498,9 +506,6 @@ class StockManagement
                     $remainingRefund -= $remove;
 
                     $stockMovement[$orderItemId]['committed'] = $oldCommitted - $remove;
-                    if ($stockMovement[$orderItemId]['committed'] <= 0) {
-//                        unset($stockMovement[$orderItemId]['committed']);
-                    }
                 }
             }
 
@@ -546,10 +551,12 @@ class StockManagement
             // get product details by $productId and get only id from it
             $detail = ProductDetail::query()->where('post_id', $productId)->select('id')->first();
 
-            $updatedProducts[] = [
-                'id'                 => $detail->id,
-                'stock_availability' => $hasInStock ? 'in-stock' : 'out-of-stock'
-            ];
+            if ($detail) {
+                $updatedProducts[] = [
+                    'id'                 => $detail->id,
+                    'stock_availability' => $hasInStock ? 'in-stock' : 'out-of-stock'
+                ];
+            }
         }
 
         if (!empty($updatedProducts)) {
@@ -801,10 +808,12 @@ class StockManagement
             // get product details by $productId and get only id from it
             $detail = ProductDetail::query()->where('post_id', $productId)->select('id')->first();
 
-            $updatedProducts[] = [
-                'id'                 => $detail->id,
-                'stock_availability' => $hasInStock ? 'in-stock' : 'out-of-stock'
-            ];
+            if ($detail) {
+                $updatedProducts[] = [
+                    'id'                 => $detail->id,
+                    'stock_availability' => $hasInStock ? 'in-stock' : 'out-of-stock'
+                ];
+            }
         }
 
         if (!empty($updatedProducts)) {

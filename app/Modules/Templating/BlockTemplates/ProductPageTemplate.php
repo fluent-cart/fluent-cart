@@ -79,6 +79,8 @@ class ProductPageTemplate
 
                                 <!-- wp:fluent-cart/product-sku /-->
 
+                                <!-- wp:fluent-cart/product-package-description /-->
+
                                 <!-- wp:fluent-cart/buy-section {"inside_product_info":"yes"} /--></div>
                             <!-- /wp:column --></div>
                         <!-- /wp:columns --></div></div>

@@ -207,7 +207,6 @@ class MenuHandler
             );
         }
 
-
         if (PermissionManager::hasPermission(['subscriptions/view'])) {
             $submenu['fluent-cart']['subscriptions'] = array(
                 __('Subscriptions', 'fluent-cart'),

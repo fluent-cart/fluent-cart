@@ -49,22 +49,45 @@ class ModuleSettingsController extends Controller
         foreach ($data as $moduleKey => $moduleData) {
             $prevStatus = Arr::get($prevSettings, $moduleKey . '.active', 'no');
             $newStatus = Arr::get($moduleData, 'active', 'no');
-            if ($newStatus === $prevStatus) {
-                continue;
-            }
 
             if ($prevStatus === 'yes' && $newStatus === 'no') {
                 // Module deactivated
-                do_action('fluent_cart/module/deactivated/' . $moduleKey, $moduleData, $prevSettings[$moduleKey]);
+                do_action('fluent_cart/module/deactivated/' . $moduleKey, $moduleData, $prevSettings[$moduleKey] ?? []);
             } elseif ($prevStatus === 'no' && $newStatus === 'yes') {
                 // Module activated
-                do_action('fluent_cart/module/activated/' . $moduleKey, $moduleData, $prevSettings[$moduleKey]);
+                do_action('fluent_cart/module/activated/' . $moduleKey, $moduleData, $prevSettings[$moduleKey] ?? []);
+            } elseif ($newStatus === 'yes') {
+                // Module is active — fire activation hook if any child settings changed
+                $hasChanged = $this->hasModuleSettingsChanged($moduleData, $prevSettings[$moduleKey] ?? []);
+                if ($hasChanged) {
+                    do_action('fluent_cart/module/activated/' . $moduleKey, $moduleData, $prevSettings[$moduleKey] ?? []);
+                }
             }
         }
 
         return $this->sendSuccess([
             'message' => __('Settings saved successfully', 'fluent-cart')
         ]);
+    }
+
+    private function hasModuleSettingsChanged($newData, $oldData)
+    {
+        if (!is_array($newData) || !is_array($oldData)) {
+            return true;
+        }
+
+        foreach ($newData as $key => $value) {
+            if ($key === 'active') {
+                continue;
+            }
+
+            $oldValue = Arr::get($oldData, $key);
+            if ($oldValue !== $value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getPluginAddons(): \WP_REST_Response
@@ -77,7 +100,6 @@ class ModuleSettingsController extends Controller
             if($isUpcoming){
                 $addon['is_installed'] = false;
                 $addon['is_active'] = false;
-                $addon['plugin_file'] = '';
                 $addon['plugin_file'] = '';
                 $addon['source_link'] = '';
                 $addon['source_type'] = '';

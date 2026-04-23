@@ -17,6 +17,7 @@ $router->prefix('shipping')->withPolicy('StoreSensitivePolicy')->group(function 
     $router->post('/zones/update-order', [ShippingZoneController::class, 'updateOrder']);
 
     $router->get('/zone/states', [ShippingZoneController::class, 'getZoneStates']);
+    $router->get('/zone/countries', [ShippingZoneController::class, 'getCountriesByContinent']);
 
     // Methods
     $router->post('/methods', [ShippingMethodController::class, 'store']);

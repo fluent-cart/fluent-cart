@@ -150,10 +150,27 @@ class Stripe extends AbstractPaymentGateway
         ];
     }
 
-    public function getLocalizeData(): array
+    private function getStripeLocale(): string
     {
+        $parts = explode('_', get_locale());
+        $lang = strtolower($parts[0]);
+        $region = isset($parts[1]) ? strtoupper($parts[1]) : '';
+
+        if ($region) {
+            $full = $lang . '-' . $region;
+            if (in_array($full, ['en-GB', 'fr-CA', 'zh-HK', 'zh-TW', 'pt-BR', 'es-419'])) {
+                return $full;
+            }
+        }
+
+        return $lang ?: 'auto';
+    }
+
+    public function getLocalizeData(): array
+    {        
         return [
             'fct_stripe_data' => [
+                'locale'       => $this->getStripeLocale(),
                 'translations' => [
                     'Payment module not available to checkout! Please reload again, or contact admin!' => __('Payment module not available to checkout! Please reload again, or contact admin!', 'fluent-cart'),
                     'See Errors' => __('See Errors', 'fluent-cart'),

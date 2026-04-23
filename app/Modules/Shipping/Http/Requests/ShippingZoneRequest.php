@@ -36,17 +36,21 @@ class ShippingZoneRequest extends RequestGuard
             'region' => function ($attr, $value) {
                 if ($value === 'all') {
                     $shippingClassId = Arr::get($this->all(), 'shipping_class_id', null);
-                    $zone = \FluentCart\App\Models\ShippingZone::query()->where('region', 'all');
+                    $query = \FluentCart\App\Models\ShippingZone::query()->where('region', 'all');
                     if ($shippingClassId) {
-                        $zone = $zone->where('shipping_class_id', $shippingClassId);
+                        $query->where('shipping_class_id', $shippingClassId);
                     } else {
-                        $zone = $zone->whereNull('shipping_class_id');
+                        $query->where(function ($q) {
+                            $q->whereNull('shipping_class_id')
+                              ->orWhere('shipping_class_id', 0);
+                        });
                     }
-                    if($this->id){
-                        $zone = $zone->where('id', '!=', $this->id);
+                    // Exclude current zone on update
+                    $currentId = Arr::get($this->all(), 'id') ?: App::getInstance()->request->get('id');
+                    if ($currentId) {
+                        $query->where('id', '!=', intval($currentId));
                     }
-                    $zone = $zone->first();
-                    if ($zone) {
+                    if ($query->first()) {
                         return __('Only one "Whole World" shipping zone is allowed.', 'fluent-cart');
                     }
                 }

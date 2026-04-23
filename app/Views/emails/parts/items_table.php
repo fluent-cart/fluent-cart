@@ -24,6 +24,7 @@ use FluentCart\Framework\Support\Arr;
     });
     $transaction = $order->getLatestTransaction();
     $isRefund = $is_refund ?? false;
+
 ?>
 
 <table role="presentation" style="border-spacing:0;padding: 0; width: 100%;border: none">
@@ -62,6 +63,19 @@ use FluentCart\Framework\Support\Arr;
                 <?php if ($item['payment_type'] === 'subscription' && !empty($item['payment_info'])): ?>
                     <p style="font-size:12px;color:rgb(75,85,99);line-height:20px;margin: 3px 0 0 0;">
                         <?php echo wp_kses_post($item['payment_info']) ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php
+                    $otherInfo = is_array($item['other_info'] ?? null) ? $item['other_info'] : [];
+                    $packageInfo = Arr::get($item, 'package_info', '');
+                    if (!$packageInfo && Arr::get($otherInfo, 'package_name')) {
+                        $packageInfo = \FluentCart\App\Services\Renderer\ProductCardRender::buildPackageInfoFromOtherInfo($otherInfo);
+                    }
+                    if ($packageInfo):
+                ?>
+                    <p style="font-size:12px;color:rgb(107,114,128);line-height:18px;margin: 5px 0 0 0;">
+                        <?php echo esc_html($packageInfo); ?>
                     </p>
                 <?php endif; ?>
                 </p>

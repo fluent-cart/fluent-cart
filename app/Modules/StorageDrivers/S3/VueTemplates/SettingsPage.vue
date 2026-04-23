@@ -69,9 +69,9 @@
 
                     <!-- btn group -->
                     <div class="fct-btn-group mt-3">
-                        <el-button size="small" :loading="checking_connection" @click="checkConnection">
+                        <LoadingButton size="small" :loading="checking_connection" @click="checkConnection">
                             {{ translate('Check again') }}
-                        </el-button>
+                        </LoadingButton>
 
                         <el-button size="small" @click="enableEditMode">
                             {{ translate('Edit Config') }}
@@ -541,7 +541,8 @@
 export default {
   components: {
     Animation,
-    StepIndicator
+    StepIndicator,
+    LoadingButton
   },
   props: {
     payload: {

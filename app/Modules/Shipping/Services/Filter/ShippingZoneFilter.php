@@ -17,23 +17,15 @@ class ShippingZoneFilter extends BaseFilter
             $this->query->whereLike('name', $escaped);
         }
 
-        $request = \FluentCart\App\App::request();
-        $classId = $request->get('shipping_class_id', '__not_set__');
-        if ($classId !== '__not_set__') {
+        $params = \FluentCart\App\App::request()->all();
+        if (array_key_exists('shipping_class_id', $params)) {
+            $classId = $params['shipping_class_id'];
             if ($classId && $classId !== '0') {
                 $this->query->where('shipping_class_id', (int) $classId);
             } else {
-                $this->query->whereNull('shipping_class_id');
-            }
-        }
-
-        $request = \FluentCart\App\App::request();
-        $classId = $request->get('shipping_class_id', '__not_set__');
-        if ($classId !== '__not_set__') {
-            if ($classId && $classId !== '0') {
-                $this->query->where('shipping_class_id', (int) $classId);
-            } else {
-                $this->query->whereNull('shipping_class_id');
+                $this->query->where(function ($q) {
+                    $q->whereNull('shipping_class_id')->orWhere('shipping_class_id', 0);
+                });
             }
         }
     }

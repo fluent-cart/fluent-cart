@@ -90,8 +90,12 @@ class TransStrings
     public static function singleProductPageString(): array
     {
         return [
-            'In Stock'     => _x('In Stock', 'Single Product Page', 'fluent-cart'),
-            'Out Of Stock' => _x('Out Of Stock', 'Single Product Page', 'fluent-cart'),
+            'In Stock'        => _x('In Stock', 'Single Product Page', 'fluent-cart'),
+            'Out Of Stock'    => _x('Out Of Stock', 'Single Product Page', 'fluent-cart'),
+            'Package'         => _x('Package', 'Single Product Page', 'fluent-cart'),
+            'Dimensions'      => _x('Dimensions', 'Single Product Page', 'fluent-cart'),
+            'Weight'          => _x('Weight', 'Single Product Page', 'fluent-cart'),
+            'Shipping Weight' => _x('Shipping Weight', 'Single Product Page', 'fluent-cart'),
         ];
     }
 

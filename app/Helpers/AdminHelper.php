@@ -101,7 +101,18 @@ class AdminHelper
             'products'      => [
                 'label'      => __('Products', 'fluent-cart'),
                 'link'       => $baseUrl . 'products',
-                'permission' => ['products/view']
+                'permission' => ['products/view'],
+                'children'   => [
+                    'all_products'      => [
+                        'label' => __('All Products', 'fluent-cart'),
+                        'link'  => $baseUrl . 'products'
+                    ],
+                    'product_inventory' => [
+                        'label'      => __('Inventory', 'fluent-cart'),
+                        'link'       => $baseUrl . 'products/inventory',
+                        'permission' => ['products/view']
+                    ]
+                ]
             ],
             'subscriptions' => [
                 'label'      => __('Subscriptions', 'fluent-cart'),

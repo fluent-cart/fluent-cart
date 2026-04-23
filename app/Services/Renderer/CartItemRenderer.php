@@ -115,6 +115,7 @@ class CartItemRenderer
                 </div>
             <?php endif; ?>
             <?php $this->maybeRenderPaymentTypeInfo(); ?>
+            <?php $this->maybeRenderPackageInfo(); ?>
 
             <?php do_action('fluent_cart/cart/line_item/after_main_title', $this->getEventInfo()); ?>
         </div>
@@ -192,6 +193,54 @@ class CartItemRenderer
             /* translators: %s is the item price */
             printf(esc_html__('%s each', 'fluent-cart'), esc_html(Helper::toDecimal($itemPrice)));
             ?>
+        </div>
+        <?php
+    }
+
+    protected function maybeRenderPackageInfo()
+    {
+        $otherInfo = Arr::get($this->item, 'other_info', []);
+        if (!is_array($otherInfo)) {
+            return;
+        }
+
+        $packageSlug = Arr::get($otherInfo, 'package_slug', '');
+        $package = Helper::getPackageBySlug($packageSlug);
+        if (!$package) {
+            return;
+        }
+
+        $name = Arr::get($package, 'name', '');
+        $type = Arr::get($package, 'type', '');
+
+        $parts = [];
+        if ($name) {
+            $parts[] = $name;
+        }
+
+        $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
+        $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
+        $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
+        $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
+        $packageWeight = floatval(Arr::get($package, 'weight', 0));
+        $packageWeightUnit = Arr::get($package, 'weight_unit', $storeWeightUnit);
+        $convertedPackageWeight = Helper::convertWeight($packageWeight, $packageWeightUnit, $storeWeightUnit);
+        $totalWeight = $convertedProductWeight + $convertedPackageWeight;
+
+        if ($totalWeight) {
+            $formatted = rtrim(rtrim(number_format($totalWeight, 2), '0'), '.');
+            $parts[] = $formatted . ' ' . $storeWeightUnit;
+        }
+
+        if (!$parts) {
+            return;
+        }
+
+        $icon = ShippingMethodsRender::getPackageTypeIcon($type ?: 'box');
+        ?>
+        <div class="fct_item_package_info">
+            <?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <span><?php echo esc_html(implode(' · ', $parts)); ?></span>
         </div>
         <?php
     }

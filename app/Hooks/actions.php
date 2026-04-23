@@ -85,6 +85,7 @@ use FluentCart\App\Http\Routes\WebRoutes;
 
 
 \FluentCart\App\Hooks\Handlers\BlockEditors\ProductSkuBlockEditor::register();
+\FluentCart\App\Hooks\Handlers\BlockEditors\ProductPackageDescriptionBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\StoreLogoBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\StoreLogoShortCode::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\CustomerDashboardButtonBlockEditor::register();

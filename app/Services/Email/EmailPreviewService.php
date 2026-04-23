@@ -107,12 +107,26 @@ class EmailPreviewService
                 $this->latestTransaction = $transaction;
                 $this->order_items = new Collection([
                     [
-                        'post_title'      => 'Sample Product',
-                        'quantity'         => 1,
-                        'title'            => 'Standard Plan',
-                        'payment_type'     => 'onetime',
-                        'payment_info'     => '',
-                        'formatted_total'  => '$49.00',
+                        'post_title'           => 'Sample Product',
+                        'quantity'             => 1,
+                        'title'                => 'Standard Plan',
+                        'payment_type'         => 'onetime',
+                        'payment_info'         => '',
+                        'formatted_total'      => '$49.00',
+                        'package_info'       => __('Package: Medium Box · 30 × 20 × 15 cm · Wt: 2 kg · Shipping wt: 2.5 kg', 'fluent-cart'),
+                        'other_info'         => [
+                            'package_name'           => 'Medium Box',
+                            'package_type'           => 'box',
+                            'package_length'         => 30,
+                            'package_width'          => 20,
+                            'package_height'         => 15,
+                            'package_dimension_unit' => 'cm',
+                            'weight'                 => 2,
+                            'weight_unit'            => 'kg',
+                            'package_weight'         => 0.5,
+                            'package_weight_unit'    => 'kg',
+                            'package_slug'           => 'medium-box',
+                        ],
                     ],
                 ]);
                 $this->subscriptions = $emptyCollection;
