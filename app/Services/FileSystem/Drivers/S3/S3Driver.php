@@ -25,7 +25,7 @@ class S3Driver extends BaseDriver
 
         $this->secretKey = Arr::get($getSettings, 'secret_key', '');
         $this->accessKey = Arr::get($getSettings, 'access_key', '');
-        $this->bucket = Arr::get($getSettings, 'bucket', '');
+        $this->bucket = S3Settings::resolveEffectiveBucket($getSettings);
         $this->region = Arr::get($getSettings, 'region', '');
         $this->storageDriver = new S3StorageDriver();
     }
@@ -46,7 +46,7 @@ class S3Driver extends BaseDriver
         $response = S3FileUploader::upload(
             $this->secretKey,
             $this->accessKey,
-            Arr::get($params, 'bucket'),
+            $this->bucket,
             $this->region,
             $localFilePath,
             $uploadToFilePath
@@ -61,11 +61,10 @@ class S3Driver extends BaseDriver
             'path'    => $response['path'],
             'file'    => [
                 'driver' => 's3',
-                'size' =>$fileSize,
-                'bucket' => Arr::get($params, 'bucket'),
+                'size'   => $fileSize,
+                'bucket' => $this->bucket,
                 'name'   => $response['path'],
             ],
-
         ];
     }
 
@@ -75,7 +74,7 @@ class S3Driver extends BaseDriver
         return S3FileList::get(
             $this->secretKey,
             $this->accessKey,
-            Arr::get($params, 'activeBucket'),
+            $this->bucket,
             $this->region,
             Arr::get($params, 'search', ''),
         );

@@ -79,6 +79,9 @@ abstract class BlockEditor
         });
         add_action('enqueue_block_assets', function () {
             if($this->isBlockEditor()) {
+                // Reset flag so styles also load inside the WP 6.3+ editor iframe
+                // (enqueue_block_editor_assets already set it on the outer admin page)
+                $this->isStylesLoaded = false;
                 $this->enqueueStyles();
             }
         });

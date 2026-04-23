@@ -15,23 +15,35 @@ class S3BucketList
     private $timeStamp;
     private $date;
     private string $requestUrl;
+    private ?string $sessionToken = null;
 
 
-    public static function get(string $secret, string $accessKey, string $region)
+    public static function get(string $secret, string $accessKey, string $region, ?string $sessionToken = null)
     {
-        return (new static($secret, $accessKey, $region))->getList();
+        $validation = S3InputValidator::validateRegion($region);
+        if (is_wp_error($validation)) {
+            return $validation;
+        }
+
+        return (new static($secret, $accessKey, $region, $sessionToken))->getList();
     }
 
-    public function __construct(string $secret, string $accessKey, string $region)
+    public function __construct(string $secret, string $accessKey, string $region, ?string $sessionToken = null)
     {
         $this->secretKey = $secret;
         $this->accessKey = $accessKey;
         $this->region = $region;
+        $this->sessionToken = $sessionToken;
 
         $this->httpMethod = "GET";
         $this->timeStamp = gmdate('Ymd\THis\Z');
         $this->date = substr($this->timeStamp, 0, 8);
-        $this->requestUrl = "https://s3.amazonaws.com";
+        if ($region !== 'us-east-1' && $region) {
+            $this->requestUrl = "https://s3.{$region}.amazonaws.com";
+        } else {
+            $this->requestUrl = "https://s3.amazonaws.com";
+        }
+
         $this->generateSignature();
     }
 
@@ -46,6 +58,9 @@ class S3BucketList
             'headers' => $this->getHeaders()
         ]);
 
+        if (is_wp_error($response)) {
+             return $response;
+        }
 
         $responseCode = wp_remote_retrieve_response_code($response);
 
@@ -101,19 +116,32 @@ class S3BucketList
 
     private function createCanonicalUrl(): string
     {
-        return "$this->httpMethod\n" .
+        $payload = "$this->httpMethod\n" .
             "/\n\n" .
             "host:{$this->getHost()}\n" .
             "x-amz-content-sha256:{$this->getContentHash()}\n" .
-            "x-amz-date:{$this->timeStamp}\n\n" .
-            "host;x-amz-content-sha256;x-amz-date\n" .
+            "x-amz-date:{$this->timeStamp}\n";
+
+        if ($this->sessionToken) {
+            $payload .= "x-amz-security-token:{$this->sessionToken}\n";
+        }
+
+        $payload .= "\n";
+
+        $signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+        if ($this->sessionToken) {
+            $signedHeaders .= ";x-amz-security-token";
+        }
+
+        $payload .= $signedHeaders . "\n" .
             "{$this->getContentHash()}";
 
+        return $payload;
     }
 
     private function getHost(): string
     {
-        return "s3.amazonaws.com";
+        return parse_url($this->requestUrl, PHP_URL_HOST) ?: "s3.amazonaws.com";
     }
 
     private function createStringToSign(): string
@@ -137,10 +165,22 @@ class S3BucketList
 
     public function getHeaders(): array
     {
-        return [
+        $headers = [
             "x-amz-content-sha256" => $this->getContentHash(),
             'x-amz-date'           => $this->timeStamp,
-            'Authorization'        => "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$this->date}/{$this->region}/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature={$this->getSignature()}"
         ];
+
+        if ($this->sessionToken) {
+            $headers['x-amz-security-token'] = $this->sessionToken;
+        }
+
+        $signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+        if ($this->sessionToken) {
+            $signedHeaders .= ";x-amz-security-token";
+        }
+
+        $headers['Authorization'] = "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$this->date}/{$this->region}/s3/aws4_request, SignedHeaders={$signedHeaders}, Signature={$this->getSignature()}";
+
+        return $headers;
     }
 }

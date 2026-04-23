@@ -1,42 +1,63 @@
 .distignore
 .gitignore
-.git
-composer.lock
-package.json
-package-lock.json
-README.md
-vite.config.js
-tailwind.config.js
-wpf
-yarn-error.log
-yarn.lock
-resources
-
-svn
-svn.php
-pro_build.php
-*.zip
+# System
 .DS_Store
-postcss.config.js
 
+# VCS
+.git
+svn
 
-#logs
-logs
+# Dependencies
+node_modules/
+vendor/fakerphp/
+
+# Build / Distribution
+dist/
+builds/
+dev/
+
+# Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# IDE
+.idea/
 
-#Ide
-/.idea
+# Lock Files
+composer.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-#Folders
-database/Seeder
-dev-docs
-node_modules
+# Development / Docs
+dev-docs/
+database/Seeder/
 
+# Source (exclude from distribution if pre-built)
+resources/
+research/
 
-#libs
-vendor/fakerphp
+# Project / Build Config
+package.json
+webpack.mix.js
+vite.config.js
+tailwind.config.js
+postcss.config.js
+build.sh
+pro_build.php
+
+# Project Specific
+wpf
+countries.json
+create-dockblock.js
+fallBackCheck.js
+
+# Archives
+*.zip
+*.md
+jsconfig.json
+*.mjs

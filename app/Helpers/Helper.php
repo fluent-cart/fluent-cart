@@ -1773,10 +1773,19 @@ class Helper
         $allChildVariants = array_filter($allChildVariants);
         $childVariants = ProductVariation::query()
             ->whereIn('id', $allChildVariants)
+            ->with('product:ID,post_title')
             ->select($select)
             ->get()
             ->toArray();
 
+        // Extract post_title from product and remove product object to keep data clean
+        foreach ($childVariants as $key => $childVariant) {
+            $postTitle = Arr::get($childVariant, 'product.post_title');
+            if ($postTitle) {
+                $childVariants[$key]['post_title'] = $postTitle;
+                unset($childVariants[$key]['product']);
+            }
+        }
 
         foreach ($variants as &$variant) {
             $childIds = Arr::get($variant, 'other_info.bundle_child_ids', []);

@@ -196,7 +196,6 @@ return [
     'Link Settings' => __('Link Settings', 'fluent-cart'),
     'Link With Shop App' => __('Link With Shop App', 'fluent-cart'),
     'Link to Home' => __('Link to Home', 'fluent-cart'),
-    'Linked Product' => __('Linked Product', 'fluent-cart'),
     'List' => __('List', 'fluent-cart'),
     'List View' => __('List View', 'fluent-cart'),
     'Live Filter' => __('Live Filter', 'fluent-cart'),

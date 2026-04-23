@@ -273,6 +273,15 @@ class API
         return new \WP_Error($http_code, $message, $body);
     }
 
+    public static function createOrder($purchaseUnit)
+    {
+        return self::makeRequest('checkout/orders', 'v2', 'POST', [
+            'intent'              => 'CAPTURE',
+            'purchase_units'      => [$purchaseUnit],
+            'application_context' => ['shipping_preference' => 'NO_SHIPPING'],
+        ]);
+    }
+
     public static function verifyPayment($paymentId)
     {
         return self::makeRequest('checkout/orders/' . $paymentId, 'v2', 'GET');

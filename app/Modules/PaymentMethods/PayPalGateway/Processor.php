@@ -5,6 +5,7 @@ namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway;
 use FluentCart\App\Events\Subscription\SubscriptionActivated;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
@@ -118,6 +119,18 @@ class Processor
             $purchaseUnits['amount']['breakdown']['item_total']['value'] = number_format($adjustedItemTotal, 2, '.', '');
         }
 
+        $paypalOrder = API::createOrder($purchaseUnits);
+
+        if (is_wp_error($paypalOrder)) {
+            return $paypalOrder;
+        }
+
+        $paypalOrderId = Arr::get($paypalOrder, 'id');
+
+        $transaction->update([
+            'meta' => array_merge($transaction->meta ?? [], ['paypal_order_id' => $paypalOrderId])
+        ]);
+
         return [
             'nextAction'         => 'paypal',
             'actionName'         => 'custom',
@@ -132,7 +145,9 @@ class Processor
             ],
             'message'            => __('Order has been placed successfully', 'fluent-cart'),
             'custom_payment_url' => PaymentHelper::getCustomPaymentLink($order->uuid),
-            'response'           => $purchaseUnits
+            'response'           => [
+                'paypalOrderId' => $paypalOrderId,
+            ]
         ];
     }
 

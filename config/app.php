@@ -9,6 +9,6 @@ return [
     'hook_prefix'    => 'fluent_cart/',
     'rest_namespace' => 'fluent-cart',
     'rest_version'   => 'v2',
-    'env'            => 'production',
-    'using_faker'    => false,
+    'env'            => 'dev',
+    'using_faker'    => true,
 ];

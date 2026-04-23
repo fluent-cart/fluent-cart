@@ -432,6 +432,18 @@ $router->prefix('settings/')
         $router->post('storage-drivers/verify-info', [StorageController::class, 'verifyConnectInfo'])->meta([
             'permissions' => 'is_super_admin'
         ]);
+        $router->post('storage-drivers/create-bucket', [StorageController::class, 'createBucket'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('storage-drivers/bucket-list', [StorageController::class, 'listBuckets'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('storage-drivers/reset', [StorageController::class, 'resetSettings'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('storage-drivers/change-status', [StorageController::class, 'changeStatus'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
 
 
     });

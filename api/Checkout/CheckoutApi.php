@@ -99,8 +99,8 @@ class CheckoutApi
                     }
                 }
             }
-        } else {
-            $data['order_id'] = $cart->order->id;
+        } else if ($prevOrder) {
+            $data['order_id'] = $prevOrder->id;
         }
 
         $data = static::prepareAddressData($data);

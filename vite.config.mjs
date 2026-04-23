@@ -4,6 +4,9 @@ import vue from "@vitejs/plugin-vue";
 import react from "@vitejs/plugin-react";
 import path from "path";
 //import AutoImport from "unplugin-auto-import/vite";
+import {moveManifestPlugin} from "./build/vite/plugins/moveManifestPlugin.mjs";
+import {staticCopyManifestPlugin} from "./build/vite/plugins/staticCopyManifestPlugin.mjs";
+import {manifestPhpConfigPlugin} from "./build/vite/plugins/manifestPhpConfigPlugin.mjs";
 import fs from "fs"; // Add this dependency for file operations
 
 const serverConfig = require('./config/vite.json');
@@ -36,6 +39,12 @@ const chunkCacheBustPlugin = {
 };
 
 // https://vitejs.dev/config/
+
+const staticCopyTargets = [
+                {src: "resources/images", dest: ""},
+                {src: "resources/public/lib", dest: "public/"},
+                {src: "resources/world.geo.json", dest: ""},
+            ];
 
 //Add All CSS and js here
 const inputs = [
@@ -190,6 +199,8 @@ const inputs = [
     "resources/order-bump/order-bump.js",
     // Licensing
     "resources/licensing/license.js",
+    // Addon Assets
+    "resources/addon-assets/addon-assets.js",
     // Subscriptions
     "resources/admin/Modules/Subscriptions/subscription.js",
     "resources/admin/Modules/Shipping/shipping.js",
@@ -220,83 +231,6 @@ const inputs = [
     "resources/public/checkout/ModalCheckoutForm.js",
 ];
 
-let viteConfig;
-
-const moveManifestPlugin = {
-    name: "move-manifest",
-    configResolved(resolvedConfig) {
-        viteConfig = resolvedConfig;
-    },
-    writeBundle() {
-        const outDir = viteConfig.build.outDir;
-        const manifestSrc = path.join(outDir, ".vite", "manifest.json");
-        const manifestDest = path.resolve(__dirname, serverConfig.manifest_path);
-        const viteDir = path.join(outDir, ".vite");
-
-        if (fs.existsSync(manifestSrc)) {
-            // Move the manifest file
-            fs.renameSync(manifestSrc, manifestDest);
-
-            // Remove empty .vite directory if exists
-            if (fs.existsSync(viteDir) && fs.readdirSync(viteDir).length === 0) {
-                fs.rmSync(viteDir, {recursive: true});
-            }
-
-            // Read manifest.json content
-            const manifestContent = JSON.parse(fs.readFileSync(manifestDest, "utf8"));
-
-            // Convert JSON to PHP array string
-            const phpArray = jsonToPhpArray(manifestContent);
-
-            // Update config/app.php
-            const configPath = path.resolve(__dirname, "config/vite_config.php");
-            //create if not exists
-            if (!fs.existsSync(configPath)) {
-                fs.writeFileSync(configPath, '<?php return [];', "utf8");
-            }
-            let configData = fs.readFileSync(configPath, "utf8");
-
-            // Replace or insert 'manifest' key
-
-            fs.writeFileSync(configPath, '<?php return ' + phpArray + ';', "utf8");
-            console.log("✅ Manifest array injected into config/vite_config.php");
-        }
-    },
-};
-
-// Helper function to convert JSON to PHP array syntax
-function jsonToPhpArray(obj, indentLevel = 1) {
-    const indent = "    ".repeat(indentLevel);
-    if (Array.isArray(obj)) {
-        return "[\n" +
-            obj.map(v => `${indent}${valueToPhp(v, indentLevel + 1)}`).join(",\n") +
-            "\n" + "    ".repeat(indentLevel - 1) + "]";
-    } else if (typeof obj === "object" && obj !== null) {
-        return "[\n" +
-            Object.entries(obj)
-                .map(([key, value]) => `${indent}'${key}' => ${valueToPhp(value, indentLevel + 1)}`)
-                .join(",\n") +
-            "\n" + "    ".repeat(indentLevel - 1) + "]";
-    }
-    return valueToPhp(obj, indentLevel);
-}
-
-function valueToPhp(value, indentLevel) {
-    if (typeof value === "string") {
-        return `'${value.replace(/'/g, "\\'")}'`;
-    } else if (typeof value === "number") {
-        return String(value);
-    } else if (typeof value === "boolean") {
-        return value ? "true" : "false";
-    } else if (value === null) {
-        return "null";
-    } else if (Array.isArray(value) || typeof value === "object") {
-        return jsonToPhpArray(value, indentLevel);
-    }
-    return "null";
-}
-
-
 export default defineConfig({
     base: '',
     css: {
@@ -314,16 +248,25 @@ export default defineConfig({
         }),
         //liveReload([`${__dirname}/**/*\.php`]),
         viteStaticCopy({
-            targets: [
-                {src: "resources/images", dest: ""},
-                {src: "resources/public/lib", dest: "public/"},
-                {src: "resources/world.geo.json", dest: ""},
-            ],
+            targets: staticCopyTargets,
         }),
         // AutoImport({
         //     resolvers: [],
         // }),
-        moveManifestPlugin
+        moveManifestPlugin({
+            rootDir: __dirname,
+            manifestPath: serverConfig.manifest_path,
+        }),
+        staticCopyManifestPlugin({
+            rootDir: __dirname,
+            manifestPath: serverConfig.manifest_path,
+            staticCopyTargets,
+        }),
+        manifestPhpConfigPlugin({
+            rootDir: __dirname,
+            manifestPath: serverConfig.manifest_path,
+            phpConfigPath: "config/vite_config.php",
+        })
     ],
 
     build: {

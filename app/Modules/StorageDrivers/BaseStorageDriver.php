@@ -26,6 +26,11 @@ abstract class BaseStorageDriver implements BaseStorageInterface
 
     abstract public function getLogo();
 
+    public function getDarkLogo()
+    {
+        return null;
+    }
+
     abstract public function getDescription();
 
     abstract public function getSettings();
@@ -91,6 +96,7 @@ abstract class BaseStorageDriver implements BaseStorageInterface
             "route"       => $this->slug,
             "description" => $this->getDescription(),
             "logo"        => $this->getLogo(),
+            "dark_logo"   => $this->getDarkLogo(),
             "status"      => $this->isEnabled(),
             "brand_color" => $this->brandColor,
             "has_bucket"  => $this->hasBucket(),
@@ -98,26 +104,19 @@ abstract class BaseStorageDriver implements BaseStorageInterface
         ];
 
         if ($this->hasBucket()) {
-            $bucketList = Arr::get($this->getSettings(), 'buckets', []);
-
-            $buckets = [];
-
-            if (is_array($bucketList)) {
-                foreach ($bucketList as $bucket) {
-                    $buckets[] = array(
-                        "label" => $bucket,
-                        "value" => $bucket,
-                    );
-                }
-            }
-
-            $data['buckets'] = $buckets;
+            $data['need_reconfigure'] = $this->needsReconfigure();
+            $data['buckets'] = [];
         }
         static::$drivers[$this->slug] = $data;
         return static::$drivers;
     }
 
     public function hasBucket(): bool
+    {
+        return false;
+    }
+
+    public function needsReconfigure(): bool
     {
         return false;
     }
@@ -143,6 +142,13 @@ abstract class BaseStorageDriver implements BaseStorageInterface
         return $this->updateSettings($data);
     }
 
+    public function resetSettings()
+    {
+        fluent_cart_update_option($this->driverHandler, []);
+
+        return $this->getSettings();
+    }
+
     public function updateSettings($data)
     {
         $oldSettings = $this->getSettings();
@@ -165,9 +171,41 @@ abstract class BaseStorageDriver implements BaseStorageInterface
             return Arr::get($item, 'visible', 'yes') === 'yes';
         })->toArray();
 
-        return [
+        $response = [
             'fields'   => $filtered,
             'settings' => Arr::except($this->getSettings(), $this->hiddenSettingKeys())
+        ];
+
+        if ($this->hasSettingsTemplate()) {
+            $response['template'] = $this->getSettingsTemplate();
+            $response['template_payload'] = $this->getSettingsTemplatePayload($response);
+        }
+
+        $response = apply_filters('fluent_cart/storage/settings_response', $response, $this);
+
+        return apply_filters('fluent_cart/storage/settings_response_' . $this->slug, $response, $this);
+    }
+
+    public function hasSettingsTemplate(): bool
+    {
+        return (bool) $this->getSettingsTemplate();
+    }
+
+    public function getSettingsTemplate(): ?string
+    {
+        return null;
+    }
+
+    public function getSettingsTemplatePayload(array $response = []): array
+    {
+        return [
+            'driver' => $this->slug,
+            'driver_label' => $this->title,
+            'description' => $this->getDescription(),
+            'logo' => $this->getLogo(),
+            'dark_logo' => $this->getDarkLogo(),
+            'settings' => Arr::get($response, 'settings', []),
+            'fields' => Arr::get($response, 'fields', [])
         ];
     }
 
@@ -196,4 +234,3 @@ abstract class BaseStorageDriver implements BaseStorageInterface
 
     abstract public function getDriverClass(): string;
 }
-

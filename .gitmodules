@@ -1,0 +1,3 @@
+[submodule "fluent-cart-dev-docs"]
+	path = fluent-cart-dev-docs
+	url = https://github.com/WPManageNinja/fluent-cart-dev-docs.git

@@ -256,7 +256,18 @@ class ModuleSettingsController extends Controller
                 'plugin_file' => 'fluentforms-pdf/fluentforms-pdf.php',
                 'source_type' => 'wordpress',
                 'upcoming'    => false,
-            ]
+            ],
+            'fluent-cart-migrator' => [
+                'title'       => __('FluentCart Migrator', 'fluent-cart'),
+                'description' => __('Migrate your store data to FluentCart from other eCommerce platforms.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/logo.svg'),
+                'plugin_slug' => 'fluent-cart-migrator',
+                'plugin_file' => 'fluent-cart-migrator/fluent-cart-migrator.php',
+                'source_type' => 'cdn',
+                'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-migrator.zip',
+                'upcoming'    => false,
+                'repo_link'   => 'https://fluentcart.com/fluentcart-addons/?3181_search=Migrator'
+            ],
         ];
 
         // Allow other modules/plugins to register their addons

@@ -29,7 +29,7 @@ function stripe_appearance($appearance) {
     );
 }
 
-add_filter('fluent_cart_stripe_appearance', 'stripe_appearance', 10, 1);
+add_filter('fluent_cart/stripe_appearance', 'stripe_appearance', 10, 1);
 ```
 
 ## Available Options
@@ -89,7 +89,7 @@ function my_brand_stripe_appearance($appearance) {
     );
 }
 
-add_filter('fluent_cart_stripe_appearance', 'my_brand_stripe_appearance', 10, 1);
+add_filter('fluent_cart/stripe_appearance', 'my_brand_stripe_appearance', 10, 1);
 ```
 
 This code allows you to dynamically pull your brand colors from the WordPress customizer and apply them to Stripe Elements.

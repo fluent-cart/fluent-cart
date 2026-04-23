@@ -156,11 +156,15 @@ class ProductVariationResource extends BaseResourceApi
             'fulfillment_type' => Arr::get($variant, 'fulfillment_type', 'physical'),
             'shipping_class'   => Arr::get($variant, 'shipping_class') ?: null,
             'variation_title'  => Arr::get($variant, 'variation_title', ''),
-            'sku'              => Arr::get($variant, 'sku') ?: null,
             'other_info'       => $otherInfo,
             'downloadable'     => $isDownloadable,
             'payment_type'     => $hasSubscription ? 'subscription' : 'onetime',
         ];
+
+        $sku = Arr::get($variant, 'sku');
+        if (!empty($sku)) {
+          $variantData['sku'] = $sku;
+        }
 
         $isCreated = static::getQuery()->create($variantData);
         if ($isCreated) {
