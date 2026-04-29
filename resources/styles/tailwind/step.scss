@@ -1,0 +1,85 @@
+.started-content{
+    @apply mb-7.5 relative;
+    &-toggle{
+        @apply absolute top-0 right-0;
+    }
+    &-wrap {
+        @apply border border-solid border-gray-divider border-l-0 border-r-0 bg-white dark:bg-dark-700 -mx-7.5 -mt-7.5 pt-7.5 pb-7.5 px-7.5 dark:border-dark-500;
+    }
+    .title{
+        @apply font-semibold text-[22px] mt-0 mb-2.5;
+    }
+    .text{
+        @apply text-[15px] mt-0 mb-4;
+    }
+    .completed-text{
+        @apply pl-2.5 ml-2.5 text-sm border border-solid border-gray-outline border-t-0 border-r-0 border-b-0 text-system-dark-light dark:text-gray-300 dark:border-dark-500;
+    }
+} 
+
+.step{
+    &-row{
+        @apply gap-3.5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4;
+    }
+    &-card{
+        @apply h-full;
+        &-completed-text{
+            @apply line-through text-system-dark text-sm font-medium dark:group-[.active]:text-gray-500;
+        }
+        &-inner{
+            @apply h-full box-border relative rounded p-5 border border-solid border-gray-outline dark:border-dark-400 group-[.active]:bg-gray-50 dark:group-[.active]:bg-dark-600 dark:group-[.active]:border-dark-400;
+            .title{
+                @apply text-[15px] my-0 font-semibold text-system-dark group-[.active]:line-through dark:text-gray-50;
+            }
+            .text{
+                @apply mt-0 mb-3 text-[13px] text-system-mid group-[.active]:line-through dark:text-gray-300 dark:group-[.active]:text-gray-500;
+            }
+            .link{
+                @apply text-dark-500 text-sm font-medium dark:text-gray-50;
+            }
+        }
+        &-marker{
+            @apply absolute top-0 left-0 text-success-500 group-[.active]:block dark:group-[.active]:text-dark-100;
+            .el-icon{
+                @apply w-[22px] h-[22px];
+                svg{
+                    @apply w-[22px] h-[22px];
+                }
+            }
+        }
+        &-icon{
+            @apply w-9 h-9 bg-gray-50 flex justify-center items-center text-system-dark rounded border border-solid border-transparent group-[.active]:bg-success-500 group-[.active]:text-white dark:bg-dark-600 dark:text-white dark:border-dark-400 dark:group-[.active]:border-success-500;
+            svg{
+                @apply w-5 h-5;
+            }
+        }
+        &-head{
+            @apply flex items-center gap-2.5 mb-2.5;
+        }
+    }
+}
+
+// started content collapse
+.started-content{
+    &-collapse {
+        @apply grid grid-rows-[1fr];
+        transition: grid-template-rows 0.2s ease-in-out;
+        .step-row{
+            @apply overflow-hidden;
+        }
+    }
+    &-collapsed {
+        @apply grid-rows-[0fr];
+    }
+    &-toggle{
+        svg{
+            @apply transition-transform duration-300;
+        }
+        &.active{
+            svg{
+                @apply -rotate-180;
+            }
+        }
+    }
+}
+

@@ -375,6 +375,7 @@ class CustomerController extends Controller
 
     public function updateAddress(CustomerAddressRequest $request)
     {
+
         $data = $request->getSafe($request->sanitize());
         $data = self::formattedAddress($data);
         $id = Arr::get($request->get('address'), 'id');
@@ -383,7 +384,7 @@ class CustomerController extends Controller
 
         $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
         if (empty($customer) || $customer->id != $address->customer_id) {
-            $this->sendError([
+           return $this->sendError([
                 'message' => __('You are not authorized to update this address', 'fluent-cart')
             ]);
         }
@@ -407,8 +408,9 @@ class CustomerController extends Controller
         $address = CustomerAddresses::query()->findOrFail($id);
 
         $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
+        
         if (empty($customer) || $customer->id != $address->customer_id) {
-            $this->sendError([
+           return $this->sendError([
                 'message' => __('You are not authorized to delete this address', 'fluent-cart')
             ]);
         }

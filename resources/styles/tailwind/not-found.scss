@@ -1,0 +1,15 @@
+.fct-not-found-page{
+  @apply flex items-center justify-center w-full h-[calc(100vh-160px)];
+  &-inner{
+    @apply flex items-center gap-4 max-w-[530px] mx-auto;
+  }
+  img{
+    @apply w-[200px] flex-shrink-0;
+  }
+  h5{
+    @apply text-lg font-semibold text-system-dark mt-0 mb-3 dark:text-gray-50;
+  }
+  p {
+    @apply mt-0 mb-4 text-system-mid dark:text-gray-300;
+  }
+}

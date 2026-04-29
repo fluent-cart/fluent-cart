@@ -156,7 +156,8 @@ class Processor
         if ($stripeSubscription['pending_setup_intent'] != null) {
             $paymentArgs['vendor_subscription_info'] = [
                 'type'         => 'setup',
-                'clientSecret' => Arr::get($stripeSubscription, 'pending_setup_intent.client_secret')
+                'clientSecret' => Arr::get($stripeSubscription, 'pending_setup_intent.client_secret'),
+                'trx_hash'     => $paymentInstance->transaction->uuid,
             ];
         } else {
             $paymentArgs['vendor_subscription_info'] = [

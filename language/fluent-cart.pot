@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FluentCart\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 13:33+0000\n"
+"POT-Creation-Date: 2026-04-28 12:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -312,8 +312,8 @@ msgid "%s is invalid, please use a valid email."
 msgstr ""
 
 #. %s attribute name
-#: api/Checkout/CheckoutApi.php:685 api/Checkout/CheckoutApi.php:721
-#: api/Checkout/CheckoutApi.php:768 api/Checkout/CheckoutApi.php:805
+#: api/Checkout/CheckoutApi.php:686 api/Checkout/CheckoutApi.php:722
+#: api/Checkout/CheckoutApi.php:769 api/Checkout/CheckoutApi.php:806
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:328
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:346
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:370
@@ -331,10 +331,10 @@ msgstr ""
 
 #. %s attribute name
 #. 1: attribute name
-#: api/Checkout/CheckoutApi.php:673 api/Checkout/CheckoutApi.php:709
-#: api/Checkout/CheckoutApi.php:735 api/Checkout/CheckoutApi.php:755
-#: api/Checkout/CheckoutApi.php:792 api/Checkout/CheckoutApi.php:819
-#: api/Checkout/CheckoutApi.php:835
+#: api/Checkout/CheckoutApi.php:674 api/Checkout/CheckoutApi.php:710
+#: api/Checkout/CheckoutApi.php:736 api/Checkout/CheckoutApi.php:756
+#: api/Checkout/CheckoutApi.php:793 api/Checkout/CheckoutApi.php:820
+#: api/Checkout/CheckoutApi.php:836
 #: app/Modules/Integrations/IntegrationHelper.php:48
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:325
 #: app/Http/Controllers/FrontendControllers/CustomerController.php:333
@@ -479,8 +479,8 @@ msgstr ""
 #: app/Views/invoice/thank_you.php:228 app/Views/invoice/thank_you.php:242
 #: app/Views/invoice/receipt_slip.php:366
 #: app/Views/invoice/receipt_slip.php:378
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:612
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:629
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:622
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:639
 #: app/Services/Renderer/Receipt/ThankYouRender.php:455
 #: app/Services/Renderer/Receipt/ThankYouRender.php:472
 #: app/Views/emails/parts/items_table.php:133
@@ -497,8 +497,8 @@ msgstr ""
 #: app/Views/invoice/thank_you.php:228 app/Views/invoice/thank_you.php:242
 #: app/Views/invoice/receipt_slip.php:366
 #: app/Views/invoice/receipt_slip.php:378
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:612
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:629
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:622
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:639
 #: app/Services/Renderer/Receipt/ThankYouRender.php:455
 #: app/Services/Renderer/Receipt/ThankYouRender.php:472
 #: app/Views/emails/parts/items_table.php:133
@@ -518,7 +518,7 @@ msgstr ""
 msgid "*"
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:691
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:702
 msgid "* Tax to be paid on reverse charge basis"
 msgstr ""
 
@@ -697,7 +697,7 @@ msgstr ""
 msgid "A product must have at least one variant."
 msgstr ""
 
-#: app/Views/emails/subscription/canceled/admin.php:14
+#: app/Views/emails/subscription/canceled/admin.php:17
 msgid "A subscription has been canceled."
 msgstr ""
 
@@ -810,6 +810,11 @@ msgstr ""
 
 #: app/Modules/StorageDrivers/S3/S3.php:589
 msgid "Access Key"
+msgstr ""
+
+#: app/Views/emails/subscription/canceled/customer.php:63
+#: app/Views/emails/subscription/canceled/admin.php:47
+msgid "Access Until"
 msgstr ""
 
 #: api/StoreSettings.php:598 api/StoreSettings.php:608
@@ -1437,7 +1442,7 @@ msgstr ""
 msgid "Address Attached"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:418
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:420
 msgid "Address deleted successfully"
 msgstr ""
 
@@ -1446,7 +1451,7 @@ msgstr ""
 msgid "Address deletion failed!"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:955 api/Checkout/CheckoutApi.php:963
+#: api/Checkout/CheckoutApi.php:956 api/Checkout/CheckoutApi.php:964
 msgid "Address field is required."
 msgstr ""
 
@@ -1518,7 +1523,7 @@ msgstr ""
 msgid "Address successfully set as the primary"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:393
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:394
 msgid "Address updated successfully"
 msgstr ""
 
@@ -1849,10 +1854,6 @@ msgstr ""
 msgid "all product types"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:107
-msgid "All Products"
-msgstr ""
-
 #: app/Services/Translations/admin-translation.php:174
 msgid "All products"
 msgstr ""
@@ -1986,10 +1987,10 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:30
 #: app/Views/invoice/receipt_slip.php:278
 #: app/Views/invoice/receipt_slip.php:448
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:475
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:722
-#: app/Views/emails/subscription/canceled/customer.php:43
-#: app/Views/emails/subscription/canceled/admin.php:27
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:485
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:733
+#: app/Views/emails/subscription/canceled/customer.php:46
+#: app/Views/emails/subscription/canceled/admin.php:30
 msgid "Amount"
 msgstr ""
 
@@ -2012,7 +2013,7 @@ msgid "Amount off Products"
 msgstr ""
 
 #: app/Views/invoice/receipt_slip.php:407
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:675
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:685
 msgid "Amount Paid"
 msgstr ""
 
@@ -3503,7 +3504,7 @@ msgid "Bill Times"
 msgstr ""
 
 #: app/Views/invoice/thank_you.php:345 app/Views/invoice/receipt_slip.php:179
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:326
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:336
 #: app/Services/Renderer/Receipt/ThankYouRender.php:771
 msgid "Bill To"
 msgstr ""
@@ -3822,7 +3823,7 @@ msgstr ""
 msgid "Brandenburg"
 msgstr ""
 
-#: app/CPT/FluentProducts.php:309 app/Helpers/AdminHelper.php:160
+#: app/CPT/FluentProducts.php:309 app/Helpers/AdminHelper.php:167
 #: app/Services/Translations/block-editor-translation.php:61
 msgid "Brands"
 msgstr ""
@@ -4745,7 +4746,7 @@ msgstr ""
 msgid "Catanzaro"
 msgstr ""
 
-#: app/CPT/FluentProducts.php:286 app/Helpers/AdminHelper.php:156
+#: app/CPT/FluentProducts.php:286 app/Helpers/AdminHelper.php:163
 #: app/Services/Translations/admin-translation.php:342
 #: app/Services/Translations/block-editor-translation.php:75
 msgid "Categories"
@@ -4940,7 +4941,7 @@ msgstr ""
 msgid "Change:"
 msgstr ""
 
-#: app/Views/emails/subscription/canceled/customer.php:65
+#: app/Views/emails/subscription/canceled/customer.php:74
 msgid "Changed your mind? You can reactivate your subscription at any time."
 msgstr ""
 
@@ -5363,7 +5364,7 @@ msgstr ""
 msgid "City / Town"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:958 api/Checkout/CheckoutApi.php:964
+#: api/Checkout/CheckoutApi.php:959 api/Checkout/CheckoutApi.php:965
 #: app/Http/Requests/CustomerAddressRequest.php:50
 #: app/Http/Requests/FrontendRequests/CustomerAddressRequest.php:43
 #: app/Http/Requests/FrontendRequests/CustomerRequests/CustomerProfileRequest.php:56
@@ -6292,7 +6293,7 @@ msgstr ""
 msgid "Country code is required"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:956
+#: api/Checkout/CheckoutApi.php:957
 #: app/Http/Requests/CustomerAddressRequest.php:52
 #: app/Http/Requests/FrontendRequests/CustomerAddressRequest.php:46
 #: app/Http/Requests/FrontendRequests/CustomerRequests/CustomerProfileRequest.php:58
@@ -6460,7 +6461,7 @@ msgstr ""
 msgid "Coupon Uses Limit Exceeded"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:147
+#: app/Helpers/AdminHelper.php:154
 #: app/Services/Translations/admin-translation.php:494
 #: app/Hooks/Handlers/MenuHandler.php:255
 msgid "Coupons"
@@ -6835,7 +6836,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:529
 #: app/Views/emails/subscription/trial_end/admin.php:26
 #: app/Views/emails/subscription/reminder/admin.php:21
-#: app/Views/emails/subscription/canceled/admin.php:18
+#: app/Views/emails/subscription/canceled/admin.php:21
 #: app/Views/emails/order/reminder/due/admin.php:31
 msgid "Customer"
 msgstr ""
@@ -7087,7 +7088,7 @@ msgstr ""
 msgid "Customer: %s"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:97
+#: app/Helpers/AdminHelper.php:119
 #: app/Services/Translations/admin-translation.php:548
 #: app/Hooks/Handlers/MenuHandler.php:192
 msgid "Customers"
@@ -7264,7 +7265,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:88
+#: app/Helpers/AdminHelper.php:110
 #: app/Services/Translations/admin-translation.php:562
 #: app/Services/Translations/customer-profile-translation.php:72
 #: app/Services/Translations/block-editor-translation.php:110
@@ -7287,7 +7288,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:73
 #: app/Services/Translations/block-editor-translation.php:111
 #: app/Views/invoice/receipt_slip.php:445
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:719
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:730
 msgid "Date"
 msgstr ""
 
@@ -7661,7 +7662,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:609
 #: app/Services/Translations/block-editor-translation.php:116
 #: app/Views/invoice/receipt_slip.php:269
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:466
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:476
 msgid "Description"
 msgstr ""
 
@@ -7811,7 +7812,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:630
 #: app/Services/Translations/block-editor-translation.php:118
 #: app/Views/invoice/thank_you.php:190 app/Views/invoice/receipt_slip.php:333
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:562
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:572
 #: app/Services/Renderer/Receipt/ThankYouRender.php:405
 #: app/Views/emails/parts/items_table.php:161
 msgid "Discount"
@@ -8261,7 +8262,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:79
 #: app/Services/Translations/block-editor-translation.php:131
 #: app/Services/Renderer/Receipt/ThankYouRender.php:634
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:170
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:174
 #: app/Views/emails/parts/downloads.php:39
 msgid "Download"
 msgstr ""
@@ -8338,7 +8339,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:82
 #: app/Services/Translations/block-editor-translation.php:132
 #: app/Services/Renderer/Receipt/ThankYouRender.php:605
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:275
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:279
 #: app/Hooks/Handlers/BlockEditors/CustomerProfileBlockEditor.php:46
 #: app/Hooks/Handlers/ShortCodes/CustomerProfileHandler.php:233
 #: app/Views/emails/order/paid/customer.php:49
@@ -9179,7 +9180,7 @@ msgstr ""
 msgid "Email Configuration"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:953
+#: api/Checkout/CheckoutApi.php:954
 #: app/Http/Requests/CustomerAddressRequest.php:47
 #: app/Http/Requests/FrontendRequests/CustomerRequests/CustomerProfileRequest.php:59
 #: app/Http/Requests/FrontendRequests/CustomerRequests/CustomerProfileAccountDetailsRequest.php:32
@@ -9199,7 +9200,7 @@ msgstr ""
 msgid "Email is required."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:847 api/Checkout/CheckoutApi.php:954
+#: api/Checkout/CheckoutApi.php:848 api/Checkout/CheckoutApi.php:955
 #: app/Http/Requests/CustomerAddressRequest.php:48
 #: app/Http/Requests/CustomerRequest.php:65
 msgid "Email must be a valid email address."
@@ -9801,8 +9802,9 @@ msgstr ""
 #: app/Services/Translations/block-editor-translation.php:134
 #: app/Views/invoice/thank_you.php:395 app/Views/invoice/receipt_slip.php:216
 #: app/Modules/Tax/TaxModule.php:511
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:374
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:384
 #: app/Services/Renderer/Receipt/ThankYouRender.php:813
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:512
 #: app/Views/emails/parts/addresses.php:70
 msgid "EU VAT"
 msgstr ""
@@ -10145,7 +10147,7 @@ msgstr ""
 msgid "Failed to delete"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:423
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:425
 msgid "Failed to delete address"
 msgstr ""
 
@@ -10408,7 +10410,7 @@ msgid "Failed to update"
 msgstr ""
 
 #: api/Resource/OrderResource.php:1316
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:398
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:399
 msgid "Failed to update address"
 msgstr ""
 
@@ -10522,7 +10524,7 @@ msgstr ""
 msgid "Failing"
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:776
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:787
 msgid "Failure reason: "
 msgstr ""
 
@@ -10864,7 +10866,7 @@ msgstr ""
 msgid "First Name is required."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:857
+#: api/Checkout/CheckoutApi.php:858
 msgid "First name is required."
 msgstr ""
 
@@ -11291,7 +11293,7 @@ msgstr ""
 msgid "Full Name *"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:952 api/Checkout/CheckoutApi.php:960
+#: api/Checkout/CheckoutApi.php:953 api/Checkout/CheckoutApi.php:961
 msgid "Full name field is required."
 msgstr ""
 
@@ -11303,7 +11305,7 @@ msgstr ""
 msgid "Full Name is required."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:853
+#: api/Checkout/CheckoutApi.php:854
 msgid "Full name is required."
 msgstr ""
 
@@ -12316,7 +12318,7 @@ msgstr ""
 #: app/Views/emails/subscription/trial_end/customer.php:26
 #: app/Views/emails/subscription/reminder/customer.php:21
 #: app/Views/emails/subscription/renewal/customer.php:16
-#: app/Views/emails/subscription/canceled/customer.php:19
+#: app/Views/emails/subscription/canceled/customer.php:22
 #: app/Views/emails/order/reminder/due/customer.php:24
 #: app/Views/emails/order/reminder/overdue/customer.php:28
 #, php-format
@@ -13190,7 +13192,7 @@ msgstr ""
 msgid "Integration Type"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:40 app/Helpers/AdminHelper.php:138
+#: app/Helpers/AdminHelper.php:40 app/Helpers/AdminHelper.php:145
 #: app/Services/Translations/admin-translation.php:1028
 #: app/Hooks/Handlers/MenuHandler.php:232
 msgid "Integrations"
@@ -13308,7 +13310,7 @@ msgstr ""
 msgid "Invalid data provided"
 msgstr ""
 
-#: app/Services/DateTime/DateTime.php:74 app/Services/DateTime/DateTime.php:117
+#: app/Services/DateTime/DateTime.php:74 app/Services/DateTime/DateTime.php:114
 msgid "Invalid datetime format."
 msgstr ""
 
@@ -13426,6 +13428,11 @@ msgid ""
 "yearly..)"
 msgstr ""
 
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:244
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:417
+msgid "Invalid request."
+msgstr ""
+
 #: app/Services/FileSystem/Drivers/S3/S3InputValidator.php:59
 msgid "Invalid S3 bucket name."
 msgstr ""
@@ -13535,7 +13542,7 @@ msgstr ""
 msgid "Invalid vendor subscription ID."
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:111
+#: app/Helpers/AdminHelper.php:95
 #: app/Services/Translations/admin-translation.php:1034
 msgid "Inventory"
 msgstr ""
@@ -15014,7 +15021,7 @@ msgstr ""
 msgid "Last Name"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:862
+#: api/Checkout/CheckoutApi.php:863
 msgid "Last name is required."
 msgstr ""
 
@@ -15218,7 +15225,7 @@ msgstr ""
 msgid "Libya"
 msgstr ""
 
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:158
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:162
 msgid "License"
 msgid_plural "Licenses"
 msgstr[0] ""
@@ -15319,8 +15326,8 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:128
 #: app/Services/Translations/block-editor-translation.php:198
 #: app/Services/Renderer/Receipt/ThankYouRender.php:723
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:266
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:414
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:270
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:418
 #: app/Hooks/Handlers/BlockEditors/CustomerProfileBlockEditor.php:45
 #: app/Hooks/Handlers/ShortCodes/CustomerProfileHandler.php:225
 #: app/Views/emails/order/paid/customer.php:39
@@ -15642,7 +15649,7 @@ msgstr ""
 msgid "Logout"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:164
+#: app/Helpers/AdminHelper.php:171
 #: app/Services/Translations/admin-translation.php:1124
 #: app/Hooks/Handlers/MenuHandler.php:294
 msgid "Logs"
@@ -16106,7 +16113,7 @@ msgstr ""
 
 #: app/Views/emails/subscription/trial_end/customer.php:83
 #: app/Views/emails/subscription/reminder/customer.php:72
-#: app/Views/emails/subscription/canceled/customer.php:74
+#: app/Views/emails/subscription/canceled/customer.php:83
 msgid "Manage Subscription"
 msgstr ""
 
@@ -17096,7 +17103,7 @@ msgstr ""
 msgid "Morazán"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:130
+#: app/Helpers/AdminHelper.php:137
 #: app/Services/Renderer/ProductRenderer.php:462
 msgid "More"
 msgstr ""
@@ -18467,7 +18474,7 @@ msgid "No SKU"
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/Processor.php:33
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:396
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:397
 msgid "No subscription found."
 msgstr ""
 
@@ -19385,7 +19392,7 @@ msgstr ""
 msgid "Order At"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:143
+#: app/Helpers/AdminHelper.php:150
 msgid "Order Bump"
 msgstr ""
 
@@ -19534,8 +19541,8 @@ msgstr ""
 msgid "Order has been marked as paid"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:183
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:288
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:184
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:289
 #: app/Modules/PaymentMethods/Cod/Cod.php:63
 #: app/Modules/PaymentMethods/PayPalGateway/Processor.php:146
 #: app/Modules/PaymentMethods/PayPalGateway/Processor.php:214
@@ -19649,7 +19656,7 @@ msgstr ""
 msgid "Order not found"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:269
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:280
 msgid "Order not found for the provided intent ID."
 msgstr ""
 
@@ -19829,8 +19836,8 @@ msgstr ""
 #: app/Views/invoice/dispatch_slip.php:37
 #: app/Views/invoice/shipping_slip.php:28
 #: app/Views/invoice/delivery_slip.php:30
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:139
-#: app/Services/ShortCodeParser/Parsers/OrderParser.php:251
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:143
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:255
 #: app/Views/emails/order/paid/customer.php:24
 #: app/Views/emails/order/paid/admin.php:25
 #: app/Views/emails/order/shipped/customer.php:28
@@ -19867,7 +19874,7 @@ msgstr ""
 msgid "Order Total Amount (Formatted)"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:325
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:326
 msgid "Order total including all items, shipping (If any), and taxes (If any)"
 msgstr ""
 
@@ -19925,7 +19932,7 @@ msgstr ""
 msgid "Order Value Ranges"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:92 app/Helpers/Status.php:428
+#: app/Helpers/AdminHelper.php:114 app/Helpers/Status.php:428
 #: app/Services/Translations/admin-translation.php:1363
 #: app/Services/Widgets/DashboardWidget.php:59
 #: app/Hooks/Handlers/MenuHandler.php:182
@@ -20651,7 +20658,7 @@ msgstr ""
 msgid "Payment confirmation failed"
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:773
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:784
 msgid "Payment Confirmation Failed!"
 msgstr ""
 
@@ -20659,12 +20666,12 @@ msgstr ""
 msgid "Payment confirmation received from PayPal. Transaction ID: "
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:557
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:562
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:579
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:584
 msgid "Payment confirmation received from Stripe. Transaction ID:"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:286
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:297
 msgid "Payment confirmed successfully. Redirecting...!"
 msgstr ""
 
@@ -20710,7 +20717,7 @@ msgid "Payment has been paid successfully! Redirecting..."
 msgstr ""
 
 #: app/Views/invoice/receipt_slip.php:435
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:709
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:720
 msgid "Payment history"
 msgstr ""
 
@@ -20739,7 +20746,7 @@ msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1416
 #: app/Views/invoice/receipt_slip.php:442
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:716
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:727
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:205
 msgid "Payment method"
 msgstr ""
@@ -20757,12 +20764,18 @@ msgstr ""
 msgid "Payment method is upcoming! Not available for right now!"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:395
+#: api/Checkout/CheckoutApi.php:396
 msgid "Payment method not found!"
 msgstr ""
 
 #: app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php:441
 msgid "Payment method not supported"
+msgstr ""
+
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:423
+msgid ""
+"Payment method setup is not complete. Please complete the payment method "
+"setup."
 msgstr ""
 
 #: app/Modules/PaymentMethods/StripeGateway/SwitchCustomerMethod.php:120
@@ -21641,7 +21654,7 @@ msgstr ""
 msgid "Please try again in a moment."
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:778
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:789
 msgid "Please try to complete payment again from here!"
 msgstr ""
 
@@ -21837,7 +21850,7 @@ msgstr ""
 msgid "Postcode / ZIP"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:959 api/Checkout/CheckoutApi.php:965
+#: api/Checkout/CheckoutApi.php:960 api/Checkout/CheckoutApi.php:966
 #: app/Http/Requests/CustomerAddressRequest.php:51
 #: app/Http/Requests/FrontendRequests/CustomerAddressRequest.php:45
 #: app/Http/Requests/FrontendRequests/CustomerRequests/CustomerProfileRequest.php:57
@@ -22732,7 +22745,7 @@ msgid "Product weight"
 msgstr ""
 
 #: api/StoreSettings.php:571 app/CPT/FluentProducts.php:205
-#: app/CPT/FluentProducts.php:207 app/Helpers/AdminHelper.php:102
+#: app/CPT/FluentProducts.php:207 app/Helpers/AdminHelper.php:86
 #: app/Services/Filter/LicenseFilter.php:120
 #: app/Services/Filter/OrderBumpFilter.php:103
 #: app/Services/Renderer/ShopAppRenderer.php:239
@@ -23026,7 +23039,7 @@ msgid "Qom (قم)"
 msgstr ""
 
 #: app/Views/invoice/receipt_slip.php:272
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:469
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:479
 msgid "Qty"
 msgstr ""
 
@@ -23239,7 +23252,7 @@ msgstr ""
 msgid "Reactivate"
 msgstr ""
 
-#: app/Views/emails/subscription/canceled/customer.php:67
+#: app/Views/emails/subscription/canceled/customer.php:76
 msgid "Reactivate Subscription"
 msgstr ""
 
@@ -23252,8 +23265,8 @@ msgid "Reactivate Subscription!"
 msgstr ""
 
 #: app/Services/Translations/admin-translation.php:1556
-#: app/Views/emails/subscription/canceled/customer.php:54
-#: app/Views/emails/subscription/canceled/admin.php:38
+#: app/Views/emails/subscription/canceled/customer.php:57
+#: app/Views/emails/subscription/canceled/admin.php:41
 msgid "Reason"
 msgstr ""
 
@@ -23385,8 +23398,8 @@ msgstr ""
 msgid "Redirecting to receipt..."
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:378
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:538
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:379
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:539
 msgid "Redirecting to Stripe checkout..."
 msgstr ""
 
@@ -23411,7 +23424,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:1572
 #: app/Services/Widgets/DashboardWidget.php:72
 #: app/Views/invoice/thank_you.php:257 app/Views/invoice/receipt_slip.php:390
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:645
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:655
 #: app/Services/Renderer/Receipt/ThankYouRender.php:488
 #: app/Views/emails/parts/items_table.php:191
 #: app/Views/emails/parts/items_table.php:219
@@ -23873,7 +23886,7 @@ msgstr ""
 msgid "Reply to name (Optional)"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:123
+#: app/Helpers/AdminHelper.php:130
 #: app/Services/Translations/admin-translation.php:1620
 #: app/Hooks/Handlers/MenuHandler.php:222
 msgid "Reports"
@@ -26198,7 +26211,7 @@ msgstr ""
 msgid "Setup fee option must be yes or no."
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:245
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:256
 msgid "Setup intent confirmed successfully. Please check your subscriptions."
 msgstr ""
 
@@ -26308,7 +26321,7 @@ msgid "Ship exclusively to the countries you choose"
 msgstr ""
 
 #: app/Views/invoice/thank_you.php:404 app/Views/invoice/receipt_slip.php:238
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:412
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:422
 #: app/Services/Renderer/Receipt/ThankYouRender.php:827
 msgid "Ship To"
 msgstr ""
@@ -26343,7 +26356,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:221
 #: app/Services/Translations/block-editor-translation.php:362
 #: app/Views/invoice/thank_you.php:203 app/Views/invoice/receipt_slip.php:343
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:577
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:587
 #: app/Services/Renderer/Receipt/ThankYouRender.php:421
 #: app/Views/emails/parts/items_table.php:118
 #: app/Hooks/Handlers/BlockEditors/Checkout/InnerBlocks/InnerBlocks.php:413
@@ -26531,7 +26544,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:1857
 #: app/Services/Translations/customer-profile-translation.php:223
 #: app/Views/invoice/thank_you.php:241 app/Views/invoice/receipt_slip.php:377
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:628
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:638
 #: app/Services/Renderer/Receipt/ThankYouRender.php:471
 #: app/Views/emails/parts/items_table.php:132
 #: app/Hooks/Handlers/BlockEditors/Checkout/InnerBlocks/InnerBlocks.php:468
@@ -27174,7 +27187,7 @@ msgstr ""
 msgid "signup fee"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Processor.php:478
+#: app/Modules/PaymentMethods/StripeGateway/Processor.php:479
 msgid "Signup fee / initial payment"
 msgstr ""
 
@@ -28188,7 +28201,7 @@ msgstr ""
 msgid "Street address"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:957
+#: api/Checkout/CheckoutApi.php:958
 #: app/Http/Requests/CustomerAddressRequest.php:49
 #: app/Http/Requests/FrontendRequests/CustomerAddressRequest.php:41
 msgid "Street Address field is required."
@@ -28218,8 +28231,8 @@ msgstr ""
 msgid "Stripe not connected in test mode!"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:557
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:562
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:579
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:584
 msgid "Stripe Payment Confirmation"
 msgstr ""
 
@@ -28293,8 +28306,8 @@ msgstr ""
 #: app/Views/emails/subscription/trial_end/admin.php:30
 #: app/Views/emails/subscription/reminder/customer.php:38
 #: app/Views/emails/subscription/reminder/admin.php:25
-#: app/Views/emails/subscription/canceled/customer.php:38
-#: app/Views/emails/subscription/canceled/admin.php:22
+#: app/Views/emails/subscription/canceled/customer.php:41
+#: app/Views/emails/subscription/canceled/admin.php:25
 #: app/Modules/Subscriptions/Services/Filter/SubscriptionFilter.php:118
 msgid "Subscription"
 msgstr ""
@@ -28567,7 +28580,7 @@ msgstr ""
 msgid "Subscription was created but not found in paypal or connecting issue"
 msgstr ""
 
-#: api/StoreSettings.php:1093 app/Helpers/AdminHelper.php:118
+#: api/StoreSettings.php:1093 app/Helpers/AdminHelper.php:125
 #: app/Helpers/Status.php:445
 #: app/Services/Translations/admin-translation.php:1964
 #: app/Services/Translations/customer-profile-translation.php:242
@@ -28591,7 +28604,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:243
 #: app/Services/Translations/block-editor-translation.php:404
 #: app/Views/invoice/thank_you.php:179 app/Views/invoice/receipt_slip.php:322
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:546
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:556
 #: app/Services/Renderer/Receipt/ThankYouRender.php:391
 #: app/Views/emails/parts/subscription_item.php:63
 #: app/Views/emails/parts/items_table.php:103
@@ -29096,7 +29109,7 @@ msgstr ""
 #: app/Services/Translations/customer-profile-translation.php:249
 #: app/Services/Translations/block-editor-translation.php:408
 #: app/Views/invoice/receipt_slip.php:365
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:611
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:621
 #: app/Views/emails/parts/subscription_item.php:75
 #: app/Views/emails/parts/items_table.php:175
 #: app/Hooks/Handlers/BlockEditors/Checkout/InnerBlocks/InnerBlocks.php:457
@@ -29259,7 +29272,7 @@ msgstr ""
 msgid "Taxable Amount"
 msgstr ""
 
-#: app/Helpers/AdminHelper.php:151
+#: app/Helpers/AdminHelper.php:158
 #: app/Services/Translations/admin-translation.php:1996
 #: app/Hooks/Handlers/MenuHandler.php:265
 msgid "Taxes"
@@ -29793,7 +29806,7 @@ msgstr ""
 msgid "The selected shipping class does not exist."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:895
+#: api/Checkout/CheckoutApi.php:896
 msgid "The selected shipping method is not available."
 msgstr ""
 
@@ -30278,7 +30291,7 @@ msgstr ""
 msgid "This payment method does not support remote resync"
 msgstr ""
 
-#: app/Models/Subscription.php:542
+#: app/Models/Subscription.php:547
 msgid "This payment method does not support remote subscription cancel"
 msgstr ""
 
@@ -30815,7 +30828,7 @@ msgstr ""
 #: app/Services/Translations/block-editor-translation.php:427
 #: app/Views/invoice/thank_you.php:133 app/Views/invoice/thank_you.php:269
 #: app/Views/invoice/receipt_slip.php:399
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:660
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:670
 #: app/Services/Renderer/Receipt/ThankYouRender.php:272
 #: app/Services/Renderer/Receipt/ThankYouRender.php:503
 #: app/Views/emails/parts/subscription_item.php:95
@@ -31098,7 +31111,7 @@ msgstr ""
 msgid "Transaction not found"
 msgstr ""
 
-#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:401
+#: app/Modules/PaymentMethods/StripeGateway/Confirmations.php:412
 msgid "Transaction not found for the provided setup intent."
 msgstr ""
 
@@ -31486,7 +31499,7 @@ msgstr ""
 msgid "Unable to mark paid for canceled order"
 msgstr ""
 
-#: app/Services/DateTime/DateTime.php:147
+#: app/Services/DateTime/DateTime.php:163
 msgid "Unable to parse datetime:"
 msgstr ""
 
@@ -31533,7 +31546,7 @@ msgid "Unit Price"
 msgstr ""
 
 #: app/Views/invoice/receipt_slip.php:275
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:472
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:482
 msgid "Unit price"
 msgstr ""
 
@@ -32591,8 +32604,12 @@ msgstr ""
 msgid "Vat Tax ID"
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:339
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:389
+#: app/Services/ShortCodeParser/Parsers/OrderParser.php:504
+msgid "VAT/Tax ID"
+msgstr ""
+
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:349
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:399
 msgid "VAT/Tax ID:"
 msgstr ""
 
@@ -32950,7 +32967,7 @@ msgstr ""
 #: app/Services/Translations/admin-translation.php:2240
 #: app/Views/emails/subscription/trial_end/admin.php:64
 #: app/Views/emails/subscription/reminder/admin.php:53
-#: app/Views/emails/subscription/canceled/admin.php:50
+#: app/Views/emails/subscription/canceled/admin.php:59
 msgid "View Subscription"
 msgstr ""
 
@@ -33104,7 +33121,7 @@ msgstr ""
 msgid "Waterford"
 msgstr ""
 
-#: app/Services/Renderer/Receipt/ReceiptRenderer.php:774
+#: app/Services/Renderer/Receipt/ReceiptRenderer.php:785
 msgid "We are sorry, your order is placed but payment confirmation has failed."
 msgstr ""
 
@@ -33128,7 +33145,7 @@ msgstr ""
 msgid "We couldn't find any products matching your search"
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:884
+#: api/Checkout/CheckoutApi.php:885
 msgid "We don't ship to this address. Please select a different address."
 msgstr ""
 
@@ -33745,15 +33762,15 @@ msgstr ""
 msgid "You are not allowed to delete file"
 msgstr ""
 
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:412
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:414
 msgid "You are not authorized to delete this address"
 msgstr ""
 
 #: app/Http/Controllers/FrontendControllers/CustomerProfileController.php:320
 #: app/Http/Controllers/FrontendControllers/CustomerProfileController.php:358
 #: app/Http/Controllers/FrontendControllers/CustomerProfileController.php:400
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:387
-#: app/Http/Controllers/FrontendControllers/CustomerController.php:432
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:388
+#: app/Http/Controllers/FrontendControllers/CustomerController.php:434
 msgid "You are not authorized to update this address"
 msgstr ""
 
@@ -33798,7 +33815,7 @@ msgid "You can purchase one subscription at a time."
 msgstr ""
 
 #: app/Views/emails/subscription/trial_end/admin.php:62
-#: app/Views/emails/subscription/canceled/admin.php:48
+#: app/Views/emails/subscription/canceled/admin.php:57
 msgid ""
 "You can review subscription details and take action if needed from the admin "
 "dashboard."
@@ -33948,7 +33965,7 @@ msgid ""
 "immediately to refund the cardholder and close the dispute."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:843
+#: api/Checkout/CheckoutApi.php:844
 msgid "You must agree to the terms and conditions."
 msgstr ""
 
@@ -33961,7 +33978,7 @@ msgid ""
 "You must provide either a render callback or a page ID for the endpoint."
 msgstr ""
 
-#: api/Checkout/CheckoutApi.php:901
+#: api/Checkout/CheckoutApi.php:902
 msgid "You must select a shipping method."
 msgstr ""
 
@@ -34174,7 +34191,7 @@ msgid ""
 msgstr ""
 
 #. %s is the subscription item name
-#: app/Views/emails/subscription/canceled/customer.php:29
+#: app/Views/emails/subscription/canceled/customer.php:32
 #, php-format
 msgid "Your subscription for %s has been canceled."
 msgstr ""

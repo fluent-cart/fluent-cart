@@ -649,6 +649,7 @@ abstract class BaseFilter
 
             $this->query->{$method}(function ($query) use ($group, $filterName) {
                 foreach ($group as $providerName => $items) {
+                    $items = $this->mergeRelationFilters($items);
                     foreach ($items as $item) {
                         if ($item['filter_type'] === 'custom') {
                             $filters = static::advanceFilterOptions();
@@ -680,6 +681,55 @@ abstract class BaseFilter
                 }
             });
         }
+    }
+
+    /**
+     * Merge relation filter items that target the same relation field with compatible operators.
+     * This prevents multiple whereHas() subqueries ANDed together for the same relation column,
+     * which would return no results (e.g., license status IN ('active') AND license status IN ('expired')).
+     */
+    private function mergeRelationFilters(array $items): array
+    {
+        $merged = [];
+        $relationGroups = [];
+
+        foreach ($items as $item) {
+            if (Arr::get($item, 'filter_type') !== 'relation') {
+                $merged[] = $item;
+                continue;
+            }
+
+            $value = Arr::get($item, 'value');
+            $operator = $item['operator'] ?? '';
+            $mergeableOperators = ['in', 'contains', 'not_in', 'not_contains'];
+
+            if (!in_array($operator, $mergeableOperators)) {
+                $merged[] = $item;
+                continue;
+            }
+
+            // Normalize string value to array for merging
+            if (is_string($value) && $value !== '') {
+                $value = [$value];
+                $item['value'] = $value;
+            }
+
+            if (!is_array($value) || empty($value)) {
+                $merged[] = $item;
+                continue;
+            }
+
+            $key = $item['property'] . ':' . $item['relation'] . ':' . $item['column'] . ':' . $operator;
+            if (!isset($relationGroups[$key])) {
+                $relationGroups[$key] = $item;
+            } else {
+                $relationGroups[$key]['value'] = array_values(
+                    array_unique(array_merge($relationGroups[$key]['value'], $value))
+                );
+            }
+        }
+
+        return array_merge($merged, array_values($relationGroups));
     }
 
     private function handleAdvanceFilter($query, $filterItem)

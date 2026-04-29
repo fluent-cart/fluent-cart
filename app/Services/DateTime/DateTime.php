@@ -46,7 +46,7 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
 
             // If fromTz is specified and the datetime doesn't have timezone info, set it
             if ($fromTz && $dt->getTimezone()->getName() === 'UTC' && $fromTz !== 'UTC') {
-                $dt = $dt->setTimezone(new \DateTimeZone($fromTz));
+                $dt = $dt->setTimezone(static::resolveTimezone($fromTz));
             }
 
             return $dt->setTimezone(new \DateTimeZone('UTC'));
@@ -65,7 +65,7 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
             // If fromTz is provided and the parsed string doesn't contain timezone info
             if ($fromTz && !preg_match('/[+-]\d{2}:?\d{2}$|Z$|[A-Z]{3,4}$/i', trim($datetime))) {
                 // Create a new datetime in the specified timezone
-                $dt = static::createFromFormat('Y-m-d H:i:s', $dt->format('Y-m-d H:i:s'), new \DateTimeZone($fromTz));
+                $dt = static::createFromFormat('Y-m-d H:i:s', $dt->format('Y-m-d H:i:s'), static::resolveTimezone($fromTz));
             }
 
             return $dt->setTimezone(new \DateTimeZone('UTC'));
@@ -89,11 +89,8 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
      */
     public static function gmtToTimezone($datetime = null, $timezone = null): DateTime
     {
-        // If not a string or DateTimeZone, fallback to wp_timezone()
         if (!$timezone instanceof \DateTimeZone) {
-            $timezone = is_string($timezone)
-                ? new \DateTimeZone($timezone)
-                : wp_timezone(); // returns a DateTimeZone object
+            $timezone = static::resolveTimezone($timezone);
         }
 
 
@@ -119,6 +116,25 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
     }
 
 
+    /**
+     * Safely resolve a timezone string to a DateTimeZone object.
+     *
+     * PHP 8.4 throws on deprecated aliases like Asia/Saigon, so we validate
+     * with timezone_open() before constructing. Old orders may carry such aliases
+     * from the browser-captured user_tz stored in order config at checkout time.
+     * Falls back to the supplied $fallback, or wp_timezone() if none given.
+     */
+    private static function resolveTimezone($timezone, $fallback = null): \DateTimeZone
+    {
+        if ($timezone instanceof \DateTimeZone) {
+            return $timezone;
+        }
+        if (is_string($timezone) && $timezone !== '' && @timezone_open($timezone) !== false) {
+            return new \DateTimeZone($timezone);
+        }
+        return ($fallback instanceof \DateTimeZone) ? $fallback : wp_timezone();
+    }
+
     public function getDefaultTimezone()
     {
         return new DateTimeZone('UTC');
@@ -136,7 +152,7 @@ class DateTime extends \FluentCart\Framework\Support\DateTime
             } else {
                 $tz = $timezone instanceof \DateTimeZone
                     ? $timezone
-                    : ($timezone ? new \DateTimeZone($timezone) : new DateTimeZone('UTC'));
+                    : ($timezone ? static::resolveTimezone($timezone, new \DateTimeZone('UTC')) : new DateTimeZone('UTC'));
 
                 $dt = new \DateTimeImmutable($datetimeString, $tz);
             }

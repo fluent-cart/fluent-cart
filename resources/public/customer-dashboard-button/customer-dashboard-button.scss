@@ -1,0 +1,19 @@
+.fct-customer-dashboard-btn,
+.fct-customer-dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  width: auto;
+  .fct-customer-dashboard-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+}

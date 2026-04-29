@@ -1,0 +1,6 @@
+.media{
+  @apply w-10 h-10;
+  img{
+    @apply w-full h-full rounded-sm object-cover;
+  }
+}

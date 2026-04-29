@@ -1,0 +1,24 @@
+.el-notification{
+    @apply dark:bg-dark-600 dark:border-dark-600 dark:text-gray-50;
+    z-index: 99999 !important;
+    &__title{
+        @apply dark:text-gray-50;
+    }
+    &__content {
+        p{
+            @apply dark:text-gray-300;
+            br{
+                @apply hidden;
+            }
+        }
+    }
+    &__closeBtn svg{
+        @apply dark:text-gray-300;
+    }
+    &__content{
+        @apply text-left;
+    }
+    &.fct-file-upload-notification{
+        @apply z-[99999] #{!important};
+    }
+}

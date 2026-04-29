@@ -1,0 +1,59 @@
+.el-message-box{
+  @apply rounded p-0;
+  &__content{
+    @apply pb-5 pt-2.5 px-5;
+  }
+  &__header{
+    @apply pt-4 pb-0 px-5;
+    &.show-close{
+      @apply pr-3;
+    }
+  }
+  &__title{
+    @apply text-base text-system-dark font-semibold;
+  }
+  &__message {
+    p{
+      @apply text-sm leading-[20px] text-system-mid;
+    }
+  }
+  &__btns{
+    @apply p-5 border border-solid border-gray-divider border-b-0 border-x-0;
+    .el-button{
+      @apply rounded;
+      &:not(.el-button--primary){
+        @apply text-primary-500 hover:bg-primary-25 hover:border-primary-100 ;
+      }
+    }
+    .el-button--primary{
+      @apply bg-primary-500 border-primary-500;
+    }
+    button:hover,
+    button:focus,
+    button:active,
+    .button:hover,
+    .button:focus,
+    .button:active {
+      @apply shadow-none !important;
+    }
+  }
+  &__headerbtn{
+    @apply hidden;
+  }
+  &__container{
+    @apply gap-4;
+  }
+  &__status {
+    @apply w-10 h-10 flex-shrink-0 rounded;
+    + .el-message-box__message{
+      @apply pr-0;
+    }
+    &.el-message-box-icon--warning{
+      @apply bg-warning-25;
+    }
+    &.el-message-box-icon--error{
+      @apply bg-red-25;
+    }
+  }
+}
+

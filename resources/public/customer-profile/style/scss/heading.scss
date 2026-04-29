@@ -1,0 +1,9 @@
+.fct-customer-dashboard-heading{
+  @apply grid gap-1 mb-7.5;
+  .title{
+    @apply m-0 text-[24px] text-system-dark font-semibold leading-[32px] dark:text-gray-50;
+  }
+  .text{
+    @apply text-base text-system-mid font-normal leading-[24px] m-0 dark:text-gray-300;
+  }
+}

@@ -1,0 +1,15 @@
+.selected-tags {
+  @apply bg-white flex gap-1 items-center border border-solid border-gray-outline rounded flex-wrap w-full py-1 px-3 dark:bg-dark-600 dark:border-dark-400;
+  input{
+    @apply w-1 border-0 m-0 p-0 text-[13px] text-system-dark focus:border-0 focus:outline-none focus:shadow-none dark:text-primary-50 dark:bg-transparent;
+  }
+  .tag {
+    @apply bg-gray-50 rounded-sm flex items-center justify-between py-1 pl-2 pr-1 text-[13px] text-system-mid gap-0.5 dark:bg-dark-500 dark:text-gray-300;
+    button {
+      @apply bg-transparent border-0 cursor-pointer text-sm rounded-full w-4.5 h-4.5 p-0 flex items-center justify-center hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-400;
+      .icon svg{
+        @apply w-2 h-2;
+      }
+    }
+  }
+}

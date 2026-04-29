@@ -42,8 +42,9 @@ class SubscriptionEOT extends EventDispatcher
     public function beforeDispatch()
     {
         $result = $this->subscription->cancelRemoteSubscription([
-            'reason'     => 'end_of_term',
-            'fire_hooks' => false
+            'reason'         => 'end_of_term',
+            'fire_hooks'     => false,
+            'effective_from' => 'immediately',
         ]);
 
         if (is_wp_error($result)) {

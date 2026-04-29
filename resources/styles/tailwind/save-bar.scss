@@ -1,0 +1,61 @@
+
+/*===== save bar =====*/
+.fct-save-bar{
+  @apply py-4 px-5 bg-white fixed top-0 right-0 w-[calc(100%-160px)] z-[2009] transition-all duration-300  dark:bg-dark-600 border border-solid border-x-0 border-t-0 border-gray-divider dark:border-dark-400;
+
+  transform: translateY(-100%);
+  box-shadow: 0px 4px 16px -2px rgba(27, 37, 51, 0.06);
+  .fct-btn-group {
+    @apply gap-2.5;
+    .el-button+.el-button {
+      @apply m-0;
+    }
+  }
+  &.is-active{
+    transform: translateY(30px);
+  }
+  &-inner{
+    @apply flex justify-between items-center;
+  }
+  &-left{
+    @apply flex items-center gap-2.5;
+    .title{
+      @apply m-0 text-system-mid text-sm font-normal dark:text-gray-300;
+    }
+  }
+  + .page-heading-wrap {
+    @apply pt-[70px] transition-all duration-300;
+  }
+
+  &.shake-unsave-changes {
+    .fct-save-bar-inner {
+      animation: shake 0.2s linear infinite;
+    }
+  }
+}
+body {
+  &.folded {
+    .fct-save-bar {
+      @apply w-[calc(100%-36px)];
+    }
+  }
+}
+
+@media (max-width: 782px) {
+  .fct-save-bar {
+    @apply w-full #{!important};
+    &.is-active{
+      transform: translateY(46px);
+    }
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+

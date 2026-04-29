@@ -1,0 +1,20 @@
+.el-scrollbar.el-cascader-menu {
+  height: inherit;
+  width: 50%;
+}
+.el-cascader-menu__wrap.el-scrollbar__wrap {
+  max-height: 204px;
+  height: auto;
+}
+.el-cascader-panel.is-bordered{
+  @apply dark:border-dark-400;
+}
+.el-cascader-menu{
+  @apply dark:border-dark-400 dark:text-gray-300;
+}
+.el-cascader-node.in-active-path, .el-cascader-node.is-active, .el-cascader-node.is-selectable.in-checked-path{
+  @apply dark:text-gray-50;
+}
+.el-cascader-node:not(.is-disabled):focus, .el-cascader-node:not(.is-disabled):hover{
+  @apply dark:bg-dark-500;
+}

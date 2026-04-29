@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.fluent-cart-login{
+  &-wrap{
+    container-type: inline-size;
+    container-name: registration-page;
+    font-family: "Inter", sans-serif;
+    @apply max-w-[500px] mx-auto bg-white rounded-[20px] my-10 p-8 border border-solid border-[#EAECF0];
+
+    * {
+      box-sizing: border-box;
+    }
+    .heading{
+      @apply text-[24px] font-medium leading-[32px] text-[#2F3448] mb-1.5 mt-2;
+      font-family: "Inter", sans-serif;
+    }
+    .text{
+      @apply text-base text-[#565865] font-normal leading-[24px] m-0;
+    }
+    .fluent-cart-login-button{
+      @apply p-2 w-full rounded-[10px] mt-5 text-base cursor-pointer text-white border-0 font-medium hover:bg-[#253241] !important;
+
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #1C2732 !important;
+      box-shadow: 0px 1px 2px 0px rgba(27, 28, 29, 0.48), 0px 0px 0px 1px #242628;
+
+      &:disabled{
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+      }
+    }
+    .fluent-cart-login-footer-action {
+      @apply text-center text-sm mt-5 text-[#565865] !important;
+      a{
+        @apply text-[#253241] font-medium;
+      }
+    }
+    .fluent-cart-login-remember-me-forgot-password{
+      @apply flex items-center gap-1 justify-between mt-4;
+    }
+
+    /* checkbox */
+    .checkbox {
+      @apply relative flex items-center gap-2 text-sm text-[#2F3448] leading-[20px] cursor-pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      input {
+        @apply left-0 w-0 h-0 absolute opacity-0 cursor-pointer;
+      }
+
+      .checkmark {
+        @apply relative block top-0 left-0 w-5 h-5 bg-white rounded-[6px] border border-solid border-[#D6DAE1] transition-all duration-200;
+        &::after {
+          content: "";
+          position: absolute;
+          display: block;
+          left: 50%;
+          top: 40%;
+          width: 5px;
+          height: 9px;
+          border: solid white;
+          border-width: 0 1.5px 1.5px 0;
+          transform: translate(-50%, -50%) rotate(45deg);
+          opacity: 0;
+          transition: all 0.2s ease;
+        }
+      }
+
+      input:checked ~.checkmark {
+        @apply bg-[#1C2732] border-[#1C2732];
+        &::after {
+          opacity: 1;
+          transition: all 0.2s ease;
+        }
+      }
+    }
+    .forgot-password{
+      @apply text-sm leading-[20px] text-[#253241] font-medium no-underline hover:underline focus:shadow-none focus:outline-none !important;
+    }
+  }
+  &-head{
+    @apply text-center border border-solid border-x-0 border-t-0 border-[#EAECF0] pb-5 mb-6;
+    img {
+      @apply mx-auto;
+    }
+  }
+  &-inputs{
+    @apply grid gap-3;
+    .fluent-cart-checkout-page-input-group-body{
+      @apply grid grid-cols-2 gap-3;
+    }
+    .fluent-cart-checkout-page-form-input-wrapper{
+      @apply flex flex-col gap-2;
+      &.has-error{
+        .fluent-cart-checkout-page-form-input{
+          @apply border-red-500 !important;
+        }
+      }
+    }
+    .fluent-cart-checkout-page-form-error{
+      @apply text-xs text-red-500 block;
+    }
+    .fluent-cart-checkout-page-form-label{
+      @apply text-sm font-medium text-[#2F3448] mb-0 leading-[20px];
+    }
+    .fluent-cart-checkout-page-form-input{
+      @apply bg-white text-[#2F3448] shadow-none w-full text-sm border border-solid border-[#D6DAE1] rounded-[10px] py-2.5 pr-2.5 pl-3 transition-all duration-200 leading-[20px] focus:border-[#253241] focus:outline-none placeholder:text-[#9D9FAC] focus:shadow-none !important;
+    }
+  }
+}

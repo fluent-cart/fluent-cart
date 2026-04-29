@@ -1,0 +1,111 @@
+#screen-meta-links {
+    display: none !important;
+}
+.wrap {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1260px;
+
+    input[type=email], 
+    input[type=number], 
+    input[type=password], 
+    input[type=search], 
+    input[type=tel], 
+    input[type=text], 
+    input[type=url], 
+    textarea {
+        border: 1px solid #D6DAE1;
+        border-radius: 8px;
+        min-height: 36px;
+        box-shadow: none;
+        &:focus{
+            box-shadow: none;
+            border-color: #253241;
+        }
+    }
+
+    select {
+        border: 1px solid #D6DAE1;
+        border-radius: 8px;
+        min-height: 36px;
+        box-shadow: none;
+        padding-left: 14px;
+        padding-right: 40px;
+        &:focus{
+            box-shadow: none;
+            border-color: #253241;
+        }
+    }
+
+    .button{
+        min-height: 36px;
+        border-radius: 8px;
+        padding-left: 14px;
+        padding-right: 14px;
+        border: 1px solid #D6DAE1;
+        background-color: #fff;
+        color: #2f3448;
+        font-weight: 500;
+        &:hover {
+            background-color: #253241;
+            border-color: #253241;
+            color: #fff;
+        }
+    }
+    .button.button-primary{
+        background-color: #253241;
+        color: #fff;
+        border-color: #253241;
+    }
+    .form-wrap {
+        label{
+            margin-bottom: 8px;
+        }
+        p, 
+        p.description {
+            font-size: 12px;
+        }
+    }
+}
+
+
+#col-container {
+    table.widefat{
+        border: 0;
+        box-shadow: none;
+        border-radius: 8px;
+        box-shadow: 1px 10px 12px 5px rgba(0,0,0,0.01);
+    }
+
+    .widefat thead td,
+    .widefat thead th,
+    .widefat tfoot td, 
+    .widefat tfoot th {
+        border-color: #EAECF0;
+    }
+    th.sortable a, 
+    th.sorted a {
+        display: flex;
+    }
+    .wp-list-table {
+        margin-top: 20px;
+    }
+    a {
+        color: #253241;
+    }
+
+}
+#col-left{
+    .col-wrap {
+        margin-bottom: 30px;
+        margin-top: 0px;
+        display: block;
+        max-width: 100%;
+        border-radius: 8px;
+        border-style: none;
+        background-color: #fff;
+        margin-right: 20px;
+        padding: 10px 0 0 20px;
+        box-shadow: 1px 10px 12px 5px rgba(0,0,0,0.01);
+    }
+}

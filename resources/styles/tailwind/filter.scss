@@ -1,0 +1,486 @@
+.filters-wrap {
+    .el-button{
+        @apply relative;
+    }
+    .filter-count-badge{
+        @apply absolute -top-[10px] -right-[8px];
+    }
+}
+.fct-search-tags {
+    @apply m-0 p-0 list-none flex items-center gap-1;
+    li {
+        @apply relative inline-flex items-center bg-primary-25 text-primary-500 border border-solid border-primary-50 rounded mb-0 text-xs py-1 pl-2.5 pr-7.5 dark:bg-dark-600 dark:text-gray-50 dark:border-dark-500;
+    }
+    .tag{
+        &-action {
+            @apply absolute top-1 right-1 cursor-pointer w-5 h-5 flex items-center justify-center hover:text-system-dark dark:hover:text-gray-50;
+            svg{
+                @apply w-2.5 h-2.5;
+            }
+        }
+        &-title{
+            @apply font-medium;
+        }
+    }
+}
+
+.dark {
+    .table-filters .search-bar .el-input__wrapper {
+        --el-input-border-color: theme('colors.dark.800');
+        --el-input-focus-border-color: theme('colors.dark.800');
+        --el-input-hover-border-color: theme('colors.dark.800');
+    }
+}
+
+.filter-select {
+    @apply w-[180px];
+    .el-input__wrapper {
+        @apply shadow-none dark:bg-dark-800 dark:border-gray-700;
+        input {
+            @apply dark:text-gray-50;
+        }
+    }
+    .el-input.is-focus .el-input__wrapper,
+    .el-input__wrapper.is-focus {
+        @apply shadow-none border-primary-500 dark:border-gray-600;
+        input {
+            @apply text-primary-500 dark:text-gray-200;
+        }
+    }
+}
+
+.remove-all-filter-button {
+    @apply flex cursor-pointer justify-center w-6 h-6 hover:text-system-dark dark:text-gray-300 dark:hover:text-gray-50;
+    svg{
+        @apply w-[13px] h-[13px];
+    }
+}
+
+// bulk actions
+.fct-bulk-actions{
+    @apply min-h-10 max-h-10 flex rounded border border-solid border-gray-outline dark:border-dark-400;
+    .el-input{
+        &__wrapper{
+            @apply rounded-tr-none rounded-br-none border-0 bg-transparent dark:bg-dark-600;
+        }
+    }
+    .el-button{
+        @apply text-system-mid border-r-0 border-t-0 border-b-0 rounded-tl-none rounded-bl-none dark:text-gray-50 #{!important};
+    }
+    .el-select__wrapper{
+        @apply min-h-9.5 border-0 shadow-none rounded-tr-none rounded-br-none;
+        &.is-hovering:not(.is-focused){
+            @apply shadow-none;
+        }
+    }
+    &.is-x-small{
+        @apply min-h-7 max-h-7 rounded-sm;
+        .el-select__wrapper{
+            @apply px-2 text-xs min-h-6.5 rounded-bl-sm rounded-tl-sm;
+        }
+        .el-button{
+            @apply text-xs px-2;
+        }
+    }
+}
+
+// filter nav
+.fct-filter-nav{
+    @apply z-[1] relative m-0 gap-1 bg-gray-50 rounded p-1 inline-flex items-center justify-center dark:bg-dark-600;
+    &.filter-nav-disabled{
+        @apply opacity-50 cursor-not-allowed;
+        .fct-filter-nav-item{
+            @apply cursor-not-allowed;
+        }
+    }
+    &-item{
+        @apply border-0 bg-transparent cursor-pointer m-0 text-center text-xs leading-none font-medium py-1.5 px-3 text-system-light dark:text-gray-400;
+        transition: all 0.3s ease;
+        &.active {
+            @apply text-system-dark dark:text-gray-50;
+        }
+    }
+    &-active-bar{
+        @apply absolute rounded-sm z-[-1] left-0 bg-white dark:bg-dark-500;
+        box-shadow: 0 6px 10px 0 rgba(14, 18, 27, 0.06), 0 2px 4px 0 rgba(14, 18, 27, 0.03);
+        transition: all 0.3s ease;
+    }
+}
+
+// advanced filter
+.fct-advanced-filter-container {
+    @apply overflow-hidden;
+    .fct-advanced-filters {
+        @apply bg-gray-25 border border-solid border-gray-divider rounded-xs mb-5 p-2 dark:bg-dark-500 dark:border-dark-400;
+        table {
+            @apply mb-5 border-collapse border-spacing-0 border-0;
+            tr td {
+                @apply p-[5px];
+            }
+        }
+    }
+    .fct-advanced-filter{
+        .fct-condition-or-wrap {
+            .fct-condition-or {
+                @apply text-system-light cursor-auto font-normal dark:text-gray-700;
+            }
+        }
+        &-footer{
+            @apply flex gap-3 items-center flex-wrap;
+            .el-button{
+                @apply m-0;
+            }
+        }
+    }
+
+    .fct-condition-or-wrap {
+        @apply border-[1px] border-dashed border-gray-divider text-system-light text-center relative leading-[100%] my-4 dark:border-dark-400;
+        .fct-condition-or {
+            @apply flex items-center gap-1 cursor-pointer text-primary-500 font-semibold bg-white text-[15px] uppercase px-3 top-1/2 left-1/2 absolute dark:bg-dark-700 dark:text-gray-50;
+            transform: translate(-50%, -50%);
+            svg{
+                @apply w-3;
+            }
+        }
+    }
+}
+
+
+// filter search
+.filter-search-wrap {
+    @apply flex gap-3 relative items-baseline;
+    .search-bar{
+        @apply flex-1;
+    }
+}
+
+.search-bar{
+    &.is-transparent{
+        @apply mr-3;
+        .el-input__wrapper{
+            @apply border-transparent bg-gray-50 dark:bg-dark-600;
+            &.is-focus{
+                @apply bg-gray-50 dark:bg-dark-600;
+            }
+        }
+        .el-input__inner{
+            &::placeholder{
+                @apply text-system-dark-light #{!important};
+            }
+        }
+    }
+    &.is-unable-advanced-filter{
+        .el-input__wrapper{
+            @apply cursor-not-allowed opacity-50 pointer-events-none;
+        }
+        .el-input__inner{
+            @apply cursor-not-allowed pointer-events-none;
+        }
+        .el-input__prefix{
+            @apply pointer-events-none;
+        }
+    }
+}
+
+
+// filter cascader
+.fct-cascader{
+    &-panel {
+        @apply grid gap-2;
+    }
+    &-option{
+        @apply border border-solid border-gray-divider pb-2 border-x-0 border-t-0 last:border-b-0 last:pb-0 dark:border-dark-400;
+    }
+    &-button {
+        @apply py-1 text-sm font-medium text-system-dark cursor-pointer dark:text-gray-50;
+    }
+    &-item {
+        @apply cursor-pointer py-1 px-2 rounded-sm text-sm text-system-mid hover:bg-gray-25 dark:text-gray-300;
+    }
+    &-content{
+        @apply m-0 pt-2 pl-2;
+    }
+}
+
+.fct-advanced-filter-popover {
+    .fct-cascader-panel{
+        @apply hidden;
+    }
+}
+
+
+/*=== fct-filter-dropdown-container ===*/
+.fct-filter-dropdown-container {
+    @apply relative w-max z-10;
+}
+
+.fct-filter-dropdown {
+    @apply absolute top-full right-0 w-[300px] z-[1024] bg-white p-2 rounded mt-1 dark:bg-dark-600;
+    box-shadow: 0px 16px 32px -12px rgba(14, 18, 27, 0.2);
+    &-header{
+        @apply -mx-2 -mt-2 rounded-tl rounded-tr mb-2 border border-solid border-gray-divider border-x-0 border-t-0 dark:border-dark-400;
+        .el-input__wrapper{
+            @apply border-x-0 py-2.5 px-3.5 min-h-11 border-t-0 rounded-tl rounded-tr rounded-bl-none rounded-br-none border-0;
+        }
+        .fct-filter-back-wrapper{
+            @apply py-2.5 px-2 min-h-11 flex items-center gap-1;
+        }
+        .fct-filter-back-button{
+            @apply w-6.5 h-6.5 flex-shrink-0 p-0 border-0 rounded-full flex items-center justify-center bg-transparent cursor-pointer text-system-mid focus:outline-none focus:shadow-none hover:bg-gray-25 dark:text-gray-300 dark:hover:bg-dark-500;
+            svg{
+                @apply w-4.5 h-4.5;
+            }
+        }
+    }
+    li{
+        @apply m-0;
+    }
+    ul{
+        @apply p-0 m-0 list-none grid gap-1 !important;
+    }
+    .fct-filter-dropdown-list-item{
+        .icon svg{
+            @apply w-5 h-5 text-system-mid dark:text-gray-300;
+        }
+        .fct-filter-dropdown-button{
+            @apply flex items-center gap-2 text-sm font-normal text-system-dark cursor-pointer p-2 rounded-sm transition duration-100 dark:text-gray-50 hover:bg-gray-50 dark:hover:bg-dark-500;
+        }
+        &.filter-not-found{
+            @apply p-2 text-sm text-system-mid cursor-default pointer-events-none dark:text-gray-300;
+        }
+    }
+    .fct-filter-active-label{
+        @apply text-sm text-system-dark font-medium dark:text-gray-50;
+    }
+    .fct-filter-dropdown-active-button {
+        @apply flex items-center gap-2 text-sm font-normal text-system-dark cursor-pointer py-1 px-2 rounded-xs transition duration-100 hover:bg-gray-50 dark:text-gray-50 dark:hover:bg-dark-500;
+    }
+    .is-selected {
+       .fct-filter-dropdown-active-button{
+           @apply bg-gray-50 dark:bg-dark-500;
+       }
+    }
+    .is-multi-list {
+        .fct-filter-dropdown-active-button {
+            @apply relative;
+        }
+        .is-selected {
+            .fct-filter-dropdown-active-button{
+                @apply bg-transparent hover:bg-gray-50 dark:hover:bg-dark-500;
+                &::after {
+                    content: '';
+                    @apply absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4;
+                    background-repeat: no-repeat;
+                    background-size: 16px 16px;
+                    background-position: center;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z'/%3E%3C/svg%3E");
+                }
+            }
+        }
+    }
+}
+
+.fct-applied-filters-wrap {
+    @apply flex items-center gap-2 justify-between;
+    .reset-filters-btn{
+        @apply whitespace-nowrap bg-transparent p-1 leading-[20px] border-0 p-0 cursor-pointer text-sm text-primary-500 hover:underline dark:text-gray-50;
+    }
+}
+
+.fct-applied-filter-list {
+    @apply m-0 p-0 list-none flex flex-wrap gap-1.5 items-center;
+    li {
+        @apply m-0;
+    }
+    .fct-applied-filter {
+        @apply m-0 min-h-7 flex gap-1 items-center bg-gray-25 rounded-sm text-[13px] text-system-dark pl-2 pr-1 border border-solid border-gray-outline leading-none dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400;
+        &-variation{
+            @apply pr-0 overflow-hidden;
+            .fct-applied-filter-value{
+                @apply border-r-0;
+            }
+        }
+        &-date{
+            @apply pr-0 overflow-hidden;
+            .fct-applied-filter-value{
+                @apply border-r-0;
+            }
+        }
+        &-compare-to {
+            @apply bg-transparent border-0 p-0 rounded-none dark:bg-transparent;
+        }
+        &.fct-applied-filter-variation {
+            .el-select {
+                .el-select__selection {
+                    @apply py-[1.8px];
+                }
+            }
+        }
+        &.fct-applied-filter-order-types {
+            .el-select {
+                .el-select__selection {
+                    @apply py-[1.8px];
+                    .el-tag {
+                        @apply py-[1px] px-2 #{!important};
+                    }
+                }
+            }
+        }
+    }
+    .fct-applied-filter-value{
+        @apply relative h-full border-y-0 border-solid border border-gray-outline flex items-center gap-1 text-system-mid capitalize px-2 dark:text-gray-500 dark:border-dark-400;
+        .el-tooltip__trigger{
+            @apply h-full -mx-2 cursor-pointer flex items-center justify-center px-2 hover:bg-gray-50 dark:hover:bg-dark-500;
+        }
+        .fct-applied-filter-value-inner-label{
+            @apply flex items-center gap-0.5;
+        }
+        .fct-applied-filter-expand-icon {
+            @apply w-2.5 h-2.5 opacity-50;
+        }
+    }
+    .fct-applied-filter-remove{
+        @apply p-0 m-0 bg-transparent border-0 flex items-center justify-center shadow-none text-system-mid w-5 h-5 rounded-full cursor-pointer hover:text-system-dark hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-500;
+        svg{
+            @apply w-4 h-4;
+        }
+    }
+    .el-select{
+        .el-select__wrapper{
+            @apply border-0 rounded-none -mx-2 py-0 pl-0 pr-1.5 bg-transparent min-h-[auto] text-[13px];
+            input{
+                @apply hidden;
+            }
+        }
+        .el-select__selection{
+            @apply py-[3px] pl-2 gap-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-500;
+            &.is-near {
+                @apply gap-1 ml-0;
+                .el-tag {
+                    @apply bg-gray-100 dark:bg-dark-500;
+                }
+            }
+        }
+        .el-select__placeholder,
+        .el-select__tags-text{
+            @apply w-auto relative transform-none z-10 text-system-mid dark:text-gray-500;
+            white-space: normal;
+        }
+        .is-disabled {
+            @apply bg-gray-50 dark:bg-dark-600;
+        }
+    }
+    .el-range-editor.el-input__wrapper {
+        @apply w-[200px] border-0 -mx-2 rounded-none p-0 bg-transparent min-h-[auto] hover:bg-gray-50 dark:hover:bg-dark-500;
+        .el-input__icon{
+            @apply hidden;
+        }
+        .el-range-input{
+            @apply h-[24px] w-[44%] text-[13px] cursor-pointer text-system-mid dark:text-gray-500;
+        }
+        .el-range__close-icon--hidden{
+            @apply hidden;
+        }
+    }
+    .el-date-editor.el-input,
+    .el-date-editor.el-input__wrapper{
+        @apply h-full;
+    }
+    .el-range-separator {
+        @apply flex-none w-2 p-0;
+    }
+    .fct-applied-filter-popover-wrap{
+        @apply h-full flex items-center justify-center;
+    }
+}
+
+.fct-applied-filter-popover-content{
+    @apply p-0 m-0 list-none flex flex-col gap-2.5 max-h-[276px] overflow-y-scroll;
+    li{
+        @apply m-0 flex items-center gap-6;
+        span{
+            @apply flex-1 text-sm text-system-dark dark:text-gray-50;
+        }
+    }
+    .fct-applied-filter-remove{
+        @apply p-0 m-0 bg-transparent border-0 flex items-center justify-center shadow-none text-system-mid w-5 h-5 rounded-full cursor-pointer hover:text-system-dark hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-500;
+        svg{
+            @apply w-4 h-4;
+        }
+    }
+}
+
+.fct-dropdown-compact{
+    .el-select-dropdown__item {
+        @apply rounded-xs px-2 h-7 text-[13px];
+    }
+}
+
+.fct-applied-filter{
+    .fct-date-range-filter{
+        @apply flex items-center gap-1 relative;
+        .el-range-editor.el-input__wrapper{
+            @apply pr-4.5;
+        }
+        .icon{
+            @apply absolute right-0 top-1/2 transform -translate-y-1/2;
+        }
+    }
+}
+
+// compare filter
+.fct-compare-to-filter {
+    @apply flex items-center gap-2;
+    .fct-applied-filter-label{
+        @apply text-[13px] text-system-dark dark:text-gray-50;
+    }
+    .fct-applied-filter-actions {
+        @apply flex items-center gap-2;
+    }
+    .el-select {
+        @apply w-[150px];
+        .el-select__wrapper {
+            @apply m-0 border pl-0.5 border-solid border-gray-outline rounded-sm rounded-md dark:border-dark-400 !important;
+            &.is-focused {
+                @apply border-primary-500 dark:border-gray-300 !important;
+            }
+        }
+        .el-select__selection:hover {
+            @apply bg-transparent dark:hover:bg-transparent;
+        }
+    }
+    .el-select__selection {
+        @apply block;
+    }
+    .el-input--small .el-input__wrapper {
+        @apply min-h-7 rounded-md;
+    }
+    .fct-compare-to-date {
+        .el-input {
+            @apply w-[180px];
+        }
+    }
+
+}
+
+.fct-date-range-filter.is-clearable,
+.fct-applied-filter-value-inner-label.is-clearable{
+    .fct-applied-filter-clear-all {
+        @apply absolute top-1/2 -translate-y-1/2 right-[4px] hidden w-[15px] h-[15px] text-system-light cursor-pointer hover:text-system-dark dark:hover:text-gray-50;
+    }
+
+    &:hover {
+        .fct-applied-filter-expand-icon {
+            @apply opacity-0 invisible;
+        }
+        .fct-applied-filter-clear-all {
+            @apply block;
+        }
+    }
+}
+
+.fct-date-range-filter.is-clearable {
+    .fct-applied-filter-clear-all {
+        @apply right-[-4px];
+    }
+}

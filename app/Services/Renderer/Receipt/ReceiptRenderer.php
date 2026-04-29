@@ -310,6 +310,16 @@ class ReceiptRenderer
             <?php echo esc_html($this->settings->getFormattedFullAddress()); ?>
         </div>
         <?php
+        $orderTaxRates = $order->orderTaxRates->first();
+        $storeVatNumber = Arr::get($orderTaxRates->meta ?? [], 'store_vat_number', '');
+        $taxCountry = Arr::get($orderTaxRates->meta ?? [], 'tax_country', '');
+        if (!empty($storeVatNumber)): ?>
+            <div
+                    class="fct-receipt-page-store-address-vat"
+                    style="margin-top: 5px;font-weight: 500;">
+                <?php echo esc_html(TaxModule::getCountryTaxTitle($taxCountry)) . ': ' . esc_html($storeVatNumber); ?>
+            </div>
+        <?php endif;
     }
 
     public function renderBillToAddress()
@@ -684,6 +694,7 @@ class ReceiptRenderer
     public function renderTaxNote()
     {
         $order = Arr::get($this->config, 'order', null);
+        $orderTaxRates = $order->orderTaxRates->first();
         $taxtotal = $order->tax_total + $order->shipping_tax;
         if (Arr::get($orderTaxRates->meta ?? [], 'vat_reverse.valid') && !$taxtotal): ?>
 

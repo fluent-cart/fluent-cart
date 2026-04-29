@@ -8,6 +8,9 @@
 
 $renewalAmount = $subscription->recurring_total ?? 0;
 $billingInterval = $subscription->billing_interval ?? '';
+$accessUntilLabel = !empty($subscription->next_billing_date)
+    ? \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($subscription->next_billing_date)->format('M d, Y')
+    : '';
 ?>
 
 <div class="space_bottom_30">
@@ -35,8 +38,14 @@ $billingInterval = $subscription->billing_interval ?? '';
         <?php endif; ?>
         <?php if (!empty($reason)): ?>
             <tr>
-                <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Reason', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:right;"><?php echo esc_html($reason); ?></td>
+                <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Reason', 'fluent-cart'); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($reason); ?></td>
+            </tr>
+        <?php endif; ?>
+        <?php if ($accessUntilLabel): ?>
+            <tr>
+                <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Access Until', 'fluent-cart'); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:right;"><?php echo esc_html($accessUntilLabel); ?></td>
             </tr>
         <?php endif; ?>
         </tbody>

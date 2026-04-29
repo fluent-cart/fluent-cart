@@ -1,0 +1,152 @@
+.fct-term-input{
+  &-wrap{
+    @apply relative;
+  }
+  &-inline-wrap{
+    @apply flex gap-4 items-center;
+  }
+}
+.fct-term-label{
+  @apply text-system-dark flex gap-2.5 py-2 px-2.5 rounded cursor-pointer items-center hover:bg-gray-50 dark:hover:bg-dark-400 dark:text-gray-50;
+  input[type=checkbox]{
+    @apply m-0 border-gray-outline shadow-none focus:outline-none focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
+    &[type=checkbox]:checked{
+      @apply bg-dark-500 border-dark-500;
+      &::before{
+        filter: brightness(1000);
+      }
+    }
+  }
+}
+
+.fct-term-search-result{
+  @apply absolute top-full left-0 w-full bg-white border border-solid border-gray-divider p-3 rounded z-10 shadow-xl mt-2.5 dark:bg-dark-500 dark:border-dark-400;
+  &:after{
+    @apply absolute -top-[2px] border border-solid border-gray-divider w-2.5 h-2.5 bg-white left-1/2 border-r-0 border-b-0 dark:border-dark-400 dark:bg-dark-500;
+    content: '';
+    transform: rotate(45deg) translateX(-50%);
+  }
+  &-list{
+    @apply p-0 m-0 list-none;
+    li{
+      @apply m-0;
+    }
+    label{
+      @apply text-system-dark flex gap-2.5 py-2 px-2.5 rounded cursor-pointer items-center hover:bg-gray-50 dark:hover:bg-dark-400 dark:text-gray-50;
+      input{
+        @apply m-0 border-gray-outline shadow-none focus:outline-none focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
+        &[type=checkbox]:checked{
+          @apply bg-dark-500 border-dark-500;
+          &::before{
+            filter: brightness(1000);
+          }
+        }
+      }
+    }
+    &.is-scrollable{
+      @apply max-h-[220px] overflow-y-scroll;
+      &:active::-webkit-scrollbar-thumb,
+      &:focus::-webkit-scrollbar-thumb,
+      &:hover::-webkit-scrollbar-thumb {
+        @apply visible;
+      }
+      &::-webkit-scrollbar-thumb {
+        @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+      }
+      &::-webkit-scrollbar-thumb:hover {
+        @apply bg-gray-200 dark:bg-dark-500;
+      }
+      &::-webkit-scrollbar {
+        @apply h-1 w-1;
+      }
+    }
+  }
+  &-button-wrap{
+    .el-button {
+      @apply w-full justify-start text-[13px] font-semibold;
+      @apply dark:bg-dark-400  #{!important};
+      .search-text{
+        @apply text-system-dark-light font-normal dark:text-gray-500;
+      }
+    }
+  }
+  .empty-text{
+    @apply text-center mb-0 text-xs text-system-dark dark:text-gray-300;
+  }
+}
+
+.fct-term-selected {
+  &-list{
+    @apply flex gap-2 flex-wrap p-0 mx-0 mb-0 mt-2.5 list-none;
+    li{
+      @apply overflow-hidden m-0;
+    }
+  }
+
+  @apply w-full inline-flex bg-gray-50 text-system-dark-light text-xs font-medium rounded leading-none py-1.5 pl-2 pr-1 items-center gap-2.5 dark:bg-dark-500 dark:text-gray-50 #{!important};
+  .text{
+    @apply truncate;
+  }
+  .icon{
+    @apply text-system-dark-light w-4 h-4 justify-center cursor-pointer flex-shrink-0 rounded-full hover:bg-gray-200 dark:text-gray-50 dark:hover:bg-dark-300;
+    svg{
+      @apply w-[9px] h-[9px];
+    }
+  }
+}
+.fct-term-list{
+  @apply p-0 m-0 list-none;
+  &-wrap{
+    &.is-scrollable{
+      @apply max-h-[320px] overflow-y-scroll;
+      &:active::-webkit-scrollbar-thumb,
+      &:focus::-webkit-scrollbar-thumb,
+      &:hover::-webkit-scrollbar-thumb {
+        @apply visible;
+      }
+      &::-webkit-scrollbar-thumb {
+        @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+      }
+      &::-webkit-scrollbar-thumb:hover {
+        @apply bg-gray-200 dark:bg-dark-500;
+      }
+      &::-webkit-scrollbar {
+        @apply h-1 w-1;
+      }
+    }
+    .empty-text{
+      @apply text-center mt-0 text-sm text-system-dark dark:text-gray-300;
+    }
+  }
+  li{
+    @apply m-0;
+  }
+  .title{
+    @apply text-system-dark font-semibold mb-3 text-[15px] dark:text-gray-50;
+  }
+  &-header{
+    @apply pb-5;
+    &-button-wrap{
+      @apply pt-5 -ml-2.5;
+      .el-button {
+        @apply w-full justify-start text-sm font-semibold;
+        @apply text-dark-500 bg-transparent border-0 dark:hover:bg-dark-400  #{!important};
+        svg{
+          @apply w-3.5 h-3.5;
+        }
+        .search-text{
+          @apply font-normal;
+        }
+      }
+    }
+  }
+}
+
+.fct-add-labels-modal{
+  .fct-term-list{
+    @apply pl-2.5 mb-4;
+    li:not(.title){
+      @apply -ml-2.5;
+    }
+  }
+}

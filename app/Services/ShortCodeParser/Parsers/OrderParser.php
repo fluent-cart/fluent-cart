@@ -7,6 +7,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentReceipt;
@@ -51,8 +52,11 @@ class OrderParser extends BaseParser
 //    ];
 
     protected array $methodMap = [
-        'item_count'  => 'getItemCount',
-        'is_digital'  => 'getIsDigital',
+        'item_count'         => 'getItemCount',
+        'is_digital'         => 'getIsDigital',
+        'store_vat_display'  => 'getStoreVatDisplay',
+        'buyer_vat_display'  => 'getBuyerVatDisplay',
+        'buyer_company_name' => 'getBuyerCompanyName',
     ];
 
     protected array $attributeMap = [
@@ -449,6 +453,89 @@ class OrderParser extends BaseParser
     public function getSubscriptions()
     {
         return '';
+    }
+
+    /**
+     * Returns formatted store VAT display string, e.g. "VAT: NL123456789B01".
+     * Returns empty string if no store VAT is configured for this order.
+     */
+    public function getStoreVatDisplay(): string
+    {
+        if (!$this->order) {
+            return '';
+        }
+
+        $orderTaxRate = $this->order->orderTaxRates ? $this->order->orderTaxRates->first() : null;
+
+        if (!$orderTaxRate) {
+            return '';
+        }
+
+        $storeVatNumber = Arr::get($orderTaxRate->meta ?? [], 'store_vat_number', '');
+
+        if (empty($storeVatNumber)) {
+            return '';
+        }
+
+        $taxCountry = Arr::get($orderTaxRate->meta ?? [], 'tax_country', '');
+        $label = \FluentCart\App\Modules\Tax\TaxModule::getCountryTaxTitle($taxCountry);
+
+        return esc_html($label) . ': ' . esc_html($storeVatNumber);
+    }
+
+    /**
+     * Returns formatted buyer VAT display string, e.g. "VAT/Tax ID: XX123456".
+     * Checks OrderMeta vat_tax_id first, then falls back to EU VAT reverse charge number.
+     */
+    public function getBuyerVatDisplay(): string
+    {
+        if (!$this->order) {
+            return '';
+        }
+
+        // Check OrderMeta vat_tax_id first (simple VAT/Tax ID)
+        $vatMeta = OrderMeta::query()
+            ->where('order_id', $this->order->id)
+            ->where('meta_key', 'vat_tax_id')
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        if ($vatMeta && !empty($vatMeta->meta_value)) {
+            return esc_html(__('VAT/Tax ID', 'fluent-cart')) . ': ' . esc_html($vatMeta->meta_value);
+        }
+
+        // Fall back to EU VAT reverse charge number
+        $orderTaxRate = $this->order->orderTaxRates ? $this->order->orderTaxRates->first() : null;
+        $vatNumber = Arr::get($orderTaxRate->meta ?? [], 'vat_reverse.vat_number', '');
+
+        if (!empty($vatNumber)) {
+            return esc_html(__('EU VAT', 'fluent-cart')) . ': ' . esc_html($vatNumber);
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns buyer company name from billing address meta or VAT reverse charge data.
+     */
+    public function getBuyerCompanyName(): string
+    {
+        if (!$this->order) {
+            return '';
+        }
+
+        // Check billing address meta first
+        if ($this->order->billing_address) {
+            $companyName = Arr::get($this->order->billing_address->meta ?? [], 'other_data.company_name', '');
+            if (!empty($companyName)) {
+                return esc_html($companyName);
+            }
+        }
+
+        // Fall back to VAT reverse charge name
+        $orderTaxRate = $this->order->orderTaxRates ? $this->order->orderTaxRates->first() : null;
+
+        return esc_html(Arr::get($orderTaxRate->meta ?? [], 'vat_reverse.name', ''));
     }
 
 }

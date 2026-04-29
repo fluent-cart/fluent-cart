@@ -1,0 +1,71 @@
+.el-pagination{
+    .el-select {
+        @apply text-left w-[106px] m-0 font-medium text-[var(--fct-customer-dashboard-paginator-text-color)] #{!important};
+        .el-input {
+           @apply w-auto #{!important};
+        }
+        .el-input__wrapper,
+        .el-select__wrapper {
+            @apply min-h-8 font-normal py-1.5 px-1.5 bg-gray-neutral border border-solid border-gray-outline rounded justify-start focus:shadow-none #{!important};
+            box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+            &.is-hovering:not(.is-focused){
+                @apply shadow-none;
+            }
+        }
+        .el-select__placeholder.is-transparent{
+            @apply text-system-mid #{!important};
+        }
+        .el-select__caret{
+            @apply text-system-mid #{!important};
+        }
+        .el-select__prefix,
+        .el-select__suffix {
+            @apply text-[var(--fct-customer-dashboard-paginator-text-color)];
+        }
+        .el-select__placeholder {
+            @apply text-[var(--fct-customer-dashboard-paginator-text-color)];
+        }
+    }
+    .el-input{
+        &__inner {
+            @apply text-left w-[90px] m-0 font-medium text-system-mid;
+        }
+        &__suffix-inner{
+            .el-icon{
+                @apply text-system-dark #{!important};
+            }
+            &:first-child {
+                @apply ml-0 #{!important};
+            }
+        }
+    }
+    button{
+        @apply min-h-[28px] min-w-[28px] pt-0.5 h-auto text-system-mid #{!important};
+    }
+    &.is-background{
+        @apply bg-transparent;
+        .btn-next, 
+        .btn-prev {
+            @apply m-0 bg-transparent min-h-8 min-w-8 #{!important};
+            &:disabled{
+                @apply bg-transparent #{!important};
+            }
+            svg{
+                @apply w-4 h-4 #{!important};
+            }
+            .el-icon{
+                @apply h-auto leading-none #{!important};
+            }
+        }
+        .el-pager {
+            @apply p-0;
+            li {
+                @apply bg-white min-h-8 min-w-8 py-0 p-1 h-auto rounded text-sm font-medium leading-5 transition-all duration-200 border border-solid border-gray-outline hover:bg-gray-50 hover:text-system-dark;
+                &.is-active{
+                    @apply text-[var(--fct-customer-dashboard-paginator-items-active-color)] bg-[var(--fct-customer-dashboard-paginator-items-active-bg)] border-[var(--fct-customer-dashboard-paginator-items-active-border)] #{!important};
+                }
+            }
+        }
+    }
+}
+

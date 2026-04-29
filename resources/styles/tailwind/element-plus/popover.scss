@@ -1,0 +1,318 @@
+.filter{
+    &-popover{
+        &.el-popover{
+            @apply rounded p-5;
+        }
+        &-title{
+            @apply mt-0 mb-4 text-base font-semibold text-system-dark dark:text-gray-50;
+        }
+        &-text{
+            @apply mt-0 mb-5 text-sm text-system-mid dark:text-gray-300;
+        }
+        &-link{
+            @apply text-dark-500 no-underline block focus:shadow-none focus:outline-none focus:text-dark-500 dark:text-gray-50;
+            .icon{
+                @apply inline-flex ml-1;
+            }
+        }
+        .filter-item-key{
+            @apply bg-primary-50 rounded-md py-1.5 px-2.5 uppercase text-primary-500 text-xs font-medium dark:bg-dark-500 dark:text-gray-300;
+        }
+        .filter-popover-item hr {
+            @apply border-b-0 border-t-neutral-100 mt-5 mb-5 dark:border-t-dark-500;
+        }
+        .filter-btn-wrap {
+            @apply mt-4 flex;
+        }
+        .el-button svg {
+            @apply mr-1.5;
+        }
+        .el-select .el-input__inner {
+            @apply py-0 px-1 ;
+        }
+        .action_item {
+            @apply cursor-pointer text-lg w-full text-center;
+        }
+        .el-select__tags-text{
+            @apply block ;
+        }
+        .fct_inline_inputs .el-select + .el-input {
+            @apply mt-1;
+        }
+        .el-select .el-select-tags-wrapper.has-prefix{
+            @apply ml-[6px] #{!important};
+        }
+        &-input-group{
+            @apply mt-4;
+            .fct-label-hint{
+               @apply mb-2;
+            }
+            + .filter-popover-title{
+                @apply mt-5;
+            }
+        }
+    }
+}
+
+.filter-popover .fct_inline_inputs .el-select,
+.filter-popover .fct-filter-items table .el-select {
+    @apply w-full;
+}
+/*==== dark popover =====*/
+.el-popover.el-popper,
+.el-popper.is-light,
+.el-popper.is-light .el-popper__arrow::before,
+.el-dropdown-menu {
+    @apply dark:bg-dark-600 dark:border-dark-500 dark:text-gray-300;
+}
+.el-popover.el-popper{
+    @apply rounded border-gray-divider;
+    box-shadow: 0px 16px 32px -4px rgba(27, 37, 51, 0.2);
+}
+.fct_filter_items,
+.fct_filter_items h3 {
+    @apply dark:text-gray-50;
+}
+.fct_filter_items p,
+.el-dropdown-menu__item {
+    @apply dark:text-gray-300;
+}
+
+.popover-wrapper .el-button--primary{
+    @apply dark:bg-dark-600 dark:border-dark-600 dark:text-gray-50;
+}
+.el-picker-panel{
+    @apply dark:bg-dark-600;
+}
+.el-date-picker__header-label,
+.el-picker-panel__icon-btn,
+.el-year-table td .cell,
+.el-date-table th,
+.el-month-table td .cell,
+.el-date-table td.available {
+    @apply dark:text-gray-50;
+}
+.el-date-picker__header--bordered,
+.el-date-table th {
+    @apply dark:border-dark-400;
+}
+.el-month-table td .el-date-table-cell__text,
+.el-year-table td .el-date-table-cell__text {
+    @apply dark:text-gray-50;
+}
+
+.el-select__popper{
+    @apply rounded border-0;
+    box-shadow: 0 2px 10px rgba(0,0,0, 0.08);
+    .el-select-dropdown__list{
+        @apply p-2.5;
+        &:last-child{
+            li{
+                @apply mb-0;
+            }
+        }
+    }
+    .el-select-dropdown__item{
+        @apply rounded font-medium;
+        &.hover,
+        &:hover{
+            @apply bg-gray-50 dark:bg-dark-500;
+        }
+    }
+    .el-select-dropdown.is-multiple{
+        .el-select-dropdown__item.selected,
+        .el-select-dropdown__item.selected.hover{
+            @apply dark:bg-dark-500;
+        }
+    }
+}
+
+// el autocomplete
+.el-autocomplete__popper{
+    .el-autocomplete-suggestion{
+        &__list{
+            span{
+                @apply block leading-[1.8] whitespace-break-spaces;
+            }
+            li{
+                @apply mb-2.5 last:mb-0 dark:text-gray-50;
+                .name{
+                    @apply text-system-dark dark:text-gray-50;
+                }
+                .email{
+                    @apply text-system-light dark:text-gray-500;
+                }
+            }
+        }
+        li{
+            @apply dark:hover:bg-dark-500;
+        }
+    }
+    &.el-popper{
+        @apply rounded;
+    }
+}
+/*===== popover content ======*/
+.fct-popover-content{
+    @apply p-1;
+    p{
+        @apply mt-0 mx-0 mb-1.5 text-sm text-system-mid last:mb-0 dark:text-gray-300;
+    }
+    h3{
+        @apply mt-0 mb-1.5;
+    }
+    hr{
+        @apply border-gray-divider dark:border-dark-500;
+    }
+    a{
+        @apply text-dark-500 no-underline hover:text-dark-600;
+    }
+    table{
+        @apply w-full text-left border-collapse;
+    }
+    thead th{
+        @apply whitespace-nowrap bg-gray-50 px-3 py-2 text-system-dark font-medium last:text-right last:w-[100px] dark:bg-dark-500 dark:text-gray-50;
+    }
+    tbody {
+        tr{
+            @apply border-b border-solid border-gray-divider border-0 last:border-b-0 dark:border-dark-500;
+        }
+        td{
+            @apply whitespace-nowrap px-3 py-2 font-normal text-sm text-system-mid last:text-right dark:text-gray-50;
+        }
+    }
+}
+
+.fct-customer-info-popover {
+  .el-button {
+    @apply w-full mt-3.5;
+  }
+}
+
+/*======= input-popover =======*/
+.input-popover{
+    @apply flex relative gap-2;
+    .el-button{
+        @apply absolute px-2.5 top-[1px] right-[9px] border-y-0 border-r-0 min-h-[30px] rounded-tl-none rounded-bl-none ;
+    }
+    &-textarea{
+        @apply flex-col-reverse text-right gap-0;
+        .el-button{
+            @apply relative min-h-[32px] top-auto border border-b-0 right-auto rounded-tl rounded-bl-none rounded-br-none;
+        }
+        .el-textarea__inner{
+            @apply rounded-tr-none;
+        }
+    }
+}
+/*== fct-admin-summary-popover-item ==*/
+.fct-admin-summary-popover-item{
+    .filter-popover-title{
+        @apply mb-2 text-[15px];
+    }
+}
+
+.fct-create-customer-button-wrap{
+    @apply pt-1.5 px-4 border border-solid border-gray-100 border-t-0 border-l-0 border-r-0 mb-4 pb-4 dark:border-dark-400;
+    .el-button{
+        @apply w-full justify-start text-[13px];
+    }
+}
+.fct-customer-autocomplete-dropdown{
+    .el-scrollbar__wrap{
+        overflow: inherit;
+    }
+    .el-autocomplete-suggestion__wrap{
+        @apply max-h-[inherit]
+    }
+    .el-autocomplete-suggestion__list{
+        @apply overflow-y-scroll max-h-[230px];
+        &:active::-webkit-scrollbar-thumb,
+        &:focus::-webkit-scrollbar-thumb,
+        &:hover::-webkit-scrollbar-thumb {
+            @apply visible;
+        }
+        &::-webkit-scrollbar-thumb {
+            @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+        }
+        &::-webkit-scrollbar-thumb:hover {
+            @apply bg-gray-200 dark:bg-dark-500;
+        }
+        &::-webkit-scrollbar {
+            @apply h-1 w-1;
+        }
+    }
+    &.is-empty-customer{
+        @apply block #{!important};
+        .fct-create-customer-button-wrap{
+            @apply mb-2.5;
+        }
+        .empty-text{
+            @apply text-system-mid hover:bg-transparent cursor-text dark:text-gray-300 ;
+        }
+    }
+}
+
+.el-popper {
+    &.fct-tooltip{
+        @apply max-w-[240px] w-auto h-auto bg-gray-25 border-gray-100 text-system-dark dark:bg-primary-500 dark:border-primary-400 dark:text-gray-50 #{!important};
+        &.fct-label-hint-popover a,
+        a {
+            @apply text-primary-500 dark:text-gray-50 #{!important};
+        }
+        span {
+            word-break: break-word;
+        }
+        .el-popper__arrow {
+            &:before {
+                @apply bg-gray-25 border-gray-100 dark:bg-primary-500 border-l-0 border-t-0 dark:border-primary-400 #{!important};
+            }
+        }
+      div {
+        word-break: break-word;
+      }
+    }
+    &.fct-label-hint-popover {
+        &.is-dark {
+            a {
+                @apply text-gray-50 font-semibold
+            }
+        }
+    }
+    &.fct-delete-confirm-popover {
+        @apply z-[99999] #{!important};
+    }
+}
+.el-popper.fct-tooltip-long{
+    @apply max-w-[360px];
+}
+//.el-popper.el-tooltip:not(.fct-advanced-filter-popover):not(.fct-choose-variant-popover)
+.el-tooltip__trigger{
+    .icon{
+        @apply dark:text-gray-300;
+    }
+}
+
+.el-popconfirm__action{
+    @apply flex items-center justify-end pt-2.5;
+    .el-button--small:not(.is-text){
+        @apply py-1 text-xs px-2.5;
+    }
+}
+
+.el-popper {
+    &.fct-color-picker-popover {
+        box-shadow: 0px 16px 32px -4px rgba(27, 37, 51, 0.2);
+        @apply p-3 rounded border border-solid border-gray-100;
+        .el-color-dropdown__main-wrapper {
+            .el-color-svpanel {
+                @apply rounded-sm overflow-hidden;
+            }
+        }
+    }
+}
+.el-select__popper.fct-multi-select-filter {
+    .el-select-dropdown {
+        @apply min-w-[170px] max-w-[170px] !important;
+    }
+}

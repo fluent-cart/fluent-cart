@@ -1,0 +1,22 @@
+.fct-current-user-info-wrap {
+  @apply flex items-center justify-between mb-6;
+}
+.fct-current-user-info-content {
+  @apply flex items-center gap-3;
+  .image {
+    @apply w-12 h-12 rounded-full overflow-hidden flex-none;
+    img {
+      @apply block w-full h-full object-cover;
+    }
+  }
+  .content {
+    h4 {
+      @apply mt-0 mb-1 text-primary-800 font-medium text-lg leading-6 dark:text-gray-50;
+    }
+    p {
+      @apply m-0 text-system-mid dark:text-gray-500;
+    }
+  }
+}
+
+

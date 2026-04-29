@@ -2,7 +2,7 @@
 
 namespace FluentCart\App\Hooks\Scheduler\AutoSchedules;
 
-use FluentCart\App\Hooks\Scheduler\JobRunner;
+
 use FluentCart\App\Models\Cart;
 
 class DailyScheduler
@@ -33,7 +33,7 @@ class DailyScheduler
 
         $carts = Cart::query()
             ->where('updated_at', '<=', date('Y-m-d H:i:s', strtotime('-' . $days . ' days')))
-            ->limt(1000)
+            ->limit(1000)
             ->get();
 
         if ($carts->isEmpty()) {

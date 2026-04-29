@@ -1,0 +1,226 @@
+// media button
+.fct-media-button{
+    @apply inline-flex gap-2.5 items-center border border-solid border-gray-outline rounded py-2 px-3.5 leading-none text-system-mid text-sm font-medium bg-gray-25 hover:bg-gray-50 cursor-pointer dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-600;
+    .icon{
+        svg{
+            @apply w-5 h-5;
+        }
+    }
+}
+
+// attachment list
+.fct-attachments{
+    &-list{
+        @apply m-0 p-0 list-none flex gap-2.5;
+        li{
+            @apply m-0 relative w-[150px] h-[150px] flex-1;
+            img{
+                @apply w-full h-full border border-solid border-gray-outline rounded bg-cover object-contain dark:border-dark-400;
+            }
+            .fct-attachments-button{
+                @apply absolute top-2.5 right-2.5 flex gap-2.5 flex-row-reverse;
+                .icon-button{
+                    @apply cursor-pointer;
+                }
+            }
+            &.small{
+                @apply w-[80px] h-[80px];
+                .fct-attachments-button{
+                    @apply gap-1 right-1 top-1;
+                }
+            }
+            &.gray{
+                .fct-media-button{
+                    @apply bg-gray-neutral dark:bg-dark-600;
+                }
+            }
+        }
+        .fct-media-button{
+            @apply border-[2px] bg-white text-system-dark border-dashed leading-[2px] p-2.5 h-full w-full flex-col text-center justify-center dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400;
+            .icon{
+                svg{
+                    @apply w-7.5 h-7.5;
+                }
+                + span{
+                    @apply mt-0.5 block leading-none;
+                }
+            }
+        }
+        &.is-single{
+            li{
+                @apply flex-none;
+            }
+        }
+        &.is-multiple{
+            @apply flex-wrap;
+            li{
+                @apply w-[84px] h-[84px] flex-none;
+            }
+            .fct-media-button{
+                .icon{
+                    @apply w-auto h-auto rounded-none bg-transparent;
+                    svg{
+                        @apply w-7.5 h-7.5;
+                    }
+                }
+            }
+            .fct-attachments-button{
+                @apply h-6 w-6 top-1 right-1;
+                svg{
+                    @apply h-3 w-3;
+                }
+            }
+        }
+        &.fct-single-attachment {
+            li {
+                @apply w-auto h-auto;
+                &.fct-attachment-item {
+                    @apply relative flex gap-3 w-auto h-auto max-w-full items-center;
+                    .fct-attachment-img-wrap {
+                        @apply relative;
+                        img {
+                            @apply w-9 h-9 rounded mb-0 block;
+                        }
+                        .icon-button {
+                            @apply absolute left-0 top-0 w-full h-full flex items-center justify-center rounded border-0 bg-[rgba(0,0,0,0.56)] text-white cursor-pointer opacity-0 transition duration-300 ease-in-out;
+                        }
+                        &:hover {
+                            .icon-button {
+                                @apply opacity-100;
+                            }
+                        }
+                    }
+                    .fct-attachments-button {
+                        @apply relative top-0 right-0;
+                        .icon-button {
+                            @apply w-auto h-auto border-0 bg-transparent underline font-medium;
+                        }
+                    }
+
+                }
+                .fct-media-button {
+                    @apply flex items-center flex-row w-max py-2.5 px-3 gap-1.5 bg-transparent border border-dashed border-gray-200 rounded dark:border-dark-400;
+                    .icon {
+                        //@apply bg-gray-100 rounded w-9 h-9 flex-none flex items-center justify-center dark:bg-primary-500;
+                        svg {
+                            @apply w-5 h-5 text-system-dark dark:text-gray-50;
+                        }
+                    }
+                    > span {
+                        //@apply m-0 block border-solid border-[1px] border-gray-outline rounded text-system-dark text-sm leading-5 py-[7px] px-[11px] dark:bg-primary-500 dark:border-primary-500 dark:text-gray-50;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.fct-gallery-wrap {
+    .fct-media-button{
+        @apply w-full h-full justify-center border-dashed;
+        svg{
+            width: 30px;
+            height: 30px;
+        }
+    }
+    .is-full-media{
+        .fct-media-button{
+            @apply w-full flex-col gap-4;
+            svg{
+                @apply w-7 h-7;
+            }
+        }
+    }
+}
+.fct-gallery-drag-area{
+    @apply grid grid-cols-3 gap-2.5 m-0 p-0 list-none;
+    >*:first-child{
+        @apply col-span-3 h-[140px];
+    }
+    li{
+        @apply mb-0 h-[87px];
+    }
+    .gallery-drag-item{
+        @apply bg-white relative border border-solid border-gray-divider rounded flex items-center overflow-hidden cursor-pointer p-1 dark:bg-dark-600 dark:border-dark-400;
+        img{
+            @apply w-full object-contain h-full aspect-square;
+        }
+        .gallery-drag-item-overlay{
+            @apply absolute top-0 left-0 rounded-[7px] w-full h-full opacity-0 invisible transition duration-150;
+            background-color: rgba(35, 39, 55, 0.1);
+        }
+        .el-tag{
+            @apply absolute top-1 left-1;
+        }
+        .icon-move{
+            @apply absolute top-1.5 left-1 z-[1] opacity-0 invisible transition duration-150;
+            svg{
+                @apply w-3 h-3;
+            }
+        }
+        .icon-button{
+            @apply border-0 absolute top-1 right-1 z-[1] opacity-0 invisible transition duration-150 hover:bg-white dark:hover:bg-dark-500;
+        }
+        &:hover{
+            .gallery-drag-item-overlay,
+            .icon-button,
+            .icon-move {
+                @apply opacity-100 visible;
+            }
+        }
+    }
+    .flip-list-move {
+        transition: transform 0.5s;
+    }
+    .no-move {
+        transition: transform 0s;
+    }
+    .sortable-ghost{
+        @apply cursor-grabbing;
+    }
+    .fct-media-button{
+        @apply bg-white hover:bg-gray-25 dark:bg-dark-600;
+    }
+}
+
+.fct-product-pricing-table-item{
+    .fct-attachments-list {
+        li{
+            @apply w-full h-full;
+        }
+        img{
+            @apply object-cover;
+        }
+        .fct-attachments-button{
+            @apply top-0 left-0 w-full h-full;
+            .icon-button.x-small{
+                @apply w-full h-full;
+            }
+        }
+    }
+    .fct-attachments-wrap,
+    .fct-attachments-list{
+        @apply h-full;
+    }
+}
+
+// upload media
+.upload-media-flex{
+    @apply flex items-center gap-5;
+    .upload-text{
+        @apply flex-1;
+        label {
+            @apply leading-none block font-medium text-system-dark mb-2 text-sm dark:text-gray-50;
+        }
+        span{
+            @apply text-xs text-system-mid dark:text-gray-300;
+        }
+    }
+}
+
+.fct-upload-btn{
+    @apply bg-white border-dashed text-system-dark dark:bg-dark-600 dark:text-white !important;
+    .icon svg{
+        @apply w-5 h-5;
+    }
+}

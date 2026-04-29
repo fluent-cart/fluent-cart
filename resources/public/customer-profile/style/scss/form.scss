@@ -1,0 +1,86 @@
+// form container
+.fct-form-container {
+  @apply flex justify-between gap-7.5 border border-solid border-gray-divider border-x-0 border-t-0 pb-6 mb-6 last:border-b-0 last:mb-0 last:pb-0;
+
+  .form-heading{
+    @apply text-[15px] font-semibold leading-[22px] text-[var(--fct-customer-dashboard-title-color)] mb-1;
+  }
+  .form-desc{
+    @apply text-sm text-[var(--fct-customer-dashboard-text-color)] font-normal leading-[20px] m-0;
+    + .el-button{
+      @apply mt-4;
+    }
+  }
+  .form-left {
+    @apply w-[250px] flex-shrink-0;
+  }
+  .form-right {
+    @apply w-[488px];
+  }
+  @media (max-width: 645px) {
+    @apply flex-col gap-3;
+    .form-left,
+    .form-right {
+      @apply w-full;
+    }
+  }
+}
+
+// form row
+.form-row {
+  @apply flex justify-between;
+  .form-col {
+    @apply flex-1;
+  }
+  &.col-2{
+    @apply gap-[15px];
+  }
+  .form-group{
+    @apply w-full;
+  }
+}
+
+// input group
+.form-input-group{
+  @apply relative;
+  label{
+    @apply cursor-text text-[15px] font-normal text-system-light absolute left-4 top-1/2 transition-all duration-150 ease-in-out m-0 leading-none pointer-events-none;
+    transform: translateY(-50%);
+  }
+  input,
+  select {
+    @apply text-system-dark h-12.5 bg-white border border-solid border-gray-outline rounded pt-[22px] pb-2 px-4 leading-[1] text-[15px] w-full outline-none focus:border-primary-500 #{!important};
+  }
+  select{
+    @apply py-4 appearance-none #{!important};
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L5.29289 5.79289C5.62623 6.12623 5.79289 6.29289 6 6.29289C6.20711 6.29289 6.37377 6.12623 6.70711 5.79289L11 1.5" stroke="%23565865" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-position: right 16px center;
+    background-repeat: no-repeat;
+    background-size: 11px 11px;
+  }
+  img{
+    @apply absolute top-1/2 right-4 pointer-events-none;
+    transform: translateY(-50%);
+  }
+  &.is-focused{
+    label {
+        @apply top-3.5 text-xs;
+    }
+  }
+}
+
+// file upload button
+.file-upload-button{
+  @apply bg-white border border-solid border-gray-outline rounded py-2 px-4 text-sm font-semibold text-system-dark leading-[1.3] transition-all duration-150 hover:bg-gray-50;
+  box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+}
+
+.form-group {
+  @apply mb-4;
+  label {
+    @apply block mb-1 text-sm font-medium text-system-dark;
+  }
+}
+.el-input.is-disabled .el-input__wrapper {
+  @apply bg-gray-25 !important;
+}

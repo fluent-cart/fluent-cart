@@ -527,11 +527,16 @@ class Subscription extends Model
         $gateway = App::gateway($this->current_payment_method);
 
         if ($gateway && $gateway->has('subscriptions')) {
-            $vendorCanceled = $gateway->subscriptions->cancel($this->vendor_subscription_id, [
+            $cancelArgs = [
                 'subscription_id' => $this->id,
                 'parent_order_id' => $this->parent_order_id,
-                'mode'            => $this->order->mode
-            ]);
+                'mode'            => $this->order->mode,
+            ];
+            $effectiveFrom = Arr::get($args, 'effective_from', '');
+            if ($effectiveFrom) {
+                $cancelArgs['effective_from'] = $effectiveFrom;
+            }
+            $vendorCanceled = $gateway->subscriptions->cancel($this->vendor_subscription_id, $cancelArgs);
 
             if (is_wp_error($vendorCanceled)) {
                 return $vendorCanceled;

@@ -1,0 +1,31 @@
+.heading{
+    &-wrap{
+        @apply bg-gray-50 dark:bg-dark-700 grid grid-cols-1 md:flex items-center justify-between py-4 px-7.5 gap-4;
+        .title{
+            @apply m-0 font-bold text-system-dark dark:text-gray-50;
+        }
+    }
+    &-action{
+        @apply flex justify-end;
+    }
+}
+
+// page heading 
+.page-heading-wrap{
+    @apply mb-5 gap-2 flex items-center justify-between;
+    .page-title{
+        @apply text-[20px] leading-[28px] flex items-center gap-2 my-0 text-system-dark dark:text-gray-50;
+        a{
+            @apply p-1 rounded text-system-mid hover:bg-gray-100 focus:shadow-none;
+        }
+    }
+    .actions{
+        @apply flex gap-2 items-center;
+        @media (max-width: 768px) {
+            @apply flex-wrap;
+        }
+        .el-button+.el-button{
+            @apply ml-0;
+        }
+    }
+}

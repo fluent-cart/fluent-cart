@@ -1,0 +1,340 @@
+.licenses-stats{
+    &-row{
+        @apply grid md:grid-cols-2 xl:grid-cols-4 gap-5.5;
+        .licenses-stats-card {
+            &.license-product {
+                .licenses-stats-card-head {
+                    .licenses-icon {
+                        .icon {
+                            @apply text-report-royal_blue dark:text-white;
+                        }
+                    }
+                }
+            }
+            &.total-active {
+                .licenses-stats-card-head {
+                    .licenses-icon {
+                        .icon {
+                            @apply text-report-sea_green dark:text-white;
+                        }
+                    }
+                }
+            }
+            &.total-expired {
+                .licenses-stats-card-head {
+                    .licenses-icon {
+                        .icon {
+                            @apply text-report-coral dark:text-white;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    &-card{
+        @apply bg-gray-25 rounded p-4 dark:bg-primary-600;
+        box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.04);
+        &-head {
+            @apply flex items-center gap-3 flex-1 mb-3;
+            &-content {
+                @apply flex flex-col;
+                .value {
+                  @apply text-lg leading-6 font-semibold text-system-dark dark:text-gray-50;
+                }
+                .title {
+                  @apply text-xs leading-4 block font-medium text-system-mid dark:text-gray-300;
+                }
+            }
+        }
+        .text{
+            @apply text-xs text-system-mid leading-4 font-normal dark:text-gray-300;
+        }
+        .licenses-icon{
+            @apply w-10 h-10 rounded-[10px] bg-white dark:bg-primary-500 border-0 flex items-center justify-center #{!important};
+            box-shadow: 0px 1px 2px 0px #3333330A, 
+                        0px 2px 4px 0px #3333330A,
+                        0px 4px 8px -2px #3333330F,
+                        0px 0px 0px 1px #3333330A,
+                        0px -1px 1px -0.5px #3333330F inset;
+            svg{
+                @apply w-5 h-5;
+            }
+        }
+        &.total-active{
+            .licenses-icon{
+                @apply bg-success-25 text-success-800 dark:bg-success-800 dark:text-success-50;
+            }
+        }
+        &.total-expired{
+            .licenses-icon{
+                @apply bg-warning-25 text-warning-800 dark:bg-warning-800 dark:text-warning-50;
+            }
+        }
+        &.inactive-license{
+            .licenses-icon{
+                @apply bg-gray-25 text-gray-800 dark:bg-gray-800 dark:text-gray-50;
+            }
+        }
+    }
+}
+
+/*======= license url table ======*/
+.fct-license-site-url-table{
+    @apply w-full text-left table-fixed border-collapse;
+    thead {
+        @apply bg-gray-neutral border border-solid border-gray-divider border-l-0 border-r-0 text-sm dark:bg-dark-600 dark:border-dark-400;
+        th{
+            @apply font-semibold text-system-dark dark:text-gray-50;
+        }
+        tr {
+            @apply block;
+        }
+    }
+    th,
+    td{
+        @apply py-3.5 px-5;
+    }
+    td{
+        @apply w-full border border-solid border-gray-divider border-l-0 border-r-0 border-t-0 text-system-dark font-normal text-sm dark:text-gray-300 dark:border-dark-400;
+    }
+    tbody{
+        @apply overflow-auto block w-full max-h-[340px];
+        tr:last-child{
+            td{
+                @apply border-b-0;
+            }
+        }
+    }
+}
+
+/*====== fct-license-activation-limit-wrap =====*/
+.fct-license-activation-limit-container{
+    @apply flex items-center gap-3;
+}
+.fct-license-activation-limit-actions{
+    @apply flex items-center;
+    .icon-button{
+        @apply text-success-500 focus:text-success-500 first:rounded-tr-none first:rounded-br-none first:mr-[-0.5px] last:rounded-tl-none last:rounded-bl-none last:ml-[-0.5px];
+        .cross{
+            @apply text-red-500 focus:text-red-500;
+        }
+        svg{
+            @apply w-5 h-5;
+        }
+    }
+    button.icon-button .icon {
+        @apply text-success-500 focus:text-success-500;
+    }
+}
+.fct-license-activation-limit-wrap{
+    @apply w-[236px] relative border border-solid border-gray-outline rounded overflow-hidden flex items-center dark:border-dark-400;
+    .activation-limit-length{
+        @apply inline-flex items-center justify-center text-[15px] text-system-dark dark:text-gray-400 px-4 py-2;
+    }
+    .activation-limit-unlimited{
+        @apply bg-gray-50 text-sm text-system-light flex items-center absolute top-0 left-[60px] w-full h-full pl-3 dark:bg-dark-500;
+    }
+    .el-input-number{
+        @apply w-full;
+        .el-input__wrapper{
+            @apply border-0 rounded-none;
+        }
+        &.is-controls-right {
+            .el-input-number__decrease,
+            .el-input-number__increase{
+                @apply border-gray-outline -mr-[1px] text-base bg-gray-neutral h-5 w-6.5 text-system-mid dark:border-dark-400 dark:bg-dark-500 dark:text-gray-300;
+            }
+            .el-input__wrapper{
+                @apply pr-8;
+            }
+            .el-input-number__decrease{
+                @apply -mb-[1px];
+            }
+            .el-input-number__increase{
+                @apply -mt-[1px];
+            }
+            .el-input__inner{
+                @apply text-[15px] text-system-dark text-left m-0 dark:text-gray-300 #{!important};
+            }
+        }
+    }
+}
+
+.fct-license-info-content {
+    .el-date-editor--date.el-tooltip__trigger{
+        @apply w-full;
+    }
+    &-row{
+        @apply grid grid-cols-3 gap-5;
+    }
+    .el-input__prefix{
+        @apply hidden;
+    }
+}
+
+.fct-activation-limit-message-box-content{
+    @apply grid gap-4;
+}
+
+.fct-plan-changer-content-wrap{
+    .fct-plan-changer-text{
+        @apply text-system-dark text-sm dark:text-gray-300;
+    }
+}
+.fct-license-activation-row{
+    @apply flex items-center gap-5 w-full;
+}
+
+/* license key */
+.fct-license-key{
+    &-wrap{
+        @apply py-3 px-5;
+    }
+
+    @apply inline-flex mt-1.5 items-center pr-[36px] relative;
+}
+.fct-license-key-inner {
+    @apply truncate max-w-[260px];
+}
+.fct-license-product {
+    .link{
+        @apply block text-[13px] text-system-dark leading-[22px] focus:shadow-none dark:text-gray-50;
+        &:hover{
+            text-decoration: underline !important;
+        }
+    }
+    span{
+        @apply block;
+    }
+    button {
+        @apply mt-2;
+    }
+}
+
+.fct-license-key-wrap.has-bg{
+    @apply bg-gray-50 rounded p-2 dark:bg-dark-500;
+    a {
+        @apply text-system-mid text-[13px] dark:text-gray-300;
+    }
+    .icon{
+        @apply ml-auto;
+    }
+    .fct-license-key {
+        @apply pr-0 mt-0 w-full;
+    }
+    .fct-license-key-inner {
+        @apply max-w-full pr-0;
+    }
+}
+
+/* license inline wrap */
+.fct-license-inline-action-wrap {
+    @apply flex items-center gap-1;
+    .inline-action-button {
+        @apply flex items-center gap-1;
+        a {
+            @apply text-primary-500 hover:underline focus:shadow-none focus:outline-none dark:text-gray-50 #{!important};
+        }
+    }
+    .separator{
+        @apply w-1 h-1 rounded-full bg-gray-500 mx-1 border-0;
+    }
+    .inline-action-input-group{
+        @apply flex items-center gap-2;
+        .el-input-number {
+            width: 80px;
+        }
+    }
+    .el-date-editor.el-input {
+        @apply h-7;
+    }
+}
+
+
+.fct_licenses_table{
+    .product-name-inner{
+        @apply pr-0;
+    }
+}
+.fct-single-customer-license-table {
+    .fct-product-info-card .product-name-inner,
+    .fct-product-info-card .product-sub-name {
+        max-width: 250px;
+    }
+}
+
+
+
+// License Setting
+.fluent_cart_configure_integration_body {
+    .fluent_cart_license_box {
+        @apply flex flex-wrap flex-col items-start gap-5;
+        .fct-license-box-content {
+            @apply w-full;
+            h3 {
+                @apply m-0 mb-1.5 text-sm font-medium text-system-dark dark:text-gray-50 leading-5;
+            }
+            .el-input {
+                @apply mb-1.5;
+            }
+            p {
+                @apply m-0 text-system-mid dark:text-gray-300 text-sm leading-4 font-normal;
+                a {
+                    @apply inline-flex items-center gap-1 text-primary-500 dark:text-gray-50 border-0 border-b-[1px] border-solid border-primary-500 dark:border-gray-50 leading-4 font-medium;
+                }
+            }
+        }
+        .el-button {
+            @apply p-2.5 ml-auto;
+            .icon {
+                svg {
+                    @apply w-5 h-5;
+                }
+            }
+        }
+        &.fct_license_expired,
+        &.fct_license_valid {
+            @apply p-2.5;
+            .fct-license-box-content {
+                @apply flex flex-col items-center;
+                .icon {
+                    @apply mb-4;
+                }
+                h3 {
+                    @apply text-base mb-1;
+                }
+                > p {
+                    @apply text-system-mid text-xs leading-4 font-normal mb-0 dark:text-gray-300;
+                }
+                .fct-license-box-content-details {
+                    @apply max-w-[400px] w-full border-[1px] border-solid border-gray-divider rounded mt-5 dark:border-dark-400;
+                    p {
+                        @apply text-xs text-system-mid leading-5 flex items-center justify-between py-3 px-4 border-solid border-t-0 border-l-0 border-r-0 border-b-[1px] border-gray-divider dark:border-dark-400 dark:text-gray-300;
+                        &:last-child {
+                            @apply border-0;
+                        }
+                        .label {
+                            @apply text-system-dark font-medium dark:text-gray-50;
+                        }
+                        .license-key {
+                            @apply flex items-center gap-1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .fluent_cart_warning {
+        &:empty {
+            @apply hidden m-0;
+        }
+    }
+}
+
+
+.fct_licenses_table_mobile,
+.license-breadcrumb-only-mobile,
+.fct-license-info-form-show-on-mobile,
+.fct-license-related-orders-show-on-mobile {
+    @apply hidden;
+}

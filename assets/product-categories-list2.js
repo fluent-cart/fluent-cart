@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll("[data-fct-categories-go-btn]").forEach(function(t){t.addEventListener("click",function(){var e=t.closest("[data-fct-categories-dropdown-wrap]").querySelector("[data-fct-categories-dropdown]");e&&e.value&&(window.location.href=e.value)})})});

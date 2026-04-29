@@ -1,0 +1,7 @@
+.el-badge{
+    .el-badge__content{
+        &--primary{
+            @apply bg-primary-500;
+        }
+    }
+}

@@ -1,0 +1,38 @@
+.role-wise-permissions{
+  @apply grid grid-cols-3;
+  &-card{
+    @apply border border-solid border-gray-divider border-x-0 border-t-0 pb-6 pt-6 dark:border-dark-400;
+    &:nth-last-child(1) {
+      @apply border-0 pb-0;
+    }
+  }
+}
+
+
+.permission-actions{
+  display: grid;
+  gap: 12px;
+}
+.permission-text{
+  font-size: 13px;
+  margin-top: 20px;
+  color: #696778;
+}
+.permission-text span{
+  color: #2f3448;
+  font-weight: 500;
+}
+.dark .permission-text span{
+  color: #f5f6f7;
+}
+.dark .permission-text{
+  color: #f5f6f7;
+  opacity: 0.8;
+}
+
+.select-use-option{
+  @apply flex justify-between w-full text-system-dark dark:text-gray-50;
+  span:last-child{
+    @apply text-system-mid text-xs dark:text-gray-300;
+  }
+}

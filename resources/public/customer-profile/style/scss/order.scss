@@ -1,0 +1,67 @@
+.order-content-only-mobile-item {
+  @apply grid gap-2 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  .link{
+    @apply text-system-dark no-underline hover:underline !important;
+  }
+  .item-footer-content{
+    @apply inline-flex gap-2 items-center justify-between;
+  }
+  .item-header {
+    @apply flex items-center justify-between;
+  }
+  .fct-customer-orders-items-title {
+    @apply text-sm leading-[20px];
+  }
+}
+
+// subscription order
+.subscription-only-mobile-item {
+  @apply grid gap-3 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  .fct-customer-payment-meta-info {
+    @apply items-start mb-1 !important;
+  }
+  .fct-customer-orders-items-title {
+    @apply text-sm leading-[20px];
+  }
+  .item-header {
+    @apply flex items-center justify-between;
+    .text {
+      @apply text-[13px] text-system-light;
+    }
+    .fct-card-info {
+      .text {
+        @apply text-system-mid;
+      }
+    }
+  }
+  .fct-customer-payment-info {
+    @apply text-system-light text-[13px];
+  }
+  .item-footer-content {
+    @apply flex gap-2 items-center;
+  }
+
+}
+
+// license
+.license-only-mobile-item {
+  @apply grid gap-3 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  .fct-customer-orders-items-title {
+    @apply text-sm leading-[20px];
+  }
+  .fct-customer-orders-items-meta-wrap {
+    @apply inline-flex items-center gap-2;
+  }
+  .text-meta {
+    @apply text-[13px] leading-[20px] text-system-mid;
+  }
+  .fct-customer-payment-meta-info {
+    @apply items-start !important;
+  }
+  .fct-expiration-info {
+    @apply text-system-light mb-2;
+    .text-meta {
+      @apply text-system-light;
+    }
+  }
+}

@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./product-gallery-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.fct-product-gallery-wrapper {
+  @apply w-full mx-auto;
+}
+.fct-product-gallery-thumb {
+  @apply border border-solid border-gray-divider text-center rounded;
+  .containerZoom {
+    @apply rounded;
+  }
+
+  aspect-ratio: 1/1;
+
+  img {
+    @apply rounded object-cover w-full h-full;
+  }
+}
+
+.fct-gallery-thumb-controls {
+  @apply mt-5 flex overflow-y-hidden gap-2 rounded-[4px] !p-0;
+  &:active::-webkit-scrollbar-thumb,
+  &:focus::-webkit-scrollbar-thumb,
+  &:hover::-webkit-scrollbar-thumb {
+    @apply visible;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-sm;
+    visibility: hidden;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-300;
+  }
+
+  &::-webkit-scrollbar {
+    @apply h-1;
+  }
+}
+
+.fct-gallery-thumb-control-button {
+  @apply w-[92px] h-[92px] rounded border border-solid border-gray-divider transition-all duration-100 flex-shrink-0 hover:border-dark-50 first:ml-0 overflow-hidden flex-none p-0;
+  &.is-hidden{
+    @apply hidden;
+  }
+  
+  img {
+    @apply w-full h-full object-cover rounded-[inherit] cursor-pointer shadow-none;
+  }
+
+  &.active {
+    @apply border-dark-700;
+  }
+
+  &:hover {
+    img {
+      @apply opacity-100;
+    }
+  }
+
+  .thumbnail-active img {
+    @apply opacity-100;
+  }
+}

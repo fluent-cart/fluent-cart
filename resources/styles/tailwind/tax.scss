@@ -1,0 +1,444 @@
+
+// Tax Classes
+.fct-tax-classes {
+  @apply border-[1px] border-solid border-gray-outline dark:border-dark-400 border-l-0 border-t-0 border-r-0 flex justify-between p-4 items-center;
+  &-wrap {
+    @apply border-[1px] border-solid border-gray-outline dark:border-dark-400 rounded;
+    .fct-tax-classes {
+      &:last-child {
+        @apply border-b-0;
+      }
+    }
+  }
+  &-content {
+    .fct-tax-classes {
+      &-title {
+        @apply m-0 mb-1 text-system-dark font-medium text-sm leading-5 flex gap-2 items-center;
+        .heading {
+          @apply truncate max-w-[300px] block;
+        }
+      }
+      &-categories {
+        @apply flex wrap gap-1 font-normal text-xs;
+        .fct-tax-classes-category {
+          @apply text-system-mid dark:text-system-light border-[1px] border-solid border-gray-divider rounded block leading-none py-1 px-[5px] dark:border-dark-400;
+        }
+        .fct-tax-classes-more {
+          @apply bg-gray-50 dark:bg-dark-400;
+        }
+      }
+      &-desc {
+        @apply m-0 text-system-mid text-xs leading-4;
+      }
+    }
+  }
+  &-actions {
+    @apply flex gap-1;
+    .icon-button {
+      @apply rounded-none border-0 cursor-pointer bg-transparent hover:bg-transparent focus:bg-transparent;
+    }
+  }
+}
+
+
+// Tax Rates
+.fct-tax-rates {
+  &-wrap {
+    .el-collapse {
+      @apply border-0;
+      .el-collapse-item {
+        @apply border-[1px] border-solid border-gray-divider dark:border-dark-400 rounded mb-4;
+        &__header {
+          @apply relative pl-[44px] bg-transparent border-0 pr-4;
+          .el-collapse-item__arrow {
+            @apply absolute left-4 m-0 w-5 h-5 flex items-center justify-center dark:text-dark-200;
+          }
+          .fct-tax-rates-title {
+            @apply m-0 flex items-center justify-between w-full text-system-dark dark:text-gray-300 text-sm leading-5 font-medium;
+            .total-countries {
+              @apply block text-system-mid text-xs leading-4 font-normal dark:text-gray-500;
+            }
+          }
+        }
+        &__wrap {
+          @apply border-0 bg-transparent;
+          .el-collapse-item__content {
+            @apply p-0;
+            .fct-tax-rates-countries {
+              .fct-tax-rates-country {
+                @apply flex items-center justify-between py-3 pr-4 pl-[44px] border-[1px] border-solid border-gray-divider dark:border-dark-400 border-t-0 border-x-0;
+                &:last-child {
+                  @apply border-b-0;
+                }
+                &-name {
+                  @apply text-sm text-system-dark dark:text-gray-300 font-medium leading-5 flex m-0 items-center gap-4;
+                }
+                &-rate {
+                  @apply block text-xs text-blue-800 leading-4 font-medium bg-blue-100 rounded-sm py-[2px] px-2;
+                }
+                &-actions {
+                  @apply flex items-center gap-2;
+                }
+              }
+            }
+          }
+        }
+      }
+      .fct-tax-rates-group {
+        .fct-tax-rates-country-add {
+          @apply bg-gray-25 flex border-[1px] border-solid border-gray-divider border-b-0 border-r-0 border-l-0 pl-4.5 py-3 text-sm leading-5 text-system-dark font-medium cursor-pointer gap-1 items-center rounded-bl rounded-br;
+          .icon {
+            svg {
+              @apply w-3 h-3;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.fct-tax-rates-country-view {
+  .el-table {
+    @apply border-[1px] border-solid border-gray-divider rounded dark:border-dark-400;
+    .el-table {
+      &__header {
+        thead {
+          tr {
+            th {
+              @apply border-t-0 border-l-0 border-[1px] border-solid border-gray-divider bg-gray-25 dark:bg-dark-600;
+              &:first-child {
+                @apply rounded-tl;
+              }
+
+              &:last-child {
+                @apply rounded-tr border-r-0;
+              }
+            }
+          }
+        }
+      }
+      &__body {
+        tbody {
+          tr {
+            td {
+              @apply border-[1px] border-solid border-gray-divider border-l-0 border-t-0;
+              &:last-child {
+                @apply border-r-0;
+              }
+              .el-input-number {
+                @apply w-full;
+              }
+            }
+            &:last-child {
+              td {
+                @apply border-b-0;
+              }
+            }
+          }
+        }
+      }
+    }
+    .fct-tax-rates-country-modal-actions {
+      @apply flex items-center justify-end;
+      .icon-button {
+        @apply border-0 rounded-none bg-transparent cursor-pointer;
+      }
+    }
+  }
+  .fct-tax-rates-country-add {
+    @apply mt-5;
+    .el-button {
+      @apply bg-transparent text-sm leading-5 font-medium py-1 px-1.5;
+    }
+  }
+}
+
+
+// Tax Configurations
+.el-overlay {
+  &.fct-tax-rates-configuration-country-modal {
+    .el-overlay-dialog {
+      @apply items-start;
+    }
+    .el-dialog {
+      @apply w-full max-w-[700px];
+    }
+  }
+}
+
+
+/*== tax filing ==*/
+.el-overlay {
+  .fct-tax-filling-modal {
+    @apply w-[auto] !important;
+  }
+  .fct-tax-filling-success-modal {
+    @apply w-[450px] !important;
+    .el-dialog__header {
+      @apply hidden;
+    }
+  }
+}
+.fct-tax-filing {
+  @apply border border-solid border-gray-divider rounded overflow-hidden dark:border-dark-400;
+  thead tr th.el-table__cell{
+    @apply border-t-0;
+  }
+  tbody tr:last-child td.el-table__cell {
+    @apply border-b-0;
+  }
+}
+.fct-tax-filing-summary {
+    @apply flex items-center gap-10 mb-7.5;
+    .summary-label {
+        @apply text-xs mb-1 block text-system-mid leading-[16px] dark:text-gray-300;
+    }
+    .summary-value {
+      @apply text-sm block text-system-dark leading-[20px] dark:text-gray-50;
+    }
+}
+
+.fct-tax-filing-success-wrap {
+  @apply flex items-start gap-4 antialiased;
+  .fct-tax-filling-success-icon {
+    @apply w-10 h-10 rounded p-2 flex justify-center items-center bg-success-25 text-success-500 flex-shrink-0;
+    .icon {
+      @apply w-5 h-5;
+    }
+  }
+  h4 {
+    @apply mt-0 mb-1 text-base leading-[24px] font-medium;
+  }
+  p {
+    @apply m-0 text-sm font-normal text-system-mid leading-[24px] dark:text-gray-300;
+  }
+  a {
+    @apply text-primary-500 underline dark:text-gray-50 !important;
+  }
+}
+
+
+// Vat collection
+.fct-eu-vat-collection-settings {
+  .fct-eu-vat-collection-radios {
+    @apply block w-full;
+    .fct-eu-vat-collection-item {
+      @apply rounded p-4 mb-2 border border-solid border-gray-outline;
+      .el-radio {
+        @apply items-start w-full;
+        &__input {
+          @apply mt-[2px];
+        }
+        &__label {
+          @apply pl-2.5;
+          h4 {
+            @apply m-0 mb-1 text-sm font-medium text-system-dark leading-5;
+          }
+          p {
+            @apply m-0 text-system-mid text-xs leading-4 font-normal;
+          }
+        }
+      }
+      .fct-eu-vat-country-and-number {
+        @apply pl-7.5;
+      }
+    }
+  }
+}
+
+
+.fct-tax-collection-sec-head {
+  @apply mb-3 flex items-center gap-1;
+}
+
+.fct-tax-collection-sec-title {
+  @apply text-system-dark text-sm font-medium m-0 dark:text-gray-50;
+}
+
+.fct-tax-collection-methods {
+  @apply grid gap-5;
+}
+.fct-tax-collection-method{
+  @apply rounded p-4 border border-solid border-gray-outline bg-white dark:bg-dark-600 dark:border-dark-400;
+  .method-text {
+    @apply text-system-mid text-xs mt-1 dark:text-gray-300 mb-0;
+  }
+  .method-content {
+    @apply pl-6;
+  }
+  .el-form-item {
+    @apply mb-0;
+  }
+}
+
+.fct-tax-selection-sum-box {
+  @apply relative rounded flex items-start gap-2.5 p-4 border border-solid border-gray-outline bg-white dark:bg-dark-600 dark:border-dark-400;
+  img {
+    @apply w-7.5 mt-1;
+  }
+  .edit-method-btn{
+    @apply absolute top-1/2 right-4;
+    transform: translateY(-50%);
+  }
+  .summary-box-content {
+    @apply flex-1;
+  }
+}
+.fct-tax-selection-summary {
+  @apply grid gap-7.5;
+}
+.fct-tax-rate-box-head {
+  @apply mb-5 flex items-center justify-between gap-2;
+  h4 {
+    @apply text-base font-medium m-0;
+  }
+}
+
+.fct-tax-collapse {
+  @apply border-0;
+  .el-collapse-item__header {
+    @apply border-0 h-auto dark:bg-transparent;
+    .el-icon.el-collapse-item__arrow {
+      @apply hidden;
+    }
+  }
+  .el-collapse-item__wrap {
+    @apply dark:bg-transparent border-0;
+  }
+}
+
+.fct-tax-collapse-inner {
+  @apply mt-3 ml-5;
+}
+
+.fct-tax-active-country-collapse {
+  @apply border-0 grid gap-3;
+  .el-collapse-item {
+    @apply border border-solid border-gray-divider rounded p-3 dark:border-dark-400;
+  }
+  .el-collapse-item__header{
+    @apply h-auto pr-0;
+  }
+  .collapse-header {
+    @apply flex items-center justify-between w-full;
+  }
+  .country-info {
+    @apply flex items-center gap-2;
+  }
+  .total-rates {
+    @apply text-xs font-normal text-system-mid dark:text-gray-300;
+  }
+  .el-collapse-item__content {
+    @apply pb-0;
+  }
+  .el-collapse-item__wrap {
+    @apply border-0;
+  }
+}
+
+.fct-country-rates {
+  @apply ml-[46px] mt-3;
+}
+.fct-country-rate-item {
+    @apply flex items-center justify-between py-1;
+    .rate-type {
+      @apply text-xs capitalize text-system-mid dark:text-gray-300;
+    }
+    .tax-rate {
+      @apply text-xs font-normal text-system-dark dark:text-gray-300;
+    }
+}
+
+/*== fct-tax-overrides ==*/
+.fct-tax-overrides {
+  @apply border border-solid border-gray-outline px-4 rounded dark:border-dark-400;
+}
+.fct-tax-override-item {
+  @apply py-4 flex items-center justify-between gap-1 pb-4 border border-solid border-gray-divider border-x-0 border-t-0 last:border-0 dark:border-dark-400;
+  .country-info {
+    @apply flex items-center gap-2;
+  }
+  .total-rates {
+    @apply text-xs font-normal text-system-mid dark:text-gray-300;
+  }
+  .override-actions{
+    @apply flex items-center gap-2;
+  }
+}
+
+
+.summary-box-form {
+  @apply mt-4;
+  .el-form-item {
+    @apply mb-0;
+  }
+}
+
+.fct-selected-country-tax-classes {
+  .selected-country-tax-heading {
+    @apply text-sm font-medium mt-0 mb-3 dark:text-gray-50;
+  }
+}
+
+.fct-selected-country-tax-class {
+  @apply flex items-center justify-between;
+  .selected-tax-class {
+    .tax-type {
+      @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+    .tax-rate,
+    .tax-state {
+      @apply text-xs text-system-mid dark:text-gray-300;
+    }
+  }
+  .selected-tax-input-wrap {
+    @apply flex items-center gap-2 w-[135px];
+  }
+}
+
+.fct-oss-override-country-select {
+  .country-info {
+     @apply flex items-center gap-2;
+     img {
+      @apply w-5;
+     }
+  }
+}
+
+.fct-specific-country-box {
+  @apply relative rounded gap-2.5 p-4 border border-solid border-gray-outline bg-white dark:bg-dark-600 dark:border-dark-400;
+  .edit-method-btn{
+    @apply absolute top-1/2 right-4;
+    transform: translateY(-50%);
+  }
+  .summary-box-meta{
+    @apply flex items-center gap-5 justify-between;
+  }
+}
+.fct-specific-country-list {
+  @apply flex items-center gap-[32px];
+  .value {
+    @apply text-lg text-system-mid dark:text-gray-300;
+  }
+  .label {
+    @apply text-sm text-system-mid dark:text-gray-300;
+  }
+  li {
+    @apply inline-flex gap-2 flex-col m-0;
+  }
+}
+
+.fct-eu-union-countries {
+  @apply overflow-hidden rounded gap-2.5 border border-solid border-gray-outline bg-white dark:bg-dark-600 dark:border-dark-400;
+}
+
+.fct-eu-union-country {
+  @apply flex items-center justify-between p-3 cursor-pointer border border-x-0 border-t-0 border-solid border-gray-divider last:border-b-0 transition-colors hover:bg-gray-25 dark:hover:bg-dark-500 dark:border-dark-400;
+  .country-info {
+     @apply flex items-center gap-2;
+     img {
+      @apply w-5;
+     }
+  }
+}

@@ -1,0 +1,16 @@
+.fct-input-with-action{
+  &-wrap{
+    @apply flex items-center relative w-full;
+  }
+  &{
+    @apply absolute top-1/2 right-1.5;
+    transform: translateY(-50%);
+  }
+}
+.fct-term-add-input-wrap{
+  @apply flex gap-2.5 mt-4 relative;
+  .el-button{
+    @apply absolute top-1 right-1;
+    @apply rounded-sm #{!important};
+  }
+}

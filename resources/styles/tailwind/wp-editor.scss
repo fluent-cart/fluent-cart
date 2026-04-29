@@ -1,0 +1,331 @@
+@use 'sass:color';
+.custom-wp-editor-wrapper{
+    --tab-button-radius : 10px;
+    @apply w-full;
+    * {
+        @apply box-border;
+    }
+    .add_media {
+        @apply m-0;
+    }
+    .wp-editor-tools {
+        .wp-media-buttons {
+            @apply relative;
+            .add_media {
+                @apply flex items-center capitalize text-system-mid font-medium px-3 py-2 gap-1 leading-none bg-gray-25 text-sm border-gray-outline rounded focus:shadow-none hover:bg-gray-50 dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400 dark:hover:bg-dark-600;
+            }
+            .wp-media-buttons-icon {
+                @apply m-0;
+                &::before {
+                    @apply w-full h-full block bg-no-repeat bg-center;
+                    content: '';
+                    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 22 22" fill="none"><g id="elements"><circle id="Ellipse 1119" cx="6.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path id="Rectangle 2056" d="M1.5 11C1.5 6.52166 1.5 4.28249 2.89124 2.89124C4.28249 1.5 6.52166 1.5 11 1.5C15.4783 1.5 17.7175 1.5 19.1088 2.89124C20.5 4.28249 20.5 6.52166 20.5 11C20.5 15.4783 20.5 17.7175 19.1088 19.1088C17.7175 20.5 15.4783 20.5 11 20.5C6.52166 20.5 4.28249 20.5 2.89124 19.1088C1.5 17.7175 1.5 15.4783 1.5 11Z" stroke="currentColor" stroke-width="1.5"/><path id="Vector" d="M4 19.9999C8.37246 14.775 13.2741 7.884 20.4975 12.5424" stroke="currentColor" stroke-width="1.5"/></g></svg>');
+                }
+            }
+        }
+        .wp-editor-container {
+            @apply shadow-none col-span-2 border-gray-outline dark:border-dark-400 rounded dark:bg-dark-700;
+        }
+    }
+    .wp-media-buttons,
+    .wp-editor-tabs {
+        @apply mb-2.5;
+    }
+    .wp-editor-tabs {
+        @apply bg-gray-50 p-1 rounded dark:bg-dark-600 dark:border-dark-400;
+        .wp-switch-editor{
+            @apply bg-transparent leading-[1.07] border-0 h-auto m-0 top-auto py-2 px-3 rounded text-xs font-medium dark:text-gray-300;
+        }
+    }
+
+    .html-active .switch-html, 
+    .tmce-active .switch-tmce{
+        @apply bg-white text-system-dark dark:bg-dark-500 dark:text-gray-50;
+        box-shadow: 0px 6px 10px 0px rgba(14, 18, 27, 0.06), 0px 2px 4px 0px rgba(14, 18, 27, 0.03);
+    }
+
+    .mce-widget.mce-btn.mce-menubtn {
+        @apply rounded-xs;
+    }
+    .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group {
+        @apply w-full;
+    }
+    .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group > div:first-child {
+        @apply flex items-center justify-start w-full min-w-full p-1 gap-0.5 flex-wrap;
+    }
+    .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group > div:first-child > div {
+        @apply m-0;
+    }
+    .mce-toolbar .mce-listbox button,
+    .mce-btn button{
+        @apply text-xs dark:text-gray-300 rounded-xs bg-transparent #{!important};
+    }
+    #mceu_1 {
+        @apply py-0.5 px-[3px];
+    }
+    #mceu_1-button {
+        @apply p-0;
+    }
+    .mce-container-body.mce-stack-layout {
+        @apply bg-gray-50 dark:bg-dark-700;
+    }
+    .mce-statusbar.mce-last {
+        @apply hidden;
+    }
+    textarea.wp_vue_editor {
+        @apply w-full border-none dark:bg-dark-700 dark:text-gray-300 resize-none #{!important};
+        &:focus {
+            @apply shadow-none;
+        }
+    }
+    .quicktags-toolbar {
+        @apply bg-gray-50 dark:bg-dark-600 dark:border-dark-400;
+        input {
+            @apply border-transparent duration-300 text-system-mid transform-none dark:text-gray-300 dark:bg-dark-600;
+            &:hover {
+                @apply border-dark-500 text-dark-500 hover:border-gray-outline hover:text-system-mid hover:bg-transparent dark:border-dark-400 dark:text-gray-300;
+            }
+        }
+    }
+    .mce-btn.mce-active button{
+        @apply text-dark-500;
+    }
+    .mce-top-part::before{
+        @apply shadow-none;
+    }
+    .mce-toolbar-grp{
+        @apply dark:border-dark-400;
+    }
+    .mce-toolbar .mce-btn-group .mce-btn.mce-listbox{
+        @apply dark:border-dark-400;
+    }
+    .fct-editor-action-buttons{
+        @apply lg:absolute lg:top-0 lg:left-0 flex gap-2.5 z-10;
+    }
+    div.mce-toolbar-grp{
+        @apply dark:bg-dark-600;
+    }
+    .mce-panel{
+        @apply dark:bg-dark-700;
+    }
+    iframe{
+        @apply h-full #{!important};
+    }
+
+    .wp-editor-container{
+        .mce-tinymce.mce-container.mce-panel{
+            height: 100% !important;
+        }
+    }
+
+  .mce-toolbar .mce-btn-group .mce-btn:focus,
+  .mce-toolbar .mce-btn-group .mce-btn:hover,
+  .qt-dfw:focus,
+  .qt-dfw:hover {
+    @apply dark:bg-dark-600;
+  }
+}
+
+div.mce-panel {
+  @apply dark:bg-dark-700;
+}
+.mce-window.fluent-cart .mce-window-head {
+  @apply dark:bg-dark-700 dark:border-dark-500 !important;
+}
+.mce-window.fluent-cart  .mce-foot {
+  @apply dark:border-dark-500 !important;
+}
+.mce-window.fluent-cart .mce-window-head .mce-title {
+  @apply dark:text-gray-50;
+}
+.mce-window.fluent-cart input {
+  @apply dark:border-dark-500 !important;
+}
+.mce-panel.mce-menu {
+  @apply dark:border-dark-500 !important;
+}
+.mce-window.fluent-cart .mce-textbox {
+  @apply dark:bg-dark-700 dark:text-gray-50 dark:border-dark-500;
+}
+.mce-window .mce-btn {
+  @apply dark:bg-dark-600 dark:text-gray-50 dark:border-dark-500 !important;
+}
+.mce-window .mce-btn.mce-primary {
+  @apply dark:shadow-none !important;
+}
+.mce-window.fluent-cart .mce-btn.mce-menubtn {
+  @apply dark:bg-dark-600 dark:border-dark-500 !important;
+}
+/*Color Buttons*/
+.mce-toolbar {
+    .mce-btn-group .mce-btn:focus, 
+    .mce-toolbar .mce-btn-group .mce-btn {
+        @apply duration-300 flex;
+    }
+    .mce-btn-group .mce-btn:focus, 
+    .mce-toolbar .mce-btn-group .mce-btn.mce-colorbutton:hover .mce-open {
+        @apply border-transparent;
+    }
+    .mce-btn-group .mce-btn:focus, 
+    .mce-toolbar .mce-btn-group .mce-btn button:first-child{
+        @apply flex flex-col justify-center dark:bg-dark-700 border-[1px];
+    }
+    .mce-btn-group .mce-btn:focus, 
+    .mce-toolbar .mce-btn-group .mce-btn.mce-colorbutton button:first-child *{
+        @apply relative left-0;
+    }
+    .mce-btn-group .mce-btn.mce-listbox{
+        @apply shadow-none bg-white border-white py-[2px] dark:bg-dark-600 dark:border-dark-400 #{!important};
+    }
+}
+
+.wp-editor-container {
+    .mce-toolbar {
+        .mce-btn-group {
+            .mce-btn{
+                @apply rounded-xs bg-transparent;
+                &.mce-active {
+                    @apply border-gray-outline rounded-xs bg-transparent dark:border-dark-400;
+                    i{
+                        @apply text-system-dark dark:text-gray-50;
+                    }
+                }
+                &:focus, 
+                &:hover {
+                    @apply border-gray-outline rounded-xs shadow-none dark:border-dark-400;
+                    i {
+                        @apply text-system-dark dark:text-gray-50;
+                    }
+                }
+            }
+
+        }
+        .mce-ico{
+            @apply text-sm flex justify-center items-center text-system-mid dark:text-gray-200;
+        }
+    }
+}
+
+.mce-menu.mce-in.mce-animate{
+    @apply dark:bg-dark-600 dark:border-dark-500;
+}
+
+/*==== Style for editor shortcode ====*/
+.wp_vue_editor_wrapper {
+    .popover-wrapper {
+        position: absolute;
+        margin-left: 120px;
+        z-index: 99;
+    }
+    .el-popper {
+        min-width:400px #{!important};
+        width: 400px #{!important};
+    }
+}
+
+.fct-input-dropdown-popover-wrap {
+    @apply text-left;
+    .el_pop_data_group {
+        @apply flex;
+    }
+    .el_pop_data_headings {
+        @apply w-[160px] bg-gray-50 rounded p-3 mr-5 flex-shrink-0 dark:bg-dark-500;
+        ul{
+            li{
+                @apply py-1.5 px-3 mb-0.5 rounded cursor-pointer text-system-dark hover:bg-gray-200 dark:text-gray-50 dark:hover:bg-dark-600;
+                &.item_selected{
+                    @apply bg-gray-200 font-medium dark:bg-dark-600 dark:text-gray-50;
+                }
+            }
+        }
+    }
+    ul{
+        @apply m-0 p-0;
+    }
+    .el_pop_data_body{
+        @apply flex-1 max-h-[312px] overflow-y-auto;
+        ul {
+            li{
+                @apply cursor-pointer border border-solid border-t-0 border-x-0 border-gray-divider py-2 transition-all duration-300 m-0 last:border-0 dark:border-dark-400;
+                span{
+                    @apply block first:font-medium first:text-system-dark first:dark:text-gray-50 last:text-system-mid last:dark:text-gray-300 last:text-xs;
+                }
+                &:hover {
+                    @apply bg-gray-25 pl-1.5 dark:bg-dark-500;
+                    span:first-child{
+                        @apply text-dark-500 dark:text-gray-50;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.mce-menu-item,
+.mce-container, 
+.mce-container *, 
+.mce-widget, 
+.mce-widget *, 
+.mce-reset{
+    @apply dark:text-gray-300;
+}
+.mce-menu .mce-menu-item.mce-active.mce-menu-item-normal, 
+.mce-menu .mce-menu-item.mce-active.mce-menu-item-preview, 
+.mce-menu .mce-menu-item.mce-selected, 
+.mce-menu .mce-menu-item:focus, 
+.mce-menu .mce-menu-item:hover{
+    @apply bg-dark-500;
+}
+
+
+.fct-add-shortcode-button-wrap{
+    @apply  z-[2];
+}
+.fct-select-button-wrap{
+    @apply w-[143px] z-[2];
+}
+.fct-select-template-wrap{
+    @apply w-[158px];
+}
+.fct-view-template-wrap{
+    @apply z-[2];
+}
+.fct-refresh-setting-wrap{
+    @apply z-[2];
+}
+.dark{
+    .custom-wp-editor-wrapper .wp-editor-tools .wp-media-buttons .wp-media-buttons-icon::before{
+        filter: brightness(0) invert(1);
+    }
+}
+
+.mce-window.fluent-cart{
+    @apply rounded shadow-none;
+    .mce-window-head{
+        @apply border-gray-divider rounded-tl rounded-tr;
+        .mce-title{
+            @apply leading-[44px] text-base text-system-dark;
+        }
+    }
+    input{
+        @apply border-gray-outline px-2.5 w-[294px] #{!important};
+    }
+    .mce-btn{
+        @apply shadow-none;
+        &.mce-menubtn{
+            @apply shadow-none bg-white rounded-none border-gray-outline #{!important};
+            &.mce-active button{
+                @apply text-system-dark;
+            }
+        }
+        &.mce-primary{
+            @apply bg-dark-500 border-dark-500 #{!important};
+        }
+    }
+    .mce-foot{
+        @apply rounded-bl rounded-br border-gray-divider;
+        .mce-btn{
+            @apply border-gray-outline;
+        }
+    }
+}

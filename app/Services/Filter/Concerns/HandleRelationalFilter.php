@@ -43,6 +43,11 @@ trait HandleRelationalFilter
             return;
         }
 
+        // Normalize string values to array for array-based operators
+        if (is_string($searchTerm) && in_array($operator, ['in', 'contains', 'not_in', 'not_contains', 'in_all', 'not_in_all'])) {
+            $searchTerm = [$searchTerm];
+        }
+
         if (is_string($searchTerm)) {
             $query = $query->whereHas($relation, function (Builder $q) use ($filter, $relationKey) {
                 $filter['property'] = $relationKey;

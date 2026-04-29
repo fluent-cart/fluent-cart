@@ -1,0 +1,6 @@
+.el-alert{
+    @apply rounded;
+    &--error.is-light{
+        @apply bg-red-50 text-red-500;
+    }
+}

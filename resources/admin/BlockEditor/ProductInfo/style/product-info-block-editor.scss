@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+@config "./product-info-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.product-card-inner .block-editor-block-list__layout {
+  //@apply grid grid-cols-2 gap-10;
+}

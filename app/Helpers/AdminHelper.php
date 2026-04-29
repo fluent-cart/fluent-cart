@@ -80,6 +80,28 @@ class AdminHelper
         }
     }
 
+    private static function getProductsMenu($baseUrl)
+    {
+        $menu = [
+            'label'      => __('Products', 'fluent-cart'),
+            'link'       => $baseUrl . 'products',
+            'permission' => ['products/view']
+        ];
+
+        if (ModuleSettings::isActive('stock_management') &&
+            ModuleSettings::getSettings('stock_management.enable_advanced_inventory') === 'yes') {
+            $menu['children'] = [
+                'product_inventory' => [
+                    'label'      => __('Inventory', 'fluent-cart'),
+                    'link'       => $baseUrl . 'products/inventory',
+                    'permission' => ['products/view']
+                ]
+            ];
+        }
+
+        return $menu;
+    }
+
     public static function getAdminMenu($echo = false, $activeNav = '')
     {
         $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
@@ -98,22 +120,7 @@ class AdminHelper
                 'link'       => $baseUrl . 'customers',
                 'permission' => ['customers/view', 'customers/manage']
             ],
-            'products'      => [
-                'label'      => __('Products', 'fluent-cart'),
-                'link'       => $baseUrl . 'products',
-                'permission' => ['products/view'],
-                'children'   => [
-                    'all_products'      => [
-                        'label' => __('All Products', 'fluent-cart'),
-                        'link'  => $baseUrl . 'products'
-                    ],
-                    'product_inventory' => [
-                        'label'      => __('Inventory', 'fluent-cart'),
-                        'link'       => $baseUrl . 'products/inventory',
-                        'permission' => ['products/view']
-                    ]
-                ]
-            ],
+            'products'      => self::getProductsMenu($baseUrl),
             'subscriptions' => [
                 'label'      => __('Subscriptions', 'fluent-cart'),
                 'link'       => $baseUrl . 'subscriptions',

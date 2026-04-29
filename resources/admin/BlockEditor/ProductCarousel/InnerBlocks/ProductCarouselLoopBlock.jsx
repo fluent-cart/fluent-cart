@@ -1,0 +1,195 @@
+import {useProductData} from "@/BlockEditor/ShopApp/Context/ProductContext";
+import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
+import { ProductContainerContext } from "@/BlockEditor/ShopApp/Context/ProductContainerContext";
+
+const {
+    InnerBlocks,
+    useBlockProps,
+    useInnerBlocksProps,
+    __experimentalUseBlockPreview,
+    BlockContextProvider
+} = wp.blockEditor;
+
+const useBlockPreview = __experimentalUseBlockPreview || null;
+
+const {useContext, useEffect, useState, useMemo, memo} = wp.element;
+const {useSelect} = wp.data;
+let lastChanged = '';
+
+const ProductTemplateInnerBlocks = () => {
+    const innerBlocksProps = useInnerBlocksProps(
+        {className: 'fct-block-product'},
+        {__unstableDisableLayoutClassNames: true}
+    );
+    return <div {...innerBlocksProps} />;
+};
+
+const ProductTemplateBlockPreview = ({
+    blocks,
+    blockContextId,
+    isHidden,
+    setActiveBlockContextId,
+}) => {
+    const blockPreviewProps = useBlockPreview({
+        blocks,
+        props: {
+            className: 'fct-block-product',
+        },
+    });
+
+    const handleOnClick = () => {
+        setActiveBlockContextId(blockContextId);
+    };
+
+    const style = {
+        display: isHidden ? 'none' : undefined,
+    };
+
+    return (
+        <div
+            {...blockPreviewProps}
+            tabIndex={0}
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
+            role="button"
+            onClick={handleOnClick}
+            onKeyPress={handleOnClick}
+            style={style}
+        />
+    );
+};
+
+const MemoizedProductTemplateBlockPreview = memo(ProductTemplateBlockPreview);
+
+const ProductContent = ({
+    displayTemplate,
+    blocks,
+    blockContext,
+    setActiveBlockContextId,
+}) => {
+    return (
+        <BlockContextProvider
+            key={blockContext.ID}
+            value={blockContext}
+        >
+            {displayTemplate ? <ProductTemplateInnerBlocks/> : null}
+            <MemoizedProductTemplateBlockPreview
+                blocks={blocks}
+                blockContextId={blockContext.ID}
+                setActiveBlockContextId={setActiveBlockContextId}
+                isHidden={displayTemplate}
+            />
+        </BlockContextProvider>
+    );
+};
+
+//Our product loop block
+const ProductCarouselLoopBlock = {
+    attributes: {
+        wp_client_id: {
+            type: 'string',
+            default: ''
+        },
+        last_changed: {
+            type: 'string',
+            default: ''
+        }
+    },
+    edit: (props) => {
+        const {attributes, setAttributes, clientId, context} = props;
+        const { simulateLoading, simulateNoResults } = useContext(ProductContainerContext);
+
+        let isHidden = simulateLoading || simulateNoResults ? 'hide' : '';
+        const enableFilter = context['fluent-cart/enable_filter'];
+        let isEnableFilter = enableFilter ? '' : 'not-enable-filter';
+
+        const blockProps = useBlockProps({
+            className: 'fct-shop-app-preview-wrap' + ' ' + isHidden + ' ' + isEnableFilter,
+        });
+
+        useEffect(() => {
+            setAttributes({last_changed: new Date().toISOString()});
+            if (attributes.wp_client_id) {
+                return;
+            }
+            setAttributes({wp_client_id: clientId});
+        }, [clientId, attributes.wp_client_id, setAttributes]);
+
+        const parentData = useProductData();
+
+        // Get the current block data
+        const currentBlock = useSelect(
+            (select) => select('core/block-editor').getBlock(clientId),
+            [clientId]
+        );
+
+        const [count, setCount] = useState(1);
+
+        useEffect(() => {
+            if (count > 1) {
+                lastChanged = new Date().toISOString();
+                return;
+            }
+            setCount(count + 1);
+        }, [currentBlock]);
+
+        const blocks = currentBlock.innerBlocks;
+
+        const [ activeBlockContextId, setActiveBlockContextId ] = useState();
+
+        return (
+            <div {...blockProps}>
+                <div
+                    className="fct-product-loop-editor"
+                    style={{ display: 'flex' }}
+                >
+                {parentData?.products.map((product) => {
+                    const displayTemplate =
+                        product.ID ===
+                        ( activeBlockContextId || parentData?.products[ 0 ]?.ID );
+
+                        return (
+                            <SingleProductDataProvider value={{
+                                product: product
+                            }} key={product.ID}>
+                                <div key={product.ID}
+                                    className="fluent-cart-product-loop fct-product-block-editor-product-card"
+                                >
+                                    <ProductContent
+                                        key={product.ID}
+                                        attributes={{
+                                            productId: product.ID,
+                                        }}
+                                        blocks={blocks}
+                                        displayTemplate={displayTemplate}
+                                        blockContext={product}
+                                        setActiveBlockContextId={setActiveBlockContextId}
+                                    />
+                                </div>
+                            </SingleProductDataProvider>
+                        )
+                    }
+                )}
+                </div>
+            </div>
+        );
+    },
+
+    save: (props) => {
+        const blockProps = useBlockProps.save();
+        return (
+            <div {...blockProps} className="fluent-cart-product-loop fct-product-block-editor-product-card">
+                <InnerBlocks.Content/>
+            </div>
+        );
+    },
+    supports: {
+        align: ['wide', 'full'],
+        html: false,
+    },
+    usesContext: [
+        'fluent-cart/carousel_settings',
+        'fluent-cart/product_ids'
+    ]
+};
+
+export default ProductCarouselLoopBlock;

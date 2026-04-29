@@ -1,0 +1,29 @@
+@config "./product-package-description-block-editor.config.js";
+@tailwind utilities;
+
+.fct-package-description {
+    &__table {
+        @apply w-full text-sm border-collapse;
+
+        th, td {
+            @apply py-1.5 px-0 text-left border-0 border-b border-solid border-gray-divider;
+        }
+
+        th {
+            @apply font-semibold text-system-dark w-[140px] align-top;
+        }
+
+        td {
+            @apply font-normal text-system-mid;
+        }
+
+        tr:last-child th,
+        tr:last-child td {
+            @apply border-b-0;
+        }
+    }
+}
+
+.fct-package-info-preview {
+    @apply py-1.5 px-3 rounded text-xs font-medium bg-gray-25 text-system-mid;
+}

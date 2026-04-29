@@ -1,0 +1,86 @@
+@config "./searchbar-block-editor.config.js";
+@tailwind utilities;
+@tailwind base;
+
+.fluent-cart-searchbar-block-editor *{
+    @apply box-border;
+}
+.block-editor-block-list__block.wp-block[data-type="fluent-cart/fluent-cart-searchbar-block-editor'"] {
+    @apply ml-0 mr-0 w-full max-w-full !important
+}
+
+/* product menu items */
+/*.fca_product_menu_items {*/
+/*    @apply flex p-0 m-0 list-none;*/
+/*}*/
+/*.fca_product_menu_items li {*/
+/*    @apply px-2.5 text-sm mb-0 relative first:pl-0 last:pr-0 last:after:hidden;*/
+/*}*/
+/*.fca_product_menu_items li::after{*/
+/*    @apply absolute top-2/4 right-0 w-1 h-1 bg-gray-300 rounded-full;*/
+/*    content: "";*/
+/*}*/
+
+/*.fca_product_menu_items li:last-child {*/
+/*    @apply mr-0;*/
+/*}*/
+
+/*.fca_product_menu_items li a {*/
+/*    @apply text-neutral-1000 no-underline focus:shadow-none dark:text-neutral-200;*/
+/*}*/
+/*.dark .fca_product_menu_items li a {*/
+/*    @apply text-gray-300;*/
+/*}*/
+/*.fca_product_menu_items li a:hover {*/
+/*    @apply text-dark-500;*/
+/*}*/
+
+.components-select-control__input{
+    @apply text-sm !important;
+}
+.components-select-control__input option{
+    @apply py-1 px-2 rounded-[2px] capitalize;
+}
+
+/*===== search bar block =====*/
+.fluent-cart-search-bar-app-wrapper{
+    @apply max-w-[360px] ml-0 !important;
+}
+.fluent-cart-search-bar-app-wrapper-result-container{
+    @apply relative;
+}
+.fluent-cart-search-bar-app-input-wrap{
+    @apply flex items-center w-full relative !important;
+}
+.fluent-cart-search-bar-app-input{
+    @apply bg-white border border-solid border-gray-outline rounded w-full focus:border-dark-500 focus:outline-none max-h-12 text-system-dark placeholder:text-system-light placeholder:text-base !important;
+}
+.fluent-cart-search-bar-app-input.is-active{
+    @apply border-dark-500 rounded-bl-none rounded-br-none !important;
+}
+.fluent-cart-search-bar-app-input-search{
+    @apply absolute top-0 left-4 h-full flex items-center text-system-mid !important;
+}
+.fluent-cart-search-bar-app-input-search + .fluent-cart-search-bar-app-input{
+    @apply pl-10.5 !important;
+}
+.fluent-cart-search-bar-app-input-clear{
+    @apply absolute top-0 right-0 py-3.5 px-4 h-full text-system-mid cursor-pointer !important;
+    @apply hidden;
+}
+.fluent-cart-search-bar-app-wrapper-result-wrap{
+    @apply absolute top-full left-0 w-full border border-solid border-gray-outline rounded-br rounded-bl border-t-0 py-3 bg-white;
+}
+.fluent-cart-search-bar-app-wrapper-result-wrap h5{
+    @apply text-system-light font-medium mt-0 mb-2 text-sm px-4 !important;
+}
+.fluent-cart-search-bar-app-list-wrapper{
+    @apply p-0 m-0 list-none !important;
+}
+.fluent-cart-search-bar-app-list-wrapper li a{
+    @apply px-4 py-2.5 block text-system-dark text-sm font-normal no-underline leading-[1.1] transition duration-200 hover:bg-gray-50 !important;
+}
+.fluent-cart-search-bar-app-list-wrapper li.is-empty{
+    @apply px-4 py-2.5 text-system-dark text-sm font-normal leading-[1.1] !important;
+}
+

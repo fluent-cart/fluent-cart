@@ -1,0 +1,50 @@
+.single-page{
+    &-header{
+        @apply pb-5;
+        &-title{
+            &-wrap{
+                @apply flex gap-2.5 items-center;
+                .el-breadcrumb{
+                    @apply flex items-center;
+                }
+            }
+        }
+        &-text{
+            @apply pt-1 text-xs text-system-mid dark:text-gray-300;
+        }
+        &-actions{
+            @apply flex gap-3 items-center;
+        }
+        &-status-wrap{
+            .badge{
+                @apply py-[5px] px-2;
+            }
+        }
+    }
+    &-body-header{
+        @apply flex justify-between items-center mb-5;
+        &-title-wrap{
+            p{
+                @apply mb-0;
+            }
+        }
+    }
+}
+
+span.fct_separator {
+    padding: 0 5px;
+    display: inline-block;
+    line-height: 100%;
+    vertical-align: middle;
+    &::after {
+        font-size: 14px;
+        content: "";
+        background: rgb(86 88 101 / var(--tw-text-opacity, 1));
+        margin: 0 4px 0;
+        width: 3px;
+        height: 3px;
+        display: block;
+        border-radius: 50%;
+    }
+}
+

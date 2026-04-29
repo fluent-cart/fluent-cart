@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --color-primary: #4F66F5;
+    --color-success: #22C55E;
+    --color-neutral: #666978;
+    --color-secondary: #60646B;
+    --color-warning: #FAA619;
+    --text-color: var(--color-neutral);
+    --body-bg: #F3F5FA;
+    --body-bg-dark: #11171D;
+
+}
+
+
+#wpcontent {
+    @apply dark:bg-dark-800;
+}
+
+#wpbody-content {
+    font-family: 'Inter', sans-serif !important;
+    @apply leading-5 text-system-mid min-h-[calc(100vh-95px)] dark:text-gray-300;
+}
+
+#wpbody-content * {
+    letter-spacing: 0.02em !important;
+}
+
+#wpbody-content a {
+    @apply no-underline;
+}
+
+#wpfooter {
+    @apply dark:bg-dark-800 dark:text-white;
+}
+body{
+    @apply bg-[var(--body-bg)] dark:bg-dark-800 antialiased;
+}
+body.dark{
+    background-color: var(--body-bg-dark);
+}
+img {
+    @apply overflow-hidden;
+}

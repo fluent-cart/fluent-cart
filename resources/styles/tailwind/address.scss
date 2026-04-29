@@ -1,0 +1,129 @@
+.fct-material-input {
+  @apply relative w-full;
+  &-label {
+    @apply antialiased text-gray-500 pointer-events-none absolute top-[14px] left-[13px] z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    &.is-focus {
+      @apply top-[3px] text-[12px];
+    }
+  }
+  .required-mark{
+    @apply text-red-500;
+  }
+  .el-input {
+    .el-input__wrapper {
+      @apply max-h-10 min-h-10;
+      input {
+        @apply m-0 outline-none shadow-none #{!important};
+        &:focus {
+          @apply outline-none shadow-none #{!important};
+        }
+      }
+    }
+
+    &.is-focus {
+      .el-input__wrapper {
+        @apply pt-[22px] pb-1.5 #{!important};
+      }
+    }
+  }
+}
+
+.fct-material-select {
+  @apply relative;
+  &-label {
+    @apply antialiased text-gray-500 pointer-events-none absolute top-4 left-[13px] z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    &.is-focus {
+      @apply top-1.5 text-xs;
+    }
+  }
+  .required-mark{
+    @apply text-red-500;
+  }
+  .el-select {
+    .el-select__wrapper {
+      @apply max-h-10 min-h-10;
+      input {
+        @apply m-0;
+      }
+      .el-select__selection {
+        @apply pl-0;
+      }
+    }
+    &.is-focus {
+      .el-select__wrapper {
+        @apply pt-[22px] pb-1.5;
+      }
+    }
+  }
+}
+
+/* fct-compact-form */
+.fct-compact-form {
+  @apply gap-0 !important;
+  .fct-material-input,
+  .setting-fields-inner {
+    @apply m-0 relative;
+    &:first-child{
+      .el-input__wrapper,
+      .el-select__wrapper {
+        @apply border-t-[1px] rounded-tl rounded-tr;
+      }
+    }
+    &:last-child{
+      .el-input__wrapper,
+      .el-select__wrapper {
+        @apply border-b-[1px] rounded-bl rounded-br;
+      }
+    }
+  }
+
+  .fct-material-input#store_state{
+    .el-input__wrapper{
+      @apply rounded-none border-b-[0.5px] border-t-[0.5px];
+    }
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper {
+    @apply min-h-12 rounded-none border-b-[0.5px] border-t-[0.5px];
+  }
+
+  .setting-fields-inner{
+    .el-input__wrapper,
+    .el-select__wrapper {
+      @apply min-h-[48px];
+    }
+  }
+  .city{
+    .fct-material-input{
+      .el-input__wrapper,
+      .el-select__wrapper {
+        @apply border-r-[0.5px] border-b-[1px] border-t-[0.5px] rounded-bl rounded-tr-none rounded-tl-none rounded-br-none;
+      }
+    }
+  }
+  .postcode{
+    .fct-material-input{
+      .el-input__wrapper,
+      .el-select__wrapper {
+        @apply border-l-[0.5px] border-b-[1px] border-t-[0.5px] rounded-br rounded-tr-none rounded-tl-none rounded-bl-none;
+      }
+    }
+  }
+}
+
+.fct-global-address-component-row {
+  @apply grid lg:grid-cols-2;
+}
+.fct-customer-address-section {
+  .el-select__wrapper{
+    &:first-child{
+      @apply border-t-[1px] rounded-tl rounded-tr;
+    }
+  }
+  .address_locale {
+    .el-select__wrapper{
+      @apply border-t-[0.5px] rounded-none;
+    }
+  }
+}

@@ -1,0 +1,9 @@
+.pagination-wrap{
+  @apply flex items-center justify-between py-4 flex-wrap gap-2.5;
+}
+.pager-wrap{
+  @apply flex gap-2.5 items-center;
+  .text{
+    @apply text-sm font-normal text-[var(--fct-customer-dashboard-paginator-text-color)] #{!important};
+  }
+}

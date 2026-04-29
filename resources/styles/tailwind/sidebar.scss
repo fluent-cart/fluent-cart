@@ -1,0 +1,48 @@
+/*==== sidebar =====*/
+.fct-admin-sidebar {
+    .card-header{
+        @apply pt-3.5;
+        &.border-bottom{
+            @apply pb-3.5;
+        }
+    }
+    .el-button.is-text{
+        @apply mt-3;
+    }
+    .no-address-text{
+        @apply my-0 leading-[1.7];
+    }
+    .sidebar-label{
+        @apply text-sm mb-2 text-system-dark font-medium dark:text-gray-50;
+    }
+    .sidebar-title{
+        @apply text-sm mb-2 text-system-dark font-semibold dark:text-gray-50;
+    }
+    .card .card-header-title.is-small{
+        @apply text-sm;
+    }
+}
+
+.fct-contact-info-list{
+    @apply m-0 p-0 list-none;
+    li{
+        @apply mb-4 last:mb-0;
+        .title{
+            @apply block text-system-mid text-xs mb-0.5 dark:text-gray-50;
+        }
+        .text{
+            @apply text-ellipsis overflow-hidden text-[13px] block text-system-mid leading-6 dark:text-gray-300;
+        }
+        a.text{
+            @apply text-[13px] text-dark-500 focus:shadow-none focus:outline-none hover:text-dark-600 dark:text-gray-50 dark:hover:text-gray-50;
+        }
+        .text-sub{
+            @apply text-system-mid text-[13px] dark:text-gray-300;
+        }
+    }
+}
+
+/*==== dashboard sidebar =====*/
+
+
+

@@ -1,0 +1,168 @@
+@config "./modal-checkout.config.js";
+@tailwind utilities;
+
+
+// Modal Checkout Styles
+.fct-checkout-modal-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    outline: 0;
+    z-index: 999999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: rgba(8, 10, 18, 0.92);
+
+    &.fct-checkout-modal-open {
+        opacity: 1;
+        visibility: visible;
+
+        .fct-checkout-modal {
+            transform: scale(1);
+        }
+    }
+}
+
+// Modal
+.fct-checkout-modal {
+    max-width: 1100px;
+    width: 90%;
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    margin: 4vh auto;
+
+  // Close Button
+  .fct-checkout-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    color: #565865;
+    padding: 0;
+    box-shadow: none;
+    opacity: 0.8;
+    border-radius: 50%;
+
+    &:hover,
+    &:focus {
+      color: #253241;
+      opacity: 1;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+/*== loader ==*/
+.fct-checkout-modal-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  z-index: 5;
+}
+
+.fct-checkout-modal-loader-spinner {
+  position: relative;
+  height: 50px;
+  width: 50px;
+  flex: none;
+  &:after,
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    border-radius: 9999px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #253241;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    animation: spin 1.3s linear infinite;
+  }
+  &:after {
+    transform: rotate(30deg);
+    top: 10%;
+    left: 10%;
+    height: 80%;
+    width: 80%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Iframe
+.fct-checkout-modal-iframe {
+    width: 100%;
+    border: none;
+    display: block;
+    background-color: #ffffff;
+}
+.fct-checkout-modal-content {
+  overflow: visible;
+}
+
+// Animation keyframes for loader
+@keyframes fct-pulse-loader {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+// Print styles - hide modal when printing
+@media print {
+    .fct-checkout-modal-container {
+        display: none !important;
+    }
+}
+
+
+@media (max-width: 768px) {
+    
+
+}

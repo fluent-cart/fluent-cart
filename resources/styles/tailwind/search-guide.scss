@@ -1,0 +1,51 @@
+.fct-search-guide-dialog {
+  @apply w-[600px] !important;
+}
+
+.el-button.fct-search-guide-btn{
+  @apply text-xs dark:bg-transparent !important;
+}
+.fct-search-guide-wrap {
+  @apply grid gap-6;
+  .fct-alert {
+    @apply text-xs;
+  }
+  h5 {
+    @apply mt-0 mb-2.5 text-sm font-medium leading-[20px] dark:text-gray-50;
+  }
+}
+
+.fct-search-guide-list {
+  @apply flex items-center gap-2 flex-wrap;
+  li {
+    @apply m-0;
+  }
+  .el-tag.el-tag--info {
+    @apply bg-gray-100 dark:bg-dark-500;
+  }
+}
+
+.fct-search-guide-examples-list{
+  @apply grid gap-2 max-h-[300px] overflow-y-scroll;
+  h5 {
+    @apply m-0;
+  }
+}
+
+.fct-search-guide-example-item {
+  @apply flex items-center justify-between cursor-pointer py-2 px-3 rounded bg-white border border-solid border-gray-outline transition-all hover:bg-gray-25 hover:border-primary-500 dark:hover:border-dark-400 dark:bg-dark-500 dark:border-dark-400 dark:hover:bg-dark-400;
+  &:hover{
+    .click-hint{
+      @apply opacity-100;
+    }
+  }
+  .example-query {
+    @apply text-sm font-normal text-system-dark dark:text-gray-50;
+  }
+  .example-description {
+    @apply text-xs text-system-mid dark:text-gray-300;
+  }
+  .click-hint {
+    @apply text-xs text-primary-500 transition-all opacity-0 dark:text-gray-300;
+  }
+}

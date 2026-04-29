@@ -239,7 +239,18 @@ class Confirmations
 
         // in case of plan change, and first payment is 0, then setup intent will be created
         if (strpos($intentId, 'seti_') === 0) {
-            $this->confirmSetupIntent($intentId);
+            $trxHash = sanitize_text_field(App::request()->get('trx_hash'));
+            if (empty($trxHash)) {
+                wp_send_json(['message' => __('Invalid request.', 'fluent-cart')], 400);
+            }
+            $result = $this->confirmSetupIntent($intentId, $trxHash);
+            if (is_wp_error($result)) {
+                wp_send_json(
+                    [
+                        'message' => $result->get_error_message(),
+                    ], 400
+                );
+            }
             wp_send_json(
                 [
                     'message' => __('Setup intent confirmed successfully. Please check your subscriptions.', 'fluent-cart'),
@@ -383,7 +394,7 @@ class Confirmations
         ]);
     }
 
-    public function confirmSetupIntent($setupIntent)
+    public function confirmSetupIntent($setupIntent, $trxHash = null)
     {
         $api = new API();
 
@@ -399,6 +410,17 @@ class Confirmations
             return new \WP_Error(
                 'transaction_not_found',
                 __('Transaction not found for the provided setup intent.', 'fluent-cart')
+            );
+        }
+
+        if ($trxHash !== null && $transaction->uuid !== $trxHash) {
+            return new \WP_Error('invalid_request', __('Invalid request.', 'fluent-cart'));
+        }
+
+        if (Arr::get($response, 'status') !== 'succeeded') {
+            return new \WP_Error(
+                'setup_intent_not_succeeded',
+                __('Payment method setup is not complete. Please complete the payment method setup.', 'fluent-cart')
             );
         }
 

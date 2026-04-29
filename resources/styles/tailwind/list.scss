@@ -1,0 +1,21 @@
+.fct-lists{
+  @apply m-0 p-0 list-none;
+  li {
+    @apply mb-2.5 flex items-center justify-between text-system-dark font-medium dark:text-gray-50;
+    span:last-child {
+      @apply text-system-mid font-normal dark:text-gray-300;
+    }
+    button {
+      span:last-child{
+        @apply text-inherit;
+      }
+    }
+  }
+}
+.fct-bullet-lists{
+  @apply m-0 py-0 pr-0 pl-3.5 list-disc;
+  li{
+
+  }
+}
+

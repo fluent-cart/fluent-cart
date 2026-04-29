@@ -1,0 +1,69 @@
+
+.fct-dashboard-recent-activities {
+	&__header {
+		@apply mb-6;
+		&_title {
+			@apply mt-0 mb-1 text-system-dark text-base font-medium leading-6;
+		}
+		&_desc {
+			@apply mt-0 mb-3 text-system-mid dark:text-system-light text-sm leading-5;
+		}
+		&_filter {
+			@apply gap-2.5;
+			.el-radio-button {
+				@apply h-auto;
+				&__inner {
+					@apply bg-transparent !shadow-none !border-0 text-system-mid font-normal !rounded leading-5 py-1 px-2.5 dark:text-gray-500;
+				}
+				&.is-active {
+					.el-radio-button__inner {
+						@apply bg-gray-100 font-medium text-system-dark dark:bg-primary-500 dark:text-gray-25 #{!important};
+					}
+				}
+			}
+		}
+	}
+	&__body {
+		@apply flex flex-col gap-6;
+	}
+	&__item {
+		@apply relative;
+		&:last-child {
+			&:before {
+				@apply hidden;
+			}
+		}
+		&:before {
+			content: '';
+			@apply bg-gray-200 w-[1px] absolute left-[13px] h-[calc(100%-24px)] top-9 dark:bg-dark-500;
+		}
+		.icon {
+			@apply flex items-center justify-center absolute top-0 left-0 border border-solid border-gray-200 w-7 h-7 rounded-full flex-none dark:border-dark-500;
+			svg {
+				path {
+					@apply dark:fill-gray-300;
+				}
+			}
+		}
+		.content {
+			.title {
+				@apply flex flex-col gap-1 justify-between items-start text-system-dark text-sm font-medium leading-5 mt-0 mb-1.5 dark:text-gray-50;
+				.date {
+					@apply text-system-light text-xs leading-4 font-normal;
+				}
+			}
+			.description {
+				@apply text-system-mid text-xs leading-4 m-0 dark:text-gray-400;
+			}
+			&_bottom {
+				@apply text-system-dark text-sm leading-5 mt-1 mb-0 block;
+			}
+			.created_by {
+				@apply text-system-mid text-xs leading-4 font-normal inline-block mt-1.5 dark:text-gray-300;
+			}
+		}
+		&.has-icon {
+			@apply pl-11;
+		}
+	}
+}

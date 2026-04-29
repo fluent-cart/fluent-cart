@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
     'FluentCart\\OpenSpout\\' => array($vendorDir . '/openspout/openspout/src'),
     'FluentCart\\Framework\\' => array($vendorDir . '/wpfluent/framework/src/WPFluent'),
     'FluentCart\\Dev\\' => array($baseDir . '/dev'),

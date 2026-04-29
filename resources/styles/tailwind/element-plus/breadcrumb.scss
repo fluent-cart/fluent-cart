@@ -1,0 +1,14 @@
+.el-breadcrumb{
+    &__inner{
+        @apply text-system-dark-light font-medium dark:text-gray-400;
+        a,
+        &.is-link{
+            @apply transition-none font-semibold text-system-dark hover:text-primary-500 dark:text-gray-50;
+        }
+    }
+    &__item:last-child {
+        .el-breadcrumb__inner{
+            @apply font-medium hover:text-system-dark-light hover:font-medium text-system-dark-light dark:text-gray-400 dark:hover:text-gray-400;
+        }
+    }
+}

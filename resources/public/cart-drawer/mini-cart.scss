@@ -1,0 +1,54 @@
+.fct-mini-cart-button {
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  color: inherit;
+  display: flex;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  gap: 0.65em;
+  line-height: 1;
+  padding: .5em;
+  white-space: nowrap;
+  cursor: pointer;
+
+  .fct-mini-cart-wrap {
+    align-items: center;
+    display: flex;
+    position: relative;
+    svg {
+      height: 1.25em;
+      width: 1.25em;
+    }
+    img {
+      height: 1.25em;
+      width: 1.25em;
+    }
+  }
+
+  .fct-mini-cart-badge {
+    border-radius: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    justify-content: center;
+    left: 100%;
+    position: absolute;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #fff;
+    background-color: rgb(58, 79, 102);
+    width: 1.40em;
+    height: 1.40em;
+    margin-left: -44%;
+    font-size: .875em;
+  }
+
+  .fct-mini-cart-amount {
+    display: initial;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+}

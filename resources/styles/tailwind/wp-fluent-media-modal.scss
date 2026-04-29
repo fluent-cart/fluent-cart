@@ -1,0 +1,334 @@
+.wp-fluent-media-modal{
+    .upload-ui{
+        .button{
+            @apply border-gray-outline border-[1.5px] border-dashed bg-white text-system-mid rounded-md hover:bg-gray-50 hover:text-system-dark transition-all duration-150 dark:bg-transparent dark:border-dark-400 dark:text-gray-50 dark:hover:border-dark-300 !important;
+        }
+    }
+    .button,
+    .button-primary{
+        @apply rounded-md bg-primary-500 border-primary-500 text-white hover:bg-primary-600 hover:border-primary-600 hover:text-white !important;
+        &:focus {
+            @apply dark:outline-none dark:shadow-none dark:bg-primary-500 border-primary-500 text-white !important;
+        }
+        &:hover {
+            @apply dark:bg-primary-400 border-primary-400 text-white !important;
+        }
+    }
+    .media-modal{
+        &-close{
+            @apply w-8 h-8 rounded-full bg-gray-100 text-system-mid top-3.5 right-5 focus:shadow-none focus:border-transparent dark:bg-dark-500 dark:text-gray-300 !important;
+        }
+        &-content{
+            @apply rounded dark:bg-dark-600 !important;
+        }
+        * {
+            &::-webkit-scrollbar {
+                @apply w-2;
+            }
+            &::-webkit-scrollbar-thumb {
+                @apply rounded-full bg-gray-500 dark:bg-gray-300;
+
+            }
+            &::-webkit-scrollbar-track {
+                @apply bg-transparent;
+            }
+        }
+    }
+    .media-frame-title {
+        h1 {
+            @apply py-3 px-6 text-lg dark:text-gray-50 !important;
+        }
+    }
+    .media-toolbar{
+        @apply px-6;
+    }
+    .media-attachments-filter-heading {
+        @apply left-6 top-5 dark:text-gray-50 !important;
+    }
+    .media-frame-router{
+        @apply h-[40px];
+    }
+    .media-frame-content{
+        @apply top-[96px] border-gray-outline dark:bg-dark-600 dark:border-dark-500 !important;
+    }
+    .media-router {
+        @apply px-6;
+        .media-menu-item{
+            @apply px-0 mr-5 pt-3 pb-4 text-[15px] text-system-mid focus:shadow-none focus:outline-none last:mr-0 dark:text-gray-300 !important;
+            &::before{
+                @apply absolute rounded-tl-sm rounded-tr-sm -bottom-[0.5px] left-0 w-full h-[2.5px] scale-50 opacity-0 bg-primary-500 transition-all duration-200 !important;
+                content: "";
+            }
+            &.active{
+                @apply ml-0 mt-0 mb-0 bg-transparent border-0 text-primary-500 dark:text-gray-300 !important;
+                &::before{
+                    @apply scale-100 opacity-100 dark:bg-gray-300 !important;
+                }
+            }
+        }
+        .active{
+            @apply ml-0 mt-0 mb-0 bg-transparent border-0 text-white !important;
+        }
+    }
+    .media-frame select.attachment-filters{
+        @apply max-w-[100%] w-full min-h-[38px] py-2 pl-3 rounded bg-blend-difference mt-11 hover:text-dark-500 focus:border-primary-500 focus:text-system-mid dark:hover:text-gray-50 dark:focus:text-gray-50 !important;
+        background-position: top 50% right 10px !important;
+    }
+    .media-frame {
+        input[type=search]{
+            @apply min-h-[38px] rounded mt-11 px-3 focus:border-primary-500;
+        }
+        .media-search-input-label{
+            @apply top-5 font-semibold dark:text-gray-50;
+        }
+    }
+    .attachments-browser .media-toolbar{
+        @apply h-[90px] dark:bg-transparent;
+    }
+    .attachments-browser{
+        .attachments{
+            @apply px-4.5;
+            .attachment {
+                @apply bg-transparent outline-none;
+            }
+        }
+        &.has-load-more .attachments-wrapper{
+            @apply top-[90px];
+        }
+        .attachments-wrapper {
+            @apply mr-0.5;
+        }
+    }
+    .attachment-preview{
+        @apply shadow-none bg-gray-50 rounded dark:bg-dark-600 !important;
+    }
+    .attachment {
+        .thumbnail{
+            @apply rounded;
+            &:after{
+                @apply shadow-none border border-solid border-gray-outline rounded dark:border-dark-500 !important;
+            }
+        }
+        &.details {
+            @apply shadow-none;
+            .check{
+                @apply bg-dark-500 border-[1.5px] border-solid border-white shadow-none focus:shadow-none dark:border-dark-500 !important;
+            }
+        }
+        .check{
+            @apply rounded-full shadow-none focus:shadow-none focus:bg-dark-600 !important;
+            .media-modal-icon{
+                @apply transition-all duration-300;
+            }
+        }
+    }
+    .attachment.details:focus, 
+    .attachment:focus, 
+    .selected.attachment:focus{
+        @apply focus:shadow-none focus:outline-none !important;
+    }
+    .selected{
+        &.attachment {
+            @apply shadow-none !important;
+        }
+        .thumbnail::after{
+            @apply border-[2px] border-dark-500 !important;
+        }
+    }
+    .media-frame-toolbar {
+        .media-toolbar{
+            @apply border-gray-outline dark:border-dark-500;
+        }
+    }
+    .media-sidebar{
+        @apply border-gray-outline bg-gray-50 dark:bg-dark-600 dark:border-dark-500 mr-0.5;
+        .setting {
+            .name {
+                @apply dark:text-gray-200;
+            }
+        }
+        .label,
+        p {
+            @apply dark:text-gray-300;
+        }
+        .compat-item {
+            label {
+                span {
+                    @apply dark:text-gray-300;
+                }
+            }
+        }
+    }
+    .image-details .media-embed h2, 
+    .media-sidebar h2{
+        @apply text-system-dark dark:text-gray-50;
+    }
+    .attachment-details{
+        p {
+            @apply dark:text-gray-400;
+        }
+    }
+    .attachment-info{
+        @apply border-gray-outline dark:border-dark-500;
+        .filename{
+            @apply dark:text-gray-300;
+        }
+        .details{
+            @apply dark:text-gray-400;
+        }
+        .thumbnail{
+            img{
+                @apply rounded;
+            }
+        }
+        .thumbnail,
+        .thumbnail img {
+            @apply max-w-[100px] max-h-[100px];
+        }
+        .thumbnail-image:after{
+            @apply shadow-none border border-solid border-gray-outline rounded dark:border-dark-500;
+        }
+    }
+    .media-frame.hide-router .media-frame-content {
+        @apply top-[64px];
+    }
+    .edit-attachment{
+        @apply text-dark-500 mt-1.5 hover:text-dark-700 dark:text-gray-200;
+    }
+    a {
+        @apply dark:text-gray-200 dark:underline;
+        &:hover {
+            @apply dark:text-gray-50;
+        }
+    }
+    .delete-attachment{
+        @apply mt-1;
+    }
+    .copy-attachment-url{
+        @apply border-gray-outline text-system-mid bg-white focus:shadow-none focus:outline-none hover:bg-white hover:text-dark-500 focus:border-gray-outline focus:bg-white hover:border-gray-outline dark:bg-dark-500 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:focus:bg-dark-500 dark:focus:border-dark-400 dark:hover:text-gray-50 dark:focus:text-gray-50 !important;
+    }
+    .description a{
+        @apply text-dark-500 dark:text-gray-200;
+    }
+    .image-editor .imgedit-menu .button{
+        @apply border-dark-100 text-dark-500 bg-white hover:bg-dark-50 hover:border-dark-200 focus:shadow-none focus:outline-none dark:bg-transparent dark:border-dark-400 dark:text-gray-50;
+    }
+    .uploader-inline {
+        .upload-message{
+            @apply mb-2.5;
+        }
+        h2{
+            @apply font-semibold dark:text-gray-50;
+        }
+        p{
+            @apply dark:text-gray-200;
+        }
+    }
+    input[type=color], 
+    input[type=date], 
+    input[type=datetime-local], 
+    input[type=datetime], 
+    input[type=email], 
+    input[type=month], 
+    input[type=number], 
+    input[type=password], 
+    input[type=search], 
+    input[type=tel], 
+    input[type=text], 
+    input[type=time], 
+    input[type=url], 
+    input[type=week], 
+    select, 
+    textarea {
+        @apply border-gray-outline focus:border-primary-500 focus:outline-none focus:shadow-none dark:text-gray-50 dark:bg-dark-500 dark:border-dark-400 dark:focus:border-dark-400;
+        &::placeholder{
+            @apply dark:text-gray-200;
+        }
+    }
+    .media-menu{
+        @apply dark:bg-transparent dark:border-dark-600;
+        .media-menu-item{
+            @apply dark:text-gray-200;
+        }
+    }
+    .media-frame-menu-heading{
+        @apply dark:text-gray-50;
+    }
+    .imgedit-group-top h2, 
+    .imgedit-group-top h2 .button-link {
+        @apply dark:text-gray-200;
+    }
+    .imgedit-help p{
+        @apply dark:text-gray-400;
+    }
+    .image-editor .imgedit-menu .button{
+        @apply min-h-[30px];
+    }
+    &.wp-core-ui.media-modal .image-editor .imgedit-help-toggle{
+        @apply text-dark-500 focus:shadow-none focus:border-transparent focus:outline-none text-base mt-0.5;
+    }
+    .button.disabled,
+    .button-primary:focus,
+    .button-primary:disabled,
+    .button-primary[disabled],
+    .button:disabled, 
+    .button[disabled]{
+        @apply dark:bg-dark-500 dark:border-dark-500 #{!important};
+        text-shadow: none;
+    }
+    .button{
+        @apply min-h-[38px] rounded text-sm focus:shadow-none;
+    }
+    .load-more-count{
+        @apply dark:text-gray-300;
+    }
+    .kadence-blocks-image-picker {
+        .kadence-blocks-image-picker-contents {
+            .kadence-blocks-image-picker-search-container {
+                @apply dark:bg-dark-600 dark:border-primary-500;
+                .kb-pexels-search {
+                    .components-input-control__container {
+                        @apply bg-transparent;
+                        input {
+                            @apply dark:bg-primary-500 rounded dark:text-gray-50;
+                            &::placeholder {
+                                @apply dark:text-gray-50;
+                            }
+                        }
+                        .components-input-control__backdrop {
+                            @apply dark:border-primary-500 rounded;
+                        }
+                    }
+                    .kb-pexels-search-send {
+                        @apply outline-none flex items-center gap-1 border-0 p-0 pl-3 pr-0.5 rounded cursor-pointer;
+                    }
+                }
+            }
+            .kadence-blocks-image-picker-sidebar {
+                @apply dark:bg-dark-600 dark:border-dark-500;
+                * {
+                    @apply dark:text-gray-50;
+                }
+                .components-input-control__container {
+                    @apply bg-transparent;
+                    input {
+                        @apply dark:bg-primary-500 dark:text-gray-50 rounded;
+                        &::placeholder {
+                            @apply dark:text-gray-50;
+                        }
+                    }
+                    .components-input-control__backdrop {
+                        @apply dark:border-primary-400 rounded bg-transparent;
+                    }
+                }
+                .download-button {
+                    @apply dark:border-0 dark:bg-gray-100 dark:text-system-dark p-2 font-medium cursor-pointer;
+                }
+            }
+        }
+    }
+}
+.media-sidebar:not(:has(.attachment-details))::before{
+    @apply absolute top-1/2 left-3 w-[90%] mx-auto leading-[22px] text-center text-sm text-system-mid dark:text-gray-300;
+    content: 'No media information available. Please select image.';
+}

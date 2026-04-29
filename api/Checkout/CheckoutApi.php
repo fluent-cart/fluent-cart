@@ -293,13 +293,14 @@ class CheckoutApi
         }
 
         if ($shippingAddressId && $shipToDifferent === 'yes') {
-            $prevShippingAddress = Order::find($orderId)->shipping_address;
+            $prevShippingOrder = Order::query()->find($orderId);
+            $prevShippingAddress = $prevShippingOrder ? $prevShippingOrder->shipping_address : null;
             $prevShippingId = Arr::get($prevShippingAddress, 'id', null);
             $shippingAddress = null;
             if ($orderId && $prevShippingId == $shippingAddressId) {
                 $shippingAddress = OrderAddress::query()
                     ->where('id', $shippingAddressId)
-                    ->where('type', 'billing')
+                    ->where('type', 'shipping')
                     ->first();
             }
             if (empty($shippingAddress)) {

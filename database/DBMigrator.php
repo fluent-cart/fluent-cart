@@ -184,6 +184,15 @@ class DBMigrator
 
             $ordersTable = $wpdb->prefix . 'fct_orders';
 
+            if (!Schema::hasColumn('fee_total', 'fct_orders')) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+                $wpdb->query($wpdb->prepare(
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+                    "ALTER TABLE %i ADD COLUMN `fee_total` BIGINT NOT NULL DEFAULT '0' AFTER `shipping_total`",
+                    $ordersTable
+                ));
+            }
+
             // check if scheduled_at is exist or not
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
             $isReceiptNumberMigrated = $wpdb->get_col($wpdb->prepare("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='receipt_number' AND TABLE_NAME=%s", $ordersTable));
