@@ -20,14 +20,14 @@
               <span v-if="transaction.status === 'succeeded'">{{$t('Payment')}}</span>
 
               <Badge :type="transaction.status" size="small">
-                {{ transaction.status }}
+                {{ getStatusText(transaction.status) }}
               </Badge>
 
-              <time 
-                datetime="{{ transaction.created_at }}" 
+              <time
+                datetime="{{ transaction.created_at }}"
                 :aria-label="$t('Transaction date') + ': ' + dateTimeI18(transaction.created_at)"
               >
-                on {{ dateTimeI18(transaction.created_at) }}
+                {{ $t('on') }} {{ dateTimeI18(transaction.created_at) }}
               </time>
 
               <span v-if="transaction.status === 'succeeded'" class="mr-1">{{$t('using')}}</span>
@@ -44,7 +44,7 @@
 
               <el-tooltip
                   v-if=" transaction.meta && transaction.meta.refunded_total"
-                  :content="`Partially refunded: ${formatNumber(transaction.meta.refunded_total)}`"
+                  :content="translate('Partially refunded: %s', formatNumber(transaction.meta.refunded_total))"
                   placement="top"
               >
                 <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
@@ -75,14 +75,14 @@
                 <span v-if="firstTxn.status === 'succeeded'">{{$t('Payment')}}</span>
 
                 <Badge :type="firstTxn.status" size="small">
-                  {{ firstTxn.status }}
+                  {{ getStatusText(firstTxn.status) }}
                 </Badge>
 
-                <time 
-                  datetime="{{ firstTxn.created_at }}" 
+                <time
+                  datetime="{{ firstTxn.created_at }}"
                   :aria-label="$t('Transaction date') + ': ' + dateTimeI18(firstTxn.created_at)"
                 >
-                  on {{ dateTimeI18(firstTxn.created_at) }}
+                  {{ $t('on') }} {{ dateTimeI18(firstTxn.created_at) }}
                 </time>
 
                 <span v-if="firstTxn.status === 'succeeded'">
@@ -103,7 +103,7 @@
 
                 <el-tooltip
                     v-if="transaction.total_refund > 0"
-                    :content="`Partially refunded: ${formatNumber(transaction.total_refund)}`"
+                    :content="translate('Partially refunded: %s', formatNumber(transaction.total_refund))"
                     placement="top"
                 >
                   <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
@@ -135,6 +135,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import {computed} from "vue";
 import {dateTimeI18} from "../../translator/Translator";
+import Str from "@/utils/support/Str";
 
 const props = defineProps({
   transactions: Object,
@@ -151,4 +152,36 @@ const receiptUrl = (uuid) => {
 const assetsPath = computed(() => {
   return window.fluentcart_customer_profile_vars.assets_path;
 });
+
+const getStatusText = (status) => {
+  const map = {
+    completed: translate('Completed'),
+    paid: translate('Paid'),
+    active: translate('Active'),
+    publish: translate('Published'),
+    draft: translate('Draft'),
+    shipped: translate('Shipped'),
+    success: translate('Success'),
+    licensed: translate('Licensed'),
+    succeeded: translate('Succeeded'),
+    failed: translate('Failed'),
+    error: translate('Error'),
+    canceled: translate('Canceled'),
+    expired: translate('Expired'),
+    partially_paid: translate('Partially Paid'),
+    intended: translate('Intended'),
+    scheduled: translate('Scheduled'),
+    'on-hold': translate('On Hold'),
+    pending: translate('Pending'),
+    unpaid: translate('Unpaid'),
+    warning: translate('Warning'),
+    processing: translate('Processing'),
+    future: translate('Future'),
+    inactive: translate('Inactive'),
+    dispute: translate('Dispute'),
+    disabled: translate('Disabled'),
+    beta: translate('Beta'),
+  };
+  return map[status] ?? Str.headline(status);
+};
 </script>

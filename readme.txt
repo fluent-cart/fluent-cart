@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.23
+Stable tag: 1.3.25
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,21 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.3.25 (Apr 30, 2026) =
+- Fixes Sites with www and non-www counted as separate activations
+- Fixes Subscription orders with coupon discounts getting stuck after checkout
+- Fixes Duplicate renewal records created during payment processing
+- Fixes Page freeze when clicking empty mini cart
+- Fixes Max-width constraints and responsive padding on product pages
+- Fixes Incorrect coupon expiration time in admin dashboard
+- Fixes Shipping overcharge with multiple shipping classes in cart
+- Fixes Free shipping adding class surcharges with multiple shipping classes
+- Fixes Paddle subscriptions not cancelling immediately after refund
+- Fixes Customer lifetime stats not updating after refund
+- Fixes Double encryption when saving Stripe settings
+- Fixes Raw transaction and subscription status keys shown in customer portal
+- Improves Product variation management
 
 = 1.3.23 (Apr 28, 2026) =
 - Adds Subscription access end date in cancellation emails

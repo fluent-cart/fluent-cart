@@ -171,6 +171,7 @@ return [
     'Page %1$s of %2$s' => __('Page %1$s of %2$s', 'fluent-cart'),
     'Paid' => __('Paid', 'fluent-cart'),
     'Partially Paid' => __('Partially Paid', 'fluent-cart'),
+    'Partially refunded: %s' => __('Partially refunded: %s', 'fluent-cart'),
     'Pay Now' => __('Pay Now', 'fluent-cart'),
     'Pay Remaining Installments' => __('Pay Remaining Installments', 'fluent-cart'),
     'PayPal Payment' => __('PayPal Payment', 'fluent-cart'),
@@ -259,6 +260,7 @@ return [
     'Transaction date' => __('Transaction date', 'fluent-cart'),
     'Transactions' => __('Transactions', 'fluent-cart'),
     'Transactions Table' => __('Transactions Table', 'fluent-cart'),
+    'Trialing' => __('Trialing', 'fluent-cart'),
     'Type' => __('Type', 'fluent-cart'),
     'Unpaid' => __('Unpaid', 'fluent-cart'),
     'Unshipped' => __('Unshipped', 'fluent-cart'),
@@ -296,6 +298,8 @@ return [
     'You can update your card' => __('You can update your card', 'fluent-cart'),
     'You have reached your 24 hours limit for updating card. Please try again tomorrow.' => __('You have reached your 24 hours limit for updating card. Please try again tomorrow.', 'fluent-cart'),
     'Your Recent Purchases' => __('Your Recent Purchases', 'fluent-cart'),
+    /* translators: %s is the expiration date  */
+    'Your license has been expired at %s. Please renew the license for getting updates and support.' => __('Your license has been expired at %s. Please renew the license for getting updates and support.', 'fluent-cart'),
     'Your next billing date is:' => __('Your next billing date is:', 'fluent-cart'),
     'Your purchases will be shown here!' => __('Your purchases will be shown here!', 'fluent-cart'),
     /* translators: %s is the expiration date  */

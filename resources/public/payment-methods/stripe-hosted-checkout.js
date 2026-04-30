@@ -4,8 +4,10 @@
  */
 
 window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
-    const translate = window.fluentcart.$t || ((str) => str);
-    const $t = translate;
+    const $t = function(string) {
+        const translations = window.fct_stripe_data?.translations || {};
+        return translations[string] || string;
+    };
     
     window.dispatchEvent(new CustomEvent('fluent_cart_payment_method_loading', {
         detail: {

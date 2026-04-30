@@ -20,9 +20,10 @@
                 <div v-if="license.renewal_url && license.status === 'expired'" class="fct-renew-box mb-4">
                     <el-alert type="error" :closable="false" role="alert" aria-live="assertive">
                         <div class="text-center p-4">
-                            <p class="p-0 m-0 mb-3">Your license has been expired at
-                                {{ dateTimeI18(license.expiration_date) }}. Please renew the license for getting updates
-                                and support.</p>
+                            <p class="p-0 m-0 mb-3">
+                                <!-- translators: %s is the expiration date -->
+                                {{ $t('Your license has been expired at %s. Please renew the license for getting updates and support.', dateTimeI18(license.expiration_date)) }}
+                            </p>
                             <a :href="license.renewal_url" class="el-button el-button--primary" :aria-label="$t('Renew License')">
                                 {{ $t('Renew License') }}
                             </a>

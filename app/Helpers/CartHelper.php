@@ -478,39 +478,19 @@ class CartHelper
             return 0;
         }
 
-        $totalShippingAmount = 0;
-
-        // Preload all class-specific methods in a single query
-        $classMethodsMap = [];
-        $classIdsWithMethods = array_filter(array_unique(array_column($groups, 'class_id')));
-        if ($classIdsWithMethods && $country) {
-            $allClassMethods = ShippingMethod::query()
-                ->whereHas('zone', function ($q) use ($country, $classIdsWithMethods) {
-                    $q->where(function ($zq) use ($country) {
-                        $zq->whereIn('region', [$country, 'all'])
-                           ->orWhere('region', 'selection');
-                    })
-                    ->whereIn('shipping_class_id', $classIdsWithMethods);
-                })
-                ->where('is_enabled', 1)
-                ->orderBy('amount', 'DESC')
-                ->with('zone')
-                ->get()
-                ->filter(function ($method) use ($country) {
-                    if (!$method->zone || $method->zone->region !== 'selection') {
-                        return true;
-                    }
-                    return $method->zone->appliesToCountry($country);
-                });
-
-            // Group by shipping_class_id
-            foreach ($allClassMethods as $method) {
-                $classId = $method->zone->shipping_class_id ?? null;
-                if ($classId) {
-                    $classMethodsMap[$classId][] = $method;
+        // Early return for free_shipping — no base rate, no class surcharges
+        if ($selectedMethod->type === 'free_shipping') {
+            if ($returnType === 'items') {
+                foreach ($cartItems as $key => $item) {
+                    $cartItems[$key]['shipping_charge'] = 0;
+                    $cartItems[$key]['itemwise_shipping_charge'] = 0;
                 }
+                return ['items' => $cartItems, 'shipping_amount' => 0];
             }
+            return 0;
         }
+
+        $totalShippingAmount = 0;
 
         // Preload all variations for weight calculation (avoids N+1 per group)
         $allVariationIds = [];
@@ -525,37 +505,82 @@ class CartHelper
             ? ProductVariation::query()->whereIn('id', $allVariationIds)->get()->keyBy('id')
             : new \FluentCart\Framework\Support\Collection();
 
+        // Compute cart-wide totals BEFORE the group loop (for per_order/per_price/per_weight base rate)
+        $cartTotalPrice = 0;
+        $cartTotalQuantity = 0;
+        foreach ($physicalItems as $item) {
+            $quantity = Arr::get($item, 'quantity', 1);
+            $cartTotalQuantity += $quantity;
+            $cartTotalPrice += ($quantity * Arr::get($item, 'unit_price', 0)) - Arr::get($item, 'discount_total', 0);
+        }
+
+        // Calculate the method base rate ONCE using cart-wide totals
+        $settings = Arr::wrap($selectedMethod->settings);
+        $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
+        $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
+
+        if ($configureRate === 'per_order') {
+            $methodBaseRate = Helper::toCent($selectedMethod->amount);
+        } elseif ($configureRate === 'per_price') {
+            $methodBaseRate = $cartTotalPrice * ($selectedMethod->amount / 100);
+        } elseif ($configureRate === 'per_weight') {
+            $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
+            $totalWeight = 0;
+
+            foreach ($physicalItems as $item) {
+                $varId = Arr::get($item, 'object_id', Arr::get($item, 'variation_id'));
+                $variation = $varId ? $allVariationsMap->get($varId) : null;
+                if ($variation) {
+                    $otherInfo = $variation->other_info ?: [];
+                    $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
+                    $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
+                    $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
+
+                    $packageSlug = Arr::get($otherInfo, 'package_slug', '');
+                    $package = Helper::getPackageBySlug($packageSlug);
+                    $packageWeight = 0;
+                    if ($package) {
+                        $packageWeightUnit = Arr::get($package, 'weight_unit', $storeWeightUnit);
+                        $packageWeight = Helper::convertWeight(
+                            floatval(Arr::get($package, 'weight', 0)),
+                            $packageWeightUnit,
+                            $storeWeightUnit
+                        );
+                    }
+
+                    $totalWeight += ($convertedProductWeight + $packageWeight) * Arr::get($item, 'quantity', 1);
+                }
+            }
+
+            $weightTiers = Arr::get($settings, 'weight_tiers', []);
+            $methodBaseRate = 0;
+            foreach ($weightTiers as $tier) {
+                $min = floatval(Arr::get($tier, 'min', 0));
+                $max = floatval(Arr::get($tier, 'max', 0));
+                if ($totalWeight >= $min && ($max <= 0 || $totalWeight <= $max)) {
+                    $methodBaseRate = Helper::toCent(floatval(Arr::get($tier, 'cost', 0)));
+                    break;
+                }
+            }
+        } else {
+            // per_item
+            $methodBaseRate = Helper::toCent($selectedMethod->amount) * $cartTotalQuantity;
+        }
+
+        // Accumulate class surcharges across all groups
+        $allGroupsClassCharge = 0;
+        $allGroupsMaxClassCharge = 0;
+
         foreach ($groups as $groupKey => &$group) {
             $classId = $group['class_id'];
             $groupItems = $group['items'];
 
-            // Find the applicable method for this group (from preloaded map)
-            $groupMethod = $selectedMethod;
-            if ($classId && isset($classMethodsMap[$classId])) {
-                $classMethods = $classMethodsMap[$classId];
-                $matched = false;
-                foreach ($classMethods as $m) {
-                    if ($m->id == $shippingMethodId) {
-                        $groupMethod = $m;
-                        $matched = true;
-                        break;
-                    }
-                }
-                if (!$matched) {
-                    $groupMethod = $classMethods[0];
-                }
-            }
-
-            // Calculate group totals
-            $groupTotalPrice = 0;
-            $groupTotalQuantity = 0;
-            $groupMaxClassCharge = 0;
+            // Calculate class surcharges for this group
             $groupTotalClassCharge = 0;
+            $groupMaxClassCharge = 0;
 
             foreach ($groupItems as &$gItem) {
                 $quantity = Arr::get($gItem, 'quantity', 1);
-                $groupTotalQuantity += $quantity;
-                $groupTotalPrice += ($quantity * Arr::get($gItem, 'unit_price', 0)) - Arr::get($gItem, 'discount_total', 0);
 
                 // Calculate class surcharge per item
                 $itemClassCharge = 0;
@@ -575,80 +600,32 @@ class CartHelper
             }
             unset($gItem);
 
-            // Calculate method-level amount for this group
-            $settings = Arr::wrap($groupMethod->settings);
-            $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
-            $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
+            $allGroupsClassCharge += $groupTotalClassCharge;
+            $allGroupsMaxClassCharge = max($allGroupsMaxClassCharge, $groupMaxClassCharge);
 
-            if ($groupMethod->type === 'free_shipping') {
-                $methodAmount = 0;
-            } elseif ($configureRate === 'per_order') {
-                $methodAmount = $groupMethod->amount * 100;
-            } elseif ($configureRate === 'per_price') {
-                $methodAmount = $groupTotalPrice * ($groupMethod->amount / 100);
-            } elseif ($configureRate === 'per_weight') {
-                $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
-                $totalWeight = 0;
+            $group['items'] = $groupItems;
+            $group['class_charge'] = $groupTotalClassCharge;
+        }
+        unset($group);
 
-                foreach ($groupItems as $gItem) {
-                    $varId = Arr::get($gItem, 'object_id', Arr::get($gItem, 'variation_id'));
-                    $variation = $varId ? $allVariationsMap->get($varId) : null;
-                    if ($variation) {
-                        $otherInfo = $variation->other_info ?: [];
-                        $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
-                        $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
-                        $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
+        // Compute total: base rate (once) + class surcharges
+        if ($classAggregation === 'highest_class') {
+            $totalShippingAmount = $methodBaseRate + $allGroupsMaxClassCharge;
+        } else {
+            $totalShippingAmount = $methodBaseRate + $allGroupsClassCharge;
+        }
 
-                        $packageSlug = Arr::get($otherInfo, 'package_slug', '');
-                        $package = Helper::getPackageBySlug($packageSlug);
-                        $packageWeight = 0;
-                        if ($package) {
-                            $packageWeightUnit = Arr::get($package, 'weight_unit', $storeWeightUnit);
-                            $packageWeight = Helper::convertWeight(
-                                floatval(Arr::get($package, 'weight', 0)),
-                                $packageWeightUnit,
-                                $storeWeightUnit
-                            );
-                        }
+        // Distribute the total shipping amount across all physical items proportionally
+        $totalLineTotal = 0;
+        foreach ($physicalItems as $item) {
+            $totalLineTotal += Arr::get($item, 'line_total', 0);
+        }
 
-                        $totalWeight += ($convertedProductWeight + $packageWeight) * Arr::get($gItem, 'quantity', 1);
-                    }
-                }
-                $weightTiers = Arr::get($settings, 'weight_tiers', []);
-                $methodAmount = 0;
-                foreach ($weightTiers as $tier) {
-                    $min = floatval(Arr::get($tier, 'min', 0));
-                    $max = floatval(Arr::get($tier, 'max', 0));
-                    if ($totalWeight >= $min && ($max <= 0 || $totalWeight <= $max)) {
-                        $methodAmount = Helper::toCent(floatval(Arr::get($tier, 'cost', 0)));
-                        break;
-                    }
-                }
-            } else {
-                // per_item
-                $methodAmount = $groupMethod->amount * $groupTotalQuantity * 100;
-            }
-
-            // Add class aggregation
-            if ($classAggregation === 'highest_class') {
-                $methodAmount += $groupMaxClassCharge;
-            } else {
-                $methodAmount += $groupTotalClassCharge;
-            }
-
-            // Distribute method-level portion across group items proportionally
-            $methodOnlyAmount = $methodAmount - $groupTotalClassCharge;
-            if ($methodOnlyAmount < 0) {
-                $methodOnlyAmount = 0;
-            }
-
-            $totalLineTotal = 0;
-            foreach ($groupItems as $gItem) {
-                $totalLineTotal += Arr::get($gItem, 'line_total', 0);
-            }
-
-            $distributed = 0;
-            $itemCount = count($groupItems);
+        $methodOnlyAmount = $methodBaseRate;
+        $distributed = 0;
+        $itemCount = count($physicalItems);
+        foreach ($groups as $groupKey => &$group) {
+            $groupItems = $group['items'];
             foreach ($groupItems as $idx => &$gItem) {
                 if ($totalLineTotal > 0) {
                     $share = (Arr::get($gItem, 'line_total', 0) / $totalLineTotal) * $methodOnlyAmount;
@@ -660,18 +637,20 @@ class CartHelper
                 $distributed += $share;
             }
             unset($gItem);
-
-            $diff = round($methodOnlyAmount - $distributed, 2);
-            if ($diff != 0 && !empty($groupItems)) {
-                $lastIdx = array_key_last($groupItems);
-                $groupItems[$lastIdx]['itemwise_shipping_charge'] += ceil($diff);
-            }
-
             $group['items'] = $groupItems;
-            $group['amount'] = $methodAmount;
-            $totalShippingAmount += $methodAmount;
+            $group['amount'] = $group['class_charge'];
         }
         unset($group);
+
+        // Correct rounding difference on last physical item
+        $diff = round($methodOnlyAmount - $distributed, 2);
+        if ($diff != 0) {
+            $lastGroupKey = array_key_last($groups);
+            if ($lastGroupKey !== null && !empty($groups[$lastGroupKey]['items'])) {
+                $lastItemIdx = array_key_last($groups[$lastGroupKey]['items']);
+                $groups[$lastGroupKey]['items'][$lastItemIdx]['itemwise_shipping_charge'] += ceil($diff);
+            }
+        }
 
         // Merge group items back into cartItems
         foreach ($groups as $group) {

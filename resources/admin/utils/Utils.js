@@ -23,7 +23,7 @@ export default class Utils {
 export function dateTimeI18(dateTime, format = 'MMM DD') {
 
     const datei18 = AppConfig.get('datei18');
-    const date = dayjs(dateTime).locale({
+    const date = dayjs.utc(dateTime).local().locale({
         name: 'fluent_date_time',
         weekdays: Object.values(datei18.weekdays),
         weekdaysShort: Object.values(datei18.weekdaysShort),

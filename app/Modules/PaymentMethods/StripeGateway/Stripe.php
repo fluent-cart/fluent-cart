@@ -196,7 +196,12 @@ class Stripe extends AbstractPaymentGateway
         $mode = Arr::get($data, 'payment_mode', 'test');
 
         if ('connect' == $provider) {
-            $data[$mode . '_secret_key'] = Helper::encryptKey(Arr::get($data, $mode . '_secret_key'));
+            $currentKey = Arr::get($data, $mode . '_secret_key', '');
+            $oldKey = Arr::get($oldSettings, $mode . '_secret_key', '');
+
+            if ($currentKey !== $oldKey) {
+                $data[$mode . '_secret_key'] = Helper::encryptKey($currentKey);
+            }
         }
 
         if (Arr::get($data, 'provider') === 'api_keys') {

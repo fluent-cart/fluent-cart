@@ -121,6 +121,11 @@ const loadVariantFromProps = async () => {
   } else if (props.modeType === 'duplicate') {
     variant.value = cloneVariant(props.product.variants?.[props.index]);
     variant.value.serial_index = props.productEditModel.variantsLength() + 1;
+    variant.value.variation_title = `${translate('Copy of')} ${variant.value.variation_title || ''}`.trim();
+    variant.value.sku = '';
+    variant.value.on_hold = 0;
+    variant.value.committed = 0;
+    variant.value.available = variant.value.total_stock ?? 0;
     delete variant.value.id;
   } else {
     variant.value = {};
@@ -186,11 +191,12 @@ const saveDraftEntry = async (draftEntry) => {
 const saveCurrentVariant = async () => {
   try {
     let currentIndex = props.index;
-    const currentVariant = variant.value;
+    // Clone so no mutations to the reactive variant.value trigger watch(variant)
+    const currentVariant = cloneVariant(variant.value);
 
     if (props.modeType === 'duplicate') {
       currentIndex = props.productEditModel.variantsLength();
-      currentVariant.rowId = currentVariant.rowId + 1;
+      currentVariant.rowId = (currentVariant.rowId ?? 0) + 1;
     }
 
     let result = await props.productEditModel.createOrUpdatePricing(currentVariant);
@@ -199,7 +205,7 @@ const saveCurrentVariant = async () => {
     }
 
     currentVariant.id = result.data.id;
-    props.productEditModel.afterCreatingOrUpdatingPricing(currentIndex, currentVariant)
+    props.productEditModel.afterCreatingOrUpdatingPricing(currentIndex, currentVariant);
 
     if (currentIndex === undefined || currentIndex === null) {
       currentIndex = props.product.variants.findIndex(item => item?.id === currentVariant.id);
@@ -274,19 +280,19 @@ watch(variant, () => {
 }, {deep: true})
 
 watch(
-  () => [props.modeType, props.index],
-  () => {
-    loadVariantFromProps();
-  },
-  {immediate: true}
+    () => [props.modeType, props.index],
+    () => {
+      loadVariantFromProps();
+    },
+    {immediate: true}
 );
 
 watch(
-  dirtyDraftCount,
-  (count) => {
-    emit('dirtyStateChange', !!count);
-  },
-  {immediate: true}
+    dirtyDraftCount,
+    (count) => {
+      emit('dirtyStateChange', !!count);
+    },
+    {immediate: true}
 );
 
 keyboardShortcuts.bind(['mod+s'], (event) => {
@@ -313,10 +319,10 @@ defineExpose({
 <template>
   <div class="fct-product-pricing-form-wrap">
     <div class="fct-product-pricing-form-inner">
-        <el-form 
-            label-position="top"
-            require-asterisk-position="right"
-        >
+      <el-form
+          label-position="top"
+          require-asterisk-position="right"
+      >
         <!-- Media -->
         <VariantTitleMedia
             :variant="variant"
@@ -358,27 +364,26 @@ defineExpose({
     <div class="dialog-footer" v-if="modeType !=='add'">
       <div class="fct-btn-group sm">
         <el-button
-          v-if="dirtyDraftCount"
-          @click="discardDrafts"
-      >
-        {{ translate('Discard') }}
-      </el-button>
+            v-if="dirtyDraftCount"
+            @click="discardDrafts"
+        >
+          {{ translate('Discard') }}
+        </el-button>
 
-      <el-button @click="(() => {
+        <el-button @click="(() => {
         emit('closeModal')
       })">
-        {{ translate('Cancel') }}
-      </el-button>
-      
-      <el-button
-          :disabled="productEditModel.saving"
-          @click="handleVariantSave"
-          type="primary"
-      >
-        {{ typeof variant.id === 'undefined' ? translate('Save') : translate('Update') }}
-      </el-button>
+          {{ translate('Cancel') }}
+        </el-button>
+
+        <el-button
+            :disabled="productEditModel.saving || (modeType === 'update' && !dirtyDraftCount)"
+            @click="handleVariantSave"
+            type="primary"
+        >
+          {{ typeof variant.id === 'undefined' ? translate('Save') : translate('Update') }}
+        </el-button>
       </div>
     </div>
   </div>
 </template>
-

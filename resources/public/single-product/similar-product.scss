@@ -6,6 +6,9 @@
 .fct-similar-product-list-container {
     width: 100%;
     display: block;
+    max-width: 1290px;
+    margin-left: auto;
+    margin-right: auto;
     @apply @container/similar-product;
 
     @keyframes spin {
@@ -29,7 +32,7 @@
 }
 
 .fct-product-modal-close {
-  @apply absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-gray-50 bg-transparent p-0 border-0;
+  @apply bg-white absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-gray-50 p-0 border-0;
   svg {
     @apply w-3 h-3;
   }
@@ -66,6 +69,9 @@
         display: none;
     }
   }
+  .fct-single-product-page {
+    @apply px-0 !important;
+  }
 }
 
 .fluent-cart-similar-product-list {
@@ -81,6 +87,11 @@
   @apply grid gap-5;
   --fct-related-product-columns: 4;
   grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
+}
+@media (max-width: 1290px) {
+  .fct-similar-product-list-container {
+    @apply px-7.5;
+  }
 }
 
 @media (max-width: 1024px) {

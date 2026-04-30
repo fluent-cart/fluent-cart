@@ -517,7 +517,8 @@ class Subscription extends Model
         $args = wp_parse_args($args, [
             'reason'     => '',
             'fire_hooks' => true,
-            'note'       => ''
+            'note'       => '',
+            'effective_from' => ''
         ]);
 
         if ($this->status === Status::SUBSCRIPTION_CANCELED) {
@@ -566,6 +567,10 @@ class Subscription extends Model
             $config['cancellation_reason'] = $args['reason'];
         }
         $updateData['config'] = $config;
+
+        if (Arr::get($args, 'effective_from') === 'immediately') {
+            $updateData['next_billing_date'] = gmdate('Y-m-d H:i:s', time());
+        }
 
         $this->fill($updateData);
         $this->save();

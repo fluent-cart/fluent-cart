@@ -263,7 +263,10 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
+
+dayjs.extend(utc);
 import translate, {translateNumber} from "@/utils/translator/Translator";
 
 import Rest from "@/utils/http/Rest";
@@ -333,14 +336,17 @@ const fetchSettings = () => {
 };
 
 const isExpired = (endDate) => {
-  const currentDate = dayjs().format("YYYY-MM-DD");
-  const endDateFormatted = dayjs(endDate).format("YYYY-MM-DD");
-
-  if (endDateFormatted === "Invalid date") {
+  if (!endDate || endDate === '0000-00-00 00:00:00') {
     return false;
   }
 
-  return endDateFormatted < currentDate;
+  const end = dayjs.utc(endDate).local();
+
+  if (!end.isValid()) {
+    return false;
+  }
+
+  return end.isBefore(dayjs());
 };
 
 onMounted(() => {

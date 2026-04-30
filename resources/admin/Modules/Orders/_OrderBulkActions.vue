@@ -196,7 +196,7 @@ export default {
       this.$del('orders/' + this.order.id)
           .then(response => {
             handleSuccess(response.message);
-            this.$router.push({
+            this.$router.replace({
               name: 'orders'
             });
           })

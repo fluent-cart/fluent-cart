@@ -25,7 +25,7 @@
                             <template v-else>
                                 <p class="p-0 m-0 mb-3">
                                   <!-- translators: %s is the subscription status -->
-                                    {{ $t('Your subscription status is now: %s. Please reactivate to keep things running smoothly.', subscription.status) }}
+                                    {{ $t('Your subscription status is now: %s. Please reactivate to keep things running smoothly.', getStatusText(subscription.status)) }}
                                 </p>
                                 <a :href="subscription.reactivate_url" class="el-button el-button--primary" :aria-label="$t('Reactivate Subscription Plan')">
                                     {{ $t('Reactivate Subscription Plan') }}
@@ -231,8 +231,9 @@ import EarlyInstallmentPayment from "./UpdatePaymentInfos/EarlyInstallmentPaymen
 import LicenseTable from "../parts/LicenseTable.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import TransactionsTable from "../parts/TransactionTable.vue";
-import {pluralizeTranslate} from "../../translator/Translator";
+import translate, {pluralizeTranslate} from "../../translator/Translator";
 import {dateTimeI18} from "../../translator/Translator";
+import Str from "@/utils/support/Str";
 
 export default {
     name: "SingleSubscription",
@@ -304,6 +305,38 @@ export default {
         },
         subscriptionStatus() {
           return this.subscription?.overridden_status ? this.subscription?.overridden_status : this.subscription?.status;
+        },
+        getStatusText(status) {
+          const map = {
+            completed: translate('Completed'),
+            paid: translate('Paid'),
+            active: translate('Active'),
+            publish: translate('Published'),
+            draft: translate('Draft'),
+            shipped: translate('Shipped'),
+            success: translate('Success'),
+            licensed: translate('Licensed'),
+            succeeded: translate('Succeeded'),
+            failed: translate('Failed'),
+            error: translate('Error'),
+            canceled: translate('Canceled'),
+            expired: translate('Expired'),
+            partially_paid: translate('Partially Paid'),
+            intended: translate('Intended'),
+            scheduled: translate('Scheduled'),
+            'on-hold': translate('On Hold'),
+            pending: translate('Pending'),
+            unpaid: translate('Unpaid'),
+            warning: translate('Warning'),
+            processing: translate('Processing'),
+            future: translate('Future'),
+            inactive: translate('Inactive'),
+            dispute: translate('Dispute'),
+            disabled: translate('Disabled'),
+            beta: translate('Beta'),
+            trialing: translate('Trialing'),
+          };
+          return map[status] ?? Str.headline(status);
         }
     },
     mounted() {

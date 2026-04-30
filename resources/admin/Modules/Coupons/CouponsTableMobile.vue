@@ -151,7 +151,10 @@ import {$confirm, formatDate} from "@/Bits/common";
 import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import Rest from "@/utils/http/Rest";
+
+dayjs.extend(utc);
 import Notify from "@/utils/Notify";
 import Clipboard from "@/utils/Clipboard";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
@@ -170,14 +173,17 @@ const props = defineProps({
 
 
 const isExpired = (endDate) => {
-  const currentDate = dayjs().format("YYYY-MM-DD");
-  const endDateFormatted = dayjs(endDate).format("YYYY-MM-DD");
-
-  if (endDateFormatted === "Invalid date") {
+  if (!endDate || endDate === '0000-00-00 00:00:00') {
     return false;
   }
 
-  return endDateFormatted < currentDate;
+  const end = dayjs.utc(endDate).local();
+
+  if (!end.isValid()) {
+    return false;
+  }
+
+  return end.isBefore(dayjs());
 };
 
 const handleCommand = (command) => {

@@ -453,9 +453,11 @@ export default class FluentCartCart {
 
             // Handle expand button
             if (expandButton) {
-                if (cartDrawer) cartDrawer.classList.add(ref.#cartDrawerToggleClass);
+                if (cartDrawer) {
+                    cartDrawer.classList.add(ref.#cartDrawerToggleClass);
+                    bodyElement.style.overflow = 'hidden';
+                }
                 if (drawerOverlay) drawerOverlay.classList.add(ref.#cartDrawerOverlayActiveClass);
-                bodyElement.style.overflow = 'hidden';
                 return;
             }
 

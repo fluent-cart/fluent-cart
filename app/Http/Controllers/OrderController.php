@@ -257,7 +257,7 @@ class OrderController extends Controller
             'amount.required'         => __('Refund amount is required', 'fluent-cart'),
         ]);
 
-        $transaction = OrderTransaction::query()->findOrFail($refundInfo['transaction_id']);
+        $transaction = OrderTransaction::query()->where('order_id', $orderId)->findOrFail($refundInfo['transaction_id']);
         $refundAmount = Helper::toCent($refundInfo['amount']);
 
         // refund on our end
@@ -314,7 +314,8 @@ class OrderController extends Controller
 
         if ($cancelSubscription && $transaction->subscription_id && $transaction->subscription) {
             $vendorSubscriptionCancelled = $transaction->subscription->cancelRemoteSubscription([
-                'reason' => 'refunded'
+                'reason' => 'refunded',
+                'effective_from' => 'immediately'
             ]);
             if (is_wp_error($vendorSubscriptionCancelled)) {
                 $responseData['subscription_cancel']['status'] = 'failed';

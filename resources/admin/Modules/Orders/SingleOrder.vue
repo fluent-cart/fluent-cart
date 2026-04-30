@@ -1497,10 +1497,8 @@ export default {
           })
           .catch((errors) => {
             if (errors.code === "fluent_cart_entity_not_found") {
-              this.notFound.show = true;
-              this.notFound.buttonText = Arr.get(errors, "data.buttonText");
-              this.notFound.message = Arr.get(errors, "data.message");
-              this.notFound.route = Arr.get(errors, "data.route");
+              Notify.error(Arr.get(errors, "data.message") || translate("Order not found"));
+              this.$router.replace({ name: 'orders' });
             } else {
               if (errors.status_code == '422') {
                 Notify.validationErrors(errors);
