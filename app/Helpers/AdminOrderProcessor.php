@@ -248,6 +248,27 @@ class AdminOrderProcessor
 
         $totalAmount = $orderData['subtotal'] - $orderData['coupon_discount_total'] - $orderData['manual_discount_total'] + $orderData['shipping_total'] + $orderData['tax_total'];
         $orderData['total_amount'] = $totalAmount > 0 ? $totalAmount : 0;
+
+        /**
+         * Filter the prepared order data before it is used for order creation.
+         *
+         * This mirrors the frontend checkout hook so integrations can adjust
+         * order payload fields consistently for manual admin orders too.
+         *
+         * @param array $orderData Prepared order data array.
+         * @param array $context {
+         *     Additional context for the filter.
+         *
+         *     @type array $items Formatted order items with prices and quantities.
+         *     @type array $args  Admin order arguments: customer data, payment
+         *                        method, shipping, tax, notes, and IP data.
+         * }
+         */
+        $orderData = apply_filters('fluent_cart/checkout/order_data', $orderData, [
+            'items' => $this->formattedIOrderItems,
+            'args'  => $this->args,
+        ]);
+
         $this->orderData = $orderData;
     }
 
