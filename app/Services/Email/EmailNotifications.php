@@ -409,82 +409,105 @@ class EmailNotifications
 
     }
 
+
+    private static function getRecipientEmail($recipient, $mailingSettings, $notification = null, $viewData = []): string
+	{
+	    if ($recipient === 'admin') {
+	        $toEmail = Arr::get($mailingSettings, 'admin_email', '');
+
+	        $toEmail = apply_filters(
+	            'fluent_cart/admin_notification_recipients',
+	            $toEmail,
+	            $notification,
+	            $viewData
+	        );
+
+	        if (is_array($toEmail)) {
+	            $toEmail = implode(',', array_filter($toEmail));
+	        }
+
+	        return $toEmail;
+	    }
+
+	    return self::EMAIL_RECIPIENT_MAP[$recipient] ?? '';
+	}
+
     public static function getNotificationsOfEvent($event, $viewData): array
-    {
-        $notifications = static::getNotifications();
-        $notifications = array_filter($notifications, function ($notification) use ($event) {
-            return $notification['event'] === $event;
-        });
+	{
+	    $notifications = static::getNotifications();
+	    $notifications = array_filter($notifications, function ($notification) use ($event) {
+	        return $notification['event'] === $event;
+	    });
 
-        if (empty($notifications)) {
-            return [];
-        }
+	    if (empty($notifications)) {
+	        return [];
+	    }
 
-        $emails = [];
-        $mailingSettings = static::getSettings();
+	    $emails = [];
+	    $mailingSettings = static::getSettings();
 
-        foreach ($notifications as $key => $notification) {
+	    foreach ($notifications as $key => $notification) {
+	        $settings = Arr::get($notification, 'settings');
 
-            $settings = Arr::get($notification, 'settings');
+	        if (in_array($notification['event'], ['order_placed_offline', 'invoice_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
+	            // Continue with normal flow
+	        } else {
+	            continue;
+	        }
 
-            // Skip active check for on-demand notifications (offline payments, payment reminders)
-            if (in_array($notification['event'], ['order_placed_offline', 'invoice_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
-                // Continue with normal flow
-            } else {
-                continue;
-            }
-            $recipient = Arr::get($notification, 'recipient');
+	        $recipient = Arr::get($notification, 'recipient');
 
-            if (!in_array($recipient, ['admin', 'customer', 'user', 'subscriber'])) {
-                continue;
-            }
+	        if (!in_array($recipient, ['admin', 'customer', 'user', 'subscriber'])) {
+	            continue;
+	        }
 
-            if ($recipient === 'admin') {
-                $toEmail = Arr::get($mailingSettings, 'admin_email', '');
-            } else {
-                $toEmail = self::EMAIL_RECIPIENT_MAP[$recipient];
-            }
+	        $toEmail = static::getRecipientEmail(
+	            $recipient,
+	            $mailingSettings,
+	            $notification,
+	            $viewData
+	        );
 
-            if (empty($toEmail)) {
-                continue;
-            }
+	        if (empty($toEmail)) {
+	            continue;
+	        }
 
-            $emails[$key] = static::formatNotification($notification, $viewData);
-        }
+	        $emails[$key] = static::formatNotification($notification, $viewData);
+	    }
 
-        return $emails;
-    }
+	    return $emails;
+	}
 
     public static function formatNotification($notification, $viewData): array
-    {
-        $settings = Arr::get($notification, 'settings');
-        $mailingSettings = static::getSettings();
+	{
+	    $settings = Arr::get($notification, 'settings');
+	    $mailingSettings = static::getSettings();
 
+	    $recipient = Arr::get($notification, 'recipient');
 
-        $recipient = Arr::get($notification, 'recipient');
-        if ($recipient === 'admin') {
-            $toEmail = Arr::get($mailingSettings, 'admin_email', '');
-        } else {
-            $toEmail = self::EMAIL_RECIPIENT_MAP[$recipient];
-        }
+	    $toEmail = static::getRecipientEmail(
+	        $recipient,
+	        $mailingSettings,
+	        $notification,
+	        $viewData
+	    );
 
+	    $isDefaultEmailBody = Arr::get($settings, 'is_default_body', 'yes') === 'yes' || empty(Arr::get($settings, 'email_body'));
 
-        $isDefaultEmailBody = Arr::get($settings, 'is_default_body', 'yes') === 'yes' || empty(Arr::get($settings, 'email_body'));
+	    $emailBody = $isDefaultEmailBody ?
+	        TemplateService::getTemplateByPathName(Arr::get($notification, 'template_path'), $viewData) :
+	        Arr::get($settings, 'email_body');
 
-        $emailBody = $isDefaultEmailBody ?
-            TemplateService::getTemplateByPathName(Arr::get($notification, 'template_path'), $viewData) :
-            Arr::get($settings, 'email_body');
-
-        return [
-            'to'         => $toEmail,
-            'body'       => $emailBody,
-            'pre_header' => Arr::get($notification, 'pre_header', ''),
-            'is_async'   => $notification['is_async'],
-            'subject'    => Arr::get($settings, 'subject'),
-            'is_custom'  => !$isDefaultEmailBody,
-            'settings'   => $settings,
-        ];
-    }
+	    return [
+	        'to'         => $toEmail,
+	        'body'       => $emailBody,
+	        'pre_header' => Arr::get($notification, 'pre_header', ''),
+	        'is_async'   => $notification['is_async'],
+	        'subject'    => Arr::get($settings, 'subject'),
+	        'is_custom'  => !$isDefaultEmailBody,
+	        'settings'   => $settings,
+	    ];
+	}
 
     public static function getNotification($name)
     {
