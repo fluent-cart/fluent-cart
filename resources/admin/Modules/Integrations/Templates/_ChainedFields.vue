@@ -22,18 +22,6 @@
     export default {
         name: 'ChainedFields',
         props: ['settings', 'field', 'value'],
-        computed: {
-            listItems() {
-
-            }
-        },
-        watch: {
-            'settings.list_id'() {
-                if(this.field.require_list) {
-                    this.fetchSettings();
-                }
-            }
-        },
         data() {
             return {
                 loading: false,
@@ -46,6 +34,27 @@
                 },
                 selected_subcategory: ''
             }
+        },
+        computed: {
+            listItems() {
+
+            }
+        },
+        watch: {
+            'settings.list_id'() {
+                if(this.field.require_list) {
+                    this.fetchSettings();
+                }
+            }
+        },
+        mounted() {
+            if(!this.settings[ this.field['key'] ]) {
+                this.settings[ this.field['key'] ] = this.chained_settings;
+            } else {
+                this.chained_settings = this.settings[ this.field['key'] ];
+            }
+            this.app_ready = true;
+            this.fetchSettings();
         },
         methods: {
             fetchSettings() {
@@ -68,7 +77,6 @@
                     }
                 })
                 .catch(error => {
-                    console.log(error);
                 })
                 // .always(() => {
                 //     this.loading = false;
@@ -78,15 +86,6 @@
                 this.$set(this.settings, this.field['key'].category, this.selected_category);
                 this.fetchSettings();
             }
-        },
-        mounted() {
-            if(!this.settings[ this.field['key'] ]) {
-                this.settings[ this.field['key'] ] = this.chained_settings;
-            } else {
-                this.chained_settings = this.settings[ this.field['key'] ];
-            }
-            this.app_ready = true;
-            this.fetchSettings();
         }
     }
 </script>

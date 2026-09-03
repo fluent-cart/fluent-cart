@@ -40,11 +40,15 @@
 /*==== setting row ====*/
 .fct-setting-row{
     a{
-        @apply text-blue-500 dark:text-gray-50;
-        @apply hover:underline #{!important}
+        @apply inline-flex items-center gap-0.5 text-blue-500 dark:text-gray-50;
+        @apply hover:underline #{!important};
+        svg {
+            width: 14px;
+            height: 14px;
+        }
     }
     p{
-        @apply my-0 text-sm;
+        @apply my-0 text-[13px];
         + p{
             @apply mt-2.5;
         }
@@ -63,7 +67,10 @@
         @apply mt-2.5;
     }
     h4 + p,
-    h4 + span{
+    h4 + span,
+    h4 + ul,
+    h4 + code,
+    code + p {
         @apply mt-2;
     }
     h4 + span{
@@ -76,7 +83,12 @@
         @apply mb-0;
     }
     .setting-label{
-        @apply mb-2;
+        @apply mb-2 text-sm;
+    }
+    p + h4,
+    p + h5,
+    ul + p {
+        @apply mt-3.5;
     }
 }
 
@@ -84,8 +96,192 @@
     .display-name{
         @apply text-sm font-medium text-system-dark dark:text-gray-50;
     }
+    .display-role {
+        @apply mt-0 text-[13px];
+    }
+    .el-tag.el-tag--success {
+        @apply bg-success-100 text-success-800 border-success-100 rounded-[6px] dark:bg-success-800 dark:text-gray-50 !important;
+    }
 }
 
+.fct-connect-require {
+    @apply bg-gray-25 p-5 rounded text-center dark:bg-dark-500;
+}
+
+.fct-connect-success {
+    @apply flex items-center justify-between bg-success-25 p-4 rounded dark:bg-dark-500;
+}
+
+.fct-subscription-mode-cards {
+    @apply flex flex-col gap-2;
+}
+
+.fct-subscription-mode-card {
+    @apply flex flex-col rounded-lg border-[1.5px] border-solid border-gray-divider p-4 cursor-pointer dark:border-dark-400;
+    transition: border-color 0.15s ease;
+
+    &:hover {
+        @apply border-primary-300 dark:border-primary-300;
+    }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-1 outline-primary-500 dark:outline-primary-300;
+    }
+
+    &.is-selected {
+        @apply border-primary-500 dark:border-primary-300;
+    }
+
+    &__header {
+        @apply flex items-center gap-2.5;
+    }
+
+    &__radio {
+        @apply flex-shrink-0 w-4 h-4 rounded-full border-2 border-solid border-gray-300 dark:border-dark-300;
+        transition: border-color 0.15s ease;
+        position: relative;
+
+        &::after {
+            content: '';
+            @apply absolute rounded-full bg-primary-500 dark:bg-primary-300;
+            width: 8px;
+            height: 8px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.15s ease;
+        }
+    }
+
+    &.is-selected &__radio {
+        @apply border-primary-500 dark:border-primary-400;
+
+        &::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+
+    &__title {
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+
+    &__desc {
+        @apply mt-1.5 ml-[26px] text-xs text-system-mid dark:text-gray-300;
+    }
+
+    &__extras {
+        @apply mt-2.5 ml-[26px] pt-2.5;
+        border-top: 1px solid;
+        @apply border-gray-divider dark:border-dark-400;
+
+        .fct-subscription-mode-note {
+            @apply block mt-1 pl-6 text-xs font-normal text-system-dark-light dark:text-gray-300;
+            white-space: normal;
+        }
+
+        .fct-subscription-mode-support {
+            @apply block mt-1 pl-6 text-xs font-medium text-system-mid dark:text-gray-300;
+            white-space: normal;
+        }
+    }
+
+    &__schedule-link {
+        @apply mt-2 ml-[26px];
+    }
+
+    &__schedule-trigger {
+        @apply inline-flex items-center gap-1 text-xs text-warning-600 dark:text-warning-400 cursor-pointer;
+
+        &:hover {
+            @apply underline;
+        }
+    }
+}
+
+.fct-subscription-mode-recommended {
+    @apply px-1.5 py-0.5 text-[10px] font-semibold rounded text-success-700 bg-success-50 dark:text-success-300 dark:bg-success-500/20;
+    letter-spacing: 0.03em;
+}
+
+.fct-subscription-mode-safety-note {
+    @apply mt-3 flex items-start gap-2 px-3 py-2.5 rounded text-xs text-system-mid bg-gray-25 dark:text-gray-300 dark:bg-dark-500;
+}
+
+.fct-subscription-mode-apply-note {
+    @apply mt-4 px-3 py-2 rounded text-xs text-system-mid border-warning-500 bg-warning-50 dark:text-gray-50 dark:bg-warning-500/10;
+    border-width: 0 0 0 2px;
+    border-style: solid;
+}
+
+.fct-payment-setting-radio-box {
+    @apply grid grid-cols-2 gap-5;
+    .el-radio {
+        @apply items-start mr-0 border border-solid border-gray-divider rounded p-4 text-sm dark:text-gray-300 dark:border-dark-400;
+    }
+    .el-radio__label {
+        @apply pl-0 flex gap-3 text-system-dark dark:text-gray-50;
+        white-space: break-spaces;
+    }
+    .el-radio__input{
+        @apply absolute top-4 right-4;
+    }
+    .options-name {
+        @apply block;
+    }
+    .options-text {
+        @apply block text-xs font-normal text-system-mid dark:text-gray-300;
+    }
+    .options-img {
+        @apply flex-shrink-0 w-8 h-8 flex items-center justify-center border border-solid border-gray-outline rounded dark:border-dark-400;
+        img {
+            @apply w-4.5 h-4.5;
+        }
+    }
+}
+
+.fluent_theme_dark {
+    .fct-payment-setting-radio-box {
+        .options-img {
+            img {
+                filter: brightness(10);
+            }
+        }
+    }
+}
+
+.fct-settings-description {
+    @apply text-xs pt-1 text-system-mid dark:text-gray-300 !important;
+}
+
+.fct-events-wrap {
+    @apply mt-3;
+    p {
+        @apply mb-3;
+    }
+    ul li {
+        @apply m-0;
+    }
+}
+.fct-payment-steps-list {
+    li {
+        @apply flex items-center gap-2 mb-2 last:mb-0;
+    }
+}
+.fct-payment-steps-number {
+    @apply w-4.5 h-4.5 flex-shrink-0 inline-flex items-center justify-center bg-gray-100 rounded-full text-xs text-system-dark dark:bg-dark-500 dark:text-gray-50;
+}
+.fct-webhook-notice {
+    @apply mt-4;
+    .fct-webhook-notice-title {
+        @apply text-sm font-medium mb-1;
+    }
+    ul {
+        @apply ml-4.5 mt-2.5;
+        li:last-child {
+            @apply mb-0;
+        }
+    }
+}
 /*====== fct-merge-fields-container ========*/
 .fct-field-general{
     @apply w-full;
@@ -100,7 +296,7 @@
     }
 }
 
-.dark .setting-wrap.local{
+.fluent_theme_dark .setting-wrap.local{
     img{
         filter: brightness(100);
     }
@@ -198,6 +394,7 @@
 }
 .fct-setting-container {
     @apply fixed w-full h-[calc(100vh-96px)] bottom-0 right-0 z-50;
+    height: calc(100dvh - 96px);
     .setting-html-wrapper {
         .setting-label {
             @apply mb-0;
@@ -206,6 +403,12 @@
     .form-section {
         .form-note {
             @apply text-system-mid text-xs leading-4 m-0 dark:text-gray-400 mt-0.5;
+        }
+        .el-radio-group:has(.radio-option-note) {
+            @apply flex flex-col w-full items-start;
+        }
+        .radio-option-note {
+            @apply pl-6;
         }
     }
     #pane-pages_setup {
@@ -469,30 +672,20 @@
 
 /* ── Email Body Type Segmented Control ── */
 .fct-seg-wrap {
-  @apply inline-flex rounded-sm p-[3px] gap-[2px];
-  background: #EAECF0;
+  @apply bg-gray-50 inline-flex rounded-sm p-[3px] gap-[2px];
 
-  .dark & {
-    background: #252840;
+  .fluent_theme_dark & {
+    @apply bg-dark-500;
   }
 }
 
 .fct-seg-btn {
-  @apply relative py-[7px] px-[18px] text-sm font-medium border-none bg-transparent rounded-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1;
-  color: #565865;
-  font-family: inherit;
+  @apply relative py-[7px] px-3.5 text-sm font-medium border-none bg-transparent rounded-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1 text-system-mid hover:bg-white dark:text-gray-50;
   letter-spacing: -0.1px;
   transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 
-  &:hover {
-    color: #2F3448;
-    background: rgba(255,255,255,.5);
-  }
-
   &.active {
-    color: #2F3448;
-    background: #FFFFFF;
-    font-weight: 600;
+    @apply bg-white text-system-dark dark:text-gray-50;
     box-shadow: 0 1px 3px rgba(47,52,72,.12), 0 0 0 1px rgba(47,52,72,.06);
   }
 
@@ -500,17 +693,15 @@
     @apply outline-none;
   }
 
-  .dark & {
-    color: #6B7080;
+  .fluent_theme_dark & {
+    @apply text-gray-50;
 
     &:hover {
-      color: #A0A5BC;
-      background: rgba(255,255,255,.05);
+      @apply bg-dark-400 text-gray-50;
     }
 
     &.active {
-      color: #E4E6F0;
-      background: #2F3448;
+      @apply bg-gray-800 text-gray-50;
       box-shadow: 0 1px 3px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.06);
     }
   }
@@ -535,6 +726,7 @@
 
 .fct-settings-nav-container {
   @apply absolute top-0 left-[160px] z-[1024] bg-white w-[260px] flex-shrink-0 transition-all duration-300 ease-in-out h-[calc(100vh-96px)] rounded-none border-0 border-r-[1px] border-solid border-gray-divider dark:border-dark-400 dark:bg-dark-700;
+  height: calc(100dvh - 96px);
 }
 .fct-settings-nav {
   @apply overscroll-contain overflow-x-hidden p-4;
@@ -622,6 +814,9 @@
 .fct-settings-nav-content-inner {
   overscroll-behavior: contain;
   @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-none;
+  /* dvh override — the vh values above stay as fallback for older browsers */
+  max-height: calc(100dvh - 96px);
+  min-height: calc(100dvh - 96px);
 }
 
 .fct-setting-menu-toggle {
@@ -902,4 +1097,19 @@
 
 .fct-module-settings-option-wrap {
     @apply ml-4;
+}
+
+/*
+ * Danger zone — settings that change how the whole subscription system bills.
+ * Deliberately loud: this is a store-wide decision that affects checkout,
+ * renewals, and which payment methods customers can use.
+ */
+.fct-settings-danger-zone {
+    @apply border border-yellow-400 bg-yellow-50 rounded-lg p-5 mt-8;
+    @apply dark:border-yellow-600 dark:bg-yellow-900/10;
+    border-left-width: 4px;
+
+    .setting-label {
+        @apply text-yellow-900 dark:text-yellow-200;
+    }
 }

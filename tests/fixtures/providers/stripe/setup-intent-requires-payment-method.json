@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "seti_phase29_failed",
+    "object": "setup_intent",
+    "status": "requires_payment_method",
+    "customer": "cus_phase29",
+    "payment_method": null,
+    "last_setup_error": {
+      "code": "setup_intent_authentication_failure",
+      "decline_code": "authentication_required",
+      "message": "The customer did not complete 3D Secure authentication."
+    }
+  }
+}

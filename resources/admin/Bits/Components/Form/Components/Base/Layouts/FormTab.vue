@@ -38,7 +38,7 @@ const initializeTabSelection = () => {
   // Get the hash portion of the URL
   const hash = window.location.hash;
   // Extract the last segment of the hash
-  const extractedValue = hash.split('/').pop();
+  const extractedValue = hash.split('/').pop().split('#')[0];
 
 
   // Storing keys of props.field.schema into tabs

@@ -5,8 +5,8 @@
       :title="$t('Billing Address')"
       :description="$t('Provide or update the address where your billing statements and invoices will be sent.')"
       @fetch="$emit('fetch')"
-      @setAddressPrimary="$emit('setAddressPrimary', $event)"
-      @deleteAddress="$emit('deleteAddress', $event)"
+      @set-address-primary="$emit('setAddressPrimary', $event)"
+      @delete-address="$emit('deleteAddress', $event)"
   />
 </template>
 
@@ -15,8 +15,8 @@ import AddressSection from './AddressSection.vue';
 
 export default {
   name: "BillingAddress",
+  components: { AddressSection },
   props: ['profileDetails'],
-  emits: ['fetch', 'setAddressPrimary', 'deleteAddress'],
-  components: { AddressSection }
+  emits: ['fetch', 'setAddressPrimary', 'deleteAddress']
 }
 </script>

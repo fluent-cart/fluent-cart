@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\ShortCodeParser;
 
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\WpMetaHelper;
 use FluentCart\Framework\Support\Arr;
@@ -295,6 +296,8 @@ class ShortcodeParser
                         } else {
                             $parsedData[$placeholder] = Arr::get($order, 'id');
                         }
+                    } elseif ($targetItem === 'payment_link') {
+                        $parsedData[$placeholder] = PaymentHelper::getCustomPaymentLink(Arr::get($order, 'uuid'));
                     } else if ($targetItem === 'total_amount') {
                         $parsedData[$placeholder] = Helper::toDecimal(Arr::get($order, 'total_amount'), false);
                     } elseif ($targetItem === 'total_paid') {

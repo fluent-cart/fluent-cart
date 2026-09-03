@@ -259,6 +259,7 @@ return [
     'WS' => __( 'Samoa', 'fluent-cart' ),
     'YE' => __( 'Yemen', 'fluent-cart' ),
     'ZM' => __( 'Zambia', 'fluent-cart' ),
+    'XI' => __( 'Northern Ireland', 'fluent-cart' ),
     'ZW' => __( 'Zimbabwe', 'fluent-cart' ),
 ];
 ?>

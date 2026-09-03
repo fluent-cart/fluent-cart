@@ -152,7 +152,6 @@ watch(() => props.item, (newItem) => {
 
 // Watch for changes in inputValue
 /*watch(inputValue, (newValue) => {
-  console.log(updatedStock.value)
   // If newValue is an empty string or 0
   if (newValue === '' || newValue <= 0) {
     // If newValue is empty, set currentQuantity to props.min
@@ -181,7 +180,6 @@ watch(() => props.item, (newItem) => {
       emit('update:value', newValue, updatedStock.value, props.item);
     }
   }
-  console.log(updatedStock.value)
 });*/
 </script>
 

@@ -87,7 +87,7 @@ class ReceiptHandler
             DateTime::now() < $orderPlacedAt->addHours(2);
 
 
-        if (!$showOrder) {
+        if (!$showOrder && !$isAdmin) {
             return $this->renderNotFoundPage();
         }
 

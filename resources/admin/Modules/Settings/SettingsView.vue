@@ -43,7 +43,11 @@
         >
           <li v-for="(route, i) in routes" :key="i" class="fct-settings-nav-item" :class="{'fct-settings-nav-item-active': isRouteActive(route)}">
             <router-link v-if="Permission.hasAny(route.permission)" :to="route.url" class="fct-settings-nav-link">
-              <DynamicIcon :name="route.icon"/>
+              <template v-if="route.icon_img">
+                <img :src="route.icon_img" :alt="route.name" :class="route.icon_img_dark ? 'w-5 h-5 dark:hidden' : 'w-5 h-5'"/>
+                <img v-if="route.icon_img_dark" :src="route.icon_img_dark" :alt="route.name" class="w-5 h-5 hidden dark:block"/>
+              </template>
+              <DynamicIcon v-else :name="route.icon"/>
 
               <span class="fct-settings-nav-link-text">
                 {{ route.name }}
@@ -60,6 +64,7 @@
               <ul class="fct-settings-nav-child-list">
                 <li
                     v-for="(child, i) in route.child"
+                    v-show="!child.permission || Permission.hasAny(child.permission)"
                     :key="i"
                     class="fct-settings-nav-item"
                     :class="{ 'fct-settings-nav-item-active': isChildActive(child, i, route) }"
@@ -76,7 +81,6 @@
 
       <div class="fct-settings-nav-content">
         <div class="fct-settings-nav-content-inner">
-          <AdminNotice/>
           <router-view/>
         </div>
       </div>
@@ -94,7 +98,6 @@ import translate from "@/utils/translator/Translator";
 import Animation from "@/Bits/Components/Animation.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Permission from "@/utils/permission/Permission";
-import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 defineOptions({
   name: "SettingsView",
@@ -135,15 +138,21 @@ const routes = ref([
         url: '/settings/store-settings/cart_and_checkout'
       },
       {
-        name: translate('Subscriptions'),
-        url: '/settings/store-settings/subscriptions'
-      },
-      {
         name: translate('Checkout Fields'),
         url: '/settings/store-settings/checkout_fields'
+      },
+      {
+        name: translate('Subscriptions'),
+        url: '/settings/store-settings/subscriptions_setup'
       }
 
     ]
+  },
+  {
+    name: translate('Product Reviews'),
+    icon: "Stars",
+    permission: ['reviews/manage'],
+    url: '/settings/product-reviews'
   },
   {
     name: translate("Payment Settings"),
@@ -172,13 +181,13 @@ const routes = ref([
     ]
   },
   {
-    name: translate("Tax & Duties"),
+    name: translate("Tax Settings"),
     icon: "Tax",
     permission: ["is_super_admin"],
     url: '/settings/tax_settings',
     child: [
       {
-        name: translate('Configuration & Classes'),
+        name: translate('Configuration'),
         url: '/settings/tax_settings'
       },
       // {
@@ -187,12 +196,12 @@ const routes = ref([
       // },
       {
         name: translate('Rates'),
-        url: '/settings/tax_settings/tax_rates'
-      },
-      {
-        name: translate('European Union'),
-        url: '/settings/tax_settings/eu'
-      },
+        url: '/settings/tax_settings/tax_rates',
+        activeFor: [
+          '/settings/tax_settings/eu',
+          '/settings/tax_settings/tax_rates_country_single'
+        ]
+      }
     ]
   },
   {
@@ -212,6 +221,10 @@ const routes = ref([
       {
         name: translate('Notifications'),
         url: '/settings/email_notifications'
+      },
+      {
+        name: translate('Store Digest'),
+        url: '/settings/email_digest_settings'
       }
     ]
   },
@@ -274,6 +287,8 @@ if (hasPro) {
     url: '/settings/licensing'
   });
 }
+
+AppConfig.get('addon_settings_sidebar', []).forEach(item => routes.value.push(item));
 
 /*
 |--------------------------------------------------------------------------
@@ -406,6 +421,11 @@ const isChildActive = (child, index, routeGroup) => {
 
   // Exact match for child
   if (currentPath === child.url) {
+    return true;
+  }
+
+  // Check additional active path prefixes declared on the child
+  if (child.activeFor && child.activeFor.some(prefix => currentPath.startsWith(prefix))) {
     return true;
   }
 

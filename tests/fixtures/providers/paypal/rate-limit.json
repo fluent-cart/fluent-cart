@@ -1,0 +1,9 @@
+{
+  "status": 429,
+  "message": "Too Many Requests",
+  "body": {
+    "name": "RATE_LIMIT_REACHED",
+    "message": "Too many requests.",
+    "debug_id": "phase22-rate-limit"
+  }
+}

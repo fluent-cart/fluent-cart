@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "message": "Too Many Requests",
+  "headers": {
+    "content-type": "application/json",
+    "stripe-rate-limited-reason": "endpoint-rate"
+  },
+  "body": {
+    "error": {
+      "type": "rate_limit_error",
+      "code": "rate_limit",
+      "message": "Too many requests made to the API too quickly."
+    }
+  }
+}

@@ -1,4 +1,9 @@
 <script setup>
+/* eslint-disable vue/no-mutating-props --
+ * Pre-existing controlled-mutation component (same contract as TermForm.vue):
+ * the parent owns the variant object and hands it down for in-place editing;
+ * every v-model and write-back below predates this file entering lint scope.
+ * New code added here must not introduce further prop mutations. */
 import {ref, computed, onMounted} from 'vue';
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
@@ -8,6 +13,8 @@ import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import VariantItemCollapse from "@/Modules/Products/parts/VariantItemCollapse.vue";
 import StockAdjuster from "@/Modules/Products/parts/StockAdjuster.vue";
+import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import AppConfig from "@/utils/Config/AppConfig";
 
 const props = defineProps({
     variant: Object,
@@ -15,11 +22,86 @@ const props = defineProps({
     modeType: String,
     product: Object,
     productEditModel: Object,
+    isGroupMode: { type: Boolean, default: false },
 });
 
 const generatingSku = ref(false);
 
 const isStockManaged = computed(() => props.variant.manage_stock == '1' || props.variant.manage_stock == 1);
+
+// A variation's stock toggle is inert while the PRODUCT's Inventory
+// Management (product.detail.manage_stock — the card on the product edit
+// page) is off. Lock the toggle and offer the enable action inline, using
+// the exact same endpoint and cascade the card's own switch uses, so the
+// two entry points stay behaviorally identical.
+const productStockEnabled = computed(() => {
+    return props.product?.detail?.manage_stock == '1' || props.product?.detail?.manage_stock == 1;
+});
+const enablingProductStock = ref(false);
+// The warning strip's switch: flipping it on runs the enable request; a
+// failure flips it back so the control never shows a state the server
+// refused. The whole strip unmounts once productStockEnabled turns true.
+const enableInventorySwitch = ref(false);
+
+const handleEnableInventoryToggle = (value) => {
+    if (!value) {
+        return; // only turning ON triggers the request
+    }
+    enableProductInventory();
+};
+
+const enableProductInventory = () => {
+    if (enablingProductStock.value) {
+        return;
+    }
+    enablingProductStock.value = true;
+
+    Rest.put(`products/${props.product.ID}/update-manage-stock`, {
+        manage_stock: '1'
+    })
+        .then((response) => {
+            // Mirror ProductInventory.vue's handleManageStockChange: flip the
+            // detail flag and cascade onto the variants only AFTER the server
+            // confirmed the write.
+            props.product.detail.manage_stock = '1';
+            (props.product.variants || []).forEach((productVariant) => {
+                productVariant.manage_stock = '1';
+            });
+            props.variant.manage_stock = '1';
+            props.productEditModel.updatePricingValue('manage_stock', '1', props.fieldKey, props.variant, props.modeType);
+
+            Notify.success(response?.message || translate('Inventory Management enabled'));
+        })
+        .catch((errors) => {
+            enableInventorySwitch.value = false; // revert the strip's switch
+            if (errors?.status_code == '422') {
+                Notify.validationErrors(errors);
+            } else {
+                Notify.error(errors?.data?.message || translate('Failed to update inventory'));
+            }
+        })
+        .finally(() => {
+            enablingProductStock.value = false;
+        });
+};
+
+// The Stock Management module (Settings -> Modules) is the master switch. With
+// it off, the product-level Inventory card (ProductInventory.vue) hides itself
+// the same way, so the variation-level inventory UI must hide too — otherwise
+// the variation toggle and the "enable inventory" strip would keep offering
+// stock tracking that the store has globally turned off.
+const stockModuleEnabled = computed(() => {
+    return AppConfig.get('modules_settings.stock_management.active') === 'yes';
+});
+
+// Inventory UI (label, manage-stock toggle, stock grid) is shown for the
+// legacy variable type (simple_variations) and for advanced variations.
+const showInventory = computed(() => {
+    if (!stockModuleEnabled.value) {
+        return false;
+    }
+    return ['simple_variations', 'advanced_variations'].includes(props.product.detail?.variation_type);
+});
 
 const handleVariantStockChange = (value) => {
     props.productEditModel.updatePricingValue('manage_stock', value, props.fieldKey, props.variant, props.modeType);
@@ -46,6 +128,16 @@ const saveStock = () => {
     props.variant.adjusted_quantity = 0;
     props.variant.new_stock = props.variant.total_stock;
 
+    // Unsaved draft variant: there is no row to PUT against yet. Keep the
+    // adjustment in the local model only — the Save button creates the
+    // variant WITH these stock values (ProductVariationResource::create
+    // persists total_stock/available from the pricing payload).
+    if (!props.variant.id) {
+        props.productEditModel.updatePricingValue('total_stock', props.variant.total_stock, props.fieldKey, props.variant, props.modeType);
+        props.productEditModel.updatePricingValue('available', props.variant.available, props.fieldKey, props.variant, props.modeType);
+        return;
+    }
+
     Rest.put(`products/${props.product.ID}/update-inventory/${props.variant.id}`, {
         total_stock: props.variant.total_stock,
         available: props.variant.available
@@ -66,7 +158,7 @@ const generateSku = () => {
     const title = props.product.post_title || '';
     if (!title) return;
 
-    const isVariation = props.product.detail?.variation_type === 'simple_variations';
+    const isVariation = ['simple_variations', 'advanced_variations'].includes(props.product.detail?.variation_type);
     const variantTitle = isVariation ? (props.variant.variation_title || '') : '';
     const excludeId = props.variant.id || 0;
 
@@ -94,23 +186,61 @@ const generateSku = () => {
 
 <template>
     <SharedVariantItemBox class="fct-variant-inventory" :class="product.detail?.variation_type === 'simple' ? 'fct-variant-inventory--simple' : ''">
-        <template v-if="product.detail?.variation_type === 'simple_variations'" #label>
+        <template v-if="showInventory" #label>
             {{ translate('Inventory') }}
         </template>
 
-        <template v-if="product.detail?.variation_type === 'simple_variations'" #action>
+        <!-- While product-level inventory is off, the warning strip below is
+             the single control — showing a dead header toggle next to it
+             would be two switches fighting over one decision. -->
+        <template v-if="showInventory && productStockEnabled" #action>
             <div class="fct-shared-variant-item-box__switch">
                 <el-switch
+                    v-if="!isGroupMode"
                     size="small"
                     v-model="variant.manage_stock"
                     @change="handleVariantStockChange"
-                    active-value="1" 
+                    active-value="1"
                     inactive-value="0"
                 />
+
+                <div v-else class="fct-inline-select-wrap">
+                    <label>{{ translate('Manage Stock') }}:</label>
+
+                    <el-select
+                        size="small"
+                        v-model="variant.manage_stock"
+                        popper-class="fct-group-select-popper"
+                        class="fct-inline-select"
+                        placement="bottom"
+                    >
+                        <el-option value="__unchanged__" :label="translate('Unchanged')" />
+                        <el-option value="1" :label="translate('Manage stock')" />
+                        <el-option value="0" :label="translate('Don\'t manage')" />
+                    </el-select>
+                </div>
             </div>
         </template>
 
-        <div v-if="isStockManaged && product.detail?.variation_type === 'simple_variations'" class="fct-variant-stock-grid">
+        <!-- The product's Inventory Management is off: the variation toggle
+             above is locked; explain why and offer the enable action inline. -->
+        <div v-if="showInventory && !productStockEnabled" class="fct-variant-inventory-global-off" role="alert">
+            <span class="fct-variant-inventory-global-off__text">
+                <DynamicIcon name="Warning" />
+                {{ translate('Enable inventory to track stock and manage availability for this product and its variations.') }}
+            </span>
+            <span class="fct-variant-inventory-global-off__action">
+                <el-switch
+                    size="small"
+                    v-model="enableInventorySwitch"
+                    :loading="enablingProductStock"
+                    :disabled="enablingProductStock"
+                    @change="handleEnableInventoryToggle"
+                />
+            </span>
+        </div>
+
+        <div v-if="isStockManaged && showInventory && !isGroupMode" class="fct-variant-stock-grid">
             <!-- Total Stock -->
             <div class="fct-variant-stock-box">
                 <div class="fct-stock-box-label">{{ translate('Total Stock') }}</div>
@@ -150,7 +280,18 @@ const generateSku = () => {
             </div>
         </div>
 
-        <VariantItemCollapse>
+        <div v-if="isStockManaged && showInventory && isGroupMode" class="fct-admin-input-wrapper">
+            <el-form-item :label="translate('Total Stock')">
+                <el-input
+                    type="number"
+                    :min="0"
+                    :placeholder="translate('Unchanged')"
+                    v-model="variant.total_stock"
+                />
+            </el-form-item>
+        </div>
+
+        <VariantItemCollapse v-if="!isGroupMode">
             <template #header="{ isOpen }">
                 <div v-if="isOpen" class="fct-collapse-heading">
                     {{ translate('More details') }}
@@ -167,7 +308,7 @@ const generateSku = () => {
                 <el-form-item>
                     <template #label>
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <LabelHint 
+                            <LabelHint
                                 :title="translate('SKU (Stock Keeping Unit)')"
                                 placement="bottom"
                             />
@@ -175,7 +316,7 @@ const generateSku = () => {
                                 type="button"
                                 @click="generateSku"
                                 :disabled="!product.post_title || generatingSku"
-                                class="underline-link-button"
+                                class="underline-link-button fct-generate-sku-btn"
                             >
                                 {{ generatingSku ? translate('Generating...') : translate('Generate SKU') }}
                             </button>
@@ -194,5 +335,6 @@ const generateSku = () => {
                 </el-form-item>
             </div><!-- .fct-admin-input-wrapper -->
         </VariantItemCollapse>
+
     </SharedVariantItemBox>
 </template>

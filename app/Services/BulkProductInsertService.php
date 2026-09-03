@@ -4,9 +4,12 @@ namespace FluentCart\App\Services;
 
 use FluentCart\Api\Resource\ProductVariationResource;
 use FluentCart\App\CPT\FluentProducts;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Http\Rules\RequiredWhenRule;
+use FluentCart\App\Http\Rules\WhenFilledRule;
 use FluentCart\Framework\Validator\Validator;
 
 class BulkProductInsertService
@@ -104,11 +107,58 @@ class BulkProductInsertService
             ],
             'variants.*.other_info'                  => 'required|array',
             'variants.*.other_info.payment_type'     => 'required|sanitizeText|in:onetime,subscription',
-            'variants.*.other_info.repeat_interval'  => 'nullable|required_if:variants.*.other_info.payment_type,subscription|sanitizeText|in:yearly,half_yearly,quarterly,monthly,weekly,daily',
+            'variants.*.other_info.times'            => [
+                function ($attribute, $value, $rules, $allData) {
+                    $index = explode('.', $attribute)[1];
+
+                    return Helper::installmentTimesError(Arr::get($allData, "variants.$index.other_info"));
+                },
+            ],
+            // Conditional requirements here are closures, not `required_if`, and
+            // the attributes carrying one have no `nullable`: filterExcludeables()
+            // drops EVERY rule — closures included — when `nullable` meets a falsy
+            // value, which is what left these requirements dead. WhenFilledRule
+            // therefore carries the value checks that `nullable` used to guard.
+            //
+            // manage_setup_fee keeps `nullable` on purpose: it is an optional flag
+            // that both services already default to 'no', so demanding it would
+            // reject payloads that simply omit it.
+            'variants.*.other_info.repeat_interval'  => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.payment_type',
+                    'subscription',
+                    __('Interval is required for subscriptions.', 'fluent-cart')
+                ),
+                WhenFilledRule::in(
+                    ['yearly', 'half_yearly', 'quarterly', 'monthly', 'weekly', 'daily'],
+                    __('Interval must be a valid frequency.', 'fluent-cart')
+                ),
+            ],
             'variants.*.other_info.trial_days'        => 'nullable|numeric|min:0|max:365',
-            'variants.*.other_info.manage_setup_fee' => 'nullable|required_if:variants.*.other_info.payment_type,subscription|sanitizeText|in:no,yes',
-            'variants.*.other_info.signup_fee'       => 'nullable|required_if:variants.*.other_info.manage_setup_fee,yes|numeric|min:0',
-            'variants.*.other_info.signup_fee_name'  => 'nullable|required_if:variants.*.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+            'variants.*.other_info.manage_setup_fee' => 'nullable|sanitizeText|in:no,yes',
+            'variants.*.other_info.signup_fee'       => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.manage_setup_fee',
+                    'yes',
+                    __('Setup Fee Amount is required.', 'fluent-cart')
+                ),
+                WhenFilledRule::numericAtLeast(
+                    0,
+                    __('Setup Fee must be a number.', 'fluent-cart'),
+                    __('Setup Fee must be 0 or more.', 'fluent-cart')
+                ),
+            ],
+            'variants.*.other_info.signup_fee_name'  => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.manage_setup_fee',
+                    'yes',
+                    __('Setup Fee Name is required.', 'fluent-cart')
+                ),
+                WhenFilledRule::text(
+                    100,
+                    __('Setup Fee Name must be plain text of 100 characters or fewer.', 'fluent-cart')
+                ),
+            ],
         ];
 
         $messages = [
@@ -127,15 +177,10 @@ class BulkProductInsertService
             'variants.*.item_price.min'                          => __('Price must be a positive number.', 'fluent-cart'),
             'variants.*.other_info.payment_type.required'        => __('Payment Type is required.', 'fluent-cart'),
             'variants.*.other_info.payment_type.in'              => __('Payment Type must be onetime or subscription.', 'fluent-cart'),
-            'variants.*.other_info.repeat_interval.required_if'  => __('Interval is required for subscriptions.', 'fluent-cart'),
-            'variants.*.other_info.repeat_interval.in'           => __('Interval must be a valid frequency.', 'fluent-cart'),
             'variants.*.other_info.trial_days.numeric'           => __('Trial days must be a number.', 'fluent-cart'),
             'variants.*.other_info.trial_days.min'               => __('Trial days must be 0 or more.', 'fluent-cart'),
             'variants.*.other_info.trial_days.max'               => __('Trial days may not be greater than 365.', 'fluent-cart'),
             'variants.*.other_info.manage_setup_fee.in'          => __('Setup fee option must be yes or no.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee.required_if'       => __('Setup Fee Amount is required.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee.numeric'           => __('Setup Fee must be a number.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee_name.required_if'  => __('Setup Fee Name is required.', 'fluent-cart'),
         ];
 
         $validator = Validator::make($data, $rules, $messages);
@@ -487,11 +532,16 @@ class BulkProductInsertService
 
     /**
      * Sanitize a price value to ensure it's a valid integer (cents).
+     *
+     * The value ARRIVES in cents — this only normalizes float artifacts and
+     * rejects negatives. CSV imports carry dollars, so Importer.vue converts
+     * at parse time, keeping this endpoint on the same cents contract as every
+     * other write. See dev-docs/PRICING-AND-TAX.md §6.
      */
     protected function sanitizePrice($value): int
     {
         if (is_numeric($value)) {
-            return absint(round(floatval($value) * 100));
+            return absint(Helper::roundCent($value));
         }
 
         return 0;

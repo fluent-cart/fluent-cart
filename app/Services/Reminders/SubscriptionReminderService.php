@@ -5,6 +5,7 @@ namespace FluentCart\App\Services\Reminders;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\App\Services\Payments\SubscriptionHelper;
 use FluentCart\Framework\Support\Arr;
 
 class SubscriptionReminderService extends ReminderService
@@ -112,6 +113,10 @@ class SubscriptionReminderService extends ReminderService
                 return false;
             }
 
+            if (!$this->isEligible($subscription)) {
+                return false;
+            }
+
             $state = $this->normalizeReminderState($subscription->getMeta(static::TRIAL_META_KEY, []));
             if ($this->isStageAlreadySent($state, $cycleKey, $stage)) {
                 return false;
@@ -185,6 +190,7 @@ class SubscriptionReminderService extends ReminderService
 
         while (!$this->isRuntimeExpired($startedAt, $maxRuntime)) {
             $subscriptions = Subscription::query()
+                ->with('order')
                 ->where('id', '>', $lastId)
                 ->whereNotNull('next_billing_date')
                 ->whereIn('status', $this->getReminderStatuses())
@@ -228,6 +234,12 @@ class SubscriptionReminderService extends ReminderService
 
     protected function queueForSubscription(Subscription $subscription): int
     {
+        // Store-billed (manual/system) subscriptions use the renewal order email +
+        // renewal reminders instead — queueing these too would double-remind
+        if ($subscription->usesRenewalEngine()) {
+            return 0;
+        }
+
         if (!$this->isEligible($subscription)) {
             return 0;
         }
@@ -603,6 +615,13 @@ class SubscriptionReminderService extends ReminderService
 
     protected function isEligible(Subscription $subscription): bool
     {
+        // Live subscription on a test-mode store (or vice versa): don't email —
+        // mode lives on the parent order. Checked at both scan and send time so
+        // pre-queued actions copied to a clone are also caught.
+        if ($subscription->order && !SubscriptionHelper::canProcessInMode($subscription->order->mode)) {
+            return false;
+        }
+
         if (!in_array($subscription->status, $this->getReminderStatuses(), true)) {
             return false;
         }

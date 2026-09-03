@@ -51,7 +51,7 @@ const removeImageHandler = () => {
   } else {
     value.value = ''
   }
-  lightBoxAttachments = []
+  lightBoxAttachments.value = []
   emits('update:modelValue', value.value)
 }
 
@@ -59,14 +59,14 @@ const onMediaSelected = (attachments) => {
   if (attachments.length) {
     if (props.multiple) {
       value.value = [];
-      lightBoxAttachments = []
+      lightBoxAttachments.value = []
       for (const attachment of attachments) {
         value.value.push(attachment)
-        lightBoxAttachments.push(attachment)
+        lightBoxAttachments.value.push(attachment)
       }
     } else {
       value.value = attachments
-      lightBoxAttachments = attachments
+      lightBoxAttachments.value = attachments
     }
   }
 
@@ -110,10 +110,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <attachments
+  <Attachments
       :attachments="lightBoxAttachments"
-      @mediaUploaded="onMediaSelected"
-      @removeImage="removeImageHandler"
+      @media-uploaded="onMediaSelected"
+      @remove-image="removeImageHandler"
       :icon="icon"
       :title="title"
       :mediaInputSize="mediaInputSize"

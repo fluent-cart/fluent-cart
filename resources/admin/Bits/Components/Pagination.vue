@@ -147,6 +147,9 @@ export default {
       flush: 'sync'
     }
   },
+  mounted() {
+    this.translatePickerElements();
+  },
 
   methods: {
     translateNumber,
@@ -200,9 +203,6 @@ export default {
         }
       });
     }
-  },
-  mounted() {
-    this.translatePickerElements();
   },
 
 };

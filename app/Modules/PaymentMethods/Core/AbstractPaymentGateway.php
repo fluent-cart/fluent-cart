@@ -68,8 +68,16 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
             $meta['logo'] = $gatewaySettings['checkout_logo'];
         }
 
-        if (isset($gatewaySettings['checkout_instructions']) && !empty($gatewaySettings['checkout_instructions'])) {
-            $meta['instructions'] = $gatewaySettings['checkout_instructions'];
+        if (!empty($gatewaySettings['checkout_instructions'])) {
+            $instructionsText = trim(wp_strip_all_tags(html_entity_decode($gatewaySettings['checkout_instructions'], ENT_QUOTES)));
+            // Nbsp survives strip_tags/html_entity_decode as a literal
+            // non-breaking space, so a rich-text editor can save "<p>&nbsp;</p>"
+            // and still look non-empty to a bare !empty() check.
+            $instructionsText = str_replace("\xC2\xA0", '', $instructionsText);
+
+            if (trim($instructionsText) !== '') {
+                $meta['instructions'] = $gatewaySettings['checkout_instructions'];
+            }
         }
 
         if ($key !== '') {
@@ -149,10 +157,13 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         return $settings;
     }
 
+    /**
+     * Back-compat wrapper — the canonical entry point is
+     * OrderTransaction::getSuccessUrl(); call that directly.
+     */
     public function getSuccessUrl($transaction, $args = [])
     {
-        $paymentHelper = new PaymentHelper($this->getMeta('route'));
-        return $paymentHelper->successUrl($transaction->uuid, $args);
+        return $transaction->getSuccessUrl($args);
     }
 
     public static function getCancelUrl(): string
@@ -219,15 +230,128 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
 
     public function validateSubscriptions($items): bool
     {
-        $hasSubscription = (new CartResource())->hasSubscriptionProduct($items);
+        return (new CartResource())->hasSubscriptionProduct($items);
+    }
 
-        if ($hasSubscription && !$this->has('subscriptions')) {
-            wp_send_json([
-                'status'  => 'failed',
-                'message' => __('Subscription payment is not avalable for this gateway. Please choose another payment method!', 'fluent-cart')
-            ], 422);
+    /**
+     * Whether this gateway can save a payment method WITHOUT an accompanying
+     * charge (SetupIntent-style), enabling `system` subscriptions on carts with
+     * nothing payable now (free trials). Gateways declaring `system_subscription`
+     * SHOULD override this when their API supports zero-amount setup.
+     */
+    public function supportsSetupWithoutCharge(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Charge a system (auto-charged, store-billed) subscription's renewal invoice
+     * off-session using the stored token. Gateways declaring the
+     * `system_subscription` capability MUST override this. A successful charge must
+     * flow through the gateway's normal charge-confirmation path (so
+     * syncOrderStatuses / handleRenewalPaid run). Return WP_Error on failure.
+     *
+     * @param \FluentCart\App\Services\Payments\PaymentInstance $paymentInstance
+     * @param array $args ['attempt' => int] — attempt number, used for idempotency keys
+     * @return true|'processing'|\WP_Error true = payment confirmed; 'processing' =
+     *                                     charge accepted, the gateway webhook will
+     *                                     confirm it (invoice stays scheduled)
+     */
+    public function chargeRenewal(\FluentCart\App\Services\Payments\PaymentInstance $paymentInstance, $args = [])
+    {
+        return new \WP_Error('not_supported', __('This payment method cannot charge saved payment methods.', 'fluent-cart'));
+    }
+
+    /**
+     * Re-check an async (processing) renewal charge against the gateway. Called by
+     * the SystemChargeService reconciliation loop when a charge was accepted but
+     * the confirming webhook has not arrived. A settled payment must be confirmed
+     * through the gateway's normal charge-confirmation path before returning true.
+     *
+     * @param \FluentCart\App\Services\Payments\PaymentInstance $paymentInstance
+     * @return true|'processing'|\WP_Error true = settled and confirmed;
+     *                                     'processing' = still settling, check again
+     *                                     later; WP_Error = definitively failed
+     */
+    public function reconcileRenewalCharge(\FluentCart\App\Services\Payments\PaymentInstance $paymentInstance)
+    {
+        return new \WP_Error('not_supported', __('This payment method cannot reconcile pending charges.', 'fluent-cart'));
+    }
+
+    /**
+     * Store-managed subscription mode: a manual subscription's payment — the first
+     * order or a renewal invoice — must be taken as a plain one-time charge. No
+     * vendor subscription may be created and no manual→automatic conversion may
+     * happen. Every gateway with a subscription branch in
+     * makePaymentFromPaymentInstance() must consult this BEFORE its conversion /
+     * vendor-subscription logic and route to its single-payment path when true.
+     */
+    protected function shouldChargeSubscriptionAsOneTime(\FluentCart\App\Services\Payments\PaymentInstance $paymentInstance): bool
+    {
+        $subscription = $paymentInstance->subscription;
+
+        // Manual and system subscriptions are both store-billed — any interactive
+        // payment against them (first order or renewal invoice) is a one-time charge.
+        if (!$subscription || !in_array($subscription->collection_method, ['manual', 'system'], true)) {
+            return false;
         }
-        return $hasSubscription;
+
+        // Stamped at creation: a subscription born under store-managed mode must
+        // never be converted to automatic billing, even after the merchant switches
+        // the store setting back to gateway-managed.
+        if (\FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::isSubscriptionStoreManaged($subscription)) {
+            return true;
+        }
+
+        // Unstamped manual subscriptions (gateway-managed fallback / pre-feature)
+        // charge one-time only while the store is currently store-managed; under
+        // gateway-managed they keep today's manual→automatic conversion behavior.
+        return \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::isStoreManaged();
+    }
+
+    //technically not reachable , as conversion to manual subscription is not possible as of now.
+    protected function maybeConvertToManualSubscription(\FluentCart\App\Services\Payments\PaymentInstance $paymentInstance): void
+    {
+        $subscription = $paymentInstance->subscription;
+        // Manual AND system are already store-billed — nothing to convert. Without
+        // the system check, a COD payment against a system renewal invoice would
+        // silently downgrade the subscription to manual and disable auto-charging.
+        if (!$subscription || in_array($subscription->collection_method, ['manual', 'system'], true)) {
+            return;
+        }
+
+        if ($subscription->vendor_subscription_id) {
+            $oldGateway = App::gateway($subscription->current_payment_method);
+            if ($oldGateway && $oldGateway->has('subscriptions') && $oldGateway->subscriptions) {
+                $cancelResult = $oldGateway->subscriptions->cancel($subscription->vendor_subscription_id, [
+                    'subscription_id' => $subscription->id,
+                    'parent_order_id' => $subscription->parent_order_id,
+                ]);
+                if (is_wp_error($cancelResult)) {
+                    fluent_cart_error_log(
+                        'Failed to cancel vendor subscription during conversion to manual',
+                        $cancelResult->get_error_message()
+                    );
+                    return;
+                }
+            }
+        }
+
+        $subscription->collection_method = 'manual';
+        $subscription->current_payment_method = $this->getMeta('route');
+        $subscription->vendor_subscription_id = null;
+        $subscription->save();
+
+        $subscription->addLog(
+            'Converted to manual billing',
+            sprintf('Subscription converted from automatic to manual — paid via %s', $this->getMeta('label')),
+            'warning'
+        );
+
+        do_action('fluent_cart/subscription_converted_to_manual', [
+            'subscription'   => $subscription,
+            'payment_method' => $this->getMeta('route'),
+        ]);
     }
 
     public function validatePaymentMethod($data)
@@ -239,18 +363,6 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
                 'reason'  => sprintf(
                     /* translators: %s is the payment method name */
                     __('Selected payment method %s is not active!', 'fluent-cart'),
-                    $this->getMeta('route')
-                )
-            ];
-        }
-
-        $hasSubscriptions = (CartCheckoutHelper::make())->hasSubscription();
-        if ($hasSubscriptions === 'yes' && !$this->has('subscriptions')) {
-            return [
-                'isValid' => false,
-                'reason'  => sprintf(
-                    /* translators: %s is the payment method name */
-                    __('Subscription is not active for Selected payment method %s!', 'fluent-cart'),
                     $this->getMeta('route')
                 )
             ];
@@ -346,6 +458,11 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         return new \WP_Error('not_implemented', __('Refund process is not implemented for this payment gateway.', 'fluent-cart'));
     }
 
+    public function syncRemoteTransaction(OrderTransaction $transaction)
+    {
+        return new \WP_Error('not_implemented', __('Remote transaction sync is not available for this payment method.', 'fluent-cart'));
+    }
+
     public function enqueue($hasSubscription): void
     {
         $styles = $this->getEnqueueStyleSrc();
@@ -439,7 +556,6 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         $this->beforeRenderPaymentMethod($hasSubscription);
         $this->render($mode);
         $route = $this->getMeta('route');
-        do_action_deprecated('fluent-cart/after_render_payment_method_' . $route, [], '1.3.16', 'fluent_cart/after_render_payment_method_' . $route, 'Use fluent_cart/after_render_payment_method_' . $route . ' instead of fluent-cart/after_render_payment_method_' . $route . '.');
         do_action('fluent_cart/after_render_payment_method_' . $route);
     }
 

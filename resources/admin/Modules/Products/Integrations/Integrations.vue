@@ -205,7 +205,6 @@ import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 
 export default {
     name: 'ProductIntegrations',
-    props: ['product', 'product_id'],
     components: {
         IconButton, Empty,
         DynamicIcon,
@@ -214,6 +213,7 @@ export default {
         CardHeader,
         CardContainer
     },
+    props: ['product', 'product_id'],
     data() {
         return {
             product_id: this.product_id,
@@ -234,6 +234,14 @@ export default {
         hasActiveModules() {
             return Object.values(this.available_integrations).some(integration => integration.enabled);
         },
+    },
+    mounted() {
+        this.fetchIntegrations();
+        const header = document.querySelector('#fct_admin_menu_holder .fct-admin-product-header');
+        if (header) {
+            const app = document.querySelector('#fluent_cart_plugin_app');
+            app.prepend(header);
+        }
     },
     methods: {
         isEmpty,
@@ -326,7 +334,7 @@ export default {
                             this.handleSuccess(response.message);
                             this.feeds.splice($index, 1);
                         })
-                        .catch((e) => console.log(e));
+                        .catch(() => {});
                 })
                 .catch(() => {
                     // cancel response....
@@ -345,14 +353,6 @@ export default {
                 message: message,
                 offset: 40
             });
-        }
-    },
-    mounted() {
-        this.fetchIntegrations();
-        const header = document.querySelector('#fct_admin_menu_holder .fct-admin-product-header');
-        if (header) {
-            const app = document.querySelector('#fluent_cart_plugin_app');
-            app.prepend(header);
         }
     }
 }

@@ -34,8 +34,15 @@ class CouponsController extends Controller
 
     public function viewDetails(Request $request, $id)
     {
+        $coupon = CouponResource::viewDetails($id);
 
-        return ['coupon' => CouponResource::viewDetails($id)];
+        if (!$coupon) {
+            return CouponResource::makeErrorResponse([
+                ['code' => 404, 'message' => __('Coupon not found, please reload the page and try again!', 'fluent-cart')]
+            ], 404);
+        }
+
+        return ['coupon' => $coupon];
     }
 
     public function create(CouponRequest $request)
@@ -175,10 +182,11 @@ class CouponsController extends Controller
     public function reapplyCoupon(Request $request)
     {
         $data = $request->getSafe([
-            'order_uuid'         => 'sanitize_text_field',
+            'order_uuid'        => 'sanitize_text_field',
             'applied_coupons.*' => 'intval',
-            'order_items.*'     => 'sanitize_text_field',
+            'customer_email'    => 'sanitize_email',
         ]);
+        $data['order_items'] = Arr::except(Arr::get($request->all(), 'order_items', []), ['*']);
 
         $isApplied = CouponResource::reapplyCoupon($data);
 
@@ -199,7 +207,7 @@ class CouponsController extends Controller
         $productId = Arr::get($request->all(), 'productId', null);
         $appliedCoupons = Arr::get($request->all(), 'appliedCoupons', []);
         $origin = Arr::get($request->all(), 'origin', null);
-        $checkEligibility = CouponResource::checkProductEligibility($productId, $appliedCoupons, $origin);
+        $checkEligibility = CouponResource::checkProductEligibilityForCodes($productId, $appliedCoupons, $origin);
         return $checkEligibility;
     }
 

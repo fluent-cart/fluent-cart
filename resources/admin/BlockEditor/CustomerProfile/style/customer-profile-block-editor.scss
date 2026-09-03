@@ -44,7 +44,7 @@
         @apply w-7 h-7 flex items-center justify-center;
     }
     .fct-theme-button-icon {
-        @apply relative w-3.5 h-3.5 rounded-[10px] bg-dark-300 dark:bg-dark-200;
+        @apply relative w-3.5 h-3.5 rounded-[10px] bg-dark-300;
         transform-origin: center center;
         transition: transform 0.75s ease-in-out, background .2s ease, color .2s ease;
 
@@ -71,13 +71,13 @@
     .badge{
         @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-none font-medium py-[5px] px-2.5 rounded-md whitespace-nowrap max-h-6.5;
         &.success{
-            @apply bg-success-25 text-success-500 dark:bg-success-800 dark:text-white;
+            @apply bg-success-25 text-success-500;
         }
         &.warning{
-            @apply bg-warning-25 text-warning-500 dark:bg-warning-800 dark:text-white;
+            @apply bg-warning-25 text-warning-500;
         }
         &.danger{
-            @apply bg-red-25 text-red-500 dark:bg-red-800 dark:text-white;
+            @apply bg-red-25 text-red-500;
         }
     }
     .fct-customer-dashboard {
@@ -87,7 +87,7 @@
         &-header{
             @apply flex items-center justify-between mb-4;
             .is-link {
-                @apply font-medium underline text-sm text-[var(--fluent-cart-customer-dashboard-title-color)] focus:bg-transparent focus:shadow-none dark:text-gray-50;
+                @apply font-medium underline text-sm text-[var(--fluent-cart-customer-dashboard-title-color)] focus:bg-transparent focus:shadow-none;
             }
         }
         &-item{

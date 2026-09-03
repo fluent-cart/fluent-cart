@@ -185,8 +185,49 @@ class Response
     }
 
     /**
+     * Attach a response cookie whose value is base64(json($value)).
+     *
+     * Pairs with Request::cookie(), which auto-detects this exact format
+     * and decodes back to the original value on read. Use this when you
+     * need to attach arrays/objects to a Response — strings, numbers, and
+     * scalars work fine through plain withCookie() and don't need encoding.
+     *
+     * @param  string       $name
+     * @param  mixed        $value     Anything json_encode can serialize
+     * @param  int          $minutes
+     * @param  string       $path
+     * @param  string|null  $domain
+     * @param  bool         $secure
+     * @param  bool         $httpOnly
+     * @param  string       $samesite
+     * @return              self
+     */
+    public function withEncodedCookie(
+        $name,
+        $value,
+        $minutes,
+        $path = '/',
+        $domain = null,
+        $secure = false,
+        $httpOnly = true,
+        $samesite = 'Lax'
+    )
+    {
+        return $this->withCookie(
+            $name,
+            base64_encode(json_encode($value)),
+            $minutes,
+            $path,
+            $domain,
+            $secure,
+            $httpOnly,
+            $samesite
+        );
+    }
+
+    /**
      * Set response cookie
-     * 
+     *
      * @param  string       $name
      * @param  mixed        $value
      * @param  int          $minutes

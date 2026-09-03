@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "sub_phase30_replaced",
+    "object": "subscription",
+    "status": "canceled",
+    "customer": "cus_phase30_guard",
+    "metadata": {
+      "fct_ref_id": "phase30-guard-order-ref"
+    },
+    "pending_setup_intent": null,
+    "latest_invoice": {
+      "id": "in_phase30_replaced",
+      "object": "invoice",
+      "status": "void",
+      "payment_intent": {
+        "id": "pi_phase30_replaced",
+        "object": "payment_intent",
+        "status": "canceled"
+      }
+    }
+  }
+}

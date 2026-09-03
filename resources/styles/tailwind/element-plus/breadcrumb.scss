@@ -3,7 +3,7 @@
         @apply text-system-dark-light font-medium dark:text-gray-400;
         a,
         &.is-link{
-            @apply transition-none font-semibold text-system-dark hover:text-primary-500 dark:text-gray-50;
+            @apply transition-none font-semibold text-system-dark hover:text-primary-500 dark:text-gray-50 dark:hover:text-gray-50;
         }
     }
     &__item:last-child {

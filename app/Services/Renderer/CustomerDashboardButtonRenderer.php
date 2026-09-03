@@ -21,14 +21,16 @@ class CustomerDashboardButtonRenderer
         $isShortcode = Helper::toBool(Arr::get($atts, 'is_shortcode', false));
         $linkTarget = Arr::get($atts, 'link_target', '_self');
         $showIcon = Helper::toBool(Arr::get($atts, 'show_icon', true), true);
+        $customClass = trim(Arr::get($atts, 'class', ''));
+        $extraClass = trim(Arr::get($atts, 'extra_class', ''));
 
         if (empty($buttonText)) {
             $buttonText = __('My Account', 'fluent-cart');
         }
 
-        $class = $displayType === 'button'
+        $class = $customClass ?: ($displayType === 'button'
             ? 'wp-block-button__link wp-element-button fct-customer-dashboard-btn'
-            : 'fct-customer-dashboard-link';
+            : 'fct-customer-dashboard-link');
 
         $linkAtts = [
             'href'       => TemplateService::getCustomerProfileUrl(),
@@ -41,12 +43,16 @@ class CustomerDashboardButtonRenderer
             $linkAtts['rel'] = 'noopener noreferrer';
         }
 
+        if ($extraClass) {
+            $linkAtts['class'] .= ' ' . $extraClass;
+        }
+
         if ($isShortcode) {
             ob_start();
             $this->renderAttributes($linkAtts);
             $wrapperAttributes = ob_get_clean();
         } else {
-            $wrapperAttributes = get_block_wrapper_attributes($linkAtts);
+            $wrapperAttributes = RenderHelper::getBlockWrapperAttributes($linkAtts);
         }
 
         ?>

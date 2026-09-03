@@ -27,7 +27,7 @@ class ConnectConfig
             'connect_config' => [
                 'test_redirect'   => $testConnectRedirect,
                 'live_redirect'   => $liveConnectRedirect,
-                'image_url'       => Vite::getAssetUrl('images/payment-methods/paypal-icon.png'),
+                'image_url'       => Vite::getAssetUrl('images/payment-methods/paypal-icon.svg'),
                 'disconnect_note' => __('Disconnecting your PayPal account will prevent you from offering PayPal services and products on your website. Do you wish to continue?', 'fluent-cart')
             ],
             'test_account'   => $testAccountInfo,
@@ -153,59 +153,6 @@ class ConnectConfig
 
         //create webhook and setup endpoints
         (new Webhook())->registerWebhook($mode);
-    }
-
-    public static function verifyAuthorizeSuccess($data)
-    {
-        $response = wp_remote_post(self::$connectBase . 'paypal-verify-code', [
-            'method'      => 'POST',
-            'timeout'     => 60,
-            'redirection' => 5,
-            'httpversion' => '1.0',
-            'sslverify'   => false,
-            'blocking'    => true,
-            'headers'     => array(),
-            'body'        => $data,
-            'cookies'     => array()
-        ]);
-
-        if (is_wp_error($response)) {
-            $message = $response->get_error_message();
-            echo '<div class="fct_message fct_message_error">' . esc_html($message) . '</div>';
-            return;
-        }
-
-        $response = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (empty($response['paypal_user_id'])) {
-            $message = Arr::get($response, 'message');
-            if (!$message) {
-                $message = __('Invalid PayPal Request. Please configure paypal payment gateway again', 'fluent-cart');
-            }
-            echo '<div class="fct_message fct_message_error">' . esc_html($message) . '</div>';
-            return;
-        }
-
-        $payPalInstance = App::gateway('paypal');
-        $settings = $payPalInstance->settings->get();
-
-        $settings['provider'] = 'connect';
-
-        $settings['is_active'] = 'yes';
-
-        if (!empty($response['livemode'])) {
-            $settings['payment_mode'] = 'live';
-            $settings['live_account_id'] = $response['paypal_user_id'];
-            $settings['live_publishable_key'] = $response['paypal_publishable_key'];
-            $settings['live_secret_key'] = $response['access_token'];
-        } else {
-            $settings['payment_mode'] = 'test';
-            $settings['test_account_id'] = $response['paypal_user_id'];
-            $settings['test_publishable_key'] = $response['paypal_publishable_key'];
-            $settings['test_secret_key'] = $response['access_token'];
-        }
-
-        $payPalInstance->updateSettings($settings);
     }
 
     private static function getAccountInfo($settings, $mode)

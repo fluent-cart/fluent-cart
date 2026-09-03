@@ -66,7 +66,6 @@ window.addEventListener('load', function () {
                         }));
                     })
                     .catch(error => {
-                        console.error('An error occurred:', error);
                     });
             },
             false
@@ -80,6 +79,29 @@ window.addEventListener('load', function () {
     if(window.fluentCartCheckout){
         window.fluentCartCheckout['beforeCheckoutCallbacks'] = [];
         window.fluentCartCheckout['afterCheckoutCallbacks'] = [];
+    }
+
+    const checkoutNotices = window.fluentcart_checkout_vars?.notices;
+    if (Array.isArray(checkoutNotices) && checkoutNotices.length > 0) {
+        checkoutNotices.forEach((message) => {
+            const node = document.createElement('span');
+            const icon = document.createElement('span');
+            icon.className = 'warn warning';
+            const label = document.createElement('span');
+            label.textContent = message;
+            node.appendChild(icon);
+            node.appendChild(label);
+            new Toastify({
+                node: node,
+                className: "warning",
+                duration: 6000,
+                close: false,
+                style: {
+                    color: "#000",
+                    background: "#ffffff",
+                },
+            }).showToast();
+        });
     }
 
 

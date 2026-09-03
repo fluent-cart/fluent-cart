@@ -17,6 +17,7 @@
 <script>
 export default {
   name: 'FluidTabItem',
+  inject: ['setActiveItem', 'isActiveItem'],
   props: {
     label: String,
     requiredConfirmation: {
@@ -28,7 +29,6 @@ export default {
       default: null
     }
   },
-  inject: ['setActiveItem', 'isActiveItem'],
   data() {
     return {
       isActive: false,
@@ -36,6 +36,9 @@ export default {
   },
   mounted() {
     this.updateActive();
+  },
+  updated() {
+    this.isActive = this.isActiveItem(this.$refs.btn);
   },
   methods: {
     clicked() {
@@ -57,9 +60,6 @@ export default {
       }
       this.isActive = this.isActiveItem(this.$refs.btn);
     },
-  },
-  updated() {
-    this.isActive = this.isActiveItem(this.$refs.btn);
   },
 };
 </script>

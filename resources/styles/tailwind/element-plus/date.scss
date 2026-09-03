@@ -138,7 +138,7 @@
             @apply h-1 w-1;
         }
         .el-picker-panel__shortcut{
-            @apply text-sm font-medium text-system-mid py-2 px-3 rounded hover:bg-gray-50 hover:text-system-dark dark:text-gray-300 dark:hover:bg-dark-500;
+            @apply text-sm font-medium text-system-mid py-2 px-3 rounded hover:bg-gray-50 hover:text-system-dark dark:text-gray-300 dark:hover:bg-dark-500 dark:hover:text-gray-50;
             &.active{
                 @apply bg-gray-100 text-system-dark dark:bg-dark-500 dark:text-gray-50;
             }
@@ -270,7 +270,7 @@
     }
 }
 
-.dark{
+.fluent_theme_dark{
     .el-date-range-picker__header .el-picker-panel__icon-btn {
         &.arrow-right::before,
         &.arrow-left::before,
@@ -278,5 +278,8 @@
         &.d-arrow-right::before {
             filter: invert(1);
         }
+    }
+    .el-date-range-picker__header-label {
+        @apply text-gray-300;
     }
 }

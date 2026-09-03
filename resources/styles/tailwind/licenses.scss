@@ -107,6 +107,17 @@
     }
 }
 
+/*====== activated site last update cell =====*/
+.fct-license-site-last-update{
+    @apply flex flex-col gap-0.5 leading-tight;
+    .version{
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+    .date{
+        @apply text-sm text-system-mid dark:text-gray-300;
+    }
+}
+
 /*====== fct-license-activation-limit-wrap =====*/
 .fct-license-activation-limit-container{
     @apply flex items-center gap-3;

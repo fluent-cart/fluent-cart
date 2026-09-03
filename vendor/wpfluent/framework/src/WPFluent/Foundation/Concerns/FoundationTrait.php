@@ -73,7 +73,7 @@ trait FoundationTrait
      */
     public function parseRestHandler($handler, $ns = '')
     {
-        if ($handler instanceof \Closure) {
+        if (is_object($handler) && is_callable($handler)) {
             return $handler;
         }
 
@@ -415,7 +415,11 @@ trait FoundationTrait
         if ($handler instanceof \Closure) {
             return false;
         };
-        
+
+        if (is_object($handler)) {
+            return false;
+        }
+
         $parts = array_filter(explode('\\', $handler));
         
         return count($parts) > 1;

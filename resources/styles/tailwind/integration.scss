@@ -221,11 +221,22 @@
         @apply flex items-center gap-1;
     }
 }
+
+.fct-vat-excluded-inclusive-wrap {
+    @apply pl-[42px];
+}
+
 @media (max-width: 768px) {
     .dropdown_label_repeater{
         @apply overflow-x-scroll;
         table{
             @apply w-[750px] !important;
         }
+    }
+    .fct-setting-form-row {
+        @apply grid;
+    }
+    .fct-vat-excluded-inclusive-wrap {
+        @apply pl-0;
     }
 }

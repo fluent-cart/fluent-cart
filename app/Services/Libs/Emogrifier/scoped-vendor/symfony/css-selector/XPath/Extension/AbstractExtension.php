@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\XPath\Extension;
 
 /**
@@ -22,23 +23,42 @@ namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\XPath\Extension;
  */
 abstract class AbstractExtension implements ExtensionInterface
 {
-    public function getNodeTranslators() : array
+    /**
+     * {@inheritdoc}
+     */
+    public function getNodeTranslators(): array
     {
         return [];
     }
-    public function getCombinationTranslators() : array
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getCombinationTranslators(): array
     {
         return [];
     }
-    public function getFunctionTranslators() : array
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getFunctionTranslators(): array
     {
         return [];
     }
-    public function getPseudoClassTranslators() : array
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPseudoClassTranslators(): array
     {
         return [];
     }
-    public function getAttributeMatchingTranslators() : array
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getAttributeMatchingTranslators(): array
     {
         return [];
     }

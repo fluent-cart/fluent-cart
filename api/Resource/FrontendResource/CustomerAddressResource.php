@@ -114,7 +114,7 @@ class CustomerAddressResource extends BaseResourceApi
         $data['customer_id'] = $id;
 
         // set others data as meta
-        $otherData = Arr::only($data, ['company_name', 'first_name', 'last_name', 'phone']);
+        $otherData = Arr::only($data, ['company_name', 'vat_number', 'legal_registration_id', 'first_name', 'last_name', 'phone']);
         Arr::set($data, 'meta.other_data', $otherData);
 
         $isCreated = static::getQuery()->create($data);
@@ -169,6 +169,14 @@ class CustomerAddressResource extends BaseResourceApi
                 ['code' => 404, 'message' => __('Address not found, please reload the page and try again!', 'fluent-cart')]
             ]);
         }
+
+        $otherData = Arr::only($data, ['company_name', 'vat_number', 'legal_registration_id', 'first_name', 'last_name', 'phone']);
+        $existingMeta = is_array($address->meta) ? $address->meta : [];
+        Arr::set($existingMeta, 'other_data', array_merge(
+            Arr::get($existingMeta, 'other_data', []),
+            $otherData
+        ));
+        $data['meta'] = $existingMeta;
 
         $isUpdated = $address->update($data);
 

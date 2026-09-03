@@ -20,6 +20,22 @@ class ShippingZoneRequest extends RequestGuard
         if (array_key_exists('shipping_class_id', $data)) {
             $classId = $data['shipping_class_id'];
             $data['shipping_class_id'] = $classId ? intval($classId) : null;
+        } else {
+            // Omitted on update means "preserve the stored class". Resolve the
+            // effective class HERE (this return is merged into the request) so
+            // the whole-world uniqueness rule below validates the same class
+            // bucket the row will actually keep — and the controller writes
+            // that same value back. Without this, a class-scoped zone going
+            // region=all was checked against general zones: falsely rejected by
+            // an unrelated general whole-world zone, while a real conflict in
+            // its own class went unchecked.
+            $currentId = Arr::get($data, 'id') ?: App::getInstance()->request->get('id');
+            if ($currentId) {
+                $storedClassId = \FluentCart\App\Models\ShippingZone::query()
+                    ->where('id', intval($currentId))
+                    ->value('shipping_class_id');
+                $data['shipping_class_id'] = $storedClassId ? intval($storedClassId) : null;
+            }
         }
 
         return $data;

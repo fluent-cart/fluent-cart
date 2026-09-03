@@ -61,12 +61,12 @@
                       :existingUpgradePathMap="existingUpgradePathMap"
                       :fromName="Arr.get(variantTitleMap, scope.row.object_id, '')"
                       :preSelectedFromVariant="scope.row.object_id"
-                      @pathGenerated="handlePathGenerated"
+                      @path-generated="handlePathGenerated"
                   />
 
-                  <icon-button size="x-small" tag="button" outline @click="() => deletePath(scope.row.id)">
+                  <IconButton size="x-small" tag="button" outline @click="() => deletePath(scope.row.id)">
                     <DynamicIcon name="Delete"/>
-                  </icon-button>
+                  </IconButton>
                 </div>
               </template>
             </el-table-column>
@@ -142,12 +142,12 @@
                       :existingUpgradePathMap="existingUpgradePathMap"
                       :fromName="Arr.get(variantTitleMap, row.object_id, '')"
                       :preSelectedFromVariant="row.object_id"
-                      @pathGenerated="handlePathGenerated"
+                      @path-generated="handlePathGenerated"
                   />
 
-                  <icon-button size="x-small" tag="button" outline @click="() => deletePath(row.id)">
+                  <IconButton size="x-small" tag="button" outline @click="() => deletePath(row.id)">
                     <DynamicIcon name="Delete"/>
-                  </icon-button>
+                  </IconButton>
                 </div>
               </div><!-- path-actions -->
             </div>
@@ -179,6 +179,7 @@
       <div v-else-if="!isProActive" class="border border-solid border-gray-divider mt-5 pt-5 border-x-0 border-b-0 dark:border-dark-400">
         <ProFeatureNotice
             class="py-7.5"
+            placement="feature_lock_upgrade_paths"
             :title="translate('Get access to this feature by Upgrading to FluentCart Pro')"
             :text="translate('This feature is only available in FluentCart Pro.')"
         />
@@ -199,7 +200,7 @@
   <AddModal
       v-if="!isBundleProduct"
       :productId="product.ID"
-      @pathGenerated="handlePathGenerated"
+      @path-generated="handlePathGenerated"
       ref="addModalRef"
       :pathOptions="upgradePathOptions"
       :all-variants="product.variants"
@@ -277,7 +278,6 @@ const fetchUpgradeSettings = async () => {
     initializeUpgradeSettings();
   })
       .catch(function (error) {
-        console.log(error);
       })
       .finally(() => {
         loading.value = false;

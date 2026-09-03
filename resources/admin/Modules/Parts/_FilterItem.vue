@@ -89,16 +89,10 @@
 <script type="text/babel">
 import {isEmpty} from "@/utils/Utils";
 import {each} from "@/utils/Utils";
-import {Close} from '@element-plus/icons-vue';
-import {markRaw} from "vue";
-
 export default {
   name: 'OrderFilterItem',
   props: ['filters', 'filterOptions'],
   emits: ['updateFilters'],
-  components: {
-    Close: markRaw(Close)
-  },
   data() {
     return {
       selectedFilters: [],
@@ -114,6 +108,34 @@ export default {
         'gt': 'greater than',
         'lt': 'less than'
       }
+    }
+  },
+  mounted() {
+    // if (isEmpty(this.filters)) {
+    //     this.filterArray.push({
+    //         item_key: '',
+    //         item_values: [],
+    //         operator: 'IN'
+    //     });
+    // } else {
+    //     each(this.filters, (filter, filterKey) => {
+    //         this.filterArray.push({
+    //             item_key: filterKey,
+    //             item_values: filter.value,
+    //             operator: filter.operator
+    //         });
+    //     });
+    // }
+
+    if (!isEmpty(this.filters)) {
+      this.selectedFilters = Object.keys(this.filters);
+      each(this.filters, (filter, filterKey) => {
+        this.filterArray[filterKey] = ({
+          item_key: filterKey,
+          item_values: filter.value,
+          operator: filter.operator
+        });
+      });
     }
   },
   methods: {
@@ -184,34 +206,6 @@ export default {
     // removeFilter(index) {
     //     this.filterArray.splice(index, 1);
     // }
-  },
-  mounted() {
-    // if (isEmpty(this.filters)) {
-    //     this.filterArray.push({
-    //         item_key: '',
-    //         item_values: [],
-    //         operator: 'IN'
-    //     });
-    // } else {
-    //     each(this.filters, (filter, filterKey) => {
-    //         this.filterArray.push({
-    //             item_key: filterKey,
-    //             item_values: filter.value,
-    //             operator: filter.operator
-    //         });
-    //     });
-    // }
-
-    if (!isEmpty(this.filters)) {
-      this.selectedFilters = Object.keys(this.filters);
-      each(this.filters, (filter, filterKey) => {
-        this.filterArray[filterKey] = ({
-          item_key: filterKey,
-          item_values: filter.value,
-          operator: filter.operator
-        });
-      });
-    }
   }
 }
 </script>

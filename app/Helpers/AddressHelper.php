@@ -10,6 +10,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Models\CustomerAddresses;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\OrderAddress;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
@@ -91,6 +92,24 @@ class AddressHelper
                 }
             }
         }
+    }
+
+    /**
+     * Copy an existing OrderAddress's meta (company/VAT/legal-reg id/label) onto the
+     * order-address row of the same type already created for $orderId. insertOrderAddresses()
+     * only accepts flat column data, so a parent-order snapshot copy (renewals) must
+     * carry meta over separately.
+     */
+    public static function copyOrderAddressMeta($orderId, $type, $sourceAddress): void
+    {
+        if (!$sourceAddress || empty($sourceAddress->meta)) {
+            return;
+        }
+
+        OrderAddress::query()
+            ->where('order_id', $orderId)
+            ->where('type', $type)
+            ->update(['meta' => json_encode($sourceAddress->meta)]);
     }
 
     public static function getIpAddress($anonymize = false)
@@ -574,9 +593,20 @@ class AddressHelper
             if ($addressModel && $addressModel->customer_id == $currentCustomer->id) {
                 $addressData = $addressModel->getFormattedDataForCheckout($type . '_');
 
+                $businessInfoFields = [$type . '_company_name', $type . '_legal_registration_id'];
                 foreach ($addressData as $key => $value) {
-                    if (!isset($data[$key]) || $data[$key] === '' || $data[$key] !== $value) {
+                    if ($value !== '') {
+                        if (in_array($key, $businessInfoFields) && !empty($data[$key])) {
+                            continue;
+                        }
                         $data[$key] = $value;
+                    }
+                }
+
+                if ($type === 'billing') {
+                    $vatNumber = Arr::get($addressData, 'billing_vat_number', '');
+                    if ((!isset($data['fct_billing_tax_id']) || $data['fct_billing_tax_id'] === '') && $vatNumber !== '') {
+                        $data['fct_billing_tax_id'] = $vatNumber;
                     }
                 }
             }

@@ -1,0 +1,31 @@
+.fct-product-rating-block-editor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .fct-product-card-stars {
+        display: flex;
+        align-items: center;
+        line-height: 1;
+    }
+
+    .fct-star {
+        font-size: 14px;
+        color: #d1d5db;
+        line-height: 1;
+    }
+
+    .fct-star-filled {
+        color: #f59e0b;
+    }
+
+    .fct-star-half {
+        color: #f59e0b;
+        opacity: 0.6;
+    }
+
+    .fct-product-card-review-count {
+        font-size: 12px;
+        color: #6b7280;
+    }
+}

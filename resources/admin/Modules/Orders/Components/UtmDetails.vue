@@ -44,9 +44,9 @@
             </li>
 
 
-            <li v-if="Array.isArray(order_operation.meta)" v-for='(meta, key) in order_operation.meta' class="fct-admin-summary-item">
-              <span class="font-medium">{{ key }}</span>
-              <span>{{ meta || '--' }}</span>
+            <li v-for="item in metaItems" :key="item.key" class="fct-admin-summary-item">
+              <span class="font-medium">{{ item.label }}</span>
+              <span>{{ item.value }}</span>
             </li>
 
           </ul>
@@ -68,6 +68,40 @@ export default {
   props: {
     order_operation: {
       type: Object,
+    }
+  },
+  computed: {
+    /**
+     * Ad-network click identifiers live in the `meta` JSON column rather than in
+     * their own columns. The API sends that column as an object when it holds
+     * values and as an empty array when it does not, so normalise both shapes
+     * before rendering. Unknown keys still render under their raw name — a feed
+     * added through the `fluent_cart/utm/allowed_keys` filter stays visible.
+     */
+    metaItems() {
+      const meta = this.order_operation && this.order_operation.meta;
+
+      if (!meta || typeof meta !== 'object') {
+        return [];
+      }
+
+      const labels = {
+        gclid: translate('Google Click ID (gclid)'),
+        gbraid: translate('Google iOS Web Click ID (gbraid)'),
+        wbraid: translate('Google iOS App Click ID (wbraid)'),
+        gad_campaignid: translate('Google Ads Campaign ID'),
+        gad_source: translate('Google Ads Source'),
+        msclkid: translate('Microsoft Click ID (msclkid)'),
+        fbclid: translate('Facebook Click ID (fbclid)'),
+      };
+
+      return Object.keys(meta)
+          .filter((key) => meta[key] !== '' && meta[key] !== null && meta[key] !== undefined)
+          .map((key) => ({
+            key,
+            label: labels[key] || key,
+            value: meta[key],
+          }));
     }
   }
 };

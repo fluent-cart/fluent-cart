@@ -4,7 +4,9 @@ namespace FluentCart\Framework\Support;
 
 use Closure;
 use stdClass;
+use Iterator;
 use ArrayIterator;
+use IteratorIterator;
 use DateTimeInterface;
 use IteratorAggregate;
 use FluentCart\Framework\Support\Helper;
@@ -1502,7 +1504,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
     /**
      * Get the values iterator.
      *
-     * @return \Traversable
+     * @return \Iterator
      */
     #[\ReturnTypeWillChange]
     public function getIterator()
@@ -1529,12 +1531,19 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Make an iterator from the given source.
      *
      * @param  mixed  $source
-     * @return \Traversable
+     * @return \Iterator
      */
     protected function makeIterator($source)
     {
         if ($source instanceof IteratorAggregate) {
-            return $source->getIterator();
+            $iterator = $source->getIterator();
+
+            // IteratorAggregate::getIterator() is only guaranteed to return a
+            // Traversable; wrap a bare one so callers always get a real Iterator
+            // (valid()/current()/next()/key()).
+            return $iterator instanceof Iterator
+                ? $iterator
+                : new IteratorIterator($iterator);
         }
 
         if (is_array($source)) {

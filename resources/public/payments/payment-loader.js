@@ -19,7 +19,15 @@ export default class PaymentLoader {
         this.#form = form;
         this.payMethod = this.#form.querySelector('input[name="_fct_pay_method"]:checked')?.value;
         this.checkoutHandler = checkoutHandler;
-        this.#checkoutUiService = checkoutHandler.checkoutUiService;
+        // The custom payment page constructs PaymentLoader without a checkout
+        // handler; fall back to a no-op UI service so button-state calls are safe.
+        this.#checkoutUiService = checkoutHandler?.checkoutUiService || {
+            enableCheckoutButton: () => {},
+            disableCheckoutButton: () => {},
+            showCheckoutButton: () => {},
+            hideCheckoutButton: () => {},
+            setCheckoutButtonText: () => {},
+        };
         this.customPayment = customPayment;
         this.#isZeroPayment = window.fluentcart_checkout_info?.is_zero_payment === 'yes';
         this.#hasSubscriptions = window.fluentcart_checkout_info?.has_subscription === 'yes';
@@ -90,6 +98,14 @@ export default class PaymentLoader {
                     el.classList.remove('fct-payment-loading');
                     el.classList.add('fct-payment-loading-failed');
                 });
+
+                if (document.querySelector('.fct_place_order_btn_wrap')) {
+                    document.querySelector('.fct_place_order_btn_wrap').classList.remove('fct-payment-loading');
+                }
+
+                if (paymentMethod === this.payMethod) {
+                    this.#checkoutUiService.disableCheckoutButton();
+                }
             }
         });
 
@@ -261,7 +277,6 @@ export default class PaymentLoader {
             if (xhr.status >= 200 && xhr.status < 300) {
                 // do your stuff
             } else {
-                console.error('Network response was not ok');
             }
         };
 
@@ -330,6 +345,16 @@ export default class PaymentLoader {
             params['variation_id'] = searchParams.get('variation_id');
         }
 
+        // Carry the "save my card" choice into the payment config request. The
+        // gateway resolves setup_future_usage from it, and the same checkbox is
+        // posted with the order so the server's half matches. Without this, a
+        // buyer who ticks the box and then re-selects the payment method would get
+        // a config built as if they had not consented.
+        const saveCardBox = this.#form.querySelector('input[name="save_payment_method"]');
+        if (saveCardBox && saveCardBox.checked) {
+            params['save_payment_method'] = 'yes';
+        }
+
         const paymentInfoUrl = CheckoutHelper.buildUrl(url.toString(), params).toString();
 
         window.dispatchEvent(new CustomEvent('fluent_cart_load_payments_' + paymentMethod, {
@@ -346,6 +371,7 @@ export default class PaymentLoader {
     }
 
     changeLoaderStatus(status) {
+        this.showLoader();
         const loaderStatus = document.querySelector('.fct-order-processing .loading-status');
         if (!loaderStatus) {
             return;
@@ -362,6 +388,20 @@ export default class PaymentLoader {
         };
 
         loaderStatus.textContent = statusMessages[status] || status;
+    }
+
+    showLoader() {
+        let loader = document.querySelector('.fct-order-processing');
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.className = 'fct-order-processing';
+            loader.innerHTML = '<div class="fct-loader-spinner"></div><br/>'
+                + '<div class="loading-status"></div>'
+                + '<div class="fct-browser-notify">' + this.#translate('Please Don\'t close the browser') + '</div>';
+            document.body.appendChild(loader);
+        } else {
+            loader.classList.remove('fct-loader-hidden');
+        }
     }
 
     hideLoader() {

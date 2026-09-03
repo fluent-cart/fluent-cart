@@ -29,8 +29,20 @@ class Status
     public const PAYMENT_REFUNDED = 'refunded';
     public const PAYMENT_PARTIALLY_REFUNDED = 'partially_refunded';
     public const PAYMENT_AUTHORIZED = 'authorized';
+    public const PAYMENT_SCHEDULED = 'payment_scheduled';
 
     // Transaction Statuses
+    // Product review statuses — raw wp_comments.comment_approved values
+    public const REVIEW_APPROVED = '1';
+    public const REVIEW_PENDING = '0';
+    public const REVIEW_SPAM = 'spam';
+    public const REVIEW_TRASH = 'trash';
+
+    // Review permission modes — who may submit a review
+    public const REVIEW_PERMISSION_VERIFIED_BUYERS = 'verified_buyers';
+    public const REVIEW_PERMISSION_LOGGED_IN = 'logged_in';
+    public const REVIEW_PERMISSION_ANYONE = 'anyone';
+
     public const TRANSACTION_SUCCEEDED = 'succeeded';
     public const TRANSACTION_AUTHORIZED = 'authorized';
     public const TRANSACTION_PENDING = 'pending';
@@ -62,6 +74,10 @@ class Status
     public const SUBSCRIPTION_COMPLETED = 'completed';
     public const SUBSCRIPTION_AUTHENTICATED = 'authenticated';
     public const SUBSCRIPTION_CREATED = 'created';
+
+    public const SUBSCRIPTION_METHOD_MANUAL = 'manual';
+    public const SUBSCRIPTION_METHOD_AUTOMATIC = 'automatic';
+    public const SUBSCRIPTION_METHOD_SYSTEM = 'system';
 
     // billing interval
     public const BILLING_YEARLY = 'yearly';
@@ -167,15 +183,13 @@ class Status
 
     public static function getEditableOrderStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_order_statuses', [
-            [
-                self::ORDER_ON_HOLD    => __('On Hold', 'fluent-cart'),
-                self::ORDER_PROCESSING => __('Processing', 'fluent-cart'),
-                self::ORDER_COMPLETED  => __('Completed', 'fluent-cart'),
-                //  'archived' => __('Archived', 'fluent-cart'),
-                self::ORDER_CANCELED   => __('Canceled', 'fluent-cart')
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_order_statuses', 'Use fluent_cart/editable_order_statuses instead of fluent-cart/editable_order_statuses.');
+        $statuses = [
+            self::ORDER_ON_HOLD    => __('On Hold', 'fluent-cart'),
+            self::ORDER_PROCESSING => __('Processing', 'fluent-cart'),
+            self::ORDER_COMPLETED  => __('Completed', 'fluent-cart'),
+            //  'archived' => __('Archived', 'fluent-cart'),
+            self::ORDER_CANCELED   => __('Canceled', 'fluent-cart')
+        ];
 
         return apply_filters('fluent_cart/editable_order_statuses', $statuses, []);
     }
@@ -192,6 +206,7 @@ class Status
             self::PAYMENT_REFUNDED           => __('Refunded', 'fluent-cart'),
             self::PAYMENT_PARTIALLY_REFUNDED => __('Partially Refunded', 'fluent-cart'),
             self::PAYMENT_AUTHORIZED         => __('Authorized', 'fluent-cart'),
+            self::PAYMENT_SCHEDULED          => __('Payment Scheduled', 'fluent-cart'),
         ], []);
     }
 
@@ -215,15 +230,13 @@ class Status
 
     public static function getEditableTransactionStatuses($withLabel = true)
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_transaction_statuses', [
-            [
-                self::TRANSACTION_PENDING   => __('Pending', 'fluent-cart'),
-                self::TRANSACTION_SUCCEEDED => __('Succeeded', 'fluent-cart'),
-                self::TRANSACTION_AUTHORIZED => __('Authorized', 'fluent-cart'),
-                self::TRANSACTION_FAILED    => __('Failed', 'fluent-cart'),
-                self::TRANSACTION_REFUNDED  => __('Refunded', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_transaction_statuses', 'Use fluent_cart/editable_transaction_statuses instead of fluent-cart/editable_transaction_statuses.');
+        $statuses = [
+            self::TRANSACTION_PENDING   => __('Pending', 'fluent-cart'),
+            self::TRANSACTION_SUCCEEDED => __('Succeeded', 'fluent-cart'),
+            self::TRANSACTION_AUTHORIZED => __('Authorized', 'fluent-cart'),
+            self::TRANSACTION_FAILED    => __('Failed', 'fluent-cart'),
+            self::TRANSACTION_REFUNDED  => __('Refunded', 'fluent-cart'),
+        ];
 
         $statuses = apply_filters('fluent_cart/editable_transaction_statuses', $statuses, []);
 
@@ -247,14 +260,12 @@ class Status
 
     public static function getEditableShippingStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_order_statuses', [
-            [
-                self::SHIPPING_UNSHIPPED   => __('Unshipped', 'fluent-cart'),
-                self::SHIPPING_SHIPPED     => __('Shipped', 'fluent-cart'),
-                self::SHIPPING_DELIVERED   => __('Delivered', 'fluent-cart'),
-                self::SHIPPING_UNSHIPPABLE => __('Unshippable', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_shipping_statuses', 'Use fluent_cart/editable_shipping_statuses instead of fluent-cart/editable_order_statuses.');
+        $statuses = [
+            self::SHIPPING_UNSHIPPED   => __('Unshipped', 'fluent-cart'),
+            self::SHIPPING_SHIPPED     => __('Shipped', 'fluent-cart'),
+            self::SHIPPING_DELIVERED   => __('Delivered', 'fluent-cart'),
+            self::SHIPPING_UNSHIPPABLE => __('Unshippable', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/editable_shipping_statuses', $statuses, []);
     }
@@ -324,7 +335,15 @@ class Status
         return [
             self::PAYMENT_PAID,
             self::PAYMENT_PARTIALLY_REFUNDED,
-            self::PAYMENT_PARTIALLY_PAID
+            self::PAYMENT_PARTIALLY_PAID,
+        ];
+    }
+
+    public static function getPaymentRetryableStatuses()
+    {
+        return [
+            self::PAYMENT_PENDING,
+            self::PAYMENT_FAILED
         ];
     }
 
@@ -343,6 +362,35 @@ class Status
         return apply_filters('fluent_cart/transaction_success_statuses', [self::TRANSACTION_SUCCEEDED, self::TRANSACTION_AUTHORIZED], []);
     }
 
+    /**
+     * All product review statuses (raw wp_comments.comment_approved values).
+     */
+    public static function getReviewStatuses(): array
+    {
+        return [
+            self::REVIEW_APPROVED,
+            self::REVIEW_PENDING,
+            self::REVIEW_SPAM,
+            self::REVIEW_TRASH,
+        ];
+    }
+
+    /**
+     * Review statuses that count as an existing review for duplicate
+     * detection. Spam and trash are deliberately excluded — a review the
+     * store rejected does not block the customer from submitting a fresh
+     * one. Every surface that projects "can this user review?" must use
+     * this set so it never contradicts the
+     * ProductReviewService::canSubmitReview() write-path guard.
+     */
+    public static function getReviewDuplicateStatuses(): array
+    {
+        return apply_filters('fluent_cart/review_duplicate_statuses', [
+            self::REVIEW_APPROVED,
+            self::REVIEW_PENDING,
+        ]);
+    }
+
     // Get all statuses (optional utility)
     public static function all()
     {
@@ -359,12 +407,10 @@ class Status
 
     public static function getEditableCustomerStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_customer_statuses', [
-            [
-                self::CUSTOMER_ACTIVE   => __('Active', 'fluent-cart'),
-                self::CUSTOMER_INACTIVE => __('Inactive', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_customer_statuses', 'Use fluent_cart/editable_customer_statuses instead of fluent-cart/editable_customer_statuses.');
+        $statuses = [
+            self::CUSTOMER_ACTIVE   => __('Active', 'fluent-cart'),
+            self::CUSTOMER_INACTIVE => __('Inactive', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/editable_customer_statuses', $statuses, []);
     }
@@ -447,6 +493,10 @@ class Status
                         [
                             'value' => 'subscription_activated',
                             'label' => __('Subscription Activated', 'fluent-cart')
+                        ],
+                        [
+                            'value' => 'subscription_reactivated',
+                            'label' => __('Subscription Reactivated', 'fluent-cart')
                         ],
                         [
                             'value' => 'subscription_canceled',

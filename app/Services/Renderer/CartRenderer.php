@@ -163,6 +163,16 @@ class CartRenderer
         <?php
     }
 
+    protected function getEventInfo()
+    {
+        return [
+            'item'    => $this->currentCartItem,
+            'cart'    => null,
+            'product' => $this->product,
+            'variant' => null,
+        ];
+    }
+
     public function renderDetails()
     {
         ?>
@@ -174,6 +184,7 @@ class CartRenderer
                 $this->renderItemPrice();
                 $this->renderQuantity();
                 (new CartItemRenderer($this->currentCartItem))->renderChildVariants();
+                do_action('fluent_cart/cart/line_item/line_meta', $this->getEventInfo());
             ?>
 
         </div>
@@ -186,7 +197,9 @@ class CartRenderer
     public function renderTitles()
     {
         $postTitle = Arr::get($this->currentCartItem, 'post_title', '');
-        $variationTitle = Arr::get($this->currentCartItem, 'title', '');
+        // The Cart model already resolves & appends variation_display_title on
+        // every cart item (Cart::getCartDataAttribute), so just read it.
+        $variationTitle = (string) Arr::get($this->currentCartItem, 'variation_display_title', Arr::get($this->currentCartItem, 'title', ''));
         $variationType = Arr::get($this->currentCartItem, 'variation_type', 'simple');
 
         $aria_label = sprintf(
@@ -218,7 +231,11 @@ class CartRenderer
 
     public function renderItemPrice()
     {
-        $price = Helper::toDecimal(Arr::get($this->currentCartItem, 'unit_price', 0));
+        $price = Helper::toDecimal(Arr::get(
+            $this->currentCartItem,
+            'line_meta.original_unit_price',
+            Arr::get($this->currentCartItem, 'unit_price', 0)
+        ));
         $quantity = Arr::get($this->currentCartItem, 'quantity', 1);
 
         ?>
@@ -311,7 +328,12 @@ class CartRenderer
     public function renderItemTotal()
     {
         $quantity = Arr::get($this->currentCartItem, 'quantity', 0);
-        $totalPrice = Arr::get($this->currentCartItem, 'unit_price', 0) * $quantity;
+        $displayUnitPrice = Arr::get(
+            $this->currentCartItem,
+            'line_meta.original_unit_price',
+            Arr::get($this->currentCartItem, 'unit_price', 0)
+        );
+        $totalPrice = $displayUnitPrice * $quantity;
 
         if (Arr::get($this->currentCartItem, 'other_info.payment_type', 'onetime') == 'subscription') {
             if (Arr::get($this->currentCartItem, 'other_info.manage_setup_fee') == 'yes') {
@@ -348,8 +370,27 @@ class CartRenderer
 
     public function renderTotal()
     {
-
-        $subtotal = CartCheckoutHelper::make()->getItemsAmountSubtotal(true, true);
+        $cartItems = CartCheckoutHelper::make()->getItems();
+        $grossTotal = 0;
+        foreach ($cartItems as $item) {
+            $paymentType = Arr::get($item, 'other_info.payment_type', '');
+            $qty = max(1, (int) Arr::get($item, 'quantity', 1));
+            $displayUnitPrice = (int) Arr::get(
+                $item,
+                'line_meta.original_unit_price',
+                Arr::get($item, 'unit_price', 0)
+            );
+            if ($paymentType === 'subscription') {
+                if ((int) Arr::get($item, 'other_info.trial_days', 0) > 0) {
+                    $grossTotal += (int) Arr::get($item, 'other_info.signup_fee', 0);
+                } else {
+                    $grossTotal += $displayUnitPrice * $qty + (int) Arr::get($item, 'other_info.signup_fee', 0);
+                }
+            } else {
+                $grossTotal += $displayUnitPrice * $qty;
+            }
+        }
+        $subtotal = Helper::toDecimal($grossTotal);
         $aria_label = sprintf(
         /* translators: 1: Total price */
                 __('Total cart price: %1$s', 'fluent-cart'),
@@ -363,7 +404,15 @@ class CartRenderer
                 role="region"
                 aria-label="<?php esc_attr_e('Cart Total', 'fluent-cart'); ?>"
         >
-            <span><?php echo esc_html__('Total', 'fluent-cart'); ?>:</span>
+            <span><?php
+                /**
+                 * Filters the cart total label. Lets a caller relabel it without
+                 * reimplementing this markup; the default renders exactly as before.
+                 *
+                 * @param string $label
+                 */
+                echo esc_html(apply_filters('fluent_cart/cart/total_label', __('Total', 'fluent-cart')));
+                ?></span>
             <span
                     data-fluent-cart-cart-total-price
                     aria-live="polite"
@@ -412,7 +461,15 @@ class CartRenderer
            href="<?php echo esc_attr($this->storeSettings->getCheckoutPage()); ?>"
            role="button"
            aria-label="<?php esc_attr_e('Go to checkout page', 'fluent-cart'); ?>">
-            <?php esc_html_e('Go to Checkout', 'fluent-cart'); ?>
+            <?php
+            /**
+             * Filters the cart checkout button text. Lets a caller relabel it
+             * without reimplementing this markup; the default is unchanged.
+             *
+             * @param string $text
+             */
+            echo esc_html(apply_filters('fluent_cart/cart/checkout_button_text', __('Go to Checkout', 'fluent-cart')));
+            ?>
         </a>
 
         <?php

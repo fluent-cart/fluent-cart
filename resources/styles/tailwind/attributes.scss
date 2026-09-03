@@ -1,0 +1,1165 @@
+/* Attributes module — Library Picker dialog + option cards. */
+
+.fct-library-picker {
+  @apply flex flex-col gap-5;
+}
+
+.fct-library-picker__section {
+  @apply flex flex-col gap-2;
+}
+
+.fct-library-picker__section-head {
+  @apply flex items-center justify-between;
+}
+
+.fct-library-picker__section-label {
+  @apply text-[12px] font-semibold uppercase tracking-wide text-system-mid dark:text-gray-300;
+}
+
+.fct-library-picker__search {
+  @apply mb-1;
+}
+
+.fct-library-picker__list {
+  // Project Tailwind spacing scale jumps from 18 (72px) to 180 (180px) and has no 72
+  // token, so the Tailwind-default max-h-72 (18rem) utility doesn't compile. Using the
+  // arbitrary-value syntax keeps the intended scroll height without extending the scale.
+  @apply flex flex-col list-none p-0 m-0 max-h-[288px] overflow-y-auto border border-solid border-gray-divider dark:border-dark-400 rounded-md;
+}
+
+.fct-library-picker__row {
+  @apply flex items-center gap-3 px-3 py-2.5 cursor-pointer border border-x-0 border-t-0 border-b border-solid border-gray-divider dark:border-dark-400 last:border-b-0 hover:bg-gray-50 dark:hover:bg-dark-500;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-[-2px] outline-blue-500;
+  }
+
+  .fct-library-picker__row-icon {
+    @apply inline-flex items-center justify-center w-6 h-6 rounded text-[12px] font-semibold bg-gray-100 text-system-dark dark:bg-dark-400 dark:text-gray-50 flex-shrink-0;
+
+    &.fct-library-picker__row-icon--color {
+      @apply bg-gradient-to-tr from-orange-400 to-pink-500 text-transparent;
+    }
+  }
+
+  .fct-library-picker__row-title {
+    @apply flex-1 text-[14px] text-system-dark dark:text-gray-50;
+  }
+
+  .fct-library-picker__row-meta {
+    @apply text-[12px] text-system-mid dark:text-gray-300;
+  }
+}
+
+.fct-library-picker__empty {
+  @apply text-[13px] text-system-mid dark:text-gray-300 px-3 py-4 text-center bg-gray-50 dark:bg-dark-500 rounded-md;
+}
+
+/* "+ Create new option" link at the bottom of the picker. Project's primary-* palette
+   is dark charcoal (#253241), so we use the blue scale to match the mockup's
+   accent-link styling. */
+.fct-library-picker__create-new {
+  @apply inline-flex items-center gap-1.5 px-1 py-2 mt-1 bg-transparent border-0 cursor-pointer text-blue-600 hover:text-blue-700 text-[13px] font-medium dark:text-blue-400 dark:hover:text-blue-300;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+
+  svg {
+    @apply w-3.5 h-3.5 flex-shrink-0;
+  }
+}
+
+/* Groups table has a type="expand" column as td:first-child, so the actual first
+   data column (Title) is td:nth-child(2) and misses the compact-table pl-5 rule. */
+.fct-attr-group-page .compact-table .el-table__body-wrapper table tr td:nth-child(2) .table-cell {
+    @apply pl-0;
+}
+
+/* Expand column cell: center the icon vertically and horizontally. */
+.fct-attr-group-page .el-table__expand-column .cell {
+    @apply flex items-center justify-center;
+}
+
+/* Expand icon: larger hit area and bigger arrow. */
+.fct-attr-group-page .el-table__expand-icon {
+    @apply w-9 h-9 flex items-center justify-center;
+
+    .el-icon {
+        @apply text-[18px];
+    }
+}
+
+/* Strip El Plus expanded-cell TD + inner .cell padding so the panel div
+   controls its own spacing with no inherited indentation. */
+.fct-attr-group-page .el-table__expanded-cell {
+    @apply p-0;
+}
+
+.fct-attr-group-page .el-table__expanded-cell .cell {
+    @apply p-0;
+}
+
+/* Inline term panel: white shell, white rounded inner card. */
+.fct-group-terms-panel {
+    @apply bg-white dark:bg-dark-700 py-3 px-4;
+    animation: fct-panel-expand 0.22s ease-out;
+
+    .el-table {
+        --el-table-bg-color: theme('colors.white');
+        --el-table-tr-bg-color: theme('colors.white');
+        --el-fill-color-lighter: theme('colors.gray.25');
+        @apply bg-white dark:bg-dark-600 rounded-lg overflow-hidden;
+        border: 1px solid theme('colors.neutral.700');
+
+        .el-table__inner-wrapper,
+        .el-table__body-wrapper {
+            @apply bg-white dark:bg-dark-600;
+        }
+
+        .el-table__inner-wrapper::before {
+            display: none;
+        }
+
+        tr.el-table__row {
+            @apply bg-white dark:bg-dark-600;
+        }
+
+        // Header: match the group table exactly — gray-25 bg, same border, same cell padding.
+        thead tr th.el-table__cell {
+            --el-table-header-bg-color: theme('colors.gray.25');
+            @apply bg-gray-25 dark:bg-dark-500;
+            @apply border border-solid border-gray-divider border-l-0 border-r-0 border-b-0 dark:border-dark-500;
+        }
+
+        // Include .el-table__header-wrapper to beat the outer compact-table rule
+        // (.compact-table .el-table__body-wrapper table .el-table__cell .cell { p-0 })
+        // which bleeds into the inner table's header .cell descendants and strips p-2.
+        .el-table__header-wrapper thead tr th .cell {
+            @apply flex flex-row items-center font-medium text-xs p-2 leading-5;
+        }
+
+        .el-table__header-wrapper thead tr th:first-child .cell {
+            @apply pl-5;
+        }
+
+        .el-table__header-wrapper thead tr th:last-child .cell {
+            @apply pr-5;
+        }
+
+        td.el-table__cell {
+            @apply bg-white dark:bg-dark-600;
+        }
+
+        .el-table__body-wrapper table tr td:first-child .table-cell {
+            @apply pl-5;
+        }
+
+        .el-table__body-wrapper table tr td:last-child .table-cell {
+            @apply pr-5;
+        }
+    }
+}
+
+/* Draggable terms table — replaces el-table inside .fct-group-terms-panel */
+.fct-terms-drag-table {
+    @apply bg-white dark:bg-dark-600 rounded-lg overflow-hidden;
+    border: 1px solid theme('colors.neutral.700');
+
+    .fct-terms-drag-table__header {
+        @apply flex items-center bg-gray-25 dark:bg-dark-500 border-b border-solid border-gray-divider dark:border-dark-500;
+    }
+
+    .fct-terms-drag-table__th {
+        @apply text-xs font-medium text-system-mid dark:text-gray-300 py-2;
+    }
+
+    .fct-terms-drag-table__row {
+        @apply flex items-center border-b border-solid border-gray-divider dark:border-dark-500 bg-white dark:bg-dark-600;
+        @apply transition-colors duration-150 hover:bg-gray-25 dark:hover:bg-dark-500;
+
+        &:last-child {
+            @apply border-b-0;
+        }
+
+        &.ghost {
+            @apply opacity-50 bg-blue-50 dark:bg-dark-500;
+        }
+    }
+
+    .fct-terms-drag-table__td,
+    .fct-terms-drag-table__th {
+        &.col-handle {
+            @apply w-[120px] flex-shrink-0 flex items-center justify-center;
+        }
+        &.col-title {
+            @apply flex-1 min-w-0 px-2 py-3 text-sm text-system-dark dark:text-gray-50 font-medium;
+        }
+        &.col-date {
+            @apply w-[150px] flex-shrink-0 px-2 py-3 text-sm text-system-mid dark:text-gray-300;
+        }
+        &.col-actions {
+            @apply w-[200px] flex-shrink-0 flex items-center justify-end gap-1 pr-3;
+        }
+    }
+
+    .fct-drag-handle {
+        @apply w-8 h-8 inline-flex items-center justify-center cursor-grab text-system-mid dark:text-gray-500;
+        svg {
+            @apply w-5 h-5;
+        }
+    }
+
+    .fct-term-action-btn {
+        @apply w-7 h-7 inline-flex items-center justify-center rounded bg-transparent border-0 cursor-pointer text-system-mid dark:text-gray-400 hover:text-system-dark hover:bg-gray-100 dark:hover:bg-dark-400 dark:hover:text-gray-50 transition-colors duration-150;
+
+        svg {
+            @apply w-4 h-4;
+        }
+
+        &--delete {
+            @apply hover:text-red-500 dark:hover:text-red-400;
+        }
+
+        &:focus-visible {
+            @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+        }
+    }
+}
+
+/* Color swatch dot shown in the Title cell for color-type groups. */
+.fct-color-option {
+    @apply flex items-center gap-2;
+}
+
+.fct-color-dot {
+    @apply inline-block w-4 h-4 rounded-full flex-shrink-0 border border-solid border-gray-outline;
+}
+
+/* Image thumbnail shown in the Title cell for image-type groups. */
+.fct-image-option {
+    @apply flex items-center gap-2;
+
+    img {
+        @apply w-7 h-7 rounded object-cover flex-shrink-0 border border-solid border-gray-outline;
+    }
+}
+
+/* Chip/pill terms UI — replaces drag table inside .fct-group-terms-panel */
+.fct-terms-chips-wrap {
+    @apply px-4 py-3;
+}
+
+.fct-terms-chips-label {
+    @apply text-xs font-medium text-system-mid dark:text-gray-400 mb-2;
+}
+
+.fct-terms-chips {
+    // gap-x-3 (12px) gives the abs-positioned delete badge (right: -6px, w-4) 6px clearance
+    // from the next chip. pt-2 stops first-row badges from being clipped at the top.
+    @apply flex flex-wrap gap-x-3 gap-y-4 items-center pt-2;
+
+    .fct-terms-chips-list {
+        display: contents;
+    }
+}
+
+.fct-term-chip {
+    @apply relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-dark-500 border border-solid border-transparent cursor-pointer text-sm text-system-dark dark:text-gray-100 select-none;
+    @apply transition-colors duration-150 hover:bg-white hover:border-gray-200 dark:hover:bg-dark-600 dark:hover:border-dark-400;
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500 rounded-md;
+    }
+
+    &--ghost {
+        @apply opacity-40;
+    }
+
+    &--add {
+        @apply bg-transparent border border-solid border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
+        margin-top: 0;
+        margin-right: 0;
+
+        svg {
+            @apply w-4 h-4;
+        }
+    }
+
+    &--load-more {
+        @apply bg-transparent border border-solid border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
+        margin-top: 0;
+        margin-right: 0;
+
+        &:disabled {
+            @apply cursor-not-allowed opacity-60;
+        }
+
+        svg {
+            @apply w-4 h-4;
+        }
+    }
+
+    &__color-dot {
+        @apply inline-block w-3.5 h-3.5 rounded-full flex-shrink-0 border border-solid border-gray-outline;
+    }
+
+    &__img {
+        @apply w-4 h-4 rounded object-cover flex-shrink-0 border border-solid border-gray-outline;
+    }
+
+    &__title {
+        @apply leading-none;
+    }
+
+    &__handle {
+        @apply inline-flex items-center justify-center text-gray-300 dark:text-gray-500 cursor-grab ml-0.5;
+        svg {
+            @apply w-3.5 h-3.5;
+        }
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    // Delete badge: always-visible abs-positioned circle at top-right corner
+    &__delete {
+        @apply absolute flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-dark-600 border border-solid border-gray-200 dark:border-dark-400 cursor-pointer text-system-dark dark:text-gray-100 p-0 transition-colors duration-150;
+        top: -8px;
+        right: -8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+
+        svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        &:hover {
+            @apply bg-red-500 dark:bg-red-500 border-red-500 text-white;
+        }
+
+        &:focus-visible {
+            @apply outline-2 outline-offset-1 outline-red-400;
+        }
+    }
+}
+
+.fct-terms-chips-empty {
+    @apply text-xs text-system-mid dark:text-gray-500;
+}
+
+/* Color swatch grid — Add/Edit term modals for color-type groups. */
+.fct-color-presets-section {
+    @apply flex flex-col gap-3 mb-2;
+}
+
+.fct-color-swatch-grid {
+    @apply flex flex-wrap gap-2 w-fit;
+}
+
+.fct-color-swatch {
+    @apply block w-6 h-6 rounded-md border-0 cursor-pointer p-0 transition-all duration-150 flex-shrink-0;
+    @apply shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)];
+
+    &:hover {
+        @apply scale-110;
+    }
+
+    /* Inner gap ring uses the form surface color (white in light, dark-700
+       in dark) so the swatch reads as a chip floating against the fill,
+       not as a glaring white ring on the dark draft form. */
+    &.is-active,
+    &:focus-visible {
+        @apply shadow-[0_0_0_2px_theme(colors.white),0_0_0_4px_var(--swatch-color)] dark:shadow-[0_0_0_2px_theme(colors.dark.700),0_0_0_4px_var(--swatch-color)];
+        outline: none;
+    }
+}
+
+.fct-color-custom-row {
+    @apply flex items-center gap-2;
+
+    .el-input { flex: 1; }
+}
+
+/* Large square swatch — custom color row in presets picker. */
+.fct-term-color-picker-wrap--lg {
+    @apply relative flex-shrink-0 w-10 h-10 border border-solid border-gray-300 dark:border-dark-400 rounded-lg overflow-hidden;
+
+    // Doubled class selectors beat El Plus's single-class rules when its stylesheet
+    // loads after ours (same specificity loses to later cascade position).
+    .el-color-picker.el-color-picker {
+        @apply block w-full h-full;
+        padding: 0;
+    }
+
+    // relative is required so the icon's top/left anchors to the trigger, not the outer wrapper.
+    .el-color-picker__trigger.el-color-picker__trigger {
+        @apply relative block w-full h-full rounded-none border-0 bg-white dark:bg-dark-600;
+        padding: 0;
+        margin: 0;
+        min-width: unset;
+        min-height: unset;
+    }
+
+    .el-color-picker__color.el-color-picker__color {
+        @apply block w-full h-full rounded-none;
+        border: none;
+        margin: 0;
+    }
+
+    .el-color-picker__color-inner.el-color-picker__color-inner {
+        @apply block w-full h-full rounded-none;
+    }
+
+    .el-color-picker__empty {
+        display: none;
+    }
+
+    .el-icon.el-color-picker__icon {
+        @apply absolute text-gray-900 dark:text-gray-100;
+        top: 48%;
+        left: 49%;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes fct-chip-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.fct-spin {
+    animation: fct-chip-spin 0.7s linear infinite;
+    display: inline-flex;
+}
+
+@keyframes fct-panel-expand {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Term color picker — el-color-picker wrapper in Add/Edit term modals. */
+.fct-term-color-picker-wrap {
+    .el-color-picker__trigger {
+        @apply w-12 h-10 p-0 rounded-md overflow-hidden;
+    }
+
+    .el-color-picker__color {
+        @apply w-full h-full border-0 rounded-md relative;
+    }
+
+    .el-color-picker__color-inner {
+        @apply w-full h-full rounded-md;
+    }
+
+    /* El Plus renders an X icon when no color is selected — hide it; the grey bg is enough. */
+    .el-color-picker__empty {
+        display: none;
+    }
+
+    .el-icon.el-color-picker__icon {
+        @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 right-auto bottom-auto text-white;
+    }
+}
+
+/* Attributes page: restyle filter tabs as square-rounded grey chips.
+   Scoped to .fct-attr-group-page so other pages keep the default underline/pill style. */
+.fct-attr-group-page .fct-fluid-tab {
+  @apply bg-transparent p-0 gap-1.5;
+
+  .fct-fluid-tab-active-bar {
+    display: none;
+  }
+
+  .fct-fluid-tab-item {
+    @apply bg-gray-100 dark:bg-dark-500 rounded-md text-system-mid dark:text-gray-400 text-[13px] leading-5 px-3 py-1.5;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &.active {
+      @apply bg-gray-200 dark:bg-dark-400 text-system-dark dark:text-gray-50;
+    }
+
+    &:hover:not(.active) {
+      @apply bg-gray-200 dark:bg-dark-400 text-system-dark dark:text-gray-200;
+    }
+  }
+}
+
+/* Add Term Modal — dynamic multi-row title list */
+.fct-term-list {
+  @apply flex flex-col gap-2 w-full;
+}
+
+.fct-term-row {
+  @apply flex items-center gap-2;
+
+  .fct-term-row-inner {
+    @apply flex flex-col flex-1 gap-1;
+
+    .fct-term-row-title-line {
+      @apply flex items-center gap-2;
+
+      .el-input {
+        @apply flex-1 min-w-0;
+
+        &.is-error .el-input__wrapper {
+          @apply shadow-[0_0_0_1px_theme(colors.red.400)_inset];
+        }
+      }
+
+    }
+  }
+
+.fct-term-row-error {
+    @apply text-xs text-red-500;
+  }
+}
+
+.fct-term-image-list {
+  @apply flex flex-col gap-3 w-full;
+}
+
+.fct-term-image-card {
+  @apply flex items-start gap-3 p-3 rounded-lg border border-solid border-gray-200 dark:border-dark-400;
+
+  .fct-term-image-card-preview {
+    @apply flex-shrink-0 w-14 h-14 rounded-md overflow-hidden bg-gray-100 dark:bg-dark-500 flex items-center justify-center text-gray-400;
+
+    img {
+      @apply w-full h-full object-cover;
+    }
+  }
+
+  .fct-term-color-card-preview {
+    @apply transition-colors duration-150;
+  }
+
+  .fct-term-image-card-fields {
+    @apply flex flex-col flex-1 gap-2;
+
+    .el-input.is-error .el-input__wrapper {
+      @apply shadow-[0_0_0_1px_theme(colors.red.400)_inset];
+    }
+  }
+
+  .fct-term-row-error {
+    @apply text-xs text-red-500 -mt-1;
+  }
+}
+
+.fct-term-remove {
+  @apply inline-flex items-center justify-center w-7 h-7 flex-shrink-0 rounded border-0 bg-transparent cursor-pointer text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20;
+
+  svg {
+    @apply w-3.5 h-3.5;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+.fct-add-another.el-button {
+  @apply border-0 bg-gray-50 hover:bg-gray-100 rounded-md text-[13px] text-system-dark dark:bg-dark-500 dark:hover:bg-dark-400 dark:text-gray-50;
+  padding: 8px 14px;
+  height: auto;
+}
+
+/* ============================================================
+   Attributes split-panel page (feat/attr-groups-split-ui)
+   ============================================================ */
+
+.fct-attr-split-page {
+    @apply py-4;
+}
+
+.fct-attr-split-page-title {
+    @apply text-[20px] font-semibold text-system-dark dark:text-gray-50 mb-4;
+    margin-top: 0;
+}
+
+/* Card height must stay inside the viewport so the body scroll bar (not
+   the page) handles overflow. The 200px offset budgets for WP admin bar
+   (~32px), FluentCart top nav (~60px), this page's py-4 (32px), the h1
+   line + mb-4 (≈50px), and card borders/buffer. Use 100dvh so mobile
+   browsers shrink the card when chrome appears/disappears. */
+.fct-attr-split-card {
+    @apply flex bg-white dark:bg-dark-700 overflow-hidden border border-solid border-gray-outline dark:border-dark-400 rounded;
+    height: calc(100vh - 200px);
+    height: calc(100dvh - 200px);
+    min-height: 420px;
+}
+
+/* ---- Left sidebar ---- */
+
+.fct-attr-split-left {
+    @apply w-[280px] flex flex-col flex-shrink-0 border border-y-0 border-l-0 border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-attr-split-left-header {
+    @apply flex items-center justify-between px-4 py-4 border border-x-0 border-t-0 border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-attr-split-title {
+    @apply flex items-center gap-2 text-[15px] font-semibold text-system-dark dark:text-gray-50;
+}
+
+.fct-attr-split-count {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-gray-100 dark:bg-dark-500 text-[11px] font-medium text-system-mid dark:text-gray-300 px-1.5;
+}
+
+/* Bordered + icon button in the header */
+.fct-attr-split-left-header .fct-attr-icon-btn {
+    @apply border border-solid border-gray-200 dark:border-dark-400 rounded-md;
+}
+
+.fct-attr-split-search {
+    @apply px-3 py-3;
+
+    .el-input__wrapper {
+        @apply bg-gray-50 dark:bg-dark-600 rounded-lg shadow-none;
+    }
+
+    .el-input__wrapper.is-focus {
+        @apply shadow-none;
+    }
+}
+
+.fct-attr-group-list {
+    @apply flex flex-col flex-1 overflow-y-auto px-2 py-1;
+    min-height: 0;
+}
+
+.fct-attr-group-item {
+    @apply relative flex items-center gap-2 px-3 py-3 cursor-pointer mb-1 rounded transition-colors duration-150;
+
+    &:hover {
+        @apply bg-gray-50 dark:bg-dark-600;
+
+        .fct-attr-group-item-actions {
+            @apply opacity-100;
+        }
+    }
+
+    /* Keyboard focus ring — row is role="button" tabindex="0", so Tab
+       cycles through groups. */
+    &:focus-visible {
+        @apply outline-2 outline-offset-[-2px] outline-blue-500;
+
+        .fct-attr-group-item-actions {
+            @apply opacity-100;
+        }
+    }
+
+    &.is-active {
+        @apply bg-gray-50 dark:bg-dark-600;
+
+        .fct-attr-group-item-name {
+            @apply text-system-dark dark:text-gray-50;
+        }
+    }
+}
+
+/* Draggable wrapper around the group rows — keeps the same vertical stack the
+   plain v-for produced so spacing is unchanged whether or not reorder is on. */
+.fct-attr-group-list-inner {
+    @apply flex flex-col;
+}
+
+/* Drag handle for reordering attribute groups in the sidebar. A real <button>
+   so it's keyboard-focusable (Arrow Up/Down move the group); the rules below
+   reset the native button chrome. Sits as the first child of the flex row;
+   @mousedown.stop keeps grabbing it from also selecting the group. */
+.fct-attr-group-handle {
+    @apply flex items-center justify-center shrink-0 w-4 p-0 m-0 border-0 bg-transparent text-gray-400 cursor-grab select-none;
+
+    svg {
+        @apply w-4 h-4;
+    }
+
+    &:active {
+        @apply cursor-grabbing;
+    }
+
+    /* Visible focus ring for the keyboard reorder path. */
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm text-system-dark dark:text-gray-50;
+    }
+
+    &:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+}
+
+/* sortablejs drop placeholder while dragging a group row. */
+.fct-attr-group-item--ghost {
+    @apply opacity-40;
+}
+
+.fct-attr-group-item-body {
+    @apply flex flex-col gap-0.5 flex-1 min-w-0;
+}
+
+.fct-attr-group-item-name {
+    @apply text-[13px] font-semibold text-system-dark dark:text-gray-50 truncate;
+    transition: color 0.15s ease;
+}
+
+.fct-attr-group-item-meta {
+    @apply text-[11px] text-system-mid dark:text-gray-400;
+}
+
+.fct-attr-group-item-actions {
+    @apply flex items-center gap-0.5 opacity-0 transition-opacity duration-150;
+}
+
+.fct-attr-group-action {
+    width: 24px;
+    height: 24px;
+
+    &--delete:hover {
+        @apply text-red-500 dark:text-red-400;
+    }
+}
+
+.fct-attr-group-chevron {
+    @apply flex-shrink-0 inline-flex items-center justify-center w-7 h-7 bg-white dark:bg-dark-700 border border-solid border-gray-200 dark:border-dark-400 rounded-md text-system-mid dark:text-gray-300;
+    svg { @apply w-3.5 h-3.5; }
+}
+
+.fct-attr-group-empty,
+.fct-attr-group-loading {
+    @apply px-2 py-1 flex flex-col gap-1;
+}
+
+.fct-attr-group-empty {
+    @apply px-4 py-6 text-[13px] text-system-mid dark:text-gray-400 text-center;
+}
+
+/* Group sidebar skeleton row: mirrors .fct-attr-group-item structure
+   (title line + meta line) so the swap-in is invisible. */
+.fct-attr-group-skeleton {
+    @apply flex flex-col gap-2 px-3 py-3 mb-1 rounded-lg;
+}
+
+/* ---- Shared skeleton primitives ---- */
+.fct-skel-block {
+    /* dark-400 picked over dark-600 because the variant table's body bg
+       is also dark-600 in dark mode, so the skeleton blocks would blend
+       into the surface and read as empty rows instead of loading state.
+       dark-400 sits one step lighter and gives the shimmer something to
+       animate against. */
+    @apply inline-block bg-gray-100 dark:bg-dark-400 rounded;
+    animation: fct-skel-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes fct-skel-shimmer {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+}
+
+.fct-skel-group-title { @apply h-3.5; }
+.fct-skel-group-meta  { @apply h-3; }
+
+/* Term-list row skeletons (used by AttrTermsTableLoader and the right-
+   panel skeleton during the initial sidebar load). */
+.fct-term-rows-loader {
+    @apply gap-2;
+}
+
+.fct-term-row-item--skeleton {
+    @apply pointer-events-none;
+}
+
+.fct-skel-handle { @apply w-4 h-4 flex-shrink-0; }
+.fct-skel-dot    { @apply w-3.5 h-3.5 rounded-full flex-shrink-0; }
+.fct-skel-title  { @apply h-3.5 flex-1; }
+.fct-skel-action { @apply w-7 h-7 flex-shrink-0 rounded; }
+
+/* Right-panel skeleton (initial load before any group is selected) */
+.fct-attr-panel-skeleton {
+    @apply flex flex-col flex-1 min-h-0;
+}
+
+.fct-attr-panel-skeleton-header {
+    @apply px-5 py-4 flex flex-col gap-2.5 border border-x-0 border-t-0 border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-attr-panel-skeleton-chips {
+    @apply flex items-center gap-1.5;
+}
+
+.fct-skel-breadcrumb { @apply h-4 w-[128px]; }
+.fct-skel-chip       { @apply h-5 w-[64px] rounded; }
+
+.fct-attr-panel-skeleton-body {
+    @apply flex flex-col flex-1 gap-2 px-5 py-4 overflow-hidden;
+}
+
+.fct-attr-split-left-footer,
+.fct-attr-panel-footer {
+    @apply p-3 mt-auto flex-shrink-0 border border-x-0 border-b-0 border-solid border-gray-outline dark:border-dark-400;
+}
+
+/* Split footer: + Add Terms button (bordered, same look as the sidebar
+   footer button) + small bordered sync icon button beside it. */
+.fct-attr-panel-footer--split {
+    @apply flex items-stretch gap-2;
+}
+
+.fct-attr-add-attr-btn--main {
+    @apply flex-1;
+}
+
+.fct-attr-panel-footer-sync {
+    @apply inline-flex items-center justify-center w-10 flex-shrink-0 bg-transparent cursor-pointer text-system-mid dark:text-gray-400 border border-solid border-gray-200 dark:border-dark-400 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-dark-600 hover:text-system-dark dark:hover:text-gray-100 rounded;
+
+    svg { @apply w-4 h-4; }
+
+    &:disabled {
+        @apply cursor-not-allowed opacity-50 hover:bg-transparent dark:hover:bg-transparent;
+    }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+.fct-attr-add-attr-btn {
+    @apply flex items-center justify-center gap-1.5 w-full bg-transparent text-[13px] font-medium text-system-dark dark:text-gray-50 cursor-pointer rounded border border-solid border-gray-200 dark:border-dark-400 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-dark-600;
+    padding: 9px 12px;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+
+    &:disabled {
+        @apply cursor-not-allowed opacity-60 hover:bg-transparent dark:hover:bg-transparent;
+    }
+}
+
+.fct-attr-load-more-count {
+    @apply text-system-mid dark:text-gray-400 text-[12px];
+}
+
+/* "+ Add Terms" header button — match design (gray border, 8px radius) */
+/* Shared small icon-only button */
+.fct-attr-icon-btn {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded border-0 bg-transparent cursor-pointer text-system-mid dark:text-gray-400;
+    @apply transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-dark-500 hover:text-system-dark dark:hover:text-gray-50;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+/* ---- Right panel ---- */
+
+.fct-attr-split-right {
+    @apply flex flex-col flex-1 min-w-0 overflow-hidden;
+}
+
+.fct-group-terms-panel {
+    @apply flex flex-col flex-1 min-h-0 bg-white dark:bg-dark-700 p-0;
+}
+
+.fct-attr-split-empty {
+    @apply flex flex-col items-center justify-center flex-1 gap-3 text-system-mid dark:text-gray-400 py-16;
+
+    svg { @apply w-12 h-12 opacity-30; }
+
+    p { @apply text-sm; }
+}
+
+/* Panel header: breadcrumb + chips + add button. Bottom border uses
+   the same Tailwind utility pattern the rest of the admin uses, so dark
+   mode is handled inline (dark-400) and there's no FOUC from a CSS-var
+   override that depends on the .fluent_theme_dark class arriving. */
+.fct-attr-panel-header {
+    @apply px-5 py-4 flex flex-col gap-2.5 border border-x-0 border-t-0 border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-attr-panel-header-top {
+    @apply flex items-center justify-between gap-4;
+}
+
+.fct-attr-panel-breadcrumb {
+    @apply flex items-center gap-1.5 text-[14px];
+}
+
+.fct-attr-panel-breadcrumb-root {
+    @apply text-system-mid dark:text-gray-400;
+}
+
+.fct-attr-panel-breadcrumb-sep {
+    @apply text-gray-400 dark:text-gray-500 font-normal text-[18px] leading-none;
+}
+
+.fct-attr-panel-breadcrumb-current {
+    @apply font-semibold text-system-dark dark:text-gray-50;
+}
+
+.fct-attr-panel-chips {
+    @apply flex items-center flex-wrap gap-1.5;
+}
+
+.fct-attr-meta-chip {
+    @apply inline-flex items-center gap-1 text-[12px] px-2 py-0.5 rounded bg-gray-100 dark:bg-dark-500 text-system-dark dark:text-gray-100;
+}
+
+.fct-attr-meta-chip-label {
+    @apply text-system-mid dark:text-gray-400;
+}
+
+/* ---- Scrollable body wrapper ---- */
+.fct-attr-panel-body {
+    @apply flex flex-col flex-1 overflow-y-auto px-5 py-4 gap-2;
+    min-height: 0;
+}
+
+/* ---- Draft form: full-width section for the active draft ---- */
+.fct-term-draft-form {
+    @apply flex flex-col gap-3 p-3 bg-white dark:bg-dark-700 rounded border border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-term-draft-form-title-line {
+    @apply flex items-center gap-2;
+
+    .el-input { @apply flex-1 min-w-0; }
+
+    /* Red inset ring when a server-side title validation error is set. */
+    .el-input.is-error .el-input__wrapper {
+        @apply shadow-[0_0_0_1px_theme(colors.red.400)_inset];
+    }
+}
+
+.fct-term-draft-form-close {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded border-0 bg-transparent cursor-pointer text-system-mid dark:text-gray-400 flex-shrink-0;
+    @apply transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-dark-500 hover:text-system-dark dark:hover:text-gray-100;
+
+    svg { @apply w-4 h-4; }
+}
+
+.fct-term-draft-swatches {
+    @apply justify-start;
+}
+
+.fct-term-draft-custom-row {
+    @apply gap-2;
+}
+
+.fct-term-draft-clear-btn {
+    @apply inline-flex items-center justify-center px-3 h-9 rounded-md border border-solid border-gray-200 dark:border-dark-400 bg-transparent text-[13px] font-medium text-system-dark dark:text-gray-50 cursor-pointer flex-shrink-0;
+    @apply transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-dark-600;
+
+    &:disabled {
+        @apply cursor-not-allowed opacity-60 hover:bg-transparent dark:hover:bg-transparent;
+    }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+/* el-color-picker wrapper in the custom-hex row — reuses the
+   .fct-term-color-picker-wrap--lg shell, only the size is overridden
+   to fit alongside the hex input. A pseudo-element draws a centered
+   chevron over the swatch so the click target reads as "picker" even
+   after a color is set (Element Plus hides its built-in icon then). */
+.fct-term-draft-custom-swatch-wrap {
+    @apply relative w-9 h-9 rounded-md;
+
+    &::after {
+        @apply absolute pointer-events-none;
+        content: '';
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: translate(-50%, -65%) rotate(45deg);
+        color: rgba(255, 255, 255, 0.9);
+        mix-blend-mode: difference;
+    }
+
+    /* Hide Element Plus's own arrow so we don't render two. */
+    .el-icon.el-color-picker__icon {
+        display: none;
+    }
+}
+
+.fct-term-draft-image-row {
+    @apply flex items-center gap-3;
+
+    .el-input { @apply flex-1 min-w-0; }
+}
+
+.fct-term-draft-img-btn {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-50 dark:bg-dark-500 border border-solid border-gray-200 dark:border-dark-400 cursor-pointer text-system-mid dark:text-gray-400 flex-shrink-0 overflow-hidden p-0;
+
+    img { @apply w-full h-full object-cover; }
+    svg { @apply w-4 h-4; }
+}
+
+.fct-term-draft-img-btn--lg {
+    @apply w-14 h-14;
+}
+
+/* Completed drafts (compact list rows above the active form) */
+.fct-term-row-item--draft {
+    @apply bg-gray-25 dark:bg-dark-600;
+
+    &.is-clickable {
+        @apply cursor-pointer;
+    }
+
+    &.is-error {
+        @apply ring-1 ring-red-400/70;
+    }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+/* + Add Terms / Add more button below the rows */
+.fct-term-add-draft-btn {
+    @apply inline-flex items-center justify-center gap-1.5 self-start px-3 py-2 rounded-md bg-gray-50 dark:bg-dark-500 hover:bg-gray-100 dark:hover:bg-dark-400 text-[13px] font-medium text-system-dark dark:text-gray-50 cursor-pointer border-0;
+    @apply transition-colors duration-150;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+/* ---- Term list rows ---- */
+
+.fct-term-rows-empty {
+    @apply text-[13px] text-system-mid dark:text-gray-400 py-6 text-center;
+}
+
+.fct-term-rows-list,
+.fct-term-drafts-completed {
+    @apply flex flex-col gap-2;
+}
+
+.fct-term-rows-inner {
+    @apply flex flex-col gap-2;
+}
+
+.fct-term-row-item {
+    @apply flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-dark-700 border border-solid border-gray-outline dark:border-dark-400 rounded transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-dark-600;
+
+    &.fct-term-row--ghost {
+        @apply opacity-40 bg-blue-50 dark:bg-dark-600;
+    }
+}
+
+.fct-term-row-handle {
+    @apply inline-flex items-center justify-center w-6 h-6 cursor-grab text-gray-300 dark:text-gray-600 flex-shrink-0;
+    svg { @apply w-4 h-4; }
+
+    &:active { cursor: grabbing; }
+
+    /* Reorder is gated until all terms are loaded — visual + cursor
+       feedback. Tooltip + aria-disabled set in the template. */
+    &.is-disabled {
+        @apply cursor-not-allowed opacity-40;
+        &:active { cursor: not-allowed; }
+    }
+}
+
+/* Banner shown above the term list when drag-reorder is blocked
+   (partial pagination — see GroupTermsPanel.vue). */
+.fct-term-reorder-locked {
+    @apply text-[12px] text-system-mid dark:text-gray-400 px-1 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-solid border-amber-200 dark:border-amber-800;
+}
+
+.fct-term-row-color-dot {
+    @apply inline-block w-3.5 h-3.5 rounded-full flex-shrink-0;
+    border: 1px solid rgba(0,0,0,0.10);
+}
+
+.fct-term-row-img {
+    @apply w-7 h-7 rounded object-cover flex-shrink-0 border border-solid border-gray-outline dark:border-dark-400;
+}
+
+.fct-term-row-name {
+    @apply flex-1 text-[13px] font-medium text-system-dark dark:text-gray-50 min-w-0 truncate;
+}
+
+.fct-term-row-delete {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded border-0 bg-transparent cursor-pointer text-system-dark dark:text-gray-100 flex-shrink-0 p-0;
+    @apply transition-colors duration-150 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-red-400;
+    }
+}
+
+/* Hover-visible Edit button on saved-term pills (sits left of Delete) */
+.fct-term-row-actions {
+    @apply inline-flex items-center gap-1 flex-shrink-0;
+}
+
+.fct-term-row-edit {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded border-0 bg-transparent cursor-pointer text-system-dark dark:text-gray-100 p-0 opacity-0;
+    @apply transition-opacity transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-dark-500;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply opacity-100 outline-2 outline-offset-2 outline-blue-500;
+    }
+}
+
+.fct-term-row-item:hover .fct-term-row-edit,
+.fct-term-row-item:focus-within .fct-term-row-edit {
+    @apply opacity-100;
+}
+
+/* Inline edit form: same shape as the draft form, plus an actions row */
+.fct-term-edit-slot {
+    @apply w-full;
+}
+
+.fct-term-edit-form {
+    @apply mb-1;
+}
+
+.fct-term-edit-actions {
+    @apply flex items-center justify-end;
+
+    /* Tighter spacing between Cancel and Save than El Plus's 12px default. */
+    .el-button + .el-button {
+        margin-left: 6px;
+    }
+}
+
+/* V3 — Per-card action trigger button. */
+.fct-option-card-action-btn {
+  @apply inline-flex items-center justify-center w-7 h-7 rounded bg-transparent border-0 cursor-pointer text-gray-400 hover:text-system-dark hover:bg-gray-100 dark:hover:bg-dark-400 dark:hover:text-gray-50;
+
+  svg {
+    @apply w-4 h-4;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}

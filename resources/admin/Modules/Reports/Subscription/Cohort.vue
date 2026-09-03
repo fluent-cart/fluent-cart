@@ -699,7 +699,6 @@ const generateSnapshots = async () => {
                 }
             } catch (error) {
                 handleError(translate('Error generating snapshots'));
-                console.error(error);
                 loading.value = false;
             }
         })
@@ -744,7 +743,6 @@ const pollJobStatus = async (jobId) => {
             }
         } catch (error) {
             handleError(translate('Error checking job status!'));
-            console.error(error);
             loading.value = false;
         }
     };

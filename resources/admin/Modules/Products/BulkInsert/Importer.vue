@@ -6,6 +6,8 @@ import Papa from 'papaparse';
 import Storage from "@/utils/Storage";
 import translate from "../../../utils/translator/Translator";
 import {generateCid} from "@/utils/cid";
+import AppConfig from "@/utils/Config/AppConfig";
+import {resolveSeparators, csvValueToCents} from "@/Bits/moneyInput";
 
 const self = getCurrentInstance().ctx;
 const showModal = ref(false);
@@ -30,6 +32,21 @@ const columnMapReference = [
 
 let maxIteration = 0;
 const shouldShowMappers = ref(false);
+// CSV files carry DOLLARS (a merchant's spreadsheet says 19.99, not 1999), but
+// the bulk-insert endpoint takes CENTS like every other write. Convert here, at
+// the human-input boundary. See dev-docs/PRICING-AND-TAX.md section 6.
+//
+// Parsing goes through the same core as PriceInput, using the shop's configured
+// separators, so an imported "1.234,56" means what a typed "1.234,56" means. A
+// naive strip of every comma would read "19,99" in a comma-decimal shop as 1999
+// dollars.
+//
+// Negative and malformed cells are passed through rather than normalized away,
+// so BulkProductInsertService's `numeric|min:0` rules still reject the row and
+// the merchant gets a field error instead of a silently wrong price.
+const csvSeparators = resolveSeparators(AppConfig.get('shop.decimal_separator', ''));
+const csvPriceToCents = (value) => csvValueToCents(value, csvSeparators.thousand);
+
 const parseCsv = (file) => {
   if (file) {
     Papa.parse(file, {
@@ -123,6 +140,7 @@ const wooFieldMap = {
   compare_price: ['Sale price'],
   images: ['Images'],
   categories: ['Categories'],
+  sku: ['SKU'],
   payment_type: ['Payment Type'],
   repeat_interval: ['Subscription Interval', 'Meta: _subscription_period'],
   trial_days: ['Trial Days', 'Meta: _subscription_trial_length'],
@@ -232,7 +250,7 @@ const populateWooCommerceData = (concat = true) => {
     product['variants'] = [];
 
     // Parse categories (comma-separated paths, e.g. "Clothing, Clothing > T-Shirts")
-    const categoriesRaw = row[fields['categories']?.value] || row['Categories'] || '';
+    const categoriesRaw = row[fields['categories']?.value] || '';
     if (categoriesRaw) {
       product['categories'] = categoriesRaw.split(',').map(c => c.trim()).filter(Boolean);
     } else {
@@ -240,9 +258,9 @@ const populateWooCommerceData = (concat = true) => {
     }
 
     if (type === 'simple' || type === 'subscription') {
-      const price = row[fields['item_price']?.value] || '';
-      const comparePrice = row[fields['compare_price']?.value] || '';
-      const simpleSku = row['SKU'] || '';
+      const price = csvPriceToCents(row[fields['item_price']?.value] || '');
+      const comparePrice = csvPriceToCents(row[fields['compare_price']?.value] || '');
+      const simpleSku = row[fields['sku']?.value] || '';
       const paymentType = type === 'subscription' ? 'subscription' : (row[fields['payment_type']?.value] || 'onetime');
       const repeatInterval = normalizeInterval(row[fields['repeat_interval']?.value] || '');
       const trialDays = row[fields['trial_days']?.value] || '';
@@ -250,7 +268,7 @@ const populateWooCommerceData = (concat = true) => {
       const installmentCount = row[fields['installment_count']?.value] || '';
       const setupFee = row[fields['manage_setup_fee']?.value] || '';
       const setupFeeName = row[fields['signup_fee_name']?.value] || '';
-      const setupFeeAmount = row[fields['signup_fee']?.value] || '';
+      const setupFeeAmount = csvPriceToCents(row[fields['signup_fee']?.value] || '');
       if (price || product['post_title']) {
         product['variants'].push({
           _cid: generateCid(),
@@ -274,7 +292,7 @@ const populateWooCommerceData = (concat = true) => {
       }
     }
 
-    const sku = row['SKU'] || '';
+    const sku = row[fields['sku']?.value] || '';
     if (type === 'variable' && sku) {
       parentMap[sku] = product;
     }
@@ -290,8 +308,8 @@ const populateWooCommerceData = (concat = true) => {
     if (!parentSku || !parentMap[parentSku]) return;
 
     const variationTitle = getAttributeValues(row);
-    const price = row[fields['item_price']?.value] || '';
-    const comparePrice = row[fields['compare_price']?.value] || '';
+    const price = csvPriceToCents(row[fields['item_price']?.value] || '');
+    const comparePrice = csvPriceToCents(row[fields['compare_price']?.value] || '');
 
     const variantImagesRaw = row[fields['images']?.value] || '';
     const variantMedia = [];
@@ -302,7 +320,7 @@ const populateWooCommerceData = (concat = true) => {
       });
     }
 
-    const variantSku = row['SKU'] || '';
+    const variantSku = row[fields['sku']?.value] || '';
     const variantPaymentType = row[fields['payment_type']?.value] || 'onetime';
     const variantRepeatInterval = normalizeInterval(row[fields['repeat_interval']?.value] || '');
     const variantTrialDays = row[fields['trial_days']?.value] || '';
@@ -310,7 +328,7 @@ const populateWooCommerceData = (concat = true) => {
     const variantInstallmentCount = row[fields['installment_count']?.value] || '';
     const variantSetupFee = row[fields['manage_setup_fee']?.value] || '';
     const variantSetupFeeName = row[fields['signup_fee_name']?.value] || '';
-    const variantSetupFeeAmount = row[fields['signup_fee']?.value] || '';
+    const variantSetupFeeAmount = csvPriceToCents(row[fields['signup_fee']?.value] || '');
 
     const variantEntry = {
       _cid: generateCid(),
@@ -383,7 +401,7 @@ const populateData = (concat = true) => {
     const installmentCountValue = value[fields['installment_count']?.value] || '';
     const setupFeeValue = value[fields['manage_setup_fee']?.value] || '';
     const setupFeeNameValue = value[fields['signup_fee_name']?.value] || '';
-    const setupFeeAmountValue = value[fields['signup_fee']?.value] || '';
+    const setupFeeAmountValue = csvPriceToCents(value[fields['signup_fee']?.value] || '');
 
     const details = {
       variation_type: 'simple',
@@ -416,7 +434,12 @@ const populateData = (concat = true) => {
         const variationKey = fields[indexKey]?.value ?? '';
         if (variationKey.length > 0) {
           const titleIndexedKey = variationKey.replace('%d', i.toString());
-          variant[indexKey] = value[titleIndexedKey];
+          const rawValue = value[titleIndexedKey];
+          // Money columns cross the dollars -> cents boundary here, exactly as
+          // they do on the WooCommerce path; variation_title is passed through.
+          variant[indexKey] = (indexKey === 'variation_title')
+            ? rawValue
+            : csvPriceToCents(rawValue);
         }
       })
 
@@ -836,7 +859,7 @@ const emit = defineEmits(['onDataPopulated'])
             </td>
 
             <td width="50%">
-              <el-select v-model="field.value" filterable>
+              <el-select v-model="field.value" filterable clearable>
                 <el-option
                     v-for="option in fieldMapOptions"
                     :key="option.value"

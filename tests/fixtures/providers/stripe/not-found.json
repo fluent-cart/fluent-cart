@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "message": "Not Found",
+  "body": {
+    "error": {
+      "type": "invalid_request_error",
+      "code": "resource_missing",
+      "message": "No such Stripe resource."
+    }
+  }
+}

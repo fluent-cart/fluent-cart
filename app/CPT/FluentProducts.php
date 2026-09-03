@@ -41,11 +41,17 @@ class FluentProducts
         });
 
         add_action('admin_enqueue_scripts', function () {
-            if ($this->showStandaloneMenu) {
-                return;
-            }
             $screen = get_current_screen();
             $isProductEditingScreen = $screen && $screen->post_type === 'fluent-products' && $screen->base === 'post';
+
+            if ($this->showStandaloneMenu) {
+                if ($isProductEditingScreen && App::request()->get('custom-editor') === 'true') {
+                    wp_enqueue_style('wp-admin');
+                    $this->enqueueCustomEditorStyles();
+                }
+                return;
+            }
+
             if (!$isProductEditingScreen) {
                 if ($screen && $screen->post_type === 'fluent-products' && ($screen->base == 'edit-tags' || $screen->base == 'term')) {
                     $this->customizeTaxonomyScreen();
@@ -56,24 +62,7 @@ class FluentProducts
             // Make sure the default admin styles are enqueued
             wp_enqueue_style('wp-admin');
 
-            $custom_css =
-                '#editor .editor-sidebar__panel .editor-post-summary .editor-post-trash,' .
-                '#wpadminbar,' .
-                '#adminmenu,' .
-                '#adminmenuback,' .
-                '#adminmenuwrap {' .
-                'display: none !important;' .
-                '}' .
-                '#wpbody-content .interface-interface-skeleton {' .
-                'left: 0 !important;' .
-                'top: 0 !important;' .
-                '}' .
-                '#wpcontent, #wpfooter {' .
-                'margin-left: 0 !important;' .
-                'margin-right: 0 !important;' .
-                '}';
-
-            wp_add_inline_style('wp-admin', $custom_css);
+            $this->enqueueCustomEditorStyles();
 
             wp_register_script('fluent-products-inline-js', '', [], FLUENTCART_VERSION, true);
             wp_enqueue_script('fluent-products-inline-js');
@@ -320,6 +309,33 @@ class FluentProducts
                 'not_found'     => __('No Brand found', 'fluent-cart'),
             ],
         ]);
+
+        // product-tags is deliberately NOT registered: FluentCart ships
+        // categories and brands only (product decision 2026-08-06). The former
+        // dead consumers (Product tag getters, shop shortcode tag= filter)
+        // were removed with that decision.
+    }
+
+    private function enqueueCustomEditorStyles()
+    {
+        $custom_css =
+            '#editor .editor-sidebar__panel .editor-post-summary .editor-post-trash,' .
+            '#wpadminbar,' .
+            '#adminmenu,' .
+            '#adminmenuback,' .
+            '#adminmenuwrap {' .
+            'display: none !important;' .
+            '}' .
+            '#wpbody-content .interface-interface-skeleton {' .
+            'left: 0 !important;' .
+            'top: 0 !important;' .
+            '}' .
+            '#wpcontent, #wpfooter {' .
+            'margin-left: 0 !important;' .
+            'margin-right: 0 !important;' .
+            '}';
+
+        wp_add_inline_style('wp-admin', $custom_css);
     }
 
     public function customizeTaxonomyScreen()

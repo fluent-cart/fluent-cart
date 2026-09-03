@@ -388,7 +388,6 @@ const handleBulkDuplicate = async () => {
       await Rest.post(`products/${productId}/duplicate`, requestData);
       successCount.value++;
     } catch (error) {
-      console.error(`Failed to duplicate product ${productId}:`, error);
       failedCount.value++;
     }
     processedCount.value++;
@@ -403,7 +402,6 @@ const handleBulkDelete = async () => {
       await Rest.delete(`products/${product.ID}`);
       successCount.value++;
     } catch (error) {
-      console.error(`Failed to delete product ${product.ID}:`, error);
       failedCount.value++;
     }
     processedCount.value++;
@@ -411,19 +409,25 @@ const handleBulkDelete = async () => {
 };
 
 const showNotification = () => {
-  const actionText = isDuplicateAction.value ? 'duplicated' : 'deleted';
+  const isDuplicate = isDuplicateAction.value;
 
   if (successCount.value > 0 && failedCount.value === 0) {
     Notify.success({
-      message: translate(`All products ${actionText} successfully`)
+      message: isDuplicate
+        ? translate('All products duplicated successfully')
+        : translate('All products deleted successfully')
     });
   } else if (successCount.value > 0 && failedCount.value > 0) {
     Notify.warning({
-      message: translate(`Some products were ${actionText} successfully`)
+      message: isDuplicate
+        ? translate('Some products were duplicated successfully')
+        : translate('Some products were deleted successfully')
     });
   } else {
     Notify.error({
-      message: translate(`Failed to ${actionText.replace('ed', '')} products`)
+      message: isDuplicate
+        ? translate('Failed to duplicate products')
+        : translate('Failed to delete products')
     });
   }
 };

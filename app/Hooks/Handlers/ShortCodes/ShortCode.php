@@ -4,6 +4,7 @@ namespace FluentCart\App\Hooks\Handlers\ShortCodes;
 
 use FluentCart\Api\Contracts\CanEnqueue;
 use FluentCart\App\App;
+use FluentCart\App\Services\Renderer\RenderContext;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 
@@ -52,7 +53,16 @@ abstract class ShortCode
     public static function register()
     {
         add_shortcode(static::getShortCodeName(), function ($shortcodeAttributes, $content, $block) {
-            return static::make($shortcodeAttributes)->renderShortcode($block);
+            // WordPress exposes no "shortcode currently rendering" signal, so
+            // this is the one place that has to say so. Every ShortCode
+            // subclass registers through here, so it is the only place.
+            return RenderContext::declaring(
+                RenderContext::SOURCE_SHORTCODE,
+                static::getShortCodeName(),
+                function () use ($shortcodeAttributes, $block) {
+                    return static::make($shortcodeAttributes)->renderShortcode($block);
+                }
+            );
         });
     }
 

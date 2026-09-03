@@ -7,6 +7,7 @@ import {ElMessageBox} from "element-plus";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import PackageDialog from "@/Modules/Shipping/Components/PackageDialog.vue";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const packages = ref([]);
 const loading = ref(false);
@@ -147,10 +148,12 @@ onMounted(() => {
     <SettingsHeader
       :heading="translate('Packages')"
       :save-button-text="translate('Add Package')"
-      @onSave="openAddDialog"
+      @on-save="openAddDialog"
     />
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div v-loading="loading" class="fct-packages-list">
         <div v-if="loadError && !loading" class="fct-packages-empty">
           <p class="text-gray-500">{{ translate('Failed to load packages.') }}</p>

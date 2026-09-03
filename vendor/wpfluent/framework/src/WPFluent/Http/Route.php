@@ -20,6 +20,8 @@ use FluentCart\Framework\Http\SubstituteParameters;
 use FluentCart\Framework\Http\Middleware\RateLimiter;
 use FluentCart\Framework\Validator\ValidationException;
 use FluentCart\Framework\Database\Orm\ModelNotFoundException;
+use FluentCart\Framework\Foundation\Exceptions\HttpException;
+use FluentCart\Framework\Foundation\Exceptions\ExceptionHandler;
 use FluentCart\Framework\Http\Response\Response as WPFluentResponse;
 
 class Route
@@ -43,6 +45,12 @@ class Route
      * @var string
      */
     protected $restNamespace = null;
+
+    /**
+     * Whether this route should override existing routes at the same URI.
+     * @var bool
+     */
+    protected $shouldOverride = false;
 
     /**
      * Full URI
@@ -198,7 +206,6 @@ class Route
     /**
      * Map the route to be used in front-end.
      *
-     * @param mixed $handler
      * @return self
      */
     public function preparefrontendHandlers()
@@ -231,13 +238,38 @@ class Route
 
         $endpoints[$controller]["_{$cb}"] = [
             'uri' => $this->uri,
-            'methods' => explode(',', $this->method)
+            'methods' => explode(',', $this->method),
+            'policy' => $this->getPolicyName()
         ];
 
         // @phpstan-ignore-next-line
         $this->app->endpoints = $endpoints;
 
         return $this;
+    }
+
+    /**
+     * Get a display name for the route's policy handler.
+     *
+     * @return string|null
+     */
+    protected function getPolicyName()
+    {
+        if (!$this->policyHandler) {
+            return null;
+        }
+
+        if ($this->policyHandler instanceof Closure) {
+            return 'Closure';
+        }
+
+        $name = $this->policyHandler;
+
+        if (is_string($name) && !$this->app->hasNamespace($name)) {
+            $name = $this->app->__namespace__ . '\\App\\Http\\Policies\\' . $name;
+        }
+
+        return $name;
     }
 
     /**
@@ -553,6 +585,10 @@ class Route
      */
     public function injectProp($key, $value)
     {
+        if (!$this->endpointSignature) {
+            return;
+        }
+
         [$controller, $cbKey] = $this->endpointSignature;
 
         $controllerKey = str_replace('\\', '.', $controller);
@@ -714,7 +750,7 @@ class Route
             $this->restNamespace,
             $this->getRouteUri(),
             $this->getOptions(),
-            $this->override()
+            $this->shouldOverride
         );
     }
 
@@ -739,13 +775,15 @@ class Route
     }
 
     /**
-     * Allow route override if we are testing.
-     * 
-     * @return bool
+     * Mark this route to override any existing route at the same URI.
+     *
+     * @return $this
      */
-    protected function override()
+    public function override()
     {
-        return str_starts_with($this->app->env(), 'testing');
+        $this->shouldOverride = true;
+
+        return $this;
     }
 
     /**
@@ -873,11 +911,67 @@ class Route
             return $this->app->response->sendError([
                 'message' => $e->getMessage()
             ], 404);
+        } catch (HttpException $e) {
+            return $this->renderHttpException($e);
         } catch (Throwable $e) {
-            return $this->handleUnknownException(
-                $e, $this->response ? $this->response->get_headers() : []
-            );
+            $headers = $this->response ? $this->response->get_headers() : [];
+
+            // Consult the plugin's ExceptionHandler registry BEFORE the
+            // production sanitizer. A registered renderable may return
+            // either an HttpException (rendered with full status + safe
+            // message) or a WP_REST_Response (returned verbatim). Null /
+            // no-match falls through to handleUnknownException — the
+            // sanitization default is preserved for any exception not
+            // explicitly opted in.
+            if ($mapped = $this->mapToHandlerResponse($e)) {
+                return $mapped;
+            }
+
+            return $this->handleUnknownException($e, $headers);
         }
+    }
+
+    /**
+     * Run the bound `ExceptionHandler` over `$e` and convert its result
+     * to a `WP_REST_Response`, or `null` if the handler has nothing for
+     * this exception (in which case the caller falls through to the
+     * sanitizer).
+     *
+     * Returns an `HttpException` result through `renderHttpException()`
+     * so observability + headers + the `{code, message, data}` shape
+     * stay consistent with the dedicated `HttpException` catch arm.
+     * A `WP_REST_Response` is returned verbatim — the renderer claimed
+     * full control over the response shape; we still fire
+     * `fluent_exception` so observability listeners see the original
+     * exception.
+     *
+     * @param  \Throwable $e
+     * @return \WP_REST_Response|null
+     */
+    protected function mapToHandlerResponse(Throwable $e)
+    {
+        if (!$this->app->bound(ExceptionHandler::class)) {
+            return null;
+        }
+
+        $handler = $this->app->make(ExceptionHandler::class);
+
+        if (!$handler instanceof ExceptionHandler) {
+            return null;
+        }
+
+        $result = $handler->render($e, $this->app);
+
+        if ($result instanceof HttpException) {
+            return $this->renderHttpException($result);
+        }
+
+        if ($result instanceof WP_REST_Response) {
+            $this->fireExceptionEvent($e);
+            return $result;
+        }
+
+        return null;
     }
 
     /**
@@ -888,41 +982,7 @@ class Route
      */
     protected function handleResponse($response)
     {
-        if ($response->get_status() >= 400) {
-            $this->fireExceptionEvent(
-                new Exception(
-                    $this->extractErrorMessage($response),
-                    $response->get_status()
-                )
-            );
-        }
-
         return $response;
-    }
-
-    /**
-     * Extract error message from response data.
-     *
-     * @param  \WP_REST_Response $response
-     * @return string
-     */
-    protected function extractErrorMessage($response)
-    {
-        $data = $response->get_data();
-
-        if (is_string($data)) {
-            return $data;
-        }
-
-        if (is_array($data) && isset($data['message'])) {
-            return $data['message'];
-        }
-
-        if ($data instanceof WP_Error) {
-            return $data->get_error_message();
-        }
-
-        return 'Unknown error';
     }
 
     /**
@@ -958,18 +1018,48 @@ class Route
 
         $this->fireExceptionEvent($e);
 
+        // Production sanitization: client-facing message must not leak
+        // PDO / HTTP-client / file-system internals. The real message
+        // ships to fluent_exception listeners (Night Watcher / bridge)
+        // via fireExceptionEvent above, so observability is preserved.
         if ($this->app->isDebugOn()) {
             $data = [
                 'file'  => $e->getFile(),
                 'line'  => $e->getLine(),
             ];
+
+            $message = $e->getMessage();
+        } else {
+            $message = 'An internal error occurred.';
         }
 
         return $this->app->response->sendError([
             'code'    => 'plugin_exception',
             'data'    => $data,
-            'message' => $e->getMessage(),
+            'message' => $message,
         ], $e->getCode() ?: 500, $headers);
+    }
+
+    /**
+     * Render an HttpException to a sanitization-free response.
+     *
+     * HttpException is the opt-in contract for "I authored this message,
+     * it is safe to ship to the client". Bypasses handleUnknownException's
+     * production sanitization but still fires fluent_exception for
+     * observability so listeners see every thrown HttpException.
+     *
+     * @param  HttpException $e
+     * @return \WP_REST_Response
+     */
+    protected function renderHttpException(HttpException $e)
+    {
+        $this->fireExceptionEvent($e);
+
+        return $this->app->response->sendError([
+            'code'    => $e->getErrorCode(),
+            'message' => $e->getMessage(),
+            'data'    => $e->getData(),
+        ], $e->getStatusCode(), $e->getHeaders());
     }
 
     /**
@@ -1045,6 +1135,15 @@ class Route
      */
     protected function fireExceptionEvent($exception)
     {
+        // Reentrancy guard: a fluent_exception listener that itself triggers
+        // an exception path must not re-enter this method and recurse. Reset
+        // in finally so subsequent (sequential) calls proceed normally.
+        static $firing = false;
+
+        if ($firing) {
+            return;
+        }
+
         if ($this->app->isDebugOn() || defined('FLUENT_BRIDGE_SECRET')) {
             $message = sprintf(
                 "%s in %s:%d\nStack trace:\n%s\n",
@@ -1053,10 +1152,26 @@ class Route
                 $exception->getLine(),
                 $exception->getTraceAsString()
             );
-            
+
             error_log($message);
-            
+        }
+
+        $firing = true;
+
+        try {
             $this->app->doAction('fluent_exception', $exception);
+        } catch (Throwable $listenerError) {
+            // Listener-throw isolation: a buggy fluent_exception listener
+            // (DB down, disk full) must not escape and crash the response.
+            // Log under the same gate; never re-fire fluent_exception here
+            // — that would be the cascade we are protecting against.
+            if ($this->app->isDebugOn() || defined('FLUENT_BRIDGE_SECRET')) {
+                error_log(
+                    'fluent_exception listener failed: ' . $listenerError->getMessage()
+                );
+            }
+        } finally {
+            $firing = false;
         }
     }
 
@@ -1068,6 +1183,8 @@ class Route
     public function permissionCallback($wpRestRequest)
     {
         try {
+            $this->parameters = null;
+            $this->substitutedParameters = null;
             $this->app->instance('route', $this);
             $this->app->instance('wprestrequest', $wpRestRequest);
             $this->app->request->mergeInputsFromRestRequest($wpRestRequest);
@@ -1104,7 +1221,7 @@ class Route
 
             return $response;
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return new WP_Error(
                 'Permission Callback Error',
                 $e->getMessage(), [
@@ -1232,7 +1349,9 @@ class Route
      */
     protected function collectMiddleWare($type = 'before')
     {
-        $middleware = $this->app['config']->get('middleware', []);
+        $middleware = $this->app->bound('http.middleware')
+            ? $this->app['http.middleware']
+            : [];
 
         $callableMiddleware = Arr::get($middleware, "global.{$type}", []);
 
@@ -1263,7 +1382,7 @@ class Route
                 $this->addMiddlewareInTheStack($callableMiddleware, $handler);
             } else {
                 if (isset($key)) {
-                    $mpath = 'config.middleware.route.' . $type;
+                    $mpath = 'app/Http/middleware.php route.' . $type;
                     $msg = "No middleware is assigned for the key: {$key} in {$mpath} array.";
                 } else {
                     $msg = "Could't resolve middleware.";
@@ -1430,8 +1549,8 @@ class Route
      */
     protected function isPolicyHandlerParseable($policyHandler)
     {
-        return (strpos($policyHandler, '@') === true
-            || strpos($policyHandler, '::') === true);
+        return (strpos($policyHandler, '@') !== false
+            || strpos($policyHandler, '::') !== false);
     }
 
     /**

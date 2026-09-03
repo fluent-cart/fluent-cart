@@ -17,7 +17,17 @@ class TemplateService
         $viewData = array_merge($viewData, [
             'default_banner_image' => $defaultBannerImage,
         ]);
-        App::make('view')->render('emails.' . $name, $viewData);
+        // Core templates resolve against app/Views/emails. Add-ons register
+        // their own notifications but keep the templates inside their own
+        // plugin, where that prefix cannot reach — they match on the
+        // template_path they registered and return a path View::make() can
+        // resolve (an absolute file path is safest). Core paths are untouched.
+        $viewPath = apply_filters('fluent_cart/email/template_view_path', 'emails.' . $name, [
+            'template_path' => $name,
+            'view_data'     => $viewData,
+        ]);
+
+        App::make('view')->render($viewPath, $viewData);
         return ob_get_clean();
     }
 

@@ -97,7 +97,7 @@
                                                     </el-table-column>
                                                     <el-table-column :width="120" :label="translate('Amount')">
                                                         <template #default="scope">
-                                                            <span>{{ formatNumber(scope.row.total_paid) }}</span>
+                                                            <span>{{ formatNumber(scope.row.total_amount) }}</span>
                                                         </template>
                                                     </el-table-column>
                                                     <el-table-column :width="150" :label="translate('Date')" prop="created_at">
@@ -143,7 +143,7 @@
                                                       </div>
 
                                                       <div class="fct-table-price-col">
-                                                        {{ formatNumber(row.total_paid) }}
+                                                        {{ formatNumber(row.total_amount) }}
                                                       </div>
                                                     </div><!-- fct-table-mobile-header -->
 
@@ -347,7 +347,7 @@
                                                             @confirm="updateLicenseStatus('active')"
                                                         >
                                                             <template #reference>
-                                                                <el-button text class="!text-primary-500 !mt-0">
+                                                                <el-button text class="!mt-0">
 <!--                                                                    <DynamicIcon name="CheckCircle"/>-->
                                                                     {{ translate('Enable') }}
                                                                 </el-button>
@@ -574,10 +574,13 @@ export default {
                     this.activatedSites = this.activations
                         .map((activation) => ({
                             id: activation.id,
+                            site_id: activation.site_id,
                             site_url: activation.site?.site_url,
                             created_at: activation.site?.created_at,
                             status: activation.status,
                             is_local: activation.is_local,
+                            last_update_version: activation.last_update_version,
+                            last_update_date: activation.last_update_date,
                         }))
                         .sort((a, b) => b.id - a.id);
                 })

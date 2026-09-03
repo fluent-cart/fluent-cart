@@ -8,7 +8,7 @@ dayjs.extend(quarterOfYear);
 
 const proShortcuts = [
   {
-    text: "Today",
+    text: translate("Today"),
     value: () => {
       const start = dayjs().startOf('day').toDate();
       const end = dayjs().endOf('day').toDate();

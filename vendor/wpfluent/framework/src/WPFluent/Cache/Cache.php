@@ -85,6 +85,10 @@ class Cache
      */
     public static function get($key)
     {
+        // Initialize so wp_cache_get's by-reference $found arg doesn't
+        // trigger a PHP 8.1+ "writing to undefined variable" deprecation.
+        $found = null;
+
         $key = static::key($key);
 
         if (static::isPersistent()) {

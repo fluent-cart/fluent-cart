@@ -4,7 +4,7 @@
 
         <GlobalIntegrationFeeds/>
 
-        <div style="margin-top: 100px;" class="fct-integration-content">
+        <div class="fct-integration-content mt-8">
             <CardContainer>
                 <CardBody>
                     <div class="fct-integration-content-head">
@@ -71,7 +71,7 @@
                                         </h5>
                                         <p class="desc">{{ addon.description }}</p>
                                         <div v-if="addon.is_pro && !addon.is_pro_active" class="mt-2">
-                                            <el-button type="warning" size="small" tag="a" :href="upgradeUrl" target="_blank">
+                                            <el-button type="warning" size="small" tag="a" :href="upgradeUrl('feature_lock_integrations')" target="_blank">
                                                 <DynamicIcon name="Crown" class="mr-1"/>
                                                 {{ translate('Upgrade to Pro') }}
                                             </el-button>
@@ -116,9 +116,9 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {Tab as FluidTab, Item as FluidTabItem} from "@/Bits/Components/FluidTab/FluidTab.js";
 import translate from "../../utils/translator/Translator";
 import Badge from "@/Bits/Components/Badge.vue";
-import Notify from "@/utils/Notify";
 import GlobalIntegrationFeeds from '@/Modules/Integrations/Feeds.vue';
 import AppConfig from "@/utils/Config/AppConfig";
+import {upgradeUrl} from "@/Bits/common";
 
 export default {
     name: "Integrations",
@@ -145,7 +145,6 @@ export default {
             modules: ["all", "crm", "lms", "core", 'marketing'],
             installationLoading: false,
             admin_url: AppConfig.get('admin_url'),
-            upgradeUrl: AppConfig.get('app_config.upgrade_url'),
             installing: false,
             installingAdding: ''
         };
@@ -179,7 +178,11 @@ export default {
             return isEmpty(this.filteredAddons);
         },
     },
+    mounted() {
+        this.fetchAddons();
+    },
     methods: {
+        upgradeUrl,
         fetchAddons() {
             this.fetching = true;
             this.$get("integration/addons")
@@ -216,9 +219,6 @@ export default {
                     this.installingAdding = '';
                 });
         }
-    },
-    mounted() {
-        this.fetchAddons();
     }
 };
 </script>

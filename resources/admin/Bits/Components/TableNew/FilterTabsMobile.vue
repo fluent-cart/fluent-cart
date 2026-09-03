@@ -9,7 +9,7 @@
         size="small"
     >
       <el-option
-          v-for="(viewLabel, viewKey) in table.getTabs()"
+          v-for="(viewLabel, viewKey) in (table.getTabs() || {})"
           :key="viewKey"
           :label="viewLabel.title || viewLabel"
           :value="viewKey"
@@ -100,4 +100,3 @@ const onChange = (viewKey) => {
   }
 };
 </script>
-

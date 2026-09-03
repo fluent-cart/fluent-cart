@@ -91,12 +91,22 @@ class Encrypter
      *
      * @param  string  $cipher
      * @return string
+     *
+     * @throws \RuntimeException If the cipher is not in the supported list.
      */
     public static function generateKey($cipher)
     {
-        return random_bytes(
-        	self::$supportedCiphers[strtolower($cipher)]['size'] ?? 32
-        );
+        $cipher = strtolower($cipher);
+
+        if (!isset(self::$supportedCiphers[$cipher])) {
+            $ciphers = implode(', ', array_keys(self::$supportedCiphers));
+
+            throw new RuntimeException(
+                "Unsupported cipher '{$cipher}'. Supported ciphers are: {$ciphers}."
+            );
+        }
+
+        return random_bytes(self::$supportedCiphers[$cipher]['size']);
     }
 
     /**
@@ -171,16 +181,16 @@ class Encrypter
 
         $foundValidMac = false;
 
-        // Here we will decrypt the value. If we are able to successfully decrypt it
-        // we will then unserialize it and return it out to the caller. If we are
-        // unable to decrypt this value we will throw out an exception message.
+        // Try each key (current + rotated) in turn. For non-AEAD ciphers,
+        // the MAC must be validated against THIS specific key — not a
+        // previous iteration's. Once a key passes its MAC check, attempt
+        // decryption with the same key.
         foreach ($this->getAllKeys() as $key) {
-            if (
-                $this->shouldValidateMac() &&
-                !($foundValidMac = $foundValidMac || $this->validMacForKey($payload, $key))
-            ) {
+            if ($this->shouldValidateMac() && !$this->validMacForKey($payload, $key)) {
                 continue;
             }
+
+            $foundValidMac = true;
 
             $decrypted = \openssl_decrypt(
                 $payload['value'], strtolower($this->cipher), $key, 0, $iv, $tag ?? ''
@@ -341,7 +351,16 @@ class Encrypter
      */
     public function getSlug()
     {
-        $slug = App::config()->get('app.slug');
+        // Defensive: framework not bootstrapped (bare PHP, plugin
+        // activation pre-init, early CLI). Fall back to a generic slug
+        // so the constructor can still build a working encrypter.
+        $app = App::getInstance();
+
+        if (!$app) {
+            return 'wpfluent_enc_key';
+        }
+
+        $slug = $app->config->get('app.slug');
 
         $default = $slug . '_enc_key';
 
@@ -350,7 +369,7 @@ class Encrypter
          *
          * @param string $default Default option key name.
          */
-        return App::applyFilters($slug . '.encryption.option_key', $default);
+        return $app->applyFilters($slug . '.encryption.option_key', $default);
     }
 
     /**
@@ -384,22 +403,47 @@ class Encrypter
     {
         $keys = [$this->key];
 
-        // Get the old keys option name, allowing override via filter
-        $oldKeysOption = App::applyFilters(
-            $this->slug . '.encryption.old_keys_option',
-            $this->slug . '_old_enc_key'
-        );
+        $oldKeysOption = $this->oldKeysOptionName();
 
         $oldKeys = get_option($oldKeysOption, []);
 
         foreach ($oldKeys as $encodedKey) {
             $decoded = base64_decode($encodedKey, true);
-            if ($decoded !== false) {
-                $keys[] = $decoded;
+
+            // Skip corrupted base64 and any key whose length doesn't match
+            // the active cipher (otherwise it'd silently fail in the
+            // decrypt loop, hiding the real cause).
+            if ($decoded === false || !static::supported($decoded, $this->cipher)) {
+                continue;
             }
+
+            $keys[] = $decoded;
         }
-        
+
         return $keys;
+    }
+
+    /**
+     * Resolve the option name that stores rotated old keys.
+     * Honors the {slug}.encryption.old_keys_option filter when the
+     * framework App is bootstrapped; otherwise uses the default.
+     *
+     * @return string
+     */
+    protected function oldKeysOptionName()
+    {
+        $default = $this->slug . '_old_enc_key';
+
+        $app = App::getInstance();
+
+        if (!$app) {
+            return $default;
+        }
+
+        return $app->applyFilters(
+            $this->slug . '.encryption.old_keys_option',
+            $default
+        );
     }
 
     /**
@@ -415,19 +459,25 @@ class Encrypter
     {
         $currentEncoded = base64_encode($this->key);
 
-        // Get the old keys option name, allowing override via filter
-        $oldKeysOption = App::applyFilters(
-            $this->slug . '.encryption.old_keys_option',
-            $this->slug . '_old_enc_key'
-        );
+        $oldKeysOption = $this->oldKeysOptionName();
 
         $oldKeys = get_option($oldKeysOption, []);
 
         // Add current key to old list if not already present
         if (!in_array($currentEncoded, $oldKeys, true)) {
             $oldKeys[] = $currentEncoded;
-            update_option($oldKeysOption, $oldKeys);
         }
+
+        // Cap retention so the array doesn't grow unbounded across many
+        // rotations. Keeps the MOST RECENT $cap entries; trimmed-out keys
+        // mean any data still encrypted under them becomes undecryptable —
+        // that's the documented contract of any retention policy.
+        $cap = $this->oldKeysMax();
+        if (count($oldKeys) > $cap) {
+            $oldKeys = array_values(array_slice($oldKeys, -$cap));
+        }
+
+        update_option($oldKeysOption, $oldKeys);
 
         // Generate and store new key
         $newKey = base64_encode(static::generateKey($this->cipher));
@@ -435,5 +485,31 @@ class Encrypter
 
         // Update instance property with decoded new key
         $this->key = base64_decode($newKey);
+    }
+
+    /**
+     * Maximum number of rotated keys to retain.
+     *
+     * Honors the {slug}.encryption.old_keys_max filter when the framework
+     * App is bootstrapped. Default is 10, which covers ~10 weeks of weekly
+     * rotation or ~10 years of annual rotation; bump the filter to keep
+     * more historical keys around.
+     *
+     * @return int
+     */
+    protected function oldKeysMax()
+    {
+        $default = 10;
+
+        $app = App::getInstance();
+
+        if (!$app) {
+            return $default;
+        }
+
+        return (int) $app->applyFilters(
+            $this->slug . '.encryption.old_keys_max',
+            $default
+        );
     }
 }

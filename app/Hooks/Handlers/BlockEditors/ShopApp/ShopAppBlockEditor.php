@@ -117,6 +117,7 @@ class ShopAppBlockEditor extends BlockEditor
     public function render(array $shortCodeAttribute, $block = null, $content = null): string
     {
         AssetLoader::loadProductArchiveAssets();
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
         return $content;
     }
 }

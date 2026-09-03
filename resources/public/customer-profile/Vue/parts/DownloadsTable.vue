@@ -37,6 +37,9 @@ import Storage from "@/utils/Storage";
 import translate from "../../translator/Translator";
 
 export default {
+    components: {
+        DynamicIcon
+    },
     props: {
         downloads: {
             type: Array,
@@ -46,9 +49,6 @@ export default {
             type: Boolean,
             default: true
         }
-    },
-    components: {
-        DynamicIcon
     },
     methods: {
       translate,

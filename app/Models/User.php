@@ -18,6 +18,26 @@ class User extends Model
 
     protected $guarded = ['password'];
 
+    /**
+     * Credential columns of the WordPress `users` table that must never be
+     * serialized into an API response.
+     *
+     * `$guarded` above is mass-assignment protection only (GuardsAttributes) and
+     * has no effect on serialization — and it names `password`, which is not even
+     * a real column. Serialization hiding lives here (HidesAttributes), and it is
+     * applied by HasAttributes::getArrayableItems(), so it covers toArray(),
+     * toJson() and every `with('wpUser')` eager load at once.
+     *
+     * This affects serialization ONLY. Direct property access ($user->user_pass)
+     * still works, so internal reads are unaffected.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'user_pass',            // bcrypt/phpass password hash
+        'user_activation_key',  // password-reset / new-user activation token
+    ];
+
 
     /**
      * Check if the user has a specific permission.

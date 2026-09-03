@@ -139,6 +139,30 @@ const MiniCartInspectorSettings = ({ attributes, setAttributes, clientId }) => {
                         />
                     </BaseControl>
 
+                    {/* Badge Count Mode — only shown when badge is visible */}
+                    { attributes.show_item_count !== 'never' && (
+                        <BaseControl
+                            label={ blocktranslate("Badge count shows", "fluent-cart") }
+                        >
+                            <RadioControl
+                                selected={ attributes.count_mode }
+                                options={ [
+                                    {
+                                        label: blocktranslate("Count distinct products", "fluent-cart"),
+                                        value: "distinct_products",
+                                    },
+                                    {
+                                        label: blocktranslate("Count total item quantity", "fluent-cart"),
+                                        value: "total_quantity",
+                                    },
+                                ] }
+                                onChange={ (value) =>
+                                    setAttributes({ count_mode: value })
+                                }
+                            />
+                        </BaseControl>
+                    ) }
+
 
                 </PanelBody>
             </InspectorControls>

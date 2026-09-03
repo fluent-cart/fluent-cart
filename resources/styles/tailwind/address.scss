@@ -13,7 +13,7 @@
     .el-input__wrapper {
       @apply max-h-10 min-h-10;
       input {
-        @apply m-0 outline-none shadow-none #{!important};
+        @apply text-[13px] m-0 outline-none shadow-none #{!important};
         &:focus {
           @apply outline-none shadow-none #{!important};
         }
@@ -126,4 +126,15 @@
       @apply border-t-[0.5px] rounded-none;
     }
   }
+}
+.fct-customer-address-business-details {
+    @apply mt-5;
+    .fct-customer-address-business-details-title {
+        @apply text-sm mt-0 mb-4 font-medium;
+    }
+}
+.fct-customer-address-wrap {
+    .fct_edit_customer_popup {
+        @apply mt-4;
+    }
 }

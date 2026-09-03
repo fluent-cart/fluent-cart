@@ -1,4 +1,6 @@
 <script setup>
+import PriceInput from "@/Bits/Components/Inputs/PriceInput.vue";
+
 const props = defineProps({
   variant: {
     type: Object,
@@ -19,13 +21,13 @@ const emit = defineEmits(['change']);
 
 <template>
   <template v-if="variant">
-    <el-input
+    <PriceInput
       size="small"
-      :class="{ 'is-error': hasError }"
-      v-model="variant.compare_price"
+      :error-class="hasError ? 'is-error' : ''"
+      :model-value="variant.compare_price"
       :placeholder="$t('Compare price')"
       :disabled="disabled"
-      @input="emit('change')"
+      @update:model-value="variant.compare_price = $event; emit('change')"
     />
   </template>
   <span v-else class="text-gray-300 text-sm flex justify-center">&mdash;</span>

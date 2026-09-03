@@ -13,7 +13,6 @@ import ProductMedia from "@/Modules/Products/parts/ProductMedia.vue";
 import ProductTermTaxonomy from "@/Modules/Products/parts/ProductTermTaxonomy.vue";
 import {useProductDownloadableModel} from "@/Models/Product/ProductDownloadableModel";
 import ShippingClass from "@/Modules/Products/parts/ShippingClass.vue";
-import TaxClass from "@/Modules/Products/parts/TaxClass.vue";
 import DynamicTemplates from "@/Bits/Components/DynamicTemplates/DynamicTemplates.vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -55,6 +54,8 @@ const setupProduct = (product) => {
   Object.keys(editableProduct.taxonomies).map((key) => {
     editableProduct.product_terms[key] = editableProduct[key] ?? [];
   });
+
+  productEditModel.saveSnapshot();
 
   isEditingReady.value = true;
 }
@@ -182,7 +183,6 @@ onBeforeRouteLeave(() => {
           productEditModel.update();
         }"
         :saveButtonText="translate('Update')"
-        :loadingText="translate('Updating')"
         :show-cmnd-icon="true"
     >
     </SaveBar>
@@ -218,38 +218,39 @@ onBeforeRouteLeave(() => {
 
       <div class="fct-product-edit">
         <div class="fct-product-main">
-          <product-info
+          <ProductInfo
               :product="editableProduct"
               :productEditModel="productEditModel"
               :reload="reload"
           />
           <div
               class="fct-show-on-tablet fct-product-publish-and-media-widgets el-form el-form--default el-form--label-top">
-            <product-status :product="editableProduct"
+            <ProductStatus :key="productEditModel.data.discardKey"
+                            :product="editableProduct"
                             :productEditModel="productEditModel"/>
 
             <ProductMedia :product="editableProduct"
                           :productEditModel="productEditModel"/>
           </div>
 
-          <product-pricing
+          <ProductPricing
               :product="editableProduct"
               :productEditModel="productEditModel"
               :productDownloadableModel="productDownloadableModel"
           />
 
-          <product-inventory
+          <ProductInventory
               :product="editableProduct"
               :productEditModel="productEditModel"/>
 
-          <product-bundle-selector
+          <ProductBundleSelector
               v-if="productEditModel.isBundleProduct()"
               :product="editableProduct"
               :productEditModel="productEditModel"
           />
 
 
-          <product-download
+          <ProductDownload
               v-if="!productEditModel.isBundleProduct()"
               :product="editableProduct"
               :productEditModel="productEditModel"
@@ -258,7 +259,8 @@ onBeforeRouteLeave(() => {
         </div>
         <div class="fct-product-aside">
           <div class="el-form el-form--default el-form--label-top">
-            <product-status class="fct-hide-on-tablet" :product="editableProduct"
+            <ProductStatus class="fct-hide-on-tablet" :key="'aside-' + productEditModel.data.discardKey"
+                            :product="editableProduct"
                             :productEditModel="productEditModel"/>
 
             <ProductMedia class="fct-hide-on-tablet" :product="editableProduct"
@@ -269,11 +271,6 @@ onBeforeRouteLeave(() => {
 
             <ShippingClass
                 v-if="productEditModel.hasPhysicalVariation()"
-                :product="editableProduct"
-                :productEditModel="productEditModel"/>
-
-            <TaxClass
-                v-if="productEditModel.isTaxEnabled()"
                 :product="editableProduct"
                 :productEditModel="productEditModel"/>
 

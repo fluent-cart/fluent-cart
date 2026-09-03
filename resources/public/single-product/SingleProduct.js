@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         #subscriptionInfo;
         #productId;
         #pricingSection;
+        #variationController;
 
         toTitleCase(str) {
             return str.replace(
@@ -69,16 +70,29 @@ document.addEventListener('DOMContentLoaded', () => {
             this.#setupDecreaseButton();
             this.#setupQuantityInput();
             this.#setupCartButtons();
-            this.#setupVariationButtons();
+
+            // Hand off to the advanced-variation controller (registered by Pro
+            // via window.FluentCartVariationControllers.advanced) when this
+            // product is an advanced variation. Falls back to the standard
+            // variation-button setup when the controller is unavailable —
+            // either Pro is inactive, or this is a simple-variation product.
+            FluentCartSingleProduct.#instance = this;
+            window.fluentCartSingleProduct = this;
+
+            const advancedWrap = this.findOneInContainer('.fct-advanced-variation-wrap');
+            const Controller = (window.FluentCartVariationControllers || {}).advanced || null;
+            if (advancedWrap && Controller) {
+                this.#variationController = new Controller();
+                this.#variationController.init(advancedWrap);
+            } else {
+                this.#setupVariationButtons();
+            }
 
             this.#setup();
 
             this.#initTabOnDemand();
             this.#setMobileViewClass();
             this.#listenWindowResize();
-
-
-            FluentCartSingleProduct.#instance = this;
 
             return this;
         }
@@ -320,54 +334,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             button.setAttribute('aria-checked', 'true');
             button.setAttribute('tabindex', '0');
+            button.classList.add('selected');
 
-            this.#resetQuantity();
             const variationId = button.dataset.cartId;
 
-            // get parent data-fluent-cart-product-pricing-section
-            const pricingSection = button.closest('[data-fluent-cart-product-pricing-section]');
-            // get data-fluent-cart-product-payment-type from pricingSection and add class is-hidden to all
-            const paymentTypes = pricingSection.querySelectorAll('[data-fluent-cart-product-payment-type]');
-            const itemPrices = pricingSection.querySelectorAll('[data-fluent-cart-product-item-price]');
-            if (paymentTypes) {
-                //paymentTypes.forEach(type => type.classList.add('is-hidden'));
-            }
-            if (itemPrices) {
-                //itemPrices.forEach(type => type.classList.add('is-hidden'));
-            }
+            // Clear the stale thumbnail highlight BEFORE selectVariation(). That
+            // call dispatches fluentCartSingleProductVariationChanged synchronously,
+            // and ImageGallery reacts by activating this variant's thumbnail. Doing
+            // the removal afterwards (as before) wiped the class ImageGallery had
+            // just set, leaving the image swapped but no thumbnail selected.
+            this.#thumbnailControls.forEach(control => control.classList.remove('active'));
 
-            const variationContent = pricingSection.querySelectorAll('.fluent-cart-product-variation-content[data-variation-id]');
-
-            if (variationContent) {
-                variationContent.forEach(type => type.classList.add('is-hidden'));
-            }
-
-            const selectedVariationContent = pricingSection.querySelectorAll(
-                `.fluent-cart-product-variation-content[data-variation-id="${variationId}"]`
-            );
-
-            if (selectedVariationContent) {
-                selectedVariationContent.forEach(type => type.classList.remove('is-hidden'));
-            }
-            
-
-
+            this.selectVariation(variationId);
+            this.#resetQuantity();
             this.#currentlySelectedVariationId = variationId;
-            // const status = button.dataset.itemStock;
 
-            let checkStockStatus = window.fluentcart_single_product_vars?.in_stock_status;
-            let stockManagement = button?.dataset.stockManagement;
-            let status = checkStockStatus;
-            if (stockManagement === 'yes') {
-                status = button?.dataset.itemStock;
+            const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
+
+            let status = window.fluentcart_single_product_vars?.in_stock_status;
+            if (button.dataset.stockManagement === 'yes') {
+                status = button.dataset.itemStock;
             }
 
             if (variationId !== undefined) {
-                this.#thumbnailControls.forEach(control => control.classList.remove('active'));
-                this.#addToCartButtons.forEach(button => {
-                    button.setAttribute('data-cart-id', variationId);
-                });
-
+                this.#addToCartButtons.forEach(btn => btn.setAttribute('data-cart-id', variationId));
                 this.#setupBuyNowButton(variationId, status);
 
                 if (button.dataset.paymentType !== 'subscription') {
@@ -382,15 +372,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.#updateProductStatus(status);
             }
 
-            // For in-stock subscriptions, hide add-to-cart (subscriptions use Buy Now only)
+            // For in-stock subscriptions, hide add-to-cart
             const outOfStockSt = window.fluentcart_single_product_vars.out_of_stock_status;
             if (button.dataset.paymentType === 'subscription' && status !== outOfStockSt) {
                 this.#addToCartButtons.forEach(btn => btn.classList.add('is-hidden'));
             }
 
-            // Update SKU on variation change
+            // Update SKU
             const skuValue = button.dataset.sku || '';
-            const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
             const skuElement = productScope?.querySelector('[data-fluent-cart-product-sku]');
             if (skuElement) {
                 skuElement.textContent = skuValue;
@@ -400,66 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Update package description on variation change
-            const packageInfoJson = button.dataset.packageInfo || '';
-            const packageWrapper = productScope?.querySelector('[data-fluent-cart-package-description]');
-            if (packageWrapper) {
-                if (packageInfoJson) {
-                    try {
-                        const pkg = JSON.parse(packageInfoJson);
-                        const trans = window.fluentcart_single_product_vars?.trans || {};
-                        const table = document.createElement('table');
-                        table.className = 'fct-package-description__table';
-                        table.setAttribute('role', 'presentation');
-                        const tbody = document.createElement('tbody');
-
-                        const addRow = (label, value) => {
-                            const tr = document.createElement('tr');
-                            const th = document.createElement('th');
-                            const td = document.createElement('td');
-                            th.textContent = label;
-                            td.textContent = value;
-                            tr.appendChild(th);
-                            tr.appendChild(td);
-                            tbody.appendChild(tr);
-                        };
-
-                        if (pkg.name) {
-                            addRow(trans['Package'] || 'Package', pkg.name);
-                        }
-                        if (pkg.dimensions) {
-                            addRow(trans['Dimensions'] || 'Dimensions', pkg.dimensions);
-                        }
-                        if (pkg.product_weight) {
-                            addRow(trans['Weight'] || 'Weight', pkg.product_weight);
-                        }
-                        if (pkg.shipping_weight) {
-                            addRow(trans['Shipping Weight'] || 'Shipping Weight', pkg.shipping_weight);
-                        }
-
-                        if (tbody.childElementCount) {
-                            table.appendChild(tbody);
-                            packageWrapper.replaceChildren(table);
-                            packageWrapper.style.display = '';
-                        } else {
-                            packageWrapper.style.display = 'none';
-                        }
-                    } catch (e) {
-                        packageWrapper.style.display = 'none';
-                    }
-                } else {
-                    packageWrapper.style.display = 'none';
-                }
-            }
-
-            button.classList.add('selected');
-
-            // Update aria-label on Buy Now and Add To Cart buttons with variant name
+            // Update aria-labels on purchase buttons
             const variantName = button.getAttribute('aria-label') || '';
             if (variantName) {
                 this.#buyNowButtons.forEach(btn => {
-                    const baseText = btn.textContent.trim();
-                    btn.setAttribute('aria-label', baseText + ' - ' + variantName);
+                    btn.setAttribute('aria-label', btn.textContent.trim() + ' - ' + variantName);
                 });
                 this.#addToCartButtons.forEach(btn => {
                     const textEl = btn.querySelector('.text');
@@ -469,26 +403,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Update variant price info
-            const priceInfoElements2 = this.findInContainer('[data-fluent-cart-single-product-page-product-variant-price-info]');
-            if (priceInfoElements2) {
-                priceInfoElements2.forEach(el => el.classList.remove('selected'));
-            }
-            const selectedPriceInfo2 = this.findOneInContainer(`[data-fluent-cart-single-product-page-product-variant-price-info][data-cart-id="${variationId}"]`);
-            if (selectedPriceInfo2) {
-                selectedPriceInfo2?.classList.add('selected');
-            }
+            this.findInContainer('[data-fluent-cart-single-product-page-product-variant-price-info]')
+                .forEach(el => el.classList.remove('selected'));
+            this.findOneInContainer(`[data-fluent-cart-single-product-page-product-variant-price-info][data-cart-id="${variationId}"]`)
+                ?.classList.add('selected');
 
             // Update quantity elements
-            const quantityElements2 = this.findInContainer(`[data-fluent-cart-single-product-page-product-quantity][data-cart-id="${variationId}"]`);
-            if (quantityElements2) {
-                quantityElements2.forEach(el => el.classList.add('selected'));
-            }
+            this.findInContainer(`[data-fluent-cart-single-product-page-product-quantity][data-cart-id="${variationId}"]`)
+                .forEach(el => el.classList.add('selected'));
+        }
 
+        selectVariation(variationId) {
+            const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
+            const scope = productScope || this.#pricingSection;
+            scope.querySelectorAll('.fluent-cart-product-variation-content[data-variation-id]')
+                .forEach(el => el.classList.add('is-hidden'));
+            scope.querySelectorAll(`.fluent-cart-product-variation-content[data-variation-id="${variationId}"]`)
+                .forEach(el => el.classList.remove('is-hidden'));
 
             window.dispatchEvent(new CustomEvent('fluentCartSingleProductVariationChanged', {
                 detail: {
-                    productId: this.#productId,
-                    variationId: variationId
+                    productId:   this.#productId,
+                    variationId: variationId,
                 }
             }));
         }
@@ -507,6 +443,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        #updateButtonText(button, newText) {
+            // If button is explicitly icon-only, don't update text
+            if (button.getAttribute('data-icon-only') === 'true') {
+                return;
+            }
+
+            const textEl = button.querySelector('.text');
+            if (!textEl) return;
+
+            // Check if there's an existing text span (for icon + text buttons)
+            let textSpan = textEl.querySelector('span');
+
+            if (textSpan) {
+                // Update existing text span
+                textSpan.textContent = newText;
+            } else {
+                // No text span found, just replace the text
+                textEl.textContent = newText;
+            }
+        }
+
         #updateProductStatus(status) {
 
             if (!status) return;
@@ -518,7 +475,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const productScope = this.#container.closest('.fct-product-summary') || this.#container.closest('.product-info-block-wrapper') || this.#container.parentElement;
             const statusElement = productScope?.querySelector("[data-fluent-cart-product-stock]");
             if (statusElement) {
-                statusElement.innerHTML = this.$t(this.toTitleCase(status.replaceAll('-', ' ')));
+                // Prefer a per-status custom label (e.g. from the Bricks Product Stock
+                // element) when present; otherwise fall back to the generic label map.
+                const customText = isOutOfStock
+                    ? statusElement.getAttribute('data-out-of-stock-text')
+                    : statusElement.getAttribute('data-in-stock-text');
+                if (customText) {
+                    // getAttribute() returns the decoded string, so assign via textContent
+                    // to avoid reparsing any markup as HTML (matches the advanced-selector path).
+                    statusElement.textContent = customText;
+                } else {
+                    statusElement.innerHTML = this.$t(this.toTitleCase(status.replaceAll('-', ' ')));
+                }
 
                 // Update badge class (fct_status_badge_*)
                 statusElement.className = statusElement.className.replace(/fct_status_badge_[\w-]+/g, '');
@@ -534,10 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isOutOfStock) {
                 this.#addToCartButtons.forEach(button => {
-                    const textEl = button.querySelector('.text');
-                    if (textEl) {
-                        textEl.textContent = window.fluentcart_single_product_vars.out_of_stock_button_text;
-                    }
+                    this.#updateButtonText(button, window.fluentcart_single_product_vars.out_of_stock_button_text);
                     button.setAttribute('disabled', 'disabled');
                     button.classList.add('out-of-stock');
                     // Always show "Not Available" button, even for subscriptions
@@ -551,10 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else {
                 this.#addToCartButtons.forEach(button => {
-                    const textEl = button.querySelector('.text');
-                    if (textEl) {
-                        textEl.textContent = window.fluentcart_single_product_vars.cart_button_text;
-                    }
+                    this.#updateButtonText(button, window.fluentcart_single_product_vars.cart_button_text);
                     button.classList.remove('out-of-stock');
                     button.removeAttribute('disabled');
                 });
@@ -748,16 +710,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    // Initialize all single product pages
-    document.querySelectorAll('[data-fluent-cart-product-pricing-section]').forEach((container, index) => {
-        new FluentCartSingleProduct().init(container, index);
-    });
-
-    window.addEventListener('fluentCartSingleProductModalOpened', function (event) {
-        document.querySelectorAll('[data-fluent-cart-product-pricing-section]').forEach((container, index) => {
-            // new FluentCartSingleProduct().init(container, index);
+    // init - host plugins call this after injecting FluentCart product HTML.
+    // Idempotent — sections already wired by an earlier call are skipped.
+    FluentCartSingleProduct.init = function (root) {
+        (root || document).querySelectorAll(
+            '[data-fluent-cart-product-pricing-section]:not([data-fluent-cart-single-product-initialized])'
+        ).forEach(container => {
+            container.setAttribute('data-fluent-cart-single-product-initialized', '1');
+            const index = document.querySelectorAll(
+                '[data-fluent-cart-product-pricing-section][data-fluent-cart-single-product-initialized]'
+            ).length - 1;
+            new FluentCartSingleProduct().init(container, index);
         });
-    });
+    };
+
+    // reinit - call this when the host replaces our HTML after first init
+    // (e.g. Elementor's innerHTML wipe on popup/show drops our listeners).
+    // Clears stale init flags, re-binds, and signals ImageGallery to rebind.
+    FluentCartSingleProduct.reinit = function (root, source) {
+        if (!root) return;
+        root.querySelectorAll('[data-fluent-cart-product-pricing-section][data-fluent-cart-single-product-initialized]')
+            .forEach(c => c.removeAttribute('data-fluent-cart-single-product-initialized'));
+        FluentCartSingleProduct.init(root);
+        window.dispatchEvent(new CustomEvent('fluentCartSingleProductModalOpened', {
+            detail: { source: source || 'external' }
+        }));
+    };
+
+    FluentCartSingleProduct.init(document);
 
     window.FluentCartSingleProduct = FluentCartSingleProduct;
 });

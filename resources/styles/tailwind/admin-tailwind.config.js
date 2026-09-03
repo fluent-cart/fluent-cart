@@ -5,7 +5,7 @@ import borderRadius from './extends/borderRadius'
 import fontSize from './extends/fontSize'
 
 module.exports = {
-    darkMode: 'class',
+    darkMode: ['selector', '.fluent_theme_dark'],
     important: '#fct_admin_app_wrapper',
     content: [
         './resources/admin/**/*.{vue,js,php}',

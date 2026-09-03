@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import {ref, computed, provide, onMounted, nextTick} from 'vue';
+import {ref, computed, provide, onMounted, nextTick, onBeforeUnmount} from 'vue';
 
 const props = defineProps({
   activeIndex: null,
@@ -26,6 +26,24 @@ const barTop = ref(0);
 const barWidth = ref(0);
 const barHeight = ref(0);
 const activeEl = ref(null);
+let resizeObserver = null;
+
+const updateBarFromElement = (el) => {
+  if (!tab.value || !el) return;
+
+  const tabRect = tab.value.getBoundingClientRect();
+  const {left, width, height, top} = el.getBoundingClientRect();
+  barLeft.value = left - tabRect.left;
+  barTop.value = top - tabRect.top;
+  barWidth.value = width;
+  barHeight.value = height;
+};
+
+const handleWindowResize = () => {
+  if (activeEl.value) {
+    updateBarFromElement(activeEl.value);
+  }
+};
 
 const barStyle = computed(() => ({
   left: `${barLeft.value}px`,
@@ -37,13 +55,21 @@ const barStyle = computed(() => ({
 const setActiveItem = (el) => {
   if (!tab.value || !el) return;
 
-  const tabRect = tab.value.getBoundingClientRect();
-  const {left, width, height, top} = el.getBoundingClientRect();
-  barLeft.value = left - tabRect.left;
-  barTop.value = top - tabRect.top;
-  barWidth.value = width;
-  barHeight.value = height;
+  updateBarFromElement(el);
   activeEl.value = el;
+
+  if (typeof ResizeObserver !== 'undefined') {
+    if (!resizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        if (activeEl.value) {
+          updateBarFromElement(activeEl.value);
+        }
+      });
+    }
+
+    resizeObserver.disconnect();
+    resizeObserver.observe(el);
+  }
 }
 
 const setActiveByIndex = (index) => {
@@ -80,11 +106,7 @@ defineExpose({
 provide('setActiveItem', setActiveItem);
 provide('isActiveItem', isActiveItem);
 
-window.addEventListener('resize', () => {
-  if (activeEl.value) {
-    setActiveItem(activeEl.value);
-  }
-});
+window.addEventListener('resize', handleWindowResize);
 
 onMounted(() => {
   nextTick(() => {
@@ -94,5 +116,12 @@ onMounted(() => {
       setActiveByActiveClass()
     }
   });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleWindowResize);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
 });
 </script>

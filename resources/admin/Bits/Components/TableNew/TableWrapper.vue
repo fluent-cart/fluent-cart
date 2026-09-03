@@ -41,6 +41,54 @@ const saveView = () => {
   props.table.promptAndSaveView();
 };
 
+// Slide transition hooks
+const slideBeforeEnter = (el) => {
+  el.style.overflow = 'hidden';
+  el.style.height = 'auto';
+  el.style.visibility = 'hidden';
+  el.style.position = 'absolute';
+};
+
+const slideEnter = (el, done) => {
+  const h = el.scrollHeight + 'px';
+  el.style.position = '';
+  el.style.visibility = '';
+  el.style.height = '0';
+  el.style.paddingTop = '0';
+  el.style.opacity = '0';
+  void el.offsetHeight;
+  el.style.transition = 'height 0.25s ease, padding-top 0.25s ease, opacity 0.25s ease';
+  el.style.height = h;
+  el.style.paddingTop = '';
+  el.style.opacity = '1';
+  el.addEventListener('transitionend', () => {
+    el.style.height = '';
+    el.style.overflow = '';
+    el.style.transition = '';
+    done();
+  }, { once: true });
+};
+
+const slideBeforeLeave = (el) => {
+  el.style.height = el.scrollHeight + 'px';
+  el.style.overflow = 'hidden';
+  void el.offsetHeight;
+};
+
+const slideLeave = (el, done) => {
+  el.style.transition = 'height 0.25s ease, padding-top 0.25s ease, opacity 0.25s ease';
+  el.style.height = '0';
+  el.style.paddingTop = '0';
+  el.style.opacity = '0';
+  el.addEventListener('transitionend', () => {
+    el.style.height = '';
+    el.style.paddingTop = '';
+    el.style.overflow = '';
+    el.style.transition = '';
+    done();
+  }, { once: true });
+};
+
 const confirmSaveView = () => {
   if (!saveViewForm.name || !saveViewForm.name.trim()) {
     Notify.error(translate('Name is required'));
@@ -99,7 +147,7 @@ const confirmSaveView = () => {
                 </el-tooltip>
 
                 <ColumnVisibility v-if="table.getToggleableColumns().length" :table="table"/>
-                <ColumnSort v-if="table.getSortableColumns().length" :table="table"/>
+                <ColumnSort v-if="table.getSortOptions().length" :table="table"/>
               </div>
 
             </div><!-- end of mobile header actions -->
@@ -176,7 +224,7 @@ const confirmSaveView = () => {
               </el-tooltip>
 
               <ColumnVisibility v-if="table.getToggleableColumns().length" :table="table"/>
-              <ColumnSort v-if="table.getSortableColumns().length" :table="table"/>
+              <ColumnSort v-if="table.getSortOptions().length" :table="table"/>
 
             </div>
           </div>
@@ -184,6 +232,13 @@ const confirmSaveView = () => {
 
         <AdvancedFilter :table="table"/>
 
+        <Transition
+            :css="false"
+            @before-enter="slideBeforeEnter"
+            @enter="slideEnter"
+            @before-leave="slideBeforeLeave"
+            @leave="slideLeave"
+        >
         <div class="filter-search-wrap" v-if="table.isSearching() && !table.useFullWidthSearch()">
           <div class="search-bar">
             <el-input
@@ -226,6 +281,7 @@ const confirmSaveView = () => {
             {{ $t('Cancel') }}
           </el-button>
         </div>
+        </Transition>
 
       </div><!-- end of card header -->
 

@@ -6,6 +6,13 @@ class SanitizeTextArea
 {
     public function __invoke($attr, $value, $rules, $data, ...$params)
     {
+        if (!is_string($value)) {
+            return sprintf(
+                /* translators: %1$s: field attribute name */
+                __('The %1$s must be a valid text', 'fluent-cart'),
+                $attr
+            );
+        }
         $value = trim($value);
         
         if (is_numeric($value)) {

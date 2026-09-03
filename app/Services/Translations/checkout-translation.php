@@ -37,7 +37,6 @@ return [
     'Something went wrong' => __('Something went wrong', 'fluent-cart'),
     'Submit' => __('Submit', 'fluent-cart'),
     'Username or Email is required' => __('Username or Email is required', 'fluent-cart'),
-    'Valid VAT number' => __('Valid VAT number', 'fluent-cart'),
     'Validating...' => __('Validating...', 'fluent-cart'),
     'Validation Error! Please fill required fields!' => __('Validation Error! Please fill required fields!', 'fluent-cart'),
     'Validation service unavailable. Please try again.' => __('Validation service unavailable. Please try again.', 'fluent-cart'),

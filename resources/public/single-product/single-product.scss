@@ -7,6 +7,18 @@
 //  @apply max-w-[1240px];
 //}
 
+.fct-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 :root {
   --fct-single-product-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
   --fct-single-product-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
@@ -70,6 +82,16 @@
   }
 }
 
+.fct-product-page--no-gallery {
+    .fct-single-product-page-row {
+        @apply @[768px]/product-page:grid-cols-1;
+        grid-template-areas: inherit;
+    }
+    .fct-product-summary {
+        grid-area: auto;
+    }
+}
+
 
 
 /*======== gallery =========*/
@@ -130,7 +152,7 @@
 }
 
 .fct-product-gallery-thumb {
-  @apply h-auto max-h-[600px] w-full border border-solid border-[var(--fct-single-product-border-color)] text-center rounded;
+  @apply h-auto max-h-[600px] w-full border border-solid border-[var(--fct-single-product-border-color)] text-center rounded flex box-border;
   .containerZoom {
     @apply rounded;
   }
@@ -286,8 +308,9 @@
   }
 }
 
-/* Stock + SKU inline when adjacent (works for both classic and block editor paths) */
-.fct-product-stock + .fct-product-sku {
+/* Use ~ (general sibling) + :not(.is-hidden) so the active SKU variant always
+   renders inline next to stock, regardless of its DOM position in the list */
+.fct-product-stock ~ .fct-product-sku:not(.is-hidden) {
   @apply inline-flex items-center;
   margin: 0 !important;
 
@@ -308,6 +331,12 @@
   .fct-product-sku-info {
     @apply flex items-center gap-2;
     word-break: keep-all;
+  }
+}
+
+.fct-product-sku {
+  &.is-hidden {
+    @apply hidden;
   }
 }
 
@@ -417,6 +446,10 @@
       @apply flex items-center gap-3;
   }
 
+  .fct-product-variant-text{
+      @apply flex flex-col min-w-0;
+  }
+
   .additional-info{
     @apply text-sm;
   }
@@ -460,7 +493,8 @@
       }
     }
   }
-  &.fct_variation_view_type_text{
+  &.fct_variation_view_type_text,
+  &.fct_variation_view_type_both{
     .fct-product-variant-payment-type{
       @apply grid grid-rows-[0fr];
       transition: grid-template-rows 0.3s;
@@ -473,7 +507,8 @@
   &.selected {
     @apply border-[var(--fct-single-product-active-border-color)];
     box-shadow: 0px 0px 0px 2px #fff, 0px 0px 0px 4px rgba(71, 108, 255, 0.10);
-    &.fct_variation_view_type_text{
+    &.fct_variation_view_type_text,
+    &.fct_variation_view_type_both{
       .fct-product-variant-payment-type{
         @apply grid-rows-[1fr] pt-1;
       }

@@ -1,4 +1,23 @@
 
+// Per-variation tax class control
+.fct-tax-class-control {
+    @apply flex flex-col items-start w-full;
+    gap: 10px;
+}
+
+.fct-tax-class-control__checkbox {
+    @apply w-full;
+}
+
+.fct-tax-class-control__class-row {
+    @apply flex items-center flex-wrap;
+    gap: 6px;
+}
+
+.fct-tax-class-control__edit {
+    @apply cursor-pointer inline-flex items-center transition-colors duration-200;
+}
+
 // Tax Classes
 .fct-tax-classes {
   @apply border-[1px] border-solid border-gray-outline dark:border-dark-400 border-l-0 border-t-0 border-r-0 flex justify-between p-4 items-center;
@@ -100,13 +119,13 @@
 
 .fct-tax-rates-country-view {
   .el-table {
-    @apply border-[1px] border-solid border-gray-divider rounded dark:border-dark-400;
+    @apply border border-solid border-gray-divider rounded dark:border-dark-400;
     .el-table {
       &__header {
         thead {
           tr {
             th {
-              @apply border-t-0 border-l-0 border-[1px] border-solid border-gray-divider bg-gray-25 dark:bg-dark-600;
+              @apply border-t-0 border-l-0 border-[1px] border-solid border-gray-divider bg-gray-25 dark:bg-dark-600 dark:border-dark-400;
               &:first-child {
                 @apply rounded-tl;
               }
@@ -122,7 +141,7 @@
         tbody {
           tr {
             td {
-              @apply border-[1px] border-solid border-gray-divider border-l-0 border-t-0;
+              @apply border-[1px] border-solid border-gray-divider border-l-0 border-t-0 dark:border-dark-400;
               &:last-child {
                 @apply border-r-0;
               }
@@ -152,6 +171,189 @@
       @apply bg-transparent text-sm leading-5 font-medium py-1 px-1.5;
     }
   }
+}
+
+.fct-tax-region-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+}
+
+.fct-tax-region-link:hover {
+  @apply text-system-dark dark:text-gray-50;
+}
+
+.fct-tax-pagination {
+  display: flex;
+  gap: 4px;
+  padding: 12px 0 4px;
+}
+
+.fct-inline-plus-btn {
+  @apply inline-flex items-center justify-center w-[18px] h-[18px] rounded-xs text-xs font-bold leading-none align-middle;
+  @apply text-primary-500 bg-primary-25 border border-primary-100;
+  @apply dark:text-primary-50 dark:bg-dark-400 dark:border-primary-300;
+}
+
+.fct-tax-class-tabs {
+  @apply mb-4;
+}
+
+.fct-tax-class-tabs__list {
+  @apply gap-x-5.5 gap-y-0 flex flex-wrap items-center border border-solid border-x-0 border-t-0 border-gray-divider dark:border-dark-400;
+}
+
+.fct-tax-class-tabs__tab {
+  @apply py-2.5 px-0 text-sm font-medium text-system-mid bg-transparent border-0 border-b-2 border-transparent cursor-pointer transition-colors flex items-center gap-1.5;
+  @apply dark:text-gray-300;
+  &:hover { @apply text-system-dark dark:text-gray-50; }
+}
+
+.fct-tax-class-tabs__tab--active {
+  @apply text-system-dark border-b-2 border-primary-500;
+  @apply dark:text-gray-50 dark:border-primary-100;
+}
+
+.fct-tax-class-tabs__delete {
+  @apply text-sm text-system-light cursor-pointer leading-none px-0.5;
+  @apply dark:text-gray-400;
+  svg {
+    @apply w-4 h-4;
+  }
+  &:hover { @apply text-red-500 dark:text-red-400; }
+}
+
+.fct-tax-class-tabs__add {
+  @apply w-5 h-5 p-0 flex items-center justify-center text-base font-medium text-system-mid bg-white border border-solid border-gray-outline cursor-pointer transition-colors rounded-md dark:text-gray-50 dark:bg-dark-600 dark:border-dark-400;
+  svg {
+    @apply w-2.5 h-2.5;
+  }
+  &:hover { 
+    @apply text-system-dark dark:text-gray-50; 
+  }
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+.fct-tax-class-tabs__inline-create {
+  @apply flex items-center gap-1.5 py-1 flex-auto;
+
+  .el-input {
+    @apply w-full min-w-[90px] max-w-[140px];
+  }
+}
+
+/* Project styles el-input with real border-color (shadow-none everywhere),
+   so the error state must override the border classes — including the
+   .is-focus rule from element-plus/inputs.scss — not the EP shadow vars. */
+.fct-tax-class-tabs__inline-create--error {
+  .el-input .el-input__wrapper,
+  .el-input .el-input__wrapper.is-focus {
+    @apply border-red-500 dark:border-red-400;
+  }
+}
+
+.fct-tax-class-tabs__inline-confirm,
+.fct-tax-class-tabs__inline-cancel {
+  @apply w-5 h-5 p-0 flex items-center justify-center bg-white border border-solid border-gray-outline cursor-pointer transition-colors rounded-md;
+  @apply dark:bg-dark-600 dark:border-dark-400;
+  svg {
+    @apply w-3 h-3;
+  }
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+.fct-tax-class-tabs__inline-confirm {
+  @apply text-primary-500 dark:text-primary-100;
+  &:hover:not(:disabled) { @apply text-primary-600 border-primary-300; }
+}
+
+.fct-tax-class-tabs__inline-cancel {
+  @apply text-system-mid dark:text-gray-300;
+  &:hover:not(:disabled) { @apply text-red-500 dark:text-red-400; }
+}
+
+.fct-tax-class-tabs__search {
+  @apply pt-2.5 pb-1.5 flex items-center gap-2;
+}
+
+.fct-base-taxes {
+  @apply flex flex-col;
+}
+
+.fct-base-taxes__header {
+  @apply flex items-center justify-between pb-3 border-b border-gray-divider mb-0;
+  @apply dark:border-dark-400;
+}
+
+.fct-base-taxes__header-label {
+  @apply font-semibold text-xs text-system-mid uppercase tracking-wide;
+  @apply dark:text-gray-400;
+}
+
+.fct-base-taxes__header-fields {
+  @apply flex items-center gap-2 flex-shrink-0;
+}
+
+.fct-base-taxes__header-col {
+  @apply font-semibold text-xs text-system-mid uppercase tracking-wide text-center;
+  @apply dark:text-gray-400;
+}
+
+.fct-base-taxes__state-row--federal {
+  @apply border-b border-gray-divider py-3.5;
+  @apply dark:border-dark-400;
+}
+
+.fct-base-taxes__region-name {
+  @apply text-sm text-system-mid flex-shrink-0;
+  min-width: 160px; /* layout constraint, no token equivalent */
+  @apply dark:text-gray-300;
+}
+
+.fct-base-taxes__region-name--federal {
+  @apply font-semibold text-system-dark;
+  @apply dark:text-gray-50;
+}
+
+.fct-base-taxes__divider {
+  @apply h-0 border-none;
+}
+
+.fct-base-taxes__state-row {
+  @apply flex items-center justify-between py-2.5 border-b border-gray-divider gap-3;
+  @apply dark:border-dark-400;
+}
+
+.fct-base-taxes__state-fields {
+  @apply flex items-center gap-2 flex-shrink-0;
+}
+
+.fct-base-taxes__field-rate {
+  width: 100px; /* fixed column width, no token equivalent */
+}
+
+.fct-base-taxes__field-name {
+  width: 160px; /* fixed column width, no token equivalent */
+}
+
+.fct-base-taxes__field-compound {
+  width: 280px; /* fixed column width, no token equivalent */
+}
+
+.fct-base-taxes__pagination {
+  @apply flex items-center gap-2 pt-3.5 pb-1;
+}
+
+.fct-base-taxes__page-info {
+  @apply text-xs text-system-mid;
+  @apply dark:text-gray-300;
 }
 
 
@@ -441,4 +643,456 @@
       @apply w-5;
      }
   }
+}
+
+
+// Skeleton placeholder used in EU VAT loader
+.fct-sk {
+  @apply bg-gray-100 dark:bg-dark-400;
+}
+
+// EU VAT Card (EUVatRegistrationCard.vue)
+.fct-vat-card {
+  .fct-vat-card-header {
+    @apply flex items-center justify-between mb-4;
+    .fct-vat-card-title {
+      @apply flex items-center gap-2;
+      h3 { @apply m-0 text-base font-semibold; }
+    }
+    .fct-vat-card-actions { @apply flex items-center; }
+  }
+
+  .fct-country-registrations-list {
+    @apply -mx-5 -mb-5 border-t border-gray-divider dark:border-dark-400;
+  }
+
+  .fct-reg-rows {
+    // divide-y equivalent: top border on every row except the first
+    .fct-vat-registration-row + .fct-vat-registration-row {
+      @apply border-t border-gray-divider dark:border-dark-400;
+    }
+  }
+
+  .fct-vat-registration-row {
+    @apply flex items-center justify-between px-5;
+    min-height: 40px; /* compact single-line row */
+  }
+
+  .fct-home-country-header {
+    @apply flex items-center gap-2.5 px-5 py-3;
+    @apply border-b border-gray-divider dark:border-dark-400;
+  }
+
+  .fct-home-country-body {
+    @apply px-5 py-4;
+  }
+
+  .fct-vat-reg-info {
+    @apply flex items-center gap-2.5 min-w-0;
+  }
+
+  .fct-vat-country-name {
+    @apply font-medium text-[13px] text-system-dark leading-none flex-shrink-0;
+    @apply dark:text-gray-50;
+  }
+
+  .fct-vat-number {
+    @apply text-[13px] text-system-mid leading-none flex-shrink-0;
+    @apply dark:text-gray-300;
+  }
+
+  .fct-vat-rate {
+    @apply text-xs text-system-mid mt-1;
+    @apply dark:text-gray-300;
+  }
+
+  .fct-vat-home-field {
+    @apply mb-3 last:mb-0;
+  }
+
+  .fct-vat-home-field__label {
+    @apply block text-sm font-medium text-system-dark mb-1.5;
+    @apply dark:text-gray-50;
+  }
+
+  .fct-vat-number-input {
+    max-width: 240px;
+  }
+
+  .fct-vat-home-actions {
+    @apply mt-3 flex justify-end;
+  }
+
+  .fct-flag-icon {
+    @apply rounded-xs object-cover flex-shrink-0 border border-gray-outline dark:border-dark-400;
+    width: 18px; /* flag icon size, no token equivalent */
+    height: 13px;
+  }
+
+  .fct-eu-flag-icon { @apply text-xl leading-none; }
+
+  .fct-vat-missing-badge {
+    @apply inline-flex items-center py-0.5 px-2 rounded-md text-[11px] font-medium flex-shrink-0;
+    @apply bg-warning-100 text-warning-800;
+    @apply dark:bg-warning-800 dark:text-white;
+  }
+
+  .fct-collecting-badge {
+    @apply inline-flex items-center py-0.5 px-2 rounded-md text-[11px] font-medium flex-shrink-0;
+    @apply bg-success-50 text-success-600;
+    @apply dark:bg-success-800 dark:text-success-50;
+
+  }
+  .fct-vat-reg-actions {
+    @apply flex items-center gap-1 flex-shrink-0 ml-2;
+    .icon-button {
+      @apply text-system-light dark:text-gray-400;
+      &:hover { @apply text-system-mid dark:text-gray-200; }
+      svg { @apply w-3.5 h-3.5; }
+    }
+  }
+
+  .fct-vat-empty-state { @apply flex items-center justify-between py-3 px-5; }
+
+  .fct-vat-empty-state--stacked { @apply justify-start; }
+
+  .fct-vat-cross-border-empty {
+    @apply flex items-center gap-4 py-4;
+    .fct-eu-flag-icon { font-size: 1.5rem; line-height: 1; @apply flex-shrink-0; }
+    .fct-vat-cross-border-empty-text { @apply flex-1 min-w-0; }
+    .fct-vat-cross-border-empty-title {
+      @apply text-sm font-medium text-system-dark m-0;
+      @apply dark:text-gray-100;
+    }
+    .fct-vat-cross-border-empty-desc {
+      @apply text-xs text-system-mid mt-0.5 m-0;
+      @apply dark:text-gray-400;
+    }
+  }
+
+  .fct-add-location {
+    @apply flex items-center gap-1.5 px-5 py-2.5 cursor-pointer text-system-mid text-sm border-t border-gray-divider transition-colors;
+    @apply dark:text-gray-300 dark:border-dark-400;
+    &:hover {
+      @apply text-system-dark dark:text-gray-50;
+    }
+  }
+}
+
+
+// OSS Rates Section (EUVatOssRatesSection.vue)
+.fct-oss-rates-section {
+  .fct-oss-rates-toggle {
+    @apply text-sm border border-solid border-gray-divider font-medium text-system-dark flex items-center justify-between py-3 px-5 rounded mt-3 bg-gray-neutral cursor-pointer transition-colors select-none hover:bg-gray-50 dark:bg-dark-500 dark:hover:bg-dark-400 dark:text-gray-50 dark:border-dark-400;
+  }
+
+  .fct-oss-rates-arrow {
+    transition: transform 0.25s ease;
+    &.is-expanded { transform: rotate(180deg); }
+  }
+
+  .fct-oss-rates-table { @apply mt-3; }
+
+  .fct-oss-rates-notice {
+    @apply bg-blue-25 border border-blue-100 rounded-sm py-2.5 px-3.5 mb-3 text-sm text-system-mid leading-normal;
+    @apply dark:bg-dark-600 dark:border-dark-400 dark:text-gray-300;
+  }
+}
+
+.fct-collapse-enter-active,
+.fct-collapse-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.fct-collapse-enter-from,
+.fct-collapse-leave-to { opacity: 0; max-height: 0; }
+.fct-collapse-enter-to,
+.fct-collapse-leave-from { opacity: 1; max-height: 600px; }
+
+
+// Registration Modal rates table (EUVatRegistrationModal.vue)
+.fct-reg-rates-table {
+  @apply mb-4;
+
+  .fct-reg-rates-row {
+    @apply grid gap-2 mb-2 last:mb-0;
+    grid-template-columns: 100px 120px 1fr; /* fixed layout columns */
+  }
+  .fct-reg-class-name {
+    @apply bg-gray-25 text-system-mid flex items-center whitespace-nowrap border border-solid border-gray-divider rounded py-1 text-[13px] px-2.5 dark:border-dark-400 dark:bg-dark-500 dark:text-gray-300;
+  }
+
+  .fct-reg-rates-cell-input {
+    @apply flex items-center border-r border-gray-divider last:border-r-0;
+    @apply dark:border-dark-400;
+    .el-input { @apply w-full; }
+  }
+
+  .fct-reg-rates-cell-rate .el-input {
+    max-width: 120px; /* input column constraint */
+  }
+
+  .fct-reg-class-name-input {
+    .el-input__wrapper { padding: 0 6px; }
+  }
+
+  .fct-reg-class-name-input--error {
+    .el-input__wrapper,
+    .el-input__wrapper.is-focus {
+      @apply border-red-500 dark:border-red-400;
+    }
+  }
+
+  .fct-reg-rates-header {
+    .fct-reg-rates-cell-label,
+    .fct-reg-rates-cell-input {
+      @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+  }
+
+  &.fct-reg-rates-table--home {
+    @apply border border-x-0 border-b-0 border-solid border-gray-divider dark:border-dark-400;
+    .fct-reg-rates-row {
+      grid-template-columns: 150px 120px 1fr 30px;
+    }
+    .fct-reg-rates-cell-action {
+      @apply flex items-center justify-center border-l border-gray-divider dark:border-dark-400;
+    }
+    .fct-reg-rates-delete-btn {
+      @apply flex-shrink-0 w-8 h-8 flex items-center justify-center text-system-mid dark:hover:text-red-400 cursor-pointer transition-colors rounded bg-transparent border-0 dark:text-gray-500 hover:bg-red-50 hover:text-red-500;
+      svg {
+        @apply w-3.5 h-3.5; 
+      }
+    }
+  }
+}
+.fct-reg-rates-section {
+    @apply -mx-5;
+}
+
+.fct-reg-add-class {
+  @apply mt-2;
+
+  .fct-reg-add-class-btn {
+    @apply bg-transparent border-0 inline-flex items-center p-1 gap-1 text-sm font-medium cursor-pointer text-system-dark dark:text-gray-50 dark:hover:bg-transparent;
+    &:disabled { @apply opacity-50 cursor-not-allowed; }
+    svg {
+        @apply w-3 h-3;
+    }
+  }
+}
+
+
+// Cross-border modal (EUVatCrossBorderModal.vue)
+.fct-cross-border-radios {
+  @apply flex flex-col w-full;
+
+  .fct-radio-option {
+    @apply w-full box-border p-4 rounded mb-3 cursor-pointer;
+    border-width: 1px;
+    border-style: solid; /* preflight:false means @apply border omits border-style */
+    @apply border-gray-outline dark:border-dark-400;
+    transition: border-color 0.2s;
+    &.is-active {
+      @apply border-primary-500;
+      @apply dark:border-primary-300;
+    }
+    .el-radio { @apply font-medium; }
+
+    .fct-radio-option-fields {
+      @apply pt-3 mt-3;
+      border-top-width: 1px;
+      border-top-style: solid;
+      @apply border-gray-divider dark:border-dark-400;
+      .el-form-item { @apply mb-3 last:mb-0; }
+      .fct-radio-option-fields-desc {
+        @apply mt-0 mb-2 text-[13px];
+      }
+    }
+  }
+}
+
+.fct-country-registrations-list--modal {
+  @apply mx-0 mb-0 rounded-sm border border-gray-divider dark:border-dark-400;
+}
+
+.fct-info-box {
+  @apply flex items-start gap-2 py-2.5 px-3 bg-neutral-50 rounded-sm;
+  @apply dark:bg-dark-700;
+}
+
+.fct-reverse-charge-price-mode {
+    @apply flex flex-col gap-3 w-full items-start;
+    .el-radio {
+        @apply mr-0 items-start h-auto;
+    }
+    .el-radio__label {
+        @apply mt-[-3px];
+    }
+    .price-mode-label {
+        @apply font-semibold;
+    }
+    .price-mode-text {
+        @apply text-xs font-normal text-system-mid dark:text-gray-300;
+    }
+}
+
+.fct-tax-rates-table {
+    @apply border border-solid border-gray-divider overflow-hidden rounded dark:border-dark-400;
+    th.el-table__cell.is-leaf {
+        @apply border-t-0;
+    }
+}
+
+.fct-country-reg-modal {
+    .fct-country-reg-text {
+        @apply text-sm mt-0 mb-2;
+    }
+}
+
+.fct-tax-rates-regions-table {
+    .el-table__body-wrapper table .el-table__cell .cell .table-cell {
+        @apply min-h-[42px];
+    }
+}
+
+.fct-tax-sum-box {
+    @apply bg-gray-25 p-5 rounded text-left dark:bg-dark-600;
+
+    .fct-tax-sum-row {
+        @apply mb-2 flex items-center justify-between gap-4 text-sm text-system-mid dark:text-gray-300;
+
+        &:last-child {
+            @apply mb-0;
+        }
+    }
+    .total-payable-tax-row {
+        @apply font-semibold text-system-dark dark:text-gray-50;
+    }
+    .fct-tax-sum-row--muted {
+        @apply opacity-60;
+    }
+    .fct-tax-sum-row--reversed {
+        @apply font-medium text-system-mid text-[13px] dark:text-gray-300;
+    }
+    .fct-tax-sum-row--divider {
+        @apply border-0 border-t border-solid border-gray-divider pt-3 mt-2 dark:border-dark-300;
+    }
+
+    // 3-column folded-rate breakdown
+    .fct-tax-breakdown-heading {
+        @apply text-xs font-semibold uppercase tracking-wide text-system-dark mb-4 dark:text-gray-100;
+    }
+
+    .fct-tax-breakdown-info {
+        @apply text-system-light text-sm italic;
+    }
+
+    .fct-tax-breakdown-col-headers,
+    .fct-tax-breakdown-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px 64px;
+        column-gap: 12px;
+        align-items: start;
+    }
+    .fct-tax-breakdown-col-headers {
+        @apply text-xs uppercase tracking-wide text-system-light dark:text-gray-400;
+    }
+    .fct-tax-breakdown-col-rate {
+        @apply min-w-0 whitespace-normal;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
+    }
+    .fct-tax-breakdown-col-base,
+    .fct-tax-breakdown-col-tax {
+        @apply whitespace-nowrap;
+        min-width: 0;
+        text-align: right;
+    }
+}
+
+.fct-order-payment-card {
+    .fct-tax-summary-cell {
+        @apply py-3 px-5;
+    }
+
+    .fct-tax-sum-box {
+        @apply w-full max-w-[460px] ml-auto;
+    }
+
+    .fct-tax-see-details {
+        @apply text-[11px] text-blue-600 cursor-pointer dark:text-blue-300;
+    }
+}
+
+// Per-item tax rate badges in admin order table rows
+.fct-ordered-product-list-wrapper {
+    table {
+        tr.is-inclusive,
+        tr.is-exclusive {
+            .fct-tax-badge {
+                @apply text-[11px] px-[7px] py-0.5 rounded-[4px] font-medium leading-none;
+            }
+
+            .fct-tax-amount {
+                @apply text-[11px] font-medium;
+            }
+        }
+
+        tr.is-inclusive {
+            .fct-tax-badge {
+                @apply bg-success-50 text-success-600 dark:bg-success-800 dark:text-success-50;
+            }
+
+            .fct-tax-amount {
+                @apply text-success-600 opacity-70 dark:text-success-50;
+            }
+        }
+
+        tr.is-exclusive {
+            .fct-tax-badge {
+                @apply bg-warning-50 text-warning-700 dark:bg-warning-800 dark:text-warning-200;
+            }
+
+            .fct-tax-amount {
+                @apply text-warning-700 dark:text-warning-200;
+            }
+        }
+    }
+}
+
+// Per-item tax rate badges in admin order view (flex layout)
+.fct-admin-order-tax-rate {
+    @apply flex items-center justify-between gap-2 mt-0.5;
+
+    .fct-tax-badge {
+        @apply text-[11px] px-[7px] py-0.5 rounded-[4px] font-medium leading-none flex-shrink-0;
+    }
+
+    .fct-tax-amount {
+        @apply text-[11px] font-medium flex-shrink-0;
+    }
+
+    &.is-inclusive {
+        .fct-tax-badge {
+            @apply bg-success-50 text-success-600 dark:bg-success-800 dark:text-success-50;
+        }
+        .fct-tax-amount {
+            @apply text-success-600 opacity-70 dark:text-success-50;
+        }
+    }
+
+    &.is-exclusive {
+        .fct-tax-badge {
+            @apply bg-warning-50 text-warning-700 dark:bg-warning-800 dark:text-warning-200;
+        }
+        .fct-tax-amount {
+            @apply text-warning-700 dark:text-warning-200;
+        }
+    }
+}
+
+.fct-tax-amount--reversed {
+    text-decoration: line-through;
+    @apply opacity-60;
 }

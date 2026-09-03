@@ -112,7 +112,7 @@ class PayPalHelper
         $refundData = [
             'custom_id' => $transaction->uuid,
             'amount'    => array(
-                'value'         => Helper::toDecimalWithoutComma($amount),
+                'value'         => number_format(Helper::toDecimalWithoutComma($amount), 2, '.', ''),
                 'currency_code' => $transaction->currency
             ),
 
@@ -310,7 +310,7 @@ class PayPalHelper
                     'sequence'       => 1,
                     'pricing_scheme' => [
                         'fixed_price' => [
-                            'value'         => $initial_amount + $recurring_amount,
+                            'value'         => number_format($initial_amount + $recurring_amount, 2, '.', ''),
                             'currency_code' => $data['currency']
                         ]
                     ],

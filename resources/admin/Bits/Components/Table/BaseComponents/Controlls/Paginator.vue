@@ -98,7 +98,7 @@ const getCurrentPageCount = (page, perPage) => {
           translate('Page %1$s of %2$s', currentPage, totalPage)
         }}</span>
       <div class="el-pagination">
-        <el-select @change="changeSize" v-model=" props.table.paginate.per_page" placeholder="Select">
+        <el-select @change="changeSize" v-model=" props.table.paginate.per_page" :placeholder="translate('Select')">
           <el-option
               v-for="item in page_sizes"
               :key="item"

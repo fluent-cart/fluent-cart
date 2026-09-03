@@ -5,6 +5,9 @@ const props = defineProps({
   field: {
     type: Object
   },
+  fieldKey: {
+    type: String
+  },
   value: {
     type: Object
   },
@@ -21,7 +24,7 @@ const props = defineProps({
 
 <template>
 
-  <div class="gap-2 grid grid-cols-dynamic sm:grid-cols-sm-dynamic md:grid-cols-md-dynamic lg:grid-cols-lg--dynamic" :style="{
+  <div class="gap-2 grid grid-cols-dynamic sm:grid-cols-sm-dynamic md:grid-cols-md-dynamic lg:grid-cols-lg--dynamic" :id="field.id || ''" :style="{
   '--grid-columns': field.columns?.default??2,
   '--sm-grid-columns': field.columns?.sm?? field.columns?.default??2,
   '--md-grid-columns': field.columns?.sm?? field.columns?.md?? field.columns?.default??2,

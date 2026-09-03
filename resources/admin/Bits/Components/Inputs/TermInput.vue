@@ -271,7 +271,7 @@ const getTermLabel = (termValue) => {
 
     <Animation :visible="showInput" accordion>
       <div class="fct-term-add-input-wrap">
-        <el-input v-model="termName" ref="inputRef" v-on:keydown.enter="onEnter"/>
+        <el-input v-model="termName" ref="inputRef" @keydown.enter="onEnter"/>
         <el-button type="info" plain @click="addTerms" class="el-button--x-small">{{ translate('Add') }}</el-button>
       </div>
     </Animation>

@@ -20,6 +20,7 @@ import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import orderReport from "@/Models/Reports/OrderReportModel";
 import {
   makeXAxisLabels,
@@ -28,6 +29,7 @@ import {
   getEmphasisColor,
   getXAxisConfig,
 } from '../Utils/decorator';
+import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
 // Define props
 const props = defineProps({
@@ -54,11 +56,7 @@ const zoomIsActive = ref(false);
 const colors = Theme.colors.report;
 const isDarkTheme = ref(Theme.isDark());
 
-const groupKeys = [
-  { value: "default", label: translate("Default") },
-  { value: "monthly", label: translate("Monthly") },
-  { value: "yearly", label: translate("Yearly") },
-];
+const { groupKeys } = useGroupKeyOptions(props.reportFilter, selectedGroupKey);
 
 const emit = defineEmits(["fetch-chart-data"]);
 
@@ -196,22 +194,18 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: (params) => {
         let tooltipContent = params[0].axisValue;
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
       
         params.forEach(function (param, index) {
-          const value = index === 0 
-            ? param.value 
-            : CurrencyFormatter.scaled(param.value);
+          // Series 0 is the order count, the rest are amounts.
+          const value = index === 0
+            ? param.value
+            : chartTooltipAmount(param.value * 100);
 
           tooltipContent += `<div>
             ${param.marker} 
@@ -430,13 +424,21 @@ const handleThemeChange = () => {
   });
 };
 
+const handleCurrencyChange = () => {
+  nextTick(() => {
+    updateChart();
+  });
+};
+
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", handleCurrencyChange, false);
 });
 
 onMounted(() => {
   nextTick(initChart);
   window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+  window.addEventListener("fluentCartCurrencyChange", handleCurrencyChange);
 });
 </script>
 

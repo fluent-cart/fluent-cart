@@ -10,7 +10,7 @@
       <el-table-column :label="$t('Date')" :width="120">
         <template #default="scope">
           <time class="text truncate" :datetime="scope.row.created_at">
-            {{ dateTimeI18(scope.row.created_at) }}
+            {{ dateTimeI18(scope.row.created_at, 'MMM DD, YYYY') }}
           </time>
         </template>
       </el-table-column>
@@ -43,13 +43,19 @@
         </template>
       </el-table-column>
 
-      <el-table-column :width="125">
+      <el-table-column :width="135">
         <template #default="scope">
           <div class="flex items-center gap-2 justify-between">
-            <a :href="scope.row.receipt_download_url" target="_blank"
+            <a v-if="scope.row.show_pay_now" :href="scope.row.custom_checkout_url"
+               target="_blank" rel="noopener noreferrer"
+               class="underline-link-button" :aria-label="$t('Pay Now for Invoice') + ' ' + scope.row.invoice_no">
+              <DynamicIcon name="CreditCard" class="w-4 h-4" aria-hidden="true"/>
+              {{ $t('Pay Now') }}
+            </a>
+            <a v-else :href="scope.row.receipt_download_url" target="_blank"
                class="underline-link-button" :aria-label="$t('Download Receipt for Invoice') + ' ' + scope.row.invoice_no"
                 rel="noopener noreferrer">
-              <DynamicIcon name="Download" class="w-4 h-4" aria-hidden="true"/>
+              <DynamicIcon name="Download" aria-hidden="true"/>
               {{ $t('Receipt') }}
             </a>
 
@@ -125,12 +131,12 @@
   </div>
 </template>
 <script type="text/babel">
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "./Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import TransactionPaymentMethod from './_TransactionPaymentMethod.vue';
 import translate from "../../translator/Translator";
 import MaterialInput from "@/Bits/Components/MaterialInput.vue";
-import Str from "@/utils/support/Str";
+import statusLabel from "../../utils/statusLabels";
 import AddressComponent from "./AddressComponent.vue";
 import {dateTimeI18} from "../../translator/Translator";
 
@@ -247,70 +253,7 @@ export default {
       this.isEditingBillingAddressModal = false;
       this.selectedTransaction = null;
     },
-    getStatusText(status) {
-      switch (status) {
-        case 'completed':
-          return translate('Completed');
-        case 'paid':
-          return translate('Paid');
-        case 'active':
-          return translate('Active');
-        case 'publish':
-          return translate('Published');
-        case 'draft':
-          return translate('Draft');
-        case 'shipped':
-          return translate('Shipped');
-        case 'success':
-          return translate('Success');
-        case 'licensed':
-          return translate('Licensed');
-        case 'succeeded':
-          return translate('Succeeded');
-        case 'failed':
-          return translate('Failed');
-        case 'error':
-          return translate('Error');
-        case 'canceled':
-          return translate('Canceled');
-        case 'expired':
-          return translate('Expired');
-        case 'partially_paid':
-          return translate('Partially Paid');
-        case 'intended':
-          return translate('Intended');
-        case 'scheduled':
-          return translate('Scheduled');
-        case 'on-hold':
-          return translate('On Hold');
-        case 'pending':
-          return translate('Pending');
-        case 'unpaid':
-          return translate('Unpaid');
-        case 'warning':
-          return translate('Warning');
-        case 'processing':
-          return translate('Processing');
-        case 'future':
-          return translate('Future');
-        case 'inactive':
-          return translate('Inactive');
-        case 'dispute':
-          return translate('Dispute');
-        case 'disabled':
-          return translate('Disabled');
-        case 'beta':
-          return translate('Beta');
-        case 'subscription':
-          return translate('Subscription');
-        case 'renewal':
-          return translate('Renewal');
-        case 'payment':
-          return translate('Payment');
-        default:
-          return Str.headline(status);
-      }
-    }
+    getStatusText: statusLabel
   }
 }
 </script>

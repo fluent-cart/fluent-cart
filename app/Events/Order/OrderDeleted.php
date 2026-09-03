@@ -17,12 +17,12 @@ class OrderDeleted extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
 
     public array $connectedOrderIds;

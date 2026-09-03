@@ -17,20 +17,22 @@ class RevenueReportService extends ReportService
 
         $query = $this->applyFilters($query, $params);
 
+        $groupKey = ReportHelper::sanitizeGroupKey($params['groupKey'] ?? null);
+
         $groupKeyExpression = '';
 
-        if (in_array($params['groupKey'], ['billing_country', 'shipping_country'])) {
-            $type = $params['groupKey'] === 'billing_country' ? 'billing' : 'shipping';
+        if (in_array($groupKey, ['billing_country', 'shipping_country'])) {
+            $type = $groupKey === 'billing_country' ? 'billing' : 'shipping';
 
             $query->leftJoin('fct_order_addresses as a', function ($join) use ($type) {
                 $join->on('o.id', 'a.order_id')->where('a.type', $type);
             });
 
-            $groupKeyExpression = "COALESCE(a.country, 'Uncategorized') AS `{$params['groupKey']}`";
-        } elseif ($params['groupKey'] === 'payment_method') {
-            $groupKeyExpression = "COALESCE(o.payment_method, 'Unknown') AS `{$params['groupKey']}`";
+            $groupKeyExpression = "COALESCE(a.country, 'Uncategorized') AS `{$groupKey}`";
+        } elseif ($groupKey === 'payment_method') {
+            $groupKeyExpression = "COALESCE(o.payment_method, 'Unknown') AS `{$groupKey}`";
         } else {
-            $groupKeyExpression = "COALESCE(o.{$params['groupKey']}, 'Unknown') AS `{$params['groupKey']}`";
+            $groupKeyExpression = "COALESCE(o.{$groupKey}, 'Unknown') AS `{$groupKey}`";
         }
 
         $query->selectRaw("{$groupKeyExpression},
@@ -73,7 +75,7 @@ class RevenueReportService extends ReportService
 
             COUNT(DISTINCT o.customer_id) AS customer_count");
 
-        return $query->groupByRaw($params['groupKey'])->orderByRaw($params['groupKey'])->get()->toArray();
+        return $query->groupByRaw($groupKey)->orderByRaw($groupKey)->get()->toArray();
     }
 
     public function getRevenueData($params = []): array

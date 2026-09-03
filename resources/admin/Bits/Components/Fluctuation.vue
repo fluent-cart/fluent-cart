@@ -9,6 +9,7 @@ import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 
 /**
  * ----------------------------------------------------------------------------
@@ -62,6 +63,12 @@ const props = defineProps({
  * Computed Properties
  * ----------------------------------------------------------------------------
  */
+
+// Check if the current report has a comparison type other than 'no_comparison'
+const hasComparison = computed(() => {
+    return reportFilter.data.compareType !== 'no_comparison';
+});
+
 const fluctuationDisplay = computed(() => {
     return formatNumber(props.fluctuation);
 });
@@ -95,7 +102,7 @@ const icon = computed(() => props.fluctuation < 0 ? 'CaretDown' : 'CaretUp');
 </script>
 
 <template>
-    <div class="percentage" :class="percentageClass">
+    <div v-if="hasComparison" class="percentage" :class="percentageClass">
         <DynamicIcon class="w-2" :name="icon" v-if="fluctuation !== 0" />
 
         <el-tooltip effect="dark" :placement="placement" popper-class="fct-tooltip">

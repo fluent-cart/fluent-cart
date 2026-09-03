@@ -67,23 +67,23 @@ onMounted(async () => {
 
   <template v-if="field.type === 'grid' && typeof field.schema !== 'undefined'">
 
-    <form-grid :class="field.wrapperClass" :form="form" :field="field" :value="value"
-               :statePath="fullStatePath" v-bind="attribute"/>
+    <FormGrid :class="field.wrapperClass" :form="form" :field="field" :value="value"
+               :fieldKey="fieldKey" :statePath="fullStatePath" v-bind="attribute"/>
   </template>
 
   <template v-if="field.type === 'tab' && typeof field.schema !== 'undefined'">
-    <form-tab :form="form" :field="field" :value="value"
+    <FormTab :form="form" :field="field" :value="value"
               :statePath="fullStatePath" v-bind="attribute"/>
   </template>
 
   <template
       v-if="field.type === 'tab-pane' && typeof field.schema !== 'undefined' && typeof field.title !== 'undefined' ">
-    <form-tab-pane :form="form" :field="field" :value="value"
+    <FormTabPane :form="form" :field="field" :value="value"
                    :fieldKey="fieldKey" :statePath="fullStatePath" v-bind="attribute"/>
   </template>
 
   <template v-if="field.type === 'section'">
-    <form-section
+    <FormSection
         :form="form"
         :statePath="field.disable_nesting === true? fullStatePath : fieldKey+'.'"
         :field="field"

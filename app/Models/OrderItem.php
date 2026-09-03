@@ -8,6 +8,7 @@ use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\WpModels\PostMeta;
 use FluentCart\Framework\Database\Orm\Relations\HasOne;
+use FluentCart\Framework\Support\Arr;
 
 /**
  *  OrderItem Model - DB Model for Order Items
@@ -55,17 +56,17 @@ class OrderItem extends Model
         'created_at',
 //        'shipping_charge'
     ];
-    protected $appends = ['payment_info', 'setup_info', 'is_custom'];
+    protected $appends = ['payment_info', 'setup_info', 'is_custom', 'variation_display_title'];
 
     protected $casts = [
-        'unit_price'         => 'double',
-        'cost'               => 'double',
-        'subtotal'           => 'double',
-        'tax_amount'         => 'double',
-        'shipping_charge'    => 'double',
-        'discount_total'     => 'double',
-        'line_total'         => 'double',
-        'refund_total'       => 'double',
+        'unit_price'      => 'double',
+        'cost'            => 'double',
+        'subtotal'        => 'double',
+        'tax_amount'      => 'double',
+        'shipping_charge' => 'double',
+        'discount_total'  => 'double',
+        'line_total'      => 'double',
+        'refund_total'    => 'double',
     ];
 
     protected static function booted()
@@ -77,7 +78,15 @@ class OrderItem extends Model
 
     protected function getFormattedTotalAttribute()
     {
-        return Helper::toDecimal($this->subtotal);
+        if ($this->line_total == 0 && $this->discount_total == 0) {
+            return Helper::toDecimal($this->subtotal);
+        }
+        return Helper::toDecimal($this->line_total);
+    }
+
+    public function getCouponDiscountAttribute()
+    {
+        return (int)($this->line_meta['coupon_discount'] ?? 0);
     }
 
     public function setOtherInfoAttribute($value)
@@ -227,5 +236,35 @@ class OrderItem extends Model
         return $this->is_custom
             ? ($this->other_info['view_url'] ?? '')
             : '';
+    }
+
+    public function getDisplayTitle()
+    {
+        if ($this->post_title == $this->title) {
+            return $this->title;
+        }
+
+        return $this->post_title . ' - ' . $this->title;
+
+    }
+
+    /**
+     * Labeled attribute combination resolved from the frozen
+     * other_info['item_attributes'] snapshot, e.g. "Color: Red | Size: XS".
+     * Falls back to the stored variation title when no attribute snapshot
+     * resolves (custom/simple items, or attrs whose groups were removed).
+     *
+     * @return string
+     */
+    public function getVariationDisplayTitleAttribute()
+    {
+        // Order items carry the item_attributes snapshot (written at order
+        // creation), so resolve directly — getDisplayAttributesString renders
+        // the labeled combination and falls back to the variation title.
+        return \FluentCart\App\Helpers\AttributeHelper::getDisplayAttributesString(
+            Arr::get($this->other_info, 'item_attributes', []),
+            $this,
+            'order_item'
+        );
     }
 }

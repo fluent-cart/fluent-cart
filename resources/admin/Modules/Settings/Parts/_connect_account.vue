@@ -1,65 +1,65 @@
 <template>
     <div class="fct-connect-details">
-        <!-- <h4 class="fct-connect-mode">{{ Stripe }}</h4> -->
         <div v-if="!connect || connect.error" class="fct-connect-require">
+            <img :src="connectConfig.image_url" alt="" class="w-10 h-10 mb-4">
+
             <h4> {{
-                /* translators: %s: payment method name */
-                translate('Connect Your %s Account to your website to accept Payments', methodName)
+                /* translators: %1$s: payment mode (test/live), %2$s: payment method name */
+                translate('Connect your %1$s %2$s account', mode, methodName)
               }}</h4>
-            <el-button tag="a" type="info" plain :href="connect_config[mode+'_redirect']">
-                <DynamicIcon name="ArrowLeftRight"/>
+
+            <el-button tag="a" :href="connectConfig[mode+'_redirect']" :style="{ backgroundColor: brandColor, borderColor: brandColor, color: 'white' }">
                 {{
-                    /* translators: %s: payment method name */
-                    translate('Connect with %s', methodLabel)
+                    /* translators: %1$s: payment method label */
+                    translate('Connect with %1$s', methodLabel)
                 }}
             </el-button>
         </div>
-        <ContentCard v-else
-                     :title="
-                      /* translators: %s: payment method name */
-                      translate('Your %s Account is Up & Running 🎉', methodLabel)
-                      ">
-            <div class="flex items-center justify-between">
+
+        <div v-else class="fct-connect-success">
+            <div class="inline-flex items-center gap-3">
                 <div>
-                    <p class="display-name" v-if="connect.display_name">{{ connect.display_name }}</p>
-                    <h4>{{ $t('Administrator') }} ({{ $t('Owner') }})</h4>
-<!--                    <p v-if="connect.email" class="email">{{ connect.email }}</p>-->
+                    <p class="display-name" v-if="connect.display_name">
+                        {{ connect.display_name }}
+                    </p>
+                    <h4 class="display-role">
+                        {{ $t('Administrator') }} ({{ $t('Owner') }})
+                    </h4>
                 </div>
-                <el-popconfirm
-                    width="230"
-                    :confirm-button-text="$t('Confirm')"
-                    :cancel-button-text="$t('No, Thanks')"
-                    icon="el-icon-info"
-                    icon-color="red"
-                    :title="connect_config?.disconnect_note ?? $t('Are you sure to disconnect?')"
-                    position="top"
-                    @confirm="disconnect">
-                    <template #reference>
-                        <el-button type="danger" plain>
-                          {{
-                            /* translators: %s: payment method name */
-                            translate('Disconnect %s', methodLabel)
-                          }}
-                        </el-button>
-                    </template>
-                </el-popconfirm>
+
+                <el-tag size="small" type="success">
+                    {{ translate('Connected') }}
+                </el-tag>
             </div>
-        </ContentCard>
+
+            <el-popconfirm
+                width="230"
+                :confirm-button-text="$t('Confirm')"
+                :cancel-button-text="$t('No, Thanks')"
+                icon="el-icon-info"
+                icon-color="red"
+                :title="connectConfig?.disconnect_note ?? $t('Are you sure to disconnect?')"
+                position="top"
+                @confirm="disconnect">
+                <template #reference>
+                    <el-button type="danger" plain>
+                        {{ translate('Disconnect') }}
+                    </el-button>
+                </template>
+            </el-popconfirm>
+        </div>
     </div>
 </template>
 
 
 <script setup>
-    import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-    import ContentCard from '@/Bits/Components/Card/ContentCard.vue';
-    import Str from "@/utils/support/Str";
 import translate from "../../../utils/translator/Translator";
 </script>
 
 <script type="text/babel">
 export default {
     name: 'ConnectAccount',
-    props: ['connect', 'connect_config', 'mode', 'method', 'methodName', 'methodLabel'],
+    props: ['connect', 'connectConfig', 'mode', 'method', 'methodName', 'methodLabel', 'brandColor'],
     data() {
         return {
             saving: false

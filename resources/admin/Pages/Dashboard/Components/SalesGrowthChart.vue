@@ -10,9 +10,10 @@ import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
 import Theme from "@/utils/Theme";
 import * as Fluid from "@/Bits/Components/FluidTab/FluidTab.js";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import {
   makeXAxisLabels,
@@ -64,14 +65,18 @@ const secondaryColor = computed(() =>
 
 const seriesData = computed(() =>
   [
+    // Series names — these render in the chart legend. Kept distinct from the
+    // y-axis titles further down, which name the same two metrics but sit
+    // vertically along the axis where a shorter or abbreviated form is often
+    // wanted once translated.
     {
-      title: translate("Orders"),
+      title: _x("Orders", "Chart series legend"),
       key: "orders",
       color: primaryColor.value,
       yAxisIndex: 1
     },
     {
-      title: translate("Revenue"),
+      title: _x("Revenue", "Chart series legend"),
       key: "net_revenue",
       color: secondaryColor.value,
       yAxisIndex: 0
@@ -148,19 +153,14 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865"
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue, chartType.value),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: (params) => {
         let result = params[0].name;
 
         params.forEach((param) => {
-          const value = param.seriesIndex === 1 ? `${CurrencyFormatter.scaled(param.value)}` : param.value;
+          const value = param.seriesIndex === 1 ? chartTooltipAmount(param.value * 100) : param.value;
           const color = isDarkTheme.value ? "#ffffff" : "#565865";
 
           result += `<div>
@@ -191,7 +191,7 @@ const updateChart = () => {
     },
     yAxis: [
       {
-        name: translate("Revenue"),
+        name: _x("Revenue", "Chart axis title"),
         type: "value",
         position: "left",
         axisLabel: {
@@ -208,7 +208,7 @@ const updateChart = () => {
         },
       },
       {
-        name: translate("Orders"),
+        name: _x("Orders", "Chart axis title"),
         type: "value",
         position: "right",
         axisLabel: {
@@ -310,10 +310,12 @@ watch(() => props.loading, (value) => {
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", updateChart, false);
+  window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
 });
 
 onMounted(() => {
   window.addEventListener('onFluentCartThemeChange', updateChart);
+  window.addEventListener('fluentCartCurrencyChange', updateChart);
   nextTick(initChart);
 });
 </script>

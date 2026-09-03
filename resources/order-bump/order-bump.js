@@ -1,3 +1,4 @@
+import translate from '@/utils/translator/Translator';
 import AllOrderBump from "@/Modules/OrderBump/AllOrderBump.vue";
 import ViewOrderBump from "@/Modules/OrderBump/ViewOrderBump.vue";
 
@@ -10,7 +11,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_order_bum
         component: AllOrderBump,
         meta: {
             active_menu: 'order_bump',
-            title: 'Order Bump',
+            title: translate('Order Bump'),
             permission: "store/sensitive"
         }
     };
@@ -22,7 +23,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_order_bum
         props: true,
         meta: {
             active_menu: 'order_bump',
-            title: 'View Order Bump',
+            title: translate('View Order Bump'),
             permission: "store/sensitive"
         }
     };

@@ -72,98 +72,6 @@
             "install-path": "../fakerphp/faker"
         },
         {
-            "name": "openspout/openspout",
-            "version": "v3.7.4",
-            "version_normalized": "3.7.4.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/openspout/openspout.git",
-                "reference": "dfbbd53b5edcd486b45a37f6a04fac33073c70f3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/openspout/openspout/zipball/dfbbd53b5edcd486b45a37f6a04fac33073c70f3",
-                "reference": "dfbbd53b5edcd486b45a37f6a04fac33073c70f3",
-                "shasum": ""
-            },
-            "require": {
-                "ext-dom": "*",
-                "ext-filter": "*",
-                "ext-libxml": "*",
-                "ext-xmlreader": "*",
-                "ext-zip": "*",
-                "php": "~7.3.0 || ~7.4.0 || ~8.0.0 || ~8.1.0"
-            },
-            "require-dev": {
-                "ext-zlib": "*",
-                "friendsofphp/php-cs-fixer": "^3.4",
-                "phpstan/phpstan": "^1.4",
-                "phpstan/phpstan-phpunit": "^1.0",
-                "phpunit/phpunit": "^9.5"
-            },
-            "suggest": {
-                "ext-iconv": "To handle non UTF-8 CSV files (if \"php-intl\" is not already installed or is too limited)",
-                "ext-intl": "To handle non UTF-8 CSV files (if \"iconv\" is not already installed)"
-            },
-            "time": "2022-03-31T06:15:15+00:00",
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.3.x-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "psr-4": {
-                    "FluentCart\\OpenSpout\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Adrien Loison",
-                    "email": "adrien@box.com"
-                }
-            ],
-            "description": "PHP Library to read and write spreadsheet files (CSV, XLSX and ODS), in a fast and scalable way",
-            "homepage": "https://github.com/openspout/openspout",
-            "keywords": [
-                "OOXML",
-                "csv",
-                "excel",
-                "memory",
-                "odf",
-                "ods",
-                "office",
-                "open",
-                "php",
-                "read",
-                "scale",
-                "spreadsheet",
-                "stream",
-                "write",
-                "xlsx"
-            ],
-            "support": {
-                "issues": "https://github.com/openspout/openspout/issues",
-                "source": "https://github.com/openspout/openspout/tree/v3.7.4"
-            },
-            "funding": [
-                {
-                    "url": "https://paypal.me/filippotessarotto",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/Slamdunk",
-                    "type": "github"
-                }
-            ],
-            "install-path": "../openspout/openspout"
-        },
-        {
             "name": "psr/container",
             "version": "2.0.2",
             "version_normalized": "2.0.2.0",
@@ -337,24 +245,24 @@
         },
         {
             "name": "wpfluent/framework",
-            "version": "2.11.14",
-            "version_normalized": "2.11.14.0",
+            "version": "2.12.7",
+            "version_normalized": "2.12.7.0",
             "source": {
                 "type": "git",
                 "url": "git@github.com:wpfluent/framework2x.git",
-                "reference": "3c48c3cc134a912bf677c0b0ea5e35c8d225b0e9"
+                "reference": "383aba01113d12b9ea9fa09c033d12875ef1a099"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpfluent/framework2x/zipball/3c48c3cc134a912bf677c0b0ea5e35c8d225b0e9",
-                "reference": "3c48c3cc134a912bf677c0b0ea5e35c8d225b0e9",
+                "url": "https://api.github.com/repos/wpfluent/framework2x/zipball/383aba01113d12b9ea9fa09c033d12875ef1a099",
+                "reference": "383aba01113d12b9ea9fa09c033d12875ef1a099",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "php": "^7.3|^8.0"
+                "php": "^7.4|^8.0"
             },
-            "time": "2026-03-12T16:43:50+00:00",
+            "time": "2026-08-30T01:20:54+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -365,7 +273,10 @@
             "autoload": {
                 "psr-4": {
                     "FluentCart\\Framework\\": "src/WPFluent"
-                }
+                },
+                "files": [
+                    "src/WPFluent/Support/mbstring-loader.php"
+                ]
             },
             "license": [
                 "MIT"
@@ -378,7 +289,7 @@
             ],
             "description": "A lightweight rest api based framework to build WordPress plugins.",
             "support": {
-                "source": "https://github.com/wpfluent/framework2x/tree/2.11.14",
+                "source": "https://github.com/wpfluent/framework2x/tree/2.12.7",
                 "issues": "https://github.com/wpfluent/framework2x/issues"
             },
             "install-path": "../wpfluent/framework"

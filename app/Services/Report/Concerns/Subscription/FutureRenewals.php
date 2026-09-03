@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\Report\Concerns\Subscription;
 
 use FluentCart\App\App;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\Payments\PaymentHelper;
 
 trait FutureRenewals
 {
@@ -134,6 +135,10 @@ trait FutureRenewals
         $currentBilling = clone $nextBilling;
         $intervalDays = $this->getIntervalDays($subscription->billing_interval);
 
+        if ($intervalDays < 1) { // unresolved interval would never advance the loop
+            return 0;
+        }
+
         while ($currentBilling <= $periodEnd) {
             if ($currentBilling >= $periodStart) {
                 $renewalCount++;
@@ -155,17 +160,7 @@ trait FutureRenewals
      */
     private function getIntervalDays($interval)
     {
-        $intervals = [
-            'daily'     => 1,
-            'weekly'    => 7,
-            'monthly'   => 30,
-            'quarterly' => 90,
-            'yearly'    => 365,
-            'biweekly'  => 14,
-            'bimonthly' => 60,
-        ];
-
-        return $intervals[$interval] ?? 30; // Default to monthly
+        return PaymentHelper::getIntervalDays($interval);
     }
 
     /**
@@ -197,6 +192,10 @@ trait FutureRenewals
         $currentBilling = clone $nextBilling;
         $intervalDays = $this->getIntervalDays($subscription->billing_interval);
         $renewalCount = 0;
+
+        if ($intervalDays < 1) { // unresolved interval would never advance the loop
+            return $renewalDates;
+        }
 
         while ($currentBilling <= $periodEnd) {
             if ($currentBilling >= $periodStart) {

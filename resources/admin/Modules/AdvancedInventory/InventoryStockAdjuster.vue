@@ -43,7 +43,7 @@
                 <ReasonDropdown
                     ref="reasonDropdownRef"
                     v-model="selectedReason"
-                    @update:customReason="customReasonText = $event"
+                    @update:custom-reason="customReasonText = $event"
                 />
             </div>
 
@@ -61,7 +61,8 @@
                     size="small"
                     type="primary"
                     @click="handleApply"
-                    :disabled="!selectedReason"
+                    :disabled="!selectedReason || isSavePending"
+                    :loading="isSavePending"
                 >
                     {{ translate('Apply') }}
                 </el-button>
@@ -80,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, inject, ref, watch, nextTick } from 'vue';
 import translate from '@/utils/translator/Translator';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Animation from "@/Bits/Components/Animation.vue";
@@ -99,6 +100,13 @@ const props = defineProps({
 
 const emit = defineEmits(['save']);
 
+// Pending state keyed by id (survives the table replacing variant objects
+// on refetch); the object flag remains as a same-object fast path.
+const pendingStockSaves = inject('fctPendingStockSaves', null);
+const isSavePending = computed(() => {
+    return Boolean(props.variant.stock_save_pending) || Boolean(pendingStockSaves?.has(props.variant.id));
+});
+
 const visible = ref(false);
 const adjustedQuantity = ref(0);
 const newStock = ref(props.variant.total_stock);
@@ -107,8 +115,24 @@ const customReasonText = ref('');
 const adjustByInput = ref(null);
 const reasonDropdownRef = ref(null);
 
+// If the popover sat open while a save was in flight (Apply disabled), its
+// inputs were seeded from the unconfirmed value. When confirmation lands,
+// re-anchor: keep the admin's typed "Adjust by" delta and recompute the
+// absolute New Stock from the now-confirmed total.
+watch(isSavePending, (pending, wasPending) => {
+    if (wasPending && !pending && visible.value) {
+        handleAdjustChange();
+    }
+});
+
 watch(visible, (newVal) => {
     if (newVal) {
+        // Re-seed from the CURRENT stock every time the popover opens. The
+        // confirmed value is written onto the variant asynchronously after
+        // the previous save, so a mount-time seed goes stale — re-applying
+        // it would silently revert the earlier adjustment.
+        newStock.value = props.variant.total_stock;
+        adjustedQuantity.value = 0;
         nextTick(() => {
             adjustByInput.value?.focus();
             adjustByInput.value?.select?.();
@@ -138,6 +162,15 @@ const handleCancel = () => {
 };
 
 const handleApply = () => {
+    // A save for this variant is still in flight: both inputs were seeded
+    // from a stock value the server hasn't confirmed yet, so an absolute
+    // new_stock computed from it would silently drop the pending adjustment
+    // (two quick +5s from 10 would send 15 twice instead of reaching 20).
+    // The Apply button is disabled in this state; this guard covers keyboard
+    // submission and races with the flag flipping mid-click.
+    if (isSavePending.value) {
+        return;
+    }
     emit('save', {
         variant: props.variant,
         newStock: newStock.value,

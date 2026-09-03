@@ -1,0 +1,9 @@
+{
+  "status": 201,
+  "message": "Created",
+  "body": {
+    "id": "PROD-PHASE22",
+    "name": "Phase 22 product",
+    "type": "DIGITAL"
+  }
+}

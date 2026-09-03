@@ -55,21 +55,22 @@ class DefaultPdfStructures
     {
         $blocks = [];
 
-        $blocks[] = self::header('RECEIPT');
+        $blocks[] = self::header(__('RECEIPT', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            'Order Number'   => '{{order.invoice_no}}',
-            'Order Date'     => '{{order.created_at}}',
-            'Payment Method' => '{{order.payment_method_title}}',
-            'Payment Status' => '{{order.payment_status}}',
+            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Order Date', 'fluent-cart')     => '{{order.created_at}}',
+            __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
+            __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',
         ]);
         $blocks[] = self::itemsTable();
         $blocks[] = self::summaryTable([
-            'Subtotal' => '{{order.subtotal_formatted}}',
-            'Discount' => '{{order.discount_total_formatted}}',
-            'Tax'      => '{{order.tax_total_formatted}}',
-            'Shipping' => '{{order.shipping_total_formatted}}',
-        ], 'Total', '{{order.total_amount_formatted}}');
+            __('Subtotal', 'fluent-cart') => '{{order.subtotal_formatted}}',
+            __('Discount', 'fluent-cart') => '{{order.discount_total_formatted}}',
+            __('Fees', 'fluent-cart')     => '{{order.fee_lines}}',
+            __('Tax', 'fluent-cart')      => '{{order.tax_breakdown}}',
+            __('Shipping', 'fluent-cart') => '{{order.shipping_total_formatted}}',
+        ], __('Total', 'fluent-cart'), '{{order.total_amount_formatted}}');
         $blocks[] = self::footer(__('Thank you for your purchase!', 'fluent-cart'));
 
         return $blocks;
@@ -94,20 +95,21 @@ class DefaultPdfStructures
     {
         $blocks = [];
 
-        $blocks[] = self::header('RENEWAL RECEIPT');
+        $blocks[] = self::header(__('RENEWAL RECEIPT', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            'Order Number'   => '{{order.invoice_no}}',
-            'Renewal Date'   => '{{order.created_at}}',
-            'Payment Method' => '{{order.payment_method_title}}',
-            'Payment Status' => '{{order.payment_status}}',
+            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Renewal Date', 'fluent-cart')   => '{{order.created_at}}',
+            __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
+            __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',
         ]);
         $blocks[] = self::itemsTable();
         $blocks[] = self::summaryTable([
-            'Subtotal' => '{{order.subtotal_formatted}}',
-            'Discount' => '{{order.discount_total_formatted}}',
-            'Tax'      => '{{order.tax_total_formatted}}',
-        ], 'Total', '{{order.total_amount_formatted}}');
+            __('Subtotal', 'fluent-cart') => '{{order.subtotal_formatted}}',
+            __('Discount', 'fluent-cart') => '{{order.discount_total_formatted}}',
+            __('Fees', 'fluent-cart')     => '{{order.fee_lines}}',
+            __('Tax', 'fluent-cart')      => '{{order.tax_breakdown}}',
+        ], __('Total', 'fluent-cart'), '{{order.total_amount_formatted}}');
         $blocks[] = self::footer(__('Thank you for your continued subscription!', 'fluent-cart'));
 
         return $blocks;
@@ -134,17 +136,17 @@ class DefaultPdfStructures
     {
         $blocks = [];
 
-        $blocks[] = self::header('REFUND NOTICE');
-        $blocks[] = self::addressColumns('REFUND TO');
+        $blocks[] = self::header(__('REFUND NOTICE', 'fluent-cart'));
+        $blocks[] = self::addressColumns(__('REFUND TO', 'fluent-cart'));
         $blocks[] = self::metaTable([
-            'Order Number'   => '{{order.invoice_no}}',
-            'Order Date'     => '{{order.created_at}}',
-            'Payment Method' => '{{order.payment_method_title}}',
+            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Order Date', 'fluent-cart')     => '{{order.created_at}}',
+            __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
         ]);
         $blocks[] = self::itemsTable();
         $blocks[] = self::summaryTable([
-            'Original Total' => '{{order.total_amount_formatted}}',
-        ], 'Refund Amount', '{{order.total_refund}}');
+            __('Original Total', 'fluent-cart') => '{{order.total_amount_formatted}}',
+        ], __('Refund Amount', 'fluent-cart'), '{{order.total_refund}}');
         $blocks[] = self::footer(__('Your refund has been processed. Please allow a few business days for the amount to appear in your account.', 'fluent-cart'));
 
         return $blocks;
@@ -172,21 +174,22 @@ class DefaultPdfStructures
     {
         $blocks = [];
 
-        $blocks[] = self::header('INVOICE');
+        $blocks[] = self::header(__('INVOICE', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            'Invoice Number' => '{{order.invoice_no}}',
-            'Invoice Date'   => '{{order.created_at}}',
-            'Payment Method' => '{{order.payment_method_title}}',
-            'Payment Status' => '{{order.payment_status}}',
+            __('Invoice Number', 'fluent-cart') => '{{order.invoice_no}}',
+            __('Invoice Date', 'fluent-cart')   => '{{order.created_at}}',
+            __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
+            __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',
         ]);
         $blocks[] = self::itemsTable();
         $blocks[] = self::summaryTable([
-            'Subtotal' => '{{order.subtotal_formatted}}',
-            'Discount' => '{{order.discount_total_formatted}}',
-            'Tax'      => '{{order.tax_total_formatted}}',
-            'Shipping' => '{{order.shipping_total_formatted}}',
-        ], 'Amount Due', '{{order.total_amount_formatted}}');
+            __('Subtotal', 'fluent-cart') => '{{order.subtotal_formatted}}',
+            __('Discount', 'fluent-cart') => '{{order.discount_total_formatted}}',
+            __('Fees', 'fluent-cart')     => '{{order.fee_lines}}',
+            __('Tax', 'fluent-cart')      => '{{order.tax_breakdown}}',
+            __('Shipping', 'fluent-cart') => '{{order.shipping_total_formatted}}',
+        ], __('Amount Due', 'fluent-cart'), '{{order.total_amount_formatted}}');
         $blocks[] = self::footer(__('Thank you for your order. Please complete the payment to process your order.', 'fluent-cart'));
 
         return $blocks;
@@ -205,8 +208,12 @@ class DefaultPdfStructures
     /**
      * Two-column FROM / BILL TO address block.
      */
-    private static function addressColumns(string $billingLabel = 'BILL TO'): array
+    private static function addressColumns(?string $billingLabel = null): array
     {
+        if ($billingLabel === null) {
+            $billingLabel = __('BILL TO', 'fluent-cart');
+        }
+
         return self::block('fluent-cart/receipt-addresses', ['billingLabel' => $billingLabel]);
     }
 
@@ -230,13 +237,22 @@ class DefaultPdfStructures
      */
     private static function itemsTable(): array
     {
+        // No inner content. The block is dynamic — it registers with
+        // `save: () => null` and renders through
+        // ReceiptItemTableBlockEditor::render(), which ignores $content and emits
+        // its own {{order.pdf_items_table}} placeholder built from these
+        // attributes. Passing content here made blocksToContent() serialise an
+        // open/close pair with `{{order.items_table}}` inside it, and the editor
+        // then failed to validate the saved markup against a save() that produces
+        // nothing. Every other receipt block already passes null and serialises
+        // self-closing.
         return self::block('fluent-cart/receipt-item-table', [
             'headerBg'    => self::WHITE,
             'headerColor' => self::TEXT,
             'bodyColor'   => self::TEXT,
             'borderColor' => self::BORDER,
             'fontSize'    => 11,
-        ], '{{order.items_table}}');
+        ]);
     }
 
     /**

@@ -110,7 +110,7 @@ class OrderMigrationService extends BaseMigrationService implements MigrationSer
     /**
      * Discover orders to migrate
      */
-    public function discoverItems(int $offset = 0, int $limit = null): array
+    public function discoverItems(int $offset = 0, ?int $limit = null): array
     {
         global $wpdb;
         

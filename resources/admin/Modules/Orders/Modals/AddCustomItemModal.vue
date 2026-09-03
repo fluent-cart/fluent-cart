@@ -8,7 +8,7 @@
                 <el-row :gutter="20">
                     <el-col :md="12" :sm="12" :xs="24">
                         <el-form-item :label="$t('Item Name')" class="required">
-                            <el-input placeholder="T-shirt" v-model="customItem.item_name"/>
+                            <el-input :placeholder="$t('T-shirt')" v-model="customItem.item_name"/>
                         </el-form-item>
                     </el-col>
                     <el-col :md="12" :sm="12" :xs="24">

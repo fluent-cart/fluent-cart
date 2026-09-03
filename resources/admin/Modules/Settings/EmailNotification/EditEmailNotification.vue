@@ -14,6 +14,8 @@ import Alert from "../../../../public/customer-profile/Vue/parts/Alert.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import ProVersionGuard from "@/Bits/Components/ProVersionGuard.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import DynamicFormLoader from "@/Bits/Components/DynamicTemplates/DynamicFormLoader.vue";
 
 const isProActive = AppConfig.get('app_config.isProActive');
 
@@ -46,6 +48,36 @@ const notificationData = ref({
 });
 const editorFrameRef = ref(null);
 const shortCodes = ref({});
+const extraForms = ref([]);
+const extraFormRefs = ref();
+
+// Normalize declared extra_fields into a render-ready list, merging saved values
+// over the declared defaults.
+const buildExtraForms = (extraFields, saved = {}) => {
+    if (!extraFields || typeof extraFields !== 'object') return [];
+
+    const entries = extraFields.schema
+        ? [[extraFields.form_name || 'form', extraFields]]
+        : Object.entries(extraFields);
+
+    return entries
+        .filter(([, form]) => form?.schema && Object.keys(form.schema).length)
+        .map(([formKey, form]) => ({
+            ...form,
+            form_key: formKey,
+            values: { ...(form.values || {}), ...(saved[formKey] || {}) },
+        }));
+};
+
+// Collect each loader's state into { [notificationName]: { form_key: values } }, or null.
+const collectExtraState = () => {
+    const loaders = [].concat(extraFormRefs.value || []);
+    const forms = loaders.reduce(
+        (acc, loader) => (typeof loader?.getState === 'function' ? { ...acc, ...loader.getState() } : acc),
+        {}
+    );
+    return Object.keys(forms).length ? { [name.value]: forms } : null;
+};
 const focusSubjectInput = ref(false);
 const hasFluentPdf = ref(false);
 const pdfTemplates = ref([]);
@@ -142,6 +174,10 @@ const getNotification = () => {
             hasFluentPdf.value = response.has_fluent_pdf || false;
             pdfTemplates.value = response.pdf_templates || [];
 
+            // Build the dynamic forms; saved values live at settings.extra[name][form_key].
+            const saved = notificationData.value.settings.extra?.[name.value] || {};
+            extraForms.value = buildExtraForms(notificationData.value.extra_fields, saved);
+
             if (notificationData.value.settings.is_default_body === 'yes') {
                 loadDefaultTemplate();
             }
@@ -162,6 +198,12 @@ const updateNotification = () => {
     saving.value = true;
 
     const payload = JSON.parse(JSON.stringify(notificationData.value));
+
+    // Persist the dynamic forms under settings.extra[name][form_key].
+    const extra = collectExtraState();
+    if (extra) {
+        payload.settings.extra = extra;
+    }
 
     if (payload.settings.is_default_body === 'no') {
         if (editorFrameRef.value) {
@@ -197,7 +239,7 @@ onMounted(() => {
           :loading="saving"
           :loading-text="translate('Updating')"
           :save-button-text="translate('Update')"
-          @onSave="updateNotification"
+          @on-save="updateNotification"
       >
         <template #heading>
           <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
@@ -212,6 +254,8 @@ onMounted(() => {
       </SettingsHeader>
 
       <div class="setting-wrap-inner">
+        <AdminNotice/>
+        
         <template v-if="loading">
           <el-skeleton animated>
             <template #template>
@@ -323,6 +367,7 @@ onMounted(() => {
                 <template v-if="notificationData.settings.is_default_body === 'no' && !loading">
                   <ProVersionGuard
                       min-version="1.3.15"
+                      placement="feature_lock_email_templates"
                       :feature-title="translate('Custom Email Templates')"
                       :feature-text="translate('Design beautiful email templates with a drag-and-drop block editor, shortcodes, and conditional content.')"
                   >
@@ -338,14 +383,28 @@ onMounted(() => {
                           :editorParams="{ block_type: 'template', campaign_title: notificationData.settings.subject, bid: notificationData.name }"
                           :frameHeight="'calc(100vh - 60px)'"
                           :documentTitle="notificationData.settings.subject"
-                          @titleUpdated="((title) => { notificationData.settings.subject = title })"
-                          @previewRequest="onPreviewRequest"
+                          @title-updated="((title) => { notificationData.settings.subject = title })"
+                          @preview-request="onPreviewRequest"
                           v-model="notificationData.settings.email_body"
                       />
                     </el-form-item>
                   </ProVersionGuard>
                 </template>
               </el-form>
+            </CardBody>
+          </Card>
+
+          <!-- Dynamic forms declared by the notification (`extra_fields`). -->
+          <Card v-for="form in extraForms" :key="form.form_key" class="mt-4">
+            <CardBody>
+              <h3 v-if="form.title" class="el-form-item__label">{{ form.title }}</h3>
+              <p v-if="form.sub_title" class="text-system-mid mb-3">{{ form.sub_title }}</p>
+              <DynamicFormLoader
+                  :schema="form.schema"
+                  :values="form.values"
+                  :form_name="form.form_key"
+                  ref="extraFormRefs"
+              />
             </CardBody>
           </Card>
         </template>
@@ -381,7 +440,7 @@ onMounted(() => {
               :disabled="saving"
               :loading="saving"
           >
-            {{ saving ? translate('Updating') : translate("Update") }}
+            {{ translate("Update") }}
           </el-button>
         </div>
       </div>

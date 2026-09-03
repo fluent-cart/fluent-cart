@@ -1,7 +1,7 @@
 <template>
   <div class="fct-report-card">
     <div class="fct-report-card-header">
-      <h3 class="title">Product Sales Volatility</h3>
+      <h3 class="title">{{ $t('Product Sales Volatility') }}</h3>
       <div class="fct-btn-group sm">
         <el-select
           v-model="displayCount"
@@ -157,7 +157,6 @@ const getChartContainer = () => {
 const initChart = () => {
   // Check attempt limit
   if (initializationAttempts >= MAX_ATTEMPTS) {
-    console.warn(`[Volatility Chart] Gave up after ${MAX_ATTEMPTS} initialization attempts`);
     return;
   }
   
@@ -190,9 +189,7 @@ const initChart = () => {
     // Set up resize listener
     window.addEventListener('resize', handleResize);
     
-    console.log(`[Volatility Chart] Successfully initialized on attempt ${initializationAttempts}`);
   } catch (error) {
-    console.error("[Volatility Chart] Initialization error:", error);
     
     // Clean up and retry
     if (chartInstance) {
@@ -461,7 +458,6 @@ const updateChart = () => {
       }
     }, 200);
   } catch (error) {
-    console.error("[Volatility Chart] Error updating chart:", error);
   }
 };
 
@@ -471,7 +467,6 @@ const handleResize = () => {
     try {
       chartInstance.resize();
     } catch (error) {
-      console.error("[Volatility Chart] Error during resize:", error);
     }
   }
 };

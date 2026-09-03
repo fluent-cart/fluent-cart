@@ -29,7 +29,6 @@ const deleteOrderBump = (id) => {
         props.orderBumpTable.fetch();
       })
       .catch((errors) => {
-        console.log(errors);
       })
       .finally(() => {
       });

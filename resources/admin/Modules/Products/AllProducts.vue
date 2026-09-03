@@ -162,7 +162,7 @@ onUnmounted(() => {
   <div class="fct-all-products-page fct-layout-width">
     <PageHeading :title="translate('Products')">
       <template #action>
-        <UserCan permission="products/create">
+        <UserCan permission="products/view">
           <el-dropdown
               trigger="click"
               popper-class="fct-dropdown"
@@ -177,25 +177,27 @@ onUnmounted(() => {
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item class="item-link">
-                  <CreateDummyProduct @onProductCreated="productTable.fetch()" :products="productTable.getTableData()"/>
-                </el-dropdown-item>
+                <UserCan permission="products/create">
+                  <el-dropdown-item class="item-link">
+                    <CreateDummyProduct @on-product-created="productTable.fetch()" :products="productTable.getTableData()"/>
+                  </el-dropdown-item>
 
-                <el-dropdown-item @click="$router.push({ name: 'product_bulk_insert' })">
-                  <DynamicIcon name="Insert" />
-                  {{ translate('Bulk Product Insert') }}
-                </el-dropdown-item>
+                  <el-dropdown-item @click="$router.push({ name: 'product_bulk_insert' })">
+                    <DynamicIcon name="Insert" />
+                    {{ translate('Bulk Product Insert') }}
+                  </el-dropdown-item>
 
-                <el-dropdown-item @click="$router.push({ name: 'product_bulk_edit' })">
-                  <DynamicIcon name="Edit" />
-                  {{ translate('Bulk Product Edit') }}
-                </el-dropdown-item>
+                  <el-dropdown-item @click="$router.push({ name: 'product_bulk_edit' })">
+                    <DynamicIcon name="Edit" />
+                    {{ translate('Bulk Product Edit') }}
+                  </el-dropdown-item>
+                </UserCan>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+        </UserCan>
 
-
-
+        <UserCan permission="products/create">
           <el-button type="primary" @click="()=>{
             isAddProductModalVisible = true;
           }">
@@ -252,13 +254,13 @@ onUnmounted(() => {
 
           <ProductsLoader v-if="productTable.isLoading()" :productTable="productTable"
                           :next-page-count="productTable.nextPageCount"/>
-          <div v-else>
+          <div v-else class="fct-products-table-wrap">
             <ProductsTable
                 ref="productTableRef"
                 :product-table="productTable"
                 @delete="deleteProduct"
                 @duplicate="duplicateProduct"
-                @selectionChange="handleSelectionChange"
+                @selection-change="handleSelectionChange"
             />
           </div>
           <template #mobile>

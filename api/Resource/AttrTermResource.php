@@ -2,259 +2,350 @@
 
 namespace FluentCart\Api\Resource;
 
+use FluentCart\Api\Resource\BaseResourceApi;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\HelperTrait;
+use FluentCart\App\Models\AttributeGroup;
 use FluentCart\App\Models\AttributeRelation;
 use FluentCart\App\Models\AttributeTerm;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Filter\AttrTermFilter;
 
 class AttrTermResource extends BaseResourceApi
 {
     use HelperTrait;
-
-    private static array $orderByCols = ['id', 'title', 'slug', 'serial', 'created_at'];
-
-    private static array $moveTo = ['up', 'down'];
 
     public static function getQuery(): Builder
     {
         return AttributeTerm::query();
     }
 
-    /**
-     * Retrieve attribute terms  based on the provided parameters.
-     *
-     * @param array $params Optional.  Params containing the necessary parameters to retrieve.
-     *        [
-     *            'params' => [
-     *                "search"       => (array) Optional.
-     *                       [ "column name(e.g., title|slug)" => [
-     *                             "column"       => "column name(e.g., title|slug)",
-     *                             "operator"     => "(string)(e.g., like_all|rlike|or_rlike)",
-     *                             "value"        => (string|array) ] 
-     *                       ],
-     *                  "filters"     => (array) Optional. 
-     *                       [ "column name(e.g., title|slug)" => [
-     *                             "column"       => "column name(e.g., title|slug)",
-     *                             "operator"     => "(string)(e.g., in)",
-     *                             "value"        => (string|array) ] 
-     *                       ],
-     *                'order_by'     => (string) Optional. Column to order by,
-     *                'order_type'   => (string) Optional. Order type for sorting (ASC or DESC),
-     *                'per_page'     => (int) Optional. Number of items for per page,
-     *                'page'         => (int) Optional. Page number for pagination
-     *            ]
-     *        ]
-     *
-     */
     public static function get(array $params = [])
     {
-        $orderBy = static::getValWithinEnum(Arr::get($params["params"], 'order_by', 'serial'), static::$orderByCols, 'serial');
-        $orderDir = static::getValWithinEnum(Arr::get($params["params"], 'order_type', 'ASC'), static::$orderByEnum, 'ASC');
-
-        return static::getQuery()->where('group_id', Arr::get($params, 'group_id'))
-            ->when(Arr::get($params["params"], 'search'), function ($query) use ($params) {
-                return $query->search(Arr::get($params["params"], 'search', ''));
-            })
-            ->applyCustomFilters(Arr::get($params["params"], 'filters', []))
-            ->orderBy(
-                sanitize_sql_orderby($orderBy), 
-                sanitize_sql_orderby($orderDir)
-            )
-            ->paginate(Arr::get($params["params"], 'per_page', 15), ['*'], 'page', Arr::get($params["params"], 'page'));
+        $filter = AttrTermFilter::make($params);
+        $groupId = Arr::get($params, 'group_id');
+        if ($groupId) {
+            $filter->setGroupId((int) $groupId);
+        }
+        return $filter->paginate();
     }
 
-    /**
-     * Find and retrieve attribute term based on the ID and given params.
-     *
-     * @param int   $id     Required. The ID of the attribute term to find and retrieve.
-     * @param array $params Optional. Additional parameters for finding attribute terms.
-     *        [
-     *             // Include optional parameters, if any.  
-     *        ]
-     *
-     */
     public static function find($id, $params = [])
     {
         return static::getQuery()->find($id);
     }
 
-    /**
-     * Create attribute term with the provided data.
-     *
-     * @param array $data   Required. Array containing the necessary parameters
-     *        $data    =>   (array) Required. Array of attribute term data.
-     *            [
-     *                    'title'          => (string) Required. The title of the attr term.
-     *                    'slug'           => (string) Required. The slug of the attr term.
-     *                    'description'    => (string) Optional. The description of the attr term.
-     *                    'serial'         => (int)    Optional. The serial of the attr term.
-     *             ]
-     * @param array $params Required. Additional parameters for attribute term creation.
-     *        [
-     *            'params' => [
-     *                'group_id'=> (int) Required. The id of the attr group.
-     *             ]
-     *         ]
-     *
-     */
     public static function create($data, $params = [])
     {
-        $groupId = Arr::get($params, 'group_id');
-
-        $group = static::getQuery()->find($groupId);
+        $groupId    = (int) Arr::get($params, 'group_id');
+        $termInputs = Arr::get($data, 'terms', []);
+        $group      = AttributeGroup::query()->find($groupId);
 
         if (!$group) {
             return static::makeErrorResponse([
-                [ 'code' => 404, 'message' => __('Information mismatch.', 'fluent-cart') ]
+                ['code' => 404, 'message' => __('Attribute group not found.', 'fluent-cart')]
             ]);
         }
 
-        $data['serial'] = empty($data['serial']) ? 10 : $data['serial'];
-        $data['group_id'] = $group->id;
+        $lastSerial = (int) AttributeTerm::query()->where('group_id', $group->id)->max('serial');
 
-        $term = AttributeTerm::create($data);
+        // One query fetches all existing slugs that share a base with any incoming
+        // term — covers uniqueness for every term without N per-term queries.
+        $slugBases = array_map(function ($termInput) {
+            $slugSource = !empty($termInput['slug']) ? $termInput['slug'] : $termInput['title'];
+            return sanitize_title($slugSource);
+        }, $termInputs);
+        $slugQuery = AttributeTerm::query()->where('group_id', $group->id);
+        foreach ($slugBases as $slugBase) {
+            $slugQuery->orWhere('slug', 'LIKE', $slugBase . '%');
+        }
+        $takenSlugs = $slugQuery->pluck('slug')->toArray();
 
-        if ($term) {
+        $insertRows   = [];
+        $insertedSlugs = [];
+        foreach ($termInputs as $index => $termInput) {
+            $slugSource  = !empty($termInput['slug']) ? $termInput['slug'] : $termInput['title'];
+            $slugBase    = sanitize_title($slugSource);
+            $uniqueSlug  = static::resolveUniqueSlugFromSet($slugBase, $takenSlugs);
+            $takenSlugs[]    = $uniqueSlug;
+            $insertedSlugs[] = $uniqueSlug;
+
+            $encodedSettings = !empty($termInput['settings']) && is_array($termInput['settings'])
+                ? json_encode($termInput['settings'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : null;
+
+            $insertRows[] = [
+                'group_id' => $group->id,
+                'title'    => $termInput['title'],
+                'slug'     => $uniqueSlug,
+                'serial'   => $lastSerial + $index + 1,
+                'settings' => $encodedSettings,
+            ];
+        }
+
+        AttributeTerm::query()->insert($insertRows);
+
+        $createdTerms = AttributeTerm::query()
+            ->where('group_id', $group->id)
+            ->whereIn('slug', $insertedSlugs)
+            ->get()
+            ->toArray();
+
+        if ($createdTerms) {
             return static::makeSuccessResponse(
-                $term,
-                __('Successfully created!', 'fluent-cart')
+                $createdTerms,
+                __('Terms created successfully.', 'fluent-cart')
             );
         }
-        
+
         return static::makeErrorResponse([
-            [ 'code' => 400, 'message' => __('Term creation failed.', 'fluent-cart') ]
+            ['code' => 400, 'message' => __('Term creation failed.', 'fluent-cart')]
         ]);
     }
 
-    /**
-     * Update attribute term with the provided data.
-     *
-     * @param array $data   Required. Array containing the necessary parameters
-     *        $data    =>   (array) Required. Array of attribute term data.
-     *            [
-     *                    'title'          => (string) Required. The title of the attr term.
-     *                    'slug'           => (string) Required. The slug of the attr term.
-     *                    'description'    => (string) Optional. The description of the attr term.
-     *                    'serial'         => (int)    Optional. The serial of the attr term.
-     *             ]
-     * @param int $termId     Required. The id of the attribute term to update.
-     * @param array $params   Required. Additional parameters for attribute term creation.
-     *        [
-     *            'params' => [
-     *                'group_id'=> (int) Required. The id of the attr group.
-     *             ]
-     *         ]
-     *
-     */
     public static function update($data, $termId, $params = [])
     {
         $groupId = Arr::get($params, 'group_id');
 
-        $term = static::getQuery()->where('id', $termId)->where('group_id', $groupId)->first();
+        // Wrap the lookup, slug regen, and update in a transaction with a
+        // row lock on the term. Symmetric with create() / delete(). Without
+        // the lock, the slug auto-regen path can read existing slugs, derive
+        // "red-2", and then collide with a concurrent insert of "red-2"
+        // between the read and the update.
+        $db = App::db();
+        $db->beginTransaction();
+        try {
+            $term = static::getQuery()
+                ->where('id', $termId)
+                ->where('group_id', $groupId)
+                ->lockForUpdate()
+                ->first();
 
-        if (!$term) {
+            if (!$term) {
+                $db->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 404, 'message' => __('Attribute term not found.', 'fluent-cart')]
+                ]);
+            }
+
+            // Mirror create()'s auto-slug behaviour: when the client clears the slug field
+            // intending the server to regenerate it, derive a unique slug from the title
+            // instead of letting MySQL reject the NOT NULL column.
+            if (array_key_exists('slug', $data) && empty($data['slug']) && !empty($data['title'])) {
+                $data['slug'] = static::generateUniqueSlug($data['title'], (int) $term->group_id, (int) $term->id);
+            }
+
+            // Defence-in-depth: group_id is in AttributeTerm $fillable for the
+            // create flow, but updating it would let a client reparent a term
+            // into a different group via the wrong endpoint. The controller's
+            // Arr::only allowlist already excludes group_id, but stripping it
+            // here too means future controller refactors cannot regress this
+            // boundary.
+            unset($data['group_id']);
+
+            // Pre-check the composite UNIQUE (group_id, slug) when the slug is
+            // changing, so a clean 422 is returned without an UPDATE the DB
+            // rejects (which prints a raw wpdb error ahead of the JSON). The
+            // catch below stays as the concurrency backstop.
+            if (!empty($data['slug'])) {
+                $slugTaken = static::getQuery()
+                    ->where('group_id', $term->group_id)
+                    ->where('slug', $data['slug'])
+                    ->where('id', '!=', $term->id)
+                    ->count() > 0;
+                if ($slugTaken) {
+                    $db->rollBack();
+                    return static::makeErrorResponse([
+                        ['code' => 422, 'message' => __('A term with this slug already exists in the group.', 'fluent-cart')]
+                    ]);
+                }
+            }
+
+            $isUpdated = $term->update($data);
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            if (static::isUniqueViolation($e)) {
+                return static::makeErrorResponse([
+                    ['code' => 422, 'message' => __('A term with this slug already exists in the group.', 'fluent-cart')]
+                ]);
+            }
             return static::makeErrorResponse([
-                [ 'code' => 404, 'message' => __('Information mismatch.', 'fluent-cart') ]
+                ['code' => 500, 'message' => __('Term update failed.', 'fluent-cart')]
             ]);
         }
-
-        $isUpdated = $term->update($data);
 
         if ($isUpdated) {
             return static::makeSuccessResponse(
                 $isUpdated,
-                __('Successfully updated!', 'fluent-cart')
+                __('Term Successfully updated!', 'fluent-cart')
             );
         }
 
         return static::makeErrorResponse([
-            [ 'code' => 400, 'message' => __('Term info update failed.', 'fluent-cart') ]
-        ]);  
+            ['code' => 400, 'message' => __('Term update failed.', 'fluent-cart')]
+        ]);
     }
 
-    /**
-     * Delete attribute term by term ID and given params.
-     *
-     * @param int   $termId     Required. The ID of the attribute term to delete.
-     * @param array $params     Required. Additional parameters for attribute term deletion.
-     *        [
-     *            'params' => [
-     *                'group_id'=> (int) Required. The id of the attr group.
-     *             ]
-     *         ]
-     * 
-     */
     public static function delete($termId, $params = [])
     {
         $groupId = Arr::get($params, 'group_id');
 
-        $isUsed = AttributeRelation::query()->where('group_id', $groupId)->where('term_id', $termId)->first();
+        // Wrap the use-check and the delete in a transaction with row-level
+        // locks so a concurrent variant attach between the check and the
+        // delete cannot leave orphan relation rows pointing at a deleted
+        // term. Without this, a TOCTOU race lets a relation row be inserted
+        // after isUsed returned null and before $term->delete() ran.
+        $db = App::db();
+        $db->beginTransaction();
+        try {
+            $term = static::getQuery()->lockForUpdate()->find($termId);
 
-        if (!$isUsed) {
-
-            $term = static::getQuery()->find($termId);
-
-            if ($term->group_id == $groupId) {
-                
-                $term->delete();
-                
-                return static::makeSuccessResponse(
-                    '',
-                    __('Attribute term successfully deleted!', 'fluent-cart')
-                );
+            if (!$term || $term->group_id != $groupId) {
+                $db->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 404, 'message' => __('Attribute term not found, failed to remove.', 'fluent-cart')]
+                ]);
             }
-            
+
+            $isUsed = AttributeRelation::query()
+                ->where('group_id', $groupId)
+                ->where('term_id', $termId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($isUsed) {
+                $db->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 403, 'message' => __('This term is already in use, can not be deleted.', 'fluent-cart')]
+                ]);
+            }
+
+            $term->delete();
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
             return static::makeErrorResponse([
-                [ 'code' => 404, 'message' => __('Term not found in database, failed to remove.', 'fluent-cart') ]
+                ['code' => 500, 'message' => __('Failed to delete attribute term.', 'fluent-cart')]
             ]);
         }
-        
-        return static::makeErrorResponse([
-            [ 'code' => 403, 'message' => __('This term is already in use, can not be deleted.', 'fluent-cart') ]
-        ]);
+
+        return static::makeSuccessResponse(
+            '',
+            __('Attribute term successfully deleted!', 'fluent-cart')
+        );
+    }
+
+    public static function reorder($params = [])
+    {
+        $groupId = (int) Arr::get($params, 'group_id');
+        $ids = array_slice(
+            array_values(array_filter(array_map('intval', (array) Arr::get($params, 'ids', [])))),
+            0,
+            500
+        );
+
+        if (empty($ids)) {
+            return static::makeErrorResponse([
+                ['code' => 422, 'message' => __('No term IDs provided.', 'fluent-cart')]
+            ]);
+        }
+
+        $ownedCount = AttributeTerm::query()
+            ->whereIn('id', $ids)
+            ->where('group_id', $groupId)
+            ->count();
+
+        if ($ownedCount !== count($ids)) {
+            return static::makeErrorResponse([
+                ['code' => 403, 'message' => __('One or more term IDs do not belong to this group.', 'fluent-cart')]
+            ]);
+        }
+
+        $values = [];
+        foreach ($ids as $index => $id) {
+            $values[] = ['id' => $id, 'serial' => $index + 1];
+        }
+
+        $db = App::db();
+        $db->beginTransaction();
+        try {
+            AttributeTerm::query()->batchUpdate($values);
+            $db->commit();
+            return static::makeSuccessResponse([], __('Terms reordered.', 'fluent-cart'));
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            return static::makeErrorResponse([
+                ['code' => 500, 'message' => __('Failed to reorder terms.', 'fluent-cart')]
+            ]);
+        }
     }
 
     /**
-     * Update attribute term serial index with the provided params.
-     *
-     * @param array $params   Required. Array containing the necessary parameters
-     *        $params    =>   (array) Required. Array of attribute term data.
-     *            [
-     *                    'term_id'   => (int) Required. The term id of the attr term.
-     *                    'group_id'  => (int) Required. The group id of the attr term.
-     *                    'move'      => (int) Required. The move of the attr term.
-     *             ]
-     *
+     * MySQL/MariaDB UNIQUE constraint violation detector. SQLSTATE 23000 covers
+     * duplicate-key on any UNIQUE index, including the composite (group_id, slug)
+     * on terms and slug on groups. Used so concurrent inserts return a clean 422
+     * instead of leaking a generic 500.
      */
-    public static function updateSerial($params = [])
+    private static function isUniqueViolation(\Throwable $e): bool
     {
-        $termId = Arr::get($params, 'term_id');
-        $groupId = Arr::get($params, 'group_id');
-        $move = Arr::get($params, 'move');
+        $msg = $e->getMessage();
+        return strpos($msg, '1062') !== false
+            || strpos($msg, 'Duplicate entry') !== false
+            || strpos($msg, 'SQLSTATE[23000]') !== false;
+    }
 
-        $term = static::getQuery()->find($termId);
-
-        if ($term->group_id == $groupId) {
-
-            $move = static::getValWithinEnum($move, static::$moveTo, 'down');
-
-            if ($move == 'up') {
-                $term->serial = $term->serial > 0 ? ($term->serial - 1) : 0;
-            } else {
-                $term->serial++;
-            }
-
-            $term->save();
-            
-            return static::makeSuccessResponse(
-                $term->serial,
-                __('Serial updated.', 'fluent-cart')
-            );
+    /**
+     * Derive a unique slug from an in-memory set of already-taken slugs.
+     * Used by createBulk() so multiple titles can be resolved in one pass
+     * without a DB round-trip per title.
+     */
+    private static function resolveUniqueSlugFromSet(string $slugBase, array $takenSlugs): string
+    {
+        if (!in_array($slugBase, $takenSlugs, true)) {
+            return $slugBase;
         }
 
-        return static::makeErrorResponse([
-            [ 'code' => 404, 'message' => __('Info mismatch.', 'fluent-cart') ]
-        ]);
+        $highestSuffix = 1;
+        foreach ($takenSlugs as $takenSlug) {
+            if (preg_match('/^' . preg_quote($slugBase, '/') . '-(\d+)$/', $takenSlug, $matches)) {
+                $highestSuffix = max($highestSuffix, (int) $matches[1]);
+            }
+        }
+
+        return $slugBase . '-' . ($highestSuffix + 1);
+    }
+
+    /**
+     * Generate a unique slug within a group, ignoring a specific term id (for update).
+     * Mirrors the auto-slug logic in create() so the two endpoints stay in sync.
+     */
+    private static function generateUniqueSlug(string $title, int $groupId, ?int $ignoreId = null): string
+    {
+        $base = sanitize_title($title);
+
+        $query = AttributeTerm::query()
+            ->where('group_id', $groupId)
+            ->where('slug', 'LIKE', $base . '%');
+
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        $taken = $query->pluck('slug')->toArray();
+
+        if (!in_array($base, $taken, true)) {
+            return $base;
+        }
+
+        $max = 1;
+        foreach ($taken as $existing) {
+            if (preg_match('/^' . preg_quote($base, '/') . '-(\d+)$/', $existing, $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+
+        return $base . '-' . ($max + 1);
     }
 }

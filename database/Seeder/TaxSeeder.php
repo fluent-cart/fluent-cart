@@ -49,23 +49,23 @@ class TaxSeeder
             [
                 'title' => 'Standard Rate',
                 'slug' => 'standard',
-                'description' => 'Standard tax rate for most products',
+
                 'meta' => json_encode(['is_default' => true]),
                 'created_at' => gmdate('Y-m-d H:i:s'),
                 'updated_at' => gmdate('Y-m-d H:i:s'),
             ],
             [
-                'title' => 'Reduced Rate',
+                'title' => 'Reduced',
                 'slug' => 'reduced',
-                'description' => 'Reduced tax rate for essential goods',
+
                 'meta' => json_encode(['is_default' => false]),
                 'created_at' => gmdate('Y-m-d H:i:s'),
                 'updated_at' => gmdate('Y-m-d H:i:s'),
             ],
             [
-                'title' => 'Zero Rate',
+                'title' => 'Zero',
                 'slug' => 'zero',
-                'description' => 'Zero tax rate for exempt products',
+
                 'meta' => json_encode(['is_default' => false]),
                 'created_at' => gmdate('Y-m-d H:i:s'),
                 'updated_at' => gmdate('Y-m-d H:i:s'),
@@ -73,7 +73,7 @@ class TaxSeeder
             [
                 'title' => 'Digital Goods',
                 'slug' => 'digital',
-                'description' => 'Tax rate for digital products and services',
+
                 'meta' => json_encode(['is_default' => false]),
                 'created_at' => gmdate('Y-m-d H:i:s'),
                 'updated_at' => gmdate('Y-m-d H:i:s'),

@@ -20,11 +20,6 @@ export default {
         }
     },
     emits: ['update:modelValue'],
-    watch: {
-        emailContent(value) {
-            this.$emit('update:modelValue', value);
-        }
-    },
     data() {
         return {
             emailContent: this.modelValue,
@@ -32,6 +27,16 @@ export default {
             editorReady: false,
             showingFullScreen: false
         }
+    },
+    watch: {
+        emailContent(value) {
+            this.$emit('update:modelValue', value);
+        }
+    },
+    mounted() {
+        this.editor = this.$refs.fct_full_editor;
+        // Listen for messages from iframe
+        window.addEventListener('message', this.handleIframeMessage);
     },
     methods: {
         handleIframeMessage(event) {
@@ -44,14 +49,11 @@ export default {
                 return;
             }
 
-            console.log('action: ' + action);
 
             // Check if this is the message we're looking for
             if (action === 'EDITOR_UPDATED' && this.editorReady) {
-                console.log('EDITOR_UPDATED');
                 this.emailContent = event.data.content;
             } else if(action === 'EDITOR_READY') {
-                console.log('EDITOR_READY');
 
                 setTimeout(() => {
                     // Send the initial content to the editor
@@ -67,11 +69,6 @@ export default {
                 this.editorReady = true;
             }
         }
-    },
-    mounted() {
-        this.editor = this.$refs.fct_full_editor;
-        // Listen for messages from iframe
-        window.addEventListener('message', this.handleIframeMessage);
     }
 }
 </script>

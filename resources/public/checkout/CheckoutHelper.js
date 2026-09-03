@@ -58,7 +58,6 @@ export default class CheckoutHelper {
             }));
         })
         .catch(error => {
-            console.error('Error rendering checkout summary:', error);
         });
         
     }
@@ -171,7 +170,6 @@ export default class CheckoutHelper {
 
             return fullUrl.href;
         } catch (error) {
-            console.error('Error building URL:', error);
             return url; // Fallback to raw URL
         }
     }
@@ -183,7 +181,6 @@ export default class CheckoutHelper {
      */
     static handleCheckoutRedirect(redirectUrl, targetOrigin = '*') {
         if (!redirectUrl) {
-            console.error('CheckoutHelper: redirectUrl is required for handleCheckoutRedirect');
             return;
         }
 

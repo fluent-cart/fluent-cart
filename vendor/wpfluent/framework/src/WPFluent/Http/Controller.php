@@ -7,6 +7,17 @@ use ReflectionException;
 use FluentCart\Framework\Foundation\App;
 use FluentCart\Framework\Validator\ValidationException;
 
+/**
+ * Base controller — exposes the Application, Request, and Response
+ * via protected properties. The `@property` annotations below are
+ * intentional in addition to the protected declarations: they help
+ * PHPStan disambiguate when a subclass declares a method with the
+ * same name as one of these properties (e.g., `function app()`).
+ *
+ * @property \FluentCart\Framework\Foundation\Application      $app
+ * @property \FluentCart\Framework\Http\Request\Request        $request
+ * @property \FluentCart\Framework\Http\Response\Response      $response
+ */
 abstract class Controller
 {
     /**

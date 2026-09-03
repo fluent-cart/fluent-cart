@@ -549,7 +549,7 @@ tr:hover .bulk-action-btn {
 // DARK MODE
 // ═════════════════════════════════════════════════════════════
 
-html.dark {
+html.fluent_theme_dark {
 
   // ── Resizable table header & sticky columns ────────────────
 
@@ -645,13 +645,26 @@ html.dark {
   @apply w-full h-full rounded-full object-cover block relative z-[1] text-[0px] text-transparent;
 }
 
-/* Hide broken image icon so the spinner underneath stays visible */
-.fmp-thumb.is-hidden {
-  @apply invisible;
-}
-
 .fmp-count {
   @apply w-6 h-6 rounded-full bg-gray-50 text-system-mid text-[10px] font-semibold inline-flex items-center justify-center border border-solid border-white shrink-0 dark:bg-gray-800 dark:border-dark-400 dark:text-gray-50;
+}
+
+/* Square thumbnails for product/variant image columns — opt-in via the
+   BulkMediaPicker `square` prop. Larger (40px) than the circular avatar
+   stack so the image reads as a proper product thumbnail. */
+.fmp-stack.is-square {
+  .fmp-thumb-wrap,
+  .fmp-thumb {
+    @apply rounded w-10 h-10;
+  }
+  .fmp-count {
+    @apply rounded ml-1;
+  }
+}
+
+/* Square empty-state add button — matches the square thumbnail box size */
+.fct-media-picker.is-square .fct-mp-add-compact {
+  @apply w-10 h-10 rounded;
 }
 
 .fmp-edit-icon {
@@ -660,6 +673,11 @@ html.dark {
 
 .fct-media-picker:hover .fmp-edit-icon {
   @apply inline-flex;
+}
+
+/* On hover the edit icon takes the count's place — they never show together */
+.fct-media-picker:hover .fmp-count {
+  @apply hidden;
 }
 
 /* ── Add by URL tab ── */
@@ -766,7 +784,21 @@ html.dark {
 }
 .fct-bulk-media-picker-modal {
   .dialog-footer {
-    @apply flex justify-between gap-2;
+    @apply flex justify-between gap-2 items-center;
+  }
+
+  .fct-media-picker-footer-actions {
+    @apply flex items-center gap-3;
+  }
+
+  .fct-media-picker-apply-to-group-label {
+    @apply flex items-center gap-1.5 text-sm text-system-dark cursor-pointer select-none transition-colors duration-150 dark:text-gray-50;
+
+    /* Checkbox label reads black (system-dark) in both states so it's never
+       muted; dark mode uses gray-50 to stay legible on the dark surface. */
+    .el-checkbox__label {
+      @apply text-system-dark dark:text-gray-50;
+    }
   }
 }
 
@@ -778,7 +810,7 @@ html.dark {
 .fct-media-picker.is-featured {
   @apply cursor-pointer flex-shrink-0;
   .fmp-featured {
-    @apply relative inline-flex items-center;
+    @apply relative inline-flex items-center border-0 p-0 bg-transparent w-[80px] h-[80px];
     &__image {
       @apply w-[80px] h-[80px] rounded object-cover;
       &.is-hidden {
@@ -786,7 +818,7 @@ html.dark {
       }
     }
     &__edit-icon {
-      @apply absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 rounded;
+      @apply absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 rounded z-[2] cursor-pointer;
       background-color: rgba(0, 0, 0, 0.35);
       color: #fff;
       svg {

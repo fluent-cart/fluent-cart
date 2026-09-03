@@ -1,0 +1,179 @@
+.fct-export-dialog-content {
+    @apply grid gap-5 max-h-[500px] overflow-y-auto;
+}
+
+.fct-export-section {
+    @apply grid gap-3;
+}
+
+.fct-export-section + .fct-export-section {
+    @apply border border-x-0 border-b-0 border-solid border-gray-divider pt-5 dark:border-dark-400;
+}
+
+.fct-export-section-heading,
+.fct-export-selection-heading {
+    @apply flex items-center justify-between gap-3;
+}
+.fct-export-selection-heading-left {
+    @apply inline-flex gap-1 items-center;
+}
+.fct-export-label {
+    @apply block text-sm font-medium text-system-dark dark:text-gray-50;
+}
+
+.fct-export-section-hint,
+.fct-export-selection-count,
+.fct-export-memory-note,
+.fct-export-progress-note {
+    @apply text-xs text-system-mid dark:text-gray-300;
+}
+
+.fct-export-options {
+    @apply w-full;
+}
+
+.fct-export-format-options {
+    @apply grid grid-cols-2 gap-3;
+}
+
+.fct-export-format-card {
+    @apply relative grid cursor-pointer content-start gap-1 rounded border border-solid border-gray-divider bg-transparent px-4 py-3 pr-10 text-left transition-colors dark:border-dark-400;
+
+    &:hover {
+        @apply border-gray-300 dark:border-dark-400;
+    }
+
+    &:focus-visible {
+        @apply outline outline-2 outline-offset-2 outline-blue-500;
+    }
+    .fct-export-format-name {
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+
+    .fct-export-format-description {
+        @apply text-xs leading-5 text-system-mid dark:text-gray-400;
+    }
+
+    .fct-export-format-check {
+        @apply opacity-0 absolute right-3 top-3 text-lg text-system-dark transition-opacity dark:text-gray-300;
+    }
+
+     &.is-selected {
+        @apply border-primary-500 dark:border-dark-300;
+        .fct-export-format-check {
+            @apply opacity-100;
+        }
+    }
+}
+
+.fct-export-section.fct-csv-columns-section,
+.fct-export-section.fct-json-modules-section {
+    @apply border border-solid border-gray-divider rounded p-3 dark:border-dark-400;
+}
+
+.fct-export-memory-note,
+.fct-export-progress-note {
+    @apply m-0 leading-5;
+}
+
+.fct-export-columns-grid {
+    @apply grid grid-cols-2 gap-x-5 gap-y-2 pl-6 pt-3;
+
+    .el-checkbox {
+        @apply m-0 h-auto;
+    }
+
+    .el-checkbox__label {
+        @apply font-normal;
+    }
+}
+
+.fct-export-modules {
+    @apply grid border border-solid border-gray-divider rounded dark:border-dark-400;
+}
+
+.fct-export-module {
+    @apply grid w-full cursor-pointer border border-solid border-gray-divider border-x-0 border-t-0 bg-transparent px-3 py-2.5 text-left transition-colors first:rounded-tl first:rounded-tr last:border-b-0 last:rounded-br last:rounded-bl dark:border-dark-400;
+
+    &:hover,
+    &:focus-visible,
+    &.is-selected {
+        @apply bg-gray-25 outline-none dark:bg-dark-500;
+    }
+
+    &.is-required {
+        @apply cursor-default;
+    }
+
+    .el-checkbox {
+        @apply m-0 h-auto;
+    }
+
+    .el-checkbox__label {
+        @apply text-sm font-medium;
+    }
+
+    > span {
+        @apply pl-6 text-xs leading-5 text-system-light dark:text-gray-400;
+    }
+}
+
+.fct-export-required {
+    @apply ml-1 text-xs font-normal text-system-light dark:text-gray-400;
+}
+
+.fct-export-loading {
+    @apply grid gap-3 py-1;
+}
+
+.fct-export-loading-line,
+.fct-export-loading-option {
+    @apply animate-pulse rounded bg-gray-100 dark:bg-gray-700;
+}
+
+.fct-export-loading-line {
+    @apply h-4 w-1/2;
+
+    &.is-short {
+        @apply h-3 w-1/3;
+    }
+}
+
+.fct-export-loading-grid {
+    @apply grid grid-cols-2 gap-2 pt-2;
+}
+
+.fct-export-loading-option {
+    @apply h-8;
+}
+
+.fct-export-progress-section {
+    @apply py-1;
+}
+
+.fct-export-progress-title {
+    @apply mb-1 text-sm font-medium text-system-dark dark:text-gray-50;
+}
+
+.fct-export-progress-meta {
+    @apply flex items-center justify-between gap-2.5;
+}
+
+.fct-export-progress-text,
+.fct-export-progress-percentage {
+    @apply text-xs text-system-mid dark:text-gray-300;
+}
+
+.fct-export-progress-percentage {
+    @apply font-medium;
+}
+
+.fct-export-progress-bar {
+    @apply my-4;
+}
+
+.fct-export-error-section,
+.fct-export-complete-section {
+    @apply py-1;
+}
+

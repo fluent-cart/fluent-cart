@@ -173,7 +173,7 @@ class CustomerHelper
                         'download_limit' => $productDownloadLimit,
                         'access_expires' => $downloadExpiryDate,
                     ];
-                    return self::storeDownloadLog($hasDownloaded, $data);
+                    return self::storeDownloadLog($data, $hasDownloaded);
                 }
 
             }
@@ -182,7 +182,7 @@ class CustomerHelper
         wp_send_json(['message' => __('Order not found', 'fluent-cart')], 422);
     }
 
-    private static function storeDownloadLog(OrderDownloadPermission $orderDownloadPermission = null, $data)
+    private static function storeDownloadLog($data, ?OrderDownloadPermission $orderDownloadPermission = null)
     {
         if (empty($orderDownloadPermission)) {
             return OrderDownloadPermissionResource::create($data);

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 use FluentCart\App\Models\Concerns\CanSearch;
+use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\Framework\Support\Arr;
 
 /**
@@ -15,7 +16,7 @@ use FluentCart\Framework\Support\Arr;
  */
 class AttributeTerm extends Model
 {
-	use CanSearch;
+	use CanSearch, CanUpdateBatch;
 	
 	protected $table = 'fct_atts_terms';
 

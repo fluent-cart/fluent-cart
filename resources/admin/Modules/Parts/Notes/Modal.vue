@@ -42,6 +42,9 @@ export default {
       deep: true
     },
   },
+    mounted() {
+        // this.notes = this.note
+    },
     methods: {
         saveNote() {
             this.$emit('whenNoteEditIsDone', this.notes, false)
@@ -49,9 +52,6 @@ export default {
         closeModal(){
         this.$emit('closeModal');
         }
-    },
-    mounted() {
-        // this.notes = this.note
     }
 }
 </script>

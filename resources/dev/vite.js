@@ -1,7 +1,6 @@
 const [major] = process.versions.node.split('.').map(Number);
 
 if (major < 20) {
-    console.error('\x1b[31m\x1b[1m❌🚨 Node.js version 20 or higher is required!! 🚨❌\x1b[0m');
     process.exit(1); // exit with error
 }
 
@@ -30,7 +29,7 @@ const regexObj = new RegExp(`["']env["']\\s+=>\\s*["']` + switchTo + `["'],?`, '
 const fakerRegex = new RegExp(`["']using_faker["']\\s+=>\\s*(true|false),?`, "g");
 let fakerMode = true;
 
-if (mode === 'production' && typeof process.env.npm_config_faker === 'undefined') {
+if (mode === 'production' && typeof process.env.npm_config_faker === 'undefined' && !arguments.includes('--faker')) {
     fakerMode = false;
 }
 
@@ -43,7 +42,6 @@ if (mode === 'production' && typeof process.env.npm_config_faker === 'undefined'
         if (fs.existsSync(assetsPath)) {
             try {
                 fs.rmSync(assetsPath, {recursive: true, force: true});
-                console.log('🧹 Deleted assets folder.');
             } catch (err) {
             }
         }
@@ -51,28 +49,22 @@ if (mode === 'production' && typeof process.env.npm_config_faker === 'undefined'
         if (fs.existsSync(buildPath)) {
             try {
                 fs.rmSync(buildPath, {recursive: true, force: true});
-                console.log('🧹 Deleted builds folder.');
             } catch (err) {
             }
         }
 
         const configPath = path.resolve(__dirname, "../../config/vite_config.php");
-        console.log(configPath,'configPath')
         if (fs.existsSync(configPath)) {
             fs.writeFileSync(configPath, '<?php return ' + '[]' + ';', "utf8");
-            console.log("✅ Manifest array cleared");
         }
 
         const {port, updated, isFree} = await updateServerConfigPort();
         if (!isFree) {
-            console.error(`❌ All allowed ports are currently in use. Exiting.`);
             process.exit(1);
         }
 
         if (updated) {
-            console.log(`✅ Server port switched to ${port}`);
         } else {
-            console.log(`✅ Server port ${port} is free. No update needed.`);
         }
     }
 
@@ -91,9 +83,7 @@ if (mode === 'production' && typeof process.env.npm_config_faker === 'undefined'
 
         composer.on('close', (code) => {
             if (code === 0 && !hadErrorOutput) {
-                console.log('✅ Composer autoload dump completed.');
             } else {
-                console.error('\x1b[31m\x1b[1m❌🚨 There was some error while autoloading Composer! 🚨❌\x1b[0m');
             }
         });
     }
@@ -113,6 +103,5 @@ newFiles.then(function (files) {
         fs.writeFile(item, result, 'utf8', function (err) {
             if (err) return console.log(err);
         });
-        console.log(`✅ ${modeTitle} asset enqueued!`);
     });
 })

@@ -76,7 +76,7 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import Theme from "@/utils/Theme";
 import { monthNames } from "./../Utils/monthNames";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
   tooltipSuffix,
@@ -180,15 +180,10 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_cyan_blue,
-        }
-      },
-      valueFormatter: (value) => CurrencyFormatter.scaled(value),
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_cyan_blue),
+      confine: true,
+      position: chartTooltipPosition,
+      valueFormatter: (value) => chartTooltipAmount(value * 100),
     },
     grid: {
       show: false,
@@ -324,14 +319,19 @@ watch(dataLoader, (value) => {
 
 const handleThemeChange = () => {
   isDarkTheme.value = Theme.isDark();
-  
+
   nextTick(() => {
     updateChart();
   });
 };
 
+const onCurrencyChanged = () => {
+  updateChart();
+};
+
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.addEventListener("fluentCartCurrencyChange", onCurrencyChanged);
 
   nextTick(() => initChart());
 });
@@ -342,5 +342,6 @@ onUnmounted(() => {
     window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
     window.removeEventListener("resize", handleResize);
   }
+  window.removeEventListener("fluentCartCurrencyChange", onCurrencyChanged, false);
 });
 </script>

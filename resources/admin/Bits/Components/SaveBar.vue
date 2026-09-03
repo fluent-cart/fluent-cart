@@ -10,13 +10,8 @@
           <div class="fct-btn-group">
             <el-button @click="discardEmitEvent" type="info" soft> {{ discardButtonText}}</el-button>
             <el-button type="primary" @click="saveEmitEvent" :loading="loading">
-              <span v-if="showCmndIcon && !loading" class="cmd">⌘s</span>
-              <template v-if="loading">
-                {{ loadingText }}
-              </template>
-              <template v-if="!loading">
-                {{ saveButtonText }}
-              </template>
+              <span v-if="showCmndIcon" class="cmd">⌘s</span>
+              {{ saveButtonText }}
             </el-button>
           </div>
         </div><!-- .fct-save-bar-right -->
@@ -43,10 +38,6 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
-  },
-  loadingText: {
-    type: String,
-    default: translate('Saving')
   },
   showCmndIcon: {
     type: Boolean,

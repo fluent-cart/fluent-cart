@@ -2,6 +2,7 @@ import UtmManager from "../utils/UTMManager";
 
 export default class FluentCartCart {
     static #instance = null;
+    static #channel = null;
 
     #cartData = [];
     #statusUrl = '?action=fluent_cart_checkout_routes&fc_checkout_action=fluent_cart_cart_status'
@@ -31,19 +32,152 @@ export default class FluentCartCart {
         this.#setupIncreaseButtonAction();
         this.#setupDecreaseButtonAction();
         this.#setupQuantityInputAction();
+        this.#setupCrossTabSync();
         return this;
+    }
+
+    static #getChannelToken() {
+        const key = 'fc_bc_token';
+        let token = localStorage.getItem(key);
+        if (!token) {
+            token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : Math.random().toString(36).slice(2);
+            localStorage.setItem(key, token);
+        }
+        return token;
+    }
+
+    #setupCrossTabSync() {
+        if (typeof BroadcastChannel === 'undefined') return;
+        if (FluentCartCart.#channel) return;
+        const siteId = window.fluentCartRestVars?.ajaxurl || window.location.origin;
+        FluentCartCart.#channel = new BroadcastChannel('fluent_cart_cart:' + siteId);
+        FluentCartCart.#channel.onmessage = (event) => {
+            if (event.data && event.data.type && event.data._token === FluentCartCart.#getChannelToken()) {
+                this.#applyCrossTabUpdate(event.data);
+            }
+        };
+    }
+
+    #deriveCartCounts(cartData) {
+        return {
+            distinctCount: cartData.length,
+            totalQty: cartData.reduce((sum, item) => sum + (item.quantity || 1), 0),
+        };
+    }
+
+    #applyCrossTabUpdate(payload) {
+        if (payload.type === 'cart_updated' && Array.isArray(payload.fragments)) {
+            const cartData = Array.isArray(payload.cart_data) ? payload.cart_data : [];
+            const { distinctCount, totalQty } = this.#deriveCartCounts(cartData);
+
+            if (window.fluentcart_drawer_vars) {
+                window.fluentcart_drawer_vars.cart_item_count = distinctCount;
+                window.fluentcart_drawer_vars.cart_total_quantity = totalQty;
+            }
+            this.updateCartTotalPrice(cartData);
+            this.#updateBadgeCounts(distinctCount, totalQty);
+            document.querySelectorAll('.fct-cart-badge-count').forEach(el => {
+                el.textContent = distinctCount.toString();
+            });
+
+            const drawerEl = document.querySelector('[data-fluent-cart-cart-drawer]');
+            const overlayEl = document.querySelector('[data-fluent-cart-cart-drawer-overlay]');
+            if (drawerEl) drawerEl.style.transition = 'none';
+            if (overlayEl) overlayEl.style.transition = 'none';
+
+            this.#applyFragments(payload.fragments, true);
+
+            requestAnimationFrame(() => {
+                const el = document.querySelector('[data-fluent-cart-cart-drawer]');
+                const ov = document.querySelector('[data-fluent-cart-cart-drawer-overlay]');
+                if (el) el.style.transition = '';
+                if (ov) ov.style.transition = '';
+            });
+
+            // Drawer title count span — updated directly because the drawer container
+            // fragment is skipped when the drawer already exists.
+            document.querySelectorAll('[data-fluent-cart-cart-total-item]').forEach(el => {
+                el.textContent = distinctCount.toString();
+            });
+
+            this.#cartData = cartData;
+            this.#renderView();
+        }
+
+        if (payload.type === 'cart_cleared') {
+            this.#cartData = [];
+            if (window.fluentcart_drawer_vars) {
+                window.fluentcart_drawer_vars.cart_item_count = 0;
+                window.fluentcart_drawer_vars.cart_total_quantity = 0;
+            }
+            this.#updateBadgeCounts(0, 0);
+            document.querySelectorAll('.fct-cart-badge-count').forEach(el => {
+                el.textContent = '0';
+            });
+            this.updateCartTotalPrice([]);
+            this.#renderView();
+        }
+    }
+
+    #applyFragments(fragments, preserveExistingDrawer = false) {
+        const drawerSelector = '[data-fluent-cart-cart-drawer-container]';
+        fragments.forEach((fragment) => {
+            const element = document.querySelector(fragment.selector);
+            if (fragment.selector === drawerSelector) {
+                if (!element) {
+                    document.body.insertAdjacentHTML('beforeend', fragment.content);
+                    if (preserveExistingDrawer) this.closeModal();
+                } else if (!preserveExistingDrawer && fragment.type === 'replace') {
+                    element.outerHTML = fragment.content;
+                }
+                return;
+            }
+            if (element && fragment.type === 'replace') {
+                if (!fragment.content) {
+                    element.remove();
+                } else {
+                    element.outerHTML = fragment.content;
+                }
+            }
+        });
+    }
+
+    broadcastCartCleared() {
+        FluentCartCart.broadcastCartUpdate([], null);
+    }
+
+    static broadcastCartUpdate(cartData, fragments) {
+        if (!FluentCartCart.#channel) return;
+        const token = FluentCartCart.#getChannelToken();
+        if (!cartData || cartData.length === 0) {
+            FluentCartCart.#channel.postMessage({ _token: token, type: 'cart_cleared' });
+        } else {
+            FluentCartCart.#channel.postMessage({
+                _token: token,
+                type: 'cart_updated',
+                cart_data: cartData,
+                fragments: fragments || [],
+            });
+        }
     }
 
     async getCart() {
 
         let data = await new Promise((resolve, reject) => {
 
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            const nonce = window.fluentCartRestVars?.rest?.nonce;
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+
             fetch(this.#baseUrl + this.#statusUrl, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // add other headers if needed, e.g., Authorization
-                },
+                headers,
             })
                 .then(response => {
                     if (!response.ok) {
@@ -147,6 +281,9 @@ export default class FluentCartCart {
 
         params = this.appendUtmSource(params);
 
+        let capturedFragments = null;
+        let capturedIsCartResponse = false;
+
         let data = await new Promise((resolve, reject) => {
             const url = new URL(this.#baseUrl + this.#cartUpdateUrl);
 
@@ -168,50 +305,27 @@ export default class FluentCartCart {
 
 
                             const cartData = response.data?.cart?.cart_data;
-                            let cartItemCount = 0;
-                            if(Array.isArray(cartData)) {
-                                cartItemCount = cartData.length;
-                                //to all element that have data-cart-badge-count attr set the text as cartItemCount
-                                document.querySelectorAll('[data-cart-badge-count], .fct-cart-badge-count').forEach(el => {
-                                    el.textContent = cartItemCount.toString();
-                                    window.fluentcart_drawer_vars.cart_item_count = cartItemCount;
-                                });
-
-                                // update cart total price
+                            if (Array.isArray(cartData)) {
+                                const { distinctCount, totalQty } = ref.#deriveCartCounts(cartData);
+                                window.fluentcart_drawer_vars.cart_item_count = distinctCount;
+                                window.fluentcart_drawer_vars.cart_total_quantity = totalQty;
+                                ref.#updateBadgeCounts(distinctCount, totalQty);
                                 ref.updateCartTotalPrice(cartData);
                             }
 
-                            if (response && response?.fragments) {
-                                if (response.fragments) {
-                                    // check if array response.fragments
-                                    if (Array.isArray(response.fragments)) {
-                                        response.fragments.forEach((fragment) => {
-                                            const element = document.querySelector(fragment.selector);
-                                            if (!element && fragment.selector === '[data-fluent-cart-cart-drawer-container]') {
-                                                document.body.insertAdjacentHTML('beforeend', fragment.content);
-                                            }
-                                            if (element && fragment.type === 'replace') {
-                                                element.outerHTML = fragment.content;
-                                            }
-                                        });
-                                    } else {
-                                        const element = document.querySelector(response.fragments.selector);
-                                        if (!element && response.fragments.selector === '[data-fluent-cart-cart-drawer-container]') {
-                                            document.body.insertAdjacentHTML('beforeend', response.fragments.content);
-                                        }
-                                        if(element && response.fragments.type === 'replace') {
-                                            element.outerHTML = response.fragments.content;
-                                        }
-                                    }
-
-                                }
-                                // Check if drawer is now open after fragments are injected
+                            if (response?.fragments) {
+                                const frags = Array.isArray(response.fragments)
+                                    ? response.fragments
+                                    : [response.fragments];
+                                capturedFragments = Array.isArray(response.fragments) ? response.fragments : null;
+                                ref.#applyFragments(frags);
                                 const drawer = document.querySelector('[data-fluent-cart-cart-drawer]');
                                 if (drawer && drawer.classList.contains(ref.#cartDrawerToggleClass)) {
                                     ref.openModal();
                                 }
                             }
-                            if (response && response?.data?.cart?.cart_data) {
+                            if (response?.data?.cart?.cart_data) {
+                                capturedIsCartResponse = true;
                                 resolve(response.data.cart.cart_data);
                             } else {
                                 if (response.message) {
@@ -273,6 +387,10 @@ export default class FluentCartCart {
         }
 
         this.#cartData = data;
+
+        if (capturedIsCartResponse) {
+            FluentCartCart.broadcastCartUpdate(data, capturedFragments);
+        }
 
         const searchParams = new URLSearchParams(window.location.search);
         if (!searchParams.has('fct_cart_hash')) {
@@ -474,9 +592,10 @@ export default class FluentCartCart {
 
     #handleMenuBarCartToggleButton() {
 
-        document.querySelectorAll('[data-cart-badge-count], .fct-cart-badge-count').forEach(el => {
-            el.textContent = window.fluentcart_drawer_vars?.cart_item_count || 0;
-        });
+        this.#updateBadgeCounts(
+            window.fluentcart_drawer_vars?.cart_item_count || 0,
+            window.fluentcart_drawer_vars?.cart_total_quantity || 0
+        );
 
         const menuButtonContainer = document.querySelector('.fluent-cart-menu-cart-open-button-container');
         if (menuButtonContainer) {
@@ -493,7 +612,19 @@ export default class FluentCartCart {
         }
     }
 
+    /**
+     * Add-to-cart forwards the campaign straight off the URL, so it never goes
+     * through UTMManager.store() and the consent gate there does not cover it.
+     * Ask the manager for the decision directly.
+     *
+     * No manager on the page means the globals bundle was not loaded and there
+     * is no gate to consult, which leaves the pre-gate behaviour intact.
+     */
     appendUtmSource(params) {
+        const utmManager = window.fluentCartUtmManager;
+        if (utmManager && !utmManager.hasConsent()) {
+            return params;
+        }
 
         const searchParams = new URLSearchParams(window.location.search);
         UtmManager.getUtmParams().forEach((param) => {
@@ -520,7 +651,7 @@ export default class FluentCartCart {
         });
 
         // Convert cents to dollars and format
-        const totalDollars = (totalCents / 100).toFixed(2);
+        const totalDollars = String(parseFloat((totalCents / 100).toFixed(2)));
         const formattedTotal = `${currencySymbol}${totalDollars}`;
 
         // Update all elements
@@ -529,5 +660,12 @@ export default class FluentCartCart {
         });
 
         return formattedTotal;
+    }
+
+    #updateBadgeCounts(distinctCount, totalQty) {
+        document.querySelectorAll('[data-cart-badge-count]').forEach(el => {
+            const mode = el.dataset.cartCountMode || 'distinct_products';
+            el.textContent = (mode === 'total_quantity' ? totalQty : distinctCount).toString();
+        });
     }
 }

@@ -5,10 +5,14 @@ import fontSize from "../../../../styles/tailwind/extends/fontSize";
 import borderRadius from "../../../../styles/tailwind/extends/borderRadius";
 
 module.exports = {
-    darkMode: 'class',
     //important: '.fluent-cart-product-block-editor',
     content: [
+        // Buttons is a copy/paste leftover from whichever block this config was
+        // cloned from — kept so nothing that currently resolves through it
+        // breaks. Cart is what this config is actually named for, and both the
+        // Cart and Mini Cart editor styles live there.
         './resources/admin/BlockEditor/Buttons/**/*.*',
+        './resources/admin/BlockEditor/Cart/**/*.*',
     ],
 
     safelist: [
@@ -46,4 +50,3 @@ module.exports = {
         fontSize: fontSize,
     },
 }
-

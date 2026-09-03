@@ -935,6 +935,21 @@ class CartCheckoutHelper implements ArrayableInterface
             return $this->cart->order->manual_discount_total;
         }
 
-        return (int)Arr::get($this->cart->checkout_data, 'manual_discount.amount', 0);
+        return (int)Arr::get($this->cart->checkout_data, 'manual_discount.amount', 0)
+            + (int)Arr::get($this->cart->checkout_data, 'upgrade_discount.amount', 0)
+            + $this->getProrateCreditAmount();
+    }
+
+    public function getProrateCreditAmount()
+    {
+        if (empty($this->cart)) {
+            return 0;
+        }
+
+        if ($this->cart->order) {
+            return (int) Arr::get($this->cart->order->config, 'prorate_credit', 0);
+        }
+
+        return (int) Arr::get($this->cart->checkout_data, 'prorate_credit.amount', 0);
     }
 }

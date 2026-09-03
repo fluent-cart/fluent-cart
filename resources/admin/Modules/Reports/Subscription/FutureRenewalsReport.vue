@@ -121,6 +121,7 @@ import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import SummaryLoader from "../Components/SummaryLoader.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
     makeXAxisLabels,
     tooltipSuffix,
@@ -257,20 +258,16 @@ const updateChart = () => {
             textStyle: {
                 color: isDarkTheme.value ? "#ffffff" : "#565865",
             },
-            axisPointer: {
-                type: 'line',
-                lineStyle: {
-                    type: 'solid',
-                    width: 2,
-                    color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-                }
-            },
+            axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue),
+            confine: true,
+            position: chartTooltipPosition,
             formatter: (params) => {
                 let result = params[0].name;
 
                 params.forEach((param, index) => {
-                    const value = index === 0 ?
-                        `${CurrencyFormatter.formatScaled(param.value)}`
+                    // Series 0 is the projected amount, the rest are counts.
+                    const value = index === 0
+                        ? chartTooltipAmount(param.value)
                         : formatNumber(param.value);
 
                     const color = isDarkTheme.value ? "#ffffff" : "#565865";
@@ -478,9 +475,11 @@ onMounted(() => {
     });
 
     window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+    window.addEventListener("fluentCartCurrencyChange", updateChart);
 });
 
 onUnmounted(() => {
     window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+    window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
 });
 </script>

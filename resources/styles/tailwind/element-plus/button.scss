@@ -1,5 +1,5 @@
 .el-button{
-    @apply py-[7px] px-4 h-auto min-h-9 text-system-dark rounded gap-1.5 focus-visible:outline-none cursor-pointer transition-none border-gray-outline hover:bg-gray-50 hover:text-system-dark hover:border-gray-outline focus:shadow-none focus:outline-none dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50;
+    @apply py-[7px] px-4 h-auto min-h-9 text-system-dark rounded gap-1.5 focus-visible:outline-none cursor-pointer transition-none border-gray-outline hover:bg-gray-50 hover:text-system-dark hover:border-gray-outline focus:shadow-none focus:outline-none dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 focus:rounded;
     .cmd{
         @apply text-xs text-gray-400 uppercase dark:text-gray-600;
     }
@@ -50,6 +50,12 @@
             span{
                 @apply dark:text-gray-50;
             }
+            &.is-disabled {
+                @apply text-primary-500 opacity-50;
+                &:hover {
+                    @apply text-primary-500 opacity-50 !important;
+                }
+            }
         }
     }
     &--warning{
@@ -61,7 +67,7 @@
     &--danger{
         @apply text-white bg-red-500 border-red-500 hover:text-white hover:bg-red-700 hover:border-red-700 ;
         &[soft]{
-            @apply bg-red-50 border-red-50 text-red-500 hover:bg-red-100 hover:border-red-100 ;
+            @apply bg-red-50 border-red-50 text-red-500 hover:bg-red-100 hover:border-red-100 dark:bg-red-800 dark:border-red-800 dark:hover:bg-red-700 dark:hover:border-red-700;
         }
         &.is-plain{
             @apply bg-red-25 text-red-500 border-red-500 hover:text-red-500 focus:text-red-500 hover:bg-red-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white dark:hover:bg-dark-600 dark:hover:border-dark-400 dark:focus:text-white dark:hover:text-white ;
@@ -128,9 +134,10 @@
         }
     }
     &.is-loading{
+        @apply opacity-50;
         &.el-button--primary{
             &::before{
-                @apply bg-dark-400;
+                @apply bg-primary-500 z-[3] dark:bg-primary-50;
             }
             [class*=el-icon]+span{
                 @apply ml-0;
@@ -141,13 +148,24 @@
             }
         }
         .el-icon.is-loading{
-            @apply z-10 text-base;
+            @apply z-10 text-base absolute;
+        }
+        span {
+            @apply opacity-0;
         }
     }
     &.is-disabled,
     &.is-disabled:focus,
     &.is-disabled:hover{
-        @apply text-system-light opacity-[0.8] cursor-not-allowed bg-gray-200 border-gray-200 hover:text-system-light dark:bg-primary-50 dark:hover:bg-primary-50 dark:text-system-light dark:border-dark-50;
+        /* Disabled state. Light mode: muted gray fill so the button reads
+           as inactive. Dark mode previously used primary-50 / dark-50 —
+           both near-white in the dark palette, so a disabled button (like
+           the "Apply" bulk-action on the variant table when nothing is
+           picked) rendered as a glaring white pill instead of a muted
+           inactive control. Swap to dark-400 for fill + border so the
+           disabled state actually reads as disabled against the dark
+           surface. */
+        @apply text-system-light opacity-[0.8] cursor-not-allowed bg-gray-200 border-gray-200 hover:text-system-light dark:bg-dark-400 dark:hover:bg-dark-400 dark:text-system-light dark:border-dark-400;
         span {
             @apply dark:text-system-light;
         }

@@ -9,6 +9,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\Framework\Support\Arr;
 
 class PlanUpgradeService
@@ -153,7 +154,11 @@ class PlanUpgradeService
                 }
 
                 $signupFee = Arr::get($variant->other_info, 'signup_fee', 0);
-                $cost = floatval($variant->item_price + Arr::get($variant->other_info, 'signup_fee', 0) - $prorateCredit - $discountAmount);
+                if (empty($signupFee)) {
+                    $signupFee = 0;
+                }
+                
+                $cost = floatval($variant->item_price + $signupFee - $prorateCredit - $discountAmount);
 
                 if ($cost < 0) {
                     $cost = 0;
@@ -162,10 +167,10 @@ class PlanUpgradeService
                 $paymentType = Arr::get($variant, 'payment_type');
                 $paymentSummary = Helper::toDecimal($cost) . ' one-time';
                 if ($paymentType === 'subscription') {
-                    $paymentSummary = '<strong>' . Helper::toDecimal($cost) . '</strong> first '
+                    $paymentSummary = '<strong>' . Helper::toDecimal($cost) . '</strong> ' . __('first', 'fluent-cart') . ' '
                         . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval'))
-                        . ', then ' . Helper::toDecimal($variant->item_price)
-                        . '/' . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval')) . ' thereafter.';
+                        . ', ' . __('then', 'fluent-cart') . ' ' . Helper::toDecimal($variant->item_price)
+                        . '/' . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval')) . ' ' . __('thereafter', 'fluent-cart') . '.';
                 }
 
                 $upgradePaths[] = [
@@ -198,8 +203,11 @@ class PlanUpgradeService
 
     public static function calculateUpgradeToDiscount(Order $order, OrderItem $originalItem)
     {
-        // check for signup fee item
-        $totalPaid = $originalItem->line_total - $originalItem->refund_total;
+        // The prorate credit reflects what the customer actually PAID for the plan they
+        // are leaving — tax included — so it isn't undercredited by the tax they paid.
+        // For tax-exclusive lines the tax was added on top (add tax_amount); for inclusive
+        // lines it is already baked into line_total. Then prorated by days remaining below.
+        $totalPaid = self::itemUnrefundedPaidWithTax($originalItem);
 
         $additionalItemIds = Arr::get($originalItem->line_meta, 'additional_item_ids', []);
         if (!empty($additionalItemIds)) {
@@ -209,10 +217,16 @@ class PlanUpgradeService
 
             foreach ($additionalItems as $item) {
                 if (Arr::get($item->line_meta, 'parent_item_id', '') == $originalItem->id) {
-                    $totalPaid += $item->line_total - $item->refund_total;
+                    $totalPaid += self::itemUnrefundedPaidWithTax($item);
                 }
             }
         }
+
+        // Chained upgrade: post-tax adjustments don't reduce line totals, so on an order
+        // that itself came from an upgrade, line_total overstates what was paid by the
+        // gifted upgrade discount — remove it from the credit base. The previous prorate
+        // credit stays: it is money the customer actually paid on earlier plans.
+        $totalPaid -= (int) Arr::get($order->config, 'upgrade_discount', 0);
 
         if ($originalItem->payment_type === 'onetime') {
             return $totalPaid < 0 ? 0 : $totalPaid;
@@ -235,26 +249,46 @@ class PlanUpgradeService
 
         $daysRemaining = ceil((strtotime($subscription->next_billing_date) - time()) / 86400); // convert seconds to days
 
-        $maps = [
-            'monthly' => (int) gmdate('t'), // Get exact days in current month (handles leap year) to avoid false remaining days calculation
-            'yearly'  => 365,
-            'weekly'  => 7,
-            'daily'   => 1,
-        ];
+        $divider = PaymentHelper::getIntervalDays($subscription->billing_interval);
 
-        if (!isset($maps[$subscription->billing_interval])) {
-            return 0; // Invalid repeat interval
+        // 0 = interval neither core nor filter-resolved; no credit rather than the
+        // full paid amount the days-remaining cap would otherwise allow.
+        if ($divider < 1) {
+            return 0;
         }
-
-        $divider = $maps[$subscription->billing_interval];
 
         if ($daysRemaining > $divider) { // making sure we are not giving discount more than the actual amount
             $daysRemaining = $divider;
         }
 
-        $discountAmount = intval($totalPaid / $divider * $daysRemaining);
+        // Multiply before dividing and round (not truncate) so float imprecision can't
+        // shave a cent — e.g. 11900/365*365 = 11899.9999998 would truncate to 11899.
+        $discountAmount = (int) round($totalPaid * $daysRemaining / $divider);
 
         return $discountAmount < 0 ? 0 : $discountAmount;
+    }
+
+    /**
+     * Unrefunded amount the customer actually paid for an order item, tax included (cents).
+     *
+     * Exclusive tax was added on top of line_total, so it is added back here. Inclusive
+     * tax is already part of line_total and must not be double-counted.
+     *
+     * Refunds are allocated against line_total (see Order::updateRefundedItems), so the
+     * exclusive tax is scaled to the unrefunded fraction of the line — otherwise a
+     * refunded line would still contribute its tax_amount to the upgrade credit.
+     */
+    private static function itemUnrefundedPaidWithTax(OrderItem $item)
+    {
+        $lineTotal = (int) $item->line_total;
+        $unrefunded = max(0, $lineTotal - (int) $item->refund_total);
+        $inclusive = (bool) Arr::get($item->line_meta, 'tax_config.inclusive', false);
+
+        if ($inclusive || $lineTotal <= 0) {
+            return $unrefunded;
+        }
+
+        return $unrefunded + (int) round((int) $item->tax_amount * $unrefunded / $lineTotal);
     }
 
 

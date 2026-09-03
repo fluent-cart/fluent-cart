@@ -24,11 +24,14 @@ const customers = ref([]);
 const loadingUsers = ref(false);
 const showCreateCustomerForm = ref(false);
 const validationErrors = ref({});
+const localizedData = window.fluentCartAdminApp || {};
 
 const editableCustomer = ref({
   id: '',
   email: '',
   full_name: '',
+  first_name: '',
+  last_name: '',
   state: '',
   city: '',
   country: '',
@@ -67,13 +70,9 @@ const changeCustomer = () => {
         }, 300);
       })
       .catch((errors) => {
-        if (errors.message) {
-          return Notify.error(errors.message);
-        }
-        console.log('errors', errors);
+        Notify.error(errors.data?.message);
       })
       .finally(() => {
-        console.log('finally');
       });
 }
 
@@ -88,10 +87,12 @@ const createCustomer = () => {
         showCreateCustomerForm.value = false;
       })
       .catch((errors) => {
-        if (errors.message) {
-          return Notify.error(errors.message);
+        if (errors.status_code == '422') {
+          Notify.validationErrors(errors);
+          validationErrors.value = errors.data;
+        } else {
+          Notify.error(errors.data?.message);
         }
-        validationErrors.value = errors;
       })
       .finally(() => {
       });
@@ -156,13 +157,30 @@ const handleBack = () => {
     <template v-if="showCreateCustomerForm">
       <div class="fct-compact-form">
         <MaterialInput
-            :label="translate('Full Name')"
+            v-if="localizedData.is_full_name_required"
+            :label="translate('Full Name *')"
             v-model="editableCustomer.full_name"
+            :class="validationErrors['full_name'] ? 'is-error' : ''"
         />
 
+        <template v-else>
+          <MaterialInput
+              :label="translate('First Name *')"
+              v-model="editableCustomer.first_name"
+              :class="validationErrors['first_name'] ? 'is-error' : ''"
+          />
+
+          <MaterialInput
+              :label="translate('Last Name')"
+              v-model="editableCustomer.last_name"
+              :class="validationErrors['last_name'] ? 'is-error' : ''"
+          />
+        </template>
+
         <MaterialInput
-            :label="translate('Email')"
+            :label="translate('Email *')"
             v-model="editableCustomer.email"
+            :class="validationErrors['email'] ? 'is-error' : ''"
         />
       </div>
 

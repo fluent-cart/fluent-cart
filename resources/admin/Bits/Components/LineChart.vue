@@ -270,12 +270,14 @@ const handleThemeChange = () => {
 // Initialize chart on mount
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+  window.addEventListener("fluentCartCurrencyChange", updateChart);
 
   nextTick(initChart);
 });
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
 });
 </script>
 

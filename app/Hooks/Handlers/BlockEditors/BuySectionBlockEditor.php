@@ -69,6 +69,12 @@ class BuySectionBlockEditor extends BlockEditor
             return '';
         }
 
+        // The Buy Section renders the single-product purchase UI, including
+        // Pro's advanced-variation selector — fire the asset hook so Pro
+        // enqueues the selector CSS/JS (without it the selector is unstyled and
+        // its price/variant JS never wires up). Pro dedupes by enqueue handle.
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
+
         ob_start();
         (new ProductRenderer($product))->renderBuySection();
         return ob_get_clean();

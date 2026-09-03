@@ -3,6 +3,7 @@
 namespace FluentCart\App\Models;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Models\Concerns\CanSearch;
+use FluentCart\App\Models\Concerns\CanUpdateBatch;
 
 /**
  *  Attributes Group Model - DB Model for Attributes Group eg: color, size etc
@@ -15,7 +16,7 @@ use FluentCart\App\Models\Concerns\CanSearch;
  */
 class AttributeGroup extends Model
 {
-    use CanSearch;
+    use CanSearch, CanUpdateBatch;
 
     public static function boot()
     {
@@ -32,6 +33,15 @@ class AttributeGroup extends Model
         'slug',
         'description',
         'settings',
+        'serial',
+        // is_system intentionally NOT fillable — it's a trust flag that only the
+        // seeder sets (via bulk insert, which bypasses fillable). Keeping it out
+        // of mass-assignment means user-created groups stay is_system=0 even if
+        // a client sneaks the field into a request body.
+    ];
+
+    protected $casts = [
+        'is_system' => 'boolean',
     ];
 
     public function setSettingsAttribute($value)
@@ -57,7 +67,7 @@ class AttributeGroup extends Model
     /**
      * hasMany: Group has many Terms
      *
-     * @return \FluentCart\Framework\Database\Orm\Relations\hasMany
+     * @return \FluentCart\Framework\Database\Orm\Relations\HasMany
      */
     public function terms()
     {

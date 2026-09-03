@@ -1,7 +1,8 @@
 <script setup>
 import * as Card from '@/Bits/Components/Card/Card.js';
-import {onMounted} from "vue";
+import {onMounted, ref} from "vue";
 import StockAdjuster from '@/Modules/Products/parts/StockAdjuster.vue';
+import SkuInput from '@/Modules/Products/parts/SkuInput.vue';
 import Animation from "@/Bits/Components/Animation.vue";
 import translateNumber from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
@@ -16,11 +17,17 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 const showStockManagement = AppConfig.get('modules_settings.stock_management.active');
+const adjusters = ref([]);
+const truncatedMap = ref({});
+
+const trackTruncation = (el, key) => {
+  if (el) truncatedMap.value[key] = el.scrollWidth > el.clientWidth;
+};
+
 onMounted(() => {
-  props.product.variants.filter(variant => {
-    variant.new_stock = variant.total_stock
-    variant.adjusted_quantity = 0
-    return variant;
+  props.product.variants.forEach(variant => {
+    variant.new_stock = variant.total_stock;
+    variant.adjusted_quantity = 0;
   });
 })
 
@@ -63,11 +70,8 @@ const handleManageStockChange = (value) => {
   })
       .then(response => {
         Notify.success(response.message);
-        // update total_stock and available for all props.product.variants
         props.product.variants.forEach(variant => {
           variant.manage_stock = value;
-          variant.total_stock = 1;
-          variant.available = 1;
         });
       })
       .catch((errors) => {
@@ -95,23 +99,31 @@ const handleManageStockChange = (value) => {
         <Card.Body class="px-0 pb-0">
           <div class="fct-product-inventory-inner-wrap hide-on-mobile">
             <el-table :data="product.variants" :row-class-name="inventoryTableRowClass">
-              <el-table-column :label="translate('Title')" v-if="product.detail.variation_type === 'simple_variations'" width="140">
+              <el-table-column :label="translate('Title')" width="180">
                 <template #default="scope">
-                  <div class="relative">
-                    <el-input disabled size="small" v-model="scope.row.variation_title">
-                    </el-input>
+                  <div class="relative" :class="{ 'fct-inventory-title-cell--has-badge': scope.row.other_info?.payment_type === 'subscription' }">
+                    <el-tooltip
+                        :content="scope.row.variation_title"
+                        placement="top"
+                        :show-after="300"
+                        :disabled="!truncatedMap[`title_${scope.$index}`]"
+                    >
+                      <span
+                          class="fct-inventory-cell-text truncate block"
+                          :ref="el => trackTruncation(el, `title_${scope.$index}`)"
+                      >{{ scope.row.variation_title || '--' }}</span>
+                    </el-tooltip>
 
-                    <span v-if="scope.row.other_info?.payment_type === 'subscription'" class="fct-variant-badge absolute -top-2 right-1.5 bg-white border border-solid border-gray-outline text-primary-500 rounded-xs dark:bg-primary-700 dark:text-gray-50 dark:border-primary-500">
+                    <span v-if="scope.row.other_info?.payment_type === 'subscription'" class="fct-variant-badge fct-variant-badge--light">
                     {{scope.row.other_info.repeat_interval}}
                   </span>
                   </div>
                 </template>
               </el-table-column>
 
-              <el-table-column :label="translate('SKU')" width="140">
+              <el-table-column :label="translate('SKU')" width="220">
                 <template #default="scope">
-                  <el-input disabled size="small" v-model="scope.row.sku" :placeholder="translate('SKU')">
-                  </el-input>
+                  <SkuInput :variant="scope.row" :product-title="product.post_title" @saved="sku => scope.row.sku = sku" />
                 </template>
               </el-table-column>
 
@@ -128,7 +140,7 @@ const handleManageStockChange = (value) => {
                 </template>
               </el-table-column> -->
 
-              <el-table-column :label="translate('Total Stock')" width="160">
+              <el-table-column :label="translate('Total Stock')" width="120">
                 <template #default="scope">
                   <div>
                     <el-input
@@ -136,13 +148,16 @@ const handleManageStockChange = (value) => {
                         class="input-with-total-stock fct-input-group"
                         readonly
                         size="small"
+                        @click="adjusters[scope.$index]?.toggle()"
                     >
                       <template #append>
                         <StockAdjuster
+                          :ref="el => adjusters[scope.$index] = el"
                           :variant="scope.row"
                           :field-key="scope.$index"
                           :product-edit-model="productEditModel"
                           @save="saveStock(scope.$index)"
+                          @click.stop
                         />
                       </template>
                     </el-input>
@@ -152,19 +167,19 @@ const handleManageStockChange = (value) => {
 
               <el-table-column :label="translate('Available')" width="100">
                 <template #default="scope">
-                  <el-input disabled size="small" :placeholder="translateNumber(scope.row.available)"/>
+                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.available) }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column :label="translate('On hold')" width="100">
                 <template #default="scope">
-                  <el-input disabled size="small" :placeholder="translateNumber(scope.row.on_hold)"/>
+                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.on_hold) }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column :label="translate('Delivered')" width="100">
                 <template #default="scope">
-                  <el-input disabled size="small" :placeholder="translateNumber(scope.row.committed)"/>
+                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.committed) }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -175,14 +190,9 @@ const handleManageStockChange = (value) => {
           <!-- mobile view -->
           <div class="fct-product-inventory-inner-wrap-mobile">
             <div v-for="(row, rowIndex) in product.variants" :key="rowIndex" class="fct-product-inventory-mobile-row" :class="applyInventoryRowClass(row)">
-              <div
-                  class="fct-product-inventory-mobile-col"
-                  v-if="product.detail.variation_type === 'simple_variations'"
-              >
-                <div class="title">
-                  {{row.variation_title}}
-                  <div class="text-xs text-gray-500 mt-1" v-if="row.sku">SKU: {{ row.sku }}</div>
-                </div>
+              <div class="fct-product-inventory-mobile-col">
+                <div class="title">{{ row.variation_title || '--' }}</div>
+                <SkuInput :variant="row" :product-title="product.post_title" class="mt-1 mb-2" @saved="sku => row.sku = sku" />
               </div><!-- fct-product-inventory-mobile-col -->
 
               <div class="fct-product-inventory-mobile-col">
@@ -229,3 +239,5 @@ const handleManageStockChange = (value) => {
     </Card.Container>
   </div>
 </template>
+
+

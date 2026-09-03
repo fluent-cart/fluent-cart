@@ -1,11 +1,7 @@
 <?php
 
 namespace FluentCart\App\Services\Renderer;
-use FluentCart\Api\StoreSettings;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\Vite;
-use FluentCart\App\Helpers\Helper;
-use FluentCart\Api\Resource\ShopResource;
 
 class SearchBarRenderer
 {
@@ -24,6 +20,7 @@ class SearchBarRenderer
             'data-link-with-shop-app' => esc_attr(Arr::get($this->config, 'link_with_shop_app', false)),
             'data-fluent-cart-search-bar-app-wrapper' => '',
             'data-url-mode' => esc_attr(Arr::get($this->config, 'url_mode', '')),
+            'data-show-thumbnail' => esc_attr(Arr::get($this->config, 'show_thumbnail', true) ? 'true' : 'false'),
         ];
 
         ?>
@@ -151,10 +148,15 @@ class SearchBarRenderer
     public function renderResultItems($products = [])
     {
         $pageTarget = (Arr::get($this->config, 'url_mode', '') == 'new-tab') ? 'target="_blank"' : '';
+        $showThumbnail = Arr::get($this->config, 'show_thumbnail', true);
 
         foreach ($products as $product) {
             $productTitle = Arr::get($product, 'post_title', '');
             $productUrl = Arr::get($product, 'guid', '');
+            $thumbnail = $showThumbnail ? Arr::get($product, 'thumbnail', '') : '';
+            $minPrice = Arr::get($product, 'detail.formatted_min_price', '');
+            $maxPrice = Arr::get($product, 'detail.formatted_max_price', '');
+           
             $aria_label = sprintf(
                     /* translators: 1: Product title */
                     esc_attr__('View product: %1$s', 'fluent-cart'),
@@ -167,7 +169,27 @@ class SearchBarRenderer
                         <?php echo esc_html($pageTarget); ?>
                         aria-label="<?php echo esc_attr($aria_label); ?>"
                     >
-                        <?php echo esc_html($productTitle); ?>
+                        <div class="fct-search-result-info">
+                            <?php if ($thumbnail) : ?>
+                                <img
+                                    src="<?php echo esc_url($thumbnail); ?>"
+                                    alt="<?php echo esc_attr($productTitle); ?>"
+                                />
+                            <?php endif; ?>
+
+                            <span class="fct-search-result-title">
+                                <?php echo esc_html($productTitle); ?>
+                            </span>
+                        </div>
+
+                        <?php if ($minPrice) : ?>
+                            <span class="fct-search-result-price">
+                                <?php echo wp_kses_post($minPrice); ?>
+                                <?php if ($maxPrice && $maxPrice !== $minPrice) : ?>
+                                    - <?php echo wp_kses_post($maxPrice); ?>
+                                <?php endif; ?>
+                            </span>
+                        <?php endif; ?>
                     </a>
                 </li>
             <?php

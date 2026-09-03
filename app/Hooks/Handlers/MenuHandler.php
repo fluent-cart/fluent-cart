@@ -24,11 +24,19 @@ use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Services\Filter\TaxFilter;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Filter\LicenseFilter;
+use FluentCart\App\Services\Filter\LicenseSiteFilter;
 use FluentCart\App\Services\Filter\ProductFilter;
 use FluentCart\App\Services\Filter\CustomerFilter;
+use FluentCart\App\Services\Filter\CouponFilter;
+use FluentCart\App\Services\Filter\LogFilter;
+use FluentCart\App\Services\Filter\OrderBumpFilter;
+use FluentCart\App\Services\Filter\ReviewFilter;
+use FluentCart\App\Modules\Shipping\Services\Filter\ShippingClassFilter;
+use FluentCart\App\Modules\Shipping\Services\Filter\ShippingZoneFilter;
 use FluentCart\App\Modules\Integrations\AddOnModule;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Services\Permission\PermissionManager;
+use FluentCart\Database\DataBackfills;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 
 class MenuHandler
@@ -54,6 +62,12 @@ class MenuHandler
 
             }
         });
+
+        // Inline dark mode init script for all FluentCart admin pages (prevents flicker)
+        add_action('admin_head', [$this, 'outputFluentCartDarkModeScript']);
+
+        // Enqueue dark mode toggle JS for taxonomy pages
+        add_action('admin_head', [$this, 'enqueueDarkModeToggleForTaxonomy']);
 
         // Add a post display state for special WC pages.
         add_filter('display_post_states', array($this, 'addDisplayPostStates'), 10, 2);
@@ -105,6 +119,64 @@ class MenuHandler
 
         return $states;
 
+    }
+
+    public function outputFluentCartDarkModeScript()
+    {
+        global $pagenow;
+        $page     = $_GET['page'] ?? '';
+        $postType = $_GET['post_type'] ?? '';
+
+        // post.php?post=ID&action=edit omits post_type; resolve it from the post ID.
+        if ($pagenow === 'post.php' && empty($postType)) {
+            $postId   = (int) App::request()->get('post', 0);
+            $postType = $postId ? (string) get_post_type($postId) : '';
+        }
+
+        $isFluentCartPage  = $page === 'fluent-cart';
+        $isTaxonomyList    = $pagenow === 'edit-tags.php' && $postType === FluentProducts::CPT_NAME;
+        $isTermEditPage    = $pagenow === 'term.php' && $postType === FluentProducts::CPT_NAME;
+        $isProductEditPage = ($pagenow === 'post.php' || $pagenow === 'edit.php') && $postType === FluentProducts::CPT_NAME;
+
+        if (!$isFluentCartPage && !$isTaxonomyList && !$isTermEditPage && !$isProductEditPage) {
+            return;
+        }
+
+        // Runs synchronously in <head> before any paint — applies the dark class and
+        // data-fct-theme attribute to <html> so logos and the theme icon render correctly
+        // from the very first frame, with no light-to-dark flash.
+        echo '<script>' . $this->getDarkModeInitScript() . '</script>';
+    }
+
+    public function enqueueDarkModeToggleForTaxonomy()
+    {
+        global $pagenow;
+        $postType = $_GET['post_type'] ?? '';
+
+        $isTaxonomyList = $pagenow === 'edit-tags.php' && $postType === FluentProducts::CPT_NAME;
+        $isTermEditPage = $pagenow === 'term.php' && $postType === FluentProducts::CPT_NAME;
+
+        if ($isTaxonomyList || $isTermEditPage) {
+            Vite::enqueueScript(
+                'fluent_cart_dark_mode_toggle',
+                'admin/dark-mode-toggle.js',
+                [],
+                FLUENTCART_VERSION,
+                true
+            );
+        }
+    }
+
+    private function getDarkModeInitScript(): string
+    {
+        return "(function(){" .
+               "var k='fluent_theme_mode',c='fluent_theme_dark'," .
+               "s=localStorage.getItem(k)||localStorage.getItem('fcart_admin_theme')," .
+               "t=s==='dark'?'dark':s==='light'?'light':'system'," .
+               "d=s==='dark'||s==='system:dark'||((!s||s==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);" .
+               "document.documentElement.setAttribute('data-fct-theme',t);" .
+               "if(d)document.documentElement.classList.add(c);" .
+               "})();";
     }
 
     public function init()
@@ -349,6 +421,9 @@ class MenuHandler
 
     public function renderAdminMenu()
     {
+        if (!apply_filters('fluent_cart/show_admin_top_bar', true)) {
+            return;
+        }
         AdminHelper::getAdminMenu(true);
     }
 
@@ -371,10 +446,19 @@ class MenuHandler
         do_action('fluent_cart/loading_app', $app);
 
         //This should be done before enqueueing the global script.
-        Vite::enqueueScript($slug . '_admin_app_start', 'admin/bootstrap/app.js', [$slug . '_global_admin_hooks']);
+        // wp-i18n backs the admin translator (resources/admin/utils/translator/Translator.js).
+        Vite::enqueueScript($slug . '_admin_app_start', 'admin/bootstrap/app.js', [$slug . '_global_admin_hooks', 'wp-i18n']);
 
         //Don't register this script using vite.
-        wp_enqueue_script($slug . '_global_admin_hooks', Vite::getEnqueuePath('admin/admin_hooks.js'), [], FLUENTCART_VERSION, true);
+        if (!wp_script_is('wp-hooks', 'registered')) {
+            $suffix = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? '' : '.min';
+            wp_register_script('wp-hooks', includes_url('js/dist/hooks' . $suffix . '.js'),  ['wp-polyfill'],   FLUENTCART_VERSION, true);
+        }
+        if (!wp_script_is('wp-hooks', 'enqueued')) {
+            wp_enqueue_script('wp-hooks');
+        }
+
+        wp_enqueue_script($slug . '_global_admin_hooks', Vite::getEnqueuePath('admin/admin_hooks.js'), ['wp-hooks'], FLUENTCART_VERSION, true);
 
         $manager = GatewayManager::getInstance();
         $payment_routes = $manager->getRoutes();
@@ -385,13 +469,16 @@ class MenuHandler
         $settings = new StoreSettings();
         $checkoutUrl = add_query_arg(Helper::INSTANT_CHECKOUT_URL_PARAM, '=', $settings->getCheckoutPage());
         $restVars = Helper::getRestInfo();
+        $hasDataMigrations = current_user_can('manage_options') && DataBackfills::hasPending();
 
         $filterOptions = [
             'order_filter_options'    => OrderFilter::getTableFilterOptions(),
             'customer_filter_options' => CustomerFilter::getTableFilterOptions(),
             'product_filter_options'  => ProductFilter::getTableFilterOptions(),
-            'license_filter_options'  => LicenseFilter::getTableFilterOptions(),
-            'tax_filter_options'      => TaxFilter::getTableFilterOptions(),
+            'license_filter_options'      => LicenseFilter::getTableFilterOptions(),
+            'license_site_filter_options' => LicenseSiteFilter::getTableFilterOptions(),
+            'tax_filter_options'          => TaxFilter::getTableFilterOptions(),
+            'review_filter_options'       => ReviewFilter::getTableFilterOptions(),
         ];
         $filterOptions = apply_filters('fluent_cart/admin_filter_options', $filterOptions, []);
 
@@ -401,10 +488,32 @@ class MenuHandler
             'customers'           => ['filters' => Arr::get($filterOptions, 'customer_filter_options', [])],
             'product_table'       => ['filters' => Arr::get($filterOptions, 'product_filter_options', [])],
             'licenses'            => ['filters' => Arr::get($filterOptions, 'license_filter_options', [])],
+            'license_sites'       => ['filters' => Arr::get($filterOptions, 'license_site_filter_options', [])],
             'taxes_table'         => ['filters' => Arr::get($filterOptions, 'tax_filter_options', [])],
             'subscriptions'       => ['filters' => Arr::get($filterOptions, 'subscription_filter_options', [])],
             'shipping_zone_table' => ['filters' => Arr::get($filterOptions, 'shipping_zone_filter_options', [])],
+            'review_table'        => ['filters' => Arr::get($filterOptions, 'review_filter_options', [])],
+            // The Order Sources report filters orders, so its advanced-filter UI
+            // reuses the Orders filter vocabulary rather than defining its own.
+            'source_report'       => ['filters' => Arr::get($filterOptions, 'order_filter_options', [])],
         ];
+
+        // Tables that declare sort options on their filter class but carry no
+        // filter-options entry above: the Sort popover still needs them, and
+        // they are what `fluent_cart/{filterName}_table_sorts` feeds.
+        $sortOnlyTables = [
+            'coupon_table'         => CouponFilter::class,
+            'log_table'            => LogFilter::class,
+            'order_bump_table'     => OrderBumpFilter::class,
+            'shipping_class_table' => ShippingClassFilter::class,
+            'shipping_zone_table'  => ShippingZoneFilter::class,
+        ];
+
+        foreach ($sortOnlyTables as $tableName => $filterClass) {
+            if (empty($tableConfig[$tableName]['filters']['sorts'])) {
+                $tableConfig[$tableName]['filters']['sorts'] = call_user_func([$filterClass, 'getSortOptions']);
+            }
+        }
 
         $tableConfig = apply_filters('fluent_cart/admin_table_saved_views', $tableConfig, [
             'filterOptions' => $filterOptions
@@ -424,13 +533,14 @@ class MenuHandler
             'light' => Vite::getAssetUrl('images/logo/logo-full.svg'),
         ];
         $appConfig['isModuleTabEnabled'] = $settings->isModuleTabEnabled();
-        $appConfig['upgrade_url'] = 'https://fluentcart.com/pricing/';
+        $appConfig['upgrade_url'] = Helper::getUpgradeUrl();
 
         $max_upload_size = wp_max_upload_size(); // Returns size in bytes
         $adminLocalizeData = apply_filters('fluent_cart/admin_app_data', [
             'app_config'                       => $appConfig,
             'slug'                             => $app->config->get('app.slug'),
             'admin_url'                        => admin_url('admin.php?page=fluent-cart#/'),
+            'wp_admin_url'                     => rtrim(admin_url(), '/'),
             'frontend_url'                     => URL::getFrontEndUrl(''),
             'nonce'                            => wp_create_nonce($slug),
             'rest'                             => $restVars,
@@ -457,7 +567,7 @@ class MenuHandler
             'editable_order_statues'           => Status::getEditableOrderStatuses(),
             'editable_customer_statues'        => Status::getEditableCustomerStatuses(),
             'shipping_statuses'                => Status::getShippingStatuses(),
-            'allow_bulk_payment_status_change' => true,
+            // Attribute library powering the Advanced Variation feature.
             'variation_attributes'             => AttributeGroup::with(['terms'])->get(),
             'variation_terms'                  => AttributeTerm::query()->get()->keyBy('id'),
             'product_image_base_uri'           => Helper::getProductImageBaseUri(),
@@ -481,15 +591,32 @@ class MenuHandler
             'eu_vat_county_options'            => TaxModule::euVatCountyOptions(),
             'country_tax_titles'               => TaxModule::taxTitleLists(),
             'site_url'                         => site_url(),
+            'store_logo'                       => (new \FluentCart\Api\StoreSettings())->get('store_logo.url', ''),
             'modules_settings'                 => ModuleSettings::getAllSettings(),
             'purchase_fluent_cart_link'        => 'https://fluentcart.com/',
             'admin_notices'                    => apply_filters('fluent_cart/admin_notices', []),
+            // POSTs data-backfills/run until done; endpoint requires manage_options
+            'has_data_migrations'              => $hasDataMigrations,
             'subscription_intervals'           => Helper::getAvailableSubscriptionIntervalOptions(),
 
             'datei18'               => TransStrings::dateTimeStrings(),
             'el_strings'            => TransStrings::elStrings(),
             'wp_locale'             => get_locale(),
             'is_full_name_required' => CheckoutFieldsSchema::isFullNameRequired(),
+            'business_details'      => [
+                'company_name' => [
+                    'enabled'  => CheckoutFieldsSchema::isCompanyNameEnabled(),
+                    'required' => CheckoutFieldsSchema::isCompanyNameRequired(),
+                ],
+                'vat_number' => [
+                    'enabled'  => CheckoutFieldsSchema::isVatNumberEnabled(),
+                    'required' => CheckoutFieldsSchema::isVatNumberRequired(),
+                ],
+                'legal_registration_id' => [
+                    'enabled'  => CheckoutFieldsSchema::isLegalRegistrationIdEnabled(),
+                    'required' => CheckoutFieldsSchema::isLegalRegistrationIdRequired(),
+                ],
+            ],
             'fct_editor_frame'      => '',
         ]);
 

@@ -1,0 +1,9 @@
+{
+  "id": "WH-PHASE29-UNKNOWN-1",
+  "event_type": "CATALOG.PRODUCT.UPDATED",
+  "resource_type": "product",
+  "resource": {
+    "id": "PROD-PHASE29-UNKNOWN-1",
+    "name": "Ignored Phase 29 product"
+  }
+}

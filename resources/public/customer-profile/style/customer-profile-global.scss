@@ -56,7 +56,7 @@
 }
 .fct-customer-root-container {
   ul {
-    @apply list-none p-0 m-0;
+    @apply list-none p-0 m-0 leading-normal !important;
   }
   button:hover,
   button:focus,

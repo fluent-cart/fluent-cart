@@ -90,7 +90,7 @@
     @apply -mt-8.5;
   }
   .fct_admin_menu_row {
-    @apply py-2.5;
+    @apply py-2.5 px-2.5;
   }
 }
 
@@ -132,6 +132,9 @@
 }
 
 @media (max-width: 768px) {
+    #fct_admin_app_wrapper #fluent_cart_plugin_app {
+        @apply pl-7.5;
+    }
   .show-on-mobile {
     @apply block !important;
   }
@@ -736,7 +739,10 @@
 
   // inventory
   .fct-product-inventory-inner-wrap-mobile {
-    @apply block;
+    /* Cap the stacked variant rows so a product with many combinations
+       scrolls inside the card instead of running off-screen — mirrors
+       the desktop el-table max-height behaviour. */
+    @apply block max-h-[420px] overflow-y-auto;
   }
 
   .fct-product-inventory-mobile-row {

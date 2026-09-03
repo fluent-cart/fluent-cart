@@ -21,7 +21,7 @@
 
       <form class="fct-compact-form">
         <MaterialInput
-            v-for="(field, index) in formFields" :key="index"
+            v-for="(field, index) in primaryFormFields" :key="index"
             :required="field.required"
             :label="field.label"
             v-model="localAddressData[field.key]"
@@ -35,6 +35,22 @@
             v-model="localAddressData"
             :validationErrors="validationErrors"
         />
+
+        <div v-if="shouldShowBusinessDetailsSection" class="fct-customer-address-business-details">
+          <h3 class="fct-customer-address-business-details-title">
+            {{ translate('Business Details') }}
+          </h3>
+
+          <MaterialInput
+              v-for="(field, index) in businessDetailFields" :key="`business-${index}`"
+              :required="field.required"
+              :label="field.label"
+              v-model="localAddressData[field.key]"
+              :class="validationErrors[field.key] ? 'is-error' : ''"
+              :aria-invalid="!!validationErrors[field.key]"
+              :aria-describedby="validationErrors[field.key] ? `${field.key}-error` : null"
+          />
+        </div>
       </form><!-- .fct-compact-form -->
 
       <div id="addressFormDescId" class="sr-only">
@@ -76,6 +92,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Notify from "@/utils/Notify";
 export default {
   name: "AddressModal",
+  components: {DynamicIcon, AddressComponent, MaterialInput},
   props: [
     'modalAction',
     'newAddressData',
@@ -84,7 +101,6 @@ export default {
     'isEditAddress'
   ],
   emits: ['fetch'],
-  components: {DynamicIcon, AddressComponent, MaterialInput},
   data() {
     return {
       addressModalTitleId: 'address-modal-title',
@@ -97,6 +113,8 @@ export default {
         name: '',
         email: '',
         company_name: '',
+        vat_number: '',
+        legal_registration_id: '',
         phone: '',
         address_1: '',
         address_2: '',
@@ -133,11 +151,72 @@ export default {
           required: false
         },
         {
+          key: 'vat_number',
+          label: translate('VAT/GST/Tax Number'),
+          required: false
+        },
+        {
+          key: 'legal_registration_id',
+          label: translate('Legal Registration ID'),
+          required: false
+        },
+        {
           key: 'phone',
           label: translate('Phone'),
           required: false
         }
       ],
+    }
+  },
+  computed: {
+    profileVars() {
+      return window.fluentcart_customer_profile_vars || {};
+    },
+    normalizedFormFields() {
+      return this.formFields.filter((field) => {
+        if (field.key === 'company_name') {
+          return this.modalAction === 'billing' && this.profileVars?.is_company_name_enabled;
+        }
+
+        if (field.key === 'vat_number') {
+          return this.modalAction === 'billing' && this.profileVars?.is_vat_number_enabled;
+        }
+
+        if (field.key === 'legal_registration_id') {
+          return this.modalAction === 'billing' && this.profileVars?.is_legal_registration_id_enabled;
+        }
+
+        return true;
+      }).map((field) => {
+        const updatedField = {...field};
+
+        if (field.key === 'company_name') {
+          updatedField.required = !!this.profileVars?.is_company_name_required;
+        }
+
+        if (field.key === 'vat_number') {
+          updatedField.required = !!this.profileVars?.is_vat_number_required;
+        }
+
+        if (field.key === 'legal_registration_id') {
+          updatedField.required = !!this.profileVars?.is_legal_registration_id_required;
+        }
+
+        return updatedField;
+      });
+    },
+    primaryFormFields() {
+      return this.normalizedFormFields.filter((field) => {
+        return !['company_name', 'vat_number', 'legal_registration_id'].includes(field.key);
+      });
+    },
+    businessDetailFields() {
+      return this.normalizedFormFields.filter((field) => {
+        return ['company_name', 'vat_number', 'legal_registration_id'].includes(field.key);
+      });
+    },
+    shouldShowBusinessDetailsSection() {
+      return this.businessDetailFields.length > 0;
     }
   },
   watch: {
@@ -167,9 +246,23 @@ export default {
     translate,
     validateForm() {
       const errors = {};
-      Object.keys(this.formRules).forEach((key) => {
+      const formRules = {...this.formRules};
+
+      if (this.modalAction === 'billing' && this.profileVars?.is_company_name_enabled && this.profileVars?.is_company_name_required) {
+        formRules.company_name = [translate('Company Name is required.')];
+      }
+
+      if (this.modalAction === 'billing' && this.profileVars?.is_vat_number_enabled && this.profileVars?.is_vat_number_required) {
+        formRules.vat_number = [translate('VAT/GST/Tax Number is required.')];
+      }
+
+      if (this.modalAction === 'billing' && this.profileVars?.is_legal_registration_id_enabled && this.profileVars?.is_legal_registration_id_required) {
+        formRules.legal_registration_id = [translate('Legal Registration ID is required.')];
+      }
+
+      Object.keys(formRules).forEach((key) => {
         if (!this.localAddressData[key] || this.localAddressData[key].trim() === '') {
-          errors[key] = {required: this.formRules[key][0]};
+          errors[key] = {required: formRules[key][0]};
         }
       });
       this.validationErrors = errors;
@@ -197,7 +290,9 @@ export default {
           address_2: completeAddress.address_2,
           city: completeAddress.city,
           postcode: completeAddress.postcode,
-          company_name: completeAddress.company_name
+          company_name: completeAddress.company_name,
+          vat_number: completeAddress.vat_number,
+          legal_registration_id: completeAddress.legal_registration_id
         }).then(response => {
           Notify.success(response);
           this.closeModal();
@@ -237,7 +332,9 @@ export default {
           city: completeAddress.city,
           postcode: completeAddress.postcode,
           type: completeAddress.type,
-          company_name: completeAddress.company_name
+          company_name: completeAddress.company_name,
+          vat_number: completeAddress.vat_number,
+          legal_registration_id: completeAddress.legal_registration_id
         }).then(response => {
           Notify.success(response);
           this.closeModal();

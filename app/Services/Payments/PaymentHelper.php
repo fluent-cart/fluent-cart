@@ -5,6 +5,7 @@ namespace FluentCart\App\Services\Payments;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Support\Arr;
@@ -20,16 +21,32 @@ class PaymentHelper
 
     public function listenerUrl($args = [])
     {
-        $listener = '?fct_payment_listener=1&method=' . $this->slug;
-        $data = apply_filters_deprecated('fluent_cart_ipn_url_' . $this->slug, [
-            ['listener_url' => site_url($listener)]
-        ], '1.3.16', 'fluent_cart/ipn_url_' . $this->slug, 'Use fluent_cart/ipn_url_' . $this->slug . ' instead of fluent_cart_ipn_url_' . $this->slug . '.');
+        // Must match the WebRoutes dispatch contract: it reads $_REQUEST['fluent-cart']
+        // as the routed page and fires do_action('fluent_cart_action_' . $page), and
+        // GlobalPaymentHandler listens on 'fluent_cart_action_fct_payment_listener_ipn'.
+        $listener = '/?fluent-cart=fct_payment_listener_ipn&method=' . $this->slug;
+        $data = ['listener_url' => site_url($listener)];
 
         return apply_filters('fluent_cart/ipn_url_' . $this->slug, $data);
     }
 
-    public function successUrl($uuid, $args = null)
+    /**
+     * Build the filterable post-payment success URL.
+     *
+     * @param OrderTransaction|string $transaction Transaction model or its uuid
+     * @param array|null $args Extra query args merged into the URL
+     * @return string
+     */
+    public function successUrl($transaction, $args = null)
     {
+        if ($transaction instanceof OrderTransaction) {
+            $transactionModel = $transaction;
+            $uuid = $transaction->uuid;
+        } else {
+            $uuid = (string)$transaction;
+            $transactionModel = OrderTransaction::query()->where('uuid', $uuid)->first();
+        }
+
         $queryArgs = array_merge(
             array(
                 'method'       => $this->slug,
@@ -48,11 +65,11 @@ class PaymentHelper
         $context = [
             'transaction_hash' => $uuid,
             'args' => $args,
-            'payment_method' => $this->slug ?? ''
+            'payment_method' => $this->slug ?? '',
+            'transaction' => $transactionModel,
+            'order' => $transactionModel ? $transactionModel->order : null
         ];
-        $url = apply_filters_deprecated('fluentcart/payment/success_url', [add_query_arg($queryArgs, $receiptUrl), $context], '1.3.16', 'fluent_cart/payment/success_url', 'Use fluent_cart/payment/success_url instead of fluentcart/payment/success_url.');
-
-        return apply_filters('fluent_cart/payment/success_url', $url, $context);
+        return apply_filters('fluent_cart/payment/success_url', add_query_arg($queryArgs, $receiptUrl), $context);
     }
 
     public static function getCustomPaymentLink($orderHash): string
@@ -71,8 +88,10 @@ class PaymentHelper
     {
         $paymentMethod = Arr::get($orderData, 'others._fct_pay_method');
         $isZeroPayment = $cartCheckoutHelper->getItemsAmountTotal(false, false) + $extraCharge <= 0;
+        $zeroMethodForced = false;
         if ($isZeroPayment && $cartCheckoutHelper->getCart()->getEstimatedRecurringTotal() <= 0) {
             $paymentMethod = apply_filters('fluent_cart/default_payment_method_for_zero_payment', 'offline_payment', []);
+            $zeroMethodForced = true;
         }
 
         if (!GatewayManager::has($paymentMethod)) {
@@ -99,6 +118,31 @@ class PaymentHelper
                     'data'    => []
                 ], 423
             );
+        }
+
+        // The checkout gateway-visibility filters (manual-subscription admission,
+        // store-managed capability gate, renewal pre-due-date block, reactivation
+        // restriction) only hide gateways in the rendered UI. The POSTed method must
+        // pass the same gate, or a crafted request can start/convert a subscription
+        // through a gateway the store never offered. Only the forced-offline zero
+        // checkout (no recurring — the UI renders no method picker and the method is
+        // overridden above) is exempt; a zero-payable SUBSCRIPTION cart (free trial)
+        // keeps the customer-picked gateway and must pass the gate like any other.
+        $cart = $cartCheckoutHelper->getCart();
+        if ($cart && !$zeroMethodForced) {
+            $allowedGateways = apply_filters('fluent_cart/checkout_active_payment_methods', [$gateway], [
+                'cart' => $cart
+            ]);
+
+            if (!in_array($gateway, (array) $allowedGateways, true)) {
+                wp_send_json(
+                    [
+                        'status'  => 'failed',
+                        'message' => __('This payment method is not available for this order. Please choose another payment method!', 'fluent-cart'),
+                        'data'    => []
+                    ], 423
+                );
+            }
         }
 
         return $paymentMethod;
@@ -222,25 +266,35 @@ class PaymentHelper
     }
 
 
+    /**
+     * Days in one billing cycle. Returns 0 when the interval cannot be resolved —
+     * neither a core interval nor one a fluent_cart/subscription_interval_in_days
+     * callback resolved to a positive day count. Callers must treat < 1 as
+     * unresolvable, never as a one-day cycle.
+     */
     public static function getIntervalDays($interval = ''): int
     {
         if ($interval === 'yearly') {
             $days = 365;
         } elseif ($interval === 'monthly') {
-            $days = 30;
+            $days = (int) gmdate('t'); // exact days in current month (handles leap year) to avoid false remaining days calculation
         } elseif ($interval === 'weekly') {
             $days = 7;
         } elseif ($interval === 'quarterly') {
             $days = 90;
         } elseif ($interval === 'half_yearly') {
             $days = 182;
+        } elseif ($interval === 'daily') {
+            $days = 1;
         } else {
-            $days =  1;
+            $days = 0;
         }
 
-        return apply_filters('fluent_cart/subscription_interval_in_days', $days, [
+        $days = (int) apply_filters('fluent_cart/subscription_interval_in_days', $days, [
             'interval' => $interval
         ]);
+
+        return $days > 0 ? $days : 0;
     }
 
 }

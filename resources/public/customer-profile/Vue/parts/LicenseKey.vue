@@ -9,7 +9,7 @@
     <CopyToClipboard
         :text="license_key"
         :showMode="show_mode"
-        :tooltipText="tooltip_text"
+        :tooltipText="tooltip_text || translate('Copy License Key')"
         :button-text="translate('Copy')"
         :aria-label="translate('Copy license key to clipboard')"
         :aria-describedby="'license-key-value'"
@@ -18,16 +18,13 @@
 </template>
 
 <script>
-import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
-import Clipboard from "@/utils/Clipboard";
-import CopyToClipboard from "../../../../admin/Bits/Components/CopyToClipboard.vue";
+import CopyToClipboard from "./CopyToClipboard.vue";
 import translate from "../../translator/Translator";
 
 export default {
   name: 'LicenseKey',
-  methods: {
-    translate
+  components: {
+    CopyToClipboard,
   },
   props: {
     license_key: String,
@@ -37,21 +34,11 @@ export default {
     },
     tooltip_text: {
       type: String,
-      default: 'Copy License Key'
+      default: ''
     }
   },
-  components: {
-    CopyToClipboard,
-    IconButton,
-    DynamicIcon
-  },
-  computed: {
-    Clipboard() {
-      return Clipboard
-    },
-  },
-  data() {
-    return {}
+  methods: {
+    translate
   }
 }
 </script>

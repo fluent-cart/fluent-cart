@@ -12,12 +12,12 @@ class StockChanged extends EventDispatcher
     ];
 
     /**
-     * @var $postIds array
+     * @var array $postIds
      */
     public $postIds;
 
     /**
-     * @var $otherInfo array|null
+     * @var array|null $otherInfo
      */
     public ?array $otherInfo;
 

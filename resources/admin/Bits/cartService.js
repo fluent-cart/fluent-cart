@@ -19,7 +19,10 @@ export const recalculatePayout = ($orderObj, $hasCoupon, discountTotal = 0) => {
       }
       item.total = item.unit_price * item.quantity;
       let originalTotal = item.unit_price * item.quantity;
-      item.subtotal = originalTotal - item.cost;
+      // productService.js sets `cost` on simple-product rows but not on variation
+      // rows (they only carry `item_cost`), and `number - undefined` is NaN, which
+      // JSON-serializes as null and fails the coupon-apply validator server-side.
+      item.subtotal = originalTotal - (parseInt(item.cost) || 0);
 
       if ($orderObj.manual_discount_total > 0) {
         item.discount_total = item.discount_total;
@@ -36,7 +39,7 @@ export const recalculatePayout = ($orderObj, $hasCoupon, discountTotal = 0) => {
         item.discount_total = 0;
       }
 
-      item.line_total = originalTotal - item.discount_total + item.tax_amount
+      item.line_total = originalTotal - item.discount_total
       subTotal += originalTotal;
 
       if (

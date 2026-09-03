@@ -13,7 +13,6 @@
         @save="update"
         :loading="loading"
         :saveButtonText="translate('Update')"
-        :loadingText="translate('Updating')"
     >
     </SaveBar>
 
@@ -39,15 +38,27 @@
                     v-if="parentOrderId"
                     :to="{ name: 'view_order', params: {} }"
                 >
-                <a @click="getOrderUrl(parentOrderId)">
+                  <a @click="getOrderUrl(parentOrderId)">
                     #{{ parentOrderId }}
-                </a>
+                  </a>
                 </el-breadcrumb-item>
 
-                <el-breadcrumb-item> #{{ translateNumber(order_id) }}</el-breadcrumb-item>
+                <el-breadcrumb-item>
+                  <el-tooltip
+                      v-if="isOrderUuidTruncated"
+                      placement="top"
+                      popper-class="fct-tooltip fct-tooltip-long"
+                      :content="orderUuid"
+                  >
+                    <span>#{{ orderUuidDisplay }}</span>
+                  </el-tooltip>
+                  <span v-else-if="orderUuid">#{{ orderUuidDisplay }}</span>
+                  <span v-else>#{{ translateNumber(order_id) }}</span>
+                </el-breadcrumb-item>
               </el-breadcrumb>
               <div class="single-page-header-status-wrap">
                 <Badge :status="order.status"/>
+                <Badge v-if="order.is_b2b_order" type="blue" :text="translate('B2B')"/>
                 <OrderUpDownIndicator :order="order"/>
               </div>
             </div>
@@ -170,109 +181,119 @@
                         class="fct-ordered-product-list-wrapper"
                         v-if="order.order_items.length > 0"
                     >
-                      <div class="fct-media-content-list -mt-4">
+
+                      <table class="fct-media-content-list -mt-4 w-full">
+                        <tbody>
                         <template
                             v-for="(product, productIndex) in order.order_items"
                             :key="productIndex"
                         >
-                          <div
-                              class="fct-media-content-list-item px-0"
-                              v-if="
+
+                          <template v-if="
                               product.payment_type !== 'signup_fee' &&
                               product.payment_type !== 'fee' &&
                               product?.other_info?.item_status !== 'adjusted' &&
                               shouldSkipAdjustmentItem(product)
-                            "
-                          >
-                            <div class="product-thumbnail">
-                              <!-- External link -->
-                              <a
-                                v-if="product?.is_custom"
-                                :href="product?.other_info?.view_url"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="link"
-                              >
-                                <img
-                                    :src="
-                                    product.featured_media != null
-                                      ? product.featured_media
-                                      : getImageUrl(product)
-                                  "
-                                    :alt="product.title"
-                                    :class="getClass(product)"
-                                />
-                              </a>
-                              <!-- Internal route -->
-                              <router-link
-                                  v-else
-                                  class="link"
-                                  :to="{
-                                  name: 'product_edit',
-                                  params: { product_id: product?.post_id },
-                                }"
-                              >
-                                <img
-                                    :src="
-                                    product.featured_media != null
-                                      ? product.featured_media
-                                      : getImageUrl(product)
-                                  "
-                                    :alt="product.title"
-                                    :class="getClass(product)"
-                                />
-                              </router-link>
-                            </div>
-                            <!-- .product-thumbnail -->
-                            <div class="product-details">
-                              <div class="product-details-content-row">
-                                <div
-                                    class="product-details-content-first flex flex-col"
-                                >
-                                  <div class="product-title m-0">
-                                    <!-- External link -->
-                                    <a
+                            " >
+
+                            <tr class="align-top">
+                              <!--                            product image-->
+                              <td class="w-[64px] pr-3 align-top" :rowspan="getProductRowSpan(product)">
+                                <div class="product-thumbnail w-[46px] flex-shrink-0">
+                                  <!-- External link -->
+                                  <a
                                       v-if="product?.is_custom"
                                       :href="product?.other_info?.view_url"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       class="link"
-                                    >
-                                      {{ product?.post_title }}
-                                    </a>
-                                    <!-- Internal route -->
-                                    <router-link
-                                        v-else
-                                        class="link"
-                                        :to="{
+                                  >
+                                    <img
+                                        :src="product.featured_media != null ? product.featured_media : getImageUrl(product)"
+                                        :alt="product.title"
+                                        :class="getClass(product)"
+                                        class="h-full object-contain rounded"
+                                    />
+                                  </a>
+                                  <!-- Internal route -->
+                                  <router-link
+                                      v-else
+                                      class="link"
+                                      :to="{
+                                    name: 'product_edit',
+                                    params: { product_id: product?.post_id },
+                                  }"
+                                  >
+                                    <img
+                                        :src="product.featured_media != null ? product.featured_media : getImageUrl(product)"
+                                        :alt="product.title"
+                                        :class="getClass(product)"
+                                        class="h-full object-contain rounded"
+                                    />
+                                  </router-link>
+                                </div>
+                              </td>
+
+                              <!--                            product title-->
+                              <td class="">
+                                <div class="product-details-content-row">
+                                  <div
+                                      class="product-details-content-first flex flex-col"
+                                  >
+                                    <div class="product-title m-0">
+                                      <!-- External link -->
+                                      <a
+                                          v-if="product?.is_custom"
+                                          :href="product?.other_info?.view_url"
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          class="link"
+                                      >
+                                        {{ product?.post_title }}
+                                      </a>
+                                      <!-- Internal route -->
+                                      <router-link
+                                          v-else
+                                          class="link"
+                                          :to="{
                                         name: 'product_edit',
                                         params: {
                                           product_id: product?.post_id
                                         }
                                       }"
+                                      >
+                                        {{ product?.post_title }}
+                                      </router-link>
+                                    </div>
+
+                                    <div v-if="(product?.variation_display_title || product?.title) && product?.title !== product?.post_title"
+                                         class="product-variation-title m-0">
+                                      &#8211; {{ product?.variation_display_title || product?.title }}
+                                    </div>
+
+
+                                    <!-- Bundle Products -->
+                                    <BundleProducts v-if="product.bundle_items.length > 0" :product="product"/>
+
+                                    <!-- Subscription summary lines — single
+                                         render. The earlier template had two
+                                         product-subscription-info blocks
+                                         (sibling + nested), both gated on the
+                                         same condition, so payment_info was
+                                         emitted twice for every subscription
+                                         row. setup_info now gets its own
+                                         <div> so "Fee $2.00" doesn't fuse to
+                                         the trailing "...cancel" text. -->
+                                    <div
+                                        class="product-subscription-info"
+                                        v-if="product?.payment_type === 'subscription'"
                                     >
-                                      {{ product?.post_title }}
-                                    </router-link>
-                                  </div>
-
-                                  <div v-if="product?.title !== product?.post_title" class="product-variation-title m-0">
-                                    &#8211; {{ product?.title }}
-                                  </div>
-
-                                  <div
-                                      class="product-subscription-info"
-                                      v-if="
-                                      product?.payment_type === 'subscription'
-                                    "
-                                  >
-                                    <span v-html="product?.payment_info"></span>
-                                    <span
-                                        v-html="product?.setup_info"
-                                        v-if="
-                                        product?.other_info
-                                          ?.manage_setup_fee === 'yes'
-                                      "
-                                    ></span>
+                                      <div v-html="product?.payment_info"></div>
+                                      <div
+                                          v-html="product?.setup_info"
+                                          v-if="product?.other_info?.manage_setup_fee === 'yes'"
+                                      ></div>
+                                    </div>
                                   </div>
 
                                   <div
@@ -311,6 +332,29 @@
 
                                 </div>
 
+                                <div class="product-details-price-mobile">
+                                  <span
+                                      class="del"
+                                      v-if="product?.variants?.length > 0"
+                                  >{{ formatNumber(product.variants.compare_price) }}</span>
+                                  <span
+                                      v-if="product.line_meta && product.line_meta.original_unit_price"
+                                      class="del line-through opacity-60 text-xs mr-0.5"
+                                  >{{ formatNumber(product.line_meta.original_unit_price) }}</span>
+                                  <span>{{ formatNumber(product.unit_price) }}</span>
+                                  <span>×</span>
+                                  <span>{{ translateNumber(product.quantity) }}</span>
+                                  <template v-if="product?.other_info?.item_status !== 'adjusted'">
+                                    <span class="text-system-mid">·</span>
+                                    <span v-if="product.coupon_discount > 0" class="del">{{ formatNumber(product.subtotal) }}</span>
+                                    <span>{{ formatNumber(getItemDisplayLineTotal(product)) }}</span>
+                                  </template>
+                                </div>
+
+                              </td>
+
+                              <!--                            product base price & quantity-->
+                              <td class="fct-order-item-qty-col text-right whitespace-nowrap">
                                 <div
                                     class="product-details-content-second shrink-0 grow-0 basis-[90px]"
                                     v-if="!isEditingItem"
@@ -326,85 +370,153 @@
                                         )
                                       }}
                                     </span>
+                                    <span
+                                        v-if="product.line_meta && product.line_meta.original_unit_price"
+                                        class="del line-through opacity-60 text-xs mr-0.5"
+                                    >{{ formatNumber(product.line_meta.original_unit_price) }}</span>
                                     <span>{{
                                         formatNumber(product.unit_price)
                                       }}</span>
                                     <span>x</span>
                                     <span>{{ translateNumber(product.quantity) }}</span>
+                                    <el-tooltip
+                                        v-if="shouldShowUnitPriceRoundingTooltip(product)"
+                                        effect="dark"
+                                        :content="translate('Unit price is rounded for display. The line total is calculated at full precision.')"
+                                        placement="top"
+                                        popper-class="fct-tooltip"
+                                    >
+                                      <el-icon class="fct-unit-price-rounding-icon"><InfoFilled /></el-icon>
+                                    </el-tooltip>
                                   </div>
                                   <!-- .product-details-quantity -->
                                 </div>
+                              </td>
 
+                              <!--                            product price-->
+                              <td class="fct-order-item-price-col text-right whitespace-nowrap">
                                 <div
-                                    class="product-details-content-third shrink-0 grow-0 flex flex-row justify-end gap-2 basis-[100px]"
+                                    class="product-details-content-third shrink-0 grow-0 flex justify-end gap-1 basis-[100px]"
                                 >
-                                  <span
-                                      v-if="
-                                      product?.other_info?.item_status !==
-                                      'adjusted'
-                                    "
-                                  >
-                                    {{ formatNumber(product.line_total) }}
-                                  </span>
-
-                                  <div
-                                      v-if="
-                                      product.payment_type === 'subscription' &&
-                                      product?.other_info?.manage_setup_fee ===
-                                        'yes'
-                                    "
-                                  >
-                                    <span>+ </span>
-                                    <span
-                                        v-if="
-                                        product?.other_info
-                                          ?.setup_fee_per_item === 'yes'
-                                      "
+                                  <template v-if="product?.other_info?.item_status !== 'adjusted'">
+                                    <div
+                                        v-if="product.coupon_discount > 0"
+                                        class=" flex items-center"
                                     >
-                                      <span
-                                      >{{
-                                          formatNumber(
-                                              product.other_info.signup_fee *
-                                              product.quantity
-                                          )
-                                        }}
-                                      </span>
-                                    </span>
-                                    <span v-else>{{
-                                        formatNumber(
-                                            product.other_info.signup_fee
-                                        )
-                                      }}</span>
-                                  </div>
+                                      <span class="del line-through text-xs font-normal opacity-60 leading-tight">
+                                      {{ formatNumber(product.subtotal) }}
+                                    </span></div>
+                                    <span>{{ formatNumber(getItemDisplayLineTotal(product)) }}</span>
+                                  </template>
                                 </div>
-                              </div>
+                              </td>
 
-                              <div
-                                  class="product-details-action-row"
-                                  v-if="isEditingItem"
+                            </tr>
+
+                            <template v-if="taxSummary.displayMode !== 'simplified'">
+                              <template v-if="getItemTaxRates(product).length">
+                                <tr
+                                    v-for="(rate, idx) in getItemTaxRates(product)"
+                                    :key="'tax-rate-' + idx"
+                                    :class="product.line_meta && product.line_meta.tax_config && product.line_meta.tax_config.inclusive ? 'is-inclusive' : 'is-exclusive'"
+                                >
+                                  <td colspan="2" class="">
+                                    <span class="fct-tax-badge">{{ formatTaxRateBadge(rate) }}</span>
+                                  </td>
+                                  <td class="text-right">
+                                    <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!product.line_meta?.tax_config?.inclusive || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
+                                      <template v-if="product.line_meta && product.line_meta.tax_config && product.line_meta.tax_config.inclusive">{{ translate('incl.') }} </template>
+                                      <template v-else>+</template>
+                                      {{ formatNumber(rate.tax_amount) }}
+                                    </span>
+                                  </td>
+                                </tr>
+                              </template>
+                              <tr
+                                  v-else-if="product.tax_amount > 0"
+                                  class="text-xs text-system-mid dark:text-gray-300 opacity-70"
                               >
-                                <a
-                                    href="#"
-                                    @click.prevent="
-                                    handleAdjustQuantityModal(product)
-                                  "
+                                <td class="pb-2">
+                                  {{ translate('Tax') }}: {{ formatNumber(product.tax_amount) }}
+                                </td>
+                              </tr>
+                            </template>
+
+
+
+                            <!--                          setup fee row-->
+                            <tr v-if="product?.other_info?.manage_setup_fee === 'yes'">
+                              <td colspan="2" class="">
+                                <span class="text-xs text-system-mid dark:text-gray-300">
+                                  {{ product?.other_info.signup_fee_name }}
+                                </span>
+                              </td>
+                              <td class="text-right text-xs text-system-mid dark:text-gray-300 whitespace-nowrap">
+                                + {{ formatNumber(product?.other_info?.setup_fee_per_item === 'yes' ? product.other_info.signup_fee * product.quantity : product.other_info.signup_fee) }}
+                              </td>
+                            </tr>
+
+                            <template v-if="taxSummary.displayMode !== 'simplified'">
+                              <template v-if="getSubscriptionSetupFeeTaxRates(product).length">
+                                <tr
+                                    v-for="(rate, idx) in getSubscriptionSetupFeeTaxRates(product)"
+                                    :key="'setup-tax-rate-' + idx"
+                                    :class="isSubscriptionSetupFeeInclusive(product) ? 'is-inclusive' : 'is-exclusive'"
                                 >
-                                  {{ translate("Adjust Quantity") }}
-                                </a>
-                                <a
-                                    href="#"
-                                    @click.prevent="
-                                    deleteProduct(productIndex, product)
-                                  "
-                                >
-                                  {{ translate("Remove Item") }}
-                                </a>
-                              </div>
-                            </div>
-                            <!-- .product-details -->
-                          </div>
+                                  <td colspan="2" class="pb-2">
+                                    <span class="fct-tax-badge">{{ translate('Setup fee') }}: {{ formatTaxRateBadge(rate) }}</span>
+                                  </td>
+                                  <td class="text-right pb-2">
+                                    <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!isSubscriptionSetupFeeInclusive(product) || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
+                                      <template v-if="isSubscriptionSetupFeeInclusive(product)">{{ translate('incl.') }} </template>{{ formatNumber(rate.tax_amount) }}
+                                    </span>
+                                  </td>
+                                </tr>
+                              </template>
+                              <tr
+                                  v-else-if="product?.other_info?.signup_fee_tax > 0 && product?.other_info?.manage_setup_fee === 'yes'"
+                                  class="text-xs text-system-mid dark:text-gray-300 opacity-70"
+                              >
+                                <td class="pb-2">
+                                  {{ translate('Setup fee tax') }}: <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!isSubscriptionSetupFeeInclusive(product) || orderSettings?.reverse_charge_price_mode === 'dynamic')}">{{ formatNumber(product.other_info.signup_fee_tax) }}</span>
+                                </td>
+                              </tr>
+                            </template>
+
+                            <tr v-if="isEditingItem">
+                              <td colspan="3" >
+                                <div class="product-details-action-row">
+                                  <a
+                                      href="#"
+                                      @click.prevent="handleAdjustQuantityModal(product)"
+                                  >
+                                    {{ translate("Adjust Quantity") }}
+                                  </a>
+                                  <a
+                                      href="#"
+                                      @click.prevent="deleteProduct(productIndex, product)"
+                                  >
+                                    {{ translate("Remove Item") }}
+                                  </a>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr class="last:hidden">
+                              <td colspan="4" class="pt-1 ">
+                                <div class="bg-gray-divider dark:bg-dark-400 h-[1px] w-full  mb-1">
+
+                                </div>
+                              </td>
+                            </tr>
+
+                          </template>
+
                         </template>
-                      </div><!-- .fct-ordered-product-list -->
+
+                        </tbody>
+
+                      </table>
 
 
                     </div>
@@ -484,35 +596,50 @@
                       <td></td>
                       <td>- {{ formatNumber(order.coupon_discount_total) }}</td>
                     </tr>
-                    <tr v-if="order.tax_total">
-                      <td>
-                        {{ translate("Tax") }}
-                        {{
-                          parseInt(order.tax_behavior) == 2 ?
-                              translate('(Included)') : translate('(Excluded)')
-                        }}
+                    <tr v-if="isEditingItem">
+                      <td colspan="3" style="text-align:right; font-style:italic; opacity:0.65; font-size:0.85em;">
+                        {{ translate('Tax will be recalculated on save') }}
                       </td>
-                      <td></td>
-                      <td>{{ formatNumber(order.tax_total) }}</td>
                     </tr>
-                    <tr v-if="order.shipping_tax">
-                      <td>{{ translate("Shipping Tax") }}
-                        {{ parseInt(order.tax_behavior) == 2 ? translate('(Included)') : translate('(Excluded)') }}
+                    <tr v-else-if="taxSummary.payableTax > 0 || taxSummary.inclusiveTax > 0 || taxSummary.inclusiveFeeTax > 0 || taxSummary.taxRateLines.length || taxSummary.shippingTax > 0 || (order.is_reverse_charge_tax_order && taxSummary.reversedTaxTotal > 0) || (order.is_reverse_charge_tax_order && taxSummary.reversedShippingTax > 0)">
+                      <td colspan="3" class="fct-tax-summary-cell">
+                        <template v-if="taxSummary.displayMode === 'simplified' && taxSummary.simpleLine">
+                          <div class="fct-tax-simple-line" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                            <span style="display:flex;align-items:center;gap:6px;">
+                              <span>{{ taxSummary.simpleLine.label }}</span>
+                              <el-popover v-if="taxSummary.simpleLine.hasDetails" placement="bottom-start" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
+                                <template #reference>
+                                  <a href="javascript:void(0)" class="fct-tax-see-details">{{ translate('See details') }} &#9662;</a>
+                                </template>
+                                <TaxBreakdownBox
+                                    :tax-summary="taxSummary"
+                                    :order="order"
+                                    :tax-breakdown-should-show="taxBreakdownShouldShow"
+                                /><!-- /fct-tax-sum-box (popover) -->
+                              </el-popover>
+                            </span>
+                            <span>{{ taxSummary.simpleLine.value }}</span>
+                          </div>
+                        </template>
+                        <TaxBreakdownBox
+                            v-else
+                            :tax-summary="taxSummary"
+                            :order="order"
+                            :tax-breakdown-should-show="taxBreakdownShouldShow"
+                        />
                       </td>
-                      <td></td>
-                      <td>{{ formatNumber(order.shipping_tax) }}</td>
                     </tr>
                     <tr class="total-amount-tr">
                       <td>{{ translate("Total") }}</td>
                       <td></td>
                       <td>
-                        {{ formatNumber(order.total_amount) }}
+                        {{ formatNumber(order.total_amount - (taxSummary.rcTotalAdjustment || 0)) }}
                       </td>
                     </tr>
                     <tr class="payment-tr">
                       <td>{{ translate("Total Paid") }}</td>
                       <td></td>
-                      <td>{{ formatNumber(order?.total_paid) }}</td>
+                      <td>{{ formatNumber(order?.business_info?.net_total_paid ?? order?.total_paid) }}</td>
                     </tr>
                     <tr class="payment-tr" v-if="order?.total_refund > 0">
                       <td>{{ translate("Total Refund") }}</td>
@@ -521,7 +648,7 @@
                     </tr>
                     <tr
                         class="payment-tr"
-                        v-if="order.total_paid - order?.total_refund != 0"
+                        v-if="(order?.business_info?.net_total_paid ?? order.total_paid) - order?.total_refund != 0"
                     >
                       <td>{{ translate("Net Payment") }}</td>
                       <td></td>
@@ -553,7 +680,7 @@
                       </td>
                       <td></td>
                       <td class="font-semibold">
-                        {{ getTotalDue() }}
+                        {{ getDueRefund() }}
                       </td>
                     </tr>
                     </tbody>
@@ -563,8 +690,6 @@
 
               <Card.Container
                   v-if="order.transactions && order.transactions.length"
-                  v-loading="canceling_subscription"
-                  element-loading-text="Cancelling in progress..."
                   class="overflow-hidden"
               >
                 <Card.Header
@@ -610,7 +735,8 @@
                             {{ translate("Mark order as paid") }}
                           </el-dropdown-item>
 
-                          <el-dropdown-item v-if="canSendPaymentReminder" command="send-payment-reminder" :disabled="sendingPaymentReminder">
+                          <el-dropdown-item v-if="canSendPaymentReminder" command="send-payment-reminder"
+                                            :disabled="sendingPaymentReminder">
                             {{ translate("Send Payment Reminder") }}
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -625,12 +751,14 @@
                       @triggerRefundModal="triggerRefundModal"
                       :transactions="order.transactions"
                       :order_id="order.id"
+                      :order-currency="order.currency"
                   />
 
                   <TransactionMobile
                       @reload="reloadOrder()"
                       :transactions="order.transactions"
                       :order_id="order.id"
+                      :order-currency="order.currency"
                   />
                 </Card.Body>
               </Card.Container>
@@ -733,10 +861,7 @@
                     :key="subscription.id"
                     :subscription="subscription"
                     :order="order"
-                    :orderId="order_id"
                     :index="index"
-                    @fetchOrder="$emit('fetch')"
-                    @reload="reloadOrder()"
                     :getOrderUrl="getOrderUrl"
                 />
 
@@ -744,6 +869,7 @@
                     v-if="order.customer"
                     :order="order"
                     :shouldEnableEditing="true"
+                    @onOrderUpdated="onBusinessInfoOrderUpdated"
                 />
 
                 <notes
@@ -769,7 +895,6 @@
                     :order_operation="order?.order_operation"
                 />
 
-                <TaxInformationWidget :taxId="taxId"/>
 
               </div>
 
@@ -808,7 +933,7 @@
           >
             <div class="fct-adjust-quantity-modal-content">
               <div class="title">
-                Adjust the quantity for <strong>{{ adjustItem.title }}</strong>
+                Adjust the quantity for <strong>{{ adjustItem.variation_display_title || adjustItem.title }}</strong>
               </div>
               <div class="fct-form-group">
                 <label>{{ translate("Quantity") }}</label>
@@ -933,7 +1058,6 @@ import NotFound from "@/Pages/NotFound.vue";
 import SubscriptionPlan from "@/Modules/Subscriptions/SubscriptionPlan.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import {pluralizeTranslate} from "@/utils/translator/Translator";
-import TaxInformationWidget from "@/Modules/Orders/Components/TaxInformationWidget.vue";
 
 const productItemModal = ref();
 const fetchBySearch = () => productItemModal.value.fetchBySearch();
@@ -967,11 +1091,13 @@ import Arr from "@/utils/support/Arr";
 import Alert from "@/Bits/Components/Alert.vue";
 import Rest from "@/utils/http/Rest";
 import UtmDetails from "@/Modules/Orders/Components/UtmDetails.vue";
+import TaxBreakdownBox from "@/Modules/Orders/Components/TaxBreakdownBox.vue";
 import OrderUpDownIndicator from "@/Bits/Components/OrderUpDownIndicator.vue";
 import TransactionMobile from "./_TransactionMobile.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import {formatOrderItems} from "@/Bits/common";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 
 export default {
   name: "SingleOrder",
@@ -991,6 +1117,7 @@ export default {
     OrderCustomerInformation,
     ShippingComponent,
     UtmDetails,
+    TaxBreakdownBox,
     OrderUpDownIndicator,
     TransactionMobile,
     BundleProducts,
@@ -1014,11 +1141,6 @@ export default {
       loading: false,
       calculating: false,
       customModal: false,
-      canceling_subscription: false,
-      reactivate_subscription: false,
-      fetching_subscription: false,
-      pausing_subscription: false,
-      resuming_subscription: false,
       processing_refund: false,
       nextInvoiceModal: false,
       cartItems: {},
@@ -1074,7 +1196,6 @@ export default {
       sendingPaymentReminder: false,
       canSendPaymentReminderFlag: false,
       isMobile: window.innerWidth < 768,
-      taxId: 0
     };
   },
   watch: {
@@ -1094,21 +1215,29 @@ export default {
   },
   computed: {
     parentOrderId() {
-        if (!this.order || !this.order.parent_id) {
-         return null;
-        }
+      if (!this.order || !this.order.parent_id) {
+        return null;
+      }
 
-        return this.order.parent_id !== '0'
-            ? this.order.parent_id
-            : null;
+      return this.order.parent_id !== '0'
+          ? this.order.parent_id
+          : null;
+    },
+    orderUuid() {
+      return (this.order && this.order.uuid) ? this.order.uuid : '';
+    },
+    orderUuidDisplay() {
+      // New uuids are 12 chars; legacy md5 uuids are longer and get
+      // truncated to 12 chars with the full value shown on hover.
+      return this.orderUuid.length > 12
+          ? this.orderUuid.substring(0, 12)
+          : this.orderUuid;
+    },
+    isOrderUuidTruncated() {
+      return this.orderUuid.length > 12;
     },
     transactionType() {
-      // basically subscription item will be only item in an order if it is a subscription order
-      return this.order.order_items.some(
-          (item) => item.payment_type === "subscription"
-      )
-          ? "subscription"
-          : "charge";
+      return "charge";
     },
     placeholderImage() {
       return `${AppConfig.get('asset_url')}images/empty-image.svg`;
@@ -1119,6 +1248,63 @@ export default {
     feeItems() {
       if (!this.order || !this.order.order_items) return [];
       return this.order.order_items.filter(item => item.payment_type === 'fee');
+    },
+    taxSummary() {
+      const s = this.order.tax_summary || {};
+      return {
+        inclusiveTax:         s.inclusiveTax || 0,
+        exclusiveTax:         s.exclusiveTax || 0,
+        taxRateLines:         this.order.display_tax_lines || s.taxRateLines || [],
+        feeTaxLines:          s.feeTaxLines || [],
+        feeTaxLineRows:       s.feeTaxLineRows || [],
+        inclusiveFeeTax:      s.inclusiveFeeTax || 0,
+        shippingTax:          s.shippingTax || 0,
+        shippingTaxLines:     s.shippingTaxLines || [],
+        payableTax:           s.payableTax || 0,
+        totalOrderTax:        s.totalOrderTax || 0,
+        isShippingInclusive:  s.isShippingInclusive || false,
+        reversedTaxTotal:      s.reversedTaxTotal || 0,
+        reversedShippingTax:   s.reversedShippingTax || 0,
+        rcShippingAdjustment:  s.rcShippingAdjustment || 0,
+        rcTotalAdjustment:     s.rcTotalAdjustment || 0,
+        showRcShippingRow:     s.showRcShippingRow || false,
+        foldedRateLines:       s.foldedRateLines || [],
+        includedInPrices:      s.includedInPrices || 0,
+        displayMode:           s.displayMode || 'itemized',
+        simpleLine:            s.simpleLine || null,
+      };
+    },
+    taxBreakdownShouldShow() {
+      const s = this.taxSummary;
+      if (s.taxRateLines.length || s.shippingTaxLines.length) {
+        return true;
+      }
+      let count = 0;
+      if (s.taxRateLines.length) {
+        count += s.taxRateLines.length;
+      } else {
+        if (s.inclusiveTax > 0) count++;
+        if (s.exclusiveTax > 0) count++;
+      }
+      count += s.feeTaxLineRows.filter(function(r) { return r.tax_amount > 0; }).length;
+      if (s.shippingTax > 0) count++;
+      if (count >= 2) return true;
+      if (count === 0) return false;
+      return !(s.payableTax > 0 || s.inclusiveTax > 0 || s.inclusiveFeeTax > 0);
+    },
+    setupFeeSiblingMap() {
+      if (!this.order || !Array.isArray(this.order.order_items)) return {};
+      var map = {};
+      this.order.order_items.forEach(function(i) {
+        if (i.payment_type !== 'signup_fee') return;
+        if (i.line_meta && i.line_meta.parent_item_id) {
+          map[i.line_meta.parent_item_id] = i;
+        }
+        if (i.object_id && !map['obj_' + i.object_id]) {
+          map['obj_' + i.object_id] = i;
+        }
+      });
+      return map;
     },
   },
   methods: {
@@ -1137,7 +1323,7 @@ export default {
                   instance.confirmButtonLoading = true;
                   this.sendingPaymentReminder = true;
                   const response = await this.$post('email-notification/send-manual-reminder', {
-                    event: 'invoice_reminder_overdue',
+                    event: 'renewal_reminder_overdue',
                     entity_id: this.order.id
                   });
                   Notify.success(response.message || translate("Payment reminder sent successfully"));
@@ -1153,11 +1339,14 @@ export default {
           }
       );
     },
-    triggerChange(){
+    triggerChange() {
       this.changes_made = 1;
     },
     handleResize() {
       this.isMobile = window.innerWidth < 768;
+    },
+    formatNumber(amount, withCurrency = true, hideEmpty = false) {
+      return this.formatNumberForOrder(amount, this.order, withCurrency, hideEmpty);
     },
     getDueRefund() {
       return this.formatNumber(
@@ -1171,8 +1360,9 @@ export default {
       this.showRefundModal = true;
     },
     getNetPayment() {
+      const totalPaid = this.order?.business_info?.net_total_paid ?? this.order.total_paid;
       return this.formatNumber(
-          this.order.total_paid - this.order?.total_refund
+          totalPaid - this.order?.total_refund
       );
     },
     getTotalDue() {
@@ -1391,12 +1581,14 @@ export default {
       orderData['metaValue'] = this.$refs['dynamicTemplates']?.getFormStates() || {};
 
 
-      Rest.post("orders/" + this.order_id, {
+      const updatePayload = {
         ...orderData,
         deletedItems: this.deletedItems,
         discount: this.discount,
         shipping: this.shippingSettings,
-      })
+      };
+
+      Rest.post("orders/" + this.order_id, updatePayload)
           .then((response) => {
             Notify.success(response.message);
             this.fetch();
@@ -1424,6 +1616,9 @@ export default {
             this.appliedCoupons = this.coupons.map((obj) => obj.coupon_id);
             this.order = response.order;
             this.order.order_items = this.formatOrderItems(response.order.order_items);
+            if (response.checkout_shipping) {
+              this.order.checkout_shipping = response.checkout_shipping;
+            }
             this.canSendPaymentReminderFlag = !!response.can_send_payment_reminder;
 
             this.isSubscription =
@@ -1455,7 +1650,7 @@ export default {
               );
             }
 
-            this.orderSettings = response.orderSettings;
+            this.orderSettings = response.order_settings;
             this.widgets = response.widgets;
             this.selectedProducts = this.availableProducts = [];
             this.discount.value = response.discount_meta?.value || 0;
@@ -1466,9 +1661,10 @@ export default {
 
             if (response.shipping_meta && response.shipping_meta.type) {
               this.shippingSettings = response.shipping_meta;
+            } else if (response.checkout_shipping && response.checkout_shipping.method_id) {
+              this.shippingSettings = { id: response.checkout_shipping.method_id };
             }
 
-            this.taxId = response.tax_id;
 
             discountLabel(this.discount);
 
@@ -1489,6 +1685,7 @@ export default {
 
             this.resetUnsaved();
             this.renderActionables();
+            this.disableItemEditing();
 
             //This is important
             nextTick(() => {
@@ -1498,7 +1695,7 @@ export default {
           .catch((errors) => {
             if (errors.code === "fluent_cart_entity_not_found") {
               Notify.error(Arr.get(errors, "data.message") || translate("Order not found"));
-              this.$router.replace({ name: 'orders' });
+              this.$router.replace({name: 'orders'});
             } else {
               if (errors.status_code == '422') {
                 Notify.validationErrors(errors);
@@ -1526,8 +1723,10 @@ export default {
       this.appliedCoupons = appliedCoupons;
       this.hasCoupon = hasCoupon;
     },
-    updateShipping(shipping) {
-      this.shippingSettings = shipping;
+    updateShipping(orderItems, shippingTotal, shippingMethod) {
+      if (shippingMethod && shippingMethod.id) {
+        this.shippingSettings = shippingMethod;
+      }
       this.changes_made++;
     },
 
@@ -1619,6 +1818,111 @@ export default {
       });
     },
     formatOrderItems,
+    getProductRowSpan(product) {
+      var count = 1;
+
+      var itemTaxRates = this.getItemTaxRates(product);
+      if (itemTaxRates.length > 0) {
+        count += itemTaxRates.length;
+      } else if (product.tax_amount > 0) {
+        count += 1;
+      }
+
+      if (product.other_info && product.other_info.manage_setup_fee === 'yes') {
+        count += 1;
+      }
+
+      var setupFeeTaxRates = this.getSubscriptionSetupFeeTaxRates(product);
+      if (setupFeeTaxRates.length > 0) {
+        count += setupFeeTaxRates.length;
+      } else if (
+          product.other_info &&
+          product.other_info.signup_fee_tax > 0 &&
+          product.other_info.manage_setup_fee === 'yes'
+      ) {
+        count += 1;
+      }
+
+      if (this.isEditingItem) {
+        count += 1;
+      }
+
+      return count;
+    },
+    getItemTaxRates(product) {
+      var rates = product.line_meta && product.line_meta.tax_config
+          ? product.line_meta.tax_config.rates
+          : null;
+      if (!Array.isArray(rates)) return [];
+      return rates.filter(function (r) {
+        return r.tax_amount > 0;
+      });
+    },
+    getSetupFeeSibling(product) {
+      return this.setupFeeSiblingMap[product.id] || this.setupFeeSiblingMap['obj_' + product.object_id] || null;
+    },
+    getSubscriptionSetupFeeTaxRates(product) {
+      var sibling = this.getSetupFeeSibling(product);
+      if (!sibling) return [];
+      var rates = (sibling.line_meta && sibling.line_meta.tax_config && Array.isArray(sibling.line_meta.tax_config.rates))
+          ? sibling.line_meta.tax_config.rates
+          : (sibling.line_meta && Array.isArray(sibling.line_meta.rates) ? sibling.line_meta.rates : null);
+      if (!Array.isArray(rates)) return [];
+      return rates.filter(function (r) {
+        return r.tax_amount > 0;
+      });
+    },
+    isSubscriptionSetupFeeInclusive(product) {
+      var sibling = this.getSetupFeeSibling(product);
+      if (!sibling || !sibling.line_meta) return false;
+      var meta = (sibling.line_meta.tax_config && typeof sibling.line_meta.tax_config === 'object')
+          ? sibling.line_meta.tax_config
+          : sibling.line_meta;
+      return !!meta.inclusive;
+    },
+    getItemDisplayLineTotal(product) {
+      return Math.max(0, parseInt(product.line_total || 0));
+    },
+    shouldShowUnitPriceRoundingTooltip(product) {
+      var quantity = parseInt(product.quantity || 1);
+      var unitPrice = parseInt(product.unit_price || 0);
+      var lineTotal = parseInt(product.line_total || 0);
+      if (quantity < 2 || unitPrice <= 0 || lineTotal <= 0) {
+        return false;
+      }
+      var diff = Math.abs(unitPrice * quantity - lineTotal);
+      return diff > 0 && diff <= quantity;
+    },
+    formatTaxRateBadge(rate) {
+      return (rate.label || translate('Tax')) + ' (' + rate.rate_percent + '%)';
+    },
+    onBusinessInfoOrderUpdated(updatedOrder) {
+      if (!updatedOrder) return;
+      // Merge only the fields the server recomputes (business info save + address
+      // change → tax recalc). Covers the tax summary box, per-rate item pills, the
+      // order totals and the payment/due status (a recalc can flip paid →
+      // partially_paid), so the UI updates without a full page reload.
+      const merged = {
+        business_info: updatedOrder.business_info,
+        is_reverse_charge_tax_order: updatedOrder.is_reverse_charge_tax_order,
+        customer_tax_number: updatedOrder.customer_tax_number,
+        is_b2b_order: updatedOrder.is_b2b_order,
+        tax_total: updatedOrder.tax_total,
+        shipping_tax: updatedOrder.shipping_tax,
+        tax_behavior: updatedOrder.tax_behavior,
+        total_amount: updatedOrder.total_amount,
+        total_paid: updatedOrder.total_paid,
+        payment_status: updatedOrder.payment_status,
+        tax_summary: updatedOrder.tax_summary,
+        display_tax_lines: updatedOrder.display_tax_lines,
+        display_shipping_tax_lines: updatedOrder.display_shipping_tax_lines,
+      };
+      // Drop keys the server didn't send so we never overwrite live values with undefined.
+      Object.keys(merged).forEach((key) => {
+        if (merged[key] === undefined) delete merged[key];
+      });
+      this.order = Object.assign({}, this.order, merged);
+    },
   },
   mounted() {
     this.changeTitle("Order #" + this.order_id);

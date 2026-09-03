@@ -4,6 +4,7 @@ namespace FluentCart\App\Http\Controllers\Reports;
 
 use FluentCart\App\Services\Report\RetentionSnapshotService;
 use FluentCart\Framework\Http\Request\Request;
+use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Http\Controllers\Controller;
 
 class RetentionSnapshotController extends Controller
@@ -25,10 +26,10 @@ class RetentionSnapshotController extends Controller
             $result = $service->generate($productId, null);
 
             return [
-                'success' => $result['success'],
-                'message' => $result['message'],
-                'stats' => $result['stats'] ?? [],
-                'mode' => 'synchronous',
+                'success' => Arr::get($result, 'success'),
+                'message' => Arr::get($result, 'message'),
+                'stats'   => Arr::get($result, 'stats', []),
+                'mode'    => 'synchronous',
             ];
         }
 
@@ -53,7 +54,7 @@ class RetentionSnapshotController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Snapshot generation queued',
+            'message' => __('Snapshot generation queued', 'fluent-cart'),
             'job_id' => $trackingId,
             'mode' => 'background',
         ];
@@ -69,7 +70,7 @@ class RetentionSnapshotController extends Controller
         if (!$jobId) {
             return [
                 'success' => false,
-                'message' => 'Job ID required',
+                'message' => __('Job ID required', 'fluent-cart'),
             ];
         }
 
@@ -78,19 +79,24 @@ class RetentionSnapshotController extends Controller
         if (!$jobData) {
             return [
                 'success' => false,
-                'message' => 'Job not found',
+                'message' => __('Job not found', 'fluent-cart'),
                 'job_id' => $jobId,
             ];
         }
 
         // If job data shows completed or failed, return that status
-        if (isset($jobData['status']) && in_array($jobData['status'], ['completed', 'failed'])) {
+        $jobStatus = Arr::get($jobData, 'status');
+        if ($jobStatus && \in_array($jobStatus, ['completed', 'failed'])) {
             return [
                 'success' => true,
-                'status' => $jobData['status'],
-                'message' => $jobData['message'] ?? 'Job ' . $jobData['status'],
-                'stats' => $jobData['stats'] ?? [],
-                'data' => $jobData,
+                'status'  => $jobStatus,
+                'message' => Arr::get($jobData, 'message', \sprintf(
+                /* translators: %1$s: job status (completed or failed) */
+                    __('Job %1$s', 'fluent-cart'),
+                    $jobStatus
+                )),
+                'stats'   => Arr::get($jobData, 'stats', []),
+                'data'    => $jobData,
             ];
         }
 
@@ -98,7 +104,7 @@ class RetentionSnapshotController extends Controller
         return [
             'success' => true,
             'status' => 'running',
-            'message' => 'Job is still running',
+            'message' => __('Job is still running', 'fluent-cart'),
             'data' => $jobData,
         ];
     }

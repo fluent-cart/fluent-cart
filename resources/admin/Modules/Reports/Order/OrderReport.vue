@@ -100,7 +100,10 @@ const getData = (params) => {
   orderReport.getOrderChartData({
     params: {
       ...params.params,
-      groupKey: "",
+      // "" is not whitelisted server-side and used to be rewritten to
+      // 'payment_method', desyncing the zero-fill labels — request Auto
+      // explicitly so the selector's "Auto (…)" label stays honest.
+      groupKey: "default",
     },
   });
 

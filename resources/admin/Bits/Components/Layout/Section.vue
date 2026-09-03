@@ -4,7 +4,7 @@
         {'-mx-7.5': fullWidth}
   ]">
     <Heading v-if="title || slots.actions" :title="title">
-      <template v-slot:actions v-if="slots.actions">
+      <template #actions v-if="slots.actions">
         <slot name="actions"></slot>
       </template>
     </Heading>

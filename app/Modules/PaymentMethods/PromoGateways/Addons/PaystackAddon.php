@@ -17,7 +17,7 @@ class PaystackAddon extends AbstractPaymentGateway
 
     public function __construct()
     {
-        $settings = new AddonGatewaySettings('paystack');
+        $settings = new AddonGatewaySettings('paystack', 'fluent_cart_payment_settings_paystack');
         
         $settings->setCustomStyles([
             'light' => [

@@ -101,6 +101,14 @@
         />
       </template>
 
+      <template v-if="itemConfig.type === 'cascading_select'">
+        <CascadingSelect
+            :table="table"
+            :item-config="itemConfig"
+            v-model="item.value"
+        />
+      </template>
+
 
     </td>
 
@@ -122,19 +130,21 @@
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import RemoteTreeSelect from "@/Bits/Components/TableNew/Components/AdvancedFilter/FilterItems/RemoteTreeSelect.vue";
+import CascadingSelect from "@/Bits/Components/TableNew/Components/AdvancedFilter/FilterItems/CascadingSelect.vue";
 import Arr from "@/utils/support/Arr";
 import SelectItem from "@/Bits/Components/TableNew/Components/AdvancedFilter/FilterItems/SelectItem.vue";
 
 
 export default {
   name: "FilterItem",
-  props: ['item', 'filterLabels', 'table'],
   components: {
     SelectItem,
     RemoteTreeSelect,
+    CascadingSelect,
     DynamicIcon,
     IconButton
   },
+  props: ['item', 'filterLabels', 'table'],
   data() {
     return {}
   },
@@ -173,6 +183,13 @@ export default {
           days_within: this.$t('Within days')
         }
       };
+
+      if (inputType === 'cascading_select') {
+        return {
+          in: this.$t('Includes'),
+          not_in: this.$t('Excludes'),
+        };
+      }
 
       if (inputType === 'selections') {
         if (this.itemConfig.is_multiple) {
@@ -222,6 +239,16 @@ export default {
       return this.filterLabels[key] || {}
     }
   },
+  mounted() {
+    if (!this.item.operator) {
+      const objectKeys = Object.keys(this.operatorOptions);
+      if (objectKeys.length) {
+        this.item.operator = objectKeys[0];
+        jQuery(this.$el).find('.fct-filter-value input').focus();
+        jQuery(this.$el).find('.fct-filter-operator .el-select').trigger('click');
+      }
+    }
+  },
   methods: {
     removeItem() {
       this.$emit('removeItem');
@@ -244,16 +271,6 @@ export default {
       setTimeout(() => {
         this.table.applyAdvancedFilter();
       }, 200);
-    }
-  },
-  mounted() {
-    if (!this.item.operator) {
-      const objectKeys = Object.keys(this.operatorOptions);
-      if (objectKeys.length) {
-        this.item.operator = objectKeys[0];
-        jQuery(this.$el).find('.fct-filter-value input').focus();
-        jQuery(this.$el).find('.fct-filter-operator .el-select').trigger('click');
-      }
     }
   }
 }

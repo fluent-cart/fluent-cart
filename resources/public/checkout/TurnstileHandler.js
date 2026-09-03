@@ -7,14 +7,14 @@ class TurnstileHandler {
         this.checkoutHandler = checkoutHandler;
         this.pendingTokenPromise = null;
         this.pendingResolve = null;
-        this.isExecuting = false;
+        this.inVisibleMode = false;
+        this.visibleModeActive = false;
+        this.fadeTimer = null;
+        this.autoRetryCount = 0;
         this.setupGlobalCallback();
         this.autoRenderWidget();
     }
 
-    /**
-     * Setup global callback for Turnstile
-     */
     setupGlobalCallback() {
         window.fluentCartTurnstileHandlerInstance = this;
         window.fluentCartTurnstileCallback = function (token) {
@@ -22,16 +22,10 @@ class TurnstileHandler {
         };
     }
 
-    /**
-     * Check if Turnstile is enabled
-     */
     isEnabled() {
         return window.fluentcart_checkout_vars?.turnstile?.enabled;
     }
 
-    /**
-     * Auto-render Turnstile widget on page load
-     */
     autoRenderWidget() {
         if (!this.isEnabled()) {
             return;
@@ -44,40 +38,37 @@ class TurnstileHandler {
             return;
         }
 
-        // Check if module is enabled via attribute
-        const isActiveAttr = wrapper?.getAttribute('data-turnstile-active');
-
-        if (!this.isEnabled() && isActiveAttr !== 'yes') {
+        if (!this.isEnabled() && wrapper?.getAttribute('data-turnstile-active') !== 'yes') {
             return;
         }
 
-        // If Turnstile script isn't loaded yet, wait for it
         if (typeof turnstile === 'undefined') {
             let attempts = 0;
-            const maxAttempts = 50; // 5 seconds
             const interval = setInterval(() => {
                 attempts++;
                 if (typeof turnstile !== 'undefined') {
                     clearInterval(interval);
-                    this.renderWidget(widget);
-                } else if (attempts >= maxAttempts) {
+                    this.renderAndExecute(widget);
+                } else if (attempts >= 50) {
                     clearInterval(interval);
                 }
             }, 100);
             return;
         }
 
-        this.renderWidget(widget);
+        this.renderAndExecute(widget);
     }
 
     /**
-     * Render the Turnstile widget on a given element
-     * @param {HTMLElement} widget
+     * execution:'render' auto-fires immediately on render.
+     * appearance:'execute' makes the widget visible during the challenge.
+     * Chrome/good Safari: auto-verifies silently, widget disappears.
+     * Safari ITP: auto-verify fails, checkbox stays visible — user clicks it
+     * BEFORE touching any payment button. Pay click finds cached token = instant.
      */
-    renderWidget(widget) {
-        const widgetId = widget.getAttribute('data-widget-id');
-        if (widgetId) {
-            return; // Already rendered
+    renderAndExecute(widget) {
+        if (widget.getAttribute('data-widget-id')) {
+            return;
         }
 
         const siteKey = widget.getAttribute('data-sitekey') || window.fluentcart_checkout_vars?.turnstile?.site_key;
@@ -88,6 +79,7 @@ class TurnstileHandler {
         try {
             const renderedWidgetId = turnstile.render(widget, {
                 sitekey: siteKey,
+                execution: 'render',
                 callback: this.handleToken.bind(this),
                 'expired-callback': this.handleExpired.bind(this),
                 'error-callback': this.handleError.bind(this),
@@ -103,66 +95,148 @@ class TurnstileHandler {
         }
     }
 
-    /**
-     * Handle token expiry - clear cached token so next getToken() fetches fresh
-     */
     handleExpired() {
         window.fluentCartTurnstileToken = null;
     }
 
-    /**
-     * Handle Turnstile error - clear state so retry is possible
-     */
     handleError() {
         window.fluentCartTurnstileToken = null;
-        this.isExecuting = false;
-        this.resolvePendingToken(null);
+
+        // Cloudflare fires error-callback for transient issues too (network blips,
+        // challenge timeouts), not only hard failures. Chrome hits these but
+        // recovers on a silent retry — so don't reveal the manual checkbox on the
+        // first error. Retry auto-verify a couple of times; only Safari ITP (which
+        // never recovers) exhausts the retries and falls through to manual.
+        this.autoRetryCount++;
+        if (this.autoRetryCount <= 2) {
+            const widget = document.querySelector('[data-fluent-cart-turnstile-widget] .cf-turnstile');
+            const widgetId = widget && widget.getAttribute('data-widget-id');
+            if (widgetId && typeof turnstile !== 'undefined') {
+                // Defer out of the error-callback stack before resetting.
+                setTimeout(() => {
+                    try {
+                        turnstile.reset(widgetId);
+                    } catch (e) {
+                    }
+                }, 0);
+                return;
+            }
+        }
+
+        // Silent retries exhausted — genuine non-interactive failure. Reveal the
+        // manual checkbox. Deferred: rendering a fresh widget synchronously inside
+        // error-callback is unreliable (the new callback fails to attach).
+        setTimeout(() => this.switchToVisibleMode(), 0);
     }
 
     /**
-     * Reset Turnstile widget
-     * Clears the current token and resets the widget for next verification
+     * Re-render with appearance:'always' after auto-verify fails.
+     * The checkbox becomes visible; user clicks it; handleToken() resolves the pending promise.
      */
-    reset() {
-        if (!this.isEnabled() || typeof turnstile === 'undefined') {
+    switchToVisibleMode() {
+        if (this.visibleModeActive) {
+            return;
+        }
+        const wrapper = document.querySelector('[data-fluent-cart-turnstile-widget]');
+        if (!wrapper || typeof turnstile === 'undefined') {
             return;
         }
 
-        // Resolve any pending promise with null before clearing state
+        const old = wrapper.querySelector('.cf-turnstile');
+        const siteKey = (old && old.getAttribute('data-sitekey')) || window.fluentcart_checkout_vars?.turnstile?.site_key;
+        if (!siteKey) {
+            return;
+        }
+
+        this.inVisibleMode = true;
+        this.visibleModeActive = true;
+
+        // Destroy any existing widget completely and start from a clean element.
+        // Re-rendering onto a stale/errored element leaves the manual-verify
+        // callback unattached, so handleToken never fires and the widget never removes.
+        if (old) {
+            const oldId = old.getAttribute('data-widget-id');
+            try {
+                if (oldId) {
+                    turnstile.remove(oldId);
+                }
+            } catch (e) {
+            }
+            old.remove();
+        }
+
+        const widget = document.createElement('div');
+        widget.className = 'cf-turnstile';
+        widget.setAttribute('data-sitekey', siteKey);
+        wrapper.appendChild(widget);
+
+        wrapper.style.opacity = '1';
+        wrapper.style.transition = '';
+
+        try {
+            const newId = turnstile.render(widget, {
+                sitekey: siteKey,
+                execution: 'render',
+                callback: this.handleToken.bind(this),
+                'expired-callback': this.handleExpired.bind(this),
+                'error-callback': () => {}, // prevent infinite loop on repeated failures
+                size: 'flexible',
+                appearance: 'always',
+                theme: 'auto'
+            });
+            if (newId) {
+                widget.setAttribute('data-widget-id', newId);
+            }
+        } catch (e) {
+            this.visibleModeActive = false;
+        }
+    }
+
+    reset() {
+        if (!this.isEnabled()) {
+            return;
+        }
+
+        if (this.fadeTimer) {
+            clearTimeout(this.fadeTimer);
+            this.fadeTimer = null;
+            this.hideAndRemoveWidget();
+        }
+
         if (this.pendingResolve) {
             const resolve = this.pendingResolve;
             this.pendingResolve = null;
             this.pendingTokenPromise = null;
-            this.isExecuting = false;
             resolve(null);
         }
 
-        window.fluentCartTurnstileToken = null;
         this.pendingTokenPromise = null;
         this.pendingResolve = null;
-        this.isExecuting = false;
+        this.inVisibleMode = false;
+        this.visibleModeActive = false;
+        this.autoRetryCount = 0;
+        window.fluentCartTurnstileToken = null;
 
-        const widget = document.querySelector(
-            '[data-fluent-cart-turnstile-widget] .cf-turnstile'
-        );
-        if (!widget) return;
+        if (typeof turnstile === 'undefined') {
+            return;
+        }
+
+        const widget = document.querySelector('[data-fluent-cart-turnstile-widget] .cf-turnstile');
+        if (!widget) {
+            return;
+        }
 
         const widgetId = widget.getAttribute('data-widget-id');
-        if (!widgetId) return;
+        if (!widgetId) {
+            return;
+        }
 
         try {
             turnstile.reset(widgetId);
         } catch (e) {
-            console.error('Turnstile reset failed', e);
         }
     }
 
-
-    /**
-     * Handle security verification for checkout
-     * @param {FormData} formData - The form data to append token to
-     * @returns {Promise<boolean>}
-     */
     async handleCheckoutSecurityVerification(formData) {
         if (!this.isEnabled()) {
             return true;
@@ -173,12 +247,21 @@ class TurnstileHandler {
             if (this.checkoutHandler?.cleanupAfterProcessing) {
                 this.checkoutHandler.cleanupAfterProcessing();
             }
-            new Toastify({
-                text: this.checkoutHandler?.translate?.("Security check failed. Please refresh the page and try again.") || "Security check failed. Please refresh the page and try again.",
-                className: "warning",
-                duration: 3000
-            }).showToast();
-            this.reset();
+            if (this.inVisibleMode) {
+                new Toastify({
+                    text: this.checkoutHandler?.translate?.("Please complete the security verification above, then try again.") || "Please complete the security verification above, then try again.",
+                    className: "warning",
+                    duration: 4000
+                }).showToast();
+                // Do not reset — keep checkbox visible so user can click it
+            } else {
+                new Toastify({
+                    text: this.checkoutHandler?.translate?.("Security check failed. Please refresh the page and try again.") || "Security check failed. Please refresh the page and try again.",
+                    className: "warning",
+                    duration: 3000
+                }).showToast();
+                this.reset();
+            }
             return false;
         }
 
@@ -187,11 +270,6 @@ class TurnstileHandler {
     }
 
     /**
-     * Verify and append Turnstile token to form data
-     * @param {FormData} formData - The form data to append token to
-     * @param {Function} translate - Translation function
-     * @param {Function} cleanupCallback - Cleanup callback on error
-     * @returns {Promise<boolean>}
      * @deprecated Use handleCheckoutSecurityVerification instead
      */
     async verifyAndAppendToken(formData, translate, cleanupCallback) {
@@ -218,24 +296,47 @@ class TurnstileHandler {
     }
 
     /**
-     * Get Turnstile token
-     * @returns {Promise<string|null>}
+     * Get token. Calls execute() once — making the widget visible — then polls
+     * for the callback. On Chrome/good Safari, auto-verify completes quickly.
+     * On Safari with ITP, the now-visible widget shows a checkbox the user can click.
      */
     async getToken() {
         if (!this.isEnabled()) {
             return null;
         }
+
+        if (typeof turnstile === 'undefined') {
+            await new Promise((resolve) => {
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (typeof turnstile !== 'undefined' || attempts >= 100) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
         if (typeof turnstile === 'undefined') {
             return null;
         }
-        const widget = document.querySelector('[data-fluent-cart-turnstile-widget] .cf-turnstile');
-        if (!widget) {
+
+        if (window.fluentCartTurnstileToken) {
+            return window.fluentCartTurnstileToken;
+        }
+
+        const wrapper = document.querySelector('[data-fluent-cart-turnstile-widget]');
+        if (!wrapper) {
             return null;
         }
 
-        // Check for cached token - but only if it's still fresh
-        if (window.fluentCartTurnstileToken) {
-            return window.fluentCartTurnstileToken;
+        // Element may have been removed after previous verification — recreate it
+        let widget = wrapper.querySelector('.cf-turnstile');
+        if (!widget) {
+            widget = document.createElement('div');
+            widget.className = 'cf-turnstile';
+            wrapper.appendChild(widget);
         }
 
         let widgetId = widget.getAttribute('data-widget-id');
@@ -247,6 +348,7 @@ class TurnstileHandler {
             try {
                 widgetId = turnstile.render(widget, {
                     sitekey: siteKey,
+                    execution: 'render',
                     callback: this.handleToken.bind(this),
                     'expired-callback': this.handleExpired.bind(this),
                     'error-callback': this.handleError.bind(this),
@@ -268,7 +370,7 @@ class TurnstileHandler {
 
         this.pendingTokenPromise = new Promise((resolve) => {
             let attempts = 0;
-            const maxAttempts = 100; // 10 seconds for slow networks
+            const maxAttempts = 150; // 15 seconds — covers slow connections
             this.pendingResolve = resolve;
 
             const poll = () => {
@@ -276,15 +378,22 @@ class TurnstileHandler {
                     const token = window.fluentCartTurnstileToken;
                     this.pendingTokenPromise = null;
                     this.pendingResolve = null;
-                    this.isExecuting = false;
                     resolve(token);
+                    return;
+                }
+
+                // Auto-verify failed — show checkbox now that user is trying to pay
+                if (this.inVisibleMode) {
+                    this.switchToVisibleMode();
+                    this.pendingTokenPromise = null;
+                    this.pendingResolve = null;
+                    resolve(null);
                     return;
                 }
 
                 if (attempts >= maxAttempts) {
                     this.pendingTokenPromise = null;
                     this.pendingResolve = null;
-                    this.isExecuting = false;
                     resolve(null);
                     return;
                 }
@@ -292,32 +401,6 @@ class TurnstileHandler {
                 attempts++;
                 setTimeout(poll, 100);
             };
-
-            try {
-                if (!this.isExecuting) {
-                    this.isExecuting = true;
-                    let response = null;
-                    try {
-                        response = turnstile.getResponse(widgetId);
-                    } catch (error) {
-                        response = null;
-                    }
-
-                    if (response) {
-                        this.handleToken(response);
-                        return;
-                    }
-
-                    try {
-                        turnstile.reset(widgetId);
-                    } catch (error) {
-                        // ignore
-                    }
-                    turnstile.execute(widgetId);
-                }
-            } catch (error) {
-                this.isExecuting = false;
-            }
 
             poll();
         });
@@ -332,7 +415,6 @@ class TurnstileHandler {
         const resolve = this.pendingResolve;
         this.pendingResolve = null;
         this.pendingTokenPromise = null;
-        this.isExecuting = false;
         resolve(token);
     }
 
@@ -340,8 +422,56 @@ class TurnstileHandler {
         if (!token) {
             return;
         }
+        this.inVisibleMode = false;
+        this.visibleModeActive = false;
+        this.autoRetryCount = 0;
         window.fluentCartTurnstileToken = token;
         this.resolvePendingToken(token);
+
+        const wrapper = document.querySelector('[data-fluent-cart-turnstile-widget]');
+
+        // Verified (auto OR manual) — always remove from DOM so Cloudflare can't
+        // re-scan and re-verify (the reappear/loop). Decide the path by whether the
+        // widget is actually on-screen, NOT by visibleModeActive: on Safari the
+        // interaction-only widget shows its own checkbox without ever entering
+        // visible mode, so the flag would be false even though the user saw it.
+        const isOnScreen = wrapper && wrapper.offsetHeight > 0;
+        if (isOnScreen) {
+            // Visible widget — let user see "Success!" briefly, then smoothly
+            // fade + collapse height, then remove.
+            this.fadeTimer = setTimeout(() => {
+                wrapper.style.overflow = 'hidden';
+                wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+                // Force reflow so the max-height start value is committed before transitioning.
+                void wrapper.offsetHeight;
+                wrapper.style.transition = 'opacity 0.15s ease, max-height 0.15s ease, margin 0.15s ease';
+                wrapper.style.opacity = '0';
+                wrapper.style.maxHeight = '0px';
+                wrapper.style.marginTop = '0px';
+                wrapper.style.marginBottom = '0px';
+                this.fadeTimer = setTimeout(() => {
+                    this.fadeTimer = null;
+                    this.hideAndRemoveWidget();
+                }, 200);
+            }, 800);
+        } else {
+            // Invisible auto-verify — remove immediately, nothing to show.
+            this.hideAndRemoveWidget();
+        }
+    }
+
+    hideAndRemoveWidget() {
+        const widget = document.querySelector('[data-fluent-cart-turnstile-widget] .cf-turnstile');
+        if (!widget) {
+            return;
+        }
+        if (typeof turnstile !== 'undefined') {
+            const widgetId = widget.getAttribute('data-widget-id');
+            try { if (widgetId) turnstile.remove(widgetId); } catch (e) {}
+        }
+        // Remove element only — wrapper stays in normal flow (collapses to 0 height when empty).
+        // display:none blocks Cloudflare from initialising a fresh widget on next attempt.
+        widget.remove();
     }
 }
 

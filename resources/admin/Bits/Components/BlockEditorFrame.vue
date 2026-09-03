@@ -46,7 +46,6 @@ import EmailBodySkeleton from './EmailBodySkeleton.vue';
 export default {
   name: 'NewEditorFrame',
   components: { EmailBodySkeleton },
-  emits: ['update:modelValue', 'titleUpdated', 'contentUpdated', 'editorFullscreenToggle', 'featuredMediaUpdated', 'previewRequest', 'autosaveState'],
   props: {
     // Path to editor - can be relative or absolute
     editorPath: {
@@ -70,6 +69,7 @@ export default {
       default: ''
     }
   },
+  emits: ['update:modelValue', 'titleUpdated', 'contentUpdated', 'editorFullscreenToggle', 'featuredMediaUpdated', 'previewRequest', 'autosaveState'],
   data() {
     return {
       editorData: {
@@ -211,7 +211,6 @@ export default {
           }
         }, 5000);
       } catch (error) {
-        console.error('Error sending data to editor:', error);
         this.sendRetries++;
         if (this.sendRetries <= 3) {
           // Retry after a short delay

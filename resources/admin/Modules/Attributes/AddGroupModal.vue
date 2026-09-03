@@ -2,41 +2,48 @@
   <div class="fct-attr-group-modal">
     <el-form label-position='top' :data="group">
       <el-row :gutter="24">
-        <el-col :span="12">
-          <el-form-item :label="$t('Group Title')" required>
-              <el-input type="text" v-model="group.title" :placeholder="$t('Group Title')" @blur="handleSlug" size="large"/>
-              <template v-if="validationErrors['title']">
-                <span class="error" v-for="(error, index) in validationErrors['title']" :key="index">{{error}}</span>
-              </template>
-            </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item :label="$t('Group Slug')" required>
-              <el-input type="text" v-model="group.slug" :placeholder="$t('Unique Slug')" size="large"/>
-              <template v-if="validationErrors['slug']">
-                <span class="error" v-for="(error, index) in validationErrors['slug']" :key="index">{{error}}</span>
-              </template>
-            </el-form-item>
-        </el-col>
         <el-col :span="24">
-          <el-form-item :label="$t('Group Description')">
-            <el-input type="textarea" v-model="group.description" :placeholder="$t('Group Description...')" size="large"  :autosize="{ minRows: 8 }"/>
-            <template v-if="validationErrors['description']">
-              <span class="error" v-for="(error, index) in validationErrors['description']" :key="index">{{error}}</span>
-            </template>
+          <el-form-item :label="$t('Group Title')" required>
+            <el-input
+                ref="titleInputRef"
+                type="text"
+                v-model="group.title"
+                :placeholder="$t('Group Title')"
+                :class="validationErrors['title'] ? 'is-error' : ''"
+                @keyup="handleTitleKeyup"
+            />
+            <ValidationError :validation-errors="validationErrors" field-key="title"/>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="12">
+          <el-form-item :label="$t('Attribute Type')">
+            <el-select v-model="group.settings.type" style="width: 100%">
+              <el-option :label="$t('Options')" value="options"/>
+              <el-option :label="$t('Color')" value="color"/>
+              <el-option :label="$t('Image')" value="image"/>
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="12">
+          <el-form-item :label="$t('Styling')">
+            <el-select v-model="group.settings.styling" clearable style="width: 100%">
+              <el-option :label="$t('Dropdown')" value="dropdown"/>
+              <el-option :label="$t('Button')" value="button"/>
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
 
       <div class="dialog-footer">
-        <el-button 
-          :disabled="loading"
+        <el-button
+          :disabled="!group.title || loading"
           :loading="loading"
           @click="createGroup()"
           type="primary"
-          size="large"
         >
-          Add Group
+            {{ $t('Add Group')}}
         </el-button>
       </div>
     </el-form>
@@ -44,65 +51,70 @@
 </template>
 
 <script setup>
-import {reactive, ref, defineModel} from "vue";
-import Api from "@/utils/http/Rest";
-import {handleSuccess, handleError} from "@/Bits/common";
+import {reactive, ref} from "vue";
+import Rest from "@/utils/http/Rest";
+import {handleSuccess} from "@/Bits/common";
+import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
+import Notify from "@/utils/Notify";
 
 
 defineOptions({
   name: 'AddGroupModal'
 })
 
-// const count = defineModel<Number>('count')
-
-const emit = defineEmits('whenGroupCreateIsDone')
+const emit = defineEmits(['whenGroupCreateIsDone'])
 
 const loading = ref(false);
 
 const validationErrors = ref({});
 
+const titleInputRef = ref(null);
+
 const group = reactive({
   title: '',
-  slug: '',
-  description: '',
-  settings: ''
+  settings: { type: 'options', styling: 'button' }
 });
+
+// Exposed for the parent to call from el-dialog's @opened event. Focus
+// must wait until AFTER the dialog's open transition completes —
+// el-dialog traps focus during the transition, so onMounted / nextTick
+// focus calls get swallowed.
+const focusTitle = () => {
+  titleInputRef.value?.focus?.();
+};
+
+defineExpose({ focusTitle });
 
 const createGroup = () => {
   loading.value = true;
   validationErrors.value = {}
 
-  Api.post('options/attr/group/', {
-    ...group
+  Rest.post('options/attr/group/', {
+    title: group.title,
+    settings: group.settings,
   }).then(response => {
     handleSuccess(response.message);
-    emit('whenGroupCreateIsDone');
+    emit('whenGroupCreateIsDone', response.data);
   }).catch(errors => {
-    console.log(errors)
-    if(errors.message) {
-      return handleError(errors);
+    if (errors?.status_code == 422 && errors.data) {
+      validationErrors.value = errors.data;
+    } else {
+      Notify.error(errors?.data?.message || errors?.message);
     }
-    if (typeof errors === 'object') {
-      return validationErrors.value = errors
-    } 
   }).finally(() => {
     loading.value = false;
-
   });
 }
 
-
-
-const handleSlug = () => {
-  if (!group.slug && group.title) {
-    group.slug = slugify(group.title);
-  }
-}
-
-const slugify = (str) => str.trim()
-    .toLowerCase()
-    .replace(/ /g, '-')
-    .replace(/&/g, 'and')
-    .replace(/'/g, '_')
-
+// Keyboard submit shortcut — Enter inside the title input mirrors the
+// Add Group button. Inline key check instead of Vue's @keyup.enter
+// modifier; the modifier compiles to _withKeys() which fails to resolve
+// when el-input forwards keyboard events (Vue runtime error in this
+// Element Plus / Vue combination). Disabled-state guard mirrors the
+// button so an in-flight request can't be double-submitted.
+const handleTitleKeyup = (event) => {
+  if (event.key !== 'Enter') return;
+  if (loading.value || !group.title) return;
+  createGroup();
+};
 </script>

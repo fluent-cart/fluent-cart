@@ -36,7 +36,7 @@ const saveTicket = () => {
 </script>
 
 <template>
-  <el-button @click="showModal = true">New Ticket</el-button>
+  <el-button @click="showModal = true">{{ $t('New Ticket') }}</el-button>
 
   <el-dialog v-model="showModal" @closed="reset">
     <el-input v-model="form.title"/>

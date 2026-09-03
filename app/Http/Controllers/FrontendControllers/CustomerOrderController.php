@@ -19,12 +19,17 @@ use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductDownload;
+use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Models\ProductReview;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\FileSystem\FileManager;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Payments\PaymentHelper;
+use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Relations\HasMany;
 use FluentCart\Framework\Http\Request\Request;
@@ -62,9 +67,9 @@ class CustomerOrderController extends BaseFrontendController
         $search = $request->getSafe('search', 'sanitize_text_field');
 
         $orders = Order::query()
-            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'fee_total', 'uuid', 'type', 'status', 'created_at'])
+            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'fee_total', 'currency', 'uuid', 'type', 'status', 'created_at'])
             ->with(['order_items' => function ($query) {
-                $query->select('id', 'order_id', 'post_title', 'title', 'quantity', 'payment_type', 'line_meta');
+                $query->select('id', 'order_id', 'object_id', 'post_title', 'title', 'quantity', 'payment_type', 'line_meta', 'other_info');
             }])
             ->where('customer_id', $customer->id)
             ->where(function ($query) {
@@ -84,18 +89,20 @@ class CustomerOrderController extends BaseFrontendController
                 'created_at'     => DateTime::gmtToTimezone($order->created_at, Arr::get($order->config, 'user_tz', wp_timezone_string()))->format('Y-m-d H:i:s'),
                 'invoice_no'     => $order->invoice_no,
                 'total_amount'   => $order->total_amount,
+                'currency'       => $order->currency,
                 'uuid'           => $order->uuid,
                 'type'           => $order->type,
                 'status'         => $order->status,
                 'renewals_count' => $order->renewals_count,
                 'order_items'    => $order->order_items->map(function ($item) {
                     return [
-                        'id'           => $item->id,
-                        'post_title'   => $item->post_title,
-                        'title'        => $item->title,
-                        'quantity'     => $item->quantity,
-                        'payment_type' => $item->payment_type,
-                        'line_meta'    => [
+                        'id'                => $item->id,
+                        'post_title'        => $item->post_title,
+                        'title'             => $item->title,
+                        'variation_display_title'   => $item->variation_display_title,
+                        'quantity'          => $item->quantity,
+                        'payment_type'      => $item->payment_type,
+                        'line_meta'         => [
                             'bundle_parent_item_id' => Arr::get($item, 'line_meta.bundle_parent_item_id', null),
                         ]
                     ];
@@ -130,7 +137,7 @@ class CustomerOrderController extends BaseFrontendController
         $order = Order::query()
             ->where('uuid', $order_uuid)
             ->where('customer_id', $customer->id)
-            ->with(['customer', 'transactions', 'shipping_address', 'billing_address'])
+            ->with(['customer', 'transactions', 'shipping_address', 'billing_address', 'orderTaxRates.tax_rate'])
             ->with(['order_items' => function ($query) {
                 $query->with([
                     'variantImages',
@@ -166,9 +173,16 @@ class CustomerOrderController extends BaseFrontendController
         $orderItems = [];
         $variationIds = [];
         $productIds = [];
+
         foreach ($order->order_items as $item) {
             if ($item->payment_type === 'signup_fee') {
-                continue; // Skip signup fee items
+                $orderItems[] = [
+                    'id'           => $item->id,
+                    'payment_type' => $item->payment_type,
+                    'object_id'    => $item->object_id,
+                    'line_meta'    => $item->line_meta,
+                ];
+                continue;
             }
 
             // Fee items: include with minimal data for frontend display
@@ -197,7 +211,7 @@ class CustomerOrderController extends BaseFrontendController
             if ($item->payment_type == 'subscription' && $signupFee = Arr::get($item->other_info, 'signup_fee')) {
                 $metaLines[] = [
                     'label' => Arr::get($item->other_info, 'signup_fee_name', __('Signup Fee', 'fluent-cart')),
-                    'value' => Helper::toDecimal($signupFee, true, $order->currency)
+                    'value' => html_entity_decode(Helper::toDecimal($signupFee, true, $order->currency))
                 ];
                 $extraAmount = (int)$signupFee;
             }
@@ -207,6 +221,7 @@ class CustomerOrderController extends BaseFrontendController
                 'product_id'    => $item->post_id,
                 'post_title'    => $item->post_title,
                 'title'         => $item->title,
+                'variation_display_title' => $item->variation_display_title,
                 'quantity'      => $item->quantity,
                 'unit_price'    => $item->unit_price,
                 'subtotal'      => $item->subtotal,
@@ -218,12 +233,103 @@ class CustomerOrderController extends BaseFrontendController
                 'url'           => $item->is_custom 
                                     ? ($item->view_url ?? '') : ($item->product->view_url ?? ''),
                 'line_meta'     => $item->line_meta,
-                'id'            => $item->id
+                'id'            => $item->id,
+                'coupon_discount' => (int) $item->coupon_discount,
+                'discount_total'  => (int) $item->discount_total,
+                'line_total'      => (int) $item->line_total,
 
             ];
             $variationIds[] = $item->object_id;
             $productIds[] = $item->post_id;
         }
+
+        // Flag reviewable product items for the dashboard's Write a Review
+        // button: reviews enabled for the product, the configured permission
+        // mode allows this customer, and they have no existing review. Every
+        // predicate mirrors the canSubmitReview() write path (canonical
+        // duplicate set via Status::getReviewDuplicateStatuses(), buyer
+        // eligibility via the same any-status order condition as
+        // hasOrderedProduct(), batched) so the projection can never show a
+        // button whose submission gets rejected.
+        $reviewableMap = [];
+        $reviewProductIds = array_values(array_unique(array_filter($productIds)));
+        $reviewUserId = get_current_user_id();
+        if ($reviewUserId && $reviewProductIds) {
+            $reviewSettings = ProductReviewService::getReviewSettings();
+            if ($reviewSettings['reviews_enabled'] === 'yes') {
+                $disabledIds = [];
+                $details = ProductDetail::query()->whereIn('post_id', $reviewProductIds)->get();
+                foreach ($details as $detail) {
+                    $otherInfo = $detail->other_info;
+                    if (isset($otherInfo['reviews_enabled']) && $otherInfo['reviews_enabled'] === 'no') {
+                        $disabledIds[] = (int) $detail->post_id;
+                    }
+                }
+
+                $reviewedIds = [];
+                $existingReviews = ProductReview::query()
+                    ->where('user_id', $reviewUserId)
+                    ->whereIn('comment_post_ID', $reviewProductIds)
+                    ->whereIn('comment_approved', Status::getReviewDuplicateStatuses())
+                    ->get();
+                foreach ($existingReviews as $existingReview) {
+                    $reviewedIds[] = (int) $existingReview->post_id;
+                }
+
+                $permissionMode = $reviewSettings['review_permission_mode'] ?? Status::REVIEW_PERMISSION_VERIFIED_BUYERS;
+                $verifiedIds = [];
+                if ($permissionMode === Status::REVIEW_PERMISSION_VERIFIED_BUYERS) {
+                    $verifiedItems = OrderItem::query()
+                        ->whereIn('post_id', $reviewProductIds)
+                        ->whereHas('order', function ($q) use ($customer) {
+                            $q->where('customer_id', $customer->id);
+                        })
+                        ->get();
+                    foreach ($verifiedItems as $verifiedItem) {
+                        $verifiedIds[(int) $verifiedItem->post_id] = true;
+                    }
+                }
+
+                foreach ($reviewProductIds as $reviewProductId) {
+                    $reviewProductId = (int) $reviewProductId;
+                    $modeEligible = $permissionMode !== Status::REVIEW_PERMISSION_VERIFIED_BUYERS
+                        || !empty($verifiedIds[$reviewProductId]);
+                    $reviewableMap[$reviewProductId] = $modeEligible
+                        && !in_array($reviewProductId, $disabledIds, true)
+                        && !in_array($reviewProductId, $reviewedIds, true);
+                }
+            }
+        }
+
+        foreach ($orderItems as &$formattedItem) {
+            if (Arr::get($formattedItem, 'payment_type') !== 'fee' && !empty($formattedItem['product_id'])) {
+                $formattedItem['can_review'] = !empty($reviewableMap[(int) $formattedItem['product_id']]);
+            }
+        }
+        unset($formattedItem);
+
+        $upgradableVariationIds = [];
+        $isUpgradeEligibleOrder = in_array($order->payment_status, [
+            Status::PAYMENT_PAID,
+            Status::PAYMENT_PARTIALLY_PAID,
+            Status::PAYMENT_PARTIALLY_REFUNDED
+        ]);
+
+        if ($isUpgradeEligibleOrder && $variationIds) {
+            $upgradableVariationIds = Meta::query()
+                ->where('meta_key', 'variant_upgrade_path')
+                ->where('object_type', 'variant_upgrade')
+                ->whereIn('object_id', $variationIds)
+                ->pluck('object_id')
+                ->toArray();
+        }
+
+        foreach ($orderItems as &$orderItem) {
+            $orderItem['has_upgrade_paths'] = Arr::get($orderItem, 'payment_type') === 'onetime'
+                && !Arr::get($orderItem, 'line_meta.parent_item_id')
+                && in_array(Arr::get($orderItem, 'variation_id'), $upgradableVariationIds);
+        }
+        unset($orderItem);
 
         $formattedOrderData = [
             'fulfillment_type' => $order->fulfillment_type,
@@ -246,11 +352,19 @@ class CustomerOrderController extends BaseFrontendController
             'total_paid'            => $order->total_paid,
             'total_refund'          => $order->total_refund,
             'shipping_total'        => $order->shipping_total,
+            'shipping_method_title' => (string) Arr::get($order->config, 'shipping_method_title', ''),
             'coupon_discount_total' => $order->coupon_discount_total,
             'manual_discount_total' => $order->manual_discount_total,
+            'prorate_credit'        => (int) Arr::get($order->config, 'prorate_credit', 0),
             'tax_total'             => $order->tax_total,
             'tax_behavior'          => $order->tax_behavior,
             'shipping_tax'          => $order->shipping_tax,
+            'display_tax_lines'          => $order->getDisplayTaxLines(),
+            'display_shipping_tax_lines' => $order->getDisplayShippingTaxLines(),
+            'is_reverse_charge_tax_order' => $order->isReverseChargeTaxOrder(),
+            'reverse_charge_price_mode'   => $order->getOrderRcMode(),
+            'is_b2b_order'                => $order->isB2BOrder(),
+            'tax_summary'                => TaxSummaryHelper::computeTaxSummary($order),
             'payment_method'        => $order->payment_method,
             'custom_payment_link'   => $this->getCustomPaymentLink($order),
         ];
@@ -294,14 +408,22 @@ class CustomerOrderController extends BaseFrontendController
             ->whereIn('order_id', $orderIds)
             ->whereIn('status', [
                 Status::TRANSACTION_SUCCEEDED,
-                Status::TRANSACTION_REFUNDED
+                Status::TRANSACTION_REFUNDED,
+                Status::TRANSACTION_FAILED,
+                Status::TRANSACTION_PENDING,
             ])
             ->orderBy('id', 'DESC')
             ->with(['order'])
             ->get();
 
         $formattedOrderData['transactions'] = $transactions->map(function ($transaction) {
-            return OrderService::transformTransaction($transaction);
+            $transformedTransaction = OrderService::transformTransaction($transaction);
+            if ($transaction->status === Status::TRANSACTION_PENDING
+                && !empty($transformedTransaction['custom_checkout_url'])
+            ) {
+                $transformedTransaction['show_pay_now'] = true;
+            }
+            return $transformedTransaction;
         });
 
         $formattedOrderData = apply_filters('fluent_cart/customer/order_data', $formattedOrderData, [
@@ -377,6 +499,14 @@ class CustomerOrderController extends BaseFrontendController
         if (!intval($order->total_amount - $order->total_paid)) {
             return false;
         }
+
+        if ($order->parent_id) {
+            $subscription = Subscription::query()->where('parent_order_id', $order->parent_id)->first();
+            if ($subscription && $subscription->isSystem() && !SystemChargeService::isExhausted($subscription, $order)) {
+                return false;
+            }
+        }
+
         return PaymentHelper::getCustomPaymentLink($order->uuid);
     }
 

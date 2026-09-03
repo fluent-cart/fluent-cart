@@ -6,10 +6,9 @@ const SearchBarPreview = ({ attributes }) => {
   return (
     <div className="flex">
       {attributes && (
-        <div className="mr-4">
+        <div className="fct-searchbar-block-select-wrap">
           <select
             name="termId"
-            className="border border-gray-300 rounded-md text-lg bg-white"
           >
             <option selected disabled>
               {blocktranslate('Category')}

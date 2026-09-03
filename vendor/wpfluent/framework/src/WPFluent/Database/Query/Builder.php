@@ -1279,6 +1279,38 @@ class Builder
     }
 
     /**
+     * Add a phonetic "sounds like" (SOUNDEX) clause to the query.
+     *
+     * Matches values pronounced similarly, e.g. searching "heera" matches
+     * "hira"/"hera", "bol" matches "ball", "cloud" matches "claude".
+     *
+     * @param  \FluentCart\Framework\Database\Query\Expression|string  $column
+     * @param  string  $value
+     * @param  string  $boolean
+     * @return $this
+     */
+    public function whereSoundsLike($column, $value, $boolean = 'and')
+    {
+        return $this->whereRaw(
+            $this->grammar->compileSoundsLike($column),
+            [$this->grammar->prepareSoundsLikeBinding($value)],
+            $boolean
+        );
+    }
+
+    /**
+     * Add an "or" phonetic "sounds like" clause to the query.
+     *
+     * @param  \FluentCart\Framework\Database\Query\Expression|string  $column
+     * @param  string  $value
+     * @return $this
+     */
+    public function orWhereSoundsLike($column, $value)
+    {
+        return $this->whereSoundsLike($column, $value, 'or');
+    }
+
+    /**
      * Add a "where in" clause to the query.
      *
      * @param  string  $column
@@ -2349,6 +2381,48 @@ class Builder
     public function orWhereFullText($columns, $value, array $options = [])
     {
         return $this->whereFulltext($columns, $value, $options, 'or');
+    }
+
+    /**
+     * Add a full-text relevance score to the select clause.
+     *
+     * Compiles a "MATCH ... AGAINST" expression aliased as the given name so
+     * results can be ordered by how well they match. A flat list of columns
+     * produces a single composite match; an associative array of
+     * column => weight produces a weighted per-column sum, e.g.
+     * ['title' => 3, 'body' => 1].
+     *
+     * @param  string|array  $columns
+     * @param  string  $value
+     * @param  array  $options
+     * @param  string  $as
+     * @return $this
+     */
+    public function selectRelevance($columns, $value, array $options = [], $as = 'relevance')
+    {
+        [$sql, $bindings] = $this->grammar->compileRelevance(
+            (array) $columns, $options, $value
+        );
+
+        if (is_null($this->columns)) {
+            $this->select('*');
+        }
+
+        return $this->selectRaw($sql.' as '.$this->grammar->wrap($as), $bindings);
+    }
+
+    /**
+     * Order the query by a previously selected relevance score.
+     *
+     * @param  string  $direction
+     * @param  string  $as
+     * @return $this
+     */
+    public function orderByRelevance($direction = 'desc', $as = 'relevance')
+    {
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
+        return $this->orderByRaw($this->grammar->wrap($as).' '.$direction);
     }
 
     /**

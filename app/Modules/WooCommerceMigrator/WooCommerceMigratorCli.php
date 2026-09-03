@@ -39,7 +39,7 @@ class WooCommerceMigratorCli
     private function checkWooCommerceDependencies()
     {
         if (!class_exists('WooCommerce')) {
-            return new \WP_Error('wc_migrator_error', 'WooCommerce is not installed or activated.');
+            return new \WP_Error('wc_migrator_error', __('WooCommerce is not installed or activated.', 'fluent-cart'));
         }
         return true;
     }

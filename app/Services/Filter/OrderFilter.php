@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Filter;
 
+use Closure;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
@@ -67,7 +68,9 @@ class OrderFilter extends BaseFilter
             'refunded'           => 'payment_status',
             'partially_refunded' => 'payment_status',
             'upgraded_to'        => 'upgraded_to',
-            'upgraded_from'      => 'upgraded_from'
+            'upgraded_from'      => 'upgraded_from',
+            'b2b_purchase'       => 'b2b_purchase',
+            'reverse_charge'     => 'reverse_charge',
         ];
     }
 
@@ -81,6 +84,154 @@ class OrderFilter extends BaseFilter
         return 'orders';
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'id'             => ['label' => __('Order ID', 'fluent-cart'), 'column' => 'id'],
+            'total_amount'   => ['label' => __('Total', 'fluent-cart'), 'column' => 'total_amount'],
+            'payment_status' => ['label' => __('Payment Status', 'fluent-cart'), 'column' => 'payment_status'],
+            'status'         => ['label' => __('Order Status', 'fluent-cart'), 'column' => 'status'],
+        ];
+    }
+
+    /**
+     * Two tiers of key, and they answer two different questions.
+     *
+     * SCREEN keys — one per calling screen, loading exactly what that screen
+     * renders. This filter serves TWO routes with different permission
+     * baselines: `GET /orders` (`orders/view`) and `GET /customers/{id}/orders`
+     * (`customers/view`). A screen key can be re-scoped for its own screen
+     * without widening anybody else's payload, and each relation is gated
+     * INSIDE the callback rather than inheriting the route's bar.
+     *
+     * PUBLIC keys — the plain relation names an external consumer can
+     * reasonably ask an order endpoint for. `GET /orders` is a REST route with
+     * consumers outside this repo, and `with[]=customer` has always meant "give
+     * me the customer". These are first-class entry points, not aliases of the
+     * screen keys: renaming them would have silently narrowed a published
+     * response shape for everyone who was already sending them.
+     *
+     * Deliberately NOT allowlisted, at any depth: `transactions` (gateway ids,
+     * card metadata), `licenses` (`license_key` serializes verbatim),
+     * `customer.wpUser` (reaches the WordPress users row).
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [
+            'admin_order_list'      => [$this, 'adminOrderList'],
+            'admin_customer_orders' => [$this, 'adminCustomerOrders'],
+
+            'order_items'                      => [$this, 'publicOrderItems'],
+            'customer'                         => [$this, 'publicCustomer'],
+            'customer.primary_billing_address' => [$this, 'publicCustomer'],
+        ];
+    }
+
+    /**
+     * `GET /orders`, sent by OrderTable.js — the line items under each row plus
+     * the customer popover.
+     *
+     * No select on any segment: OrderItem::$appends is `payment_info`,
+     * `setup_info`, `is_custom` and `variation_display_title`, which read
+     * `other_info` and walk the row's subscription data; Customer::$appends
+     * (`full_name`, `photo`, `country_name`, `formatted_address`, `user_link`)
+     * reads first_name, last_name, country, state, city, postcode and user_id;
+     * and CustomerInfoPopover.vue renders `purchase_count` plus
+     * `primary_billing_address.phone`. Narrowing the columns blanks all of that.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function adminOrderList($query)
+    {
+        // Line items belong to the order the route already authorised on
+        // `orders/view`, so they need no second bar of their own.
+        $query->with(['order_items']);
+
+        // A customer row is customer data even when it is reached from an
+        // order, so this half carries the customers bar rather than the orders
+        // one. The billing address rides in the SAME `with()` call as its
+        // parent: each call array_merges into $eagerLoad, so a second call
+        // naming `customer.x` would inject an empty closure over `customer`.
+        if ($this->userCanAny('customers/view')) {
+            $query->with([
+                'customer',
+                'customer.primary_billing_address',
+            ]);
+        }
+
+        return $query;
+    }
+
+    /**
+     * `GET /customers/{id}/orders`, sent by SingleCustomer.vue — the order
+     * history on a customer's detail screen. The screen renders the line items
+     * and nothing else; the customer is already the page.
+     *
+     * No extra permission check, and that is the decision rather than an
+     * oversight: the route is gated on `customers/view` alone and the line
+     * items carry no bar of their own today. Adding `orders/view` here would
+     * silently strip the history for a role that holds `customers/view` and
+     * nothing else. If the line items ever need `orders/view`, that is a
+     * deliberate behaviour change and this screen has to be re-tested with a
+     * customers-only role.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function adminCustomerOrders($query)
+    {
+        return $query->with(['order_items']);
+    }
+
+    /**
+     * `with[]=order_items` — a public entry point.
+     *
+     * UNGATED, deliberately. It was ungated before this allow-list existed, and
+     * the line items are the order the route already authorised. Adding a bar
+     * now would be a silent tightening hiding under a name consumers already
+     * send, which is exactly the failure mode the public tier exists to avoid.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function publicOrderItems($query)
+    {
+        return $query->with(['order_items']);
+    }
+
+    /**
+     * `with[]=customer` and `with[]=customer.primary_billing_address` — both
+     * public entry points, both served here.
+     *
+     * One callback for the two keys because the nested path can never be
+     * allowed to reach the parent row without the parent's gate: `with('a.b')`
+     * auto-injects `a`, so a separate ungated entry for the dotted path would
+     * be a way around the check below. Loading the whole subtree from one
+     * `with()` call closes that and the clobbering problem at once.
+     *
+     * Gated: the orders route's `orders/view` says nothing about customers.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return bool|\FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function publicCustomer($query)
+    {
+        if (!$this->userCanAny('customers/view')) {
+            return false;
+        }
+
+        return $query->with([
+            'customer',
+            'customer.primary_billing_address',
+        ]);
+    }
+
     public static function parseableKeys(): array
     {
         return array_merge(
@@ -89,6 +240,14 @@ class OrderFilter extends BaseFilter
         );
     }
 
+
+    public static function b2bMetaCondition(): Closure
+    {
+        return function ($q) {
+            $q->where('meta_key', 'business_info')
+              ->whereRaw("(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(meta_value, '$.company_name')), '') IS NOT NULL OR NULLIF(JSON_UNQUOTE(JSON_EXTRACT(meta_value, '$.legal_registration_id')), '') IS NOT NULL OR NULLIF(JSON_UNQUOTE(JSON_EXTRACT(meta_value, '$.tax_number')), '') IS NOT NULL)");
+        };
+    }
 
     public function applyActiveViewFilter(?string $activeView = null): void
     {
@@ -106,6 +265,12 @@ class OrderFilter extends BaseFilter
                 return $query
                     ->whereRaw("JSON_EXTRACT(config, '$.upgraded_from') IS NOT NULL")
                     ->whereRaw("JSON_EXTRACT(config, '$.upgraded_from') != 0");
+            } else if ($activeView === 'b2b_purchase') {
+                return $query->whereHas('orderMeta', static::b2bMetaCondition());
+            } else if ($activeView === 'reverse_charge') {
+                return $query->whereHas('orderTaxRates', function ($q) {
+                    $q->whereRaw("JSON_EXTRACT(meta, '$.reverse_charge_applied') = true");
+                });
             } else {
                 return $query->where(
                     $tabsMap[$activeView],
@@ -490,6 +655,60 @@ class OrderFilter extends BaseFilter
 
             'children' => $utmChildren
         ];
+
+        $filters['tax'] = [
+            'label'    => __('Tax Property', 'fluent-cart'),
+            'value'    => 'tax',
+            'children' => [
+                [
+                    'label'       => __('B2B Purchase', 'fluent-cart'),
+                    'value'       => 'b2b_purchase',
+                    'filter_type' => 'custom',
+                    'type'        => 'selections',
+                    'options'     => [
+                        'yes' => __('Yes', 'fluent-cart'),
+                        'no'  => __('No', 'fluent-cart'),
+                    ],
+                    'is_multiple' => false,
+                    'is_only_in'  => true,
+                    'callback'    => static function ($query, $item) {
+                        $value = Arr::get($item, 'value');
+                        $selected = is_array($value) ? Arr::get($value, 0, '') : $value;
+                        if ($selected === 'yes') {
+                            $query->whereHas('orderMeta', static::b2bMetaCondition());
+                        } else {
+                            $query->whereDoesntHave('orderMeta', static::b2bMetaCondition());
+                        }
+                    },
+                ],
+                [
+                    'label'       => __('Reverse Charge', 'fluent-cart'),
+                    'value'       => 'reverse_charge',
+                    'filter_type' => 'custom',
+                    'type'        => 'selections',
+                    'options'     => [
+                        'yes' => __('Yes', 'fluent-cart'),
+                        'no'  => __('No', 'fluent-cart'),
+                    ],
+                    'is_multiple' => false,
+                    'is_only_in'  => true,
+                    'callback'    => static function ($query, $item) {
+                        $value = Arr::get($item, 'value');
+                        $selected = is_array($value) ? Arr::get($value, 0, '') : $value;
+                        if ($selected === 'yes') {
+                            $query->whereHas('orderTaxRates', function ($q) {
+                                $q->whereRaw("JSON_EXTRACT(meta, '$.reverse_charge_applied') = true");
+                            });
+                        } else {
+                            $query->whereDoesntHave('orderTaxRates', function ($q) {
+                                $q->whereRaw("JSON_EXTRACT(meta, '$.reverse_charge_applied') = true");
+                            });
+                        }
+                    },
+                ],
+            ],
+        ];
+
         return LabelFilter::advanceFilterOptionsForOther($filters);
     }
 

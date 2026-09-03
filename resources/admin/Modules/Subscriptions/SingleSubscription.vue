@@ -35,19 +35,19 @@
               :subscription="subscription"
               :orderId="parentOrder?.id"
               :reminderPermissions="reminderPermissions"
-              @fetchOrder="$emit('fetchSubscription')"
+              @fetch-order="$emit('fetchSubscription')"
               @reload="reload()"
             />
 
-            <CardContainer class="overflow-hidden">
-              <CardHeader class="pb-4" :title="$t('Related Orders') + ' (' + subscription.related_orders.length +')'" title_size="small"/>
-              <orders-table class="hide-on-mobile" :orders="subscription.related_orders" :columns="['type']"/>
-              <OrdersTableMobile class="show-on-mobile fct-single-subscription-orders-mobile" :orders="subscription.related_orders" :columns="['type']"/>
+            <CardContainer v-if="visibleRelatedOrders.length" class="overflow-hidden">
+              <CardHeader class="pb-4" :title="$t('Related Orders') + ' (' + visibleRelatedOrders.length +')'" title_size="small"/>
+              <OrdersTable class="hide-on-mobile" :orders="visibleRelatedOrders" :columns="['type']"/>
+              <OrdersTableMobile class="show-on-mobile fct-single-subscription-orders-mobile" :orders="visibleRelatedOrders" :columns="['type']"/>
             </CardContainer>
 
             <CardContainer v-if="subscription.licenses" class="overflow-hidden">
               <CardHeader class="pb-4" :title="$t('Related Licenses')" title_size="small"/>
-              <license-table :licenses="subscription.licenses" :columns="[]"/>
+              <LicenseTable :licenses="subscription.licenses" :columns="[]"/>
             </CardContainer>
 
             <CardContainer v-if="subscription.activities && subscription.activities.length" class="overflow-hidden mb-0">
@@ -200,41 +200,6 @@ import Activity from "@/Modules/Orders/Activity.vue";
 import Notify from "@/utils/Notify";
 export default {
   name: 'SingleSubscription',
-  props: ['subscription_id'],
-  data() {
-    return {
-      notFound: {
-        show: false,
-        message: '',
-        buttonText: '',
-        route: ''
-      },
-      subscription: {},
-      loading: false,
-      parentOrderLoading: true,
-      error: null,
-      ArrowRight: markRaw(ArrowRight),
-      parentOrder: null,
-      selectedLabels: [],
-      changeCustomer: false,
-      reminderPermissions: {}
-    }
-  },
-  watch: {
-    subscription_id: {
-      handler(newVal, oldVal) {
-        this.fetchSubscription();
-      },
-    },
-  },
-  computed: {
-    Str() {
-      return Str
-    },
-    subscriptionStatus() {
-      return this.subscription?.status;
-    }
-  },
   components: {
     Activity,
     ChangeOrderCustomer,
@@ -255,6 +220,49 @@ export default {
     CustomerPurchaseValue,
     OrderCustomerInformation,
     OrdersTableMobile
+  },
+  props: ['subscription_id'],
+  data() {
+    return {
+      notFound: {
+        show: false,
+        message: '',
+        buttonText: '',
+        route: ''
+      },
+      subscription: {},
+      loading: false,
+      parentOrderLoading: true,
+      error: null,
+      ArrowRight: markRaw(ArrowRight),
+      parentOrder: null,
+      selectedLabels: [],
+      changeCustomer: false,
+      reminderPermissions: {}
+    }
+  },
+  computed: {
+    Str() {
+      return Str
+    },
+    subscriptionStatus() {
+      return this.subscription?.status;
+    },
+    visibleRelatedOrders() {
+      return (this.subscription?.related_orders || []).filter(
+        o => !(o.type === 'renewal' && Number(o.total_amount) === 0)
+      );
+    },
+  },
+  watch: {
+    subscription_id: {
+      handler(newVal, oldVal) {
+        this.fetchSubscription();
+      },
+    },
+  },
+  mounted() {
+    this.fetchSubscription();
   },
   methods: {
     translate,
@@ -307,9 +315,6 @@ export default {
       }
 
     }
-  },
-  mounted() {
-    this.fetchSubscription();
   },
 }
 </script>

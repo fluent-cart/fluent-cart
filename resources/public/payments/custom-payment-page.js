@@ -19,10 +19,18 @@ $(() => {
     const url = orderConfirmation;
 
 
+    // This page has no submit-button disable, so without an in-flight guard a
+    // rapid double submit fires two concurrent checkout POSTs.
+    let isPlacingOrder = false;
+
     const orderHandler = async (e) => {
 
         if (e !== undefined) {
             e.preventDefault();
+        }
+
+        if (isPlacingOrder) {
+            return false;
         }
 
         const loaderElement = jQuery('.fct-loader');
@@ -31,7 +39,6 @@ $(() => {
 
         const paymentElementState = window['is_' + payMethod + '_ready']; //is_stripe_ready, is_paypal_ready
         if (payMethod !== 'offline_payment' && !paymentElementState) {
-            console.warn('Dev Warn FCT: Payment method is not ready yet!')
             window.dispatchEvent(new CustomEvent('fluent_cart_validate_checkout_' + payMethod));
             return false;
         }
@@ -45,65 +52,53 @@ $(() => {
 
 
         loaderElement.addClass('active');
-        return await jQuery.post(checkoutUrl, {
-            order_hash: orderHash,
-            mode: paymentMode,
-            payment_method: payMethod,
-            variation_id: variationId,
-            license_key: licenseKey,
-            coupon: coupon,
-            _wpnonce: checkout_nonce
-        }).then(response => {
-            if (response.actionName === 'custom') {
-                window.dispatchEvent(new CustomEvent('fluent_cart_payment_next_action_' + response.nextAction, {
-                    detail: {
-                        // form: this.form,
-                        response: response
-                    }
-                }));
-            }  else if (response.redirect_to) {
-                this.buttonState(
-                    "order_processing",
-                    translate('Please wait...'),
-                    response.data?.buttonState
-                );
-                window.location.href = response?.redirect_to;
-            } else if (response?.status === 'failed') {
-                alert(response?.message || translate('Payment failed. Please try again.'));
-            }
-            else {
+        isPlacingOrder = true;
+        try {
+            return await jQuery.post(checkoutUrl, {
+                order_hash: orderHash,
+                mode: paymentMode,
+                payment_method: payMethod,
+                variation_id: variationId,
+                license_key: licenseKey,
+                coupon: coupon,
+                _wpnonce: checkout_nonce
+            }).then(response => {
+                if (response.actionName === 'custom') {
+                    window.dispatchEvent(new CustomEvent('fluent_cart_payment_next_action_' + response.nextAction, {
+                        detail: {
+                            // form: this.form,
+                            response: response
+                        }
+                    }));
+                } else if (response.redirect_to) {
+                    window.location.href = response?.redirect_to;
+                } else if (response?.status === 'failed') {
+                    alert(response?.message || translate('Payment failed. Please try again.'));
+                } else {
+                    loaderElement.removeClass('active');
+                }
+                // always return the response
+                return response;
+            }).catch((response) => {
                 loaderElement.removeClass('active');
-            }
-            // always return the response
-            return response;
-        }).catch((response) => {
-            loaderElement.removeClass('active');
-            if (response?.responseJSON?.data?.message) {
-                console.log(response?.responseJSON?.data?.message);
-            } else if (response?.responseJSON?.message) {
-                console.log(response?.responseJSON?.message);
-            } else if (response?.responseJSON?.data?.errors) {
-                const errors = response?.responseJSON?.data?.errors;
                 let errorMessage = '';
-                for (const key in errors) {
-                    if (errors.hasOwnProperty(key)) {
-                        errorMessage += `${key}: ${errors[key]}\n`;
+                if (response?.responseJSON?.data?.message) {
+                    errorMessage = response.responseJSON.data.message;
+                } else if (response?.responseJSON?.message) {
+                    errorMessage = response.responseJSON.message;
+                } else {
+                    const errors = response?.responseJSON?.data?.errors || response?.responseJSON?.errors || {};
+                    for (const key in errors) {
+                        if (errors.hasOwnProperty(key)) {
+                            errorMessage += `${key}: ${errors[key]}\n`;
+                        }
                     }
                 }
-                console.log(errorMessage);
-            } else if (response?.responseJSON?.errors) {
-                const errors = response?.responseJSON?.errors;
-                let errorMessage = '';
-                for (const key in errors) {
-                    if (errors.hasOwnProperty(key)) {
-                        errorMessage += `${key}: ${errors[key]}\n`;
-                    }
-                }
-                console.log(errorMessage);
-            } else {
-                console.log('An error occurred while processing the payment. Please try again.');
-            }
-        });
+                alert(errorMessage || translate('Payment failed. Please try again.'));
+            });
+        } finally {
+            isPlacingOrder = false;
+        }
     };
 
     form.on('submit', orderHandler);

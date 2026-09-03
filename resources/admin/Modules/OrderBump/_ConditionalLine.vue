@@ -115,6 +115,15 @@ export default {
             }
         }
     },
+    mounted() {
+        if (!this.conditionLine || !Object.keys(this.conditionLine).length) {
+            this.conditionLine = {
+                key: '',
+                operator: '',
+                value: ''
+            };
+        }
+    },
     methods: {
       translate,
         setDefaultValues() {
@@ -125,15 +134,6 @@ export default {
                 this.conditionLine.operator = '';
                 this.conditionLine.value = '';
             }
-        }
-    },
-    mounted() {
-        if (!this.conditionLine || !Object.keys(this.conditionLine).length) {
-            this.conditionLine = {
-                key: '',
-                operator: '',
-                value: ''
-            };
         }
     }
 }

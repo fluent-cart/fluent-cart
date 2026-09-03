@@ -6,6 +6,7 @@ import ShippingZonesLoader from "@/Modules/Shipping/Components/ShippingZonesLoad
 import translate from "@/utils/translator/Translator";
 import {useRouter} from 'vue-router';
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const router = useRouter();
 
@@ -26,7 +27,9 @@ const shippingZoneTable = useShippingZoneTable({ shipping_class_id: 0 });
     </SettingsHeader>
 
     <div class="setting-wrap-inner">
-      <p class="text-sm text-gray-500 mb-3">
+      <AdminNotice/>
+
+      <p class="text-sm text-system-mid mb-3 dark:text-gray-300">
         {{ translate('These are the general shipping zones that apply to all products. For class-specific zones, visit the individual shipping class page.') }}
       </p>
       <div class="fct-all-shipping-zones-wrap">

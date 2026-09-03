@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="10" fill="#583fad"/>
+  <!-- Circular arrow (resolution / return) -->
+  <path d="M24 10 A14 14 0 1 0 36.9 30" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Arrowhead at the end of the arc -->
+  <polyline points="33,24 37,30 43,28" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Checkmark in centre -->
+  <polyline points="18,24 22,28 30,19" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

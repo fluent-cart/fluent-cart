@@ -2,81 +2,29 @@
 
 namespace FluentCart\Api\Resource;
 
+use FluentCart\Api\Resource\BaseResourceApi;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\HelperTrait;
 use FluentCart\App\Models\AttributeGroup;
 use FluentCart\App\Models\AttributeRelation;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Filter\AttrGroupFilter;
 
 class AttrGroupResource extends BaseResourceApi
 {
     use HelperTrait;
-
-    private static array $orderByCols = ['title', 'id', 'slug', 'created_at'];
 
     public static function getQuery(): Builder
     {
         return AttributeGroup::query();
     }
 
-    /**
-     * Retrieve attribute groups  based on the provided parameters.
-     *
-     * @param array $params Optional.  Params containing the necessary parameters to retrieve.
-     *        [
-     *            'params' => [
-     *                'with'         => (array) Optional. Relationships name to be eager loaded,
-     *                "search"       => (array) Optional.
-     *                       [ "column name(e.g., title|slug)" => [
-     *                             "column"       => "column name(e.g., title|slug)",
-     *                             "operator"     => "(string)(e.g., like_all|rlike|or_rlike)",
-     *                             "value"        => (string|array) ]
-     *                       ],
-     *                  "filters"     => (array) Optional.
-     *                       [ "column name(e.g., title|slug)" => [
-     *                             "column"       => "column name(e.g., title|slug)",
-     *                             "operator"     => "(string)(e.g., in)",
-     *                             "value"        => (string|array) ]
-     *                       ],
-     *                'order_by'     => (string) Optional. Column to order by,
-     *                'order_type'   => (string) Optional. Order type for sorting (ASC or DESC),
-     *                'per_page'     => (int) Optional. Number of items for per page,
-     *                'page'         => (int) Optional. Page number for pagination
-     *            ]
-     *        ]
-     *
-     */
     public static function get(array $params = [])
     {
-        $with = Arr::get($params["params"], 'with', []);
-
-        return static::getQuery()->with($with)->withCount($with)
-            ->when(Arr::get($params["params"], 'search'), function ($query) use ($params) {
-                return $query->search(Arr::get($params["params"], 'search', ''));
-            })
-            ->when(!empty($with), function ($query) use ($params) {
-                return $query->applyCustomFilters(Arr::get($params["params"], 'filters', []));
-            })
-            ->orderBy(
-                sanitize_sql_orderby(static::getValWithinEnum(Arr::get($params["params"], 'order_by'), static::$orderByCols, 'title')),
-                sanitize_sql_orderby(static::getValWithinEnum(Arr::get($params["params"], 'order_type'), static::$orderByEnum, 'ASC'))
-            )
-            ->paginate(Arr::get($params["params"], 'per_page', 10), ['*'], 'page', Arr::get($params["params"], 'page'));
-
+        return AttrGroupFilter::make($params)->paginate();
     }
 
-    /**
-     * Find and retrieve attribute group based on the ID and given params.
-     *
-     * @param int $id Required. The ID of the attribute group to find and retrieve.
-     * @param array $params Optional. Additional parameters for finding attribute groups.
-     *        [
-     *            'params' => [
-     *                'with'         => (array) Optional. Relationships name to be eager loaded
-     *             ]
-     *         ]
-     *
-     */
     public static function find($id, $params = [])
     {
         $with = Arr::get($params, 'with', []);
@@ -91,29 +39,37 @@ class AttrGroupResource extends BaseResourceApi
         return $query->with($with)->find($id);
     }
 
-    /**
-     * Create attribute group with the provided data.
-     *
-     * @param array $data Required. Array containing the necessary parameters
-     *        $data    =>   (array) Required. Array of attribute group data.
-     *            [
-     *                    'title'          => (string) Required. The title of the attr group.
-     *                    'slug'           => (string) Required. The slug of the attr group.
-     *                    'description'    => (string) Optional. The description of the attr group.
-     *             ]
-     * @param array $params Optional. Additional parameters for attribute group creation.
-     *        [
-     *             // Include optional parameters, if any.
-     *        ]
-     *
-     */
     public static function create($data, $params = [])
     {
-        $groupCreated = static::getQuery()->create($data);
+        if (empty($data['slug']) && !empty($data['title'])) {
+            $data['slug'] = static::generateUniqueSlug($data['title']);
+        }
 
-        if ($groupCreated) {
+        // Append new groups to the end of the merchant's manual order. max()+1
+        // keeps the dense 1..N sequence going so the sidebar (orderBy serial ASC)
+        // shows the new group last until the merchant drags it elsewhere — mirrors
+        // AttrTermResource::create's per-group serial assignment.
+        $data['serial'] = (int) AttributeGroup::query()->max('serial') + 1;
+
+        try {
+            $group = static::getQuery()->create($data);
+        } catch (\Throwable $e) {
+            // Concurrent POSTs with the same slug can both pass the unique
+            // validator (TOCTOU) and collide at the DB UNIQUE on slug. Surface
+            // a clean 422 instead of leaking the raw exception as a 500.
+            if (static::isUniqueViolation($e)) {
+                return static::makeErrorResponse([
+                    ['code' => 422, 'message' => __('A group with this slug already exists.', 'fluent-cart')]
+                ]);
+            }
+            return static::makeErrorResponse([
+                ['code' => 500, 'message' => __('Group creation failed.', 'fluent-cart')]
+            ]);
+        }
+
+        if ($group) {
             return static::makeSuccessResponse(
-                $groupCreated,
+                $group,
                 __('Successfully created!', 'fluent-cart')
             );
         }
@@ -123,29 +79,43 @@ class AttrGroupResource extends BaseResourceApi
         ]);
     }
 
-    /**
-     * Update attribute group with the provided data.
-     *
-     * @param array $data Required. Array containing the necessary parameters
-     *        $data    =>   (array) Required. Array of attribute group data.
-     *            [
-     *                    'title'          => (string) Required. The title of the attr group.
-     *                    'description'    => (string) Optional. The description of the attr group.
-     *             ]
-     * @param int $groupId Required. The id of the attribute group to update.
-     * @param array $params Optional. Additional parameters for attribute group creation.
-     *        [
-     *             // Include optional parameters, if any.
-     *        ]
-     *
-     */
     public static function update($data, $groupId, $params = [])
     {
-        $isUpdated = static::getQuery()->findOrFail($groupId)->update($data);
+        // Wrap the lookup and update in a transaction with a row lock on
+        // the group so concurrent writers can't split the read and the
+        // mutation. Also lets us return a clean 422 on slug UNIQUE collision.
+        // System-seeded templates (Color, Size, …) are editable now — the
+        // earlier is_system rename block was rolled back per product
+        // decision; in-use protection only fires on delete below.
+        $connection = static::getQuery()->getConnection();
+        $connection->beginTransaction();
+        try {
+            $group = static::getQuery()->lockForUpdate()->find($groupId);
 
-        if ($isUpdated) {
+            if (!$group) {
+                $connection->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 404, 'message' => __('Attribute group not found.', 'fluent-cart')]
+                ]);
+            }
+
+            $wasUpdated = $group->update($data);
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+            if (static::isUniqueViolation($e)) {
+                return static::makeErrorResponse([
+                    ['code' => 422, 'message' => __('A group with this slug already exists.', 'fluent-cart')]
+                ]);
+            }
+            return static::makeErrorResponse([
+                ['code' => 500, 'message' => __('Group info update failed.', 'fluent-cart')]
+            ]);
+        }
+
+        if ($wasUpdated) {
             return static::makeSuccessResponse(
-                $isUpdated,
+                $wasUpdated,
                 __('Group updated successfully!', 'fluent-cart')
             );
         }
@@ -155,38 +125,147 @@ class AttrGroupResource extends BaseResourceApi
         ]);
     }
 
+    /**
+     * Generate a unique slug for a new group. Mirrors AttrTermResource::generateUniqueSlug()
+     * but scoped to the groups table (global slug UNIQUE, not per-group).
+     */
+    private static function generateUniqueSlug(string $title): string
+    {
+        $baseSlug = sanitize_title($title);
+
+        $existingSlugs = AttributeGroup::query()
+            ->where('slug', 'LIKE', "{$baseSlug}%")
+            ->pluck('slug')
+            ->toArray();
+
+        if (!in_array($baseSlug, $existingSlugs, true)) {
+            return $baseSlug;
+        }
+
+        $maxSuffix = 1;
+        foreach ($existingSlugs as $existingSlug) {
+            if (preg_match('/^' . preg_quote($baseSlug, '/') . '-(\d+)$/', $existingSlug, $matches)) {
+                $maxSuffix = max($maxSuffix, (int) $matches[1]);
+            }
+        }
+
+        return "{$baseSlug}-" . ($maxSuffix + 1);
+    }
 
     /**
-     * Delete attribute group by ID.
-     *
-     * @param int $groupId Required. The ID of the attribute group to delete.
-     * @param array $params Optional. Additional parameters for attribute group deletion.
-     *        [
-     *              // Include optional parameters, if any.
-     *        ]
-     *
+     * MySQL/MariaDB UNIQUE constraint violation detector. SQLSTATE 23000 covers
+     * duplicate-key errors on slug UNIQUE. Used so concurrent inserts/updates
+     * return a clean 422 instead of leaking a generic 500.
      */
+    private static function isUniqueViolation(\Throwable $e): bool
+    {
+        $msg = $e->getMessage();
+        return strpos($msg, '1062') !== false
+            || strpos($msg, 'Duplicate entry') !== false
+            || strpos($msg, 'SQLSTATE[23000]') !== false;
+    }
+
     public static function delete($groupId, $params = [])
     {
-        $isUsed = AttributeRelation::query()->where('group_id', $groupId)->first();
+        // Wrap the lookup, the in-use guard, and the cascading
+        // delete in a single transaction with row-level locks. Without locking
+        // the group row + the relations lookup, a concurrent variant attach
+        // between the in-use check and the cascading delete could leave
+        // orphan relation rows pointing at the deleted group. The AttributeGroup
+        // deleting boot hook also cascades to terms in a separate query, so
+        // the wrap ensures group + terms commit atomically.
+        $connection = AttributeRelation::query()->getConnection();
+        $connection->beginTransaction();
+        try {
+            $group = static::getQuery()->lockForUpdate()->find($groupId);
 
-        if (!$isUsed) {
-            $group = static::getQuery()->find($groupId);
-            if ($group) {
-                $group->delete();
-                return static::makeSuccessResponse(
-                    '',
-                    __('Attribute group successfully deleted!', 'fluent-cart')
-                );
+            if (!$group) {
+                $connection->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 404, 'message' => __('Attribute group not found in database, failed to remove.', 'fluent-cart')]
+                ]);
             }
 
+            // System-vs-merchant distinction no longer blocks deletion; the
+            // only protection that remains is the in-use guard below, which
+            // catches the case where any product variant still references
+            // this group via fct_atts_relations.
+            $existingRelation = AttributeRelation::query()
+                ->where('group_id', $groupId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingRelation) {
+                $connection->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => 403, 'message' => __('This group is already in use, can not be deleted.', 'fluent-cart')]
+                ]);
+            }
+
+            $group->delete();
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
             return static::makeErrorResponse([
-                ['code' => 404, 'message' => __('Attribute group not found in database, failed to remove.', 'fluent-cart')]
+                ['code' => 500, 'message' => __('Failed to delete attribute group.', 'fluent-cart')]
             ]);
         }
 
-        return static::makeErrorResponse([
-            ['code' => 403, 'message' => __('This group is already in use, can not be deleted.', 'fluent-cart')]
-        ]);
+        return static::makeSuccessResponse(
+            '',
+            __('Attribute group successfully deleted!', 'fluent-cart')
+        );
+    }
+
+    /**
+     * Persist the merchant's drag-reorder of attribute groups in the library.
+     * Receives group IDs in the desired display order and writes a dense
+     * serial (1-indexed) to each. Mirrors AttrTermResource::reorder, one level
+     * up — the only difference is there's no parent group to scope ownership
+     * to, so we just confirm every ID is a real group before writing.
+     *
+     * The sidebar paginates (Load More), so the submitted set is the loaded
+     * prefix of the serial-ordered list; reassigning it to 1..k stays within
+     * the prefix's own range and never collides with unloaded groups.
+     */
+    public static function reorder($params = [])
+    {
+        // IDs are already sanitized by the controller (int-cast, positive-only,
+        // deduped, capped). Take them as-is here.
+        $ids = (array) Arr::get($params, 'ids', []);
+
+        if (empty($ids)) {
+            return static::makeErrorResponse([
+                ['code' => 422, 'message' => __('No group IDs provided.', 'fluent-cart')]
+            ]);
+        }
+
+        $ownedCount = AttributeGroup::query()
+            ->whereIn('id', $ids)
+            ->count();
+
+        if ($ownedCount !== count($ids)) {
+            return static::makeErrorResponse([
+                ['code' => 404, 'message' => __('One or more group IDs do not exist.', 'fluent-cart')]
+            ]);
+        }
+
+        $values = [];
+        foreach ($ids as $index => $id) {
+            $values[] = ['id' => $id, 'serial' => $index + 1];
+        }
+
+        $db = App::db();
+        $db->beginTransaction();
+        try {
+            AttributeGroup::query()->batchUpdate($values);
+            $db->commit();
+            return static::makeSuccessResponse([], __('Groups reordered.', 'fluent-cart'));
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            return static::makeErrorResponse([
+                ['code' => 500, 'message' => __('Failed to reorder groups.', 'fluent-cart')]
+            ]);
+        }
     }
 }

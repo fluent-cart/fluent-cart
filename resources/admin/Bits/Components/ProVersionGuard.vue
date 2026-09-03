@@ -16,6 +16,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    placement: {
+        type: String,
+        default: 'upgrade_page',
+    },
 });
 
 const isProActive = AppConfig.get('app_config.isProActive');
@@ -47,5 +51,6 @@ const updateMessage = translate(
         v-else
         :title="featureTitle"
         :text="featureText"
+        :placement="placement"
     />
 </template>

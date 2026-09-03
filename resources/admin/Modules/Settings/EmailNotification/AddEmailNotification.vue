@@ -10,6 +10,7 @@ import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import { useSaveShortcut } from "@/mixin/saveButtonShortcutMixin.js";
 import Notify from "@/utils/Notify";
+import translate from "@/utils/translator/Translator";
 
 const selfRef = getCurrentInstance().ctx;
 const wpEditor = ref();
@@ -19,11 +20,11 @@ const notification = ref({});
 const htmlContent = ref();
 const availableEvents = ref([
   // Define event options
-  { label: "After Order Created", value: "fluent_cart/order_created" },
-  { label: "After Order Updated", value: "fluent_cart/order_updated" },
-  { label: "After Payment Paid", value: "fluent_cart/order_paid" },
-  { label: "After User Created", value: "fluent_cart/user_created" },
-  { label: "After Refund made", value: "fluent_cart/order_refunded" },
+  { label: translate("After Order Created"), value: "fluent_cart/order_created" },
+  { label: translate("After Order Updated"), value: "fluent_cart/order_updated" },
+  { label: translate("After Payment Paid"), value: "fluent_cart/order_paid" },
+  { label: translate("After User Created"), value: "fluent_cart/user_created" },
+  { label: translate("After Refund made"), value: "fluent_cart/order_refunded" },
 ]);
 const shortCodes = ref({});
 const emailShortCodes = ref([
@@ -135,7 +136,7 @@ const selectFromEmail = () => {
 <template>
   <Card>
     <CardHeader
-      :title="notification.title ? notification.title : 'Add Notification'"
+      :title="notification.title ? notification.title : translate('Add Notification')"
       title_size="small"
       border_bottom
       icon="Message"
@@ -155,7 +156,7 @@ const selectFromEmail = () => {
             v-model="notification.title"
             @focus="clearValidationError('title')"
           />
-          <validation-error
+          <ValidationError
             :validation-errors="validationErrors?.title?.required"
           />
         </el-form-item>
@@ -175,7 +176,7 @@ const selectFromEmail = () => {
               :value="option.value"
             ></el-option>
           </el-select>
-          <validation-error
+          <ValidationError
             :validation-errors="validationErrors?.events?.required"
           />
         </el-form-item>
@@ -204,7 +205,7 @@ const selectFromEmail = () => {
                 </template>
               </el-input>
 
-              <validation-error
+              <ValidationError
                 :validation-errors="validationErrors?.from?.required"
               />
             </el-form-item>
@@ -231,7 +232,7 @@ const selectFromEmail = () => {
                   </el-select>
                 </template>
               </el-input>
-              <validation-error
+              <ValidationError
                 :validation-errors="validationErrors?.to?.required"
               />
             </el-form-item>
@@ -247,17 +248,17 @@ const selectFromEmail = () => {
             v-model="notification.subject"
             @focus="clearValidationError('subject')"
           />
-          <validation-error
+          <ValidationError
             :validation-errors="validationErrors?.subject?.required"
           />
         </el-form-item>
 
         <div>
-          <wp-editor
+          <WpEditor
             ref="wpEditor"
             :short-codes="shortCodes"
             :buttons="buttons"
-            @onEditorReady="onEditorReady"
+            @on-editor-ready="onEditorReady"
             @update="
               (value) => {
                 notification.content = value;
@@ -265,7 +266,7 @@ const selectFromEmail = () => {
             "
             v-model="notification.content"
           >
-            <template v-slot:action>
+            <template #action>
               <div class="fct-select-template-wrap">
                 <el-select
                   @change="
@@ -317,7 +318,7 @@ const selectFromEmail = () => {
                 </span>
               </div>
             </template>
-            <template v-slot:preview_button>
+            <template #preview_button>
               <el-tooltip
                 v-if="editor !== null"
                 effect="dark"
@@ -330,7 +331,7 @@ const selectFromEmail = () => {
                 </IconButton>
               </el-tooltip>
             </template>
-          </wp-editor>
+          </WpEditor>
         </div>
         <div class="setting-save-action">
           <el-button

@@ -60,6 +60,9 @@ export function useAppMixin(app) {
             formatNumber(amount, withCurrency = true, hideEmpty = false, currency) {
                 return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currency);
             },
+            formatNumberForOrder(amount, orderOrCurrency, withCurrency = true, hideEmpty = false) {
+                return CurrencyFormatter.formatForOrder(amount, orderOrCurrency, withCurrency, hideEmpty);
+            },
             getAddress(object, type = 'billing') {
                 let address = [
                     object[type + '_address_1'],

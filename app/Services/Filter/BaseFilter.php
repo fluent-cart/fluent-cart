@@ -8,7 +8,9 @@ use FluentCart\App\Models\Model;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Filter\Concerns\HandleDateFilter;
 use FluentCart\App\Services\Filter\Concerns\HandleRelationalFilter;
+use FluentCart\App\Services\Permission\PermissionManager;
 use FluentCart\Framework\Database\Orm\Builder;
+use FluentCart\Framework\Database\Query\Builder as QueryBuilder;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Pagination\LengthAwarePaginator;
 use FluentCart\Framework\Support\Arr;
@@ -25,7 +27,6 @@ use InvalidArgumentException;
 abstract class BaseFilter
 {
     use HandleRelationalFilter, HandleDateFilter;
-
 
     /**
      * Determines if the filter type is simple or advanced.
@@ -301,6 +302,14 @@ abstract class BaseFilter
 
         if (empty($sortBy)) {
             return $this->defaultSortBy;
+        }
+
+        // Declared sort options are an allow-list written in PHP (the filter
+        // class + the {filterName}_table_sorts hook), so they are trusted the
+        // same way $fillable is — that is what lets a filter or an add-on offer
+        // a sort that is not a fillable column.
+        if (array_key_exists($sortBy, static::getSortableColumns())) {
+            return $sortBy;
         }
 
         /**
@@ -591,38 +600,241 @@ abstract class BaseFilter
 
     protected function applySort()
     {
-        $this->query = $this->query->orderBy($this->sortBy, $this->sortType);
+        $column = Arr::get(static::getSortableColumns(), $this->sortBy . '.column');
+
+        // A declared option may hand over its own ordering — that is how a sort
+        // that is not a plain column on this table (an aggregate, a joined
+        // relation) gets applied.
+        if (is_callable($column)) {
+            $sorted = call_user_func($column, $this->query, $this->sortType);
+
+            // Only a builder replaces the query. A callback that orders in place
+            // and returns nothing — or returns something else entirely — must not
+            // be able to swap the query out from under the rest of the filter.
+            if ($sorted instanceof Builder || $sorted instanceof QueryBuilder) {
+                $this->query = $sorted;
+            }
+
+            return;
+        }
+
+        if (!is_string($column) || $column === '') {
+            $column = $this->sortBy;
+        }
+
+        $this->query = $this->query->orderBy($column, $this->sortType);
+    }
+
+    /**
+     * What the `with` request parameter may load.
+     *
+     * DENY BY DEFAULT — the base returns an empty map, so a filter that does not
+     * override this loads nothing at all. That matters because the ORM resolves
+     * a relation by literally calling that method on the model
+     * (`Builder::getRelation()`), catching only BadMethodCallException. A method
+     * that exists but is not a relation still RUNS: before this allow-list,
+     * `with[]=recountTotalPaidAndRefund` inserted a phantom refunded order row.
+     *
+     * ## The entry form — one form, no others
+     *
+     * Every entry is a LITERAL request key mapped to a CALLABLE. Nothing else is
+     * an entry: a non-callable value is refused. The key is never decomposed,
+     * pattern-matched or prefix-parsed, so what the client sends is either a key
+     * in this map or it is dropped.
+     *
+     *     protected function allowedWiths(): array
+     *     {
+     *         return [
+     *             'admin_product_list' => [$this, 'adminProductList'],
+     *         ];
+     *     }
+     *
+     *     protected function adminProductList($query)
+     *     {
+     *         if (!$this->userCanAny('products/view')) {
+     *             return false;   // contributes nothing
+     *         }
+     *
+     *         return $query->with(['detail' => function ($q) {
+     *             $q->select(['id', 'post_id', 'featured_media']);
+     *         }]);
+     *     }
+     *
+     * ## Callback contract
+     *
+     * The callback receives the query as built so far — every entry already
+     * adopted is on it — checks its own permission, applies its own eager load
+     * (`with()`, `withCount()`, whatever it needs), and returns the query. It
+     * runs EXACTLY ONCE. The base never learns a relation name; the callback owns
+     * the whole path, the selects and the gate.
+     *
+     *   return false (or anything that is not a Builder) → contributes nothing
+     *   return the Builder                               → the base adopts it
+     *
+     * A count is not a special case: it is a callback that calls `withCount()`.
+     *
+     * ## Nested paths
+     *
+     * Nesting is not a special case either: name the full path (`'a.b'`) inside
+     * the callback. Two consequences, both of them sharp:
+     *
+     * 1. `with('a.b')` auto-injects the parent `a` with an EMPTY closure, so a
+     *    nested callback must repeat whatever GATE the parent carries — the
+     *    nested path is otherwise a way around it.
+     * 2. That injected empty closure also overwrites a CONSTRAINT an earlier
+     *    entry put on `a`, because each callback issues its own `with()` call and
+     *    Builder::with() array_merges into $eagerLoad (addNestedWiths() only
+     *    protects entries inside a single call). So a nested callback must also
+     *    re-state the parent's constraint in its own `with()` call:
+     *
+     *        return $query->with([
+     *            'a'   => function ($q) { $q->select([...]); },
+     *            'a.b' => function ($q) { $q->select([...]); },
+     *        ]);
+     *
+     * ## Why the builder you are handed is safe to mutate
+     *
+     * `$query->with([...])` mutates in place and returns the same instance, so a
+     * callback that mutated and then refused would already have changed the
+     * query. The base therefore invokes every callback against `clone
+     * $this->query` and adopts the result only when a Builder comes back:
+     * Orm\Builder::__clone() also clones the underlying Query\Builder, and both
+     * hold their wheres, bindings, columns and eager loads in plain arrays, which
+     * PHP copies by value. A refusing callback is structurally incapable of
+     * touching the live query.
+     *
+     * ## Escape valve
+     *
+     * The gate lives in applyWith(), so it covers every instance including a
+     * `with` assigned after construction, and it reads the CURRENT user — a cron
+     * or WP-CLI caller loses permission-gated entries. The
+     * `fluent_cart/{filter}_allowed_withs` filter is how an add-on or a
+     * privileged background job adds its own entry.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [];
+    }
+
+    /**
+     * What the `scopes` request parameter may apply.
+     *
+     * DENY BY DEFAULT. The old applyScopes() invoked whatever method name the
+     * request supplied directly on the query builder, before any WHERE clause
+     * existed — `scopes[]=delete` emptied the table, `scopes[]=truncate` wiped it
+     * and the array form mass-updated every row.
+     *
+     * Same single entry form as allowedWiths(): literal key => callable. This is
+     * a separate map only because the request delivers it on a different
+     * parameter; the resolution and the safety properties are identical.
+     *
+     * Scope callbacks are invoked as `($query, $args)`, where `$args` is the raw
+     * remainder of an array-form request entry (`scopes[]=['x','y']` → `['y']`).
+     * `$args` is UNVALIDATED client input. Declare the parameter only if you
+     * intend to validate it; a callback declared `($query)` simply never sees it,
+     * which is the default refusal of request-supplied arguments.
+     *
+     * A scope name is not reachable unless a callback routes to it, and routing
+     * through `Builder::scopes()` adds a second structural gate: it resolves via
+     * Model::callNamedScope(), which prefixes with "scope", so only a real
+     * `scopeX()` method exists at the end of that path.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedScopes(): array
+    {
+        return [];
     }
 
     protected function applyWith()
     {
-        $withs = Arr::wrap($this->with);
+        $filterName = static::getFilterName();
 
-        foreach ($withs as $with) {
-            if (Str::of($with)->lower()->endsWith('count')) {
-                //Get the relation name from count
-                //e.g.: variantsCount converts to variants
-                $relationName = Str::of($with)->substr(0, -5)->toString();
-                $this->query = $this->query->withCount($relationName);
-            } else {
-                $this->query = $this->query->with($with);
+        $withMap = apply_filters(
+            "fluent_cart/{$filterName}_allowed_withs", $this->allowedWiths(), ['filter' => $this]
+        );
+
+        foreach (Arr::wrap($this->with) as $requestKey) {
+            // Dropping non-strings also kills the array-nested with[parent][]=child
+            // form, which the ORM would otherwise read as the path parent.child.
+            if (!is_string($requestKey) || !array_key_exists($requestKey, $withMap)) {
+                continue;
             }
-        }
 
+            $this->adoptAllowEntry($withMap[$requestKey]);
+        }
     }
 
     protected function applyScopes()
     {
-        $scopes = Arr::wrap($this->scopes);
-        foreach ($scopes as $scope) {
-            if (is_array($scope)) {
-                $this->query = $this->query->{$scope[0]}($scope[1]);
+        $filterName = static::getFilterName();
+
+        $scopeMap = apply_filters(
+            "fluent_cart/{$filterName}_allowed_scopes", $this->allowedScopes(), ['filter' => $this]
+        );
+
+        foreach (Arr::wrap($this->scopes) as $requested) {
+            $args = [];
+
+            if (is_array($requested)) {
+                $requestKey = isset($requested[0]) ? $requested[0] : null;
+                $args = array_slice($requested, 1);
+            } else {
+                $requestKey = $requested;
+            }
+
+            if (!is_string($requestKey) || !array_key_exists($requestKey, $scopeMap)) {
                 continue;
             }
-            $this->query = $this->query->{$scope}();
+
+            $this->adoptAllowEntry($scopeMap[$requestKey], $args);
         }
     }
 
+    /**
+     * Invoke one allow-map entry and adopt what it hands back.
+     *
+     * The callback gets a CLONE of the live query, so a callback that mutates
+     * and then refuses cannot leave its mutation behind. Only a Builder is
+     * adopted; every other return value — false, null, a stray string — means the
+     * entry contributes nothing.
+     *
+     * @param mixed $entry Anything non-callable is refused.
+     * @param array $args  Unvalidated client arguments; always empty for a `with`.
+     * @return void
+     */
+    protected function adoptAllowEntry($entry, array $args = []): void
+    {
+        if (!is_callable($entry)) {
+            return;
+        }
+
+        $result = $entry(clone $this->query, $args);
+
+        if ($result instanceof Builder) {
+            $this->query = $result;
+        }
+    }
+
+    /**
+     * @param string|array $permission
+     * @return bool
+     */
+    protected function userCan($permission): bool
+    {
+        return PermissionManager::hasPermission((array)$permission);
+    }
+
+    /**
+     * @param string|array $permission
+     * @return bool
+     */
+    protected function userCanAny($permission): bool
+    {
+        return PermissionManager::hasAnyPermission((array)$permission);
+    }
     /**
      * Applies advanced filters to the query.
      *
@@ -642,17 +854,18 @@ abstract class BaseFilter
 
 
         $filterName = static::getFilterName();
+        $allFilterOptions = apply_filters("fluent_cart/{$filterName}_filter_options", static::advanceFilterOptions());
         foreach ($filtersGroups as $groupIndex => $group) {
 
 
             $method = $groupIndex == 0 ? 'where' : 'orWhere';
 
-            $this->query->{$method}(function ($query) use ($group, $filterName) {
+            $this->query->{$method}(function ($query) use ($group, $filterName, $allFilterOptions) {
                 foreach ($group as $providerName => $items) {
                     $items = $this->mergeRelationFilters($items);
                     foreach ($items as $item) {
                         if ($item['filter_type'] === 'custom') {
-                            $filters = static::advanceFilterOptions();
+                            $filters = $allFilterOptions;
                             $filter = Arr::get($filters, $providerName . '.children', null);
                             $property = Arr::get($item, 'property');
                             $isCallbackFound = false;
@@ -661,7 +874,7 @@ abstract class BaseFilter
                                     if ($filterItem['value'] === $item['property']) {
                                         $callback = Arr::get($filterItem, 'callback', null);
                                         if ($callback) {
-                                            $callback($this->query, $item);
+                                            $callback($query, $item);
                                             $isCallbackFound = true;
                                         }
                                         break;
@@ -670,9 +883,9 @@ abstract class BaseFilter
                             }
 
                             if ($isCallbackFound) {
-                                return;
+                                continue;
                             }
-                            do_action_ref_array("fluent_cart/{$filterName}_filter/{$providerName}/{$item['property']}", [&$this->query, $item]);
+                            do_action_ref_array("fluent_cart/{$filterName}_filter/{$providerName}/{$item['property']}", [&$query, $item]);
                         } else {
                             $this->handleAdvanceFilter($query, $item);
                         }
@@ -708,8 +921,17 @@ abstract class BaseFilter
                 continue;
             }
 
-            // Normalize string value to array for merging
-            if (is_string($value) && $value !== '') {
+            // Normalize string value to array for merging.
+            //
+            // Only for the membership operators. `contains`/`not_contains` on a
+            // text field are substring searches ("Includes gmail"), and wrapping
+            // one into an array sends it down the whereIn path below — an exact
+            // match, so the search silently returns nothing. Left as a string it
+            // is passed through unmerged and handleRelation answers it with a
+            // LIKE. Array values for those operators (ids from a
+            // remote_tree_select field such as Order Items) still merge, which is
+            // what this merge was written for.
+            if (is_string($value) && $value !== '' && in_array($operator, ['in', 'not_in'], true)) {
                 $value = [$value];
                 $item['value'] = $value;
             }
@@ -761,7 +983,7 @@ abstract class BaseFilter
     private function searchFromArray(Builder &$query, array $filterItem)
     {
         $property = $filterItem['property'];
-        $operator = $filterItem['operator'];
+        $operator = $this->resolveOperator($filterItem['operator']);
         $searchTerm = $filterItem['value'];
         $methodName = 'modify' . Str::studly($property . '_value');
 
@@ -794,7 +1016,7 @@ abstract class BaseFilter
     private function searchFromString(Builder &$query, array $filterItem)
     {
         $property = $filterItem['property'];
-        $operator = $filterItem['operator'];
+        $operator = $this->resolveOperator($filterItem['operator']);
         $searchTerm = $filterItem['value'];
 
         $methodName = 'modify' . Str::studly($property . '_value');
@@ -896,6 +1118,75 @@ abstract class BaseFilter
             ['=', '!=', '>', '<', '>=', '<=', '::'],
             $except
         );
+    }
+
+    /**
+     * The operator vocabulary this engine resolves: the operator a request may
+     * name => the operator actually applied to the query.
+     *
+     * Every entry core ships is an identity mapping, so translating through this
+     * map changes nothing on its own. The indirection exists so that filter
+     * options contributed from outside this class — an add-on's, or one of the
+     * named operators the built-in options already advertise — can be taught to
+     * the engine without editing it.
+     *
+     * Why it matters that an unknown operator never reaches the query builder:
+     * Query\Builder::invalidOperator() silently rewrites one it does not
+     * recognise into `=` and compares the column against the operator STRING, so
+     * the filter does not error — it returns wrong rows.
+     *
+     * @return array<string, string>
+     */
+    public static function supportedOperators(): array
+    {
+        $operators = [
+            '='            => '=',
+            '!='           => '!=',
+            '>'            => '>',
+            '<'            => '<',
+            '>='           => '>=',
+            '<='           => '<=',
+            '::'           => '::',
+            'in'           => 'in',
+            'not_in'       => 'not_in',
+            'in_all'       => 'in_all',
+            'not_in_all'   => 'not_in_all',
+            'contains'     => 'contains',
+            'not_contains' => 'not_contains',
+            'is_null'      => 'is_null',
+            'not_null'     => 'not_null',
+            'before'       => 'before',
+            'after'        => 'after',
+            'date_equal'   => 'date_equal',
+            'between'      => 'between',
+        ];
+
+        // Listeners must declare add_filter(..., 10, 2) to receive the context.
+        return apply_filters(
+            'fluent_cart/filter/supported_operators',
+            $operators,
+            ['filter_name' => static::getFilterName()]
+        );
+    }
+
+    /**
+     * Translate a requested operator into the one the engine applies.
+     *
+     * An operator with no entry is returned untouched — declining to resolve it
+     * here keeps this behaviour-neutral for anything already in use.
+     *
+     * @param mixed $operator
+     * @return mixed
+     */
+    protected function resolveOperator($operator)
+    {
+        if (!is_string($operator)) {
+            return $operator;
+        }
+
+        $resolved = Arr::get(static::supportedOperators(), $operator);
+
+        return is_string($resolved) && $resolved !== '' ? $resolved : $operator;
     }
 
     public function applySimpleOperatorFilter(?string $search = null): bool
@@ -1194,12 +1485,71 @@ abstract class BaseFilter
         return apply_filters("fluent_cart/{$filterName}_table_columns", []);
     }
 
+    /**
+     * Sort options this filter offers, keyed by the value the table sends as
+     * `sort_by`:
+     *
+     *     'id'          => ['label' => 'Order ID', 'column' => 'id'],
+     *     'best_seller' => ['label' => 'Best Selling', 'column' => function ($query, $direction) {
+     *         return $query->orderBy('order_items_count', $direction);
+     *     }],
+     *
+     * `column` is the real DB column to ORDER BY, or a callable that receives
+     * ($query, $direction) and applies its own ordering — which is how an
+     * add-on sorts by something that is not a plain column on this table.
+     *
+     * Filter classes override this with the core defaults; add-ons append
+     * through the hook in getSortableColumns().
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [];
+    }
+
+    /**
+     * The declared sort options plus whatever add-ons registered.
+     *
+     * This map is the allow-list parseSortBy() validates `sort_by` against and
+     * the handler table applySort() resolves against, so a registered option
+     * actually reaches ORDER BY instead of being dropped for not being fillable.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function getSortableColumns(): array
+    {
+        $filterName = static::getFilterName();
+        $columns = apply_filters("fluent_cart/{$filterName}_table_sorts", static::sortableColumns());
+
+        return is_array($columns) ? $columns : [];
+    }
+
+    /**
+     * What the admin table receives: a `sort_by value => label` map. The column
+     * (or the callable behind it) stays server side — it is not serializable,
+     * and resolving it is the backend's job.
+     *
+     * @return array<string, string>
+     */
+    public static function getSortOptions(): array
+    {
+        $options = [];
+
+        foreach (static::getSortableColumns() as $value => $option) {
+            $options[$value] = (string)Arr::get($option, 'label', $value);
+        }
+
+        return $options;
+    }
+
     public static function getTableFilterOptions(): array
     {
         return [
             'advance' => static::getAdvanceFilterOptions(),
             'guide'   => static::getSearchableFields(),
             'columns' => static::getCustomColumns(),
+            'sorts'   => static::getSortOptions(),
         ];
     }
 

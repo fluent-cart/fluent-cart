@@ -5,12 +5,14 @@ namespace FluentCart\App\Models;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
-use FluentCart\App\Events\Subscription\SubscriptionCanceled;
+use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
+use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\Concerns\HasActivity;
-use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\SubscriptionHelper;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Database\Orm\Relations\BelongsTo;
@@ -25,6 +27,8 @@ use FluentCartPro\App\Modules\Licensing\Models\License;
  *
  *  Database Model
  *
+ * @property string $uuid
+ *
  * @package FluentCart\App\Models
  *
  * @version 1.0.0
@@ -37,7 +41,7 @@ class Subscription extends Model
 
     protected $primaryKey = 'id';
 
-    protected $appends = ['url', 'payment_info', 'billingInfo', 'overridden_status', 'currency', 'reactivate_url'];
+    protected $appends = ['url', 'payment_info', 'billingInfo', 'overridden_status', 'currency', 'reactivate_url', 'permissions', 'display_item_name', 'system_charge_state'];
 
     protected $guarded = ['id'];
 
@@ -80,6 +84,30 @@ class Subscription extends Model
                 $model->uuid = md5(time() . wp_generate_uuid4());
             }
         });
+    }
+
+    public function getNextBillingDateAttribute($value)
+    {
+        if (empty($value) || $value === '0000-00-00 00:00:00' || $value === '0000-00-00') {
+            return null;
+        }
+        return $value;
+    }
+
+    public function getCanceledAtAttribute($value)
+    {
+        if (empty($value) || $value === '0000-00-00 00:00:00' || $value === '0000-00-00') {
+            return null;
+        }
+        return $value;
+    }
+
+    public function getExpireAtAttribute($value)
+    {
+        if (empty($value) || $value === '0000-00-00 00:00:00' || $value === '0000-00-00') {
+            return null;
+        }
+        return $value;
     }
 
     public function meta()
@@ -137,7 +165,7 @@ class Subscription extends Model
     {
         if (is_string($value)) {
             $decoded = json_decode($value, true);
-            return $decoded ?: $value;
+            return is_array($decoded) ? $decoded : $value;
         }
         return $value ?: [];
     }
@@ -151,6 +179,103 @@ class Subscription extends Model
         }
 
         $this->attributes['config'] = $value;
+    }
+
+    /**
+     * Merge keys into the config blob under a row lock.
+     *
+     * Every writer of this column must go through here. `config` is a single JSON
+     * document written by the cancel path, both Stripe paths and both PayPal paths;
+     * a plain read-merge-write loses whichever concurrent write commits first, and a
+     * renewal landing during a payment-method switch is not a rare pairing.
+     *
+     * @param array $values keys to set; existing keys not named here survive
+     * @return array the merged config as committed
+     */
+    public function mergeConfig(array $values): array
+    {
+        $current = $this->config;
+        $current = is_array($current) ? $current : [];
+
+        if (!$values) {
+            return $current;
+        }
+
+        $db = static::query()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $locked = static::query()
+                ->where('id', $this->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if (!$locked) {
+                $db->rollBack();
+                return $current;
+            }
+
+            $stored = $locked->config;
+            $stored = is_array($stored) ? $stored : [];
+            $merged = array_merge($stored, $values);
+
+            // Query-builder update bypasses setConfigAttribute, so encode with the
+            // same flags the mutator uses.
+            static::query()
+                ->where('id', $this->getKey())
+                ->update([
+                    'config' => json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ]);
+
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        // Only `config` was written, so only `config` is clean now — a bare
+        // syncOriginal() would also mark the caller's unsaved edits as persisted
+        // and their next save() would drop them.
+        $this->setAttribute('config', $merged);
+        $this->syncOriginalAttribute('config');
+
+        return $merged;
+    }
+
+    /**
+     * Customer-facing display name. When the config['item_attributes'] snapshot
+     * resolves it returns the product name with the labeled combination
+     * ("Cake - Flavor: Vanilla | Weight: 500 g"); otherwise the raw item_name
+     * (simple / pre-snapshot subscriptions).
+     *
+     * Presentation-only — it does NOT override the item_name column, so internal
+     * and payment-gateway reads of $subscription->item_name keep the raw stored
+     * value. Use this only at customer-facing display sites.
+     *
+     * The model is passed to the resolver so attribute-display filters (e.g. for
+     * simple-variation / third-party attributes) get the item context they need.
+     *
+     * @return string
+     */
+    public function getDisplayItemNameAttribute()
+    {
+        $itemAttributes = Arr::get($this->config, 'item_attributes', []);
+
+        if (!$itemAttributes) {
+            return $this->item_name;
+        }
+
+        $attributeDisplayTitleString = AttributeHelper::getDisplayAttributesString($itemAttributes, $this, 'subscription');
+
+        if ($attributeDisplayTitleString === '') {
+            return $this->item_name;
+        }
+
+        // Standalone label has no separate product line, so prefix the product
+        // name: "<product> - <attributes>".
+        $postTitle = $this->product ? $this->product->post_title : '';
+
+        return $postTitle !== '' ? $postTitle . ' - ' . $attributeDisplayTitleString : $attributeDisplayTitleString;
     }
 
     public function getUrlAttribute($value)
@@ -173,7 +298,6 @@ class Subscription extends Model
      */
     public function getOverriddenStatusAttribute($value)
     {
-        $variation = ProductVariation::find($this->variation_id);
         if (Arr::get($this->config, 'is_trial_days_simulated', 'no') == 'yes' && $this->status == Status::SUBSCRIPTION_TRIALING) {
             return Status::SUBSCRIPTION_ACTIVE;
         }
@@ -183,6 +307,42 @@ class Subscription extends Model
         }
 
         return $this->status;
+    }
+
+    /**
+     * Auto-charge bookkeeping for system subscriptions (attempt count, next retry,
+     * last error, processing marker). Null for every other collection method —
+     * guarded before the meta lookup so manual/automatic subscriptions pay nothing.
+     */
+    public function getSystemChargeStateAttribute()
+    {
+        if ($this->collection_method !== 'system') {
+            return null;
+        }
+
+        $meta = $this->meta->where('meta_key', 'system_charge_state')->first();
+
+        if (!$meta) {
+            return null;
+        }
+
+        return is_string($meta->meta_value) ? json_decode($meta->meta_value, true) : $meta->meta_value;
+    }
+
+    public function getHasPendingSkipAttribute(): bool
+    {
+        return $this->hasPendingSkip();
+    }
+
+    public function getLastSkippedPeriodAttribute()
+    {
+        $skipped = $this->getMeta('skipped_periods', []);
+
+        if (!is_array($skipped) || empty($skipped)) {
+            return null;
+        }
+
+        return end($skipped) ?: null;
     }
 
     public function getBillingInfoAttribute($value)
@@ -213,6 +373,22 @@ class Subscription extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'parent_order_id', 'id');
+    }
+
+    public function getBusinessInfoAttribute(): array
+    {
+        if ($this->relationLoaded('order') && $this->order) {
+            return $this->order->getBusinessInfo();
+        }
+        return [];
+    }
+
+    public function getIsReverseChargeTaxOrderAttribute(): bool
+    {
+        if ($this->relationLoaded('order') && $this->order) {
+            return $this->order->isReverseChargeTaxOrder();
+        }
+        return false;
     }
 
     /**
@@ -251,6 +427,129 @@ class Subscription extends Model
     }
 
     /**
+     * Get subscription permissions for the current user
+     * Returns what actions can be performed on this subscription
+     *
+     * @return array
+     */
+    public function getPermissionsAttribute(): array
+    {
+        $status = strtolower($this->status);
+        $hasVendorId = !empty($this->vendor_subscription_id);
+        $terminalStatuses = [
+            Status::SUBSCRIPTION_CANCELED,
+            Status::SUBSCRIPTION_EXPIRED,
+            Status::SUBSCRIPTION_COMPLETED,
+        ];
+
+        $canEdit = $this->usesRenewalEngine() && !in_array($status, $terminalStatuses);
+        $canCancel = !in_array($status, $terminalStatuses);
+
+        // One open-invoice lookup shared by the invoice actions below. Only runs
+        // for store-billed subscriptions in states where any of them can apply.
+        $hasOpenInvoice = false;
+        $chargeableStatuses = [
+            Status::SUBSCRIPTION_ACTIVE,
+            Status::SUBSCRIPTION_TRIALING,
+            Status::SUBSCRIPTION_PAST_DUE,
+            Status::SUBSCRIPTION_EXPIRED,
+        ];
+        if ($this->usesRenewalEngine() && in_array($status, $chargeableStatuses) && $this->parent_order_id) {
+            $hasOpenInvoice = Order::query()
+                ->where('parent_id', $this->parent_order_id)
+                ->where('type', Status::ORDER_TYPE_RENEWAL)
+                ->whereIn('payment_status', [Status::PAYMENT_PENDING, Status::PAYMENT_SCHEDULED])
+                ->exists();
+        }
+
+        $canManageRenewal = $this->usesRenewalEngine()
+            && in_array($status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING])
+            && $this->next_billing_date
+            && !$hasOpenInvoice;
+
+        // Admin "Charge Now": system subscription with an open invoice whose charge
+        // is not currently settling at the gateway (processing marker).
+        $chargeState = $this->isSystem() ? ($this->system_charge_state ?: []) : [];
+        $canChargeNow = $this->isSystem()
+            && $hasOpenInvoice
+            && in_array($status, $chargeableStatuses)
+            && Arr::get($chargeState, 'status') !== 'processing';
+
+        return [
+            'canEdit'          => $canEdit,
+            'canEditVendorIds' => $this->canEditVendorIds(),
+            'canVerifyVendorIds' => $this->canVerifyVendorIds(),
+            'canPause'         => $this->canPause(),
+            'canResume'        => $this->canResume(),
+            'canFetch'         => !$this->usesRenewalEngine() && $hasVendorId,
+            'canCancel'        => $canCancel,
+            // Admin one-click reactivate is for store-billed subscriptions only (the REST
+            // endpoint rejects automatic); automatic reactivation runs through the gateway
+            // URL flow, gated by canReactivate().
+            'canAdminReactivate' => $this->usesRenewalEngine() && $this->canReactivate(),
+            'canCreateRenewal' => $canManageRenewal,
+            'canSkipRenewal'   => $canManageRenewal && !$this->hasPendingSkip(),
+            'canChargeNow'     => $canChargeNow,
+            // Surfaced in the Edit modal: an already-issued renewal invoice is
+            // re-synced to the edited amount when it exists.
+            'hasPendingRenewal' => $hasOpenInvoice,
+        ];
+    }
+
+    /**
+     * Check if this is a manual subscription
+     *
+     * @return bool
+     */
+    public function isManual(): bool
+    {
+        return $this->collection_method === 'manual';
+    }
+
+    /**
+     * Check if this is a system (auto-charged, store-billed) subscription
+     *
+     * @return bool
+     */
+    public function isSystem(): bool
+    {
+        return $this->collection_method === 'system';
+    }
+
+    /**
+     * Check if this is a gateway-billed (automatic) subscription
+     *
+     * @return bool
+     */
+    public function isAutomatic(): bool
+    {
+        return $this->collection_method === Status::SUBSCRIPTION_METHOD_AUTOMATIC;
+    }
+
+    /**
+     * Manual and system subscriptions are both billed by FluentCart's invoice
+     * engine (renewal invoices, overdue escalation, admin invoice actions).
+     * System additionally auto-charges a stored token per invoice.
+     *
+     * @return bool
+     */
+    public function usesRenewalEngine(): bool
+    {
+        return in_array($this->collection_method, ['manual', 'system'], true);
+    }
+
+    /**
+     * Store-billed (manual/system) with a future due date has nothing to charge yet —
+     * reactivation should flip the subscription active locally instead of checkout.
+     *
+     * @return bool
+     */
+    public function shouldSubscriptionActiveLocally(): bool
+    {
+        return $this->usesRenewalEngine() && $this->next_billing_date && strtotime($this->next_billing_date) > time();
+    }
+
+    /**
      * Helper method to get subscription info
      *
      * @return string
@@ -268,7 +567,11 @@ class Subscription extends Model
 
         $recurringTotal = $this->recurring_total ?? 0;
 
-        return Helper::generateSubscriptionInfo($otherInfo, $recurringTotal) ?? '';
+        if ($schedule = SubscriptionHelper::getBillingSchedule($this)) {
+            return Helper::generateScheduleSubscriptionInfo($schedule, $otherInfo, $recurringTotal, $this->currency) ?? '';
+        }
+
+        return Helper::generateSubscriptionInfo($otherInfo, $recurringTotal, $this->currency) ?? '';
     }
 
     public function addLog($title, $description = '', $type = 'info', $by = '')
@@ -385,10 +688,70 @@ class Subscription extends Model
                 ->exists() && in_array($this->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING]);
     }
 
+    /**
+     * The gateway backing this subscription, or null when there is not one.
+     *
+     * `App::gateway()` returns the GatewayManager when its argument is null —
+     * that is how `App::gateway()` with no argument is meant to work, but
+     * `current_payment_method` is nullable, so a subscription with no payment
+     * method resolves to the manager too. The manager is a truthy object, so
+     * every `if (!$gateway)` guard in this class waved it through, and the next
+     * line read `$gateway->supportedFeatures` as null.
+     *
+     * `in_array($needle, null)` is a TypeError on PHP 8, thrown from
+     * `getPermissionsAttribute()` — an `$appends` entry — so it fires while
+     * SERIALIZING. One subscription row with a blank payment method therefore
+     * took down the entire subscriptions list response, not just its own row.
+     *
+     * Resolve through here rather than calling `App::gateway()` directly.
+     *
+     * The instanceof is against PaymentGatewayInterface — the manager's
+     * registration contract — NOT AbstractPaymentGateway, so a third-party
+     * gateway implementing the interface directly still resolves. The only
+     * object it rejects is the GatewayManager itself, which does not implement
+     * the interface.
+     *
+     * @return PaymentGatewayInterface|null
+     */
+    private function resolveGateway(): ?PaymentGatewayInterface
+    {
+        if (empty($this->current_payment_method)) {
+            return null;
+        }
+
+        // The one direct App::gateway() call in this class.
+        $gateway = App::gateway($this->current_payment_method);
+
+        return $gateway instanceof PaymentGatewayInterface ? $gateway : null;
+    }
+
+    /**
+     * The `switch_payment_method` entry of `supportedFeatures`, or [] when the
+     * gateway does not declare one.
+     *
+     * Unlike the flat feature flags this is a KEYED entry carrying config
+     * (`supported_gateways`), so `has()` cannot answer it — it needs the raw
+     * `supportedFeatures` property, which only AbstractPaymentGateway carries.
+     * An interface-only gateway therefore reports no switch support rather
+     * than triggering an undefined-property read.
+     *
+     * @return array
+     */
+    private function switchPaymentConfig(): array
+    {
+        $gateway = $this->resolveGateway();
+
+        if (!$gateway instanceof AbstractPaymentGateway) {
+            return [];
+        }
+
+        return (array) Arr::get($gateway->supportedFeatures, 'switch_payment_method', []);
+    }
+
     public function canUpdatePaymentMethod()
     {
-        $gateway = App::gateway($this->current_payment_method);
-        if ($gateway && !in_array('card_update', $gateway->supportedFeatures)) {
+        $gateway = $this->resolveGateway();
+        if (!$gateway || !$gateway->has('card_update')) {
             return false;
         }
 
@@ -397,9 +760,16 @@ class Subscription extends Model
 
     public function canSwitchPaymentMethod()
     {
-        $gateway = App::gateway($this->current_payment_method);
+        // Switching moves the subscription onto ANOTHER gateway's vendor subscription
+        // (see PayPal SubscriptionManager::switchPaymentMethod — it creates a live
+        // PayPal subscription). A store-billed subscription is already owned by the
+        // invoice engine, so a vendor subscription would bill it a second time. The
+        // customer changes the card on file instead (canUpdatePaymentMethod).
+        if ($this->usesRenewalEngine()) {
+            return false;
+        }
 
-        if (!$gateway || empty(Arr::get($gateway->supportedFeatures, 'switch_payment_method'))) {
+        if (!$this->switchPaymentConfig()) {
             return false;
         }
 
@@ -408,38 +778,236 @@ class Subscription extends Model
 
     public function switchablePaymentMethods()
     {
-        $gateway = App::gateway($this->current_payment_method);
-        if ($gateway && empty($gateway->supportedFeatures['switch_payment_method'])) {
+        if (!$this->canSwitchPaymentMethod()) {
             return [];
         }
 
-        return Arr::get($gateway->supportedFeatures, 'switch_payment_method.supported_gateways', []);
+        return Arr::get($this->switchPaymentConfig(), 'supported_gateways', []);
     }
 
-    public function canReactive()
+    public function canPause()
+    {
+        // Store-billed (manual/system) subscriptions can always be paused
+        // (unless already paused/canceled/expired)
+        if ($this->usesRenewalEngine()) {
+            return in_array($this->status, [
+                Status::SUBSCRIPTION_ACTIVE,
+                Status::SUBSCRIPTION_TRIALING,
+                Status::SUBSCRIPTION_PAST_DUE,
+                Status::SUBSCRIPTION_EXPIRING
+            ]);
+        }
+
+        // Automatic subscriptions require gateway support
+        $gateway = $this->resolveGateway();
+
+        if (!$gateway) {
+            return false;
+        }
+
+        // Check if gateway supports pause
+        if (!$gateway->has('pause_subscription')) {
+            return false;
+        }
+
+        // Default behavior for automatic subscriptions
+        return in_array($this->status, [
+            Status::SUBSCRIPTION_ACTIVE,
+            Status::SUBSCRIPTION_TRIALING
+        ]) && !in_array($this->status, [
+            Status::SUBSCRIPTION_PAUSED,
+            Status::SUBSCRIPTION_CANCELED,
+            Status::SUBSCRIPTION_EXPIRED,
+            Status::SUBSCRIPTION_COMPLETED
+        ]);
+    }
+
+    /**
+     * A skip is pending when the current upcoming period was reached by an admin
+     * skip that has not yet elapsed — next_billing_date still equals the value the
+     * last skip set. Blocks stacking another skip onto the same pending window.
+     *
+     * @return bool
+     */
+    public function hasPendingSkip(): bool
+    {
+        if (!$this->next_billing_date) {
+            return false;
+        }
+
+        $skippedTo = $this->getMeta('pending_skip_until');
+
+        if (!$skippedTo) {
+            return false;
+        }
+
+        return $skippedTo === $this->next_billing_date
+            && strtotime($this->next_billing_date) > time();
+    }
+
+    public function canResume()
+    {
+        // Store-billed (manual/system) subscriptions can be resumed from paused state
+        if ($this->usesRenewalEngine()) {
+            return $this->status === Status::SUBSCRIPTION_PAUSED;
+        }
+
+
+        $gateway = $this->resolveGateway();
+
+        if (!$gateway) {
+            return false;
+        }
+
+        if (!$gateway->has('resume_subscription')) {
+            return false;
+        }
+
+        // Default behavior
+        return $this->status === Status::SUBSCRIPTION_PAUSED;
+    }
+
+    public function pauseSubscription($reason = '')
+    {
+        return SubscriptionService::pauseSubscription($this, $reason);
+    }
+
+    public function resumeSubscription($reason = '')
+    {
+        return SubscriptionService::resumeSubscription($this, $reason);
+    }
+
+    public function canUpdateDetails()
+    {
+        // Only store-billed (manual/system) subscriptions can be fully edited by
+        // admin — edits to a system subscription take effect on its next invoice.
+        return $this->usesRenewalEngine();
+    }
+
+    /**
+     * Vendor identifiers are the inverse case of canUpdateDetails(): only a
+     * gateway-billed subscription has them, and correcting them is the one
+     * admin write an automatic subscription accepts. Billing fields stay
+     * gateway-owned.
+     *
+     * Off by default — this is a migration/support repair tool, and the column it
+     * writes is what gateway webhooks resolve on. Enable with:
+     *
+     *   add_filter('fluent_cart/subscription/vendor_id_editing_enabled', '__return_true');
+     *
+     * @return bool
+     */
+    public function canEditVendorIds(): bool
+    {
+        if (!apply_filters('fluent_cart/subscription/vendor_id_editing_enabled', false)) {
+            return false;
+        }
+
+        if (!$this->isAutomatic() || !$this->current_payment_method) {
+            return false;
+        }
+
+        // `expired` and `canceled` stay editable: a subscription usually lands there
+        // *because* the id was wrong (webhooks resolved to nothing), so those are the
+        // states the repair is needed in most. Sync from gateway has no status gate
+        // either. `completed` is a real end of term, not a lookup failure.
+        return strtolower($this->status) !== Status::SUBSCRIPTION_COMPLETED;
+    }
+
+    /**
+     * Whether the gateway backing this subscription can look a candidate id up
+     * before it is saved. Editing does not depend on this — a gateway with no
+     * lookup still accepts a correction, it just cannot preview it.
+     *
+     * @return bool
+     */
+    public function canVerifyVendorIds(): bool
+    {
+        if (!$this->canEditVendorIds()) {
+            return false;
+        }
+
+        $gateway = App::gateway($this->current_payment_method);
+
+        return $gateway && $gateway->has('subscriptions') && $gateway->has('verify_vendor_ids');
+    }
+
+    /**
+     * Update subscription details (for manual subscriptions)
+     *
+     * Allowed fields for manual subscriptions:
+     * - recurring_total: Update the next invoice/payment amount (in cents)
+     * - bill_times: Update the number of billing cycles (0 = unlimited)
+     * - billing_interval: Change billing frequency (daily, weekly, monthly, etc.)
+     * - expire_at: Update expiration date
+     * - trial_days: Update trial period
+     * - next_billing_date: Update next billing date
+     *
+     * @param array $data
+     * @return true|\WP_Error
+     */
+    public function updateSubscription(array $data)
+    {
+        return SubscriptionService::updateSubscription($this, $data);
+    }
+
+    /**
+     * Whether this subscription can be reactivated.
+     *
+     * Status-based for BOTH manual and automatic subscriptions — no gateway
+     * supportedFeatures branch on purpose. Manual reactivation is a local status
+     * flip; automatic reactivation runs through the Pro re-checkout flow
+     * (SubscriptionRenewalHandler builds an instant cart and the customer pays
+     * again), which works with any gateway. Gating on a gateway feature here
+     * would hide the customer-facing reactivate URL for Stripe/PayPal/etc.
+     *
+     * @return bool
+     */
+    public function canReactivate()
     {
         if (!App::isProActive()) {
-            return '';
+            return false;
         }
 
         if (isset($this->config['upgraded_to_sub_id']) || $this->recurring_amount <= 0) {
-            return '';
+            return false;
         }
 
-        if (isset($this->config['cancellation_reason']) && $this->config['cancellation_reason'] === 'refunded') {
-            return '';
-        }
+        // Paused is intentionally excluded — a paused subscription resumes (see
+        // canResume()); reactivation is for terminal/lapsed states only.
+        $canReactivate = in_array($this->status, [
+            Status::SUBSCRIPTION_CANCELED,
+            Status::SUBSCRIPTION_FAILING,
+            Status::SUBSCRIPTION_EXPIRED,
+            Status::SUBSCRIPTION_EXPIRING,
+            Status::SUBSCRIPTION_PAST_DUE,
+        ]);
 
-        $canReactivate = in_array($this->status, [Status::SUBSCRIPTION_CANCELED, Status::SUBSCRIPTION_FAILING, Status::SUBSCRIPTION_EXPIRED, Status::SUBSCRIPTION_PAUSED, Status::SUBSCRIPTION_EXPIRING, Status::SUBSCRIPTION_PAST_DUE]);
-
-        return apply_filters('fluent_cart/subscription/can_reactivate', $canReactivate, [
+        return (bool) apply_filters('fluent_cart/subscription/can_reactivate', $canReactivate, [
             'subscription' => $this
         ]);
     }
 
+    /**
+     * @deprecated Use canReactivate(). Kept as a backward-compatible alias.
+     * @return bool
+     */
+    public function canReactive()
+    {
+        return $this->canReactivate();
+    }
+
+    /**
+     * These links are minted in email and webhook contexts, where there is no
+     * current user. A wp_create_nonce() token bound to that user-less request
+     * stops verifying the moment the recipient logs in to act on it, so the link
+     * broke for the one journey it exists to serve. Authorization for the
+     * endpoint is the subscription-ownership check on the handling side, which
+     * a nonce never provided; the uuid alone is inert to anyone else.
+     */
     public function getReactivateUrl()
     {
-        if (!$this->canReactive()) {
+        if (!$this->canReactivate()) {
             return '';
         }
 
@@ -476,9 +1044,17 @@ class Subscription extends Model
             return true;
         }
 
+        // Past-due keeps access while the unpaid invoice is inside its dunning
+        // grace window; the expiry crons flip it to expired past that.
+        if ($this->status === Status::SUBSCRIPTION_PAST_DUE) {
+            $dueTimestamp = $this->next_billing_date ? strtotime($this->next_billing_date) : 0;
+            $graceDays = SubscriptionHelper::getGracePeriodDaysForInterval((string) $this->billing_interval);
+
+            return $dueTimestamp && time() < $dueTimestamp + ($graceDays * DAY_IN_SECONDS);
+        }
+
         $invalidStatuses = [
             Status::SUBSCRIPTION_EXPIRED,
-            Status::SUBSCRIPTION_PAST_DUE,
             Status::SUBSCRIPTION_INTENDED,
             Status::SUBSCRIPTION_PENDING
         ];
@@ -503,7 +1079,7 @@ class Subscription extends Model
 
     public function reSyncFromRemote()
     {
-        if ($gateway = App::gateway($this->current_payment_method)) {
+        if ($gateway = $this->resolveGateway()) {
             if ($gateway->has('subscriptions')) {
                 return $gateway->subscriptions->reSyncSubscriptionFromRemote($this);
             }
@@ -525,9 +1101,16 @@ class Subscription extends Model
             return new \WP_Error('subscription_already_cancelled', __('This subscription is already cancelled.', 'fluent-cart'));
         }
 
-        $gateway = App::gateway($this->current_payment_method);
+        $gateway = $this->resolveGateway();
 
-        if ($gateway && $gateway->has('subscriptions')) {
+        // No vendor subscription (store-billed, or a vendor id that never landed) —
+        // nothing to cancel at the gateway.
+        if (!$this->vendor_subscription_id) {
+            $vendorCanceled = null;
+            $updateData = [
+                'canceled_at' => gmdate('Y-m-d H:i:s', time())
+            ];
+        } elseif ($gateway && $gateway->has('subscriptions')) {
             $cancelArgs = [
                 'subscription_id' => $this->id,
                 'parent_order_id' => $this->parent_order_id,
@@ -545,6 +1128,7 @@ class Subscription extends Model
 
             $updateData = array_filter($vendorCanceled);
         } else {
+            // Vendor subscription exists but this gateway cannot cancel it — it stays live.
             $vendorCanceled = new \WP_Error('invalid_payment_method', __('This payment method does not support remote subscription cancel', 'fluent-cart'));
             $updateData = [
                 'canceled_at' => gmdate('Y-m-d H:i:s', time())
@@ -562,18 +1146,23 @@ class Subscription extends Model
             $updateData['canceled_at'] = NULL;
         }
 
-        $config = $this->config;
-        if ($args['reason']) {
-            $config['cancellation_reason'] = $args['reason'];
-        }
-        $updateData['config'] = $config;
-
-        if (Arr::get($args, 'effective_from') === 'immediately') {
+        if (Arr::get($args, 'effective_from') === 'immediately' && $updateData['status'] !== Status::SUBSCRIPTION_COMPLETED) {
             $updateData['next_billing_date'] = gmdate('Y-m-d H:i:s', time());
+        }
+
+        // A completed (EOT) subscription has no upcoming billing — the immediate-cancel
+        // date above must not resurrect one (SubscriptionEOT cancels remote subscriptions
+        // with effective_from=immediately after syncSubscriptionStates nulled the date).
+        if (Arr::get($updateData, 'status') === Status::SUBSCRIPTION_COMPLETED) {
+            $updateData['next_billing_date'] = NULL;
         }
 
         $this->fill($updateData);
         $this->save();
+
+        if ($args['reason']) {
+            $this->mergeConfig(['cancellation_reason' => $args['reason']]);
+        }
 
         $note = $args['note'];
 
@@ -581,8 +1170,9 @@ class Subscription extends Model
             $note = 'on customer request';
         }
 
-        if ($args['fire_hooks'] && $this->status !== Status::SUBSCRIPTION_COMPLETED) {
-            (new SubscriptionCanceled($this, $this->order, $this->order->customer, $note))->dispatch();
+        // Single cancel chokepoint — void open renewals, clear reminders, email once.
+        if ($this->status === Status::SUBSCRIPTION_CANCELED) {
+            SubscriptionService::finalizeCancellation($this, $note, (bool) $args['fire_hooks']);
         }
 
         if ($args['note']) {
@@ -607,6 +1197,34 @@ class Subscription extends Model
         return $this->recurring_total;
     }
 
+    /**
+     * Cycles the remote (vendor) plan must bill at INITIAL checkout.
+     * With a simulated trial the first installment is already collected outside
+     * the remote recurring cycles (one-time charge, paid/free trial cycle), so
+     * the remote plan only needs bill_times - 1.
+     *
+     * Only valid at initial checkout — do NOT use for renewals/reactivation
+     * (payment-method switching also sets is_trial_days_simulated; renewal flows
+     * must use getRequiredBillTimes() which is bill_count based).
+     *
+     * @return int 0 means unlimited
+     */
+    public function getInitialRemoteBillTimes()
+    {
+        $billTimes = (int)$this->bill_times;
+
+        if (!$billTimes) {
+            return 0;
+        }
+
+        if (Arr::get($this->config, 'is_trial_days_simulated', 'no') === 'yes') {
+            // never return 0 here — 0 means unlimited to the gateways
+            $billTimes = max(1, $billTimes - 1);
+        }
+
+        return $billTimes;
+    }
+
     public function getRequiredBillTimes()
     {
         $billTimes = (int)$this->bill_times;
@@ -614,20 +1232,7 @@ class Subscription extends Model
         if ($billTimes > 0) {
             $billTimes = $billTimes - $this->bill_count;
             if ($billTimes <= 0) {
-                $transacactionsCount = OrderTransaction::query()
-                    ->where('subscription_id', $this->id)
-                    ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
-                    ->where('status', Status::TRANSACTION_SUCCEEDED)
-                    ->where('total', '>', 0)
-                    ->count();
-
-                $earlyPaymentHistory = $this->getMeta('early_payment_history', []);
-                foreach ($earlyPaymentHistory as $earlyPayment) {
-                    $paidCount = (int) Arr::get($earlyPayment, 'count', 1);
-                    if ($paidCount > 1) {
-                        $transacactionsCount += ($paidCount - 1);
-                    }
-                }
+                $transacactionsCount = $this->calculateBillCount();
 
                 if ($transacactionsCount != $this->bill_count) {
                     $this->bill_count = $transacactionsCount;
@@ -646,9 +1251,134 @@ class Subscription extends Model
         return $billTimes;
     }
 
+    /**
+     * Canonical bill_count formula. Every writer of bill_count must go through
+     * this — a separate ad hoc count (e.g. StripeGateway\SubscriptionsManager
+     * previously) silently drops the offset/deduction corrections below and
+     * reports a wrong count until the next recompute.
+     *
+     * total > 0 CHARGE transactions linked to this subscription, adjusted for
+     * the two one-time corrections decided at creation (see
+     * CheckoutProcessor::syncInitialCycleCounting):
+     * - billed_cycles_offset: free simulated-trial first cycle consumed a
+     *   cycle without producing a total > 0 transaction.
+     * - billed_cycles_deduction: real-trial signup-fee-only charge is a
+     *   total > 0 transaction but isn't a billed cycle.
+     */
+    public function calculateBillCount()
+    {
+        $transacactionsCount = OrderTransaction::query()
+            ->where('subscription_id', $this->id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+            ->where('status', Status::TRANSACTION_SUCCEEDED)
+            ->where('total', '>', 0)
+            ->count();
+
+        $earlyPaymentHistory = $this->getMeta('early_payment_history', []);
+        foreach ((array)$earlyPaymentHistory as $earlyPayment) {
+            $paidCount = (int) Arr::get($earlyPayment, 'count', 1);
+            if ($paidCount > 1) {
+                $transacactionsCount += ($paidCount - 1);
+            }
+        }
+
+        $transacactionsCount += (int) $this->getMeta('billed_cycles_offset', 0);
+        $transacactionsCount -= (int) $this->getMeta('billed_cycles_deduction', 0);
+
+        return $transacactionsCount;
+    }
+
+    /**
+     * Installment / split-pay plan: a finite-term subscription (a lifetime
+     * license paid off in a fixed number of charges), as opposed to an
+     * open-ended recurring subscription. The canonical structural signal is
+     * bill_times > 0 (0 = infinite/open-ended). Reused across analytics,
+     * filters and lifecycle handling — do NOT reintroduce title-string
+     * ("Split") matching, which the data does not reliably carry.
+     *
+     * @return bool
+     */
+    public function isInstallment()
+    {
+        return (int) $this->bill_times > 0;
+    }
+
+    /**
+     * Installments still owed: 0 for open-ended plans, or once the term is
+     * fully paid.
+     *
+     * @return int
+     */
+    public function installmentsRemaining()
+    {
+        if (!$this->isInstallment()) {
+            return 0;
+        }
+
+        return max(0, (int) $this->bill_times - (int) $this->bill_count);
+    }
+
+    /**
+     * Has a finite installment plan collected every scheduled charge (end of
+     * term)? Open-ended plans never reach term end.
+     *
+     * @return bool
+     */
+    public function hasReachedTermEnd()
+    {
+        return $this->isInstallment() && (int) $this->bill_count >= (int) $this->bill_times;
+    }
+
+    /**
+     * Full committed price of an installment contract: recurring_total x
+     * bill_times, in cents. 0 for open-ended plans (no fixed total). This is
+     * the per-row form of the SUM(recurring_total * bill_times) used by the
+     * subscription analytics aggregate.
+     *
+     * @return int
+     */
+    public function totalContractValue()
+    {
+        if (!$this->isInstallment()) {
+            return 0;
+        }
+
+        return (int) $this->recurring_total * (int) $this->bill_times;
+    }
+
+    /**
+     * Filter by plan type: 'installment' (finite term, bill_times > 0),
+     * 'recurring' (open-ended, bill_times = 0) or anything else (no filter).
+     * The bill_times threshold is kept identical to isInstallment() so the SQL
+     * and PHP definitions never drift apart.
+     */
+    public function scopeOfPlanType($query, $planType)
+    {
+        if ($planType === 'installment') {
+            return $query->where('bill_times', '>', 0);
+        }
+        if ($planType === 'recurring') {
+            return $query->where('bill_times', '<=', 0);
+        }
+
+        return $query;
+    }
+
     public function getReactivationTrialDays()
     {
         if (!$this->hasAccessValidity()) {
+            return 0;
+        }
+
+        $lastPaidTransaction = OrderTransaction::query()
+            ->where('subscription_id', $this->id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+            ->where('status', Status::TRANSACTION_SUCCEEDED)
+            ->where('total', '>', 0)
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        if ($lastPaidTransaction && $lastPaidTransaction->getMaxRefundableAmount() === 0) {
             return 0;
         }
 
@@ -697,14 +1427,15 @@ class Subscription extends Model
             ->first();
 
         if ($theLastOrder) {
-            $days = PaymentHelper::getIntervalDays($this->billing_interval);
+            $paidAnchor = SubscriptionHelper::resolvePaidAnchor($theLastOrder);
+
             if ($theLastOrder->type == 'renewal') {
-                $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($theLastOrder->created_at) + $days * DAY_IN_SECONDS);
+                $nextBillingDate = gmdate('Y-m-d H:i:s', SubscriptionHelper::addBillingInterval($paidAnchor, $this->billing_interval, SubscriptionHelper::getBillingSchedule($this)));
             } else {
                 if ($this->trial_days) {
-                    $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($theLastOrder->created_at) + (int)($this->trial_days) * DAY_IN_SECONDS);
+                    $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($paidAnchor) + (int)($this->trial_days) * DAY_IN_SECONDS);
                 } else {
-                    $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($theLastOrder->created_at) + $days * DAY_IN_SECONDS);
+                    $nextBillingDate = gmdate('Y-m-d H:i:s', SubscriptionHelper::addBillingInterval($paidAnchor, $this->billing_interval, SubscriptionHelper::getBillingSchedule($this)));
                 }
             }
         } else {
@@ -723,7 +1454,7 @@ class Subscription extends Model
      * Processes all candidates in batches to avoid memory issues.
      * The query example works as follows:
      * SELECT * FROM subscriptions WHERE
-            status IN ('active', 'trialing', 'canceled')
+            status IN ('active', 'trialing', 'canceled', 'expiring', 'past_due')
             AND next_billing_date IS NOT NULL
             AND id > 0                          -- last processed ID for batch cursor
             AND next_billing_date < DATE_SUB(
@@ -746,112 +1477,196 @@ class Subscription extends Model
      * @param int $batchSize Number of subscriptions to process per batch
      * @return array Statistics about processed subscriptions
      */
-    public static function checkAndExpireSubscriptions($batchSize = 100)
+   public static function checkAndExpireSubscriptions($batchSize = 100)
     {
         $stats = [
-            'checked' => 0,
-            'validity_expired' => 0,
-            'batches' => 0,
+            'checked'           => 0,
+            'validity_expired'  => 0,
+            'batches'           => 0,
+            'expired_ids'       => [],
         ];
 
         $lastId = 0;
 
-        $gracePeriodDays = SubscriptionHelper::getSubscriptionsGracePeriodDays();
-
-        $caseSql  = 'CASE billing_interval ';
-        $bindings = [];
-
-        foreach ($gracePeriodDays as $interval => $days) {
-            $caseSql   .= 'WHEN ? THEN ? ';
-            $bindings[] = $interval;
-            $bindings[] = $days;
-        }
-
-        $caseSql   .= 'ELSE ? END';
-        $bindings[] = 7;
-
-        $cutoffSql = "DATE_SUB(?, INTERVAL ($caseSql) DAY)";
-
         do {
+            $currentTime = time();
+            $now = gmdate('Y-m-d H:i:s', $currentTime);
+
+            $gracePeriodDays = SubscriptionHelper::getSubscriptionsGracePeriodDays();
+
+            $cutoffDates = [];
+            foreach ($gracePeriodDays as $interval => $days) {
+                $cutoffDates[$interval] = gmdate('Y-m-d H:i:s', $currentTime - ((int)$days * DAY_IN_SECONDS));
+            }
+
+            // Fallback cutoff for unknown/null billing intervals.
+            $defaultGraceDays = 7;
+            $defaultCutoff = gmdate('Y-m-d H:i:s', $currentTime - ($defaultGraceDays * DAY_IN_SECONDS));
+            $knownIntervals = array_keys($cutoffDates);
+
             // Include canceled subscriptions to check if validity is yet to expired
+            // Exclude store-billed (manual/system) subscriptions — their expiry is
+            // handled by the invoice-based overdue flow
             $subscriptions = Subscription::query()
                 ->whereIn('status', [
                     Status::SUBSCRIPTION_ACTIVE,
                     Status::SUBSCRIPTION_TRIALING,
                     Status::SUBSCRIPTION_CANCELED,
+                    Status::SUBSCRIPTION_EXPIRING,
+                    Status::SUBSCRIPTION_PAST_DUE
                 ])
+                ->whereNotIn('collection_method', ['manual', 'system'])
                 ->whereNotNull('next_billing_date')
+                ->where('next_billing_date', '>', '0000-00-00 00:00:00')
                 ->where('id', '>', $lastId)
-                ->whereRaw(
-                    "next_billing_date < $cutoffSql",
-                    array_merge(
-                        [gmdate('Y-m-d H:i:s', time())],
-                        $bindings
-                    )
-                )
+                ->where(function ($query) use ($now, $cutoffDates, $knownIntervals, $defaultCutoff) {
+                    $query->where(function ($subQuery) use ($cutoffDates, $knownIntervals, $defaultCutoff) {
+                        $subQuery->whereIn('status', [
+                            Status::SUBSCRIPTION_ACTIVE,
+                            Status::SUBSCRIPTION_TRIALING,
+                            Status::SUBSCRIPTION_EXPIRING,
+                            Status::SUBSCRIPTION_PAST_DUE,
+                        ])->where(function ($dateQuery) use ($cutoffDates, $knownIntervals, $defaultCutoff) {
+                            $index = 0;
+
+                            // OR together one (interval + its cutoff) clause per known interval.
+                            foreach ($cutoffDates as $interval => $cutoff) {
+                                $method = $index === 0 ? 'where' : 'orWhere';
+
+                                $dateQuery->{$method}(function ($intervalQuery) use ($interval, $cutoff) {
+                                    $intervalQuery->where('billing_interval', $interval)
+                                        ->where('next_billing_date', '<', $cutoff);
+                                });
+
+                                $index++;
+                            }
+
+                            // Unknown/null intervals fall back to the default cutoff.
+                            $dateQuery->orWhere(function ($intervalQuery) use ($knownIntervals, $defaultCutoff) {
+                                $intervalQuery->where(function ($unknownIntervalQuery) use ($knownIntervals) {
+                                    $unknownIntervalQuery->whereNotIn('billing_interval', $knownIntervals)
+                                        ->orWhereNull('billing_interval');
+                                })->where('next_billing_date', '<', $defaultCutoff);
+                            });
+                        });
+                    // Branch B: canceled subs expire the moment their paid period ends (no grace).
+                    })->orWhere(function ($subQuery) use ($now) {
+                        $subQuery->where('status', Status::SUBSCRIPTION_CANCELED)
+                            ->where('next_billing_date', '<', $now);
+                    });
+                })
                 ->orderBy('id', 'ASC')
                 ->limit($batchSize)
                 ->with(['order', 'customer'])
                 ->get();
 
             if ($subscriptions->isEmpty()) {
-                break; // No more subscriptions to process
+                break;
             }
 
             $stats['batches']++;
             $stats['checked'] += $subscriptions->count();
 
             foreach ($subscriptions as $subscription) {
+                $nextBillingTimestamp = strtotime($subscription->next_billing_date);
+
+                // Skip unparseable/invalid dates.
+                if (!$nextBillingTimestamp || $nextBillingTimestamp <= 0) {
+                    continue;
+                }
+
+                // Re-validate in PHP (SQL was a coarse filter) and derive the exact cutoff used as a write guard below.
                 if ($subscription->status === Status::SUBSCRIPTION_CANCELED) {
+                    // Superseded by an upgrade -> the new sub owns validity, leave this one alone.
                     if (isset($subscription->config['upgraded_to_sub_id'])) {
                         continue;
                     }
-                }
-                $gracePeriod = $gracePeriodDays[$subscription->billing_interval] ?? 7;
-                $cutoff = gmdate('Y-m-d H:i:s', time() - ($gracePeriod * DAY_IN_SECONDS));
 
-                if ($subscription->next_billing_date < $cutoff) {
-                    $updateData = [
-                        'next_billing_date' => NULL,
-                    ];
-
-                    // Only change status to EXPIRED for active/trialing subscriptions
-                    if ($subscription->status !== Status::SUBSCRIPTION_CANCELED) {
-                        $updateData['status'] = Status::SUBSCRIPTION_EXPIRED;
+                    // Already processed in a prior run.
+                    if ($subscription->getMeta('validity_expired_at')) {
+                        continue;
                     }
 
-                    $subscription->updateMeta('validity_expired_at', gmdate('Y-m-d H:i:s'));
+                    // Paid period not over yet.
+                    if ($nextBillingTimestamp >= $currentTime) {
+                        continue;
+                    }
 
-                    $subscription->fill($updateData);
-                    $subscription->save();
+                    $cutoff = $now;
+                } else {
+                    $graceDays = $gracePeriodDays[$subscription->billing_interval] ?? $defaultGraceDays;
+                    $graceDays = max(0, (int)$graceDays);
+                    $cutoffTimestamp = $currentTime - ($graceDays * DAY_IN_SECONDS);
 
-                    $event = new \FluentCart\App\Events\Subscription\SubscriptionValidityExpired(
-                        $subscription,
-                        $subscription->order,
-                        $subscription->customer,
-                    );
+                    // Still inside the grace window.
+                    if ($nextBillingTimestamp >= $cutoffTimestamp) {
+                        continue;
+                    }
 
-                    $event->dispatch();
-
-                    $stats['validity_expired']++;
+                    $cutoff = gmdate('Y-m-d H:i:s', $cutoffTimestamp);
                 }
 
+                // Null out next_billing_date so the row can't be re-selected/re-processed.
+                $updateData = [
+                    'next_billing_date' => NULL,
+                    'updated_at'        => gmdate('Y-m-d H:i:s', $currentTime),
+                ];
+
+                // Canceled subs keep their status; only billing statuses flip to EXPIRED.
+                if ($subscription->status !== Status::SUBSCRIPTION_CANCELED) {
+                    $updateData['status'] = Status::SUBSCRIPTION_EXPIRED;
+                }
+
+                // Optimistic-lock write: only apply if status + past-cutoff still hold, so a concurrent
+                // renewal/cancel between SELECT and UPDATE can't be overwritten with a stale decision.
+                $updated = Subscription::query()
+                    ->where('id', $subscription->id)
+                    ->where('status', $subscription->status)
+                    ->where('next_billing_date', '<', $cutoff)
+                    ->update($updateData);
+
+                if (!$updated) {
+                    continue;
+                }
+
+                $subscription = Subscription::query()
+                    ->with(['order', 'customer'])
+                    ->find($subscription->id);
+
+                if (!$subscription) {
+                    continue;
+                }
+
+                // Idempotency marker + audit timestamp for this expiry.
+                $subscription->updateMeta('validity_expired_at', gmdate('Y-m-d H:i:s', $currentTime));
+
+                $event = new \FluentCart\App\Events\Subscription\SubscriptionValidityExpired(
+                    $subscription,
+                    $subscription->order,
+                    $subscription->customer
+                );
+
+                $event->dispatch();
+
+                $stats['validity_expired']++;
+                $stats['expired_ids'][] = $subscription->id;
             }
 
             $lastId = $subscriptions->last()->id;
 
             unset($subscriptions);
-
         } while (true);
 
         if ($stats['checked'] > 0) {
+            $expiredList = !empty($stats['expired_ids']) ? ' (IDs: ' . implode(', ', $stats['expired_ids']) . ')' : '';
             fluent_cart_add_log(
                 'Subscription Validity Expiration Check',
                 sprintf(
-                    'Checked: %d subscriptions, Status changed to Expired: %d, Batches: %d',
+                    'Checked: %d subscriptions, Status changed to Expired: %d, Batches: %d%s',
                     $stats['checked'],
                     $stats['validity_expired'],
-                    $stats['batches']
+                    $stats['batches'],
+                    $expiredList
                 ),
                 'info',
                 $stats

@@ -115,8 +115,10 @@ export default class Url {
         const hash = urlObject.hash; // includes leading '#'
 
         if (!hash.includes('?')) {
-            // No query in the hash, just append normally
-            const newHash = hash.replace(/\/?$/, '/') + '?' + new URLSearchParams(params).toString();
+            // No query in the hash, just append normally. A URL without a fragment
+            // (or a bare trailing '#') must still yield a '#/' vue route — otherwise
+            // the params would corrupt the base query string.
+            const newHash = (hash || '#').replace(/\/?$/, '/') + '?' + new URLSearchParams(params).toString();
             return `${base}${newHash}`;
         }
 
@@ -140,6 +142,17 @@ export default class Url {
     static getVueParams(key){
         const router = useRoute();
         return router?.query?.[key] ?? router?.query ?? null;
+    }
+
+    static scrollToHashSection(hash) {
+        const sectionId = hash?.startsWith('#') ? hash.slice(1) : (hash || '');
+        if (!sectionId) return;
+        const el = document.getElementById(sectionId);
+        if (el) {
+            el.scrollIntoView({behavior: 'smooth', block: 'start'});
+            el.classList.add('fct-scroll-highlight');
+            el.addEventListener('animationend', () => el.classList.remove('fct-scroll-highlight'), {once: true});
+        }
     }
 
 }

@@ -43,6 +43,7 @@ const props = defineProps({
     },
   table: Object
 });
+const emit = defineEmits(['selectionChange']);
 const selectedOrders = ref([]);
 const siteUrl = AppConfig.get('site_url');
 const receiptPageUrl = AppConfig.get('receipt_page_url');
@@ -92,6 +93,7 @@ const handleSelectionChange = (selection) => {
       mode: item.mode
     };
   });
+  emit('selectionChange', selectedOrders.value);
 
 }
 
@@ -199,7 +201,7 @@ defineExpose({
                                   {{ item.post_title }}
                                 </router-link>
 
-                                <span class="variation-title"><b>{{ item.quantity }} </b> x {{ item.title }}</span>
+                                <span class="variation-title"><b>{{ item.quantity }} </b> x {{ item.variation_display_title || item.title }}</span>
                                 
                                 <!-- Bundle Products -->
                                 <BundleProducts v-if="item.bundle_items.length > 0" :product="item"/>
@@ -355,5 +357,4 @@ defineExpose({
         </el-table>
     </div>
 </template>
-
 

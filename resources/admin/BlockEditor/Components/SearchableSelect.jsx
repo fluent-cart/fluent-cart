@@ -60,7 +60,9 @@ const SearchableSelect = ({value, onChange}) => {
                 "search": search,
                 'filter_type': 'simple',
                 'sort_by': 'ID',
-                'with': ['detail', 'variants']
+                // A screen key, not a relation name — ProductFilter::allowedWiths()
+                // decides what it loads for the block-editor pickers.
+                'with': ['block_picker']
             };
 
             if (includeIds) {

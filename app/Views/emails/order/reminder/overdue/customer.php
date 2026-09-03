@@ -18,6 +18,13 @@ $orderRef = \FluentCart\Framework\Support\Arr::get($reminder, 'order_ref', '');
 if (empty($orderRef)) {
     $orderRef = !empty($order->invoice_no) ? $order->invoice_no : '#' . $order->id;
 }
+
+$bodyText = sprintf(
+    /* translators: %1$s: invoice reference */
+    esc_html__('This is a friendly reminder that your payment for invoice %1$s is still pending. You can complete it using the button below.', 'fluent-cart'),
+    '<b>' . esc_html($orderRef) . '</b>'
+);
+$ctaText = esc_html__('Complete your payment at your earliest convenience.', 'fluent-cart');
 ?>
 
 <div class="space_bottom_30">
@@ -30,15 +37,7 @@ if (empty($orderRef)) {
         );
         ?>
     </p>
-    <p>
-        <?php
-        printf(
-            /* translators: %s is order reference */
-            esc_html__('This is a friendly reminder that your payment for order %s is still pending.', 'fluent-cart'),
-            esc_html($orderRef)
-        );
-        ?>
-    </p>
+    <p><?php echo wp_kses($bodyText, ['b' => []]); ?></p>
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin:12px 0 0;">
         <tbody>
         <tr>
@@ -65,7 +64,7 @@ if (empty($orderRef)) {
 
 <?php
 \FluentCart\App\App::make('view')->render('emails.parts.call_to_action_box', [
-    'content'     => __('Your order has an outstanding balance. Please complete your payment at your earliest convenience.', 'fluent-cart'),
+    'content'     => $ctaText,
     'link'        => $paymentLink,
     'button_text' => __('Complete Payment', 'fluent-cart'),
 ]);

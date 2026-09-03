@@ -32,19 +32,6 @@ class ShippingZoneTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Zone Name'),
-                value: 'name'
-            },
-            {
-                label: translate('Order'),
-                value: 'order'
-            }
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by zone name")
     }
@@ -81,9 +68,11 @@ class ShippingZoneTable extends Table {
         return true;
     }
 
+    // A SCREEN key, not a relation name — ShippingZoneFilter resolves it to a
+    // withCount('methods'), which surfaces as the `methods_count` attribute.
     with() {
         return [
-            'methodsCount'
+            'admin_shipping_zone_list'
         ];
     }
 }

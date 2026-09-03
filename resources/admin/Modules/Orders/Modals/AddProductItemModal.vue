@@ -38,7 +38,7 @@
                     <div v-if="product?.children?.length > 0" class="content-collapsible-btn"
                          @click="handleToggleCollapse(productIndex)"
                          :class="{ 'is-collapsed': collapsedStates[productIndex] }">
-                      <DynamicIcon name="CaretRight" class="w-4 h-5"/>
+                      <DynamicIcon name="CaretRight"/>
                     </div>
                     <div class="content-indent" v-if="!product?.children?.length > 0"></div>
                     <div class="content-checkbox">
@@ -106,7 +106,7 @@
                           </div>
 
                           <div class="content-title">
-                            <div class="title">{{ productChildren.title }}</div>
+                            <div class="title title--wrap">{{ productChildren.variation_display_title || productChildren.title }}</div>
                             <small v-if="productChildren?.other_info?.payment_type === 'subscription' && productChildren.other_info?.billing_summary !== ''" class="text">
                               {{CurrencyFormatter.currencySign}} {{productChildren.other_info?.billing_summary}}
 
@@ -153,7 +153,7 @@
       </div>
 
       <div class="-mx-5 -mb-5 fc_product_search_pagination_wrap">
-        <pagination
+        <Pagination
             :pagerSizes="false"
             :hide_on_single="false"
             :pagination="paginate"
@@ -167,7 +167,7 @@
         <el-button @click="orderAddModal = false">
           {{ translate('Cancel') }}
         </el-button>
-        <el-button :disabled="!this.selectedProducts.length" type="primary" @click="processProducts">
+        <el-button :disabled="!selectedProducts.length" type="primary" @click="processProducts">
           {{ translate('Add Items') }}
         </el-button>
       </div>
@@ -364,6 +364,14 @@ export default {
             vl.discount_total = parseInt(vl.discount_total) || 0;
             vl.quantity = parseInt(vl.quantity) || 1;
 
+            // Initialize custom price fields for subscription products
+            if (vl.payment_type === 'subscription') {
+              vl.custom_price = null;
+              vl.original_price = vl.price;
+              vl.original_unit_price = vl.unit_price;
+              vl.has_custom_price = false;
+            }
+
             itIsEncountered[vl.object_id] = vl
           }
 
@@ -431,7 +439,12 @@ export default {
         "search": this.searchQuery,
         'filter_type': 'simple',
         'sort_by': 'ID',
-        'with': ['detail.variants.media','detail.variants.bundleChildren', 'categories']
+        // One screen key, not relation names. ProductFilter::allowedWiths()
+        // loads detail → variants → media + bundleChildren in a single with()
+        // call. bundleChildren is load-bearing: productService.js assigns it to
+        // bundle_items and this component calls .length on it with no optional
+        // chaining. `categories` is gone: it was requested here and read nowhere.
+        'with': ['admin_order_add_product']
       };
       Rest.get('products/', {
         ...queryParams

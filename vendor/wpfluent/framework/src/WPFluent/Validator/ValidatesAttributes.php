@@ -695,8 +695,19 @@ trait ValidatesAttributes
         /**
          * @var $value \FluentCart\Framework\Validator\Contracts\File
          */
-        return $value->getPath() != '' && in_array(
-            $value->guessExtension(), $parameters
+        // wp_check_filetype() matches case-insensitively but returns the
+        // extension in the filename's own case ("clip.MOV" => "MOV"), so a
+        // case-sensitive compare rejects valid uploads. Fold both sides.
+        // Casts guard the false (no match) and [null] (bare "mimes:" via
+        // str_getcsv) cases, and avoid strtolower(null) on PHP 8.1+.
+        $extension = strtolower((string) $value->guessExtension());
+
+        $allowed = array_map(function ($parameter) {
+            return strtolower((string) $parameter);
+        }, $parameters);
+
+        return $value->getPath() != '' && '' !== $extension && in_array(
+            $extension, $allowed, true
         );
     }
 

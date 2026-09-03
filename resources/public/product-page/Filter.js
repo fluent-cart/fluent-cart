@@ -1,3 +1,15 @@
+// Number format used by the price-range noUiSlider. `to` is the value that gets
+// written back into the filter inputs and the URL, so it must keep two decimals
+// (prices are cents) instead of rounding the cheapest product out of the filter.
+export const priceRangeFormat = {
+    from: function (numericValue) {
+        return parseFloat(numericValue);
+    },
+    to: function (numericValue) {
+        return parseFloat(numericValue).toFixed(2);
+    }
+};
+
 export default class Filter {
     filterForm;
     filterListener;
@@ -234,6 +246,13 @@ export default class Filter {
                         return;
                     }
 
+                    // Sync descendants before reading the form, otherwise the
+                    // request goes out with the parent only and the children
+                    // are ticked afterwards.
+                    if (input.matches('[data-parent-checkbox]')) {
+                        this.syncChildCheckboxes(input);
+                    }
+
                     if (this.liveFilter) {
                         this.applyFilter();
                     }
@@ -243,24 +262,23 @@ export default class Filter {
                 });
             });
 
-            // Add event listener for parent checkboxes
-            const parentCheckboxes = this.filterForm.querySelectorAll('input[data-parent-checkbox]');
-            parentCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', (event) => {
-                    if (this.isReseting) {
-                        event.preventDefault?.();
-                        return;
-                    }
-
-                    const isChecked = checkbox.checked;
-                    const childGroup = checkbox.closest('[data-fluent-cart-shop-app-filter-checkbox-child-group]');
-                    if (childGroup) {
-                        const childCheckboxes = childGroup.querySelectorAll('input[type="checkbox"]');
-                        childCheckboxes.forEach(child => child.checked = isChecked);
-                    }
-                });
-            });
         }
+    }
+
+    /**
+     * Tick / untick every checkbox in the parent's own subtree.
+     *
+     * Groups nest, so `closest()` resolves to the checkbox's own group and
+     * leaves the ancestors and siblings alone.
+     */
+    syncChildCheckboxes(parentCheckbox) {
+        const childGroup = parentCheckbox.closest('[data-fluent-cart-shop-app-filter-checkbox-child-group]');
+        if (!childGroup) {
+            return;
+        }
+
+        const isChecked = parentCheckbox.checked;
+        childGroup.querySelectorAll('input[type="checkbox"]').forEach(child => child.checked = isChecked);
     }
 
     applyFilter(){
@@ -491,14 +509,7 @@ export default class Filter {
                                 'min': minValue,
                                 'max': maxValue
                             },
-                            format: {
-                                from: function (numericValue) {
-                                    return parseFloat(numericValue).toFixed(1);
-                                },
-                                to: function (numericValue) {
-                                    return parseFloat(numericValue).toFixed(1);
-                                }
-                            }
+                            format: priceRangeFormat
                         });
 
                         sliderWrapper.noUiSlider.on('update', (values, handle) => {

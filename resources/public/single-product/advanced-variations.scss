@@ -1,0 +1,246 @@
+@config "./advanced-variation.config.js";
+@tailwind utilities;
+
+/* Advanced Variations - Attribute Selectors */
+.fct-advanced-variation-wrap {
+  @apply flex flex-col gap-4 mb-4;
+}
+
+/* Shared selector styles */
+.fct-attribute-selector {
+  @apply flex flex-col gap-1.5;
+}
+
+.fct-attribute-label {
+  @apply text-sm font-medium text-system-dark;
+}
+
+.screen-reader-text {
+  @apply absolute w-1 h-1 overflow-hidden whitespace-nowrap;
+  clip: rect(0 0 0 0);
+}
+
+/* Swatch selector */
+.fct-swatch-options {
+  @apply flex flex-wrap gap-2;
+}
+
+.fct-attribute-selector {
+  .fct-swatch-item {
+    @apply text-system-dark inline-flex items-center justify-center border border-solid border-gray-outline rounded cursor-pointer transition-all duration-150 bg-white p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
+
+    &:hover:not(.disabled):not(.selected) {
+      border-color: var(--fct-single-product-active-border-color);
+      @apply text-system-dark;
+    }
+    &.disabled {
+      @apply opacity-50 cursor-not-allowed relative;
+
+      &::after {
+        @apply absolute top-1/2 h-[1px] bg-gray-400;
+        content: '';
+        left: -2px;
+        right: -2px;
+        transform: rotate(-45deg);
+      }
+    }
+  }
+}
+
+
+
+.fct-attribute-selector {
+  .fct-swatch-color,
+  .fct-swatch-image {
+    @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden gap-2 bg-gray-50 border-transparent hover:text-system-dark hover:border-primary-500 focus:text-system-dark focus:shadow-none;
+
+    &:hover:not(.selected):not(.disabled) {
+      @apply bg-gray-50;
+    }
+
+    &.selected {
+      @apply bg-white border border-solid border-primary-500;
+    }
+  }
+}
+
+.fct-swatch-dot {
+  /* Square color chip (rounded-sm corners) — design spec calls for a
+     square swatch dot rather than the previous circle so it visually
+     groups with the rectangular image thumb and the label pill. */
+  @apply inline-block w-4 h-4 rounded-sm border border-solid border-gray-outline shrink-0;
+}
+
+.fct-swatch-thumb {
+  @apply inline-flex items-center justify-center w-6 h-6 rounded-none overflow-hidden shrink-0;
+
+  img {
+    @apply w-full h-full object-cover rounded-none;
+  }
+}
+
+.fct-swatch-text {
+  @apply inline-block leading-none;
+}
+
+/* Selected term title shown next to an image group's label, e.g.
+   "Image: Design 2". The ": " prefix only appears once a value is set. */
+.fct-selected-term-title {
+  @apply font-normal text-system-mid;
+
+  &:not(:empty)::before {
+    content: ': ';
+  }
+}
+
+/* Image groups render thumbnail-only pills (no caption). The pill shrinks to
+   the image and shows a larger thumb so the artwork is the focus. The image is
+   contained (not cropped) so the full design is always visible. */
+.fct-attribute-selector {
+  .fct-swatch-image-only {
+    /* White pill so the contained image (product shots are usually on a white
+       background) blends edge-to-edge — the object-contain letterboxing is
+       invisible rather than showing as grey gaps. */
+    @apply min-w-0 h-auto p-1 gap-0 bg-white;
+
+    &:hover:not(.selected):not(.disabled) {
+      @apply bg-white;
+    }
+
+    .fct-swatch-thumb {
+      /* Uniform 72px square, but the full artwork stays visible — an image
+         variation pill must not crop the design the shopper is choosing.
+         object-contain overrides the base thumb's object-cover; portrait /
+         landscape shots are contained inside the square, never cropped. */
+      @apply w-[72px] h-[72px] rounded bg-white;
+
+      img {
+        @apply object-contain;
+      }
+    }
+  }
+}
+
+.fct-attribute-selector .fct-swatch-label {
+  @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden bg-gray-50 border border-solid border-transparent text-system-mid;
+
+  &:hover:not(.selected):not(.disabled) {
+    /* Grey lift on hover — same pattern as color/image swatches. */
+    @apply bg-gray-100;
+    border: 1px solid theme('colors.gray.outline');
+  }
+
+  &.selected {
+    @apply bg-white border-primary-500 text-system-dark;
+    box-shadow: none;
+  }
+
+  &.selected:hover,
+  &.selected:focus,
+  &.selected:focus-visible {
+     @apply bg-white border-primary-500 text-system-dark;
+  }
+}
+
+/* Custom Dropdown (Color / Image / Options) */
+.fct-custom-dropdown {
+  /* Label-above layout, consistent with the swatch groups. The old
+     fixed-width (50px) label column cramped longer group titles like
+     "Image test" onto two lines; stacking the label keeps it on one line
+     and aligns every group the same way. */
+  @apply relative flex flex-col gap-1.5;
+}
+
+.fct-custom-select {
+  @apply relative w-full max-w-[300px] outline-none;
+
+  /* Keyboard focus indicator — the trigger is a tabindex=0 role=combobox
+     div; outline-none above kills the UA default, so re-assert a visible
+     ring for keyboard users (mouse users never see it via :focus-visible). */
+  &:focus-visible {
+    outline: 1px solid var(--fct-single-product-active-border-color);
+    outline-offset: 1px;
+  }
+
+  .fct-custom-select__trigger {
+    @apply flex items-center justify-between gap-2 min-h-[38px] py-2 px-3 border border-solid border-gray-outline rounded-md bg-white cursor-pointer transition-colors duration-150 leading-none hover:border-gray-500;
+  }
+
+  .fct-custom-select__value {
+    @apply text-sm text-system-dark flex items-center gap-1.5;
+  }
+
+  .fct-custom-select__arrow {
+    @apply w-0 h-0 transition-transform duration-200;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #6b7280;
+  }
+
+  .fct-custom-select__options {
+    @apply absolute left-0 right-0 bg-white border border-gray-outline border-solid rounded z-[50] max-h-[220px] py-1 overflow-y-auto mt-1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+  }
+
+  .fct-custom-select__option {
+    @apply flex items-center gap-1.5 py-1.5 px-3 cursor-pointer transition-colors duration-150 hover:bg-gray-100;
+
+    &.selected {
+      @apply bg-blue-50 text-blue-500;
+      .fct-image-label,
+      .fct-color-label {
+        @apply text-blue-500;
+      }
+    }
+
+    &.disabled {
+      @apply opacity-50 cursor-not-allowed line-through pointer-events-none;
+    }
+  }
+
+  .fct-option-label {
+    @apply text-sm text-system-dark;
+  }
+
+  /* Open state */
+  &.is-open {
+    .fct-custom-select__arrow {
+      @apply rotate-180;
+    }
+
+    .fct-custom-select__trigger {
+      border-color: var(--fct-single-product-active-border-color, #3b82f6);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+    .fct-custom-select__options {
+      @apply block;
+    }
+  }
+}
+
+/* color */
+.fct-color-option {
+  @apply flex items-center gap-1.5;
+}
+
+.fct-color-option .fct-color-swatch {
+  @apply inline-block w-4 h-4 rounded-full flex-shrink-0;
+}
+.fct-color-option .fct-color-label {
+  @apply text-sm text-system-dark;
+}
+
+/* Image */
+.fct-image-option {
+  @apply flex items-center gap-1.5;
+}
+
+.fct-image-option .fct-image-src {
+  @apply w-6 h-6 object-cover rounded-xs border border-gray-divider flex-shrink-0 border-solid;
+}
+.fct-image-option .fct-image-label {
+  @apply text-sm text-system-dark;
+}
+

@@ -62,13 +62,24 @@
           <div class="fct-table-actions-col" v-if="table.isColumnVisible('actions')">
             <div class="title">{{translate('Actions')}}</div>
             <router-link
+                v-if="row.module_id && row.module_name.toLowerCase() === 'order'"
                 class="value"
                 :to="{
                   name: 'view_order',
                   params: { order_id: row.module_id }
                 }"
             >
-              {{ translate('View Order') }}
+              {{ translate('View') }}
+            </router-link>
+            <router-link
+                v-if="row.module_id && row.module_name.toLowerCase() === 'subscription'"
+                class="value"
+                :to="{
+                  name: 'view_subscription',
+                  params: { subscription_id: row.module_id }
+                }"
+            >
+              {{ translate('View') }}
             </router-link>
           </div>
         </div>

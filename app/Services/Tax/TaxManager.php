@@ -5,8 +5,11 @@ namespace FluentCart\App\Services\Tax;
 
 use FluentCart\App\App;
 use FluentCart\Api\StoreSettings;
+use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\TaxRate;
 use FluentCart\App\Models\TaxClass;
+use FluentCart\App\Models\BatchQuery\Batch;
+use FluentCart\Framework\Database\Query\Expression;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 use FluentCart\App\Helpers\AddressHelper;
@@ -37,6 +40,18 @@ class TaxManager
      * @var array
      */
     private array $descriptionMap = [];
+
+    /**
+     * @var array
+     */
+    private array $countryEnabledCache = [];
+
+    /** ISO country codes whose rates are stored under a parent country with state=<code>. */
+    private array $parentCountryMap = [
+        //'GP' => 'FR', // Guadeloupe
+        //'MQ' => 'FR', // Martinique
+        //'RE' => 'FR', // Réunion
+    ];
 
     /**
      * Private constructor to prevent direct instantiation
@@ -215,12 +230,15 @@ class TaxManager
 
                 $ratesMap[] = [
                     'country'      => $country,
-                    'name'         => $rate['name'] ?? $country . ' ' . $taxClassLabels[$typeKey] . ' Tax',
+                    'name'         => $rate['name'] ?? (
+                        ($data['group'] ?? '') === 'EU' && $typeKey === 'standard'
+                            ? $this->buildDefaultRateLabel($country)
+                            : $country . ' ' . ($taxClassLabels[$typeKey] ?? ucfirst($typeKey)) . ' Tax'
+                    ),
                     'class_id'     => $taxClassIds[$typeKey],
                     'rate'         => $rate['rate'],
                     'is_compound'  => $compound ? 1 : 0,
                     'group'        => $data['group'] ?? '',
-                    'for_shipping' => null,
                     'state'        => $rate['state'] ?? '',
                     'city'         => $rate['city'] ?? '',
                 ];
@@ -309,6 +327,138 @@ class TaxManager
         return $groupedTaxRates;
     }
 
+    /**
+     * Map territory country codes (e.g. GP) to their parent country + state
+     * so tax rate lookups hit the correct DB rows (e.g. country=FR, state=GP).
+     */
+    public function resolveTaxCountryAndState(string $country, ?string $state): array
+    {
+        $country = strtoupper($country);
+        if (isset($this->parentCountryMap[$country])) {
+            return ['country' => $this->parentCountryMap[$country], 'state' => $country];
+        }
+        return ['country' => $country, 'state' => $state];
+    }
+
+    public function normalizeTaxStatusCountryCode(string $countryCode): string
+    {
+        $countryCode = strtoupper(sanitize_text_field($countryCode));
+
+        if ($countryCode === 'EU') {
+            return 'EU';
+        }
+
+        // Resolve territory codes (GP→FR) before the EU group check.
+        if (isset($this->parentCountryMap[$countryCode])) {
+            $countryCode = $this->parentCountryMap[$countryCode];
+        }
+
+        if (Arr::get($this->rates, $countryCode . '.group') === 'EU') {
+            return 'EU';
+        }
+
+        return $countryCode;
+    }
+
+    public function getCountryTaxEnabledMetaKey(string $countryCode): string
+    {
+        return 'fluent_cart_tax_enabled_' . $this->normalizeTaxStatusCountryCode($countryCode);
+    }
+
+    public function getCountryTaxEnabledMap(array $countryCodes): array
+    {
+        $countryCodes = array_values(array_unique(array_filter(array_map(function ($countryCode) {
+            return strtoupper(sanitize_text_field($countryCode));
+        }, $countryCodes))));
+
+        if (!$countryCodes) {
+            return [];
+        }
+
+        $normalizedMap = [];
+        foreach ($countryCodes as $countryCode) {
+            $normalizedMap[$countryCode] = $this->normalizeTaxStatusCountryCode($countryCode);
+        }
+
+        $normalizedCodes = array_values(array_unique(array_values($normalizedMap)));
+        $metaKeys = array_map(function ($countryCode) {
+            return 'fluent_cart_tax_enabled_' . $countryCode;
+        }, $normalizedCodes);
+
+        $metaRows = Meta::query()
+            ->where('object_type', 'tax')
+            ->whereIn('meta_key', $metaKeys)
+            ->get();
+
+        $enabledByNormalizedCode = array_fill_keys($normalizedCodes, true);
+
+        foreach ($metaRows as $metaRow) {
+            $normalizedCountryCode = strtoupper(str_replace('fluent_cart_tax_enabled_', '', $metaRow->meta_key));
+            $enabledByNormalizedCode[$normalizedCountryCode] = $this->parseCountryTaxEnabledValue($metaRow->meta_value);
+            $this->countryEnabledCache[$normalizedCountryCode] = $enabledByNormalizedCode[$normalizedCountryCode];
+        }
+
+        $enabledMap = [];
+        foreach ($normalizedMap as $countryCode => $normalizedCountryCode) {
+            $enabledMap[$countryCode] = $enabledByNormalizedCode[$normalizedCountryCode] ?? true;
+        }
+
+        return $enabledMap;
+    }
+
+    public function isTaxEnabledForCountry(string $countryCode): bool
+    {
+        $normalizedCountryCode = $this->normalizeTaxStatusCountryCode($countryCode);
+
+        if (array_key_exists($normalizedCountryCode, $this->countryEnabledCache)) {
+            return $this->countryEnabledCache[$normalizedCountryCode];
+        }
+
+        $metaKey = 'fluent_cart_tax_enabled_' . $normalizedCountryCode;
+        $meta = Meta::query()
+            ->where('meta_key', $metaKey)
+            ->where('object_type', 'tax')
+            ->first();
+
+        if ($meta === null) {
+            $this->countryEnabledCache[$normalizedCountryCode] = true;
+            return true;
+        }
+
+        $isEnabled = $this->parseCountryTaxEnabledValue($meta->meta_value);
+        $this->countryEnabledCache[$normalizedCountryCode] = $isEnabled;
+
+        return $isEnabled;
+    }
+
+    public function setTaxEnabledForCountry(string $countryCode, bool $enabled): void
+    {
+        $normalizedCountryCode = $this->normalizeTaxStatusCountryCode($countryCode);
+        $metaKey = $this->getCountryTaxEnabledMetaKey($normalizedCountryCode);
+
+        Meta::query()
+            ->where('meta_key', $metaKey)
+            ->where('object_type', 'tax')
+            ->delete();
+
+        if (!$enabled) {
+            Meta::query()->create([
+                'meta_key'    => $metaKey,
+                'meta_value'  => ['enabled' => 0],
+                'object_type' => 'tax'
+            ]);
+        }
+
+        $this->countryEnabledCache[$normalizedCountryCode] = $enabled;
+    }
+
+    private function parseCountryTaxEnabledValue($metaValue): bool
+    {
+        $enabledValue = is_array($metaValue) ? Arr::get($metaValue, 'enabled', 1) : $metaValue;
+
+        return intval($enabledValue) === 1;
+    }
+
 
     public function groupTaxRatesByGroup($taxRates): array
     {
@@ -382,30 +532,176 @@ class TaxManager
         return Arr::get($this->config, 'continents.' . $group);
     }
 
-    public function calculateTotalCartTax()
+    private function buildDefaultRateLabel(string $countryCode): string
     {
-        $getCart = \FluentCart\App\Helpers\CartHelper::getCart();
+        $countryName = preg_replace('/\s*\([^)]+\)$/', '', AddressHelper::getCountryNameByCode($countryCode));
+        /* translators: %1$s: country code (e.g. DE), %2$s: country name (e.g. Germany), %3$s: tax class type (e.g. Standard) */
+        return sprintf(__('%1$s VAT - %2$s - %3$s rate', 'fluent-cart'), $countryCode, $countryName, __('Standard', 'fluent-cart'));
+    }
 
-        $taxSettings = (new TaxModule())->getSettings();
+    public function resetEuRates($classSlug = 'standard'): void
+    {
+        $taxClasses = TaxClass::query()->get()->keyBy('slug');
 
-        if (Arr::get($taxSettings, 'tax_calculation_basis') === 'store') {
-            $country = (new StoreSettings())->get('store_country') ?? '';
-            $state = (new StoreSettings())->get('store_state') ?? null;
-            $city = (new StoreSettings())->get('store_city') ?? null;
-            $postCode = (new StoreSettings())->get('store_postcode') ?? null;
-        } else if (Arr::get($taxSettings, 'tax_calculation_basis') === 'billing') {
-            $country = Arr::get($getCart, 'checkout_data.form_data.billing_country') ?? '';
-            $state = Arr::get($getCart, 'checkout_data.form_data.billing_state') ?? null;
-            $city = Arr::get($getCart, 'checkout_data.form_data.billing_city') ?? null;
-            $postCode = Arr::get($getCart, 'checkout_data.form_data.billing_postcode') ?? null;
-        } else {
-            $country = Arr::get($getCart, 'checkout_data.form_data.shipping_country') ?? '';
-            $state = Arr::get($getCart, 'checkout_data.form_data.shipping_state') ?? null;
-            $city = Arr::get($getCart, 'checkout_data.form_data.shipping_city') ?? null;
-            $postCode = Arr::get($getCart, 'checkout_data.form_data.shipping_postcode') ?? null;
+        $targetClass = $taxClasses->get($classSlug);
+        if (!$targetClass) {
+            return;
         }
 
-        $calculator = TaxCalculator::calculateTaxForCart($getCart, $country, $state, $city, $postCode);
-        return $calculator->getTotalTax();
+        $existing = TaxRate::query()
+            ->where('group', 'EU')
+            ->where('class_id', $targetClass->id)
+            ->where(function ($q) {
+                $q->whereNull('state')->orWhere('state', '');
+            })
+            ->where(function ($q) {
+                $q->whereNull('city')->orWhere('city', '');
+            })
+            ->where(function ($q) {
+                $q->whereNull('postcode')->orWhere('postcode', '');
+            })
+            ->get(['id', 'country', 'class_id', 'name', 'rate', 'for_shipping'])
+            ->keyBy(function ($row) {
+                return $row->country . ':' . $row->class_id;
+            });
+
+        $typeLabels = [
+            'standard' => __('Standard', 'fluent-cart'),
+            'reduced'  => __('Reduced', 'fluent-cart'),
+            'zero'     => __('Zero', 'fluent-cart'),
+        ];
+
+        $toCreate = [];
+        $toUpdate = [];
+
+        foreach ($this->rates as $countryCode => $data) {
+            if (Arr::get($data, 'group') !== 'EU' || empty($data['tax'])) {
+                continue;
+            }
+
+            foreach ($data['tax'] as $rateData) {
+                // Only reset country-level rates; skip state-specific entries (e.g. ES-Mainland, ES-Canary)
+                if (!empty($rateData['state'])) {
+                    continue;
+                }
+
+                $typeKey  = $rateData['type'] ?? 'standard';
+                if ($typeKey !== $classSlug) {
+                    continue;
+                }
+                $taxClass = $taxClasses->get($typeKey);
+                if (!$taxClass) {
+                    continue;
+                }
+
+                $name = $rateData['name'] ?? (
+                    $typeKey === 'standard'
+                        ? $this->buildDefaultRateLabel($countryCode)
+                        : $countryCode . ' ' . ($typeLabels[$typeKey] ?? ucfirst($typeKey)) . ' Tax'
+                );
+                $rate = $rateData['rate'];
+                $key  = $countryCode . ':' . $taxClass->id;
+
+                if ($existing->has($key)) {
+                    $existingRow = $existing->get($key);
+                    $shippingIsWrong = $existingRow->for_shipping !== null;
+                    if ($existingRow->name !== $name || (float) $existingRow->rate !== (float) $rate || $shippingIsWrong) {
+                        $toUpdate[] = ['id' => $existingRow->id, 'name' => $name, 'rate' => $rate, 'for_shipping' => null];
+                    }
+                } else {
+                    $toCreate[] = [
+                        'country'      => $countryCode,
+                        'group'        => 'EU',
+                        'class_id'     => $taxClass->id,
+                        'state'        => '',
+                        'city'         => '',
+                        'name'         => $name,
+                        'rate'         => $rate,
+                        'is_compound'  => 0,
+                        'for_order'    => 0,
+                        'priority'     => 0,
+                    ];
+                }
+            }
+        }
+
+        if (empty($toCreate) && empty($toUpdate)) {
+            return;
+        }
+
+        $db = App::db();
+        try {
+            $db->beginTransaction();
+            if (!empty($toCreate)) {
+                TaxRate::query()->insert($toCreate);
+            }
+            if (!empty($toUpdate)) {
+                (new Batch())->update(new TaxRate(), $toUpdate, 'id');
+            }
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    public static function getProductOverrideById($overrideId)
+    {
+        return Meta::query()
+            ->where('id', $overrideId)
+            ->where('object_type', 'tax_override')
+            ->where('meta_key', 'product_category_override')
+            ->first();
+    }
+
+    public static function clearShippingOverrideById($taxRateId)
+    {
+        TaxRate::query()->findOrFail($taxRateId);
+
+        // wpdb->prepare() converts PHP null bindings to '' (empty string), which MySQL
+        // coerces to 0 on TINYINT columns rather than NULL. Expression inlines NULL
+        // directly into the SQL, bypassing the binding path.
+        TaxRate::query()->where('id', $taxRateId)->update(['for_shipping' => new Expression('NULL')]);
+    }
+
+    // EU VAT registration helpers — stored in fct_meta, keyed by country code.
+
+    public function getEuVatRegistrations()
+    {
+        $rows = Meta::query()
+            ->where('object_type', 'eu_vat_registration')
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = (array) $row->meta_value;
+        }
+        return $result;
+    }
+
+    public function getEuVatRegistration($country)
+    {
+        $row = Meta::query()
+            ->where('object_type', 'eu_vat_registration')
+            ->where('meta_key', strtoupper($country))
+            ->first();
+
+        return $row ? (array) $row->meta_value : null;
+    }
+
+    public function saveEuVatRegistration($country, $data)
+    {
+        Meta::query()->updateOrCreate(
+            ['object_type' => 'eu_vat_registration', 'meta_key' => strtoupper($country)],
+            ['meta_value' => $data, 'object_id' => 0]
+        );
+    }
+
+    public function deleteEuVatRegistration($country)
+    {
+        Meta::query()
+            ->where('object_type', 'eu_vat_registration')
+            ->where('meta_key', strtoupper($country))
+            ->delete();
     }
 }

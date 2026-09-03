@@ -31,6 +31,7 @@ class ProductQuery
             'cursor'         => null,
             'product_type'   => '', // physical|digital|subscription|onetime|simple|variations
             'stock_status'   => '', // in_stock|out_of_stock // check only if global stock management is enabled
+            'allow_out_of_stock' => false, // when false, show only in-stock products
             'min_price'      => 0,
             'max_price'      => 0,
             'on_sale'        => false,
@@ -125,10 +126,9 @@ class ProductQuery
             ->when($this->queryArgs['exclude_ids'], function ($query, $excludeIds) {
                 $query->whereNotIn('ID', $excludeIds);
             })
-            //TODO: check if stock management module is on
-            ->when($this->queryArgs['stock_status'], function ($query, $stockStatus) {
-                $query->whereHas('detail', function ($query) use ($stockStatus) {
-                    $query->where('stock_availability', $stockStatus);
+            ->when(!$this->queryArgs['allow_out_of_stock'], function ($query) {
+                $query->whereHas('detail', function ($query) {
+                    $query->where('stock_availability', 'in-stock');
                 });
             })
             ->when($this->queryArgs['on_sale'], function ($query) {

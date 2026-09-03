@@ -36,6 +36,21 @@ export default class TaxService {
         this.validNote = this.taxWrapper?.querySelector('[data-fluent-cart-tax-valid-note]');
         
         this.bindDelegatedEvents();
+        this.syncFromServerState();
+
+        window.addEventListener('fluentCartFragmentsReplaced', () => {
+            this.syncFromServerState();
+        });
+    }
+
+    syncFromServerState() {
+        const wrapper = this.getTaxWrapper();
+        if (!wrapper) return;
+
+        const validNoteWrapper = wrapper.querySelector('[data-fluent-cart-tax-valid-note-wrapper]');
+        if (!validNoteWrapper || validNoteWrapper.dataset.vatValid !== 'true') return;
+
+        this.showSuccess();
     }
 
     getTaxWrapper() {
@@ -47,7 +62,7 @@ export default class TaxService {
     getTaxElements() {
         const wrapper = this.getTaxWrapper();
         if (!wrapper) return {};
-        
+
         return {
             applyBtn: wrapper.querySelector('[data-fluent-cart-checkout-page-tax-apply-btn]'),
             loader: wrapper.querySelector('[data-fluent-cart-checkout-page-tax-loading]'),
@@ -55,7 +70,6 @@ export default class TaxService {
             errorWrapper: wrapper.querySelector('[data-fluent-cart-checkout-page-form-error]'),
             taxRemoveBtn: wrapper.querySelector('[data-fluent-cart-tax-remove-btn]'),
             validNoteWrapper: wrapper.querySelector('[data-fluent-cart-tax-valid-note-wrapper]'),
-            validNote: wrapper.querySelector('[data-fluent-cart-tax-valid-note]')
         };
     }
 
@@ -68,7 +82,7 @@ export default class TaxService {
                 this.validateVatHandler();
                 return;
             }
-            
+
             // Remove button click
             if (event.target.matches('[data-fluent-cart-tax-remove-btn]')) {
                 event.preventDefault();
@@ -88,6 +102,10 @@ export default class TaxService {
 
     validateVatHandler() {
         const elements = this.getTaxElements();
+        if (!elements.applyBtn) {
+            return;
+        }
+
         const vatNumber = elements.taxIdInput?.value?.trim();
         if (!vatNumber) {
             this.clearError();
@@ -129,17 +147,32 @@ export default class TaxService {
             if (data?.fragments) {
                 CheckoutHelper.handleFragments(data.fragments);
             }
+            this.syncBillingCompanyName(result?.name);
             this.clearError();
-            // Optionally, you can display a small success note
-            this.showSuccess(`${this.translate('Valid VAT number')}${result?.name ? ' — ' + result.name : ''}`);
+            this.showSuccess();
             return true;
         } catch (e) {
-            console.log(e, 'error');
+            // validation network error
             this.showError(this.translate('Validation service unavailable. Please try again.'));
             return false;
         } finally {
             this.endLoading();
         }
+    }
+
+    syncBillingCompanyName(companyName) {
+        if (!companyName) {
+            return;
+        }
+
+        const companyInput = this.form?.querySelector('#billing_company_name');
+        if (!companyInput || companyInput.value === companyName) {
+            return;
+        }
+
+        // Keep the validated business name in the form without triggering a second
+        // checkout-data save cycle that can replace VAT fragments again.
+        companyInput.value = companyName;
     }
 
     async removeVat() {
@@ -189,7 +222,6 @@ export default class TaxService {
             window.location.reload();
 
         } catch (e) {
-            console.error(e);
             this.showError(this.translate('Could not remove VAT, please try again.'));
         } finally {
             this.endLoading();
@@ -221,23 +253,21 @@ export default class TaxService {
         this.clearSuccess();
     }
 
-    showSuccess(message) {
+    showSuccess() {
         const elements = this.getTaxElements();
-        const wrapper = this.getTaxWrapper();
-        if (!wrapper) return;
-        if (elements.validNote) {
+        if (!this.getTaxWrapper()) return;
+        if (elements.validNoteWrapper) {
             elements.validNoteWrapper.classList.remove('is-hidden');
-            elements.validNote.textContent = message || this.translate('Valid VAT number');
+            elements.validNoteWrapper.removeAttribute('aria-hidden');
         }
     }
 
     clearSuccess() {
         const elements = this.getTaxElements();
-        const wrapper = this.getTaxWrapper();
-        if (!wrapper) return;
-        if (elements.validNote) {
+        if (!this.getTaxWrapper()) return;
+        if (elements.validNoteWrapper) {
             elements.validNoteWrapper.classList.add('is-hidden');
-            elements.validNote.textContent = '';
+            elements.validNoteWrapper.setAttribute('aria-hidden', 'true');
         }
     }
 
@@ -272,4 +302,3 @@ export default class TaxService {
         }
     }
 }
-

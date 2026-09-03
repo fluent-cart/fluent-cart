@@ -51,7 +51,7 @@ import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import defaultReport from "@/Models/Reports/DefaultReportModel";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 
 // Define props
 const props = defineProps({
@@ -183,6 +183,8 @@ const updateChart = () => {
     },
     tooltip: {
       trigger: "item",
+      confine: true,
+      position: chartTooltipPosition,
       formatterr: "{b}: {c} ({d}%)",
       formatter: function (params) {
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
@@ -200,13 +202,13 @@ const updateChart = () => {
           <div>
             <span style="color: ${color};">${translate('Gross Sales')}</span>
             <span style="font-weight: bold; float: right; margin-left: 15px; color: ${color};">
-              ${CurrencyFormatter.scaled(params.data.gross)}
+              ${chartTooltipAmount(params.data.gross * 100)}
             </span>
           </div>
           <div>
             <span style="color: ${color};">${translate('Revenue')}</span>
             <span style="font-weight: bold; float: right; margin-left: 15px; color: ${color};">
-              ${CurrencyFormatter.scaled(params.data.net)}
+              ${chartTooltipAmount(params.data.net * 100)}
             </span>
           </div>
         `;
@@ -269,16 +271,22 @@ watch(breakdown, () => {
 
 const onThemeChanged = (event) => {
   isDarkTheme.value = Theme.isDark();
-  
+
+  updateChart();
+};
+
+const onCurrencyChanged = () => {
   updateChart();
 };
 
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", onThemeChanged);
+  window.addEventListener("fluentCartCurrencyChange", onCurrencyChanged);
   nextTick(initChart);
 });
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", onThemeChanged);
+  window.removeEventListener("fluentCartCurrencyChange", onCurrencyChanged, false);
 });
 </script>

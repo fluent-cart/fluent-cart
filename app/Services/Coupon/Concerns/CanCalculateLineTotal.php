@@ -34,6 +34,11 @@ trait CanCalculateLineTotal
         }
 
         $this->formatDiscountNumbers();
+
+        foreach ($lineItems as $id => $lineItem) {
+            $lineItems[$id]['coupon_discount'] = (int) $lineItem['discount_total'];
+        }
+
         $this->calculatedLineItems = $lineItems;
 
     }
@@ -155,8 +160,11 @@ trait CanCalculateLineTotal
         ]);
 
         if ($cart) {
-            $upgradeDiscount = Arr::get($cart, 'checkout_data.manual_discount.amount', 0);
-            $totalPrice = $totalPrice - $upgradeDiscount;
+            // Prorate credit is a post-tax adjustment to the payable total, not a
+            // discount, so it must NOT reduce the coupon-applicable base. Only a
+            // real manual discount reduces the base here.
+            $manualDiscount = Arr::get($cart, 'checkout_data.manual_discount.amount', 0);
+            $totalPrice = $totalPrice - $manualDiscount;
             if ($totalPrice < 0) {
                 $totalPrice = 0;
             }

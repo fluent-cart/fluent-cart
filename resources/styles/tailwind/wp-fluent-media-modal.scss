@@ -6,12 +6,9 @@
     }
     .button,
     .button-primary{
-        @apply rounded-md bg-primary-500 border-primary-500 text-white hover:bg-primary-600 hover:border-primary-600 hover:text-white !important;
+        @apply rounded-md bg-primary-500 border-primary-500 text-white hover:bg-primary-600 hover:border-primary-600 hover:text-white dark:bg-primary-50 dark:border-primary-50 dark:text-system-dark dark:hover:bg-primary-100 dark:hover:border-primary-100 dark:hover:text-system-dark !important;
         &:focus {
             @apply dark:outline-none dark:shadow-none dark:bg-primary-500 border-primary-500 text-white !important;
-        }
-        &:hover {
-            @apply dark:bg-primary-400 border-primary-400 text-white !important;
         }
     }
     .media-modal{
@@ -44,6 +41,9 @@
     }
     .media-attachments-filter-heading {
         @apply left-6 top-5 dark:text-gray-50 !important;
+    }
+    .media-toolbar-secondary label {
+        @apply dark:text-gray-50;
     }
     .media-frame-router{
         @apply h-[40px];
@@ -137,7 +137,7 @@
     }
     .media-frame-toolbar {
         .media-toolbar{
-            @apply border-gray-outline dark:border-dark-500;
+            @apply border-gray-outline dark:border-dark-500 dark:bg-dark-500;
         }
     }
     .media-sidebar{
@@ -193,7 +193,7 @@
         @apply top-[64px];
     }
     .edit-attachment{
-        @apply text-dark-500 mt-1.5 hover:text-dark-700 dark:text-gray-200;
+        @apply text-dark-500 mt-1.5 hover:text-dark-700 dark:text-gray-200 dark:hover:text-gray-50;
     }
     a {
         @apply dark:text-gray-200 dark:underline;
@@ -212,6 +212,14 @@
     }
     .image-editor .imgedit-menu .button{
         @apply border-dark-100 text-dark-500 bg-white hover:bg-dark-50 hover:border-dark-200 focus:shadow-none focus:outline-none dark:bg-transparent dark:border-dark-400 dark:text-gray-50;
+    }
+    .image-editor legend {
+        @apply dark:text-gray-300;
+    }
+    .media-modal .imgedit-group-top h2, 
+    .media-modal .imgedit-group-top h2 
+    .button-link {
+        @apply dark:text-gray-50;
     }
     .uploader-inline {
         .upload-message{
@@ -240,7 +248,7 @@
     input[type=week], 
     select, 
     textarea {
-        @apply border-gray-outline focus:border-primary-500 focus:outline-none focus:shadow-none dark:text-gray-50 dark:bg-dark-500 dark:border-dark-400 dark:focus:border-dark-400;
+        @apply border-gray-outline focus:border-primary-500 focus:outline-none focus:shadow-none dark:text-gray-50 dark:bg-dark-500 dark:border-dark-400 dark:focus:border-dark-400 !important;
         &::placeholder{
             @apply dark:text-gray-200;
         }
@@ -273,7 +281,7 @@
     .button-primary[disabled],
     .button:disabled, 
     .button[disabled]{
-        @apply dark:bg-dark-500 dark:border-dark-500 #{!important};
+        @apply dark:bg-dark-400 dark:border-dark-500 dark:hover:text-gray-600 #{!important};
         text-shadow: none;
     }
     .button{
@@ -327,8 +335,45 @@
             }
         }
     }
+    .embed-url {
+        @apply dark:bg-transparent;
+    }
+    .media-embed .setting .name, 
+    .media-embed .setting span, 
+    .media-embed .setting-group .name {
+        @apply dark:text-gray-50;
+    }
+    .media-menu .separator {
+        @apply dark:border-dark-400;
+    }
+    .media-menu .active, 
+    .media-menu .active:hover {
+        @apply dark:text-gray-50;
+    }
+    .media-selection::after {
+        @apply dark:hidden;
+    }
 }
 .media-sidebar:not(:has(.attachment-details))::before{
     @apply absolute top-1/2 left-3 w-[90%] mx-auto leading-[22px] text-center text-sm text-system-mid dark:text-gray-300;
     content: 'No media information available. Please select image.';
+}
+
+body.version-7-0 .wp-fluent-media-modal,
+body.version-7-1 .wp-fluent-media-modal {
+     select.attachment-filters {
+        @apply mt-1 py-0 min-h-[auto] border-gray-outline focus:shadow-none dark:bg-dark-400 dark:text-gray-50 dark:border-dark-400 !important
+    }
+    .attachments-browser .media-toolbar {
+        @apply h-[56px];
+    }
+    .media-search-input-label {
+        @apply font-normal;
+    }
+    input[type=search]{
+        @apply mt-1 min-h-[auto] rounded border-gray-outline focus:shadow-none dark:border-dark-400 dark:bg-dark-400 dark:text-gray-50;
+    }
+    .wp-core-ui .attachment:not(:has(.filename))::after {
+        @apply shadow-none border border-solid border-gray-outline rounded-bl rounded-br dark:border-dark-400 !important;
+    }
 }

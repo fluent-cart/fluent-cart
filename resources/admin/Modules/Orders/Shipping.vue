@@ -10,13 +10,14 @@
         <DynamicIcon name="External"/>
       </a>
       <span v-else>{{ getShippingButtonLabel() }}</span>
+      <div v-if="shippingTitle" class="text-xs text-system-mid dark:text-gray-300 mt-0.5">
+        {{ shippingTitle }}
+      </div>
     </td>
-    <td>
-      {{ getShippingTitle() }}
-    </td>
+    <td></td>
     <td>
     <span v-if="hasFreeShipping()">
-        <del>{{ formatNumber(order.shipping_total) }}</del>
+        <del>{{ formatNumberForOrder(order.shipping_total, order) }}</del>
         {{ translate("Free") }}
     </span>
       <span v-if="shouldEnableEditing && !hasFreeShipping()" class="max-w-[120px] block ml-auto text-right">
@@ -26,7 +27,7 @@
         </template>
       </el-input>
     </span>
-      <span v-else>{{ formatNumber(order.shipping_total) }}</span>
+      <span v-else>{{ formatNumberForOrder(order.shipping_total - (order.tax_summary && order.tax_summary.rcShippingAdjustment ? order.tax_summary.rcShippingAdjustment : 0), order) }}</span>
     </td>
   </tr>
 
@@ -48,7 +49,7 @@
           <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
             <el-radio v-for="(method, index) in shippingMethods" :label="method.id" :key="index">
               {{ method.title }}
-              <span v-if="method.shipping_charge" class="charge">{{ formatNumber(method.shipping_charge) }}</span>
+              <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
             </el-radio>
           </el-radio-group>
         </div>
@@ -58,7 +59,7 @@
           <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
             <el-radio v-for="(method, index) in otherShippingMethods" :label="method.id" :key="index">
               {{ method.title }}
-              <span v-if="method.shipping_charge" class="charge">{{ formatNumber(method.shipping_charge) }}</span>
+              <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
             </el-radio>
           </el-radio-group>
         </div>
@@ -81,7 +82,6 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import ShippingModal from "./Modals/ShippingModal.vue";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
-import {formatNumber} from "../../Bits/productService";
 import Notify from "@/utils/Notify";
 import AppConfig from "@/utils/Config/AppConfig";
 
@@ -120,11 +120,20 @@ export default {
     return {
       shippingModalIsOpen: false,
       shipping: this.shippingAttributes,
-      currency: AppConfig.get('shop.currency_sign'),
       shippingMethods: this.shippingMethodsProps,
       otherShippingMethods: this.otherShippingMethodsProps,
       total_shipping: this.order.shipping_total / 100,
     };
+  },
+  computed: {
+    currency() {
+      const signs = AppConfig.get('currency_signs', {});
+      const defaultSign = AppConfig.get('shop.currency_sign', '$');
+      return (this.order && this.order.currency && signs[this.order.currency]) ? signs[this.order.currency] : defaultSign;
+    },
+    shippingTitle() {
+      return this.getShippingTitle();
+    },
   },
   watch: {
     shippingMethodsProps: {
@@ -146,8 +155,10 @@ export default {
       deep: true
     }
   },
+  mounted() {
+
+  },
   methods: {
-    formatNumber,
     translate,
     showShippingModal() {
       this.shippingModalIsOpen = true;
@@ -165,14 +176,19 @@ export default {
       }
     },
     getShippingTitle() {
-      if (this.shipping.id == 0) {
-        return '__';
+      const checkoutTitle = this.order && this.order.checkout_shipping && this.order.checkout_shipping.method_title
+          ? this.order.checkout_shipping.method_title
+          : '';
+      if (!this.shipping.id) {
+        return checkoutTitle;
       }
-      const method = this.shippingMethods.find(method => method.id == this.shipping.id);
+      const shippingId = this.shipping.id;
+      const allMethods = this.shippingMethods.concat(this.otherShippingMethods);
+      const method = allMethods.find(function (m) { return m.id == shippingId; });
       if (method) {
         return method.title;
       }
-      return '__';
+      return checkoutTitle;
     },
     updateShipping() {
       //adjustShippingTotal(this.order, this.shipping);
@@ -204,7 +220,7 @@ export default {
             }
             this.total_shipping = this.order.shipping_total / 100;
             //this.handleSuccess(response.message);
-            this.$emit('update:shipping', data.order_items, data.shipping_total);
+            this.$emit('update:shipping', data.order_items, data.shipping_total, this.shipping);
           })
           .catch((errors) => {
             if (errors.status_code == '422') {
@@ -224,9 +240,6 @@ export default {
           'No shipping methods found. You can add shipping methods from %1$s here %2$s',
           `<a href="${link}" target="_blank" class="link-text">`, '</a>');
     }
-  },
-  mounted() {
-
   },
 };
 </script>

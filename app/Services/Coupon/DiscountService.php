@@ -85,12 +85,20 @@ class DiscountService
         $codes = array_unique($codes);
         $codes = array_values($codes);
 
-        $coupons = Coupon::query()->whereIn('code', $codes)
-            ->where('status', 'active')
-            ->get();
+        $coupons = Coupon::query()->whereIn('code', $codes)->get();
+
+        /*
+         * Allow addons to resolve codes that do not exist in fct_coupons into in-memory
+         * (virtual) Coupon models — e.g. a wallet / store-credit integration that applies a
+         * discount without persisting a coupon. The filter receives the DB-found coupons,
+         * the requested codes, and the cart; it may append unsaved Coupon instances.
+         */
+        $coupons = apply_filters('fluent_cart/coupon/resolve_coupons', $coupons, $codes, [
+            'cart' => $this->cart,
+        ]);
 
         if ($coupons->isEmpty()) {
-            return new \WP_Error('no_valid_coupons', __('Coupon can not be applied.', 'fluent-cart'), []);
+            return new \WP_Error('no_valid_coupons', __('No matching coupon found for this code.', 'fluent-cart'), []);
         }
 
         $invalidCoupons = [];
@@ -111,14 +119,27 @@ class DiscountService
         }
 
         if (empty($validCoupons)) {
-            return new \WP_Error('no_valid_coupons', __('Coupon can not be applied.', 'fluent-cart'), $invalidCoupons);
+            $message = __('Coupon can not be applied.', 'fluent-cart');
+            if (!empty($invalidCoupons)) {
+                $firstInvalid = reset($invalidCoupons);
+                if (!empty($firstInvalid['error'])) {
+                    $message = $firstInvalid['error'];
+                }
+            }
+            return new \WP_Error('no_valid_coupons', $message, $invalidCoupons);
         }
 
-        // Let's check if we have multiple coupons and if they are stackable. If not, we will only keep the first one and invalidate the rest.
+        // Stacking contract — the first coupon applied always stays (parity with
+        // the admin path, CanValidateCoupon::canBeStacked). applyCouponCodes()
+        // merges existing cart coupons before newly submitted codes and
+        // formatCoupons() preserves that order, so index 0 is genuinely the
+        // first-applied valid coupon. A non-stackable first coupon locks the
+        // cart to itself; a stackable first admits only later stackable codes.
         if (count($validCoupons) >= 2) {
-            $intermediateValidCoupons = [];
-            foreach ($validCoupons as $coupon) {
-                if ($coupon->stackable === 'yes') {
+            $firstCoupon = $validCoupons[0];
+            $intermediateValidCoupons = [$firstCoupon];
+            foreach (array_slice($validCoupons, 1) as $coupon) {
+                if ($firstCoupon->stackable === 'yes' && $coupon->stackable === 'yes') {
                     $intermediateValidCoupons[] = $coupon;
                 } else {
                     $invalidCoupons[$coupon->code] = [
@@ -129,11 +150,7 @@ class DiscountService
                 }
             }
 
-            if (!$intermediateValidCoupons) {
-                $validCoupons = [$validCoupons[0]];
-            } else {
-                $validCoupons = $intermediateValidCoupons;
-            }
+            $validCoupons = $intermediateValidCoupons;
         }
 
         // Ensure stackable coupons are applied in priority order (lower value = higher priority)
@@ -227,10 +244,20 @@ class DiscountService
         $currentItemsTotalAfterDiscount = $currentItemsSubtotal - $currentItemsDiscountTotal;
 
         if ($currentItemsTotalAfterDiscount <= 0) {
-            return new \WP_Error('no_applicable_items', __('No applicable items found for this coupon.', 'fluent-cart'));
+            return new \WP_Error('items_already_discounted', __('The eligible items are already fully discounted by another coupon.', 'fluent-cart'));
         }
 
         $percent = $this->calculateDiscountPercent($coupon, $currentItemsTotalAfterDiscount);
+
+        // Snapshot per-item discounts before this coupon runs so the max-discount
+        // cap can trim only THIS coupon's contribution — stacked coupons applied
+        // earlier must keep their share untouched.
+        $preCouponDiscounts = [];
+        $preRecurringDiscounts = [];
+        foreach ($preValidatedItems as $preItem) {
+            $preCouponDiscounts[$preItem['id']] = (int) Arr::get($preItem, 'coupon_discount', 0);
+            $preRecurringDiscounts[$preItem['id']] = (int) Arr::get($preItem, 'recurring_discounts.amount', 0);
+        }
 
         list($preValidatedItems, $couponDiscountTotal) = $this->applyDiscountToItems($preValidatedItems, $percent, $coupon);
 
@@ -240,10 +267,22 @@ class DiscountService
             );
         }
 
+        $maxDiscountAmount = (int) Arr::get($coupon->conditions, 'max_discount_amount', 0);
+        if ($maxDiscountAmount > 0) {
+            list($preValidatedItems, $couponDiscountTotal) = $this->capDiscountAtMax(
+                $preValidatedItems, 'coupon_discount', $maxDiscountAmount, $preCouponDiscounts
+            );
+            // The per-renewal discount must honor the same cap, otherwise every
+            // renewal charge overshoots it.
+            list($preValidatedItems) = $this->capDiscountAtMax(
+                $preValidatedItems, 'recurring_discounts.amount', $maxDiscountAmount, $preRecurringDiscounts
+            );
+        }
+
         $cartItems = $this->mergeValidatedItems($cartItems, $preValidatedItems);
 
         if (!$couponDiscountTotal) {
-            return new \WP_Error('no_discount_applied', __('This coupon could not apply any discount.', 'fluent-cart'));
+            return new \WP_Error('no_discount_applied', __('This coupon does not provide any additional discount on your order.', 'fluent-cart'));
         }
 
         $cartItems = $this->updateItemTotals($cartItems);
@@ -264,7 +303,7 @@ class DiscountService
         ]);
 
         if (!$canUse || is_wp_error($canUse)) {
-            $message = __('This coupon cannot be used.', 'fluent-cart');
+            $message = __('This coupon is not available for your order.', 'fluent-cart');
             if (is_wp_error($canUse)) {
                 $message = $canUse->get_error_message();
             }
@@ -425,6 +464,65 @@ class DiscountService
         return [$items, $couponDiscountTotal];
     }
 
+    /**
+     * Clamp this coupon's total contribution under $valueKey to $maxAmount,
+     * scaling each item's share proportionally (cents in, cents out).
+     *
+     * $preValues holds each item's value before this coupon ran, keyed by item
+     * id — only the delta above it (this coupon's share) is ever reduced.
+     *
+     * @return array [items, appliedTotalForThisCoupon]
+     */
+    private function capDiscountAtMax(array $items, $valueKey, $maxAmount, array $preValues)
+    {
+        $shares = [];
+        $totalShare = 0;
+        foreach ($items as $index => $item) {
+            $current = (int) Arr::get($item, $valueKey, 0);
+            $pre = (int) Arr::get($preValues, $item['id'], 0);
+            $share = max(0, $current - $pre);
+            if ($share > 0) {
+                $shares[$index] = $share;
+                $totalShare += $share;
+            }
+        }
+
+        if ($totalShare <= $maxAmount) {
+            return [$items, $totalShare];
+        }
+
+        $capped = [];
+        $cappedTotal = 0;
+        foreach ($shares as $index => $share) {
+            $cappedShare = (int) floor(($share * $maxAmount) / $totalShare);
+            $capped[$index] = $cappedShare;
+            $cappedTotal += $cappedShare;
+        }
+
+        // floor() can leave a few cents of the cap unassigned — hand them out
+        // to items that still have room so the total lands exactly on the cap.
+        $leftover = $maxAmount - $cappedTotal;
+        foreach ($shares as $index => $share) {
+            if ($leftover <= 0) {
+                break;
+            }
+            $room = $share - $capped[$index];
+            if ($room <= 0) {
+                continue;
+            }
+            $add = min($room, $leftover);
+            $capped[$index] += $add;
+            $leftover -= $add;
+        }
+
+        foreach ($capped as $index => $cappedShare) {
+            $pre = (int) Arr::get($preValues, $items[$index]['id'], 0);
+            Arr::set($items, $index . '.' . $valueKey, $pre + $cappedShare);
+        }
+
+        return [$items, $maxAmount];
+    }
+
     private function correctFixedCouponRounding(array $items, Coupon $coupon, $couponDiscountTotal)
     {
         if ($couponDiscountTotal < $coupon->amount) {
@@ -494,14 +592,29 @@ class DiscountService
 
     private function getItemEffectiveSubtotal(array $item)
     {
-        $subtotal = (int) $item['subtotal'];
         if (Arr::get($item, 'other_info.payment_type') === 'subscription'
             && Arr::get($item, 'other_info.trial_days', 0) > 0
         ) {
-            $quantity = (int) Arr::get($item, 'quantity', 1);
-            $subtotal = (int) Arr::get($item, 'other_info.signup_fee', 0) * ($quantity > 0 ? $quantity : 1);
+            $quantity = max(1, (int) Arr::get($item, 'quantity', 1));
+            // When dynamic RC has already adjusted signup_fee to the net amount, use the
+            // pre-adjustment gross value so the coupon always applies to the original price.
+            $signupFee = Arr::get($item, 'other_info.original_signup_fee') !== null
+                ? (int) Arr::get($item, 'other_info.original_signup_fee')
+                : (int) Arr::get($item, 'other_info.signup_fee', 0);
+            return $signupFee * $quantity;
         }
-        return $subtotal;
+
+        // When dynamic RC has already reduced unit_price to the net (tax-stripped) amount,
+        // use the saved gross price so the coupon is always calculated against the original
+        // inclusive price — regardless of whether VAT number was entered before or after
+        // the coupon was applied.
+        $originalUnitPrice = Arr::get($item, 'line_meta.original_unit_price');
+        if ($originalUnitPrice !== null) {
+            $quantity = max(1, (int) Arr::get($item, 'quantity', 1));
+            return (int) $originalUnitPrice * $quantity;
+        }
+
+        return (int) $item['subtotal'];
     }
 
     public function saveCart()
@@ -540,35 +653,56 @@ class DiscountService
 
     protected function isCouponValid($coupon)
     {
+        $status = $coupon->status;
+        if ($status === 'expired') {
+            return new \WP_Error('coupon_expired', __('This coupon has expired.', 'fluent-cart'));
+        }
+        if ($status === 'scheduled') {
+            return new \WP_Error('coupon_not_started', __('This coupon is not yet active.', 'fluent-cart'));
+        }
+        if ($status !== 'active') {
+            return new \WP_Error('coupon_not_available', __('This coupon is not currently available.', 'fluent-cart'));
+        }
+
         // let's validate the start date and end date first
         $startDate = $coupon->start_date;
         if ($startDate && $startDate != '0000-00-00 00:00:00' && strtotime($startDate) > time()) {
-            return new \WP_Error('coupon_not_started', __('This coupon is no longer valid.', 'fluent-cart'));
+            return new \WP_Error('coupon_not_started', __('This coupon is not yet active.', 'fluent-cart'));
         }
         $endDate = $coupon->end_date;
         if ($endDate && $endDate != '0000-00-00 00:00:00' && strtotime($endDate) < time()) {
-            return new \WP_Error('coupon_expired', __('This coupon is no longer valid.', 'fluent-cart'));
+            return new \WP_Error('coupon_expired', __('This coupon has expired.', 'fluent-cart'));
         }
 
         $conditions = $coupon->conditions;
+
+        // The spend limits below (min/max) are measured against either the cart subtotal
+        // (items only) or the full order total (shipping + fees included), per the coupon's
+        // min_amount_basis setting. Coupons created before this setting existed have no stored
+        // value and historically compared against the order total, so the fallback stays 'total'
+        // to preserve their behavior. New coupons default to 'subtotal' in the admin UI.
+        $amountBasis = Arr::get($conditions, 'min_amount_basis', 'total');
 
         // add check max_purchase_amount
         $maxPurchaseAmount = Arr::get($conditions, 'max_purchase_amount', 0);
         $getCartTotal = 0;
         if ($this->cart) {
-            $getCartTotal = ($this->cart->getEstimatedTotal() / 100);
+            $cartAmount = $amountBasis === 'total'
+                ? $this->cart->getEstimatedTotal()
+                : $this->cart->getItemsSubtotal();
+            $getCartTotal = ($cartAmount / 100);
         }
 
         if ($maxPurchaseAmount) {
             if ($getCartTotal > $maxPurchaseAmount) {
-                return new \WP_Error('max_purchase_amount_exceeded', __('This coupon is no longer valid.', 'fluent-cart'));
+                return new \WP_Error('max_purchase_amount_exceeded', __('Your cart total exceeds the maximum amount allowed for this coupon.', 'fluent-cart'));
             }
         }
 
         $minPurchaseAmount = Arr::get($conditions, 'min_purchase_amount', 0);
         if ($minPurchaseAmount) {
             if ($getCartTotal < ($minPurchaseAmount / 100)) {
-                return new \WP_Error('min_purchase_amount_not_met', __('This coupon is no longer valid.', 'fluent-cart'));
+                return new \WP_Error('min_purchase_amount_not_met', __('Your cart total is below the minimum required to use this coupon.', 'fluent-cart'));
             }
         }
 
@@ -601,7 +735,7 @@ class DiscountService
                 $usedCount = $usageQuery->count();
 
                 if ($usedCount >= $maxPerCustomer) {
-                    return new \WP_Error('coupon_max_uses_exceeded', __('You have reached the maximum number of uses for this coupon.', 'fluent-cart'));
+                    return new \WP_Error('coupon_max_uses_exceeded', __('You have already used this coupon the maximum number of times.', 'fluent-cart'));
                 }
             }
         }

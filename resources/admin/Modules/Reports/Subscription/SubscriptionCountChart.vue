@@ -45,7 +45,6 @@ const fetchChurnRates = () => {
         });
       })
       .catch((error) => {
-        console.error(error, "error");
       })
       .finally(() => {
       });

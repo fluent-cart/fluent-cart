@@ -54,14 +54,12 @@ function getPackageSrcFolders(packageName, projectRoot = path.resolve(__dirname,
 if (require.main === module) {
     const pkg = process.argv[2];
     if (!pkg) {
-        console.log('Usage: node get-package-src.js vendor/package');
         process.exit(1);
     }
 
     try {
         const projectRoot = path.resolve(__dirname, '..', '../')
         const srcPaths = getPackageSrcFolders(pkg, projectRoot);
-        console.log('Detected src folders:');
         srcPaths.forEach(p => console.log(' - ' + p));
         const newNamespace = 'FluentCart';
 
@@ -82,7 +80,6 @@ if (require.main === module) {
         });
 
     } catch (e) {
-        console.error(e.message);
     }
 }
 
@@ -128,15 +125,12 @@ function updateNamespace(file, packageName, newNamespace, newPath, projectRoot =
             pkg.autoload['psr-4'] = newPsr;
 
             changed = true;
-            console.log(`✔ Updated namespace for ${packageName}`);
         }
     }
 
     if (changed) {
         fs.writeFileSync(file, JSON.stringify(json, null, 2));
-        console.log(`✔ Saved updated installed.json`);
     } else {
-        console.log(`⚠ No matching package found: ${packageName}`);
     }
 }
 
@@ -224,9 +218,7 @@ function runScoper(outputDir) {
         --config=scoper.inc.php \
         --output-dir=` + outputDir;
 
-    console.log('Running Scoper:\n' + cmd);
 
-    console.log(`${devDir}`);
 
     execSync(cmd, {
         cwd: devDir,       // run INSIDE dev/
@@ -267,7 +259,6 @@ function copyDirReplace(src, dest) {
     // 4) Copy folder
     fs.cpSync(source, target, {recursive: true});
 
-    console.log(`✔ Copied folder:\n${source}\n→\n${target}`);
 }
 
 module.exports = {copyDirReplace};

@@ -25,6 +25,7 @@
 @use "./scss/copy-to-clipboard.scss";
 @use "./scss/address";
 @use "./scss/order";
+@use "./scss/portal-sections";
 @use "./scss/responsive";
 
 .fluent-cart-customer-profile-app {
@@ -434,7 +435,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .el-radio__label {
-    @apply pl-0;
+    @apply pl-0 flex items-center gap-1.5;
   }
 
   img {
@@ -564,17 +565,76 @@ div[data-fluent-cart-customer-profile-app] {
   .fct-order-summary-body {
     @apply p-5;
     .fct-order-summary-item {
-      @apply pb-2 gap-4 flex items-start justify-between;
+      @apply pb-2 flex flex-col gap-1;
+    }
+    .fct-order-item-row {
+      @apply flex items-start justify-between gap-4 w-full;
     }
 
     .fct-order-summary-order-calculation {
-      @apply pt-5;
+      @apply pt-4 mt-5 border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)];
+
+      .fct-customer-tax-box {
+        @apply w-full max-w-[400px] ml-auto mt-4 mb-1 py-5 px-5 rounded bg-gray-25 dark:bg-dark-600;
+
+        .tr + .tr {
+          @apply mt-1.5;
+        }
+      }
+
+      & > .tr {
+        @apply w-full max-w-[400px] ml-auto leading-7;
+      }
+
+      & > .tr + .tr {
+        @apply mt-1;
+      }
+
       .tr {
-        + .tr {
-          @apply mt-2.5;
+
+        @apply font-normal text-sm leading-7 text-system-mid;
+
+        .fct-shipping-method-name {
+          @apply block text-xs leading-4 text-system-light;
         }
 
-        @apply font-normal text-sm leading-6 text-system-mid;
+        &.fct-customer-tax-row--muted {
+          @apply opacity-60;
+        }
+        &.fct-customer-tax-row--indented {
+          @apply pl-3;
+        }
+        &.fct-customer-tax-row--divider {
+          @apply border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)] pt-2 mt-1.5;
+          border-color: rgba(148, 163, 184, 0.26);
+        }
+
+        &.fct-customer-tax-breakdown-heading {
+          @apply text-[12px] font-semibold uppercase tracking-wide text-system-mid border-0 mb-3 leading-5;
+        }
+        .fct-customer-tax-see-details {
+          @apply text-[11px] text-blue-600 cursor-pointer dark:text-blue-300;
+        }
+        .fct-customer-tax-breakdown-info {
+          @apply w-4 h-4 text-system-light flex-shrink-0;
+        }
+        &.fct-customer-tax-breakdown-col-headers,
+        &.fct-customer-tax-breakdown-row {
+          @apply border-0;
+          display: grid;
+          grid-template-columns: minmax(0, 1.7fr) minmax(110px, 1fr) minmax(64px, 0.7fr);
+          gap: 16px;
+        }
+        &.fct-customer-tax-breakdown-col-headers {
+          @apply text-[11px] uppercase tracking-wide text-system-light border-0 leading-5 mb-1;
+        }
+        .fct-customer-tax-breakdown-col-rate {
+          @apply min-w-0;
+        }
+        .fct-customer-tax-breakdown-col-base,
+        .fct-customer-tax-breakdown-col-tax {
+          text-align: right;
+        }
       }
     }
   }
@@ -582,12 +642,52 @@ div[data-fluent-cart-customer-profile-app] {
   .fct-order-summary-footer {
     @apply px-5;
     .tr {
-      @apply font-semibold text-lg leading-7 text-[var(--fct-customer-dashboard-title-color)];
+      @apply font-semibold text-lg leading-7 text-[var(--fct-customer-dashboard-title-color)] w-full max-w-[400px] ml-auto py-5 border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)];
     }
 
     &-inner {
-      @apply py-5 border-0 border-t-[1px] border-solid border-[var(--fct-customer-dashboard-divider-color)];
+      @apply border-0;
     }
+  }
+}
+
+// Teleport-safe styles for the tax breakdown card when rendered inside an
+// el-popover (teleported to body, outside the .fct-order-summary-wrap scope).
+.fct-customer-tax-box {
+  @apply w-full py-5 px-5 rounded bg-gray-25;
+
+  .tr {
+    @apply flex items-center justify-between font-normal text-sm leading-7 text-system-mid;
+  }
+  .tr + .tr {
+    @apply mt-1.5;
+  }
+  .fct-customer-tax-row--muted {
+    @apply opacity-60;
+  }
+  .fct-customer-tax-row--divider {
+    @apply border-0 border-t border-solid pt-2 mt-1.5;
+    border-color: rgba(148, 163, 184, 0.26);
+  }
+  .fct-customer-tax-breakdown-heading {
+    @apply text-[12px] font-semibold uppercase tracking-wide text-system-mid border-0 mb-3 leading-5;
+  }
+  .fct-customer-tax-breakdown-info {
+    @apply w-4 h-4 text-system-light flex-shrink-0;
+  }
+  .fct-customer-tax-breakdown-col-headers,
+  .fct-customer-tax-breakdown-row {
+    @apply border-0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(110px, 1fr) minmax(64px, 0.7fr);
+    gap: 16px;
+  }
+  .fct-customer-tax-breakdown-col-headers {
+    @apply text-[11px] uppercase tracking-wide text-system-light leading-5 mb-1;
+  }
+  .fct-customer-tax-breakdown-col-base,
+  .fct-customer-tax-breakdown-col-tax {
+    text-align: right;
   }
 }
 
@@ -683,6 +783,12 @@ div[data-fluent-cart-customer-profile-app] {
 
 .underline-link-button {
   @apply p-0 text-sm shadow-none font-medium leading-[24px] inline-flex items-center gap-1.5 text-primary-500 underline focus:outline-none focus:shadow-none hover:text-primary-300 !important;
+  .icon {
+    @apply w-4 h-4;
+  }
+  svg {
+    @apply w-full h-full;
+  }
 }
 
 .el-button.is-text.underline-link-button {
@@ -693,6 +799,11 @@ div[data-fluent-cart-customer-profile-app] {
   .text {
     @apply text-[var(--fct-customer-dashboard-sub-title-color)] text-sm;
   }
+}
+
+.fct-tax-amount--reversed {
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 /*=== empty-state ===*/

@@ -68,7 +68,7 @@ const getPaymentMethodLabel = (paymentMethod) => {
               :value="group.value"
             />
           </el-select>
-          <export-report
+          <ExportReport
             :data="tableData"
             :filename="'revenue grouped by.csv'"
             class="!ml-0"

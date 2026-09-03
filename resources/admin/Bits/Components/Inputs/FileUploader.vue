@@ -4,28 +4,28 @@
       <div class="fct-file-upload-rename" v-if="!uploading">
         <div class="fct-form-group">
           <label for="filename_input">{{ $t('File Name') }}</label>
-          <el-input id="filename_input" v-model="fileName"/>
+          <el-input id="filename_input" v-model="fileName" :maxlength="MAX_FILENAME_LENGTH"/>
 
           <div style="display: flex; justify-content: space-between">
 
             <div>
-              <span v-if="fileName.length > 160">
+              <span v-if="!isFileNameValid">
                 {{
                   /* translators: %s - maximum filename length */
-                  translate('File name Must not exceed %s characters', 160)
+                  translate('File name Must not exceed %s characters', MAX_FILENAME_LENGTH)
                 }}
               </span>
             </div>
 
             <div>
-              {{ fileName.length }}/160
+              {{ fileName.length }}/{{ MAX_FILENAME_LENGTH }}
             </div>
 
           </div>
 
         </div>
         <div class="fct-btn-group sm fct-file-upload-rename-actions">
-          <el-button type="primary" @click="upload" :disabled="fileName.length > 160">{{ $t("Upload") }}</el-button>
+          <el-button type="primary" @click="upload" :disabled="!isFileNameValid">{{ $t("Upload") }}</el-button>
           <IconButton @click.prevent="reset" tag="button">
             <DynamicIcon name="Delete"/>
           </IconButton>
@@ -122,8 +122,8 @@
             {{ formatFileSize(files[0].size * (uploadProgress / 100), files[0].size) }}
           </span>
             <span>{{
-                /* translators: %s - upload progress */
-                translate('%s% Uploaded', uploadProgress)
+                /* translators: %1$s: upload progress percentage, e.g. "45%" */
+                translate('%1$s Uploaded', `${uploadProgress}%`)
               }}</span>
           </div>
         </el-progress>
@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import {ref} from "vue";
+import {ref, computed} from "vue";
 import {formatFileSize} from "@/Bits/common";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -152,12 +152,19 @@ const props = defineProps({
 });
 const emit = defineEmits(["onUploaded"]);
 
+const MAX_FILENAME_LENGTH = 160;
+
 const uploaderRef = ref(null);
 const fileName = ref("");
 const file = ref();
 const files = ref([]);
 const uploading = ref(false);
 const uploadProgress = ref(0);
+
+const isFileNameValid = computed(() => {
+  const len = fileName.value.length;
+  return len > 0 && len <= MAX_FILENAME_LENGTH;
+});
 const getFileUploadUrl = () =>
     window.fluentCartRestVars.rest.url + "/files/upload";
 
@@ -168,24 +175,15 @@ const getAdditionalRequestData = () => {
   };
 };
 
-// Add this method to your component's methods section
-const beforeUpload = (file) => {
-  const maxFilenameLength = 160;
-
-  // Check if filename exceeds maximum length
-  if (file.name.length > maxFilenameLength) {
-    Notify.error(translate(`Filename too long. Maximum ${maxFilenameLength} characters allowed`));
-    files.value = [];
-    file.value = null;
-    fileName.value = "";
+const beforeUpload = () => {
+  if (!isFileNameValid.value) {
+    /* translators: %1$s: maximum filename length */
+    Notify.error(translate('Filename too long. Maximum %1$s characters allowed', MAX_FILENAME_LENGTH));
     uploading.value = false;
     uploadProgress.value = 0;
-
-    // Return false to prevent upload
     return false;
   }
 
-  // If validation passes, return true to allow upload
   return true;
 }
 const reset = (response) => {
@@ -213,8 +211,13 @@ defineExpose({reset});
 
 const onChange = (selectedFile) => {
   file.value = selectedFile;
-  //Remove the file extension from the name and use it
-  fileName.value = selectedFile.name.replace(/\.[^/.]+$/, "");
+  const baseName = selectedFile.name.replace(/\.[^/.]+$/, "");
+
+  if (baseName.length > MAX_FILENAME_LENGTH) {
+    fileName.value = baseName.slice(0, MAX_FILENAME_LENGTH);
+  } else {
+    fileName.value = baseName;
+  }
 };
 
 const cancelUploadingFile = () => {

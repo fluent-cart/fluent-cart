@@ -116,7 +116,6 @@ export default class TableColumn {
      */
     setCellAttribute(cellAttribute) {
         if (typeof cellAttribute !== 'object' && cellAttribute !== null) {
-            console.warn('Cell attr must be an object');
             return this;
         }
         this.cellAttribute = cellAttribute;
@@ -130,7 +129,6 @@ export default class TableColumn {
      */
     setSlotAttribute(slotAttribute) {
         if (typeof slotAttribute !== 'object' && slotAttribute !== null) {
-            console.warn('Cell attr must be an object');
             return this;
         }
         this.slotAttribute = slotAttribute;

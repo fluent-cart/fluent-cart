@@ -308,6 +308,23 @@ export const ArrowLeft = () => {
 export const ShoppingCart = () => {
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M4.00488 16V4H2.00488V2H5.00488C5.55717 2 6.00488 2.44772 6.00488 3V15H18.4433L20.4433 7H8.00488V5H21.7241C22.2764 5 22.7241 5.44772 22.7241 6C22.7241 6.08176 22.7141 6.16322 22.6942 6.24254L20.1942 16.2425C20.083 16.6877 19.683 17 19.2241 17H5.00488C4.4526 17 4.00488 16.5523 4.00488 16ZM6.00488 23C4.90031 23 4.00488 22.1046 4.00488 21C4.00488 19.8954 4.90031 19 6.00488 19C7.10945 19 8.00488 19.8954 8.00488 21C8.00488 22.1046 7.10945 23 6.00488 23ZM18.0049 23C16.9003 23 16.0049 22.1046 16.0049 21C16.0049 19.8954 16.9003 19 18.0049 19C19.1095 19 20.0049 19.8954 20.0049 21C20.0049 22.1046 19.1095 23 18.0049 23Z"></path></svg>
 }
+/**
+ * Solid cart, for the Cart page block.
+ *
+ * Distinct on purpose from ShoppingCart (outline trolley — Mini Cart, Add to
+ * Cart) and from Cart, which is the FluentCart brand mark rather than a cart
+ * and is already used by the Stock block. Solid-vs-outline is the same way
+ * Elementor separates its cart widgets.
+ */
+export const CartPage = () => {
+    return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24"
+                height="24">
+        <path
+            d="M4.00488 16V4H2.00488V2H5.00488C5.55717 2 6.00488 2.44772 6.00488 3V15H18.4433L20.4433 7H8.00488V5H21.7241C22.2764 5 22.7241 5.44772 22.7241 6C22.7241 6.08176 22.7141 6.16322 22.6942 6.24254L20.1942 16.2425C20.083 16.6877 19.683 17 19.2241 17H5.00488C4.4526 17 4.00488 16.5523 4.00488 16ZM6.00488 23C4.90031 23 4.00488 22.1046 4.00488 21C4.00488 19.8954 4.90031 19 6.00488 19C7.10945 19 8.00488 19.8954 8.00488 21C8.00488 22.1046 7.10945 23 6.00488 23ZM18.0049 23C16.9003 23 16.0049 22.1046 16.0049 21C16.0049 19.8954 16.9003 19 18.0049 19C19.1095 19 20.0049 19.8954 20.0049 21C20.0049 22.1046 19.1095 23 18.0049 23Z"/>
+        <path d="M9.00488 9H19.5049L18.2549 14H9.00488V9Z"/>
+    </svg>
+}
+
 export const ExpandUpDown = () => {
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 9 12 3 6 9H18ZM18 15 12 21 6 15H18Z"></path></svg>
 }
@@ -460,6 +477,75 @@ export const Package = () => {
         <line x1="12" y1="22" x2="12" y2="12"/>
     </svg>
 }
+
+export const StarRating = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+    </svg>
+);
+
+// Rating Summary block — small star beside the distribution bars
+export const RatingSummary = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3.6L9.1 5.8L11.5 6.15L9.75 7.85L10.2 10.25L8 9.1L5.8 10.25L6.25 7.85L4.5 6.15L6.9 5.8L8 3.6Z" fill="currentColor" stroke="none"/>
+        <path d="M14.5 6h6"/>
+        <path d="M4 14h16"/>
+        <path d="M4 19h10"/>
+    </svg>
+);
+
+// Product Rating block — a row of stars, last one empty (a 4-of-5 look)
+export const ProductRatingStars = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 8.8L5.9 10.6L7.9 10.9L6.45 12.3L6.8 14.3L5 13.35L3.2 14.3L3.55 12.3L2.1 10.9L4.1 10.6L5 8.8Z"/>
+        <path d="M12 8.8L12.9 10.6L14.9 10.9L13.45 12.3L13.8 14.3L12 13.35L10.2 14.3L10.55 12.3L9.1 10.9L11.1 10.6L12 8.8Z"/>
+        <path d="M19 8.8L19.9 10.6L21.9 10.9L20.45 12.3L20.8 14.3L19 13.35L17.2 14.3L17.55 12.3L16.1 10.9L18.1 10.6L19 8.8Z" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+    </svg>
+);
+
+// Rating Summary card block — distribution bars with counts
+export const RatingBars = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 6h13"/>
+        <path d="M21 6h.01" strokeWidth="2.5"/>
+        <path d="M4 12h9"/>
+        <path d="M21 12h.01" strokeWidth="2.5"/>
+        <path d="M4 18h5"/>
+        <path d="M21 18h.01" strokeWidth="2.5"/>
+    </svg>
+);
+
+// Review List block — review rows: star bullet + text lines
+export const ReviewList = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.7 3.2L5.5 4.8L7.2 5.05L6 6.3L6.3 8L4.7 7.2L3.1 8L3.4 6.3L2.2 5.05L3.9 4.8L4.7 3.2Z" fill="currentColor" stroke="none"/>
+        <path d="M10.5 5.5H21"/>
+        <path d="M10.5 9.5H17"/>
+        <path d="M4.7 14.2L5.5 15.8L7.2 16.05L6 17.3L6.3 19L4.7 18.2L3.1 19L3.4 17.3L2.2 16.05L3.9 15.8L4.7 14.2Z" fill="currentColor" stroke="none"/>
+        <path d="M10.5 16.5H21"/>
+        <path d="M10.5 20.5H17"/>
+    </svg>
+);
+
+export const AddReview = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor">
+        <path d="M19.431 1.648a1.12 1.12 0 0 0-1.53.416l-.001.002l-3.972 6.88l-.48-.209a5.42 5.42 0 0 0-6.752 2.05l-.007.011l-.007.012l-.002-.001l-5.2 8.68l-.005.007v.008h-.002a3.506 3.506 0 0 0 1.279 4.78a3.44 3.44 0 0 0 2.05.464l-.058.102l-.001.001a2.8 2.8 0 0 0-.366 1.162l-.38 3.443v.008c-.063.813.848 1.326 1.511.87l.01-.006l2.752-2.082c.286-.202.535-.46.725-.754v.01a3.5 3.5 0 0 0 6.322 2.07q.19.18.405.34c1.04.768 2.399 1.09 3.783 1.09h9.24a2.24 2.24 0 0 0 2.226-1.99h.024V27.06h.002V18.2a2.82 2.82 0 0 0-1.704-2.585l-10.75-4.666l3.685-6.387l.002-.003a1.12 1.12 0 0 0-.416-1.53l-.003-.001l-2.375-1.378zm-6.508 9.038l-2.656 4.6a2.85 2.85 0 0 0-1.246 1.169l-3.208 5.551a1.52 1.52 0 0 1-1.308.757a1.45 1.45 0 0 1-.742-.2l-.004-.002A1.5 1.5 0 0 1 3.2 20.5l5.18-8.646a3.42 3.42 0 0 1 4.261-1.289h.004zm2.173 6.238l2.443-4.234L28.5 17.45l-.003-.004a.81.81 0 0 1 .5.753v.794h-.002v8.02h-5.81q-.382-.001-.748-.056l-.643-.141a4.57 4.57 0 0 1-2.421-1.693c-.8-1.094-2.27-1.37-3.414-.735l-.001.001c-.69.385-1.506.84-2.148 1.2l-1.113.62l-.011.007a2.005 2.005 0 0 1-2.735-.734a2.006 2.006 0 0 1 .736-2.735l4.225-2.44a1 1 0 0 0 .663-.857a4.3 4.3 0 0 0-.479-2.526m-9.567 8.58l2.585 1.506a1.8 1.8 0 0 1-.427.424l-.007.005l-1.515 1.146l-1.001-.583l.208-1.884v-.011c.02-.214.073-.418.157-.603M19.392 7.477l-2.6-1.492l.976-1.692l2.595 1.5z"/>
+    </svg>
+);
+
+export const EditReview = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+    </svg>
+);
+
+export const ReviewForm = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+    </svg>
+);
 
 export const BillingAddress = () => {
     return <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">

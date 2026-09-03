@@ -45,7 +45,7 @@ class StoreLogoRenderer
 
         $wrapperAttributes = '';
         if (!$isShortcode) {
-            $wrapperAttributes = get_block_wrapper_attributes([
+            $wrapperAttributes = RenderHelper::getBlockWrapperAttributes([
                 'class' => 'fct-store-logo-wrapper'
             ]);
         }

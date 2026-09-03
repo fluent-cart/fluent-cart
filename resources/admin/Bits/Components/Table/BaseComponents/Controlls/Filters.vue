@@ -5,9 +5,9 @@
         <el-popover :visible="filterVisible" placement="bottom-start" width="450"
                     popper-class="filter-popover fluent-cart-admin-pages">
           <div class="filter-popover-item">
-            <filter-item
+            <FilterItem
                 v-if="filterVisible"
-                @updateFilters="applyFilters"
+                @update-filters="applyFilters"
                 :table="table"
             />
           </div>

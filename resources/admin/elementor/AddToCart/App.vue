@@ -79,7 +79,7 @@ const setDefaultVariant = (variantId) => {
         </el-button>
       </div>
 
-      <AddProductItemModal v-else :scopes="['cartable']" @onVariationSelectionUpdated="(ids, products) => {
+      <AddProductItemModal v-else :scopes="['cartable']" @on-variation-selection-updated="(ids, products) => {
         setDefaultVariant(ids[0]);
         let ver = null;
         products.forEach((product) => {

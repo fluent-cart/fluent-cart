@@ -25,12 +25,6 @@ window.fluentCartShopAppTranslator = (str) => {
     return window.fluent_cart_shop_app_block_editor_data?.trans[str] || str;
 };
 
-// Utility to merge colors with defaults
-const mergeColors = (attributes) => {
-    const merged = {...DefaultData.colors, ...(attributes.colors || {})};
-    return merged;
-};
-
 const restUrl = window.fluentCartRestVars.rest.url;
 const baseUrl = restUrl + '/public/products';
 
@@ -90,6 +84,7 @@ const DEFAULT_TEMPLATE = [
                 [
                     ['fluent-cart/product-image'],
                     ['fluent-cart/product-title'],
+                    ['fluent-cart/product-rating'],
                     ['fluent-cart/price-range'],
                     ['fluent-cart/shopapp-product-buttons'],
                 ],
@@ -229,9 +224,6 @@ registerBlockType(blockName, {
         // Initialize attributes
         useEffect(() => {
             try {
-                if (!attributes.colors || Object.keys(attributes.colors).length === 0) {
-                    setAttributes({colors: mergeColors(attributes)});
-                }
                 if (!attributes.variations) {
                     setAttributes({variations: {}});
                 }

@@ -14,11 +14,21 @@ class ProductListRenderer
 
     protected $cursor = null;
 
-    public function __construct($products, $listTitle = null, $wrapperClass = null)
+    protected $columns = 4;
+
+    protected $hideExcerpt = false;
+
+    protected $ratingContext = '';
+
+    public function __construct($products, $listTitle = null, $wrapperClass = null, $config = [])
     {
         $this->products = $products;
         $this->listTitle = $listTitle;
         $this->wrapperClass = $wrapperClass;
+        $columns = Arr::get($config, 'columns', 4);
+        $this->columns = max(1, min(6, intval($columns)));
+        $this->hideExcerpt = Arr::get($config, 'hide_excerpt', false);
+        $this->ratingContext = Arr::get($config, 'rating_context', '');
 
         if($products instanceof \FluentCart\Framework\Pagination\CursorPaginator){
             $this->cursor = wp_parse_args(wp_parse_url($products->nextPageUrl(), PHP_URL_QUERY));
@@ -35,6 +45,11 @@ class ProductListRenderer
         ) {
             return '';
         }
+
+        $columns = $this->columns
+        ? 'style="--fct-product-list-columns: ' . $this->columns . ';"'
+        : '';
+
         ?>
         <section class="fct-product-list-container <?php echo esc_attr($this->wrapperClass); ?>" aria-label="<?php echo esc_attr($this->listTitle ?: __('Product List', 'fluent-cart')); ?>">
             <?php $this->renderTitle(); ?>
@@ -43,6 +58,7 @@ class ProductListRenderer
                 role="list"
                 aria-live="polite"
                 aria-busy="false"
+                <?php echo $columns; ?>
             >
                 <?php $this->renderProductList(); ?>
             </div>
@@ -54,7 +70,10 @@ class ProductListRenderer
     {
 
         foreach ($this->products as $index => $product) {
-            $config = [];
+            $config = ['hide_excerpt' => $this->hideExcerpt];
+            if ($this->ratingContext) {
+                $config['rating_context'] = $this->ratingContext;
+            }
             if($index == 0 && $this->cursor){
                 $config['cursor'] = $this->cursor;
             }

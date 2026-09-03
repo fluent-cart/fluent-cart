@@ -99,6 +99,13 @@ class ProductCarouselBlockEditor extends BlockEditor
     {
         AssetLoader::loadProductArchiveAssets();
 
+        // The carousel renders card parts via individual ProductCardRender
+        // methods (renderTitle/renderPrices/…), not ProductCardRender::render(),
+        // so the renderer's hook never fires here. Fire the advanced-variation
+        // asset hook once at the block level — same no-arg, fire-once contract
+        // as the Related Products block — so Pro's selector assets load.
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
+
         $app = fluentCart();
         $slug = $app->config->get('app.slug');
 

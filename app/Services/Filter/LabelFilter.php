@@ -32,6 +32,24 @@ class LabelFilter extends BaseFilter
         return 'label';
     }
 
+    /**
+     * Intentionally empty. This filter cannot receive a request `with` today:
+     * its only caller is AdvanceFilterController::getFilterOption(), which
+     * hand-builds a five-key argument array (remote_data_key, search,
+     * include_ids, limit, parent_id) and never forwards the raw request.
+     *
+     * That is the reason the map is empty, NOT an oversight — if this filter is
+     * ever refactored to take `$request->all()`, an empty map is what keeps it
+     * closed, and any relation it then needs must be added here deliberately as
+     * a context key mapped to a callable.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [];
+    }
+
 
     public function applyActiveViewFilter(?string $activeView = null): void
     {

@@ -52,6 +52,11 @@ import CurrencyFormatter from '@/utils/support/CurrencyFormatter';
 
 export default {
   name: "Comparison",
+  components: {
+    CardContainer,
+    CardHeader,
+    CardBody,
+  },
   props: {
     currentMetrics: {
       type: Array,
@@ -69,11 +74,6 @@ export default {
       type: Boolean,
       default: true,
     },
-  },
-  components: {
-    CardContainer,
-    CardHeader,
-    CardBody,
   },
   data() {
     return {}

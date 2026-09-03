@@ -68,13 +68,9 @@ class PricingTableShortCode extends ShortCode
             });
 
         $activeVariants = [];
-        $getActiveVariants = explode(',', Arr::get($shortcodeAttributes, 'active_variant'));
+        $activeVariantItems = array_filter(explode(',', Arr::get($shortcodeAttributes, 'active_variant', '')));
 
-        foreach ($getActiveVariants as $item) {
-            if (empty($item)) {
-                continue;
-            }
-            // Check if the item contains an '=' sign using Str::contains()
+        foreach ($activeVariantItems as $item) {
             if (Str::contains($item, '=')) {
                 list($key, $value) = explode('=', $item);
                 $activeVariants[trim($key)] = trim($value);
@@ -102,9 +98,7 @@ class PricingTableShortCode extends ShortCode
     public function render(?array $viewData = null)
     {
         AssetLoader::markFrontendAssetsRequired();
-        ob_start();
         (new PricingTableRenderer($viewData))->render();
-        return ob_get_clean();
     }
 
     public function localizeData(): array

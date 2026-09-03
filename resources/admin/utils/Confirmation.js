@@ -56,8 +56,8 @@ class Confirmation {
             message = translate('Are you sure you want to delete this?. This action is not recoverable')
         }
 
-        /* translators: %s is the required text */
-        const content = translate('You must type "%s" exactly to proceed',
+        /* translators: %1$s: the required confirmation text */
+        const content = translate('You must type "%1$s" exactly to proceed',
             `<span >${requiredText}</span>`);
         message = `<label for=""><p>${message}</p>
         <p>${content}</p></label>`;

@@ -11,6 +11,7 @@ import PayPalWebhookSetup from "@/Modules/Settings/PaymentComponet/PayPalWebhook
 import translate from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
 import Notify from "@/utils/Notify";
+import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 const selfRef = getCurrentInstance().ctx;
 const connect_config = ref({});
@@ -24,10 +25,14 @@ const props =
     defineProps({
       fields: Object,
       settings: Object,
-      route_name: String,
+      routeName: String,
       methodName: String,
       methodTitle: String,
-      methodLabel: String
+      methodLabel: String,
+      brandColor: {
+        type: String,
+        default: '#253241'
+      }
     });
 
 const emit = defineEmits(['onSettingsChange']);
@@ -51,7 +56,7 @@ const currentMode = computed(() => {
 const getConnectConfig = () => {
   fetching_connect.value = true;
   selfRef.$get('settings/payment-methods/connect/info', {
-    method: props.route_name
+    method: props.routeName
   })
   .then(response => {
     if (response) {
@@ -191,6 +196,12 @@ const activateAddon = (gateway) => {
   });
 };
 
+const resolveList = (list) => {
+  if (!list) return [];
+  if (Array.isArray(list)) return list;
+  return list[currentMode.value] ?? [];
+};
+
 onMounted(() => {
   getConnectConfig();
   
@@ -226,26 +237,37 @@ onUnmounted(() => {
             </el-skeleton>
             <ConnectAccount v-if="!fetching_connect"
                             @reload_settings="getConnectConfig()"
-                            :method="route_name"
+                            :method="routeName"
                             :methodName="methodName"
                             :methodLabel="methodLabel"
-                            :connect_config="connect_config"
+                            :connectConfig="connect_config"
                             mode="test"
                             :connect="test_account"
+                            :brandColor="brandColor"
             />
           </template>
           <template v-else-if="settings.payment_mode == 'live'">
+            <el-skeleton :loading="fetching_connect" animated>
+              <template #template>
+                <div class="bg-gray-25 dark:bg-dark-500 p-5 rounded flex flex-col">
+                    <el-skeleton-item variant="h3" class="w-9 h-9 mb-7 mx-auto rounded" />
+                    <el-skeleton-item variant="h3" class="w-[200px] mx-auto mb-3" />
+                    <el-skeleton-item variant="h3" class="w-[120px] h-7.5 mx-auto" />
+                </div>
+              </template>
+            </el-skeleton>
+
             <ConnectAccount v-if="!fetching_connect"
-                            :method="route_name"
+                            :method="routeName"
                             :methodName="methodName"
                             @reload_settings="getConnectConfig()"
-                            :connect_config="connect_config"
+                            :connectConfig="connect_config"
                             mode="live"
                             :methodLabel="methodLabel"
                             :connect="live_account"
+                            :brandColor="brandColor"
             />
           </template>
-          <br/>
           <!-- <p>You may use direct API keys defined as constant
             <br/>For test publishable key and secret key <code>FCT_STRIPE_TEST_PUBLIC_KEY</code>,<code>FCT_STRIPE_TEST_SECRET_KEY</code> and
             <br/>For live mode <code>FCT_STRIPE_LIVE_PUBLIC_KEY</code> and<code>FCT_STRIPE_LIVE_SECRET_KEY</code></p> -->
@@ -310,13 +332,14 @@ onUnmounted(() => {
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
         </el-checkbox>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
+
       <div class="fct-col" v-if="field.type === 'select'">
         <p class="setting-label">
           {{ field.label }}
@@ -325,7 +348,7 @@ onUnmounted(() => {
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
@@ -339,7 +362,7 @@ onUnmounted(() => {
       </div>
 
       <div class="fct-col" v-if="field.type === 'radio'">
-        <p class="setting-label">
+        <p class="setting-label flex items-center gap-1">
           {{ field.label }}
           <el-tooltip v-if="field.tooltip" placement="top-start"
                       popper-class="fct-tooltip">
@@ -347,20 +370,52 @@ onUnmounted(() => {
               <p v-html="field.tooltip">
               </p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
         </p>
-        <el-radio-group v-model="settings[index]">
-          <el-radio v-for="(opt, ind) in field.options" :label="opt" :value="ind" :key="ind"/>
+
+        <el-radio-group 
+            v-model="settings[index]"
+            :class="{
+                'fct-payment-setting-radio-box': typeof Object.values(field.options)[0] === 'object'
+            }"
+        >
+            <template v-for="(opt, ind) in field.options" :key="ind">
+                <!-- Object option -->
+                <el-radio
+                    v-if="typeof opt === 'object'"
+                    :value="ind"
+                >
+                    <div class="options-img">
+                        <img :src="opt.icon" alt="">
+                    </div>
+                    <div>
+                        <span class="options-name">
+                            {{ opt.label }}
+                        </span>
+                        <span class="options-text">
+                            {{ opt.text }}
+                        </span>
+                    </div>
+                </el-radio>
+
+                <!-- Simple string option -->
+                <el-radio
+                    v-else
+                    :value="ind"
+                >
+                    {{ opt }}
+                </el-radio>
+            </template>
         </el-radio-group>
+
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div><!-- .fct-col -->
-      <!-- .fct-col -->
 
       <div class="fct-col" v-if="field.type === 'webhook_info' && settings?.payment_mode === field.mode">
-        <div v-if="route_name === 'paypal' && !checkProviderType">
+        <div v-if="routeName === 'paypal' && !checkProviderType">
           <PayPalWebhookSetup
               :testConnect="test_account"
               :liveConnect="live_account"
@@ -399,7 +454,7 @@ onUnmounted(() => {
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
@@ -417,7 +472,7 @@ onUnmounted(() => {
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
@@ -434,7 +489,7 @@ onUnmounted(() => {
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
@@ -453,7 +508,7 @@ onUnmounted(() => {
                 {{ field.tooltip }}
               </p>
             </template>
-            <el-icon>
+            <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
           </el-tooltip>
@@ -466,7 +521,61 @@ onUnmounted(() => {
       </div>
 
       <div class="fct-col" v-if="field.type === 'html_attr'">
-        <div v-html="field.value"></div>
+        <!-- string → raw HTML -->
+        <div v-if="typeof field.value === 'string'" v-html="field.value"></div>
+        
+        <!-- object → structured render -->
+        <div v-else-if="typeof field.value === 'object' && field.value !== null">
+            <p class="setting-label" v-if="field.value.title">
+                {{ field.value.title }}
+            </p>
+
+            <code v-if="field.value.webhook_url" class="copyable-content">
+                {{ field.value.webhook_url }}
+            </code>
+
+            <p v-if="field.value.description">
+                {{ field.value.description }}
+            </p>
+
+            <template v-if="field.value.steps">
+                <p class="setting-label" v-if="field.value.steps.title">
+                    {{ field.value.steps.title }}
+                </p>
+                <ul class="fct-payment-steps-list">
+                    <li v-for="(step, i) in resolveList(field.value.steps.list)" :key="i">
+                        <span class="fct-payment-steps-number">
+                            {{ i + 1 }}
+                        </span>
+                        <span v-html="step"></span>
+                    </li>
+                </ul>
+            </template>
+
+            <div v-if="field.value.events" class="fct-events-wrap">
+                <p class="setting-label">{{ field.value.events.title }}</p>
+                <ul class="flex items-center gap-2 flex-wrap">
+                    <li 
+                        v-for="(evt, i) in resolveList(field.value.events.list)" 
+                        :key="i"
+                    >
+                        <code class="copyable-content">{{ evt }}</code>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Webhook notice -->
+            <div v-if="field.value.webhook_notice" class="fct-webhook-notice">
+                <h4 class="fct-webhook-notice-title">{{ field.value.webhook_notice.title }}</h4>
+                <div class="fct-webhook-notice-desc">
+                    {{ field.value.webhook_notice.description }}
+                </div>
+                <ul v-if="field.value.webhook_notice.list && field.value.webhook_notice.list.length">
+                    <li v-for="(item, i) in field.value.webhook_notice.list" :key="i">{{ item }}</li>
+                </ul>
+            </div>
+
+        </div>
       </div>
 
       <div class="fct-col" v-if="field.type === 'active_methods'">
@@ -475,17 +584,27 @@ onUnmounted(() => {
             <p class="setting-label">{{field.label}}</p>
             {{active_methods}}
             <ul class="flex flex-wrap gap-2">
-                <li class="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm text-gray-600 dark:text-gray-200 border border-gray-100 dark:border-gray-700" v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</li>
+                <el-tag v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</el-tag>
             </ul>
-            <p class="mt-4 text-gray-700 dark:text-gray-300">{{translate('You can configure methods ')}}<a :href="field.value?.configure_url" target="_blank" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">{{translate('here')}}</a></p>
+            <p>
+                {{translate('You can configure methods ')}}
+                <a :href="field.value?.configure_url" target="_blank">
+                    {{translate('here')}}
+                </a>
+            </p>
           </div>
           <div v-if="settings.payment_mode === 'test' && index === 'test_active_methods'">
             <p class="setting-label">{{field.label}}</p>
             <ul class="flex flex-wrap gap-2">
               {{active_methods}}
-              <li class="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm text-gray-600 dark:text-gray-200 border border-gray-100 dark:border-gray-700" v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</li>
+              <el-tag v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</el-tag>
             </ul>
-            <p class="mt-4 text-gray-700 dark:text-gray-300">{{translate('You can configure methods ')}}<a :href="field.value?.configure_url" target="_blank" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">{{translate('here')}}</a></p>
+            <p>
+                {{translate('You can configure methods ')}}
+                <a :href="field.value?.configure_url" target="_blank">
+                    {{translate('here')}}
+                </a>
+            </p>
           </div>
         </div>
       </div>
@@ -511,10 +630,5 @@ onUnmounted(() => {
     .fct_hide_on_live {
         display: none !important;
     }
-}
-.fct-settings-description {
-  font-size: 0.875rem;
-  color: #6b7280;
-  padding-top: 0.25rem;
 }
 </style>

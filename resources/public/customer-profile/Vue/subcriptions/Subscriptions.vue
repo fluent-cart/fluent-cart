@@ -27,7 +27,7 @@
                 </template>
             </EmptyState>
 
-            <pagination
+            <Pagination
                 v-if="paginate.total"
                 :hide_on_single="true"
                 :pagination="paginate"
@@ -41,7 +41,7 @@
 </template>
 
 <script type="text/babel">
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "../parts/Badge.vue";
 import SubscriptionTable from "../parts/SubscriptionTable.vue";
 import OrderTableLoader from "../parts/OrderTableLoader.vue";
 import translate from "../../translator/Translator";
@@ -79,6 +79,9 @@ export default {
                 total: 0
             }
         };
+    },
+    mounted() {
+        this.fetchSubscriptions();
     },
     methods: {
         subscriptionStatus(subscription) {
@@ -126,13 +129,9 @@ export default {
                 })
                     .catch((errors) => {
                         this.canceling_subscription = false;
-                        console.log(errors)
                     });
             });
         },
-    },
-    mounted() {
-        this.fetchSubscriptions();
     }
 }
 </script>

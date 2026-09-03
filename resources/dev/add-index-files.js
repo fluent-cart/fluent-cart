@@ -20,7 +20,6 @@ const excludeFolders = [
 ];
 
 if (!entryFolder) {
-    console.error('Usage: node add-index-files.js <folder_path>');
     process.exit(1);
 }
 
@@ -32,7 +31,6 @@ function processDirectory(dir) {
 
     // Skip excluded folders
     if (excludeFolders.includes(folderName)) {
-        console.log(`Skipping folder: ${dir}`);
         return;
     }
 
@@ -43,7 +41,6 @@ function processDirectory(dir) {
     if (!hasIndex) {
         const indexPath = path.join(dir, 'index.php');
         fs.writeFileSync(indexPath, indexContent, 'utf8');
-        console.log(`Created: ${indexPath}`);
     }
 
     // Continue into subdirectories
@@ -58,4 +55,3 @@ function processDirectory(dir) {
 // Start
 processDirectory(path.resolve(entryFolder));
 
-console.log('Done creating index.php in all folders.');

@@ -54,6 +54,35 @@ class OrderBumpFilter extends BaseFilter
         return 'order_bump';
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'id'         => ['label' => __('Order Bump ID', 'fluent-cart'), 'column' => 'id'],
+            'title'      => ['label' => __('Title', 'fluent-cart'), 'column' => 'title'],
+            'created_at' => ['label' => __('Created at', 'fluent-cart'), 'column' => 'created_at'],
+        ];
+    }
+
+    /**
+     * Intentionally empty. Nothing instantiates this filter: the order-bump
+     * list endpoint is Pro's OrderBumpController::index(), which builds its own
+     * OrderPromotion query and hardcodes `->with(['product_variant.product'])`.
+     * OrderBumpTable.js's `product_variant` therefore never reaches this map.
+     *
+     * If the Pro controller is ever moved onto this filter, declare
+     * `product_variant` (and its `.product` child) here — do not widen the map
+     * speculatively before that happens.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [];
+    }
+
 
     public function applyActiveViewFilter(?string $activeView = null): void
     {

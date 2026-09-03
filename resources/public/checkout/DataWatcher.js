@@ -63,6 +63,7 @@ export default class DataWatcher {
             'billing_city',
             'billing_postcode',
             'billing_company_name',
+            'billing_legal_registration_id',
             'billing_phone',
 
             'shipping_address',
@@ -115,24 +116,52 @@ export default class DataWatcher {
             }
         });
 
+        // Save VAT/tax ID on change — only for non-EU (no Apply button); EU saves via Apply click
+        this.form.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!target || !target.matches('[data-fluent-cart-checkout-page-tax-id]')) {
+                return;
+            }
+            const wrapper = target.closest('[data-fluent-cart-checkout-page-tax-wrapper]');
+            const hasApplyBtn = wrapper && wrapper.querySelector('[data-fluent-cart-checkout-page-tax-apply-btn]');
+            if (!hasApplyBtn) {
+                this.saveCustomerData('fct_billing_tax_id', target.value.trim());
+            }
+        });
 
-        const checkboxes = [
-            'ship_to_different'
-        ];
 
-        for (const checkbox of checkboxes) {
-            const elements = document.querySelectorAll(`input[name="${checkbox}"]`);
+        document.addEventListener('change', (event) => {
+            if (!event.target.matches('input[name="ship_to_different"]')) return;
+            this.saveCustomerData('ship_to_different', event.target.checked ? 'yes' : 'no');
+        });
 
+        document.addEventListener('change', (event) => {
+            if (!event.target.matches('[data-fluent-cart-b2b-toggle]')) return;
+            const isB2B = event.target.checked;
+            this.handleB2BToggle(isB2B, event.target);
+            this.saveCustomerData('is_business', isB2B ? 'yes' : 'no');
+        });
+    }
 
-            elements.forEach((element) => {
-                element.addEventListener('change', (event) => {
-                    if (event.target.checked === true) {
-                        this.saveCustomerData(checkbox, 'yes');
-                    } else {
-                        this.saveCustomerData(checkbox, 'no');
-                    }
-                });
+    handleB2BToggle(isB2B, toggleEl = null) {
+        const businessSection = document.querySelector('[data-fluent-cart-b2b-section]');
+        const toggle = toggleEl || document.querySelector('[data-fluent-cart-b2b-toggle]');
+
+        if (businessSection) {
+            businessSection.style.display = isB2B ? '' : 'none';
+
+            businessSection.querySelectorAll('input[data-b2b-required="yes"]').forEach((input) => {
+                input.required = isB2B;
+                if (isB2B) {
+                    input.setAttribute('aria-required', 'true');
+                } else {
+                    input.removeAttribute('aria-required');
+                }
             });
+        }
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', isB2B ? 'true' : 'false');
         }
     }
 
@@ -189,22 +218,6 @@ export default class DataWatcher {
             }
         })
 
-    }
-
-    prepareUtmData() {
-        const formData = new FormData(this.form);
-        formData.append("_wpnonce", this.nonce);
-
-        const utmData = window.fluentCartUtmManager.get();
-
-        Object.keys(utmData).forEach((key) => {
-            const value = utmData[key];
-            if (value) {
-                formData.append(`utm_data[${key}]`, value);
-            }
-
-        })
-        return formData;
     }
 
 }

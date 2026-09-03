@@ -92,6 +92,22 @@ class Taxonomy
             }
         }
 
+        // $parents narrows the response to the requested parent terms — each
+        // requested node is returned at the top level with its subtree attached.
+        // The parameter was accepted but never read: callers passing parent ids
+        // (products/fetch-term-by-parent) got the full unconstrained tree back.
+        // null keeps the full tree, which is what every other caller passes.
+        if (!empty($parents)) {
+            $requestedTerms = [];
+            foreach ((array) $parents as $parentTermId) {
+                $parentTermId = (int) $parentTermId;
+                if (isset($termMap[$parentTermId])) {
+                    $requestedTerms[] = $termMap[$parentTermId];
+                }
+            }
+            $formattedTerms = $requestedTerms;
+        }
+
         // Mark prefilled terms as selected
         // Adds a selected key if the term ID is found in $prefilled.
         if (!empty($prefilled)) {

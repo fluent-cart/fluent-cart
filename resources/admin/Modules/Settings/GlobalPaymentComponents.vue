@@ -33,11 +33,12 @@
           <el-skeleton :loading="fetching" animated :rows="6" class="pt-5"/>
           <template v-if="!fetching">
             <Renderer
-                @onSettingsChange="updateSettings"
-                :route_name="route_name"
+                @on-settings-change="updateSettings"
+                :routeName="route_name"
                 :methodName="methodName"
                 :methodTitle="methodTitle"
                 :methodLabel="methodLabel"
+                :brandColor="brandColor"
                 :fields="fields"
                 :settings="settings"/>
           </template>
@@ -45,7 +46,7 @@
       </Card.Container>
       <div class="setting-save-action">
         <el-button @click="saveSettings()" type="primary" :loading="saving">
-          {{ saving ? $t('Saving') : $t('Save Settings')}}
+          {{ $t('Save Settings')}}
         </el-button>
       </div>
     </div>
@@ -94,6 +95,7 @@ export default {
       methodName: '',
       methodTitle: '',
       methodLabel: '',
+      brandColor: '#253241',
       editDesignModal: false,
       mediaSelection: [],
       checkout_label: '',
@@ -108,6 +110,13 @@ export default {
       this.getRoute();
       this.getSettings();
       this.getPageName();
+    }
+  },
+  mounted() {
+    this.getRoute();
+    this.getSettings();
+    if (window.outerWidth < 500) {
+      this.labelPosition = "top";
     }
   },
   methods: {
@@ -148,14 +157,23 @@ export default {
     },
     getSettings() {
       this.fetching = true;
-      this.$get('settings/payment-methods', {
-        method: this.route_name
-      })
+
+      this.$get('settings/payment-methods/all')
+        .then(allGatewaysResponse => {
+          const gateway = allGatewaysResponse.gateways.find(g => g.route === this.route_name);
+          if (gateway) {
+            this.brandColor = gateway.brand_color || '#000000';
+          }
+        })
+        .catch(() => {});
+
+      this.$get('settings/payment-methods', { method: this.route_name })
           .then((response) => {
             this.fetching = false;
             this.fields = response.fields;
             this.settings = response.settings;
             this.addonInfo = response.addon_info || null;
+
             this.registerCopyAction()
             //set checkout label and logo from settings
             this.checkout_label = this.settings?.checkout_label ? this.settings?.checkout_label : this.methodTitle;
@@ -164,6 +182,10 @@ export default {
             this.thank_you_page_instructions = this.settings?.thank_you_page_instructions || '';
             this.mediaSelection = this.settings?.checkout_logo ? {url: this.settings?.checkout_logo, id: 0, title: 'Checkout Logo'} : '';
           })
+          .catch(error => {
+            this.fetching = false;
+            handleError(error?.data?.message || 'Failed to load settings');
+          });
     },
     saveSettings() {
       this.saving = true;
@@ -203,13 +225,6 @@ export default {
       }
       return pageName;
     },
-  },
-  mounted() {
-    this.getRoute();
-    this.getSettings();
-    if (window.outerWidth < 500) {
-      this.labelPosition = "top";
-    }
   }
 }
 </script>

@@ -65,10 +65,12 @@ class ProductVariationResource extends BaseResourceApi
      *          'id'             => (int) Required. The variant ID.
      *          'post_id'        => (int) Required. The product ID.
      *          'variant_title'  => (string) Required. The variant title.
-     *          'item_price'     => (float) Required. The item price.
-     *          'compare_price'  => (float) Required. The compare price.
+     *          'item_price'     => (int) Required. The item price in CENTS — e.g. 129900 means
+     *                              $1,299.00. Same unit the API returns on read, and the same
+     *                              unit stored. See dev-docs/PRICING-AND-TAX.md §6.
+     *          'compare_price'  => (int) Required. The compare price, in cents (see item_price).
      *          'manage_cost'    => (string) Optional. Whether to manage costs.
-     *          'item_cost'      => (float) Required if manage cost is yes. The item cost.
+     *          'item_cost'      => (int) Required if manage cost is yes. The item cost, in cents.
      *          'manage_stock'   => (string) Required. Whether to manage stock.
      *          'stock_status'   => (string) Required. The stock status.
      *          'stock'          => (int) Required. The stock quantity.
@@ -80,7 +82,7 @@ class ProductVariationResource extends BaseResourceApi
      *              'payment_type'       => (string) Required. The payment type.
      *              'times'             => (string) Required. The number of times.
      *              'repeat_interval'       => (string) Required. The repeat interval unit.
-     *              'signup_fee'         => (string) Required. The signup fee.
+     *              'signup_fee'         => (int) Required. The signup fee, in cents (see item_price).
      *              'downloadable_files' => (array) Required if downloadable is true.
      *                  'download_limit'  => (string) Required. The download limit.
      *                  'download_expiry' => (string) Required. The download expiry.
@@ -96,11 +98,17 @@ class ProductVariationResource extends BaseResourceApi
      */
     public static function create($variant, $params = [])
     {
-        $otherInfo = Arr::get($variant, 'other_info');
+        $otherInfo = Arr::wrap(Arr::get($variant, 'other_info'));
+        $otherInfo['tax_exempt'] = Arr::get($otherInfo, 'tax_exempt', 'no');
+        $otherInfo['tax_class'] = Arr::get($otherInfo, 'tax_class', 'standard');
+
         if (Arr::get($otherInfo, 'payment_type') == 'onetime') {
             $otherInfo = Arr::only($otherInfo, [
                 'payment_type',
                 'description',
+                'tax_class',
+                'tax_exempt',
+                'tax_inclusion',
                 'package_slug',
                 'weight',
                 'weight_unit',
@@ -116,7 +124,8 @@ class ProductVariationResource extends BaseResourceApi
                 unset($otherInfo['setup_fee_per_item']);
             }
             if (Arr::get($otherInfo, 'manage_setup_fee') == 'yes') {
-                $signupFee = Helper::toCent(floatval(Arr::get($otherInfo, 'signup_fee', 0)));
+                // Already in cents — normalize only, do not scale.
+                $signupFee = Helper::roundCent(Arr::get($otherInfo, 'signup_fee', 0));
                 Arr::set($otherInfo, 'signup_fee', $signupFee);
             }
         }
@@ -148,10 +157,12 @@ class ProductVariationResource extends BaseResourceApi
             'committed'        => Arr::get($variant, 'committed'),
             'on_hold'          => Arr::get($variant, 'on_hold'),
             'stock_status'     => $stockStatus,
-            'item_price'       => Helper::toCent($itemPrice),
-            //'compare_price'   => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::toCent($comparePrice) : Helper::toCent($itemPrice),
-            'compare_price'    => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::toCent($comparePrice) : 0,
-            'item_cost'        => Helper::toCent(Arr::get($variant, 'item_cost', 0)),
+            // Amounts arrive already in CENTS. roundCent() only normalizes float
+            // artifacts (a client-computed 19.99 * 100 arriving as
+            // 1998.9999999999998) to a whole-cent int — it does not scale.
+            'item_price'       => Helper::roundCent($itemPrice),
+            'compare_price'    => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::roundCent($comparePrice) : 0,
+            'item_cost'        => Helper::roundCent(Arr::get($variant, 'item_cost', 0)),
             'manage_cost'      => Arr::get($variant, 'manage_cost', 'false'),
             'fulfillment_type' => Arr::get($variant, 'fulfillment_type', 'physical'),
             'shipping_class'   => Arr::get($variant, 'shipping_class') ?: null,
@@ -196,10 +207,12 @@ class ProductVariationResource extends BaseResourceApi
      *          'id'               => (int) Required. The variant ID.
      *          'post_id'          => (int) Required. The product ID.
      *          'variant_title'  => (string) Required. The variant title.
-     *          'item_price'     => (float) Required. The item price.
-     *          'compare_price'  => (float) Required. The compare price.
+     *          'item_price'     => (int) Required. The item price in CENTS — e.g. 129900 means
+     *                              $1,299.00. Same unit the API returns on read, and the same
+     *                              unit stored. See dev-docs/PRICING-AND-TAX.md §6.
+     *          'compare_price'  => (int) Required. The compare price, in cents (see item_price).
      *          'manage_cost'    => (string) Optional. Whether to manage costs.
-     *          'item_cost'      => (float) Required if manage cost is yes. The item cost.
+     *          'item_cost'      => (int) Required if manage cost is yes. The item cost, in cents.
      *          'manage_stock'   => (string) Required. Whether to manage stock.
      *          'stock_status'   => (string) Required. The stock status.
      *          'stock'          => (int) Required. The stock quantity.
@@ -211,7 +224,7 @@ class ProductVariationResource extends BaseResourceApi
      *              'payment_type'       => (string) Required. The payment type.
      *              'times'             => (string) Required. The number of times.
      *              'repeat_interval'       => (string) Required. The repeat interval unit.
-     *              'signup_fee'         => (string) Required. The signup fee.
+     *              'signup_fee'         => (int) Required. The signup fee, in cents (see item_price).
      *              'downloadable_files' => (array) Required if downloadable is true.
      *                  'download_limit'  => (string) Required. The download limit.
      *                  'download_expiry' => (string) Required. The download expiry.
@@ -226,8 +239,6 @@ class ProductVariationResource extends BaseResourceApi
      *      'product_terms' => (array) Optional. Terms of the product.
      *          'product-categories' => (array) Required if categories. Product categories.
      *              [0]       => (int) Optional. The category ID.
-     *          'product-tags'       => (array) Required if tags. Product tags.
-     *              [0]       => (int) Optional. The tag ID.
      *          'product-types'      => (array) Required if types. Product types.
      *              [0]       => (int) Optional. The type ID.
      * ];
@@ -247,6 +258,9 @@ class ProductVariationResource extends BaseResourceApi
             $otherInfo = Arr::only($otherInfo, [
                 'payment_type',
                 'description',
+                'tax_class',
+                'tax_exempt',
+                'tax_inclusion',
                 'bundle_child_ids',
                 'package_slug',
                 'weight',
@@ -263,7 +277,8 @@ class ProductVariationResource extends BaseResourceApi
                 unset($otherInfo['setup_fee_per_item']);
             }
             if (Arr::get($otherInfo, 'manage_setup_fee') == 'yes') {
-                $signupFee = Helper::toCent(floatval(Arr::get($otherInfo, 'signup_fee', 0)));
+                // Already in cents — normalize only, do not scale.
+                $signupFee = Helper::roundCent(Arr::get($otherInfo, 'signup_fee', 0));
                 Arr::set($otherInfo, 'signup_fee', $signupFee);
             }
         }
@@ -302,10 +317,12 @@ class ProductVariationResource extends BaseResourceApi
             'on_hold'          => Arr::get($variant, 'on_hold'),
             'shipping_class'   => Arr::get($variant, 'shipping_class') ?: null,
             'stock_status'     => $stockStatus,
-            'item_price'       => Helper::toCent($itemPrice),
-            //'compare_price'   => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::toCent($comparePrice) : Helper::toCent($itemPrice),
-            'compare_price'    => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::toCent($comparePrice) : 0,
-            'item_cost'        => Helper::toCent(Arr::get($variant, 'item_cost', 0)),
+            // Amounts arrive already in CENTS. roundCent() only normalizes float
+            // artifacts (a client-computed 19.99 * 100 arriving as
+            // 1998.9999999999998) to a whole-cent int — it does not scale.
+            'item_price'       => Helper::roundCent($itemPrice),
+            'compare_price'    => ($comparePrice !== '' && $comparePrice >= $itemPrice) ? Helper::roundCent($comparePrice) : 0,
+            'item_cost'        => Helper::roundCent(Arr::get($variant, 'item_cost', 0)),
             'manage_cost'      => Arr::get($variant, 'manage_cost', 'false'),
             'fulfillment_type' => Arr::get($variant, 'fulfillment_type', 'physical'),
             'variation_title'  => Arr::get($variant, 'variation_title', ''),

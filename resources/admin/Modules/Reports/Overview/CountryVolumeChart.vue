@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Screenshot from "@/Bits/Components/Icons/Screenshot.vue";
@@ -32,6 +32,8 @@ import Theme from '@/utils/Theme';
 import dayjs from 'dayjs';
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import translate from "@/utils/translator/Translator";
+import toCountryName from "@/Modules/Reports/Utils/toCountryName";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
 // Props
@@ -59,16 +61,26 @@ const error = ref('');
 
 const isDarkTheme = ref(Theme.isDark());
 
-// Define colors for countries
+// Define colors for countries, ordered by overall volume rank.
+// The steps are kept far enough apart that two stacked segments never read as
+// the same color.
 const countryColors = computed(() => {
-  return [
-    isDarkTheme.value ? '#032647' : '#3e9df6',
-    isDarkTheme.value ? '#04315b' : '#1589f4',
-    isDarkTheme.value ? '#053c70' : '#0a73d5',
-    isDarkTheme.value ? '#064784' : '#0968c1',
-    isDarkTheme.value ? '#075298' : '#085dad',
-  ];
+  return isDarkTheme.value
+    ? ['#8FC0F5', '#4E90E8', '#2E6BC4', '#1E4C90', '#143562']
+    : ['#9CC9FA', '#3E9DF6', '#1573D5', '#0B57A3', '#083C73'];
 });
+
+// White is unreadable on the lightest steps of the palette, so pick the label
+// color from the perceived brightness of the segment it sits on.
+const readableLabelColor = (hexColor) => {
+  const value = hexColor.replace('#', '');
+  const red = parseInt(value.substring(0, 2), 16);
+  const green = parseInt(value.substring(2, 4), 16);
+  const blue = parseInt(value.substring(4, 6), 16);
+  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+
+  return brightness > 150 ? '#0B3A66' : '#ffffff';
+};
 
 const isEmpty = computed(() => {
   const data = Array.isArray(props.data.by_countries) ? props.data.by_countries : Object.values(props.data.by_countries);
@@ -111,9 +123,46 @@ const labels = computed(() => {
   });
 });
 
+// One color per country for the whole period, assigned by overall volume rank.
+// Ranking per month (the previous behaviour) let two countries end up with the
+// same color, which made their segments indistinguishable.
+const countryColorMap = computed(() => {
+  const totals = {};
+
+  Object.values(props.data.by_month || {}).forEach(monthData => {
+    Object.entries(monthData).forEach(([country, value]) => {
+      totals[country] = (totals[country] || 0) + value;
+    });
+  });
+
+  // The API already ranks the top countries for the whole range; prefer it.
+  Object.entries(props.data.by_countries || {}).forEach(([country, value]) => {
+    totals[country] = value;
+  });
+
+  const palette = countryColors.value;
+  const fallback = palette[palette.length - 1];
+
+  return Object.keys(totals)
+    .sort((a, b) => totals[b] - totals[a])
+    .reduce((map, country, rank) => {
+      map[country] = palette[rank] || fallback;
+      return map;
+    }, {});
+});
+
+// Tallest stack in the chart — used to decide whether a segment has the height
+// to hold its country label.
+const maxStackTotal = computed(() => {
+  return chartDataArray.value.reduce((max, item) => Math.max(max, item.total), 0);
+});
+
+// A segment thinner than this share of the tallest bar cannot fit a label
+// without spilling over the segment below it.
+const MIN_LABEL_SHARE = 0.05;
+
 const seriesData = computed(() => {
   const byMonth = props.data.by_month || {};
-  const months = Object.keys(byMonth).sort();
   const allCountries = new Set();
   
   // Collect all unique countries
@@ -121,34 +170,24 @@ const seriesData = computed(() => {
     Object.keys(monthData).forEach(country => allCountries.add(country));
   });
   
-  return Array.from(allCountries).reverse().map(country => {
-    let color;
+  const palette = countryColors.value;
+  const maxTotal = maxStackTotal.value;
 
-    const data = chartDataArray.value.map((item, monthIndex) => {
-      const monthData = byMonth[months[monthIndex]];
-      
-      // Get countries sorted by volume for this month (ascending)
-      const sortedCountries = Object.entries(monthData)
-        .sort((a, b) => b[1] - a[1])
-        .map(([country]) => country);
-      
-      const countryRank = sortedCountries.indexOf(country);
+  return Array.from(allCountries).reverse().map(country => {
+    const color = countryColorMap.value[country] || palette[palette.length - 1];
+    const labelColor = readableLabelColor(color);
+
+    const data = chartDataArray.value.map(item => {
       const value = item.countries[country] || 0;
-      
-      // Assign color based on rank (0-4 for top 5, or default color)
-      const colorIndex = countryRank < 5 ? countryRank : 4;
-      
-      if (!color && colorIndex >= 0) {
-        color = countryColors.value[colorIndex] || countryColors.value[4];
-      }
-      
+      const fitsLabel = maxTotal > 0 && (value / maxTotal) >= MIN_LABEL_SHARE;
+
       return {
         value: value / 100,
         label: {
-          show: value > 0,
+          show: value > 0 && fitsLabel,
           position: 'inside',
           formatter: country,
-          color: isDarkTheme.value ? '#fff' : '#fff',
+          color: labelColor,
           fontSize: 10,
           fontWeight: 'bold',
         },
@@ -181,52 +220,41 @@ const initChart = () => {
       backgroundColor: isDarkTheme.value ? "#253241" : '#ffffff',
       textStyle: { color: isDarkTheme.value ? colors.gray["25"] : colors.system["mid"] },
       borderColor: isDarkTheme.value ? "#2C3C4E" : "#c0c4ca",
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.report.dark_cyan_blue_16 : colors.report.light_gray_cyan_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.report.dark_cyan_blue_16, colors.report.light_gray_cyan_blue, chartType.value),
       borderWidth: 1,
+      confine: true,
+      position: chartTooltipPosition,
       formatter: params => {
-        let tooltipContent = params[0].axisValue;
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
+        const borderColor = isDarkTheme.value ? colors.report.dark_cyan_blue_16 : colors.report.light_gray_blue;
         const total = chartDataArray.value[params[0].dataIndex].total;
 
-        params = params.sort((a, b) => b.value - a.value).filter(param => param.value > 0);
+        let tooltipContent = params[0].axisValue;
 
-        params.push({
-          marker: '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:#FFA500; margin-right:5px;"></span>',
-          seriesName: translate('Total'),
-          value: total / 100
-        });
+        params
+          .filter(param => param.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .forEach(param => {
+            const value = chartTooltipAmount(param.value * 100);
 
-        const borderColor = isDarkTheme.value ? colors.report.dark_cyan_blue_16 : colors.report.light_gray_blue;
-
-        params.forEach(function (param, index) {
-          const isTotal = index === params.length - 1;
-
-          if (!isTotal && param.value === 0) return;
-
-          const value = CurrencyFormatter.scaled(param.value);
-
-          if (isTotal) {
-            tooltipContent += `<div style="border-top: 1px solid ${borderColor}; margin-top: 5px; padding-top: 5px;">`;
-          } else {
-            tooltipContent += `<div>`;
-          }
-
-          tooltipContent += `
-            ${param.marker} 
-            <span style="color: ${color};">${param.seriesName}</span>
+            tooltipContent += `
+          <div>
+            ${param.marker}
+            <span style="color: ${color};">${toCountryName(param.seriesName)}</span>
             <span style="float: right; margin-left: 20px; color: ${color};">
               ${value}
             </span>
           </div>`;
-        });
-        
+          });
+
+        tooltipContent += `
+          <div style="border-top: 1px solid ${borderColor}; margin-top: 5px; padding-top: 5px;">
+            <span style="color: ${color}; font-weight: 600;">${translate('Total')}</span>
+            <span style="float: right; margin-left: 20px; color: ${color}; font-weight: 600;">
+              ${chartTooltipAmount(total)}
+            </span>
+          </div>`;
+
         return tooltipContent;
       }
     },
@@ -275,10 +303,24 @@ const handleThemeChange = () => {
 };
 
 // Lifecycle hooks
+const handleCurrencyChange = () => {
+  if (chartInstance) {
+    chartInstance.dispose();
+    chartInstance = null;
+  }
+  initChart();
+};
+
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+  window.addEventListener("fluentCartCurrencyChange", handleCurrencyChange);
 
   nextTick(initChart);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", handleCurrencyChange, false);
 });
 
 watch(() => isDarkTheme.value, () => {

@@ -11,7 +11,6 @@ use FluentCart\App\Services\DateTime\DateTime;
 
 class ReportHelper
 {
-
     /**
      * Define the group key based on the data density between the start and end dates.
      *
@@ -153,27 +152,56 @@ class ReportHelper
         return $attributes;
     }
 
+    /**
+     * Whitelist a groupKey value used to build raw SQL (SELECT/GROUP BY clauses)
+     * so an unrecognized or missing value never reaches the query builder.
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public static function sanitizeGroupKey($value)
+    {
+        $acceptedValues = ['billing_country', 'shipping_country', 'payment_method', 'payment_status', 'default', 'daily', 'monthly', 'yearly'];
+        return in_array($value, $acceptedValues) ? $value : 'payment_method';
+    }
+
     protected static function sanitizeParams($params)
-    {        
+    {
         $rules = [
             'startDate'        => 'sanitize_text_field',
             'endDate'          => 'sanitize_text_field',
             'compareType'      => 'sanitize_text_field',
             'compareDate'      => 'sanitize_text_field',
             'groupKey'         => function ($value) {
-                $acceptedValues = ['billing_country', 'shipping_country', 'payment_method', 'payment_status', 'default', 'monthly', 'yearly'];
-                return in_array($value, $acceptedValues) ? $value : 'payment_method';
+                return static::sanitizeGroupKey($value);
             },
             'currency'         => 'sanitize_text_field',
             'filterMode'       => 'sanitize_text_field',
             'storeMode'        => 'sanitize_text_field',
             'variation_ids.*'  => 'intval',
+            'customDays'       => 'intval',
             'subscriptionType' => 'sanitize_text_field',
             'orderStatus.*'    => 'sanitize_text_field',
             'orderTypes.*'     => 'sanitize_text_field',
+            'filter_type'      => 'sanitize_text_field',
         ];
-        
-        return Sanitizer::sanitize($params, $rules);
+
+        /**
+         * Report params whose shape this plugin does not own.
+         *
+         * `advanced_filters` deliberately has no rule above. Its payload describes
+         * filter conditions, and only whoever consumes it knows what shape is
+         * valid — so only they can sanitize it without mangling it (running
+         * sanitize_text_field() over a JSON blob eats everything after the first
+         * '<'). A consumer pushes its own rule in here, and Sanitizer::sanitize()
+         * leaves any key with no rule untouched.
+         *
+         * @param array $rules  Sanitization rules, keyed like $params.
+         * @param array $params The raw, unsanitized params.
+         */
+        $rules = apply_filters('fluent_cart/report/sanitize_params_rules', $rules, $params);
+
+        return Sanitizer::sanitize($params, is_array($rules) ? $rules : []);
     }
 
     /**

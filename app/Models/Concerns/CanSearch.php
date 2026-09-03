@@ -2,7 +2,7 @@
 
 namespace FluentCart\App\Models\Concerns;
 
-use FluentCart\Framework\Database\ORM\Builder;
+use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 
 /**

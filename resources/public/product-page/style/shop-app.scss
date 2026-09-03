@@ -41,7 +41,8 @@
   --fct-shop-input-border: var(--fct-shop-border-color);
 }
 
-.sr-only {
+.sr-only,
+.fct-sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -158,7 +159,8 @@
             @apply grid grid-cols-[250px_1fr] grid-rows-[auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pr-2.5;
             .fct-product-image-block,
             .fct-product-card-image-wrap,
-            .fct-product-image-link {
+            .fct-product-image-link,
+            .fct-dynamic-product-image {
               grid-area: image;
               @apply relative max-w-[250px] aspect-square;
               img {
@@ -169,7 +171,8 @@
               grid-area: image;
               @apply relative max-w-[250px] aspect-square;
             }
-            .fct-product-card-title {
+            .fct-product-card-title,
+            .fct-dynamic-product-title {
               grid-area: title;
               @apply pt-1.5 px-0 mr-auto w-full;
               a {
@@ -177,19 +180,22 @@
                 white-space: pre-wrap !important;
               }
             }
-            .fct-product-card-prices {
+            .fct-product-card-prices,
+            .fct-dynamic-product-price {
               grid-area: price;
               @apply px-0 mr-auto;
             }
             button,
-            .fct-product-view-button {
+            .fct-product-view-button,
+            .fct-dynamic-product-button {
               grid-area: button;
               @apply mt-auto self-start justify-self-start mr-auto mb-2.5 min-w-[160px] w-auto;
             }
             .wp-block-group {
                  grid-area: button;
             }
-            .fct-product-card-excerpt {
+            .fct-product-card-excerpt,
+            .fct-dynamic-product-excerpt {
               grid-area: excerpt;
               @apply block mr-auto px-0;
             }
@@ -294,6 +300,18 @@
   @apply flex items-center justify-center h-[36px] w-[36px] p-0 rounded bg-[var(--fct-shop-secondary-bg-color)] border-[1px] border-solid border-[var(--fct-shop-border-color)] text-system-dark hover:bg-[var(--fct-shop-secondary-bg-color)] hover:border-[var(--fct-shop-border-color)] hover:text-system-dark;
 }
 
+.fct-brick-products-wrapper .fct-products-container {
+  --grid-columns: 4;
+
+  @media (max-width: 768px) {
+    --grid-columns: 2;
+  }
+
+  @media (max-width: 550px) {
+    --grid-columns: 1;
+  }
+}
+
 .fct-products-container {
   --grid-columns: 0;
   @apply grid gap-6 w-full h-max;
@@ -317,7 +335,7 @@
 .fct-shop-product-search {
   @apply relative mb-4;
   input {
-    @apply pl-9 w-full py-2 text-sm pr-3 border border-solid border-[var(--fct-shop-input-border)] rounded bg-[var(--fct-shop-input-bg)] focus:outline-none focus:shadow-none focus:border-[var(--fct-shop-input-border)];
+    @apply pl-9 w-full py-2 text-sm pr-3 border border-solid border-[var(--fct-shop-input-border)] rounded bg-[var(--fct-shop-input-bg)] focus:outline-none focus:shadow-none focus:border-[var(--fct-shop-input-border)] leading-[1.5];
   }
   .fct-search-icon {
     @apply absolute top-1/2 left-3 mt-[1px];
@@ -349,7 +367,7 @@
 }
 
 .fct-shop-apply-filter-button {
-  @apply leading-none text-[var(--fct-shop-btn-text-color)] border-0 rounded cursor-pointer text-sm font-medium h-9 flex-shrink-0 p-2 hover:text-[var(--fct-shop-btn-text-color)];
+  @apply leading-none text-[var(--fct-shop-btn-text-color)] border-0 rounded cursor-pointer text-sm font-medium h-9 flex-shrink-0 p-2 hover:text-[var(--fct-shop-btn-text-color)] text-center;
 
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-shop-btn-bg-color);
   box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
@@ -409,10 +427,12 @@
 
 .fct-shop-paginator {
   .fct-shop-paginator-pager {
-    @apply list-none bg-[var(--fct-shop-paginator-bg)] flex gap-1.5 m-0 border border-solid border-[var(--fct-shop-paginator-border-color)] rounded p-[9px];
+    @apply bg-[var(--fct-shop-paginator-bg)] flex gap-1.5 m-0 border border-solid border-[var(--fct-shop-paginator-border-color)] rounded;
+
+    @apply list-none p-[9px] leading-normal !important;
 
     button {
-      @apply bg-transparent text-[var(--fct-shop-paginator-items-color)] min-w-5.5 flex justify-center items-center rounded-full cursor-pointer p-1 leading-none text-sm max-h-5.5 gap-1 font-medium hover:bg-[var(--fct-shop-paginator-items-hover-bg)];
+      @apply bg-transparent text-[var(--fct-shop-paginator-items-color)] min-w-5.5 flex justify-center items-center rounded-full cursor-pointer p-1 leading-none text-sm max-h-5.5 gap-1 font-medium hover:bg-[var(--fct-shop-paginator-items-hover-bg)] border-0;
       &.active {
         @apply bg-[var(--fct-shop-paginator-items-active-bg)] text-[var(--fct-shop-paginator-items-active-color)];
       }
@@ -556,7 +576,7 @@
 
 /*======= filter checkbox ========*/
 .fct-shop-checkbox {
-  @apply font-medium flex items-center leading-none relative pl-6 capitalize mb-4 cursor-pointer select-none last:mb-0;
+  @apply font-medium flex items-center leading-none relative pl-6 capitalize mb-4 cursor-pointer select-none last:mb-0 text-[var(--fct-shop-secondary-text-color)];
   input {
     @apply absolute opacity-0 cursor-pointer h-0 w-0;
     &:checked ~ .checkmark {
@@ -649,68 +669,19 @@
   }
 }
 
-/*========= search bar ===========*/
-.fluent-cart-search-bar-app{
-  &-wrapper-result-container{
-    @apply inline-block relative w-[250px];
-  }
-  &-input{
-    @apply w-full text-sm bg-white border border-solid border-gray-outline rounded py-3 px-4 leading-none min-h-[48px] text-system-dark focus:outline-none focus:border-dark-700 #{!important};
-    &.is-active{
-      @apply rounded-br-none rounded-bl-none #{!important};
-    }
-    &-wrap{
-      @apply flex items-center relative;
-    }
-    &-clear{
-      @apply absolute top-1/2 right-2.5 cursor-pointer text-center w-6.5 h-6.5 text-system-light hidden hover:text-system-dark leading-[28px];
-      transform: translateY(-50%);
-      svg{
-        @apply w-4 h-4;
-      }
-    }
-  }
-  &-wrapper-result-wrap{
-    @apply bg-white absolute top-full left-0 w-full z-[9999] hidden border border-solid border-gray-outline rounded-br rounded-bl border-t-0 pb-1;
-    h5{
-      @apply text-xs text-system-light m-0 px-2.5 pt-2.5 pb-2 font-semibold;
-    }
-  }
-  &-list-wrapper{
-    @apply m-0 list-none p-0 max-h-[305px] overflow-y-scroll #{!important};
-    &:active::-webkit-scrollbar-thumb,
-    &:focus::-webkit-scrollbar-thumb,
-    &:hover::-webkit-scrollbar-thumb {
-      @apply visible;
-    }
-    &::-webkit-scrollbar-thumb {
-      @apply bg-gray-200 rounded-sm;
-      visibility: hidden;
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-300;
-    }
-    &::-webkit-scrollbar {
-      @apply h-1 w-1;
-    }
-    li{
-      @apply text-sm font-medium text-system-dark leading-[20px] #{!important};
-      a{
-        @apply py-1.5 px-2.5 no-underline text-system-dark block hover:bg-gray-50 #{!important};
-      }
-      &.is-empty{
-        @apply px-2.5 py-1.5;
-      }
-    }
-  }
-}
-
 @container product-grid (min-width: 540px){
   .group.list .fluent-cart-shop-app-single-product{
     grid-template-areas:  'head  body' 'head footer';
   }
 }
 
+@media only screen and (max-width: 1280px){
+  .wp-block-fluent-cart-products{
+    .fct-products-wrapper {
+        @apply px-5;
+    }
+  }
+}
 @media only screen and (max-width: 1024px){
   .fluent-cart-shop-app-single-product-modal-body{
     @apply w-full;
@@ -869,4 +840,21 @@
   .fct-shop-view-switcher-wrap {
     @apply mb-0;
   }
+}
+
+.archive {
+    .fct-products-wrapper {
+        @apply px-5;
+    }
+}
+
+/*=== bricks builder ===*/
+.fct-brick-products-wrapper {
+  @apply p-5;
+}
+
+.fct-bricks-editor-mode {
+     .fct-products-wrapper-inner {
+        @apply gap-7.5;
+    }
 }

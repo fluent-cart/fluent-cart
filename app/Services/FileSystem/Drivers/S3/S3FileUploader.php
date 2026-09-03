@@ -9,6 +9,12 @@ use WP_Error;
 
 class S3FileUploader
 {
+    /**
+     * Value of the If-None-Match header. "*" means "only if no object exists
+     * under this key", which S3 answers with 412 when the key is taken.
+     */
+    private const IF_NONE_MATCH = '*';
+
     private string $accessKey;
     private string $secretKey;
     private string $bucket;
@@ -21,6 +27,7 @@ class S3FileUploader
     private string $requestUrl;
     private string $timeStamp;
     private string $date;
+    private bool $preventOverwrite;
 
     /**
      * @throws Exception
@@ -50,6 +57,15 @@ class S3FileUploader
             // Virtual-hosted style
             $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
         }
+
+        // Opt-in: when enabled the upload is refused instead of replacing an
+        // existing object. Resolved before signing because the header is part
+        // of the canonical request.
+        $this->preventOverwrite = (bool)apply_filters('fluent_cart/storage/s3_prevent_overwrite', false, [
+            'bucket'       => $this->bucket,
+            's3_file_path' => $this->s3FilePath,
+        ]);
+
         $this->signature = $this->generateSignature();
     }
 
@@ -83,6 +99,20 @@ class S3FileUploader
                 'driver'  => 's3',
                 'path'    => $this->s3FilePath
             ];
+        }
+
+        // S3 refused because the key is already taken. Gated on the opt-in so
+        // a 412 raised for any other precondition is not misreported as an
+        // overwrite conflict.
+        if ($responseCode === 412 && $this->preventOverwrite) {
+            return new WP_Error(
+                $responseCode,
+                sprintf(
+                    /* translators: %s is the file name that already exists in the bucket */
+                    __('A file named "%s" already exists in this bucket and existing files cannot be replaced. Upload it under a new name, for example by increasing the version number.', 'fluent-cart'),
+                    basename($this->s3FilePath)
+                )
+            );
         }
 
         return new WP_Error($responseCode, __('Failed To Upload File', 'fluent-cart'));
@@ -140,14 +170,53 @@ class S3FileUploader
             $canonicalUri = $s3FilePath;
         }
 
+        $canonicalHeaders = '';
+        foreach ($this->getCanonicalHeaders($contentHash) as $name => $value) {
+            $canonicalHeaders .= "{$name}:{$value}\n";
+        }
+
         return "{$this->httpMethod}\n"
             . "{$canonicalUri}\n\n"
-            . "host:{$this->getUploadHost()}\n"
-            . "x-amz-content-sha256:{$contentHash}\n"
-            . "x-amz-date:{$this->timeStamp}\n\n"
-            . "host;x-amz-content-sha256;x-amz-date\n"
+            . $canonicalHeaders
+            . "\n"
+            . "{$this->getSignedHeaders()}\n"
             . "{$contentHash}";
     }
+
+    /**
+     * Headers covered by the signature, keyed by lowercase name and sorted as
+     * SigV4 requires. Single source for both the canonical request and the
+     * SignedHeaders list in the Authorization header — if the two ever
+     * disagree, S3 rejects every upload with 403.
+     *
+     * @return array<string, string>
+     */
+    private function getCanonicalHeaders(string $contentHash): array
+    {
+        $headers = [
+            'host'                 => $this->getUploadHost(),
+            'x-amz-content-sha256' => $contentHash,
+            'x-amz-date'           => $this->timeStamp,
+        ];
+
+        if ($this->preventOverwrite) {
+            $headers['if-none-match'] = self::IF_NONE_MATCH;
+        }
+
+        ksort($headers);
+
+        return $headers;
+    }
+
+    /**
+     * The semicolon-separated SignedHeaders value. Built from the same names
+     * as the canonical request, without re-reading the file to hash it.
+     */
+    private function getSignedHeaders(): string
+    {
+        return implode(';', array_keys($this->getCanonicalHeaders('')));
+    }
+
     private function getUploadHostOld(): string
     {
         // ✅ Regional host
@@ -191,10 +260,16 @@ class S3FileUploader
      */
     public function getHeaders(): array
     {
-        return [
+        $headers = [
             'x-amz-content-sha256' => $this->getContentHash(),
             'x-amz-date'           => $this->timeStamp,
-            'Authorization'        => "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$this->date}/{$this->region}/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature={$this->getSignature()}"
+            'Authorization'        => "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$this->date}/{$this->region}/s3/aws4_request, SignedHeaders={$this->getSignedHeaders()}, Signature={$this->getSignature()}"
         ];
+
+        if ($this->preventOverwrite) {
+            $headers['If-None-Match'] = self::IF_NONE_MATCH;
+        }
+
+        return $headers;
     }
 }

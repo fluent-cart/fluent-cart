@@ -12,7 +12,7 @@ use FluentCart\Framework\Support\UrlRoutable;
 
 trait SubstituteParameters
 {
-    protected function SubstituteParameters($routeParameters)
+    protected function substituteParameters($routeParameters)
     {
         $resolved = [];
 

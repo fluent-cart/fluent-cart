@@ -28,7 +28,7 @@ class TurnstileBoot
 
         $isActive = ($enableTurnstile === 'yes' && !empty($siteKey));
         ?>
-        <div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none;" data-turnstile-active="<?php echo $isActive ? 'yes' : 'no'; ?>">
+        <div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget data-turnstile-active="<?php echo $isActive ? 'yes' : 'no'; ?>">
             <?php if ($isActive): ?>
             <div class="cf-turnstile"
                  data-sitekey="<?php echo esc_attr($siteKey); ?>"
@@ -74,7 +74,6 @@ class TurnstileBoot
 
     /**
      * Inject widget via wp_footer as last resort
-     * This should ALWAYS work since wp_footer fires on every page
      */
     public function injectWidgetViaFooter()
     {
@@ -112,6 +111,7 @@ class TurnstileBoot
                     try {
                         const renderedId = turnstile.render(widget, {
                             sitekey: siteKey,
+                            execution: 'render',
                             callback: function(token) {
                                 if (typeof window.fluentCartTurnstileCallback === 'function') {
                                     window.fluentCartTurnstileCallback(token);
@@ -146,7 +146,7 @@ class TurnstileBoot
 
                 if (!renderTurnstileWidget()) {
                     let attempts = 0;
-                    const maxAttempts = 50; // 5 seconds
+                    const maxAttempts = 50;
                     const checkInterval = setInterval(function() {
                         attempts++;
                         if (renderTurnstileWidget() || attempts >= maxAttempts) {
@@ -182,9 +182,6 @@ class TurnstileBoot
         return false;
     }
 
-    /**
-     * Get widget HTML as string
-     */
     private function getWidgetHtml()
     {
         $settings = ModuleSettings::getSettings('turnstile');
@@ -192,7 +189,7 @@ class TurnstileBoot
         $siteKey = Arr::get($settings, 'site_key', '');
         $isActive = ($enableTurnstile === 'yes' && !empty($siteKey));
 
-        $html = '<div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none;" data-turnstile-active="' . ($isActive ? 'yes' : 'no') . '">';
+        $html = '<div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget data-turnstile-active="' . ($isActive ? 'yes' : 'no') . '">';
 
         if ($isActive) {
             $html .= '<div class="cf-turnstile" data-sitekey="' . esc_attr($siteKey) . '" data-callback="fluentCartTurnstileCallback" data-size="flexible" data-appearance="interaction-only" data-theme="auto"></div>';
@@ -205,4 +202,3 @@ class TurnstileBoot
         return $html;
     }
 }
-

@@ -17,12 +17,12 @@ const ProductCard = (props) => {
 
     const getMinPrice = () => {
         return product && product.detail && product.detail.min_price !== null ?
-            (product.detail.min_price / 100).toFixed(2) : '0.00';
+            String(parseFloat((product.detail.min_price / 100).toFixed(2))) : '0';
     }
 
     const getMaxPrice = () => {
         return product && product.detail && product.detail.max_price !== null ?
-            (product.detail.max_price / 100).toFixed(2) : '0.00';
+            String(parseFloat((product.detail.max_price / 100).toFixed(2))) : '0';
     }
 
 

@@ -24,7 +24,7 @@ $transaction = $subscription->getLatestTransaction();
             printf(
                     /* translators: %s is the subscription item name */
                     esc_html__( 'Your subscription has been successfully renewed, ensuring uninterrupted access to %s.', 'fluent-cart' ),
-                    esc_html( $subscription->item_name )
+                    esc_html( $subscription->display_item_name )
             );
         ?>
     </p>

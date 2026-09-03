@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Helpers;
 
+use FluentCart\Api\Resource\OrderResource;
+use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\Framework\Support\Arr;
 
@@ -104,33 +106,92 @@ class OrderItemHelper
 
     public function processCustom($product, $orderId)
     {
-        $price = Arr::get($product, 'item_price', false);
-        $quantity = Arr::get($product, 'quantity', false);
+        if (!$orderId) {
+            throw new \Exception(esc_html__('Order Not valid!', 'fluent-cart'));
+        }
 
-        if (!Arr::get($product, 'item_name', false)) {
+        // The published spec (openapi/orders/create-custom-order-item.json) names
+        // these `title` and `price`; the original implementation read `item_name`
+        // and `item_price`. Accept both so neither contract is broken.
+        $title = sanitize_text_field((string)Arr::get($product, 'title', Arr::get($product, 'item_name', '')));
+
+        if (!$title) {
             throw new \Exception(esc_html__('Item must have a name!', 'fluent-cart'));
         }
 
-        if (!$price || !$quantity) {
+        // Price arrives already in cents.
+        $unitPrice = Helper::roundCent(Arr::get($product, 'price', Arr::get($product, 'item_price', 0)));
+        $quantity = intval(Arr::get($product, 'quantity', 0));
+
+        if ($unitPrice <= 0 || $quantity <= 0) {
             throw new \Exception(esc_html__('Price, Quantity field should not be empty or zero!', 'fluent-cart'));
         }
 
-        //$total = floatVal($price * 100 * $quantity);
-        $total = floatVal($price * $quantity);
+        $lineTotal = $unitPrice * $quantity;
 
-        $type = Arr::get($product, 'fulfillment_type', 'physical');
+        $fulfillmentType = Arr::get($product, 'fulfillment_type', Status::FULFILLMENT_TYPE_PHYSICAL);
 
-        $otherData = [
-            'order_id' => $orderId,
-            'variation_type' => $type,
-            //'item_price' => $price * 100,
-            'item_price' => $price,
-            'item_total' => $total,
-            'line_total' => $total,
-            'tax_amount' => 0,
-            'discount_total' => 0,
-        ];
+        if (!in_array($fulfillmentType, [Status::FULFILLMENT_TYPE_PHYSICAL, Status::FULFILLMENT_TYPE_DIGITAL], true)) {
+            $fulfillmentType = Status::FULFILLMENT_TYPE_PHYSICAL;
+        }
 
-        return $this->sanitize(array_merge($product, $otherData));
+        $order = Order::query()->find(intval($orderId));
+
+        if (!$order) {
+            throw new \Exception(esc_html__('Order Not valid!', 'fluent-cart'));
+        }
+
+        // Same rule as OrderController::updateOrder — a subscription order's
+        // total is bound to its pending charge, which nothing on this path
+        // resynchronizes.
+        if ($order->isSubscription()) {
+            throw new \Exception(esc_html__('Subscription Order cannot be edited.', 'fluent-cart'));
+        }
+
+        $db = Order::query()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            // Serialize on the order row so concurrent additions rebuild the
+            // aggregates one at a time, and a failed rebuild rolls the line
+            // back out. The tax pass opens its own transaction inside this
+            // one, which the connection runs as a savepoint.
+            $locked = Order::query()
+                ->where('id', $order->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$locked) {
+                throw new \Exception(esc_html__('Order Not valid!', 'fluent-cart'));
+            }
+
+            $orderItem = OrderItem::create([
+                'order_id'         => $locked->id,
+                'fulfillment_type' => $fulfillmentType,
+                'title'            => $title,
+                'post_title'       => $title,
+                'quantity'         => $quantity,
+                'unit_price'       => $unitPrice,
+                'subtotal'         => $lineTotal,
+                'line_total'       => $lineTotal,
+                'tax_amount'       => 0,
+                'discount_total'   => 0,
+                // Same rule as the order-edit insert path: digital lines need
+                // no shipment, so they are born fulfilled.
+                'fulfilled_quantity' => $fulfillmentType === Status::FULFILLMENT_TYPE_PHYSICAL ? 0 : $quantity,
+            ]);
+
+            // A line added on its own leaves the order carrying the subtotal it
+            // had before that line existed; the whole-order save posts
+            // client-computed totals instead and never reaches here.
+            OrderResource::syncItemDerivedTotals($locked);
+
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        return $orderItem;
     }
 }

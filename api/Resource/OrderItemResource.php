@@ -3,7 +3,9 @@
 namespace FluentCart\Api\Resource;
 
 use FluentCart\App\App;
+use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Models\OrderItem;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
@@ -227,17 +229,36 @@ class OrderItemResource extends BaseResourceApi
 
                 $itemData = Arr::only($item, ['id', 'title', 'post_id', 'object_id', 'post_title', 'quantity', 'unit_price', 'cost', 'tax_amount', 'discount_total', 'line_total']);
                 $itemData['subtotal'] = Arr::get($item, 'quantity', 0) * Arr::get($item, 'unit_price', 0);
-                $itemData['line_total'] = $itemData['subtotal'] - Arr::get($item, 'discount_total', 0) + Arr::get($item, 'tax_amount', 0);
+                $itemData['line_total'] = $itemData['subtotal'] - Arr::get($item, 'discount_total', 0);
                 $fulfillment_type = Arr::get($item, 'fulfillment_type', 'physical');
 
 
                 if (empty($isExist)) {
                     unset($itemData['id']);
+
+                    // Snapshot the variant's attribute map + variation type into
+                    // other_info so items added on order-edit carry the same data as
+                    // the create path (AdminOrderProcessor), not just what the picker sent.
+                    $otherInfo = Arr::get($item, 'other_info', []);
+                    if (!is_array($otherInfo)) {
+                        $otherInfo = [];
+                    }
+                    if (!array_key_exists('item_attributes', $otherInfo)) {
+                        $otherInfo['item_attributes'] = AttributeHelper::getProductItemAttributes($variationId, $productId);
+                    }
+                    if (empty($otherInfo['variation_type'])) {
+                        // Resolve server-side from the variation (same as the create
+                        // path) — admin orders don't go through the cart, so the snapshot
+                        // is the server's responsibility, not the request's.
+                        $variation = ProductVariation::query()->with('product_detail')->find($variationId);
+                        $otherInfo['variation_type'] = ($variation && $variation->product_detail) ? (string) $variation->product_detail->variation_type : '';
+                    }
+
                     $item = wp_parse_args([
                         'order_id' => $id,
                         'cart_index' => $idx + 1,
                         'fulfillment_type' => $fulfillment_type,
-                        'other_info' => json_encode(Arr::get($item, 'other_info', [])),
+                        'other_info' => json_encode($otherInfo),
                         'payment_type' => Arr::get($item, 'payment_type', Arr::get($item, 'other_info.payment_type', '')),
                         'shipping_charge' => Arr::get($item, 'shipping_charge', 0),
                         'created_at' => DateTime::now(),
@@ -248,6 +269,11 @@ class OrderItemResource extends BaseResourceApi
                 } else {
                     $existingData = Arr::only($itemData, ['id', 'quantity', 'unit_price', 'cost', 'subtotal', 'tax_amount', 'discount_total', 'line_total', 'shipping_charge']) + ['updated_at' => DateTime::now()];
                     $existingData['fulfilled_quantity'] = $fulfillment_type === 'physical' ? Arr::get($item, 'fulfilled_quantity', 0) : Arr::get($item, 'quantity', 0);
+                    $incomingLineMeta = Arr::get($item, 'line_meta');
+                    if (is_array($incomingLineMeta) && array_key_exists('coupon_discount', $incomingLineMeta)) {
+                        $incomingLineMeta['coupon_discount'] = (int) $incomingLineMeta['coupon_discount'];
+                        $existingData['line_meta'] = json_encode($incomingLineMeta);
+                    }
                     $existingItems[] = $existingData;
                 }
             }
@@ -311,6 +337,8 @@ class OrderItemResource extends BaseResourceApi
      */
     public static function topProductsSold($params = [])
     {
+        $params = is_array($params) ? $params : [];
+
         return OrderItem::search(Arr::only($params, ['created_at']))
             ->select('post_id')
             ->selectRaw('SUM(quantity) as total_sold')

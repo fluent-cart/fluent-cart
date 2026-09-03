@@ -73,7 +73,7 @@ function fluent_cart_add_log($title, $content, $logStatus = "info", $otherInfo =
         'module_id'   => null, // module id
         'module_name' => 'order', // 'order', 'product', 'user', 'coupon', 'subscription', 'payment', 'refund', 'shipment', 'activity
         'user_id'     => get_current_user_id() ?? 0,
-        'created_by'  => empty($user) ? 'FCT-BOT' : ($user->display_name ?? 'FCT-BOT'),
+        'created_by'  => $user->exists() ? ($user->display_name ?: 'FCT-BOT') : 'FCT-BOT',
     ];
 
     $allowedModels = [

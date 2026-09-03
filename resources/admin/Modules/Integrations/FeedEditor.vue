@@ -54,7 +54,7 @@
                                             v-model="settings[field.key]"
                                             :class="errors.errors[field.key] ? 'is-error' : ''"
                                         ></el-input>
-                                        <error-view :field="field.key" :errors="errors"></error-view>
+                                        <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'list_ajax_options'">
@@ -73,12 +73,12 @@
                                             >
                                             </el-option>
                                         </el-select>
-                                        <error-view :field="field.key" :errors="errors"></error-view>
+                                        <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'map_fields'">
                                         <MergeFieldMapper
-                                            @setMergeModelObj="setMergeModel(field)"
+                                            @set-merge-model-obj="setMergeModel(field)"
                                             :errors="errors"
                                             :inputs="inputs"
                                             :field="field"
@@ -104,7 +104,7 @@
                                                 :label="list_name"
                                             ></el-option>
                                         </el-select>
-                                        <error-view :field="field.key" :errors="errors"></error-view>
+                                        <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'checkbox-single'">
@@ -155,18 +155,18 @@
                                             </el-option-group>
                                         </el-select>
 
-                                        <error-view :field="field.key" :errors="errors"></error-view>
+                                        <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'conditional_block'">
-                                        <filter-fields
+                                        <FilterFields
                                             :fields="inputs"
                                             :conditionals="settings[field.key]"
                                             :editorShortcodes="editorShortcodes"
                                         />
                                     </template>
                                     <template v-else-if="field.component === 'value_text'">
-                                        <filed-general
+                                        <FiledGeneral
                                             :editorShortcodes="editorShortcodes"
                                             :defaultValue="settings[field.key]"
                                             v-model="settings[field.key]"
@@ -174,7 +174,7 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'value_textarea'">
-                                        <filed-general
+                                        <FiledGeneral
                                             field_type="textarea"
                                             :editorShortcodes="editorShortcodes"
                                             :defaultValue="settings[field.key]"
@@ -184,11 +184,11 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'list_select_filter'">
-                                        <list-select-filter :settings="settings" :field="field"/>
+                                        <ListSelectFilter :settings="settings" :field="field"/>
                                     </template>
 
                                     <template v-else-if="field.component === 'dropdown_label_repeater'">
-                                        <drop-down-label-repeater
+                                        <DropDownLabelRepeater
                                             :errors="errors"
                                             :inputs="inputs"
                                             :field="field"
@@ -198,7 +198,7 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'dropdown_many_fields'">
-                                        <drop-down-many-fields
+                                        <DropDownManyFields
                                             :errors="errors"
                                             :inputs="inputs"
                                             :field="field"
@@ -225,19 +225,19 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'chained_fields'">
-                                        <chained-fields
+                                        <ChainedFields
                                             :settings="settings"
                                             v-model="settings[field.key]"
                                             :field="field"
-                                        ></chained-fields>
+                                        ></ChainedFields>
                                     </template>
 
                                     <template v-else-if="field.component === 'chained_select'">
-                                        <chained-selects
+                                        <ChainedSelects
                                             :settings="settings"
                                             v-model="settings[field.key]"
                                             :field="field"
-                                        ></chained-selects>
+                                        ></ChainedSelects>
                                     </template>
 
                                     <template v-else-if="field.component === 'html_info'">
@@ -245,7 +245,7 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'selection_routing'">
-                                        <selection-routing
+                                        <SelectionRouting
                                             :inputs="inputs"
                                             :field="field"
                                             :editorShortcodes="editorShortcodes"
@@ -254,7 +254,7 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'rest_selector'">
-                                        <rest-selector
+                                        <RestSelector
                                             :field="field"
                                             v-model="settings[field.key]"
                                         />
@@ -390,6 +390,9 @@ export default {
             );
         },
     },
+    mounted() {
+        this.loadIntegrationSettings();
+    },
     methods: {
       translate,
         loadIntegrationSettings() {
@@ -445,7 +448,6 @@ export default {
                         this.merge_fields = response.merge_fields;
                     })
                     .catch((error) => {
-                        console.log(error);
                         this.loading_app = false;
                         this.handleError(error.responseJSON?.data?.message || 'Failed to load integration settings');
                     });
@@ -465,7 +467,6 @@ export default {
                     this.fieldsLoaded = true;
                 })
                 .catch((error) => {
-                    console.log(error);
                 });
         },
         saveNotification() {
@@ -533,9 +534,6 @@ export default {
         setMergeModel(field) {
             this.settings[field.key] = {};
         },
-    },
-    mounted() {
-        this.loadIntegrationSettings();
     },
 };
 </script>

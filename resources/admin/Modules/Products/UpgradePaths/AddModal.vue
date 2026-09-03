@@ -117,7 +117,7 @@ defineExpose({
           </el-option>
         </el-select>
 
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('from_variant')"
             :validation-errors="validationErrors"
             field-key="from_variant"
@@ -144,7 +144,7 @@ defineExpose({
           </el-option>
         </el-select>
 
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('to_variants')"
             :validation-errors="validationErrors"
             field-key="to_variants"
@@ -160,7 +160,7 @@ defineExpose({
         <el-input v-model="form.discount_amount" type="number" :min="0" @input="handleDiscountInput">
           <template #prepend>{{ currentCurrencySign }}</template>
         </el-input>
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('discount_amount')"
             :validation-errors="validationErrors"
             field-key="discount_amount"

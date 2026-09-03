@@ -57,13 +57,6 @@
     border-color 0.3s ease;
 }
 
-/* Hover lift */
-.fct-product-carousel .swiper-slide:hover .fct-product-card {
-  transform: translateY(-5px);
-  box-shadow: 0 14px 30px rgba(0,0,0,0.14);
-  border-color: #d1d5db;
-}
-
 /* Active slide emphasis */
 .fct-product-carousel .swiper-slide-active .fct-product-card {
   border-color: rgba(0, 115, 170, 0.45);
@@ -77,9 +70,6 @@
   transition: transform 0.35s ease;
 }
 
-.fct-product-carousel .swiper-slide:hover img.fct-product-card-image {
-  transform: scale(1.06);
-}
 
 /* ----------------------------------
    Navigation Arrows

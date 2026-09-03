@@ -24,6 +24,9 @@ export default class AddressField {
             'billing_full_name',
             'billing_first_name',
             'billing_last_name',
+            'billing_company_name',
+            'billing_vat_number',
+            'billing_legal_registration_id',
             'billing_address_1',
             'billing_address_2',
             'billing_city',
@@ -108,6 +111,17 @@ export default class AddressField {
                 const addressType = modalBody.dataset.fluentCartAddressType;
 
                 const cloned = modalBody.cloneNode(true);
+
+                // Sync the apply button with the pre-selected address so clicking Apply
+                // without re-selecting always applies the correct address and country.
+                const preSelectedBtn = cloned.querySelector('[data-fluent-cart-checkout-page-form-address-modal-address-selector-button].selected');
+                const clonedApplyBtn = cloned.querySelector('[data-fluent-cart-checkout-page-form-address-modal-apply-button]');
+                if (preSelectedBtn && clonedApplyBtn) {
+                    clonedApplyBtn.dataset.addressId = preSelectedBtn.dataset.id;
+                    clonedApplyBtn.dataset.country = preSelectedBtn.dataset.country;
+                    clonedApplyBtn.dataset.state = preSelectedBtn.dataset.state;
+                    clonedApplyBtn.dataset.addressType = addressType;
+                }
 
                 cloned.classList.remove('hidden');
                 cloned.classList.add('show');
@@ -277,7 +291,6 @@ export default class AddressField {
 
             })
             .catch((error) => {
-                console.error('An error occurred:', error);
             });
     }
 
@@ -772,8 +785,20 @@ export default class AddressField {
                 }
                 if(data?.changes?.billing_company_name) {
                     const companyName = document.querySelector('#billing_company_name');
-                    if (companyName) {
+                    if (companyName && !companyName.value.trim()) {
                         companyName.value = data?.changes?.billing_company_name;
+                    }
+                }
+                if(data?.changes?.billing_legal_registration_id) {
+                    const legalRegistrationId = document.querySelector('#billing_legal_registration_id');
+                    if (legalRegistrationId && !legalRegistrationId.value.trim()) {
+                        legalRegistrationId.value = data?.changes?.billing_legal_registration_id;
+                    }
+                }
+                if(data?.changes?.fct_billing_tax_id) {
+                    const vatNumber = document.querySelector('#fct_billing_tax_id');
+                    if (vatNumber && !vatNumber.value.trim()) {
+                        vatNumber.value = data?.changes?.fct_billing_tax_id;
                     }
                 }
                 if(data?.changes?.billing_full_name) {
@@ -795,4 +820,3 @@ export default class AddressField {
 
     }
 }
-

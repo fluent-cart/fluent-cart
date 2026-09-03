@@ -16,7 +16,7 @@ use FluentCart\Framework\Support\Arr;
 
 class Cod extends AbstractPaymentGateway
 {
-    public array $supportedFeatures = ['payment', 'refund', 'subscriptions'];
+    public array $supportedFeatures = ['payment', 'refund', 'offline'];
 
     public BaseGatewaySettings $settings;
 
@@ -40,6 +40,7 @@ class Cod extends AbstractPaymentGateway
             'slug'        => 'offline_payment',
             'description' => esc_html__('Pay with cash upon delivery', 'fluent-cart'),
             'logo'        => Vite::getAssetUrl("images/payment-methods/offline-payment.svg"),
+            'logo_light'  => Vite::getAssetUrl("images/payment-methods/offline-payment-light.svg"),
             'icon'        => Vite::getAssetUrl("images/payment-methods/cod-icon.svg"),
             'brand_color' => '#136196',
             'upcoming'    => false,
@@ -49,14 +50,13 @@ class Cod extends AbstractPaymentGateway
 
     public function __construct()
     {
-        parent::__construct(
-            new CodSettingsBase(),
-            new CodSubscriptions()
-        );
+        parent::__construct(new CodSettingsBase());
     }
 
     public function makePaymentFromPaymentInstance(PaymentInstance $paymentInstance)
     {
+        $this->maybeConvertToManualSubscription($paymentInstance);
+
         try {
             return [
                 'status'      => 'success',

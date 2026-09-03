@@ -66,7 +66,7 @@ class LabelController extends Controller
             //Check If the model class exist
             if (class_exists($modelClass)) {
                 /**
-                 * @var $modelInstance Model
+                 * @var Model $modelInstance
                  */
                 $modelInstance = new $modelClass();
                 $newLabelIds = Arr::get($data, 'selectedLabels', []);

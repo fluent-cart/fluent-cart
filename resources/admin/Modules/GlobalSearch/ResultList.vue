@@ -7,11 +7,11 @@
       ref="navigableList"
   >
     <template #default="{ item, index, isSelected }">
-      <span>
-          {{ item.item.title }}
-          <br>
-          <span v-if="item.item?.data?.show_description === true">{{ item.item.data.description }}</span>
-        </span>
+      <span class="fct-search-result-label">
+        <span class="fct-search-result-title">{{ item.item.title }}</span>
+        <span v-if="item.item?.subtitle" class="fct-search-result-subtitle">{{ item.item.subtitle }}</span>
+        <span v-else-if="item.item?.data?.show_description === true" class="fct-search-result-subtitle">{{ item.item.data.description }}</span>
+      </span>
       <div class="action-icon">
         <DynamicIcon name="Enter"/>
       </div>
@@ -26,11 +26,10 @@
         ref="navigableList"
     >
       <template #default="{ item, index, isSelected }">
-
-      <span>
-          {{ item.item.title }}
-          <br>
-          <span v-if="item.item?.data?.show_description === true">{{ item.item.data.description }}</span>
+        <span class="fct-search-result-label">
+          <span class="fct-search-result-title">{{ item.item.title }}</span>
+          <span v-if="item.item?.subtitle" class="fct-search-result-subtitle">{{ item.item.subtitle }}</span>
+          <span v-else-if="item.item?.data?.show_description === true" class="fct-search-result-subtitle">{{ item.item.data.description }}</span>
         </span>
         <div class="action-icon">
           <DynamicIcon name="Enter"/>

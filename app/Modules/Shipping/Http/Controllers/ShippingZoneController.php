@@ -49,7 +49,13 @@ class ShippingZoneController extends Controller
 
     public function update(ShippingZoneRequest $request, $id)
     {
+        // When the client omits shipping_class_id, ShippingZoneRequest::
+        // beforeValidation resolves the zone's stored class into the request
+        // (its return is merged in), so validation checks the effective class
+        // and this write preserves it — getSafe would otherwise emit the
+        // mapped key as null and wipe the stored link.
         $data = $request->getSafe($request->sanitize());
+
         $shippingZone = ShippingZone::query()->findOrFail($id);
         if (Arr::get($data, 'region') !== $shippingZone->region) {
             ShippingMethod::where('zone_id', $id)->update(['states' => []]);

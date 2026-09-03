@@ -17,17 +17,12 @@ abstract class BaseParser implements ParserContract
     /**
      * @var array $instances
      *
-     * This static property is used to cache the results of method and attribute lookups.
-     *
-     * The `BaseParser` class uses this array to store the values retrieved by the `get` method.
-     * When a value is requested for a specific code, the `get` method first checks if the value
-     * is already cached in this array. If it is, the cached value is returned, avoiding redundant
-     * lookups or method calls.
-     *
-     * This caching mechanism improves performance by reducing the number of times the same
-     * data needs to be retrieved or computed.
+     * Per-instance cache of method and attribute lookups for the record this parser
+     * was constructed with. Must stay instance-scoped, not static — a static cache
+     * keyed only by accessor bleeds values across different records parsed in the
+     * same request (e.g. two orders processed by one cron run).
      */
-    protected static array $instances = [];
+    protected array $instances = [];
 
     /**
      * @var array $methodMap
@@ -77,7 +72,7 @@ abstract class BaseParser implements ParserContract
     /**
      * Retrieves the value for the given code.
      *
-     * This method first checks if the value for the given code is already cached in the `static::$instances` array.
+     * This method first checks if the value for the given code is already cached in the `$this->instances` array.
      * If it is, the cached value is returned. If not, it checks if the code corresponds to a method or an attribute.
      * If the code corresponds to a method, the `getByMethod` method is called to retrieve the value.
      * If the code corresponds to an attribute, the `getAttribute` method is called to retrieve the value.
@@ -97,8 +92,8 @@ abstract class BaseParser implements ParserContract
         //order.payment_method||title_case -> to order.payment_method
         $template = $conditions['accessor'];
 
-        if (isset(static::$instances[$accessor])) {
-            return static::$instances[$accessor];
+        if (isset($this->instances[$accessor])) {
+            return $this->instances[$accessor];
         }
 
         if (isset($this->methodMap[$accessor])) {
@@ -123,7 +118,7 @@ abstract class BaseParser implements ParserContract
      * Retrieves the value for the given code from the data array.
      *
      * This method uses the `attributeMap` array to find the corresponding key in the data array
-     * and retrieves its value. The result is then stored in the `static::$instances` array
+     * and retrieves its value. The result is then stored in the `$this->instances` array
      * to avoid redundant lookups in the future.
      *
      * @param string $code The code representing the attribute to be retrieved.
@@ -131,15 +126,15 @@ abstract class BaseParser implements ParserContract
      */
     protected function getAttribute(string $code): string
     {
-        static::$instances[$code] = Arr::get($this->data, $this->attributeMap[$code]);
-        return static::$instances[$code];
+        $this->instances[$code] = Arr::get($this->data, $this->attributeMap[$code]);
+        return $this->instances[$code];
     }
 
     /**
      * Retrieves the value for the given code by invoking the corresponding method.
      *
      * This method checks the `methodMap` array for the provided code and calls the
-     * associated method. The result is then stored in the `static::$instances` array
+     * associated method. The result is then stored in the `$this->instances` array
      * to avoid redundant method calls in the future.
      *
      * @param string $accessor The code representing the method to be called.
@@ -148,7 +143,7 @@ abstract class BaseParser implements ParserContract
      */
     protected function getByMethod(string $accessor, ?string $template, $conditions = []): ?string
     {
-        static::$instances[$accessor] = $this->{$this->methodMap[$accessor]}($accessor, $template, $conditions);
-        return static::$instances[$accessor];
+        $this->instances[$accessor] = $this->{$this->methodMap[$accessor]}($accessor, $template, $conditions);
+        return $this->instances[$accessor];
     }
 }

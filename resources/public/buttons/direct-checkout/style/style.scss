@@ -15,7 +15,7 @@
     @apply text-white;
   }
 
-  @apply relative border-0 py-3 px-5 text-sm font-medium rounded text-center cursor-pointer leading-none flex items-center justify-center gap-2 max-h-10 text-[var(--fct-direct-btn-text-color)];
+  @apply relative border-0 py-3 px-5 text-sm font-medium rounded text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fct-direct-btn-text-color)] capitalize;
 
   @apply no-underline !important;
 

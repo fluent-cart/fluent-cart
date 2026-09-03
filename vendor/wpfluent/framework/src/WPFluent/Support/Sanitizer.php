@@ -3,6 +3,7 @@
 namespace FluentCart\Framework\Support;
 
 use Closure;
+use InvalidArgumentException;
 use FluentCart\Framework\Support\DateTime;
 
 class Sanitizer
@@ -407,7 +408,7 @@ class Sanitizer
     /**
      * Returns a DateTime object.
      *
-     * @param  string       $key
+     * @param  string       $value
      * @param  string|null  $format
      * @param  string|null|\DateTimeZone  $tz
      * @return \FluentCart\Framework\Support\DateTime|null
@@ -542,6 +543,7 @@ class Sanitizer
      *
      * @param callable|string $callback
      * @return callable|null
+     * @throws \InvalidArgumentException If the rule resolves to nothing callable.
      */
     protected static function getCallback($callback)
     {
@@ -550,9 +552,14 @@ class Sanitizer
 
             if ($cb = static::methodExists($callback)) {
                 $callback = $cb;
+            } elseif (!is_callable($callback)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Unknown sanitizer rule: %s.',
+                    is_string($callback) ? $callback : gettype($callback)
+                ));
             }
         }
-        
+
         return $callback;
     }
 

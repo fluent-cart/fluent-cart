@@ -168,7 +168,7 @@
 
   &-list {
     &-item {
-      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider pb-5 mb-5 pr-[120px] gap-2.5 grid first:pt-0 last:pb-0 last:mb-0 last:border-b-0 dark:border-dark-500;
+      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider py-5 pr-[120px] gap-2.5 grid last:border-b-0 dark:border-dark-500;
     }
 
     &-icon {
@@ -232,7 +232,7 @@
   }
 }
 
-.dark {
+.fluent_theme_dark {
   .fct-content-card-list-logo {
     &.local {
       img {
@@ -307,6 +307,13 @@
   }
   .product-sub-name {
     @apply truncate block text-xs text-system-mid mt-0.5 dark:text-gray-300;
+
+    // Compound selector (.product-sub-name.product-sub-name--wrap) so max-w-none
+    // beats the later single-class `.product-sub-name { max-w-[336px] }` rule below.
+    &.product-sub-name--wrap {
+      @apply whitespace-normal max-w-none;
+      overflow-wrap: anywhere;
+    }
   }
 
   .fct-product-info-media {
@@ -445,4 +452,3 @@
     @apply my-2.5;
   }
 }
-

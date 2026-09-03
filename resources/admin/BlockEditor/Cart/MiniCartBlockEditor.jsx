@@ -49,6 +49,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         product_count_color: {
             type: 'string',
             default: ''
+        },
+        count_mode: {
+            type: 'string',
+            default: 'distinct_products' // distinct_products | total_quantity
         }
     },
     supports: {

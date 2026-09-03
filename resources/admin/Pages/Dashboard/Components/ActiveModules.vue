@@ -1,6 +1,6 @@
 <template>
   <Card.Container>
-    <Card.Header title="Active modules" border_bottom>
+    <Card.Header :title="$t('Active modules')" border_bottom>
     </Card.Header>
     <Card.Body class="min-h-[300px]">
           <div class="p-4 border-gray-500 border-bottom" v-for="activity in activities" :key="activity.id">

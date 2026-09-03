@@ -92,12 +92,12 @@ const { carousel_settings } = attributes;
                             {/* Autoplay */}
                             <EditorPanelRow>
                                 <SelectControl
-                                    label="Autoplay"
+                                    label={blocktranslate('Autoplay')}
                                     value={carousel_settings.autoplay}
                                     options={[
-                                        { label: 'Disabled', value: 'no' },
-                                        { label: 'Always', value: 'yes' },
-                                        { label: 'On Hover', value: 'hover' },
+                                        { label: blocktranslate('Disabled'), value: 'no' },
+                                        { label: blocktranslate('Always'), value: 'yes' },
+                                        { label: blocktranslate('On Hover'), value: 'hover' },
                                     ]}
                                     onChange={(value) => {
                                         setAttributes({
@@ -114,7 +114,7 @@ const { carousel_settings } = attributes;
                                 <EditorPanelRow className="fct-nested-control">
                                     <RangeControl
                                         label="Autoplay Delay (ms)"
-                                        help="Time between slides in milliseconds"
+                                        help={blocktranslate('Time between slides in milliseconds')}
                                         value={carousel_settings.autoplayDelay || 3000}
                                         min={300}
                                         max={10000}
@@ -136,7 +136,7 @@ const { carousel_settings } = attributes;
                             {/* Arrows */}
                             <EditorPanelRow>
                                 <ToggleControl
-                                    label="Show arrows"
+                                    label={blocktranslate('Show arrows')}
                                     checked={carousel_settings.arrows === 'yes'}
                                     onChange={(value) =>
                                         setAttributes({
@@ -152,12 +152,12 @@ const { carousel_settings } = attributes;
                             {carousel_settings.arrows === 'yes' && (
                                 <EditorPanelRow className="fct-nested-control">
                                 <SelectControl
-                                    label="Arrow Size"
+                                    label={blocktranslate('Arrow Size')}
                                     value={carousel_settings.arrowsSize}
                                     options={[
-                                        { label: 'Small', value: 'sm' },
-                                        { label: 'Medium', value: 'md' },
-                                        { label: 'Large', value: 'lg' },
+                                        { label: blocktranslate('Small'), value: 'sm' },
+                                        { label: blocktranslate('Medium'), value: 'md' },
+                                        { label: blocktranslate('Large'), value: 'lg' },
                                     ]}
                                     onChange={(value) =>
                                         setAttributes({
@@ -176,7 +176,7 @@ const { carousel_settings } = attributes;
                             {/* Pagination */}
                             <EditorPanelRow>
                                 <ToggleControl
-                                    label="Show Pagination"
+                                    label={blocktranslate('Show Pagination')}
                                     checked={carousel_settings.pagination === 'yes'}
                                     onChange={(value) =>
                                         setAttributes({
@@ -192,13 +192,13 @@ const { carousel_settings } = attributes;
                             {carousel_settings.pagination === 'yes' && (
                                 <EditorPanelRow className="fct-nested-control">
                                     <SelectControl
-                                        label="Pagination Type"
+                                        label={blocktranslate('Pagination Type')}
                                         value={carousel_settings.paginationType}
                                         options={[
-                                            { label: 'Bullets', value: 'bullets' },
-                                            { label: 'Fraction', value: 'fraction' },
-                                            { label: 'Progress Bar', value: 'progress' },
-                                            { label: 'Segmented (Modern)', value: 'segmented' },
+                                            { label: blocktranslate('Bullets'), value: 'bullets' },
+                                            { label: blocktranslate('Fraction'), value: 'fraction' },
+                                            { label: blocktranslate('Progress Bar'), value: 'progress' },
+                                            { label: blocktranslate('Segmented (Modern)'), value: 'segmented' },
                                         ]}
                                         onChange={(value) =>
                                             setAttributes({

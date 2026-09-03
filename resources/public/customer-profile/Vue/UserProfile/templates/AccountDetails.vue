@@ -39,10 +39,10 @@ import translate from "../../../translator/Translator";
 
 export default {
   name: "AccountDetails.vue",
+  components: {MaterialInput},
   props: [
     'profileDetails'
   ],
-  components: {MaterialInput},
   data() {
     return {
       accountDetailsDescId: 'account-details-desc'

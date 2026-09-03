@@ -20,6 +20,7 @@ import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
   tooltipSuffix,
@@ -27,6 +28,7 @@ import {
   getEmphasisColor,
   getXAxisConfig,
 } from '../Utils/decorator';
+import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
 const props = defineProps({
   chartData: {
@@ -63,11 +65,7 @@ const currencySign = computed(() => {
   return props.reportFilter.currentCurrencySign;
 });
 
-const groupKeys = [
-  { label: translate("Default"), value: "default" },
-  { label: translate("Monthly"), value: "monthly" },
-  { label: translate("Yearly"), value: "yearly" },
-];
+const { groupKeys } = useGroupKeyOptions(props.reportFilter, selectedGroupKey);
 
 const emit = defineEmits(["fetch-chart-data"]);
 
@@ -239,19 +237,15 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: (params) => {
         let result = params[0].name;
 
         params.forEach((param) => {
-          const value = [0, 2].includes(param.seriesIndex) ? `${CurrencyFormatter.scaled(param.value)}` : param.value;
+          // Series 0 and 2 are amounts, the rest are counts.
+          const value = [0, 2].includes(param.seriesIndex) ? chartTooltipAmount(param.value * 100) : param.value;
           const color = isDarkTheme.value ? "#ffffff" : "#565865";
 
           result += `<div>
@@ -426,10 +420,12 @@ const handleThemeChange = () => {
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", handleThemeChange, false);
 });
 
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+  window.addEventListener("fluentCartCurrencyChange", handleThemeChange);
   nextTick(initChart);
 });
 </script>

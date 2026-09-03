@@ -204,10 +204,7 @@ scanDirs.forEach(dir => {
 
 // Report issues
 if (issues.length === 0) {
-    console.log('No untranslated strings found in PHP files.');
 } else {
-    console.log(`Found ${issues.length} potential untranslated strings in PHP files:`);
     issues.forEach((issue, index) => {
-        console.log(`${index + 1}) ${issue.file}:${issue.line} - "${issue.string}"`);
     });
 }

@@ -22,7 +22,7 @@
             <el-dropdown-menu>
               <el-dropdown-item>
                 <el-icon>
-                  <user/>
+                  <User/>
                 </el-icon>
                 No available action
               </el-dropdown-item>
@@ -50,7 +50,7 @@
 
 import {ArrowDown, Delete, User, MoreFilled} from "@element-plus/icons-vue";
 import {$notify, handleError, handleSuccess,} from "@/Bits/common";
-import Api from "../../utils/http/Rest";
+import Rest from "../../utils/http/Rest";
 import Confirmation from "@/utils/Confirmation";
 
 
@@ -62,8 +62,8 @@ export default {
     Delete,
     MoreFilled
   },
-  emits: ['reload'],
   props: ['selections', 'groups'],
+  emits: ['reload'],
   setup(props, ctx) {
 
     const handleDelete = () => {
@@ -96,7 +96,7 @@ export default {
 
     const handleSingleDelete = async (gId) => {
 
-      await Api.delete('options/attr/group/' + gId, {})
+      await Rest.delete('options/attr/group/' + gId, {})
           .then((res) => {
             handleSuccess(res);
             props.selections = [];

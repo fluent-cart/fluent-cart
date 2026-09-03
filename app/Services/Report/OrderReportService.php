@@ -8,7 +8,7 @@ class OrderReportService extends ReportService
 {
     public function groupBy($params = [])
     {
-        $groupKey = $params['groupKey'];
+        $groupKey = ReportHelper::sanitizeGroupKey($params['groupKey'] ?? null);
 
         $query = App::db()->table('fct_orders as o');
 

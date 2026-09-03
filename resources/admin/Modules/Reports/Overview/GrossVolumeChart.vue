@@ -7,6 +7,7 @@ import Theme from "@/utils/Theme";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
 // Define props
@@ -157,7 +158,6 @@ const initChart = () => {
 const updateChart = () => {
   if (!chartInstance) return;
   if (error.value) {
-    console.error(error.value);
     return;
   }
 
@@ -183,14 +183,9 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.report.dark_cyan_blue_16 : colors.report.light_gray_cyan_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.report.dark_cyan_blue_16, colors.report.light_gray_cyan_blue),
+      confine: true,
+      position: chartTooltipPosition,
 
       formatter: params => {
         let tooltipContent = params[0].name;
@@ -208,7 +203,7 @@ const updateChart = () => {
         params.forEach(function (param, index) {
           const isGrowth = index === params.length - 1;
 
-          const value = isGrowth ? param.value : CurrencyFormatter.formatScaled(param.value);
+          const value = isGrowth ? param.value : chartTooltipAmount(param.value);
 
           if (isGrowth) {
             tooltipContent += `<div style="border-top: 1px solid ${borderColor}; margin-top: 5px; padding-top: 5px;">`;
@@ -266,7 +261,7 @@ const updateChart = () => {
       {
         type: "value",
         position: "right",
-        name: "YoY Growth (%)",
+        name: translate("YoY Growth (%)"),
         axisLabel: {
           color: isDarkTheme.value ? "#ffffff" : "#696778",
           fontSize: 12,
@@ -286,7 +281,6 @@ const updateChart = () => {
     chartInstance.setOption(option, {notMerge: true, replaceMerge: ["series"]});
   } catch (e) {
     error.value = `Error updating chart: ${e.message}`;
-    console.error(error.value);
   }
 };
 
@@ -323,6 +317,7 @@ watch([() => props.data, chartType], () => {
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", updateChart, false);
+  window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
   if (chartInstance) {
     chartInstance.dispose();
     chartInstance = null;
@@ -331,6 +326,7 @@ onUnmounted(() => {
 
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", updateChart);
+  window.addEventListener("fluentCartCurrencyChange", updateChart);
   nextTick(initChart);
 });
 </script>

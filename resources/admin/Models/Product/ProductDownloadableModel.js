@@ -3,6 +3,7 @@ import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Confirmation from "@/utils/Confirmation";
 import Rest from "@/utils/http/Rest.js";
+import {getVariantLabel, getProductGroupOrder} from "@/utils/variantLabel";
 
 
 class ProductDownloadableModel extends Model {
@@ -85,8 +86,14 @@ class ProductDownloadableModel extends Model {
             return translate('For all variants');
         }
 
+        // Build labels via getVariantLabel so advanced-variation rows surface
+        // their attribute combination ("Red / Cotton") rather than the parent
+        // product title shared by every variant. Group order pulled from the
+        // product's saved attribute_config so the join order matches the
+        // variant table's grouping.
+        const groupOrder = getProductGroupOrder(product);
         const mappedVariations = product.variants.reduce((acc, item) => {
-            acc[item.id] = item.variation_title;
+            acc[item.id] = getVariantLabel(item, groupOrder);
             return acc;
         }, {});
 
@@ -112,8 +119,9 @@ class ProductDownloadableModel extends Model {
             ids = Object.values(jsonVariationIds);
         }
 
+        const groupOrder = getProductGroupOrder(product);
         const mappedVariations = product.variants.reduce((acc, item) => {
-            acc[item.id] = item.variation_title;
+            acc[item.id] = getVariantLabel(item, groupOrder);
             return acc;
         }, {});
 
@@ -206,6 +214,7 @@ class ProductDownloadableModel extends Model {
     }
 
     attachInsertableFiles = (productId) => {
+        this.setSaving(true);
 
         Rest.post(`products/${productId}/sync-downloadable-files`, {
             downloadable_files: this.insertableFiles
@@ -215,12 +224,15 @@ class ProductDownloadableModel extends Model {
             this.closeAddModal()
             Notify.success(translate('Variations Synced Successfully'));
         }).catch((error) => {
+            this.setSaving(false);
             if (error.status_code == '422') {
                 this.setValidationError(error.data);
             } else {
                 Notify.error(translate('Please fill up all the fields'))
             }
-        })
+        }).finally(() => {
+            this.setSaving(false);
+        });
     }
 
     getCurrentEditableIndex() {
@@ -233,19 +245,14 @@ class ProductDownloadableModel extends Model {
 
 
     updateDownloadableFile() {
-        this.setSaving(true)
         const file = this.getCurrentEditableFile();
         const index = this.getCurrentEditableIndex();
 
         if (!(file) || index < 0) {
-            console.error([
-                'File or Index is missing',
-                file,
-                index
-            ])
             return;
         }
 
+        this.setSaving(true)
 
         Rest.put('products/' + file.id + '/update', file).then((response) => {
             this.closeEditModal(index)

@@ -14,7 +14,7 @@
                     <?php echo esc_html($item->post_title); ?>
                 </div>
                 <div style="margin: 0; font-size: 12px; color: #758195; font-weight: 400; line-height: 15px;">
-                    -- <?php echo esc_html($item->title); ?>
+                    -- <?php echo esc_html($item->variation_display_title ?: $item->title); ?>
                 </div>
             </div>
         </div>

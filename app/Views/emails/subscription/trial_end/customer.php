@@ -33,7 +33,7 @@ $billingInterval = $subscription->billing_interval ?? '';
         printf(
             /* translators: %s is subscription item name */
             esc_html__('Your trial for %s is ending soon.', 'fluent-cart'),
-            '<b>' . esc_html($subscription->item_name) . '</b>'
+            '<b>' . esc_html($subscription->display_item_name) . '</b>'
         );
         ?>
     </p>
@@ -41,7 +41,7 @@ $billingInterval = $subscription->billing_interval ?? '';
         <tbody>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Subscription', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->item_name); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->display_item_name); ?></td>
         </tr>
         <?php if ($daysText): ?>
             <tr>

@@ -126,9 +126,64 @@ class AssetLoader
                 'source'       => 'public/single-product/SingleProduct.js',
                 'dependencies' => [],
                 'inFooter'     => true
+            ],
+            [
+                'source'       => 'public/single-product/Reviews.js',
+                'dependencies' => [],
+                'inFooter'     => true
+            ],
+            [
+                'source'       => 'public/single-product/ReviewForm.js',
+                'dependencies' => [],
+                'inFooter'     => true
             ]
         ];
+        $reviewVars = [
+            'trans' => [
+                'no_reviews'        => __('No reviews yet. Be the first to write a review!', 'fluent-cart'),
+                'verified_purchase' => __('Verified Purchase', 'fluent-cart'),
+                'rating_required'   => __('Please select a rating', 'fluent-cart'),
+                'content_required'  => __('Please write a review', 'fluent-cart'),
+                'name_required'     => __('Please enter your name', 'fluent-cart'),
+                'email_required'    => __('Please enter your email', 'fluent-cart'),
+                'submitting'        => __('Submitting...', 'fluent-cart'),
+                'submit_review'     => __('Submit Review', 'fluent-cart'),
+                'store_reply'       => __('Store Reply', 'fluent-cart'),
+                'reviewer'          => __('Reviewer', 'fluent-cart'),
+                'reply_placeholder' => __('Write a reply...', 'fluent-cart'),
+                'send_reply'        => __('Send a Reply', 'fluent-cart'),
+                'sending'           => __('Sending...', 'fluent-cart'),
+                'reply_failed'      => __('Failed to post reply. Please try again.', 'fluent-cart'),
+                'reply_pending'     => __('Your reply has been submitted and is pending approval.', 'fluent-cart'),
+                'reply'             => __('Reply', 'fluent-cart'),
+                /* translators: %d - number of replies */
+                'view_replies'      => __('View %d replies', 'fluent-cart'),
+                'view_one_reply'    => __('View 1 reply', 'fluent-cart'),
+                'review_thread'     => __('Review Thread', 'fluent-cart'),
+                'no_replies'        => __('No replies yet.', 'fluent-cart'),
+                'close'             => __('Close', 'fluent-cart'),
+                'all'               => __('All', 'fluent-cart'),
+                'prev'              => __('Prev', 'fluent-cart'),
+                'next'              => __('Next', 'fluent-cart'),
+                'prev_page'         => __('Previous page', 'fluent-cart'),
+                'next_page'         => __('Next page', 'fluent-cart'),
+                'load_error'        => __('Unable to load reviews. Please try again later.', 'fluent-cart'),
+                'edit_review'       => __('Edit your review', 'fluent-cart'),
+                'rated_out_of'      => __('Rated %d out of 5', 'fluent-cart'),
+                /* translators: 1: current step, 2: total steps */
+                'step_x_of_y'       => __('Step %1$s of %2$s', 'fluent-cart'),
+                'rating_poor'       => __('Poor', 'fluent-cart'),
+                'rating_fair'       => __('Fair', 'fluent-cart'),
+                'rating_good'       => __('Good', 'fluent-cart'),
+                'rating_very_good'  => __('Very Good', 'fluent-cart'),
+                'rating_excellent'  => __('Excellent', 'fluent-cart'),
+                'rating_step_hint'  => __('Rate this product', 'fluent-cart'),
+                'details_step_hint' => __('Tell us more', 'fluent-cart'),
+                'photos_step_hint'  => __('Photos are optional', 'fluent-cart'),
+            ],
+        ];
         $localizeData = [
+            'fluentcart_review_vars' => apply_filters('fluent_cart/review/js_vars', $reviewVars),
             'fluentcart_single_product_vars' => [
                 'trans'                      => TransStrings::singleProductPageString(),
                 'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
@@ -147,6 +202,7 @@ class AssetLoader
         $singlePageStyles = [
             'public/single-product/single-product.scss',
             'public/single-product/similar-product.scss',
+            'public/single-product/reviews.scss',
             'public/product-card/style/product-card.scss',
             'public/single-product/xzoom/xzoom.css',
             'public/buttons/add-to-cart/style/style.scss',
@@ -343,13 +399,21 @@ class AssetLoader
             'public/customer-profile/style/customer-profile.scss'
         );
 
+        // wp-i18n: this bundle pulls in the admin translator transitively
+        // (Start.js -> @/Bits/common.js -> @/utils/translator/Translator.js),
+        // which resolves strings through window.wp.i18n.
         Vite::enqueueScript(
             'fluentcart-customer-js',
             'public/customer-profile/Start.js',
-            []
+            ['wp-i18n']
         )->with(CustomerProfileHandler::getLocalizationData());
 
-        //will add script here/ skipping for now
+        /**
+         * Enqueue additional customer-dashboard assets — the hook an add-on
+         * uses to ship the JS backing a portal section it registers through
+         * `fluent_cart/customer_portal/profile_sections`.
+         */
+        do_action('fluent_cart/customer_dashboard/enqueue_assets');
     }
 
     public static function loadCartAssets()
@@ -414,9 +478,11 @@ class AssetLoader
                 'is_drawer_hidden'     => CartLoader::shouldHideCartDrawer(),
                 'is_admin_bar_showing' => is_admin_bar_showing(),
                 'cart_item_count'      => $isInstantCheckout ? 0 : ($cart ? count($cart->cart_data ?? []) : 0),
+                'cart_total_quantity'  => $isInstantCheckout ? 0 : ($cart ? array_sum(array_map(function ($item) { return (int) ($item['quantity'] ?? 1); }, $cart->cart_data ?? [])) : 0),
             ],
             'fluentcart_utm_vars'    => [
-                'allowed_keys' => UtmHelper::allowedUtmParameterKey()
+                'allowed_keys'     => UtmHelper::allowedUtmParameterKey(),
+                'internal_domains' => UtmHelper::getInternalDomains()
             ]
         ]);
 
@@ -513,6 +579,14 @@ class AssetLoader
             $isInstantCheckout = 'yes';
         }
 
+        $checkoutErrorNotices = Arr::get($cart->checkout_data, '__checkout_error_notices', []);
+        if ($checkoutErrorNotices) {
+            $checkoutData = is_array($cart->checkout_data) ? $cart->checkout_data : [];
+            unset($checkoutData['__checkout_error_notices']);
+            $cart->checkout_data = $checkoutData;
+            $cart->save();
+        }
+
         $data = [
             'fluentcart_checkout_vars' => [
                 'rest'                                         => Helper::getRestInfo(),
@@ -520,6 +594,7 @@ class AssetLoader
                 'is_all_digital'                               => !$cart->requireShipping(),
                 'is_cart_locked'                               => $cart->checkout_data['is_locked'] ?? 'no',
                 'disable_coupons'                              => $cart->checkout_data['disable_coupons'] ?? 'no',
+                'notices'                                      => array_values($checkoutErrorNotices),
                 'payment_methods_with_custom_checkout_buttons' => apply_filters('fluent_cart/payment_methods_with_custom_checkout_buttons', []),
                 'tax_settings'                                 => (new TaxModule())->getSettings(),
                 'submit_button'                                => [

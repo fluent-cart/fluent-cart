@@ -18,7 +18,7 @@
           v-model="settings[index]"
           filterable
           remote
-          placeholder="Please enter a keyword"
+          :placeholder="translate('Please enter a keyword')"
           :remote-method="query => getSelectOptions({query, index})"
           :loading="searching"
       >
@@ -45,6 +45,7 @@
 
 <script setup>
 import {computed, getCurrentInstance, onMounted, ref, watch} from "vue";
+import translate from "@/utils/translator/Translator";
 import MediaInput from "@/Bits/Components/Inputs/MediaInput.vue";
 import FormRenderer from "@/Bits/Components/Form/Renderer/FormRenderer.vue";
 
@@ -52,7 +53,7 @@ const selfRef = getCurrentInstance().ctx;
 
 
 defineOptions({
-  name: "_fields"
+  name: "Fields"
 })
 
 const props = defineProps({

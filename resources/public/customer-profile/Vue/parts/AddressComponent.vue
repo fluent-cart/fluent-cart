@@ -27,7 +27,6 @@ const fetchCountries = () => {
         countries.value = response.data;
       })
       .catch((errors) => {
-        console.log(errors, 'errors');
       })
       .finally(() => {
       });
@@ -61,7 +60,6 @@ const fetchStates = (countryCode) => {
         afterCountryInfoRetrieved(response);
       })
       .catch((errors) => {
-        console.log(errors, 'errors');
       })
       .finally(() => {
         loadingState.value = false;
@@ -101,7 +99,7 @@ onMounted(() => {
         :options="countries"
         v-model="model.country"
         filterable
-        @onChange="(countryCode)=>{
+        @on-change="(countryCode)=>{
           model.state = '';
           fetchStates(countryCode);
         }"

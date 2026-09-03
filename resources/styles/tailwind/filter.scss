@@ -24,7 +24,7 @@
     }
 }
 
-.dark {
+.fluent_theme_dark {
     .table-filters .search-bar .el-input__wrapper {
         --el-input-border-color: theme('colors.dark.800');
         --el-input-focus-border-color: theme('colors.dark.800');
@@ -153,6 +153,8 @@
         @apply flex-1;
     }
 }
+
+
 
 .search-bar{
     &.is-transparent{
@@ -482,5 +484,15 @@
 .fct-date-range-filter.is-clearable {
     .fct-applied-filter-clear-all {
         @apply right-[-4px];
+    }
+}
+
+.fluent_theme_dark {
+    .fct-filter-dropdown .is-multi-list {
+        .is-selected {
+            .fct-filter-dropdown-active-button::after {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z'/%3E%3C/svg%3E");
+            }
+        }
     }
 }

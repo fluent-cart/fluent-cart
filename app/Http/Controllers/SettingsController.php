@@ -15,7 +15,11 @@ class SettingsController extends Controller
 {
     public function getStore(Request $request, StoreSettings $storeSettings)
     {
-        $data = ($storeSettings->get());
+        $data = $storeSettings->get();
+
+        if (empty($data['company_name'])) {
+            $data['company_name'] = Arr::get($data, 'store_name', '');
+        }
 
         $tab = $request->get('settings_name');
         $currenttabFields = Arr::get($storeSettings->fields(), 'setting_tabs.schema.' . $tab);

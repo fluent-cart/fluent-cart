@@ -300,14 +300,70 @@ class CouponHelper
 
     }
 
+    /**
+     * Coupon restriction lists live inside the JSON `conditions` column. The model accessor
+     * decodes them to arrays, but rows written before that accessor existed can still hold a
+     * JSON string, so accept both shapes.
+     *
+     * @param mixed $value
+     * @return array
+     */
+    protected static function normalizeConditionList($value): array
+    {
+        if (is_array($value)) {
+            return array_values($value);
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? array_values($decoded) : [];
+        }
+
+        return [];
+    }
+
     public static function checkProductEligibility($productId, $couponCode, $origin)
     {
         $coupon = static::getQuery()->where('code', $couponCode)->first();
-        $excludedCategories = json_decode(Arr::get($coupon, 'excluded_categories', '[]'), true) ?? [];
-        $includedCategories = json_decode(Arr::get($coupon, 'included_categories', '[]'), true) ?? [];
-        $excludedProducts = json_decode(Arr::get($coupon, 'excluded_products', '[]'), true) ?? [];
-        $includedProducts = json_decode(Arr::get($coupon, 'included_products', '[]'), true) ?? [];
-        $product = Product::with('wp_terms')->find($productId)->toArray();
+
+        if (!$coupon) {
+            return [
+                'isApplicable' => false,
+                'message'      => __('This coupon is no longer available.', 'fluent-cart'),
+            ];
+        }
+
+        $productModel = Product::with('wp_terms')->find($productId);
+
+        if (!$productModel) {
+            return [
+                'isApplicable' => false,
+                'message'      => __('Product not found.', 'fluent-cart'),
+            ];
+        }
+
+        return static::evaluateProductEligibility($productModel, $coupon);
+    }
+
+    /**
+     * Verdict for one already-loaded product/coupon pair, so a caller checking several
+     * coupons at once hydrates the product and the coupon rows a single time.
+     *
+     * @param \FluentCart\App\Models\Product $productModel
+     * @param \FluentCart\App\Models\Coupon $coupon
+     * @return array
+     */
+    public static function evaluateProductEligibility($productModel, $coupon): array
+    {
+        $productId = $productModel->getKey();
+        $couponCode = $coupon->code;
+        $conditions = $coupon->conditions;
+        $excludedCategories = static::normalizeConditionList(Arr::get($conditions, 'excluded_categories'));
+        $includedCategories = static::normalizeConditionList(Arr::get($conditions, 'included_categories'));
+        $excludedProducts = static::normalizeConditionList(Arr::get($conditions, 'excluded_products'));
+        $includedProducts = static::normalizeConditionList(Arr::get($conditions, 'included_products'));
+
+        $product = $productModel->toArray();
 
         $productCategories = array_map(function ($productCategories) {
             return $productCategories['term_taxonomy_id'];

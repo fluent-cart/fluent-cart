@@ -15,7 +15,6 @@
 import {ref, onMounted, onBeforeUnmount, watch, reactive, provide} from 'vue';
 import {useRoute} from 'vue-router';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {formatNumber} from "@/Bits/productService";
 import Rest from "@/utils/http/Rest";
 import SingleProductLoader from "@/Modules/Products/parts/SingleProductLoader.vue";
 import NotFound from "@/Pages/NotFound.vue";
@@ -87,21 +86,23 @@ const fetchProduct = () => {
       });
 }
 
+// Amounts stay in CENTS end to end: the API returns cents, PriceInput renders
+// dollars and emits cents, and the write endpoints take cents. This used to
+// divide by 100 for the old dollars-in contract — do not reintroduce that.
 const formatPricing = (prices) => {
-  let result = {};
-
   prices.forEach((pricing, idx) => {
-    pricing.item_price = pricing.item_price ? formatNumber(pricing.item_price, false) : 0;
-    pricing.item_cost = pricing.item_cost ? formatNumber(pricing.item_cost, false) : 0;
-    pricing.compare_price = pricing.compare_price ? formatNumber(pricing.compare_price, false) : '';
+    // Cents, end to end — see the note on ProductEditModel.formatPricing. #2223
+    // fixed the same round-trip bug with a canonical dot-decimal string; cents
+    // removes the string entirely.
+    pricing.item_price = pricing.item_price ? Number(pricing.item_price) : 0;
+    pricing.item_cost = pricing.item_cost ? Number(pricing.item_cost) : 0;
+    pricing.compare_price = pricing.compare_price ? Number(pricing.compare_price) : '';
 
     if (pricing.other_info) {
-      pricing.other_info.signup_fee = pricing.other_info.signup_fee ? formatNumber(pricing.other_info.signup_fee, false) : 0;
+      pricing.other_info.signup_fee = pricing.other_info.signup_fee ? Number(pricing.other_info.signup_fee) : 0;
     }
 
     pricing.rowId = idx;
-
-    result[pricing.id] = pricing;
   });
 
   return prices;
@@ -144,7 +145,6 @@ onBeforeUnmount(() => {
 const reload = () => {
   renderMenu.value = false;
   fetchProduct();
-
 }
 
 // Provide the method to child components

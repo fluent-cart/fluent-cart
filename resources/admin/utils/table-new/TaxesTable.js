@@ -38,21 +38,6 @@ class TaxesTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Tax Country'),
-                value: 'country'
-            },
-
-
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by id, title, content or module.")
     }
@@ -70,9 +55,11 @@ class TaxesTable extends Table {
     }
 
 
+    // A SCREEN key, not a relation name — the order column select lives
+    // server-side in TaxFilter::adminTaxReport().
     with() {
         return [
-            'tax_rate'
+            'admin_tax_report'
         ];
     }
 

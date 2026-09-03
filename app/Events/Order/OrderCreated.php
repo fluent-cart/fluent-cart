@@ -19,22 +19,22 @@ class OrderCreated extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
 
     /**
-     * @var $prevOrder Order|null
+     * @var Order|null $prevOrder
      */
     public ?Order $prevOrder;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
     public ?Customer $customer;
 
     /**
-     * @var $transaction OrderTransaction|null
+     * @var OrderTransaction|null $transaction
      */
     public ?OrderTransaction $transaction;
 

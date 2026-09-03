@@ -62,7 +62,8 @@ class OrderRefund extends EventDispatcher
             ->sum('total');
 
 
-        $newOrderPaymentStatus = $calculatedRefundAmount >= $order->total_paid ? Status::PAYMENT_REFUNDED : Status::PAYMENT_PARTIALLY_REFUNDED;
+        $netPaidTotal = $order->netAmount((int) $order->total_paid);
+        $newOrderPaymentStatus = $calculatedRefundAmount >= $netPaidTotal ? Status::PAYMENT_REFUNDED : Status::PAYMENT_PARTIALLY_REFUNDED;
 
         $newRefundAmount = $calculatedRefundAmount - $order->total_refund;
 

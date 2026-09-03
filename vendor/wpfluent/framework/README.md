@@ -1,7 +1,7 @@
 # WPFluent Framework
 
-- Version - 2.11.14
-- Date - 2026-03-05
+- Version - 2.12.7
+- Date - 2026-08-30
 - Description - WPFluent (WPF) - A lightweight framework to build WordPress plugins.
 - Url - https://github.com/wpfluent/framework2x
 - License - MIT

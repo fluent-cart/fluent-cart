@@ -20,6 +20,27 @@ use WP_Error;
 class CartResource extends BaseResourceApi
 {
 
+    /**
+     * Per-request memo for get(). In production every HTTP request runs in a
+     * fresh PHP process, so this lives exactly one request. Long-running
+     * processes that simulate multiple requests (test suites, CLI) must clear
+     * it between simulated requests via resetCartCache() — as a
+     * function-static it was unreachable and leaked the first request's cart
+     * into every subsequent one.
+     *
+     * Only a resolved Cart is memoized; a null ("no cart") result is
+     * deliberately re-queried on the next call — matching the original
+     * function-static behavior, where isset(null) === false.
+     *
+     * @var Cart|null|false false = not resolved yet
+     */
+    private static $cartCache = false;
+
+    public static function resetCartCache(): void
+    {
+        static::$cartCache = false;
+    }
+
     public static function getQuery(): Builder
     {
         return Cart::query();
@@ -36,9 +57,13 @@ class CartResource extends BaseResourceApi
             $variation = CartHelper::normalizeCustomFields($variation);
         }
         else {
+            // product_detail must be eager-loaded — generateCartItemFromVariation
+            // reads $variation['product_detail']['variation_type'] to stamp
+            // the cart item's variation_type. Without it the field is null on
+            // instant-checkout carts and CartRenderer can't tell whether to
+            // hide the variant-title line for simple products.
             $variation = ProductVariation::query()
-                ->with(['product'])
-                ->with(['media', 'shippingClass'])
+                ->with(['product', 'product_detail', 'media', 'shippingClass'])
                 ->where('id', $variationId)->first();
 
             $variation = apply_filters('fluent_cart/cart/item_modify', $variation, [
@@ -87,8 +112,25 @@ class CartResource extends BaseResourceApi
                 $cart = CartHelper::generateCartFromVariation($variation, $quantity);
             }
             else {
-                // TODO: Legacy object-to-array conversion. Kept for backward compatibility.
+                // Legacy object-to-array conversion. Kept for backward compatibility.
                 $cart = CartHelper::generateCartFromCustomVariation(json_decode(json_encode($variation), true), $quantity);
+            }
+        } else {
+            // Refresh cart_data from the current variation on every instant hit.
+            // The inputs (variationId + quantity) are deterministic URL params,
+            // so regenerating is idempotent — and it picks up any fields that
+            // were missing on a previously-created draft (variation_type for
+            // advanced-variation rows, refreshed pricing, updated featured
+            // media). Without this, a stale draft from before a code change
+            // keeps rendering with its old shape.
+            if (!$isCustom) {
+                $cart->cart_data = [
+                    CartHelper::generateCartItemFromVariation($variation, $quantity)
+                ];
+            } else {
+                $cart->cart_data = [
+                    CartHelper::generateCartItemCustomItem(json_decode(json_encode($variation), true), $quantity)
+                ];
             }
         }
 
@@ -120,9 +162,8 @@ class CartResource extends BaseResourceApi
      */
     public static function get(array $params = [])
     {
-        static $cart;
-        if (isset($cart)) {
-            return $cart;
+        if (static::$cartCache !== false && static::$cartCache !== null) {
+            return static::$cartCache;
         }
 
         $autoCreate = Arr::get($params, 'create', false);
@@ -139,16 +180,16 @@ class CartResource extends BaseResourceApi
 
             $tempCart = $cartQuery->first();
 
-            $cart = $tempCart;
+            static::$cartCache = $tempCart;
 
             if (!$autoCreate) {
                 return $tempCart;
             }
         }
 
-        $cart = static::getOrSetCartForThisDevice($autoCreate);
+        static::$cartCache = static::getOrSetCartForThisDevice($autoCreate);
 
-        return $cart;
+        return static::$cartCache;
     }
 
     public static function find($id, $params = [])
@@ -311,7 +352,19 @@ class CartResource extends BaseResourceApi
         }
 
         if (!$variation) {
-            return $cart->removeItem($itemId);
+            // An item already in the cart whose variation row has since
+            // disappeared (product/variation deleted) is dropped gracefully.
+            // An id that was never in the cart and resolves to nothing is a
+            // client error — silently answering "Cart updated successfully"
+            // hid typos and probing as a 200 no-op.
+            if ($existingItem !== null) {
+                return $cart->removeItem($itemId);
+            }
+
+            return new WP_Error(
+                'invalid_item',
+                __('Invalid item.', 'fluent-cart')
+            );
         }
 
         $soldIndividually = $isCustom
@@ -352,7 +405,11 @@ class CartResource extends BaseResourceApi
 
         $utmData = static::prepareUtmData($data);
         if ($utmData) {
-            $cart->utm_data = array_merge(is_array($cart->utm_data) ? $cart->utm_data : [], $utmData);
+            // Replaced, not merged. A cart row is reused across visits, so merging
+            // key by key accumulated a union of every touch that ever reached it and
+            // the column stopped describing any single one. The browser has already
+            // resolved which touch this is, so its block is the answer.
+            $cart->utm_data = $utmData;
             $cart->save();
         }
 
@@ -566,6 +623,28 @@ class CartResource extends BaseResourceApi
                     ),
                 ];
             }
+
+            $paymentType = $productVariation instanceof ProductVariation
+                ? $productVariation->payment_type
+                : Arr::get($productVariation, 'payment_type');
+
+            if ($paymentType === 'subscription' && $quantity > 1) {
+                return [
+                    'code'    => 'failed',
+                    'message' => __('You cannot purchase more than one subscription at a time.', 'fluent-cart'),
+                ];
+            }
+
+            if (!empty($existingItemsArray)) {
+                $hasSubscription = static::hasSubscriptionProduct($existingItemsArray);
+
+                if ($paymentType === 'subscription' || $hasSubscription) {
+                    return [
+                        'code'    => 'failed',
+                        'message' => __("Subscription items can't be combined with other products in the cart.", 'fluent-cart'),
+                    ];
+                }
+            }
         }
 
         if ($productVariation instanceof ProductVariation) {
@@ -700,10 +779,13 @@ class CartResource extends BaseResourceApi
 
         $userId = get_current_user_id();
         if ($userId) {
+            // Latest cart first — without an order, first() picks by primary key
+            // (cart_hash), which resurrects an arbitrary old cart for the user.
             $cart = static::getQuery()
                 ->where('user_id', $userId)
                 ->where('stage', '!=', 'completed')
                 ->where('cart_group', 'global')
+                ->orderBy('updated_at', 'DESC')
                 ->first();
 
             if ($cart) {

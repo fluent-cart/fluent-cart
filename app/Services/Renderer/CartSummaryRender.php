@@ -143,8 +143,6 @@ class CartSummaryRender
                     <?php $this->showCouponApplied(); ?>
                 </li>
 
-                <?php $this->showManualDiscount(); ?>
-
                 <?php if (!$hideCouponField): ?>
                     <li>
                         <?php $this->showCouponField(); ?>
@@ -152,6 +150,10 @@ class CartSummaryRender
                 <?php endif ?>
 
                 <?php do_action('fluent_cart/checkout/before_summary_total', [ 'cart' => $this->cart ]); ?>
+
+                <?php $this->showUpgradeDiscount(); ?>
+                <?php $this->showProrateCredit(); ?>
+                <?php $this->showManualDiscount(); ?>
 
                 <?php
                     $this->renderTotal();
@@ -337,6 +339,48 @@ class CartSummaryRender
         <li>
             <span class="fct_summary_label" aria-label="<?php echo esc_attr($title); ?>"> <?php echo esc_html($title); ?></span>
             <span class="fct_summary_value" data-fluent-cart-checkout-manual-discount aria-label="<?php echo esc_attr($formattedAmount); ?>">
+                -<?php echo esc_html($formattedAmount); ?>
+            </span>
+        </li>
+        <?php
+    }
+
+    public function showUpgradeDiscount($atts = '')
+    {
+        $upgradeDiscount = Arr::get($this->cart->checkout_data, 'upgrade_discount', []);
+
+        if (!$upgradeDiscount || !Arr::get($upgradeDiscount, 'amount', 0)) {
+            return;
+        }
+
+        $title = Arr::get($upgradeDiscount, 'title', __('Upgrade Discount', 'fluent-cart'));
+        $amount = Arr::get($upgradeDiscount, 'amount', 0);
+        $formattedAmount = Helper::toDecimal($amount);
+        ?>
+        <li>
+            <span class="fct_summary_label" aria-label="<?php echo esc_attr($title); ?>"> <?php echo esc_html($title); ?></span>
+            <span class="fct_summary_value" data-fluent-cart-checkout-upgrade-discount aria-label="<?php echo esc_attr($formattedAmount); ?>">
+                -<?php echo esc_html($formattedAmount); ?>
+            </span>
+        </li>
+        <?php
+    }
+
+    public function showProrateCredit($atts = '')
+    {
+        $prorateCredit = Arr::get($this->cart->checkout_data, 'prorate_credit', []);
+
+        if (!$prorateCredit || !Arr::get($prorateCredit, 'amount', 0)) {
+            return;
+        }
+
+        $title = Arr::get($prorateCredit, 'title', __('Prorate Credit', 'fluent-cart'));
+        $amount = Arr::get($prorateCredit, 'amount', 0);
+        $formattedAmount = Helper::toDecimal($amount);
+        ?>
+        <li>
+            <span class="fct_summary_label" aria-label="<?php echo esc_attr($title); ?>"> <?php echo esc_html($title); ?></span>
+            <span class="fct_summary_value" data-fluent-cart-checkout-prorate-credit aria-label="<?php echo esc_attr($formattedAmount); ?>">
                 -<?php echo esc_html($formattedAmount); ?>
             </span>
         </li>

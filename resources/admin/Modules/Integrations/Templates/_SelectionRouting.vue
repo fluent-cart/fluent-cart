@@ -26,7 +26,7 @@
                 v-model="settings[field.key]"
                 :placeholder="field.placeholder"
                 v-else-if="field.simple_component == 'text'"></el-input>
-            <filed-general
+            <FiledGeneral
                 v-else-if="field.simple_component == 'value_text' && settings[field.routing_key] == 'simple'"
                 :editorShortcodes="editorShortcodes"
                 v-model="settings[field.key]"
@@ -35,7 +35,7 @@
         </div>
         
 
-        <routing-filter-fields
+        <RoutingFilterFields
             :routings="settings[field.settings_key]"
             :input_type="field.routing_input_type"
             :fields="inputs"
@@ -53,11 +53,11 @@
 
     export default {
         name: 'SelectionRouting',
-        props: ['field', 'settings', 'inputs', 'editorShortcodes'],
         components: {
             RoutingFilterFields,
             FiledGeneral
-        }
+        },
+        props: ['field', 'settings', 'inputs', 'editorShortcodes']
     }
 </script>
 <style lang="scss">

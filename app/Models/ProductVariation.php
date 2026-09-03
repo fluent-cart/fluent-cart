@@ -4,6 +4,7 @@ namespace FluentCart\App\Models;
 
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
+use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Concerns\CanSearch;
@@ -131,6 +132,65 @@ class ProductVariation extends Model
     }
 
     /**
+     * Labeled attribute combination for this variation, e.g. "Color: Red | Size: XS".
+     *
+     * Uses the batched `variation_display_title` when
+     * AttributeHelper::attachVariationDisplayTitles() has already resolved it,
+     * and otherwise resolves on demand — so callers get a correct value either
+     * way, and a correctly batched caller costs no extra queries.
+     *
+     * @return string Falls back to the stored variation title.
+     */
+    public function getVariationLabel(): string
+    {
+        $resolved = (string) ($this->variation_display_title ?? '');
+
+        if ($resolved !== '') {
+            return $resolved;
+        }
+
+        $variationType = $this->product_detail ? $this->product_detail->variation_type : '';
+
+        $label = AttributeHelper::getDisplayAttributesString(
+            AttributeHelper::getProductItemAttributes($this->id, $this->post_id),
+            [
+                'title'          => $this->variation_title,
+                'variation_type' => $variationType,
+                'other_info'     => ['variation_type' => $variationType],
+            ],
+            'order_item'
+        );
+
+        return $label !== '' ? $label : (string) $this->variation_title;
+    }
+
+    /**
+     * Full display title for this variation: "<product> - <attribute combination>".
+     *
+     * The catalogue-side counterpart to OrderItem::getDisplayTitle(), which
+     * composes the same shape from a frozen line item. Product feeds, plan
+     * names and CLI output all need the product name alongside the variation,
+     * and each was concatenating it themselves.
+     *
+     * @return string
+     */
+    public function getDisplayTitle(): string
+    {
+        $label        = $this->getVariationLabel();
+        $productTitle = $this->product ? (string) $this->product->post_title : '';
+
+        if ($productTitle === '' || $productTitle === $label) {
+            return $label;
+        }
+
+        if ($label === '') {
+            return $productTitle;
+        }
+
+        return $productTitle . ' - ' . $label;
+    }
+
+    /**
      * One2One: Product Variation belongs to one Product detail
      *
      * @return \FluentCart\Framework\Database\Orm\Relations\BelongsTo
@@ -153,6 +213,11 @@ class ProductVariation extends Model
             ->orWhereNull('product_variation_id')
             ->orWhere('product_variation_id', '[]');
 
+    }
+
+    public function attrRelations(): \FluentCart\Framework\Database\Orm\Relations\HasMany
+    {
+        return $this->hasMany(AttributeRelation::class, 'object_id', 'id');
     }
 
     public function order_items()

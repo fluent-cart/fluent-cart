@@ -6,48 +6,55 @@ class Emogrifier
 {
     private $html = '';
 
-    private $disableInvisibleNode = false;
-
     public function __construct($html)
     {
         $this->html = (string) $html;
     }
 
-    public function disableInvisibleNodeRemoval()
-    {
-        $this->disableInvisibleNode = true;
-        return $this;
-    }
-
     public function emogrify()
     {
-        // check if php version is less than 8.1
-        if (version_compare(phpversion(), '8.1', '<')) {
-            return $this->handleLegacy();
-        }
-
-        if (!class_exists('\FluentEmogrifier\Vendor\Pelago\Emogrifier\CssInliner')) {
+        if (!class_exists('\FluentEmogrifier\Vendor\TijsVerkoyen\CssToInlineStyles\CssToInlineStyles')) {
             require_once __DIR__ . '/scoped-vendor/autoload.php';
         }
 
-        if (!class_exists('\FluentEmogrifier\Vendor\Pelago\Emogrifier\CssInliner')) {
-            return $this->handleLegacy();
-        }
-
-        // check if css inlines is available or not
-        return \FluentEmogrifier\Vendor\Pelago\Emogrifier\CssInliner::fromHtml($this->html)
-            ->inlineCss()
-            ->render();
+        return $this->handleTijsVerkoyen();
     }
 
-    private function handleLegacy()
+    private function handleTijsVerkoyen()
     {
-        $emogrifier = new EmogrifierPhp7($this->html);
-        if ($this->disableInvisibleNode) {
-            $emogrifier->disableInvisibleNodeRemoval();
+        $css = '';
+        $html = $this->html;
+
+        if (preg_match_all('/<style[^>]*>(.*?)<\/style>/si', $html, $matches)) {
+            $css = implode("\n", $matches[1]);
+            $html = preg_replace('/<style[^>]*>.*?<\/style>/si', '', $html);
         }
 
-        return $emogrifier->emogrify();
+        // Preserve @media queries — TijsVerkoyen strips them during CSS processing
+        // but email clients like Apple Mail and Gmail support them for responsive layouts.
+        // Regex handles both spaced (@media screen) and minified (@media(max-width:600px)) forms.
+        $mediaBlocks = '';
+        if (preg_match_all('/@media\s*[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/s', $css, $mediaMatches)) {
+            $mediaBlocks = implode("\n", $mediaMatches[0]);
+        }
+
+        $inliner = new \FluentEmogrifier\Vendor\TijsVerkoyen\CssToInlineStyles\CssToInlineStyles();
+        $result = $inliner->convert($html, $css);
+
+        // Re-inject @media blocks for responsive email support
+        if ($mediaBlocks) {
+            $styleTag = '<style type="text/css">' . $mediaBlocks . '</style>';
+
+            if (stripos($result, '</head>') !== false) {
+                $result = str_ireplace('</head>', $styleTag . '</head>', $result);
+            } elseif (stripos($result, '<body') !== false) {
+                $result = preg_replace('/<body/i', $styleTag . '<body', $result, 1);
+            } else {
+                $result = $styleTag . $result;
+            }
+        }
+
+        return $result;
     }
 
 }

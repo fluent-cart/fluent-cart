@@ -1,0 +1,16 @@
+{
+  "id": "evt_phase29_stripe_checkout_1",
+  "object": "event",
+  "type": "checkout.session.completed",
+  "livemode": false,
+  "data": {
+    "object": {
+      "id": "cs_phase29_checkout_1",
+      "object": "checkout.session",
+      "mode": "payment",
+      "payment_status": "unpaid",
+      "payment_intent": "pi_phase29_checkout_1",
+      "metadata": {}
+    }
+  }
+}

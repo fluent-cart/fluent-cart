@@ -1,8 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
 
-import {useRoute} from 'vue-router'
-
 class ProductTable extends Table {
 
     setupInitialData() {
@@ -50,25 +48,12 @@ class ProductTable extends Table {
             {
                 label: translate('Date'),
                 value: 'post_date'
+            },
+            {
+                label: translate('Reviews'),
+                value: 'reviews'
             }
         ];
-    }
-
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Product ID'),
-                value: 'ID'
-            },
-            {
-                label: translate('Title'),
-                value: 'post_title'
-            },
-            {
-                label: translate('Created at'),
-                value: 'post_date'
-            }
-        ]
     }
 
     getSearchHint() {
@@ -87,10 +72,15 @@ class ProductTable extends Table {
         return 'product_table';
     }
 
+    // A SCREEN key, not a relation name — ProductFilter::allowedWiths() owns
+    // which relations and columns it loads. The admin list gets its own key so
+    // it can be re-scoped without touching the block-editor or Elementor
+    // pickers, which read a deeper subtree of the same model. It feeds the
+    // thumbnail and price columns from `detail`, and the stock column, which
+    // sums variants[].available.
     with() {
         return [
-            'detail',
-            'variants:post_id,available'
+            'admin_product_list'
         ];
     }
 }

@@ -1,0 +1,29 @@
+#dev codes and packages
+resources export-ignore
+research export-ignore
+dev-docs export-ignore
+vendor/fakerphp export-ignore
+database/Seeder export-ignore
+
+#node packages and managers
+package.json export-ignore
+package-lock.json export-ignore
+yarn.lock export-ignore
+node_modules export-ignore
+
+#post css
+tailwind.config.js export-ignore
+postcss.config.js export-ignore
+
+#git
+.gitignore export-ignore
+.gitattributes export-ignore
+.github export-ignore
+
+#build config
+vite.config.js export-ignore
+
+#misc
+README.md export-ignore
+readme.txt export-ignore
+wpf

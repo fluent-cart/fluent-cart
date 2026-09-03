@@ -13,8 +13,8 @@
           <template v-for="(transaction, index) in transactions" :key="index">
             <li v-if="transaction.transaction_type !== 'refund' && transaction.meta.reason !== 'renewal'" class="flex items-center gap-1 text-sm" role="listitem">
 
-              <span :aria-label="$t('Transaction amount') + ': ' + formatNumber(transaction.total)" class="font-semibold text-system-dark">
-                {{ formatNumber(transaction.total) }}
+              <span :aria-label="$t('Transaction amount') + ': ' + formatNumber(transaction.total, true, false, transaction.currency)" class="font-semibold text-system-dark">
+                {{ formatNumber(transaction.total, true, false, transaction.currency) }}
               </span>
 
               <span v-if="transaction.status === 'succeeded'">{{$t('Payment')}}</span>
@@ -44,7 +44,7 @@
 
               <el-tooltip
                   v-if=" transaction.meta && transaction.meta.refunded_total"
-                  :content="translate('Partially refunded: %s', formatNumber(transaction.meta.refunded_total))"
+                  :content="translate(/* translators: %1$s: refunded amount */ 'Partially refunded: %1$s', formatNumber(transaction.meta.refunded_total, true, false, transaction.currency))"
                   placement="top"
               >
                 <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
@@ -103,7 +103,7 @@
 
                 <el-tooltip
                     v-if="transaction.total_refund > 0"
-                    :content="translate('Partially refunded: %s', formatNumber(transaction.total_refund))"
+                    :content="translate(/* translators: %1$s: refunded amount */ 'Partially refunded: %1$s', formatNumber(transaction.total_refund, true, false, transaction.currency))"
                     placement="top"
                 >
                   <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
@@ -132,10 +132,10 @@
 <script setup>
 import translate from "../translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "./parts/Badge.vue";
 import {computed} from "vue";
 import {dateTimeI18} from "../../translator/Translator";
-import Str from "@/utils/support/Str";
+import getStatusText from "../utils/statusLabels";
 
 const props = defineProps({
   transactions: Object,
@@ -153,35 +153,4 @@ const assetsPath = computed(() => {
   return window.fluentcart_customer_profile_vars.assets_path;
 });
 
-const getStatusText = (status) => {
-  const map = {
-    completed: translate('Completed'),
-    paid: translate('Paid'),
-    active: translate('Active'),
-    publish: translate('Published'),
-    draft: translate('Draft'),
-    shipped: translate('Shipped'),
-    success: translate('Success'),
-    licensed: translate('Licensed'),
-    succeeded: translate('Succeeded'),
-    failed: translate('Failed'),
-    error: translate('Error'),
-    canceled: translate('Canceled'),
-    expired: translate('Expired'),
-    partially_paid: translate('Partially Paid'),
-    intended: translate('Intended'),
-    scheduled: translate('Scheduled'),
-    'on-hold': translate('On Hold'),
-    pending: translate('Pending'),
-    unpaid: translate('Unpaid'),
-    warning: translate('Warning'),
-    processing: translate('Processing'),
-    future: translate('Future'),
-    inactive: translate('Inactive'),
-    dispute: translate('Dispute'),
-    disabled: translate('Disabled'),
-    beta: translate('Beta'),
-  };
-  return map[status] ?? Str.headline(status);
-};
 </script>

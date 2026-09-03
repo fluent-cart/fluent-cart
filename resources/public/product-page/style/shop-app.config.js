@@ -5,10 +5,11 @@ import borderRadius from "../../../styles/tailwind/extends/borderRadius";
 import fontSize from "../../../styles/tailwind/extends/fontSize";
 
 module.exports = {
-    darkMode: 'class',
-    important: '.fluent-cart-shop-app-wrapper .fluent-cart-default-product-page-style',
+    darkMode: ['selector', '.fluent_theme_dark'],
+    important: '.fct-products-wrapper',
     content: [
         './app/FC/Template/DefaultTemplate/Views/shop/**/*.{html,php,js}',
+        './app/Services/Renderer/**/*.php',
     ],
     plugins: [
         require('@tailwindcss/container-queries'),
@@ -43,4 +44,3 @@ module.exports = {
 
     },
 }
-

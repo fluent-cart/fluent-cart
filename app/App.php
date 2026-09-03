@@ -3,14 +3,15 @@
 namespace FluentCart\App;
 
 use FluentCart\Api\StoreSettings;
-use FluentCart\Framework\Support\Once;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\Framework\Foundation\App as AppFacade;
 
 /**
  * Class App
  *
  * @method static \FluentCart\Framework\Http\Request\Request request() Get the current request instance.
- * @method static \FluentCart\Framework\Database\DBManager db()
+ * @method static \FluentCart\Framework\Database\DatabaseManager db()
  * @method static \FluentCart\Framework\Http\Response\Response response()
  * @method static \FluentCart\Framework\View\View view()
  * @method static \FluentCart\Framework\Foundation\Config config()
@@ -23,12 +24,12 @@ use FluentCart\Framework\Foundation\App as AppFacade;
 
 class App extends AppFacade
 {
-    public static function slug()
+    public static function slug(): string
     {
         return static::config()->get('app.slug');
     }
 
-    public static function route()
+    public static function route(): \FluentCart\Framework\Http\Route
     {
         return static::request()->route();
     }
@@ -41,18 +42,24 @@ class App extends AppFacade
         );
     }
 
-    public static function storeSettings()
+    public static function storeSettings(): StoreSettings
     {
-        return Once::call(function () {
-            return new StoreSettings();
-        });
+        $cached = wp_cache_get(StoreSettings::CACHE_KEY, StoreSettings::CACHE_GROUP);
+        if ($cached instanceof StoreSettings) {
+            return $cached;
+        }
+
+        $storeSettings = new StoreSettings();
+        wp_cache_set(StoreSettings::CACHE_KEY, $storeSettings, StoreSettings::CACHE_GROUP);
+
+        return $storeSettings;
     }
 
     /**
      * Get the payment gateway manager or a specific gateway
      *
      * @param string|null $gatewayName Optional gateway name to retrieve directly
-     * @return \FluentCart\App\Modules\PaymentMethods\Core\GatewayManager|\FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface|null
+     * @return GatewayManager|PaymentGatewayInterface|null
      */
     public static function gateway(?string $gatewayName = null)
     {
@@ -67,12 +74,12 @@ class App extends AppFacade
         return $gatewayManager;
     }
 
-    public static function isProActive()
+    public static function isProActive(): bool
     {
         return defined('FLUENTCART_PRO_PLUGIN_VERSION');
     }
 
-    public static function doingRestRequest()
+    public static function doingRestRequest(): bool
     {
         if (defined('REST_REQUEST') && REST_REQUEST) {
             return true;
@@ -90,7 +97,7 @@ class App extends AppFacade
         return false;
     }
 
-    public static function isDevMode()
+    public static function isDevMode(): bool
     {
         return static::config()->get('env') === 'dev';
     }

@@ -38,7 +38,6 @@ export default class AddToCartButton {
 
                 document.dispatchEvent(new Event(actionName));
             }).catch((error) => {
-                console.log(error, 'error')
                 target.classList.remove('fct-loading');
                 document.dispatchEvent(new Event(errorActionName));
             });

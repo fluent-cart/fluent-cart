@@ -39,7 +39,7 @@ return array(
             'SK', // Slovakia
             'SI', // Slovenia
             'ES', // Spain
-            'SE'  // Sweden
+            'SE', // Sweden
         ),
     ),
 );

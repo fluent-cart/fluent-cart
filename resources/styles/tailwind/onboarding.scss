@@ -61,7 +61,7 @@
       @apply mb-4 block max-w-[140px];
     }
     &-title{
-      @apply text-system-dark text-xl leading-7 font-semibold m-0 mb-1;
+      @apply text-system-dark text-xl leading-7 font-semibold m-0 mb-1 dark:text-gray-50;
     }
     &-text{
       @apply text-system-mid text-[13px] leading-5 m-0 dark:text-gray-500;
@@ -204,9 +204,9 @@
           .el-radio-button {
             @apply mb-0 h-full w-full !shadow-none outline-none;
             &__inner {
-               @apply rounded text-left p-4 relative gap-2 w-full h-full whitespace-pre-wrap border border-solid !border-gray-100 flex flex-col items-start justify-between bg-transparent dark:border-primary-500 outline-none #{!important};
+               @apply rounded text-left p-4 relative gap-2 w-full h-full whitespace-pre-wrap border border-solid border-gray-outline flex flex-col items-start justify-between bg-transparent dark:border-dark-400 outline-none #{!important};
               .label {
-                @apply text-system-mid text-sm leading-5 block transition duration-300 ease-in-out dark:text-gray-500 mb-0 mt-2;
+                @apply text-system-mid text-sm leading-5 block transition duration-300 ease-in-out dark:text-gray-300 mb-0 mt-2 w-auto;
               }
               .icon {
                 @apply text-system-light transition duration-300 ease-in-out w-10 h-10;
@@ -337,6 +337,10 @@
   }
 }
 
+.fct-onboarding-card-head-content {
+    @apply flex items-center gap-5;
+}
+
 // fc steps
 .fct-steps-wrap{
   .el-steps--simple{
@@ -379,6 +383,62 @@
       }
 
     }
+  }
+}
+
+.fct-tax-step {
+  &-toggle-row {
+    @apply flex items-center justify-between pb-4 mb-4 border-b border-solid border-gray-divider border-l-0 border-r-0 border-t-0 dark:border-primary-500;
+    &__label {
+      @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+  }
+  &-country-chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-solid border-gray-100 text-sm text-system-dark dark:bg-primary-600 dark:border-primary-500 dark:text-gray-50;
+    .icon {
+      @apply text-system-mid dark:text-gray-300;
+      svg { @apply w-3.5 h-3.5; }
+    }
+    &--empty {
+      @apply text-system-light dark:text-gray-500;
+    }
+  }
+  &-radio-group {
+    @apply flex flex-col gap-2;
+  }
+  &-radio-card {
+    @apply flex items-start gap-3 p-3 rounded border border-solid border-gray-100 cursor-pointer select-none transition-colors duration-200 dark:border-primary-500;
+    &:hover {
+      @apply border-gray-300 dark:border-primary-400;
+    }
+    &.is-selected {
+      @apply border-primary-500 bg-primary-50 dark:bg-primary-600 dark:border-gray-200;
+    }
+    &__label {
+      @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+    &__desc {
+      @apply text-xs text-system-mid mt-0.5 dark:text-gray-300;
+    }
+  }
+  &-radio-dot {
+    @apply flex-none mt-0.5 w-4 h-4 rounded-full border-[1.5px] border-solid border-gray-300 relative dark:border-primary-400;
+    &::before {
+      content: '';
+      @apply absolute w-2 h-2 rounded-full bg-primary-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-0 transition-transform duration-200 dark:bg-gray-50;
+    }
+    &.is-active {
+      @apply border-primary-500 dark:border-gray-200;
+      &::before {
+        @apply scale-100;
+      }
+    }
+  }
+  &-optional {
+    @apply text-system-light text-xs font-normal dark:text-gray-500;
+  }
+  .fct-form-help-text {
+    @apply mt-1 text-xs text-system-mid dark:text-gray-400;
   }
 }
 

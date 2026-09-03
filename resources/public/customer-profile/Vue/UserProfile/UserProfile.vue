@@ -46,14 +46,14 @@
       <!--    Billing Address-->
       <BillingAddress :profileDetails="profileDetails"
                       @fetch="fetch"
-                      @setAddressPrimary="setAddressPrimary"
-                      @deleteAddress="deleteAddress"/>
+                      @set-address-primary="setAddressPrimary"
+                      @delete-address="deleteAddress"/>
 
       <!--    Shipping Address-->
       <ShippingAddress :profileDetails="profileDetails"
                       @fetch="fetch"
-                      @setAddressPrimary="setAddressPrimary"
-                      @deleteAddress="deleteAddress"/>
+                      @set-address-primary="setAddressPrimary"
+                      @delete-address="deleteAddress"/>
     
       <!--    Save button disabling now -->
       <footer class="fct-form-footer text-right">
@@ -67,13 +67,17 @@
           {{ translate('Save Profile') }}
         </el-button>
       </footer>
+
+      <!--    Add-on sections (e.g. pro saved payment methods). Sits below the
+              footer so "Save Profile" stays attached to the fields it saves. -->
+      <PortalSections filter="profile_sections" :data="{profileDetails}"/>
     </template>
   </div>
 </template>
 
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "../parts/Badge.vue";
 import Notify from "@/utils/Notify";
 import MaterialInput from "@/Bits/Components/MaterialInput.vue";
 import AddressComponent from "@/Bits/Components/Address/AddressComponent.vue";
@@ -82,6 +86,7 @@ import translate from "../../translator/Translator";
 import AccountDetails from "./templates/AccountDetails.vue";
 import BillingAddress from "./templates/BillingAddress.vue";
 import ShippingAddress from "./templates/ShippingAddress.vue"
+import PortalSections from "../parts/PortalSections.vue";
 
 
 export default {
@@ -94,6 +99,7 @@ export default {
     AccountDetails,
     BillingAddress,
     ShippingAddress,
+    PortalSections,
   },
   data() {
     return {
@@ -124,6 +130,9 @@ export default {
         this.checkProfileChanges();
       }
     }
+  },
+  mounted() {
+    this.fetch();
   },
   methods: {
     translate,
@@ -230,9 +239,6 @@ export default {
         this.isProfileChanged = isFirstNameChanged || isLastNameChanged;
       }
     },
-  },
-  mounted() {
-    this.fetch();
   }
 };
 </script>

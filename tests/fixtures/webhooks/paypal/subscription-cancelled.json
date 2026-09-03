@@ -1,0 +1,11 @@
+{
+  "id": "WH-PHASE29-CANCEL-1",
+  "event_type": "BILLING.SUBSCRIPTION.CANCELLED",
+  "resource_type": "subscription",
+  "resource": {
+    "id": "I-PHASE29-OWNED-SUBSCRIPTION",
+    "status": "CANCELLED",
+    "status_update_time": "2026-07-31T12:34:56Z",
+    "status_change_note": "Phase 29 canned cancellation"
+  }
+}

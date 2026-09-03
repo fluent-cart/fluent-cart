@@ -117,17 +117,17 @@ class LocalizationManager
      */
     public function taxContinents($countryCode = null): array
     {
-        if (is_array(self::$continents)) {
+        if (is_array(self::$taxContinents)) {
             if ($countryCode) {
-                return self::$continents[$countryCode] ?? [];
+                return self::$taxContinents[$countryCode] ?? [];
             }
-            return self::$continents;
+            return self::$taxContinents;
         }
-        self::$continents = require 'i18n/eu_tax_countries.php';
+        self::$taxContinents = require 'i18n/eu_tax_countries.php';
         if ($countryCode) {
-            return self::$continents[$countryCode] ?? [];
+            return self::$taxContinents[$countryCode] ?? [];
         }
-        return self::$continents;
+        return self::$taxContinents;
     }
 
     /**
@@ -380,6 +380,22 @@ class LocalizationManager
             }
         }
         return '';
+    }
+
+    /**
+     * Check whether a country is part of the EU VAT country list.
+     */
+    public function isEuTaxCountry(string $countryCode): bool
+    {
+        $countryCode = trim(strtoupper($countryCode));
+
+        if ($countryCode === '') {
+            return false;
+        }
+
+        $euCountries = Arr::get($this->taxContinents('EU'), 'countries', []);
+
+        return in_array($countryCode, $euCountries, true);
     }
 
     /**

@@ -8,7 +8,7 @@ use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\Framework\Database\Orm\Relations\BelongsTo;
-use FluentCart\Framework\Database\Orm\Relations\hasOne;
+use FluentCart\Framework\Database\Orm\Relations\HasOne;
 use FluentCart\Framework\Database\Orm\Relations\MorphMany;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
@@ -126,12 +126,12 @@ class Customer extends Model
         return $this->hasMany(CustomerAddresses::class, 'customer_id', 'id')->where('type', 'billing');
     }
 
-    public function primary_shipping_address(): hasOne
+    public function primary_shipping_address(): HasOne
     {
         return $this->hasOne(CustomerAddresses::class, 'customer_id', 'id')->where('type', 'shipping')->where('is_primary', 1);
     }
 
-    public function primary_billing_address(): hasOne
+    public function primary_billing_address(): HasOne
     {
         return $this->hasOne(CustomerAddresses::class, 'customer_id', 'id')->where('type', 'billing')->where('is_primary', 1);
     }

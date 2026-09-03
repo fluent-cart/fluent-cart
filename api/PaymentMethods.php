@@ -62,9 +62,10 @@ class  PaymentMethods
             $settings = $paymentMethod->settings->get();
             if (Arr::get($settings, 'is_active') === 'yes') {
                 $isCurrencySupported = $paymentMethod->isCurrencySupported();
-                if (!$isCurrencySupported || ($hasSubscription && !$paymentMethod->has('subscriptions')) || ($hasZeroRecurring && !$paymentMethod->has('zero_recurring'))) {
+                if (!$isCurrencySupported || ($hasZeroRecurring && !$paymentMethod->has('zero_recurring'))) {
                     continue;
                 }
+
                 $activePaymentMethods[] = $paymentMethod;
             }
         }

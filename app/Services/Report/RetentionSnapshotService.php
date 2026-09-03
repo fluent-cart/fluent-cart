@@ -57,7 +57,7 @@ class RetentionSnapshotService
                 $this->log('No data to process. Exiting.', 'warning', $progressCallback);
                 return [
                     'success' => false,
-                    'message' => 'No data to process',
+                    'message' => __('No data to process', 'fluent-cart'),
                     'stats' => [],
                 ];
             }
@@ -81,14 +81,18 @@ class RetentionSnapshotService
 
             return [
                 'success' => true,
-                'message' => 'Retention snapshots generated successfully',
+                'message' => __('Retention snapshots generated successfully', 'fluent-cart'),
                 'stats' => $stats,
             ];
         } catch (\Exception $e) {
             $this->log('Error: ' . $e->getMessage(), 'error', $progressCallback);
             return [
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
+                'message' => sprintf(
+                /* translators: %1$s: error message */
+                    __('Error: %1$s', 'fluent-cart'),
+                    $e->getMessage()
+                ),
                 'stats' => [],
             ];
         }

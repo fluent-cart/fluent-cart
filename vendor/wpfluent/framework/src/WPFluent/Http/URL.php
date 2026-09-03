@@ -299,10 +299,12 @@ class URL
 
 	/**
 	 * Generate a URL from a file path.
-	 * 
+	 *
 	 * @param  string $path
 	 * @param  bool   $checkFile Whether to check if the file exists
 	 * @return string
+	 *
+	 * @phpstan-ignore-next-line
 	 */
 	public function fromFile(string $path, bool $checkFile = false): string
 	{

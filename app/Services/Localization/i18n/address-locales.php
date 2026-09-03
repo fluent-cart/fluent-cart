@@ -763,6 +763,15 @@ return array(
             'required' => false,
         ),
     ),
+    'XI' => array(
+        'postcode' => array(
+            'label' => __( 'Postcode', 'fluent-cart' ),
+        ),
+        'state'    => array(
+            'label'    => __( 'District', 'fluent-cart' ),
+            'required' => false,
+        ),
+    ),
     'ST' => array(
         'postcode' => array(
             'required' => false,

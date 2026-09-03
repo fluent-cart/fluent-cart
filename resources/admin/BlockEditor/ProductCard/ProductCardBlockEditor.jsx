@@ -72,7 +72,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             }
             apiFetch({
                 path: addQueryArgs(fetchUrl, {
-                    with: ['variants']
+                    // Screen key, not a relation name — ProductController::allowedWiths()
+                    // owns what it resolves to (detail + variants).
+                    with: ['block_product_detail']
                 }),
                 headers: {
                     'X-WP-Nonce': rest.nonce
@@ -139,12 +141,12 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                                         const formatPrice = (price) => {
                                             if (!price && price !== 0) {
                                                 return currencyPosition === 'after'
-                                                    ? `0.00${currencySign}`
-                                                    : `${currencySign}0.00`;
+                                                    ? `0${currencySign}`
+                                                    : `${currencySign}0`;
                                             }
 
                                             // Divide by 100 since your price is stored in cents
-                                            const formatted = (price / 100).toFixed(2);
+                                            const formatted = String(parseFloat((price / 100).toFixed(2)));
 
                                             return currencyPosition === 'after'
                                                 ? `${formatted}${currencySign}`

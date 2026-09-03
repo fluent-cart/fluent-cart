@@ -126,7 +126,8 @@
   }
 }
 
-div.mce-panel {
+
+.mce-window.fluent-cart div.mce-panel {
   @apply dark:bg-dark-700;
 }
 .mce-window.fluent-cart .mce-window-head {
@@ -134,9 +135,6 @@ div.mce-panel {
 }
 .mce-window.fluent-cart  .mce-foot {
   @apply dark:border-dark-500 !important;
-}
-.mce-window.fluent-cart .mce-window-head .mce-title {
-  @apply dark:text-gray-50;
 }
 .mce-window.fluent-cart input {
   @apply dark:border-dark-500 !important;
@@ -208,6 +206,9 @@ div.mce-panel {
 
 .mce-menu.mce-in.mce-animate{
     @apply dark:bg-dark-600 dark:border-dark-500;
+    .mce-menu-item {
+        @apply dark:text-gray-50;
+    }
 }
 
 /*==== Style for editor shortcode ====*/
@@ -293,27 +294,27 @@ div.mce-panel {
 .fct-refresh-setting-wrap{
     @apply z-[2];
 }
-.dark{
+.fluent_theme_dark{
     .custom-wp-editor-wrapper .wp-editor-tools .wp-media-buttons .wp-media-buttons-icon::before{
         filter: brightness(0) invert(1);
     }
 }
 
 .mce-window.fluent-cart{
-    @apply rounded shadow-none;
+    @apply rounded shadow-none dark:bg-dark-700;
     .mce-window-head{
         @apply border-gray-divider rounded-tl rounded-tr;
         .mce-title{
-            @apply leading-[44px] text-base text-system-dark;
+            @apply leading-[44px] text-base text-system-dark dark:text-gray-50;
         }
     }
     input{
-        @apply border-gray-outline px-2.5 w-[294px] #{!important};
+        @apply border-gray-outline px-2.5 w-[294px] dark:border-dark-300 #{!important};
     }
     .mce-btn{
         @apply shadow-none;
         &.mce-menubtn{
-            @apply shadow-none bg-white rounded-none border-gray-outline #{!important};
+            @apply shadow-none bg-white rounded-none border-gray-outline dark:bg-dark-700 dark:border-dark-300 #{!important};
             &.mce-active button{
                 @apply text-system-dark;
             }
@@ -327,5 +328,14 @@ div.mce-panel {
         .mce-btn{
             @apply border-gray-outline;
         }
+    }
+
+    .mce-label {
+        @apply dark:text-gray-50;
+        text-shadow: none;
+    }
+
+    .mce-btn button {
+        @apply dark:text-gray-50;
     }
 }

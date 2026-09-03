@@ -63,7 +63,11 @@ class CartHelper
                     'selected' => $variation->id
                 ]
             ),
-            'variation_type'       => $variation['product_detail']['variation_type'],
+            // Property access lazy-loads when callers didn't eager-load
+            // product_detail (instant-checkout, cart update endpoint) so
+            // CartRenderer can read variation_type to toggle the
+            // variant-title-hidden class on simple products.
+            'variation_type'       => $variation->product_detail ? $variation->product_detail->variation_type : '',
             'is_custom'            => false,
         ], $variation->toArray());
 
@@ -91,6 +95,19 @@ class CartHelper
         ]);
 
         //  $cartItem['shipping_charge'] = $shippingCharge;
+
+        // Snapshot the variant's attribute set (pa_* + third-party) into
+        // other_info so cart, checkout and the resulting order item all carry a
+        // frozen attribute map that survives later attribute-library renames.
+        $otherInfo = Arr::get($cartItem, 'other_info', []);
+        if (!is_array($otherInfo)) {
+            $otherInfo = [];
+        }
+        $otherInfo['item_attributes'] = AttributeHelper::getProductItemAttributes(
+            $variation->id,
+            $variation->post_id
+        );
+        $cartItem['other_info'] = $otherInfo;
 
         return $cartItem;
     }
@@ -179,35 +196,77 @@ class CartHelper
         return ($shippingClass->cost * 100) * $factor;
     }
 
+    private static function itemHasFreeShipping($item): bool
+    {
+        return Arr::get($item, 'other_info.free_shipping', 'no') === 'yes';
+    }
+
+    private static function excludeFreeShippingPhysicalItems(array &$items, array &$physicalItems): void
+    {
+        foreach ($physicalItems as $key => $item) {
+            if (self::itemHasFreeShipping($item)) {
+                $items[$key]['shipping_charge'] = 0;
+                $items[$key]['itemwise_shipping_charge'] = 0;
+                unset($physicalItems[$key]);
+            }
+        }
+    }
+
     public static function calculateShippingMethodCharge(ShippingMethod $method, ?array $items = null, $returnType = 'amount')
     {
         static $onceCalculated = false;
-        static $onceDistributed = false;
-        static $totalItemPrice = 0;
-        static $totalQuantity = 0;
-        static $physicalItems = [];
-        static $isAllDigital = false;
-        static $maxShippingCharge = 0;
-        static $totalShippingCharge = 0;
-        static $lastMethodId = null;
-        $isUsingCart = false;
+        static $lastFingerprint = null;
+        static $products = null;
+        static $shippingClasses = null;
 
-        // Reset statics when called with a different method to prevent stale state
-        if ($lastMethodId !== $method->id) {
-            $onceCalculated = false;
-            $onceDistributed = false;
-            $totalItemPrice = 0;
-            $totalQuantity = 0;
-            $physicalItems = [];
-            $isAllDigital = false;
-            $maxShippingCharge = 0;
-            $totalShippingCharge = 0;
-            $lastMethodId = $method->id;
-        }
+        // Per-call locals: $physicalItems/$isAllDigital are rebuilt fresh from $items on every
+        // call (via CheckoutService below), and $totalItemPrice/$totalQuantity/
+        // $totalShippingCharge/$maxShippingCharge are accumulated fresh in the per-item
+        // annotation loop below, so none of them may persist across calls — only the
+        // $products/$shippingClasses DB lookups above are worth caching per request.
+        $totalItemPrice = 0;
+        $totalQuantity = 0;
+        $physicalItems = [];
+        $isAllDigital = false;
+        $maxShippingCharge = 0;
+        $totalShippingCharge = 0;
+        $isUsingCart = false;
 
         if ($items === null) {
             $isUsingCart = true;
             $items = static::getCart()->cart_data ?? [];
+        }
+
+        // Fingerprint the resolved method + items so a same-request call with changed
+        // cart items (e.g. an item added/removed after ShippingModule::handleItemsChanges
+        // re-runs this calc) is never mistaken for a repeat of the previous call. Must be
+        // computed from the RESOLVED $items (post null → cart fallback above), not the raw
+        // argument, otherwise a null-argument call would fingerprint differently from the
+        // cart data it resolves to. Fields: id/object_id/variation_id, quantity, line_total,
+        // free_shipping, post_id, unit_price, discount_total.
+        $fingerprint = md5(serialize([
+            $method->id,
+            array_map(function ($item) {
+                return [
+                    Arr::get($item, 'id', Arr::get($item, 'object_id', Arr::get($item, 'variation_id'))),
+                    Arr::get($item, 'quantity'),
+                    Arr::get($item, 'line_total'),
+                    self::itemHasFreeShipping($item) ? 'yes' : 'no',
+                    Arr::get($item, 'post_id'),
+                    Arr::get($item, 'unit_price'),
+                    Arr::get($item, 'discount_total'),
+                ];
+            }, $items),
+        ]));
+
+        // Reset the cached-lookup guard when the method/items fingerprint changes to prevent
+        // stale $products/$shippingClasses from a previous call in the same request (replaces
+        // the old $lastMethodId check, which missed same-method-id calls made with different
+        // items). The per-call locals above are already reinitialized on every call, so only
+        // the "once" guard needs resetting here.
+        if ($lastFingerprint !== $fingerprint) {
+            $onceCalculated = false;
+            $lastFingerprint = $fingerprint;
         }
 
         if ($method->type === 'free_shipping') {
@@ -227,11 +286,27 @@ class CartHelper
             return 0;
         }
 
-        $totalItemWiseShippingCharge = 0;
-
         $cartCheckoutService = new CheckoutService($items);
         $isAllDigital = $cartCheckoutService->isAllDigital();
         $physicalItems = $cartCheckoutService->physicalItems;
+
+        // Exclude only physical items marked for free shipping from charge calculation.
+        static::excludeFreeShippingPhysicalItems($items, $physicalItems);
+
+        // No shipping is charged for all-digital carts or when every physical item has free shipping.
+        if ($isAllDigital || empty($physicalItems)) {
+            if ($returnType === 'items') {
+                foreach ($items as $key => $item) {
+                    $items[$key]['shipping_charge'] = 0;
+                    $items[$key]['itemwise_shipping_charge'] = 0;
+                }
+                return [
+                    'items'           => $items,
+                    'shipping_amount' => 0
+                ];
+            }
+            return 0;
+        }
 
         if (!$onceCalculated) {
             $onceCalculated = true;
@@ -246,44 +321,44 @@ class CartHelper
             })->toArray();
 
             $shippingClasses = ShippingClass::query()->whereIn('id', $shippingClassIds)->get()->keyBy('id');
+        }
 
-            foreach ($physicalItems as $key => &$item) {
-                $totalQuantity += Arr::get($item, 'quantity');
-                $totalItemPrice += (Arr::get($item, 'quantity') * Arr::get($item, 'unit_price')) - Arr::get($item, 'discount_total');
-                $itemShippingCharge = 0;
+        // Per-item annotation must run on every call, not gated behind $onceCalculated:
+        // $physicalItems is always re-derived fresh from the current $items argument above, so
+        // a cache-hit call still needs its own $items populated with shipping_charge and its
+        // own totals accumulated. Only the $products/$shippingClasses DB lookups above are
+        // safe to reuse across calls in the same request.
+        foreach ($physicalItems as $key => &$item) {
+            $totalQuantity += Arr::get($item, 'quantity');
+            $totalItemPrice += (Arr::get($item, 'quantity') * Arr::get($item, 'unit_price')) - Arr::get($item, 'discount_total');
+            $itemShippingCharge = 0;
 
-                $product = $products->get(Arr::get($item, 'post_id'));
+            $product = $products->get(Arr::get($item, 'post_id'));
 
 
-                if (isset($product->detail->other_info['shipping_class'])) {
-                    // shipping_class is null or not defined
-                    $shippingClass = $shippingClasses->get(
-                        $product->detail->other_info['shipping_class']
-                    );
+            if (isset($product->detail->other_info['shipping_class'])) {
+                // shipping_class is null or not defined
+                $shippingClass = $shippingClasses->get(
+                    $product->detail->other_info['shipping_class']
+                );
 
-                    if ($shippingClass) {
-                        $perItem = $shippingClass->per_item;
-                        $factor = empty($perItem) ? 1 : Arr::get($item, 'quantity');
-                        if ($shippingClass->type === 'percentage') {
-                            $itemShippingCharge = ($shippingClass->cost / 100) * Arr::get($item, 'unit_price') * $factor;
-                        } else {
-                            $itemShippingCharge = Helper::toCent($shippingClass->cost) * $factor;
-                        }
+                if ($shippingClass) {
+                    $perItem = $shippingClass->per_item;
+                    $factor = empty($perItem) ? 1 : Arr::get($item, 'quantity');
+                    if ($shippingClass->type === 'percentage') {
+                        $itemShippingCharge = ($shippingClass->cost / 100) * Arr::get($item, 'unit_price') * $factor;
+                    } else {
+                        $itemShippingCharge = Helper::toCent($shippingClass->cost) * $factor;
                     }
                 }
-                $item['shipping_charge'] = $itemShippingCharge;
-                $totalShippingCharge += $itemShippingCharge;
-
-                $items[$key] = $item;
-                $maxShippingCharge = max($maxShippingCharge, $itemShippingCharge);
             }
+            $item['shipping_charge'] = $itemShippingCharge;
+            $totalShippingCharge += $itemShippingCharge;
 
-            $totalItemWiseShippingCharge = $totalShippingCharge;
+            $items[$key] = $item;
+            $maxShippingCharge = max($maxShippingCharge, $itemShippingCharge);
         }
-
-        if ($isAllDigital) {
-            return 0;
-        }
+        unset($item);
 
         $settings = Arr::wrap($method->settings);
         $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
@@ -357,35 +432,32 @@ class CartHelper
             $shippingMethodAmount += $totalShippingCharge;
         }
 
-        $remainingShippingMethodAmount = ($shippingMethodAmount - $totalItemWiseShippingCharge);
+        $shippingMethodAmount = (int)round($shippingMethodAmount);
 
-        if (!$onceDistributed) {
-            $onceDistributed = true;
-            $totalLineTotal = array_sum(array_column($physicalItems, 'line_total'));
-            $distributed = 0;
-            $totalRemain = $remainingShippingMethodAmount;
-            $itemCount = count($physicalItems);
+        $remainingShippingMethodAmount = ($shippingMethodAmount - $totalShippingCharge);
 
-            if ($totalLineTotal > 0) {
-                foreach ($physicalItems as $key => &$item) {
-                    $share = ($item['line_total'] / $totalLineTotal) * $remainingShippingMethodAmount;
-                    $share = round($share, 2);
-                    $items[$key]['itemwise_shipping_charge'] = ceil($share);
-                    $distributed += $share;
-                }
+        // Distribution must run on every call (not gated behind a "once" flag): $physicalItems
+        // above is always re-derived fresh from the current $items argument regardless of the
+        // $onceCalculated cache, so a cached call still needs its own $items populated with
+        // itemwise_shipping_charge — a stale "already distributed" flag would leave a freshly
+        // passed-in items array with missing/zero shares even though the fingerprint matched.
+        $totalLineTotal = array_sum(array_column($physicalItems, 'line_total'));
+        $distributed = 0;
+        $itemCount = count($physicalItems);
+        $lastIndex = array_key_last($physicalItems);
+
+        foreach ($physicalItems as $key => $item) {
+            if ($key === $lastIndex) {
+                // Last item takes the exact remainder — per-item rounding must never
+                // change the total the customer is charged for shipping.
+                $share = (int) round($remainingShippingMethodAmount - $distributed);
+            } elseif ($totalLineTotal > 0) {
+                $share = (int) round(($item['line_total'] / $totalLineTotal) * $remainingShippingMethodAmount);
             } else {
-                $equalShare = round($remainingShippingMethodAmount / $itemCount, 2);
-                foreach ($physicalItems as $key => &$item) {
-                    $items[$key]['itemwise_shipping_charge'] = ceil($equalShare);
-                    $distributed += $equalShare;
-                }
+                $share = (int) round($remainingShippingMethodAmount / $itemCount);
             }
-
-            $diff = round($totalRemain - $distributed, 2);
-            if ($diff != 0) {
-                $lastIndex = array_key_last($physicalItems);
-                $items[$lastIndex]['itemwise_shipping_charge'] = ceil($diff);
-            }
+            $items[$key]['itemwise_shipping_charge'] = $share;
+            $distributed += $share;
         }
 
         if ($isUsingCart) {
@@ -423,8 +495,14 @@ class CartHelper
     public static function calculateShippingByProfile($shippingMethodId, $cartItems, $country, $state = null, $returnType = 'amount')
     {
         $cartCheckoutService = new CheckoutService($cartItems);
+        $isAllDigital = $cartCheckoutService->isAllDigital();
+        $physicalItems = $cartCheckoutService->physicalItems;
 
-        if ($cartCheckoutService->isAllDigital()) {
+        // Exclude only physical items marked for free shipping from profile-based charges.
+        static::excludeFreeShippingPhysicalItems($cartItems, $physicalItems);
+
+        // No shipping is charged for all-digital carts or when every physical item has free shipping.
+        if ($isAllDigital || empty($physicalItems)) {
             if ($returnType === 'items') {
                 foreach ($cartItems as $key => $item) {
                     $cartItems[$key]['shipping_charge'] = 0;
@@ -434,8 +512,6 @@ class CartHelper
             }
             return 0;
         }
-
-        $physicalItems = $cartCheckoutService->physicalItems;
 
         // Load products with details
         $productIds = array_unique(array_column($physicalItems, 'post_id'));
@@ -624,16 +700,29 @@ class CartHelper
         $methodOnlyAmount = $methodBaseRate;
         $distributed = 0;
         $itemCount = count($physicalItems);
+
+        // The last physical item overall (last item of the last group, in traversal order)
+        // absorbs the exact remainder — per-item rounding must never change the total
+        // the customer is charged for shipping.
+        $lastGroupKey = array_key_last($groups);
+        $lastItemIdx = ($lastGroupKey !== null && !empty($groups[$lastGroupKey]['items']))
+            ? array_key_last($groups[$lastGroupKey]['items'])
+            : null;
+
         foreach ($groups as $groupKey => &$group) {
             $groupItems = $group['items'];
             foreach ($groupItems as $idx => &$gItem) {
-                if ($totalLineTotal > 0) {
-                    $share = (Arr::get($gItem, 'line_total', 0) / $totalLineTotal) * $methodOnlyAmount;
+                if ($groupKey === $lastGroupKey && $idx === $lastItemIdx) {
+                    $share = (int) round($methodOnlyAmount - $distributed);
+                } elseif ($totalLineTotal > 0) {
+                    $share = (int) round((Arr::get($gItem, 'line_total', 0) / $totalLineTotal) * $methodOnlyAmount);
                 } else {
-                    $share = $itemCount > 0 ? ($methodOnlyAmount / $itemCount) : 0;
+                    $share = $itemCount > 0 ? (int) round($methodOnlyAmount / $itemCount) : 0;
                 }
-                $share = round($share, 2);
-                $gItem['itemwise_shipping_charge'] = ceil($share) + Arr::get($gItem, 'shipping_charge', 0);
+                // itemwise_shipping_charge carries only the proportional base-rate share.
+                // The class surcharge stays exclusively in shipping_charge (set above) so it
+                // isn't taxed twice by TaxCalculator::getShippingTax(), which sums both fields.
+                $gItem['itemwise_shipping_charge'] = $share;
                 $distributed += $share;
             }
             unset($gItem);
@@ -641,16 +730,6 @@ class CartHelper
             $group['amount'] = $group['class_charge'];
         }
         unset($group);
-
-        // Correct rounding difference on last physical item
-        $diff = round($methodOnlyAmount - $distributed, 2);
-        if ($diff != 0) {
-            $lastGroupKey = array_key_last($groups);
-            if ($lastGroupKey !== null && !empty($groups[$lastGroupKey]['items'])) {
-                $lastItemIdx = array_key_last($groups[$lastGroupKey]['items']);
-                $groups[$lastGroupKey]['items'][$lastItemIdx]['itemwise_shipping_charge'] += ceil($diff);
-            }
-        }
 
         // Merge group items back into cartItems
         foreach ($groups as $group) {
@@ -807,5 +886,44 @@ class CartHelper
             return false;
         }
         return $variationId;
+    }
+
+    /**
+     * @param \FluentCart\App\Models\Cart $cart
+     * @param array|\WP_Error             $methods
+     * @param string|int|null             $currentSelectedId
+     * @return string|int|null
+     */
+    public static function resolveAutoSelectShippingMethod($cart, $methods, $currentSelectedId)
+    {
+        if ($currentSelectedId || empty($methods) || is_wp_error($methods) || count($methods) !== 1) {
+            return $currentSelectedId;
+        }
+
+        $method = $methods[0];
+
+        $shouldAutoSelect = apply_filters('fluent_cart/shipping/auto_select_single_method', true, [
+            'cart'   => $cart,
+            'method' => $method,
+        ]);
+
+        if (!$shouldAutoSelect) {
+            return $currentSelectedId;
+        }
+
+        $charge = static::calculateShippingMethodCharge($method, $cart->cart_data);
+
+        $cart->checkout_data = array_merge(
+            (array) $cart->checkout_data,
+            [
+                'shipping_data' => [
+                    'shipping_method_id' => $method->id,
+                    'shipping_charge'    => is_array($charge) ? Arr::get($charge, 'shipping_amount', 0) : $charge,
+                ],
+            ]
+        );
+        $cart->save();
+
+        return $method->id;
     }
 }

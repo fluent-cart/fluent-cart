@@ -7,6 +7,7 @@ import translate from "@/utils/translator/Translator";
 import ShippingClassDrawer from "@/Modules/Shipping/Components/ShippingClassDrawer.vue";
 import {ref} from "vue";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const shippingClassTable = useShippingClassTable();
 const showClassDrawer = ref(false);
@@ -29,11 +30,13 @@ const onClassSaved = () => {
     <SettingsHeader
         :heading="translate('Shipping Classes')"
         :save-button-text="translate('Add Shipping Class')"
-        @onSave="openAddClassDrawer"
+        @on-save="openAddClassDrawer"
     />
 
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div class="fct-all-shipping-classes-wrap">
         <TableWrapper :table="shippingClassTable">
           <ShippingClassesLoader v-if="shippingClassTable.isLoading()" :shippingClassTable="shippingClassTable" :next-page-count="shippingClassTable.nextPageCount" />

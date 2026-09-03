@@ -30,7 +30,7 @@
                 :selected_labels="selectedLabels"
                 :shouldEnableEditing="shouldEnableEditing"
                 @update:update-label="updateLabel"
-                @closeLabelModal="labelModalIsOpen = false"
+                @close-label-modal="labelModalIsOpen = false"
             />
           </div>
         </Card.Body>
@@ -54,6 +54,11 @@ import translate from "@/utils/translator/Translator";
 
 export default {
   name: "Labels",
+  components: {
+    IconButton,
+    LabelModal,
+    DynamicIcon
+  },
   props: {
     bindToType: {
       type: String,
@@ -70,15 +75,13 @@ export default {
       default: true
     },
   },
-  components: {
-    IconButton,
-    LabelModal,
-    DynamicIcon
-  },
   data() {
     return {
       labelModalIsOpen: false,
     };
+  },
+  mounted() {
+
   },
   methods: {
     openLabelModal() {
@@ -101,9 +104,6 @@ export default {
     closeLabel() {
       this.labelModalIsOpen = false
     },
-  },
-  mounted() {
-
   },
 };
 </script>

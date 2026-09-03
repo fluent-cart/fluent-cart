@@ -7,13 +7,17 @@
     featureName: String,
     featureDescription: String,
     features: Array,
-    onClose: Function
+    onClose: Function,
+    placement: {
+      type: String,
+      default: 'upgrade_page'
+    }
   })
 </script>
 
 <template>
   <div class="fluent-cart-admin-pages">
-    <ProFeatureNotice>
+    <ProFeatureNotice :placement="placement">
         <h4 class="fct-pro-feature-title">
           {{
             /* translators: %s is the feature name */

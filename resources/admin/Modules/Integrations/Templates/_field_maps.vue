@@ -31,28 +31,28 @@
             </el-select>
 
             <template v-else>
-              <field-general
+              <FieldGeneral
                   :editorShortcodes="editorShortcodes"
                   :defaultValue="settings[primary_field.key]"
                   v-model="settings[primary_field.key]"
-              ></field-general>
+              ></FieldGeneral>
             </template>
 
             <div v-if="primary_field.help_text">{{ primary_field.help_text }}</div>
 
-            <error-view field="fieldEmailAddress" :errors="errors"></error-view>
+            <ErrorView field="fieldEmailAddress" :errors="errors"></ErrorView>
           </el-form-item>
         </div><!-- .fct-merge-fields-item -->
 
         <template v-if="field.default_fields">
           <div class="fct-merge-fields-item" v-for="default_field in field.default_fields" :key="default_field.name">
             <el-form-item :label="default_field.label" :required="default_field.required">
-              <field-general
+              <FieldGeneral
                   :editorShortcodes="editorShortcodes"
                   :defaultValue="settings[primary_field.key]"
                   v-model="settings.default_fields[default_field.name]"
-              ></field-general>
-              <error-view field="default_fields" :errors="errors"></error-view>
+              ></FieldGeneral>
+              <ErrorView field="default_fields" :errors="errors"></ErrorView>
             </el-form-item>
           </div><!-- .fct-merge-fields-item -->
         </template>
@@ -60,13 +60,13 @@
 
         <div class="fct-merge-fields-item" v-for="(field_name, field_index) in merge_fields" :key="field_index">
           <el-form-item :label="field_name">
-            <field-general
+            <FieldGeneral
                 :editorShortcodes="editorShortcodes"
                 :defaultValue="merge_model[field_index]"
-                @onValueUpdated="function(value) {
+                @on-value-updated="function(value) {
                     onValueUpdated(value, field_index)
                 }"
-            ></field-general>
+            ></FieldGeneral>
           </el-form-item>
         </div><!-- .fct-merge-fields-item -->
 
@@ -86,15 +86,10 @@ import FieldGeneral from './_FieldGeneral.vue';
 
 
 export default {
-  name: 'field_maps',
+  name: 'FieldMaps',
   components: {
     ErrorView,
     FieldGeneral
-  },
-  methods:{
-    onValueUpdated(value, field_index) {
-      this.merge_model[field_index] = value;
-    },
   },
   props: ['settings', 'merge_fields', 'field', 'errors', 'merge_model', 'inputs', 'editorShortcodes'],
   data() {
@@ -107,6 +102,11 @@ export default {
       this.$emit('setMergeModelObj');
     }
     this.appReady = true;
+  },
+  methods:{
+    onValueUpdated(value, field_index) {
+      this.merge_model[field_index] = value;
+    },
   }
 
 };

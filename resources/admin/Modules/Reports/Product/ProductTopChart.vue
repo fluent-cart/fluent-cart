@@ -810,7 +810,7 @@ table {
   background-color: #f8fafc;
 }
 
-.dark .no-comparison-message {
+.fluent_theme_dark .no-comparison-message {
   background-color: #1c2633;
   border-color: #253241;
 }

@@ -49,7 +49,7 @@ import {ClickOutside as vClickOutside} from 'element-plus';
 import translate from "@/utils/translator/Translator";
 
 defineOptions({
-  name: 'inputPopoverDropdownExtended'
+  name: 'InputPopoverDropdownExtended'
 })
 
 const props = defineProps({

@@ -55,10 +55,10 @@
         :title="noteCopy ? $t('Edit Note') : $t('Add Note')"
     >
       <div v-if="noteModalIsOpen">
-        <note-modal
+        <NoteModal
             :note="noteCopy"
-            @whenNoteEditIsDone="saveNoteModal"
-            @closeModal="noteModalIsOpen = false"
+            @when-note-edit-is-done="saveNoteModal"
+            @close-modal="noteModalIsOpen = false"
         />
       </div>
     </el-dialog>
@@ -77,6 +77,11 @@ import Notify from "@/utils/Notify";
 
 export default {
   name: "Notes",
+  components: {
+    IconButton,
+    NoteModal,
+    DynamicIcon
+  },
   props: {
     note: {
       type: String,
@@ -90,11 +95,6 @@ export default {
       type: [String,Number],
     },
   },
-  components: {
-    IconButton,
-    NoteModal,
-    DynamicIcon
-  },
   data() {
     return {
       noteModalIsOpen: false,
@@ -102,15 +102,6 @@ export default {
       noteCopy: this.note,
       loading: false
     };
-  },
-  watch: {
-    note: {
-      handler(newVal, oldVal) {
-        this.noteCopy = newVal;
-      },
-      deep: true,
-      immediate: true
-    },
   },
   computed: {
     noteNeedsCollapse() {
@@ -123,6 +114,18 @@ export default {
         return this.noteCopy.substring(0, 355) + "...";
       }
     },
+  },
+  watch: {
+    note: {
+      handler(newVal, oldVal) {
+        this.noteCopy = newVal;
+      },
+      deep: true,
+      immediate: true
+    },
+  },
+  mounted() {
+    // this.noteCopy = this.note;
   },
   methods: {
     saveNoteModal(note, showModal) {
@@ -150,9 +153,6 @@ export default {
     toggleNoteText() {
       this.isNoteExpanded = !this.isNoteExpanded;
     },
-  },
-  mounted() {
-    // this.noteCopy = this.note;
   },
 };
 </script>

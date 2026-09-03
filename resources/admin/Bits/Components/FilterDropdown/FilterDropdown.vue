@@ -34,6 +34,7 @@
         <div v-else>
           <ProFeatureNotice
               class="py-7.5"
+              placement="feature_lock_report_advanced_filtering"
               :title="translate('Upgrade to Pro for filtering')"
               :text="translate('This feature is only available in FluentCart Pro.')"
           />

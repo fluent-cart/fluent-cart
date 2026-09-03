@@ -5,6 +5,7 @@ namespace FluentCart\App\Models;
 use FluentCart\Api\Cookie\Cookie;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Api\Hasher\Hash;
+use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Concerns\CanSearch;
@@ -134,9 +135,65 @@ class Cart extends Model
 
     public function setCartDataAttribute($settings)
     {
-        $this->attributes['cart_data'] = json_encode(
-            Arr::wrap($settings)
-        );
+        $items = Arr::wrap($settings);
+
+        // Collect object_ids of items still missing the snapshot so the relations
+        // are fetched in ONE batched query instead of one per item — cart writes
+        // are user-facing and can carry several unsnapshotted items (legacy/admin
+        // carts). generateCartItemFromVariation already sets it for storefront
+        // adds, and simple products get an empty snapshot stored once.
+        $productIdByVariation = [];
+        foreach ($items as $item) {
+            if (!is_array($item) || Arr::get($item, 'is_custom')) {
+                // Custom/manual items aren't product variations — their object_id
+                // is not a variation id, so never resolve attribute relations for
+                // them (a coincidental id match would corrupt their snapshot).
+                continue;
+            }
+            $objectId  = (int) Arr::get($item, 'object_id', 0);
+            $otherInfo = Arr::get($item, 'other_info', []);
+            if ($objectId && (!is_array($otherInfo) || !array_key_exists('item_attributes', $otherInfo))) {
+                $productIdByVariation[$objectId] = (int) Arr::get($item, 'post_id', 0);
+            }
+        }
+
+        $snapshotByVariation = $productIdByVariation
+            ? AttributeHelper::getProductItemsAttributes(array_keys($productIdByVariation), $productIdByVariation)
+            : [];
+
+        foreach ($items as &$item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            // variation_display_title is a presentation-only value derived on
+            // read (getCartDataAttribute). Strip it so mutation paths that
+            // round-trip cart_data never bake stale denormalized text into JSON.
+            unset($item['variation_display_title']);
+
+            // Custom/manual items are not product variations — skip the backfill
+            // so a coincidental object_id match can't bleed a variation snapshot.
+            if (Arr::get($item, 'is_custom')) {
+                continue;
+            }
+
+            // Persist the item_attributes snapshot from the batched lookup so
+            // every cart (frontend, admin, pay-now) resolves the labeled
+            // combination from the DB. Only items that were missing it appear
+            // in the map; simple products store an empty snapshot once.
+            $objectId  = (int) Arr::get($item, 'object_id', 0);
+            $otherInfo = Arr::get($item, 'other_info', []);
+            if (!is_array($otherInfo)) {
+                $otherInfo = [];
+            }
+            if ($objectId && array_key_exists($objectId, $snapshotByVariation) && !array_key_exists('item_attributes', $otherInfo)) {
+                $otherInfo['item_attributes'] = $snapshotByVariation[$objectId];
+                $item['other_info'] = $otherInfo;
+            }
+        }
+        unset($item);
+
+        $this->attributes['cart_data'] = json_encode($items);
 
         $key = $this->getKey();
         if ($key) {
@@ -152,17 +209,18 @@ class Cart extends Model
         }
 
         $key = $this->getKey();
-        
+
         if ($key && isset(static::$cache[$key])) {
             return static::$cache[$key];
         }
 
         $decoded = json_decode($data, true);
-        
+
         if (!$decoded || !is_array($decoded)) {
             $result = [];
         } else {
             $result = Helper::loadBundleChild($decoded, ['*']);
+            $result = static::appendVariationDisplayTitle($result);
         }
 
         if ($key) {
@@ -170,6 +228,32 @@ class Cart extends Model
         }
 
         return $result;
+    }
+
+    /**
+     * Attach a resolved `variation_display_title` to each cart item — the cart-side
+     * mirror of OrderItem's appended accessor. Holds the labeled attribute
+     * combination ("Color: Red | Size: XS") resolved from the item's frozen
+     * other_info['item_attributes'] snapshot, falling back to the variation
+     * title when no attributes resolve.
+     *
+     * @param array $items
+     * @return array
+     */
+    protected static function appendVariationDisplayTitle(array $items): array
+    {
+        return array_map(function ($item) {
+            // Single resolver: snapshot -> live-resolve when missing -> title.
+            if (is_array($item)) {
+                $item['variation_display_title'] = AttributeHelper::getDisplayAttributesString(
+                    Arr::get($item, 'other_info.item_attributes', []),
+                    $item,
+                    'cart'
+                );
+            }
+
+            return $item;
+        }, $items);
     }
 
     public function setUtmDataAttribute($utmData)
@@ -216,6 +300,28 @@ class Cart extends Model
     public function isLocked()
     {
         return Arr::get($this->checkout_data, 'is_locked') === 'yes' && $this->order_id;
+    }
+
+    /**
+     * Whether this cart can still take an additional item, such as an order bump.
+     *
+     * False when the cart is locked to an existing payment (custom payment link,
+     * renewal invoice, early installment) or already carries an upgrade.
+     *
+     * `is_locked` is a 'yes'/'no' string, so it must be compared explicitly —
+     * `!empty()` treats the string 'no' as locked.
+     *
+     * Deliberately distinct from isLocked(), which additionally requires order_id
+     * and is therefore false for renewal and early-installment carts, which never
+     * set that column.
+     */
+    public function acceptsAdditionalItems()
+    {
+        if (Arr::get($this->checkout_data, 'is_locked') === 'yes') {
+            return false;
+        }
+
+        return empty(Arr::get($this->checkout_data, 'upgrade_data'));
     }
 
     public function addItem($item = [], $replacingIndex = null)
@@ -306,6 +412,10 @@ class Cart extends Model
             return $this->removeItem($variation->id, Arr::get($config, 'remove_args', []), true);
         }
 
+        if (!$variation->product) {
+            return new \WP_Error('product_not_found', __('This product is no longer available.', 'fluent-cart'));
+        }
+
         $validate = Arr::get($config, 'will_validate', false);
 
         $replacingIndex = null;
@@ -353,6 +463,12 @@ class Cart extends Model
 
             if ($this->isLocked()) {
                 return new \WP_Error('cart_locked', __('This cart is locked and cannot be modified.', 'fluent-cart'));
+            }
+
+            if ($replacingIndex === null && !empty($this->cart_data)) {
+                if ($variation->payment_type === 'subscription' || $this->hasSubscription()) {
+                    return new \WP_Error('subscription_items_can_not_combined', __("Subscription items can't be combined with other products in the cart.", 'fluent-cart'));
+                }
             }
         }
 
@@ -418,15 +534,15 @@ class Cart extends Model
             }
         }
 
-        // Subscription items may exist in cart, 
-        // but checkout must be initiated via direct checkout flow to ensure proper handling.           
+        // Subscription items may exist in cart,
+        // but checkout must be initiated via direct checkout flow to ensure proper handling.
         if (Arr::get($variation, 'payment_type', null) === 'subscription') {
             return new \WP_Error('invalid_item', __('Subscription items must be purchased via direct checkout.', 'fluent-cart'));
 
         }
 
         // Find existing item in cart
-        $replacingIndex = null; 
+        $replacingIndex = null;
         $existingItem = $this->findExistingItemAndIndex(
             $variationId,
             Arr::get($config, 'matched_args', [])
@@ -647,6 +763,15 @@ class Cart extends Model
 
         $coupons = Coupon::whereIn('code', $this->coupons)->get();
 
+        /*
+         * Let addons resolve virtual (un-persisted) coupon codes into in-memory Coupon
+         * models so they appear in the summary discount line like any coupon. See
+         * DiscountService::applyCouponCodes() for the same filter.
+         */
+        $coupons = apply_filters('fluent_cart/coupon/resolve_coupons', $coupons, $this->coupons, [
+            'cart' => $this,
+        ]);
+
         if ($coupons->isEmpty()) {
             return [];
         }
@@ -840,12 +965,13 @@ class Cart extends Model
         }
 
         $validatedFee = [
-            'key'     => sanitize_key($fee['key']),
-            'label'   => sanitize_text_field($fee['label']),
-            'amount'  => $amount,
-            'taxable' => !empty($fee['taxable']),
-            'source'  => sanitize_key($fee['source'] ?? 'custom'),
-            'meta'    => (array) ($fee['meta'] ?? []),
+            'key'       => sanitize_key($fee['key']),
+            'label'     => sanitize_text_field($fee['label']),
+            'amount'    => $amount,
+            'taxable'   => !empty($fee['taxable']),
+            'inclusive' => !empty($fee['inclusive']),
+            'source'    => sanitize_key($fee['source'] ?? 'custom'),
+            'meta'      => (array) ($fee['meta'] ?? []),
         ];
 
         $checkoutData = $this->checkout_data ?? [];
@@ -1035,12 +1161,13 @@ class Cart extends Model
 
             // Last wins — later entries (from filter) override earlier ones (stored)
             $validFees[$compositeKey] = [
-                'key'     => sanitize_key($fee['key']),
-                'label'   => sanitize_text_field($fee['label']),
-                'amount'  => $amount,
-                'taxable' => !empty($fee['taxable']),
-                'source'  => $source,
-                'meta'    => (array) ($fee['meta'] ?? []),
+                'key'       => sanitize_key($fee['key']),
+                'label'     => sanitize_text_field($fee['label']),
+                'amount'    => $amount,
+                'taxable'   => !empty($fee['taxable']),
+                'inclusive' => !empty($fee['inclusive']),
+                'source'    => $source,
+                'meta'      => (array) ($fee['meta'] ?? []),
             ];
         }
 
@@ -1111,6 +1238,13 @@ class Cart extends Model
             'cart' => $this
         ]);
 
+        // Prorate credit and upgrade discount (plan upgrade) are post-tax adjustments: the
+        // estimated_total filter has already added tax on the full price, now reduce the
+        // payable total.
+        $finalTotal = max(0, $finalTotal
+            - (int) Arr::get($this->checkout_data ?? [], 'prorate_credit.amount', 0)
+            - (int) Arr::get($this->checkout_data ?? [], 'upgrade_discount.amount', 0));
+
         do_action('fluent_cart/cart/after_totals_calculation', [
             'cart'  => $this,
             'total' => $finalTotal,
@@ -1139,6 +1273,9 @@ class Cart extends Model
         if ($feeTotal > 0) {
             $total += $feeTotal;
         }
+
+        $total -= (int) Arr::get($this->checkout_data ?? [], 'prorate_credit.amount', 0);
+        $total -= (int) Arr::get($this->checkout_data ?? [], 'upgrade_discount.amount', 0);
 
         return max(0, $total);
     }

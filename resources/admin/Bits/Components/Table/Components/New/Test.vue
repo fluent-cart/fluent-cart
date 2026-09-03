@@ -64,7 +64,7 @@ onMounted(() => {
           {{ $t('item') }}
         </template>
         <el-icon>
-          <arrow-down/>
+          <ArrowDown/>
         </el-icon>
       </div>
     </template>

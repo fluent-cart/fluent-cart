@@ -27,7 +27,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -41,7 +41,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -54,7 +54,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -64,7 +64,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -74,7 +74,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -84,7 +84,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -94,7 +94,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -104,7 +104,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
@@ -115,7 +115,7 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>

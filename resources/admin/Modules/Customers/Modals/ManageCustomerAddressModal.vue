@@ -138,6 +138,7 @@
             :address="address"
             :showAddressModal="isEditAddress"
             :order_id="order_id"
+            :showBusinessDetailsSection="showBusinessDetailsSection"
             @close-modal="showModal = false"
         />
       </div>
@@ -151,7 +152,6 @@
         </el-button>
 
         <el-button @click="emitAddNewAddress(modalAction.type)" type="primary">
-          <DynamicIcon name="Plus"/>
           {{ $t("Add new address") }}
         </el-button>
       </div>
@@ -170,7 +170,7 @@ import Notify from "@/utils/Notify";
 
 export default {
   name: "ManageAddressModal",
-  props: ["showAddressModal", "customer_id", "modalAction", "order_id"],
+  props: ["showAddressModal", "customer_id", "modalAction", "order_id","showBusinessDetailsSection"],
   expose: ["editAddress"],
   data() {
     return {
@@ -202,7 +202,7 @@ export default {
       } else if (command.action === "default") {
         this.setAddressPrimary(command.data);
       } else if (command.action === "remove") {
-        this.$confirm("Are you sure you want to delete this address?", "Warning", {
+        this.$confirm(this.$t("Are you sure you want to delete this address?"), this.$t("Warning"), {
           confirmButtonText: this.$t("Yes, Delete!"),
           cancelButtonText: this.$t("Cancel"),
           cancelButtonClass: "el-button--small",

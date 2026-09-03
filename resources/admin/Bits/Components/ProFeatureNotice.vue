@@ -15,7 +15,7 @@
 
       <slot></slot>
 
-      <el-button type="primary" tag="a" href="https://fluentcart.com/discount-deal" target="_blank">
+      <el-button type="primary" tag="a" :href="upgradeUrl(placement)" target="_blank">
         <DynamicIcon name="Crown"/>
         {{translate('Upgrade to Pro')}}
       </el-button>
@@ -26,10 +26,10 @@
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
+import {upgradeUrl} from "@/Bits/common";
 
 export default {
   name: "ProFeatureNotice",
-  methods: {translate},
   components: {
     DynamicIcon
   },
@@ -39,7 +39,12 @@ export default {
     },
     text: {
       type: String
+    },
+    placement: {
+      type: String,
+      default: 'upgrade_page'
     }
-  }
+  },
+  methods: {translate, upgradeUrl}
 }
 </script>

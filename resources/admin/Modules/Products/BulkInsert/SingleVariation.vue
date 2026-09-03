@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import PriceInput from "@/Bits/Components/Inputs/PriceInput.vue";
 
 const props = defineProps({
   variant: {
@@ -40,11 +41,15 @@ const paymentIntervalOptions = computed(() => {
     </td>
 
     <td>
-      <el-input v-model="variant.item_price"/>
+      <PriceInput
+        :model-value="variant.item_price"
+        @update:model-value="variant.item_price = $event"/>
     </td>
 
     <td>
-      <el-input v-model="variant.compare_price"/>
+      <PriceInput
+        :model-value="variant.compare_price"
+        @update:model-value="variant.compare_price = $event"/>
     </td>
 
     <td>
@@ -83,11 +88,9 @@ const paymentIntervalOptions = computed(() => {
             >
             </el-input>
 
-            <el-input :placeholder="$t('Setup fee amount')"
-                      v-model.number="variant.other_info.signup_fee" :min="1">
-              <template #prefix>
-                <span v-html="appVars.shop.currency_sign"></span>
-              </template>
+            <PriceInput :placeholder="$t('Setup fee amount')"
+                      :model-value="variant.other_info.signup_fee"
+                      @update:model-value="variant.other_info.signup_fee = $event">
               <template #append>
                 <el-select class="fct-repeat-payment-every-select" v-model="variant.other_info.setup_fee_per_item"
                            :placeholder="$t('Charge per item')">
@@ -95,7 +98,7 @@ const paymentIntervalOptions = computed(() => {
                   <el-option :label="$t('Per Qty')" value="yes"/>
                 </el-select>
               </template>
-            </el-input>
+            </PriceInput>
           </template>
         </template>
       </div>

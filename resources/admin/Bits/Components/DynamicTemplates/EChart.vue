@@ -16,7 +16,6 @@ const initChart = () => {
 
   // Initialize ECharts
   chartInstance = echarts.init(chartRef.value);
-  console.log(props.option)
   chartInstance.setOption(props.option);
 };
 

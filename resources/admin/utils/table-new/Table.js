@@ -120,7 +120,7 @@ export default class Table extends Model {
         const route = useRoute();
         const routerActiveView = route.query.active_view?.toString();
 
-        const tabs = this.getTabsCount() ? this.getTabs() : {};
+        const tabs = this.getTabs() || {};
 
         // URL always wins — supports custom links like ?active_view=draft
         if (routerActiveView) {
@@ -249,14 +249,13 @@ export default class Table extends Model {
             this.getToggleSearchingStorageName(),
             this.data.searching
         )
-
-        this.fetch();
     }
 
     /**
      * Disables search mode, clears the search query, and fetches new data.
      */
     closeSearch() {
+        const hadSearch = !!this.data.search;
         this.data.searching = false;
         this.data.search = "";
 
@@ -264,7 +263,10 @@ export default class Table extends Model {
             this.getToggleSearchingStorageName(),
             this.data.searching
         )
-        this.fetch();
+
+        if (hadSearch) {
+            this.fetch();
+        }
     }
 
     showBulkDeleteAction(value = null) {
@@ -276,7 +278,7 @@ export default class Table extends Model {
     }
 
     useFullWidthSearch() {
-        return false;
+        return this.getTabsCount() === 0;
     }
 
 
@@ -382,7 +384,8 @@ export default class Table extends Model {
                     translate('Advanced Filter'),
                     translate('Advanced filter is only available in pro version'),
                     [],
-                    this.data.vueInstance
+                    this.data.vueInstance,
+                    'feature_lock_advanced_filtering'
                 );
             }
             this.storeAdvanceFilter();
@@ -459,7 +462,8 @@ export default class Table extends Model {
             sort_by: this.data.sorting.sortBy,
             sort_type: this.data.sorting.sortType,
             with: this.with(),
-            scopes: this.scopes()
+            scopes: this.scopes(),
+            user_tz: this.data.user_tz
         };
 
         if (this.data.activeSavedViewId) {
@@ -491,10 +495,26 @@ export default class Table extends Model {
     fetch() {
         this.data.loading = true;
         let queryParams = this.buildQueryParams();
-        queryParams['user_tz'] = this.data.user_tz;
+        let refetching = false;
         Rest.get(this.getFetchUrl(), queryParams)
             .then(response => {
                 const parsedResponse = this.parseResponse(response)
+
+                // current_page is persisted in localStorage. After the dataset
+                // shrinks, a stale page can sit past last_page and the server
+                // returns empty data. Clamp to the real last page and re-fetch
+                // so the user never lands on a blank table.
+                if (
+                    parsedResponse.last_page > 0 &&
+                    this.data.paginate.current_page > parsedResponse.last_page
+                ) {
+                    this.data.paginate.current_page = parsedResponse.last_page;
+                    this.setCurrentPage(parsedResponse.last_page);
+                    refetching = true;
+                    this.fetch();
+                    return;
+                }
+
                 this.data.tableData = parsedResponse.data;
                 this.data.paginate.total = parsedResponse.total;
                 this.data.paginate.last_page = parsedResponse.last_page;
@@ -518,7 +538,11 @@ export default class Table extends Model {
                 this.data.tableData = [];
             })
             .finally(() => {
-                this.data.loading = false;
+                // Keep the loader up across the clamp-driven re-fetch so the
+                // table doesn't flash empty between the two requests.
+                if (!refetching) {
+                    this.data.loading = false;
+                }
             });
     }
 
@@ -638,7 +662,8 @@ export default class Table extends Model {
                 translate('Saved Views'),
                 translate('Saved views is only available in pro version'),
                 [],
-                this.data.vueInstance
+                this.data.vueInstance,
+                'feature_lock_saved_views'
             );
             return;
         }
@@ -696,6 +721,23 @@ export default class Table extends Model {
             queryParams['active_view'] = this.data.selectedView;
         }
         return queryParams;
+    }
+
+    _getFallbackViewId() {
+        const tabs = this.getTabs() || {};
+        const defaultView = this.getDefaultView();
+
+        if (tabs.hasOwnProperty(defaultView)) {
+            return defaultView;
+        }
+
+        const firstStaticTab = Object.keys(tabs)[0];
+        if (firstStaticTab) {
+            return firstStaticTab;
+        }
+
+        const firstSavedView = this.data.savedViews[0];
+        return firstSavedView ? firstSavedView.slug : defaultView;
     }
 
     saveCurrentView(name, description, isPublic) {
@@ -774,16 +816,19 @@ export default class Table extends Model {
                 this._syncGlobalSavedViews();
 
                 if (this.data.activeSavedViewId === viewId) {
-                    this.data.activeSavedViewId = null;
-                    this.data.savedViewQueryParams = null;
-                    this.data.selectedView = this.getDefaultView();
+                    const fallbackViewId = this._getFallbackViewId();
+                    const fallbackSavedView = this.data.savedViews.find(v => v.slug === fallbackViewId);
+
+                    this.data.activeSavedViewId = fallbackSavedView ? fallbackSavedView.slug : null;
+                    this.data.savedViewQueryParams = fallbackSavedView ? fallbackSavedView.query_params : null;
+                    this.data.selectedView = fallbackSavedView ? this.getDefaultView() : fallbackViewId;
                     this.data.filterType = 'simple';
                     this.data.advanceFilters = [[]];
                     this.data.search = '';
                     this.data.searching = false;
                     Storage.set(this.getFilterTypeStorageName(), 'simple');
-                    Storage.set(this.getTabStorageName(), this.getDefaultView());
-                    Url.pushToVueUrl(null, {active_view: this.getDefaultView()});
+                    Storage.set(this.getTabStorageName(), fallbackViewId);
+                    Url.pushToVueUrl(null, {active_view: fallbackViewId});
                     this.fetch();
                 }
             })
@@ -845,16 +890,49 @@ export default class Table extends Model {
     }
 
     getTabsCount() {
-        const tabs = this.getTabs();
-        return tabs ? Object.keys(tabs).length : 0;
+        const tabs = this.getTabs() || {};
+        return Object.keys(tabs).length + this.getSavedViews().length;
     }
 
     getToggleableColumns() {
         throw new Error("Override getToggleableColumns method");
     }
 
+    /**
+     * Sort options declared in JS. PHP is the source of truth — a table only
+     * overrides this when its list endpoint has no filter class to declare them
+     * on (the pro inventory screen, the withdrawal add-on).
+     * @returns {Array<{label: string, value: string}>}
+     */
     getSortableColumns() {
-        throw new Error("Override getSortableColumns method");
+        return [];
+    }
+
+    /**
+     * Sort options declared server side — a `sort_by value => label` map from
+     * BaseFilter::getSortOptions(), delivered the same way the advanced filter
+     * options and the custom columns are. The column each value orders by (or
+     * the callback that orders for it) is resolved in PHP, not here.
+     * @returns {Array<{label: string, value: string}>}
+     */
+    getRegisteredSortableColumns() {
+        const sorts = Arr.get(window, `fluentCartAdminApp.table_config.${this.getTableName()}.filters.sorts`) || {};
+        return Object.keys(sorts).map((value) => ({value, label: sorts[value]}));
+    }
+
+    /**
+     * Every sort option the Sort popover offers: whatever the table declares in
+     * JS first, then the ones declared server side, deduped by value. For core
+     * tables the first list is empty and this is purely the PHP declaration.
+     * @returns {Array<{label: string, value: string}>}
+     */
+    getSortOptions() {
+        const columns = this.getSortableColumns() || [];
+        const registered = this.getRegisteredSortableColumns().filter((column) => {
+            return !columns.some((existing) => existing.value === column.value);
+        });
+
+        return [...columns, ...registered];
     }
 
     getTableName() {
@@ -921,6 +999,10 @@ export default class Table extends Model {
     }
 
     isFiltering() {
+        if (this.data.activeSavedViewId) {
+            return 'saved_view';
+        }
+
         if (this.isUsingAdvanceFilter()) {
             return (this.data.advanceFilters || []).some(inner => Array.isArray(inner) && inner.length > 0) ?
                 'advanced' : false;

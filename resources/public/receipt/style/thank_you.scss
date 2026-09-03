@@ -65,16 +65,16 @@
         &-list {
           @apply flex items-start justify-between py-2 px-4;
           &-quantity {
-            @apply text-[15px] text-[#2F3448] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
+            @apply text-sm text-[#2F3448] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
             span {
               @apply text-xs font-normal text-[rgb(75,85,99)];
             }
           }
           &-variant-title {
-            @apply m-0 text-sm text-gray-800 font-normal leading-[15px];
+            @apply m-0 text-[13px] text-gray-800 font-normal leading-[15px];
           }
           &-payment-info {
-            @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 mt-[3px];
+            @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 my-[3px];
           }
           &-price {
             @apply w-[200px] text-right;
@@ -101,10 +101,22 @@
         }
 
         &-total {
-          @apply bg-[rgb(249,250,251)] p-4 rounded m-0 w-full max-w-[290px] ml-auto;
+          @apply m-0 w-full mt-4 pt-3 border-0 border-t border-solid border-[#e5e7eb];
+          > .fct-meta-line {
+            @apply w-full max-w-[400px] ml-auto;
+          }
+
+          > .fct-meta-line + .fct-meta-line {
+            @apply mt-1;
+          }
+
           &-total {
+            @apply border-0 border-t border-solid border-[#e5e7eb] pt-3 mt-1;
             .fct-thank-you-page-order-items-total-label {
               @apply text-base font-bold;
+            }
+            .fct-thank-you-page-order-items-total-value {
+              @apply font-bold;
             }
           }
         }
@@ -116,6 +128,10 @@
       margin-bottom: 5px;
       &-label {
         @apply text-sm text-[rgb(55,65,81)] leading-[24px] m-0;
+
+        .fct-shipping-method-name {
+          @apply block text-xs text-[rgb(107,114,128)] leading-[18px];
+        }
       }
       &-value {
         @apply text-[13px] text-[rgb(55,65,81)] m-0 leading-[24px] text-right;
@@ -152,6 +168,7 @@
       &-table {
         border-spacing: 0;
         border: none;
+        table-layout: fixed;
         @apply w-full overflow-hidden mb-0 p-0 pl-2.5;
         th {
           border: none;
@@ -167,6 +184,8 @@
               &.fct-thank-you-page-order-items-downloads {
                 &-table-file {
                   p {
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
                     @apply m-0 text-sm;
                     span {
                       @apply text-[#666] text-xs;
@@ -192,7 +211,7 @@
         }
       }
     }
-    
+
     &-licenses,
     &-downloads,
     &-subscriptions {
@@ -224,5 +243,152 @@
     .fct-thank-you-page-download-receipt-button {
       @apply bg-[var(--fluent-cart-primary-color,#253241)] text-sm text-system-dark bg-transparent font-semibold inline-block;
     }
+  }
+}
+
+.fct-thank-you-tax-summary {
+  @apply bg-[rgb(249,250,251)] p-4 rounded w-full max-w-[400px] ml-auto my-3;
+
+  &-header {
+    @apply flex items-center justify-between mb-2;
+  }
+
+  &-title {
+    @apply text-[10px] font-semibold uppercase tracking-[0.06em] text-[#64748b];
+  }
+
+  &-row {
+    @apply flex items-center justify-between text-xs text-[#1e293b] mb-1;
+
+    &--muted {
+      @apply text-[#94a3b8];
+    }
+
+    &--total {
+      @apply font-semibold border-0 border-t border-solid border-[#e2e8f0] pt-1.5 mt-0.5;
+    }
+  }
+}
+
+.fct-thank-you-tax-simple-label {
+  @apply flex items-center gap-[6px];
+}
+
+.fct-thank-you-tax-simple-line {
+  position: relative;
+}
+
+.fct-thank-you-tax-details {
+  display: inline-block;
+
+  > summary {
+    list-style: none;
+    cursor: pointer;
+    color: #2563eb;
+    font-size: 11px;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+}
+
+.fct-thank-you-tax-floating {
+  position: absolute;
+  right: 0;
+  left: auto;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: min(420px, 92vw);
+  max-width: 92vw;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .18);
+}
+
+@media (max-width: 480px) {
+  .fct-thank-you-tax-floating {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+  }
+}
+
+.fct-item-tax-hint {
+  @apply relative inline-flex items-center cursor-pointer;
+
+  &-icon {
+    @apply w-[14px] h-[14px] rounded-full border border-[#94a3b8] text-[10px] italic inline-flex items-center justify-center text-[#94a3b8];
+  }
+
+  &-tooltip {
+    @apply hidden absolute right-0 bg-[#1e293b] text-white text-[11px] py-1.5 px-2.5 rounded w-[220px] z-10 leading-[1.4];
+    top: calc(100% + 4px);
+  }
+
+  &:hover .fct-item-tax-hint-tooltip,
+  &:focus-within .fct-item-tax-hint-tooltip {
+    @apply block;
+  }
+}
+.fct-thank-you-page-order-items-tax-info {
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-bottom: 16px;
+}
+.fct-thank-you-page-order-items-setup-fee {
+  @apply flex items-center justify-between font-medium text-system-dark my-1 text-xs;
+  .setup-fee {
+    @apply flex-1;
+  }
+  .setup-fee-amount {
+    @apply inline-flex items-center gap-1;
+  }
+}
+.fct-item-tax-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fct-item-tax-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.fct-tax-pill {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+
+  &--exclusive {
+    background: #FAEEDA;
+    color: #854F0B;
+  }
+
+  &--inclusive {
+    background: #EAF3DE;
+    color: #3B6D11;
+  }
+}
+
+.fct-item-tax-pill-amount {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  &.is-inclusive {
+    color: #3B6D11;
+  }
+
+  &.is-exclusive {
+    color: #854F0B;
+  }
+
+  &.is-reversed {
+    text-decoration: line-through;
+    opacity: 0.6;
   }
 }

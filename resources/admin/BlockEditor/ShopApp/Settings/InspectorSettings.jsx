@@ -1,4 +1,3 @@
-import Styler from "@/BlockEditor/ShopApp/Styler";
 import PaginatorSettings from "@/BlockEditor/ShopApp/Settings/PaginatorSettings";
 import FilterSettings from "./FilterSettings";
 import DefaultData from "@/BlockEditor/ShopApp/Data/Data";

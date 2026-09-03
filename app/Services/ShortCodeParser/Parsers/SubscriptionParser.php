@@ -27,7 +27,7 @@ class SubscriptionParser extends BaseParser
             case 'sl':
                 return (string) (isset($subscription->sl) ? $subscription->sl : '');
             case 'item_name':
-                return esc_html($subscription->item_name);
+                return esc_html($subscription->display_item_name);
             case 'status':
                 return esc_html($subscription->status);
             case 'billing_interval':

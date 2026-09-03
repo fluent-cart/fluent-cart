@@ -26,6 +26,10 @@ const completionPercentage = computed(() => {
   return stepsLength ? Math.round((completed.value / stepsLength) * 100) : 0;
 });
 
+const getStepUrl = (item) => {
+  return item.hash_id ? item.url + '#' + item.hash_id : item.url;
+}
+
 const dashboardTogglePageNotification = inject("dashboardTogglePageNotification")
 
 onMounted(async () => {
@@ -38,9 +42,12 @@ onMounted(async () => {
     shouldShowOnboardings.value = Object.keys(steps.value).length !== completed.value;
     loading.value = false;    
 
-    let pageSetupCopleted = steps.value.page_setup?.completed || false;
+    let pageSetupCompleted = steps.value.page_setup?.completed || false;
     if (dashboardTogglePageNotification) {
-       dashboardTogglePageNotification(!pageSetupCopleted)
+       dashboardTogglePageNotification(
+         !pageSetupCompleted,
+         steps.value.page_setup?.url || ''
+       )
     }
 
 
@@ -58,10 +65,10 @@ onMounted(async () => {
     <el-skeleton v-if="loading" :rows="3" animated/>
 
     <div v-else class="fc_dashboard_onboarding_wrap">
-      <h3 class="fc_dashboard_onboarding_title">{{ $t('Onboarding Checklist') }}</h3>
+      <h3 class="fc_dashboard_onboarding_title">{{ $t('Getting Started') }}</h3>
 
       <div class="fc_dashboard_onboarding_lists">
-        <a v-for="(item, itemIndex) in steps" :key="itemIndex" :href="item.url"
+        <a v-for="(item, itemIndex) in steps" :key="itemIndex" :href="getStepUrl(item)"
            :class="item.completed === true ? 'active' : ''" class="fc_dashboard_onboarding_item">
           <span class="circle-shape">
             <el-icon v-if="item.completed === true"><Check/></el-icon>

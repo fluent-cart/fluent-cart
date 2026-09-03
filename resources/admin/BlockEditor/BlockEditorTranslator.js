@@ -3,12 +3,10 @@ export default function blocktranslate(string) {
     const translations = window['fluent_cart_block_translation'];
 
     if (typeof translations !== 'object') {
-        console.warn('Missing translation data of:' + string);
         return string;
     }
 
     if (!translations[string]) {
-        console.warn('Missing translation:', string);
     }
 
 

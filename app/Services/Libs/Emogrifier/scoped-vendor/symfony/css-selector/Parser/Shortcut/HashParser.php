@@ -8,12 +8,14 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\Shortcut;
 
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\ElementNode;
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\HashNode;
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\SelectorNode;
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\ParserInterface;
+
 /**
  * CSS selector hash parser shortcut.
  *
@@ -26,7 +28,10 @@ use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\ParserInterface
  */
 class HashParser implements ParserInterface
 {
-    public function parse(string $source) : array
+    /**
+     * {@inheritdoc}
+     */
+    public function parse(string $source): array
     {
         // Matches an optional namespace, optional element, and required id
         // $source = 'test|input#ab6bd_field';
@@ -35,9 +40,12 @@ class HashParser implements ParserInterface
         //     1 => string 'test' (length=4)
         //     2 => string 'input' (length=5)
         //     3 => string 'ab6bd_field' (length=11)
-        if (\preg_match('/^(?:([a-z]++)\\|)?+([\\w-]++|\\*)?+#([\\w-]++)$/i', \trim($source), $matches)) {
-            return [new SelectorNode(new HashNode(new ElementNode($matches[1] ?: null, $matches[2] ?: null), $matches[3]))];
+        if (preg_match('/^(?:([a-z]++)\|)?+([\w-]++|\*)?+#([\w-]++)$/i', trim($source), $matches)) {
+            return [
+                new SelectorNode(new HashNode(new ElementNode($matches[1] ?: null, $matches[2] ?: null), $matches[3])),
+            ];
         }
+
         return [];
     }
 }

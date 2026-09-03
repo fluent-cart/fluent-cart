@@ -65,7 +65,7 @@
   }
 
   &-variant {
-    @apply relative p-8 rounded bg-[var(--fluent-cart-pricing-table-card-bg)] border border-solid border-[var(--fluent-cart-pricing-table-card-border-color)] flex flex-col gap-8;
+    @apply relative rounded bg-[var(--fluent-cart-pricing-table-card-bg)] border border-solid border-[var(--fluent-cart-pricing-table-card-border-color)] flex flex-col gap-8;
     button,
     .fluent-cart-direct-checkout-button {
       @apply no-underline leading-none bg-white rounded p-3 flex justify-center items-center font-medium text-base focus:outline-none #{!important};
@@ -103,6 +103,12 @@
         @apply left-1/2 -top-2 transform right-auto rounded-full;
         transform: translateX(-50%);
       }
+      + .fluent-cart-pricing-table-variant-contents {
+        @apply pt-10;
+      }
+    }
+    .fluent-cart-pricing-table-variant-contents {
+        @apply pt-5 px-5;
     }
 
     .fluent-cart-pricing-table-variant-direct-checkout-button {
@@ -141,6 +147,10 @@
       @apply text-[var(--fluent-cart-pricing-table-card-compare-price-color)] font-normal flex items-center line-through relative bottom-[-3px] opacity-[0.5];
     }
 
+    .fluent-cart-pricing-table-variant-features {
+        @apply p-0 m-0 list-none grid gap-2;
+    }
+
     .fluent-cart-pricing-table-variant-description {
       @apply pt-8 text-sm font-normal text-[var(--fluent-cart-pricing-table-card-feature-color)] leading-[20px] grid gap-3;
       .fluent-cart-pricing-table-variant-feature {
@@ -156,7 +166,7 @@
     }
 
     .fluent-cart-pricing-table-variant-buttons {
-      @apply mt-auto grid gap-3;
+      @apply mt-auto grid gap-3 px-5 pb-5;
     }
   }
 

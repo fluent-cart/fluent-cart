@@ -10,6 +10,7 @@ const SearchBarModes = ({ attributes, setAttributes }) => {
     const currentTabValue = 'current-tab';
     const category_mode = attributes.category_mode;
     const link_with_shop_app = attributes.link_with_shop_app;
+    const show_thumbnail = attributes.show_thumbnail;
 
     const handleUrlMode = (value) => {
         setAttributes({ url_mode: value });
@@ -23,6 +24,10 @@ const SearchBarModes = ({ attributes, setAttributes }) => {
     const handleLinkWithShopApp = () => {
         const linkWithShopApp = !attributes.link_with_shop_app;
         setAttributes({ link_with_shop_app: linkWithShopApp ? true : false });
+    };
+
+    const handleShowThumbnail = () => {
+        setAttributes({ show_thumbnail: !show_thumbnail });
     };
 
     return (
@@ -70,6 +75,18 @@ const SearchBarModes = ({ attributes, setAttributes }) => {
                             type="checkbox"
                             checked={link_with_shop_app === true}
                             onChange={handleLinkWithShopApp}
+                        />
+                    </div>
+                </div>
+                
+                <div className="pb-4 px-4">
+                    <div className={'max-w-xs pl-5 mx-auto bg-white p-6 border border-solid border-neutral-200 rounded-md shadow-md'}>
+                        <h3 className="text-sm font-semibold mb-4 mt-0">{blocktranslate('Show Thumbnail')}</h3>
+                        <CheckboxControl
+                            label={blocktranslate('Show Thumbnail')}
+                            type="checkbox"
+                            checked={show_thumbnail === true}
+                            onChange={handleShowThumbnail}
                         />
                     </div>
                 </div>

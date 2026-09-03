@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "PAYPAL-PHASE22",
+    "status": "COMPLETED"
+  }
+}

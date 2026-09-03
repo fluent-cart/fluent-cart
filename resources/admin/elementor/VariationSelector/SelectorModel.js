@@ -46,7 +46,13 @@ class SelectorModel extends Model {
             "search": this.data.search,
             'filter_type': 'simple',
             'sort_by': 'ID',
-            'with': ['detail.variants.media', 'categories', 'variants.media']
+            // A screen key, not a relation name. It loads `detail` explicitly,
+            // because ListItem.vue reads product.detail.stock_availability,
+            // min_price and max_price — that row used to arrive only as an
+            // ORM-injected parent of the old dotted key. It also brings the
+            // variant rows down with their media so getVariantThumbnail()
+            // resolves. `categories` is gone: requested here and read nowhere.
+            'with': ['elementor_picker']
         };
         if (scopes) {
             queryParams['scopes'] = scopes;
@@ -60,7 +66,6 @@ class SelectorModel extends Model {
                     resolve(response);
                 })
                 .catch((errors) => {
-                    console.log(errors);
                     reject(errors);
                 })
                 .finally(() => {

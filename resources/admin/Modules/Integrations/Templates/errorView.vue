@@ -5,7 +5,7 @@
 <script>
 import Str from "@/utils/support/Str";
 export default {
-  name: 'errorView',
+  name: 'ErrorView',
   props: ['field', 'errors'],
   computed: {
     Str() {

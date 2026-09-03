@@ -24,7 +24,6 @@ const loadComponent = async (name) => {
   if (components[componentPath]) {
     dynamicIcon.value = markRaw((await components[componentPath]()).default);
   } else {
-    console.error(`Dynamic Dark Icon ${componentPath} not found`);
   }
 };
 
@@ -34,7 +33,6 @@ const loadDarkComponent = async (name) => {
   if (components[componentPath]) {
     dynamicDarkIcon.value = markRaw((await components[componentPath]()).default);
   } else {
-    console.error(`Dynamic Dark Icon ${componentPath} not found`);
   }
 };
 

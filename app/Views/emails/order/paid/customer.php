@@ -13,7 +13,7 @@
                 esc_html($order->customer->full_name)
             );
             ?></p>
-        <p><?php esc_html_e('Thank you for purchase! Your order has been successfully placed and confirmed. Here is the details of your order.', 'fluent-cart'); ?></p>
+        <p><?php esc_html_e('Thank you for your purchase! Your order has been successfully placed and confirmed. Here are your order details.', 'fluent-cart'); ?></p>
     </div>
 
 <?php

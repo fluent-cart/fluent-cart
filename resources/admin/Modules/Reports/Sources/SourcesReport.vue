@@ -1,8 +1,11 @@
 <script setup>
 import Rest from "@/utils/http/Rest";
+import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick, getCurrentInstance } from "vue";
+import AdvancedFilter from "@/Bits/Components/TableNew/Components/AdvancedFilter/AdvancedFilter.vue";
+import SourceReportFilterModel from "@/Models/Reports/SourceReportFilterModel";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import CurrencyFormatter from '@/utils/support/CurrencyFormatter';
 import { formatNumber } from "../Utils/formatNumber";
@@ -71,16 +74,77 @@ const filteredData = computed(() => {
  * Methods
  * ----------------------------------------------------------------------------
  */
+/**
+ * Sequence number of the most recently started report request.
+ *
+ * Applying a filter, resetting it and changing the shared date range each start
+ * their own request, so two can easily be in flight at once. Responses are not
+ * guaranteed to arrive in the order they were sent: without this guard a slower
+ * earlier response can land last and overwrite the newer one, leaving the filter
+ * controls describing criteria the table no longer reflects. An earlier response
+ * would also clear the loading state while the latest request is still pending.
+ *
+ * Only the newest request is allowed to write data, errors or loading.
+ */
+let latestRequestId = 0;
+
 const getSourceReport = () => {
+    const requestId = ++latestRequestId;
+
     loading.value = true;
-    Rest.get('/reports/sources', props.reportFilter.applicableFilters)
+
+    // The controller reads both advanced-filter keys out of `params`, so they
+    // are merged into the shared report filter payload rather than sent
+    // alongside it.
+    const requestParams = {
+        params: {
+            ...props.reportFilter.applicableFilters.params,
+            ...sourceFilterModel.getQueryParams(),
+        },
+    };
+
+    Rest.get('/reports/sources', requestParams)
         .then((response) => {
+            if (requestId !== latestRequestId) return;
+
             sourceReportData.value = response.sourceReportData;
             fluctuations.value = response.fluctuations || {};
         })
+        .catch((errors) => {
+            if (requestId !== latestRequestId) return;
+
+            Notify.error(errors?.data?.message || translate('Failed to load the order sources report'));
+        })
         .finally(() => {
+            if (requestId !== latestRequestId) return;
+
             loading.value = false;
         });
+};
+
+const sourceFilterModel = SourceReportFilterModel.init({
+    instance: getCurrentInstance(),
+    onApply: () => getSourceReport(),
+});
+
+/**
+ * The UTM cells double as a shortcut into the simple search. In advanced mode
+ * that box is hidden, so they render as plain text — a link that silently
+ * populates a control the user cannot see is worse than no link.
+ */
+const quickSearchEnabled = computed(() => !sourceFilterModel.isUsingAdvanceFilter());
+
+/**
+ * Switching to the advanced builder drops the simple search term along with the
+ * input. Keeping it would leave the table filtered by a hidden substring match
+ * on top of the conditions, and the row count would not match either filter.
+ */
+const onFilterTypeChanged = (filterType) => {
+    if (filterType === 'advanced') {
+        search.value = '';
+    }
+
+    sourceFilterModel.onFilterTypeChanged(filterType);
 };
 
 const isCheckboxDisabled = (key) => {
@@ -107,7 +171,15 @@ onMounted(() => {
                 <div class="fct-card">
                     <div class="fct-card-header">
                         <div class="fct-card-header-top">
-                            <div class="fct-card-header-left flex-1">
+                            <!--
+                                The simple search filters the loaded rows client-side, so it is
+                                hidden in advanced mode rather than left alongside the builder:
+                                two filters narrowing the same table, one of them a plain
+                                substring match, reads as one result set produced by neither.
+                                onFilterTypeChanged() clears the term as it hides, so nothing
+                                keeps filtering from behind a control the user cannot see.
+                            -->
+                            <div v-if="!sourceFilterModel.isUsingAdvanceFilter()" class="fct-card-header-left flex-1">
                                 <div class="search-bar is-transparent">
                                     <el-input :placeholder="translate('Search')" ref="search-input" type="text"
                                         clearable v-model="search">
@@ -120,8 +192,18 @@ onMounted(() => {
                                     {{ translate('Filter results by UTM values') }}
                                 </div>
                             </div>
+                            <div v-else class="flex-1"></div>
 
                             <div class="fct-card-header-actions">
+                                <div v-if="sourceFilterModel.isAdvanceFilterEnabled()"
+                                    class="fct-advanced-filter-toggle-wrapper">
+                                    <el-switch class="fct-advanced-filter-toggle"
+                                        @change="(filterType) => { onFilterTypeChanged(filterType) }"
+                                        active-value="advanced" inactive-value="simple"
+                                        v-model="sourceFilterModel.data.filterType"
+                                        :active-text="translate('Advanced Filter')" size="small" />
+                                </div>
+
                                 <div class="w-[130px]">
                                     <el-switch v-model="isNet" :active-text="translate('Net')"
                                         :inactive-text="translate('Gross')" />
@@ -151,6 +233,8 @@ onMounted(() => {
                                 </div>
                             </div>
                         </div>
+
+                        <AdvancedFilter :table="sourceFilterModel" :show-save-view="false" />
                     </div>
                     <div class="fct-card-body">
                         <el-skeleton class="px-5 pb-5" v-if="loading" :rows="5" animated></el-skeleton>
@@ -159,10 +243,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_campaign')"
                                 :label="translate('UTM Campaign')" width="180">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_campaign" v-if="scope.row.utm_campaign">
+                                    <ElLink v-if="scope.row.utm_campaign && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_campaign">
                                         {{ scope.row.utm_campaign }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_campaign">{{ scope.row.utm_campaign }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>
@@ -171,10 +257,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_source')"
                                 :label="translate('UTM Source')" width="150">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_source" v-if="scope.row.utm_source">
+                                    <ElLink v-if="scope.row.utm_source && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_source">
                                         {{ scope.row.utm_source }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_source">{{ scope.row.utm_source }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>
@@ -183,10 +271,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_medium')"
                                 :label="translate('UTM Medium')" width="150">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_medium" v-if="scope.row.utm_medium">
+                                    <ElLink v-if="scope.row.utm_medium && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_medium">
                                         {{ scope.row.utm_medium }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_medium">{{ scope.row.utm_medium }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>
@@ -195,10 +285,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_term')" :label="translate('UTM Term')"
                                 width="150">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_term" v-if="scope.row.utm_term">
+                                    <ElLink v-if="scope.row.utm_term && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_term">
                                         {{ scope.row.utm_term }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_term">{{ scope.row.utm_term }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>
@@ -207,10 +299,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_content')"
                                 :label="translate('UTM Content')" width="150">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_content" v-if="scope.row.utm_content">
+                                    <ElLink v-if="scope.row.utm_content && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_content">
                                         {{ scope.row.utm_content }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_content">{{ scope.row.utm_content }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>
@@ -219,10 +313,12 @@ onMounted(() => {
                             <el-table-column v-if="selectedColumns.includes('utm_id')" :label="translate('UTM ID')"
                                 width="100">
                                 <template #default="scope">
-                                    <el-link class="font-normal" underline="always"
-                                        v-on:click="search = scope.row.utm_id" v-if="scope.row.utm_id">
+                                    <ElLink v-if="scope.row.utm_id && quickSearchEnabled" class="font-normal"
+                                        underline="always" @click="search = scope.row.utm_id">
                                         {{ scope.row.utm_id }}
-                                    </el-link>
+                                    </ElLink>
+
+                                    <span v-else-if="scope.row.utm_id">{{ scope.row.utm_id }}</span>
 
                                     <span v-else class="unknown"> {{ translate('Unknown') }}</span>
                                 </template>

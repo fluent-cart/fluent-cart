@@ -267,7 +267,29 @@ class ModuleSettingsController extends Controller
                 'source_type' => 'cdn',
                 'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-elementor-blocks.zip',
                 'upcoming' => false,
-                'repo_link' => 'https://github.com/WPManageNinja/fluent-cart-elementor-blocks'
+                'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
+            ],
+            'fluent-cart-bricks-blocks' => [
+                'title'       => __('FluentCart Bricks Blocks', 'fluent-cart'),
+                'description' => __('Enable to get Bricks Builder elements for FluentCart. Requires the Bricks theme.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/bricks/logo.png'),
+                'plugin_slug' => 'fluent-cart-bricks-blocks',
+                'plugin_file' => 'fluent-cart-bricks-blocks/fluent-cart-bricks-blocks.php',
+                'source_type' => 'cdn',
+                'upcoming'    => false,
+                'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
+            ],
+            'fluent-cart-divi-modules' => [
+                'title'       => __('FluentCart Divi Modules', 'fluent-cart'),
+                'description' => __('Native Divi 5 modules for FluentCart products, cart, and checkout. Requires Divi 5.0+ and FluentCart 1.3.4+.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/divi/black.svg'),
+                'dark_logo'   => Vite::getAssetUrl('images/divi/white.svg'),
+                'plugin_slug' => 'fluent-cart-divi-modules',
+                'plugin_file' => 'fluent-cart-divi-modules/fluent-cart-divi-modules.php',
+                'source_type' => 'cdn',
+                'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-divi-modules.zip',
+                'upcoming'    => false,
+                'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
             ],
             'fluent-pdf' => [
                 'title'       => __('Fluent PDF', 'fluent-cart'),
@@ -289,6 +311,16 @@ class ModuleSettingsController extends Controller
                 'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-migrator.zip',
                 'upcoming'    => false,
                 'repo_link'   => 'https://fluentcart.com/fluentcart-addons/?3181_search=Migrator'
+            ],
+            'fluent-cart-customer-rights' => [
+                'title'       => __('FluentCart Customer Rights', 'fluent-cart'),
+                'description' => __('Manage customer withdrawal, refund, return, and cancellation requests with dedicated forms, workflows, notifications, and admin tools. Includes support for the German Withdrawal Button requirement under § 356a BGB.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/fluent-cart-resolution/logo.svg'),
+                'plugin_slug' => 'fluent-cart-customer-rights',
+                'plugin_file' => 'fluent-cart-customer-rights/fluent-cart-customer-rights.php',
+                'source_type' => 'cdn',
+                'upcoming'    => false,
+                'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
             ],
         ];
 

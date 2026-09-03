@@ -71,7 +71,6 @@ const fetchOrderBump = () => {
             }, 200);
         })
         .catch((errors) => {
-            console.log(errors);
         })
         .finally(() => {
             loading.value = false;
@@ -99,7 +98,6 @@ const updateBump = () => {
             changes_made.value = 0;
         })
         .catch((errors) => {
-            console.log(errors);
         })
         .finally(() => {
             updating.value = false;
@@ -139,7 +137,6 @@ onMounted(() => {
             @discard="reloadPage"
             :show-cmnd-icon="true"
             :saveButtonText="id ? translate('Update') : translate('Create')"
-            :loadingText="id ? translate('Updating') : translate('Creating')"
         />
 
         <div class="single-page-body">

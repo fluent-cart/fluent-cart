@@ -22,71 +22,71 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       class="w-full compact-table full-compact"
   >
 
-    <el-table-column :width="100" :label="translate('ID')" >
+    <el-table-column :width="143" :label="translate('ID')" >
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column v-if="logTable.isColumnVisible('date')" :label="translate('Date')" :width="120">
+    <el-table-column v-if="logTable.isColumnVisible('date')" :label="translate('Date')" :width="172">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column v-if="logTable.isColumnVisible('title')" :label="translate('Title')" :width="200">
+    <el-table-column v-if="logTable.isColumnVisible('title')" :label="translate('Title')" :width="287">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column v-if="logTable.isColumnVisible('content')" :label="translate('Content')" :width="200">
+    <el-table-column v-if="logTable.isColumnVisible('content')" :label="translate('Content')" :width="287">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column :label="translate('Status')" :width="100">
+    <el-table-column :label="translate('Status')" :width="143">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column :label="translate('Module')" :width="100">
+    <el-table-column :label="translate('Module')" :width="143">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="100">
+    <el-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="114">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" />
+            <el-skeleton-item variant="p" />
           </template>
         </el-skeleton>
       </div>

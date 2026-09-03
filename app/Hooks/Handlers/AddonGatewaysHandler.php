@@ -7,6 +7,8 @@ use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\PaystackAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\RazorpayAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\MercadoPagoAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\FlutterwaveAddon;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\SquareAddon;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\SslcommerzAddon;
 
 class AddonGatewaysHandler
 {
@@ -15,10 +17,12 @@ class AddonGatewaysHandler
      * @var array
      */
     protected $defaultGateways = [
-        'paystack' => PaystackAddon::class,
-        'razorpay' => RazorpayAddon::class,
+        'paystack'    => PaystackAddon::class,
+        'razorpay'    => RazorpayAddon::class,
         'mercado_pago' => MercadoPagoAddon::class,
         'flutterwave' => FlutterwaveAddon::class,
+        'square'      => SquareAddon::class,
+        'sslcommerz'  => SslcommerzAddon::class,
     ];
     
     public function register()

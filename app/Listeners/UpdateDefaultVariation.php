@@ -2,74 +2,54 @@
 
 namespace FluentCart\App\Listeners;
 
-use FluentCart\App\Events\StockChanged;
-use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
-use FluentCart\Framework\Support\Arr;
+use FluentCart\Framework\Support\Collection;
 
 class UpdateDefaultVariation
 {
     /**
-     * @param $event StockChanged
+     * @param $event \FluentCart\App\Events\ProductVariationsChanged
      */
-
     public static function handle($event)
     {
-        $postIds = $event->postIds;
-
-        $productsDetails = ProductDetail::query()->whereIn('post_id', $postIds)->get()->keyBy('post_id');
-        $variations = ProductVariation::query()->whereIn('post_id', $postIds)->get()->keyBy('id');
-        $groupedVariation = $variations->groupBy('post_id');
-
-
-        foreach ($postIds as $id => $postId) {
-
-            if (!isset($productsDetails[$postId])) {
-                continue;
-            }
-            $getProductDetail = $productsDetails[$postId];
-
-            $productDetail = [];
-
-            if (!empty($getProductDetail) && $getProductDetail->manage_stock == 1) {
-                $productDetail['stock_availability'] = ($getProductDetail->variants()->where('stock_status', Helper::IN_STOCK)->count() >= 1) ? Helper::IN_STOCK : Helper::OUT_OF_STOCK;
-            }
-
-            if (!empty($getProductDetail['default_variation_id'])) {
-                $defaultVariationId = self::checkDefaultVariationStockStatus(
-                    [
-                        'default_variation_id' => $getProductDetail->default_variation_id,
-                        'post_id'              => $postId,
-                        'grouped_variation'    => $groupedVariation[$postId] ?? []
-                    ]
-                );
-
-                if ($defaultVariationId) {
-                    $productDetail['default_variation_id'] = $defaultVariationId;
-                }
-            }
-
-
-            if (!empty($productDetail)) {
-                $getProductDetail->fill($productDetail)->save();
-            }
-        }
+        self::updateForProducts((array) $event->postIds);
     }
 
-    private static function checkDefaultVariationStockStatus($params = [])
+    /**
+     * Set each product's default_variation_id to the FIRST variant by
+     * serial_index — the first combination in the merchant's order. Always
+     * recomputed on a variant-set change (generate / reorder / add / update /
+     * remove), overriding any prior value including a manual pick. Intentionally
+     * ignores stock_status and item_status: the default is purely the first
+     * combination by order, in stock or not, active or not. null only when the
+     * product has no variants.
+     */
+    public static function updateForProducts(array $postIds)
     {
+        $postIds = array_values(array_filter(array_map('intval', $postIds)));
+        if (empty($postIds)) {
+            return;
+        }
 
-        $grouped_variation = Arr::get($params, 'grouped_variation');
-        $countStock = $grouped_variation->where('stock_status', Helper::IN_STOCK)->where('id', Arr::get($params, 'default_variation_id'))->count();
+        $details = ProductDetail::query()->whereIn('post_id', $postIds)->get()->keyBy('post_id');
+        // serial_index ASC so first() is the first combination in the merchant's
+        // order — the canonical variant order used across the product editor.
+        $grouped = ProductVariation::query()
+            ->whereIn('post_id', $postIds)
+            ->orderBy('serial_index', 'asc')
+            ->get()
+            ->groupBy('post_id');
 
-        if ($countStock < 1) {
-            $productVariation = $grouped_variation->where('stock_status', Helper::IN_STOCK)->first();
-            if (isset($productVariation->id)) {
-                return $productVariation->id;
+        foreach ($details as $postId => $detail) {
+            $variants = $grouped->get($postId) ?: new Collection();
+            $first = $variants->first();
+            $newDefaultId = $first ? (int) $first->id : null;
+
+            if ((int) $detail->default_variation_id !== (int) $newDefaultId) {
+                $detail->default_variation_id = $newDefaultId;
+                $detail->save();
             }
         }
-        return false;
     }
-
 }

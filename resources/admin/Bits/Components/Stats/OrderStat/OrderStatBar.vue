@@ -43,7 +43,7 @@
                   :loading="loading"
                   :stat-key="statKey"
               >
-                <template v-slot:icon>
+                <template #icon>
                   <DynamicIcon :name="stat.icon"/>
                 </template>
               </StatCard>
@@ -141,7 +141,6 @@ const handleStatRangeChanged = async (index) => {
       fetchStat(),
     ]);
   } catch (error) {
-    console.error("Error in handleStatRangeChanged:", error);
   }
 
 };
@@ -230,7 +229,6 @@ const fetchStat = () => {
         stats.value = dashBoardReport.data.dashBoardStats;
       })
       .catch((error) => {
-        console.error("Error fetching dashboard stats:", error);
       })
       .finally(() => {
         loading.value = false;

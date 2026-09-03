@@ -67,7 +67,7 @@ const getBundleInfo = () => {
         <Card.Body class="px-0 pb-0">
           <div class="fct-product-inventory-inner-wrap hide-on-mobile">
             <el-table :data="editableProductVariations" v-if="!loading">
-              <el-table-column :label="translate('Title')" v-if="product.detail.variation_type === 'simple_variations'"
+              <el-table-column :label="translate('Title')" v-if="product.detail.variation_type !== 'simple'"
                                width="140">
                 <template #default="scope">
                   <div class="space-x-5">

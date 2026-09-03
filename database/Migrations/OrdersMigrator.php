@@ -51,7 +51,8 @@ class OrdersMigrator extends Migrator
                 INDEX `{$indexPrefix}_invoice_no` (`invoice_no`(191) ASC),
                 INDEX `{$indexPrefix}_status_type` (`type` ASC),
                 INDEX `{$indexPrefix}_customer_id` (`customer_id` ASC),
-                INDEX `{$indexPrefix}_date_created_completed` (`created_at` ASC, `completed_at` ASC)";
+                INDEX `{$indexPrefix}_date_created_completed` (`created_at` ASC, `completed_at` ASC),
+                INDEX `{$indexPrefix}_uuid` (`uuid` ASC)";
     }
 
     public static function migrated()
@@ -61,6 +62,7 @@ class OrdersMigrator extends Migrator
         static::addReceiptNumberColumn();
         static::renameDiscountTotalColumn();
         static::addPaymentStatusIndex();
+        static::addUuidIndex();
     }
 
     public static function addFeeTotalColumn()
@@ -91,5 +93,14 @@ class OrdersMigrator extends Migrator
     {
         // "ALTER TABLE %i ADD INDEX `fct_payment_status` (`payment_status`, `id`)"
         static::addIndexIfNotExists('fct_payment_status', ['payment_status', 'id']);
+    }
+
+    public static function addUuidIndex()
+    {
+        // "ALTER TABLE %i ADD INDEX `{prefix}fct_ord__uuid` (`uuid`)"
+        // Non-unique on purpose: speeds up the uuid collision check and every
+        // by-value order lookup (receipts, webhooks, customer profile) without
+        // enforcing a UNIQUE constraint.
+        static::addIndexIfNotExists(static::getDbPrefix() . 'fct_ord__uuid', 'uuid');
     }
 }

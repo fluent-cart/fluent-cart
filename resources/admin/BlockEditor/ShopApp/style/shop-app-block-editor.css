@@ -97,12 +97,6 @@
 /*    @apply mr-0;*/
 /*}*/
 
-/*.fca_product_menu_items li a {*/
-/*    @apply text-system-mid no-underline focus:shadow-none dark:text-gray-200;*/
-/*}*/
-/*.dark .fca_product_menu_items li a {*/
-/*    @apply text-gray-300;*/
-/*}*/
 /*.fca_product_menu_items li a:hover {*/
 /*    @apply text-primary-500;*/
 /*}*/

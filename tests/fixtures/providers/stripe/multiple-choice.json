@@ -1,0 +1,9 @@
+{
+  "status": 300,
+  "message": "Multiple Choices",
+  "body": {
+    "detail": "Phase 30 Stripe redirect response.",
+    "request_id": "req_phase30_http_300",
+    "redirect": "https://example.invalid/phase30"
+  }
+}

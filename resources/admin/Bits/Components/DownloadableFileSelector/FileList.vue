@@ -55,6 +55,7 @@ const onSelectFile = (selected) => {
 
     return {
       name: file.name,
+      path: file.path || file.name,
       size: file.size,
       bucket: file.bucket,
       driver: file.driver
@@ -121,7 +122,7 @@ const deleteFile = async (file, index) => {
   file.deleting = true;
 
   const response = await Rest.delete('files/delete', {
-    file_path: file.name,
+    file_path: file.path || file.name,
     driver: props.driver,
     bucket: file.bucket || ''
   }).then(response => {
@@ -206,7 +207,7 @@ const deleteFile = async (file, index) => {
 
         <el-table-column :label="translate('File Name')">
           <template #default="scope">
-            <span class="file-name">{{ getFileName(scope.row.name) }}</span>
+            <span class="file-name">{{ getFileName(scope.row.path || scope.row.name) }}</span>
           </template>
         </el-table-column>
 

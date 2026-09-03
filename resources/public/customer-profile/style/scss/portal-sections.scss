@@ -1,0 +1,24 @@
+/**
+ * Chrome for add-on sections rendered inside the customer portal.
+ *
+ * Only the host's own fallback lives here. A section's styling belongs to the
+ * add-on that ships it: the runtime parser ignores a `<style>` block in the
+ * component string, and Tailwind's JIT never scans it, so an add-on enqueues
+ * its own stylesheet on `fluent_cart/customer_dashboard/enqueue_assets`.
+ *
+ * Sections reuse the portal's own layout vocabulary — `.fct-form-container`
+ * with `.form-left` / `.form-right` (see form.scss) — so they sit flush with
+ * the page's built-in sections.
+ */
+
+.fct-portal-section--error {
+  @apply border border-dashed border-gray-outline rounded p-6 text-center dark:border-dark-400;
+
+  .fct-portal-section-error-text {
+    @apply m-0 text-sm text-system-light;
+  }
+}
+
+.fct-saved-payment-methods-section {
+    @apply mt-7.5 pt-7.5 border border-solid border-x-0 border-b-0 border-gray-divider;
+}

@@ -230,14 +230,15 @@ class AddonManager
 
         $code = wp_remote_retrieve_response_code($response);
         if ($code !== 200) {
-            return new \WP_Error('api_error', 'Github API error with status code: ' . $code);
+            /* translators: %1$s: HTTP status code */
+            return new \WP_Error('api_error', sprintf(__('Github API error with status code: %1$s', 'fluent-cart'), $code));
         }
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
         if (empty($data['tag_name']) || empty($data['zipball_url'])) {
-            return new \WP_Error('no_release', 'No release found. Please ensure the repository has published releases.');
+            return new \WP_Error('no_release', __('No release found. Please ensure the repository has published releases.', 'fluent-cart'));
         }
 
         // Extract version number from tag (remove 'v' prefix if present)

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\PromoGateways\Pro;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Vite;
@@ -64,7 +65,7 @@ class PaddlePromo extends AbstractPaymentGateway
                 __('Automatic invoicing & refunds', 'fluent-cart')
             ],
             'icon_path' => 'M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z',
-            'upgrade_url' => 'https://fluentcart.com/pricing/'
+            'upgrade_url' => Helper::getUpgradeUrl('feature_lock_gateway_paddle')
         ];
     }
 

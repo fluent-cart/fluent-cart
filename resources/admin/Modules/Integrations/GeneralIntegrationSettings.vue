@@ -103,13 +103,13 @@ saveShortcut.onSave(()=>{
 import { InfoFilled, Setting} from '@element-plus/icons-vue';
 
 export default {
-    name: "generalIntegration",
-    props: ['settings_key'],
+    name: "GeneralIntegration",
     components: {
         // VideoDoc,
         InfoFilled,
         Setting
     },
+    props: ['settings_key'],
     data() {
         return {
             integration: {},
@@ -125,6 +125,9 @@ export default {
             this.settings = {};
             this.getIntegrationSettings();
         }
+    },
+    mounted() {
+        this.getIntegrationSettings();
     },
     methods: {
         save() {
@@ -200,9 +203,6 @@ export default {
             //     this.loading = false;
             // });
         },
-    },
-    mounted() {
-        this.getIntegrationSettings();
     }
 }
 </script>

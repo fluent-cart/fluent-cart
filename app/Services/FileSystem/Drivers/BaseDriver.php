@@ -27,6 +27,11 @@ abstract class BaseDriver
         return $this->storageDriver->saveSettings($params);
     }
 
+    public function buckets()
+    {
+        return [];
+    }
+
     protected abstract function getDefaultDirPath();
 
     public abstract function listFiles(array $params = []);

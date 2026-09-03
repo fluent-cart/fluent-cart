@@ -1,12 +1,12 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import dashBoardReport from "@/Models/Reports/DashBoardReportModel.js";
 import {useRouter} from "vue-router";
 import Notify from "@/utils/Notify";
 import Permission from "@/utils/permission/Permission";
 import Arr from "@/utils/support/Arr";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
-import translate, {translateNumber} from "../../../utils/translator/Translator";
+import translate, {_x, translateNumber} from "../../../utils/translator/Translator";
 import Str from "@/utils/support/Str";
 
 const router = useRouter()
@@ -24,25 +24,31 @@ const props = defineProps({
 
 const emit = defineEmits(["reload"]);
 
+// Standalone filter buttons. Separated by context from the mid-sentence forms
+// below: English distinguishes them by casing alone, but a translator needs a
+// button label and a word spliced into a running sentence to be independently
+// translatable — many languages decline or capitalise the two differently.
 const selectedGroupKeys = ref([
-  {label: translate("All"), value: "all"},
-  {label: translate("Today"), value: "today"},
-  {label: translate("Yesterday"), value: "yesterday"},
-  {label: translate("This Week"), value: "this_week"},
+  {label: _x("All", "Activity filter button"), value: "all"},
+  {label: _x("Today", "Activity filter button"), value: "today"},
+  {label: _x("Yesterday", "Activity filter button"), value: "yesterday"},
+  {label: _x("This Week", "Activity filter button"), value: "this_week"},
 ]);
 
 const selectedGroupKey = ref('all');
 
+// Spliced into "%1$s new activities %2$s" below, so these must read as part of
+// a sentence rather than as a label.
 const getFilteredTitle = () => {
   switch (selectedGroupKey.value) {
     case "all":
-      return translate("all");
+      return _x("all", "Activity filter, mid-sentence");
     case "today":
-      return translate("today");
+      return _x("today", "Activity filter, mid-sentence");
     case "yesterday":
-      return translate("yesterday");
+      return _x("yesterday", "Activity filter, mid-sentence");
     case "this_week":
-      return translate("this week");
+      return _x("this week", "Activity filter, mid-sentence");
     default:
       return selectedGroupKey.value;
   }
@@ -59,22 +65,24 @@ const getData = () => {
 const permissionMap = {
   'Order': 'orders/view',
   'Payment': 'orders/view',
+  'PayPal': 'orders/view',
   'Product': 'products/view',
   'Customer': 'customers/view',
   'Coupon': 'coupons/view',
+  'Subscription': 'subscriptions/view',
+  'Tax': 'store/settings',
+};
+
+const moduleRoutes = {
+  'order': {name: 'view_order', param: 'order_id', permission: 'orders/view'},
+  'payment': {name: 'view_order', param: 'order_id', permission: 'orders/view'},
+  'product': {name: 'view_product', param: 'product_id', permission: 'products/view'},
+  'customer': {name: 'view_customer', param: 'customer_id', permission: 'customers/view'},
+  'coupon': {name: 'view_coupon', param: 'coupon_id', permission: 'coupons/view'},
+  'subscription': {name: 'view_subscription', param: 'subscription_id', permission: 'subscriptions/view'},
 };
 
 const activityRouteHandler = (activity) => {
-
-  const moduleRoutes = {
-    'order': {name: 'view_order', param: 'order_id', permission: 'orders/view'},
-    'payment': {name: 'view_order', param: 'order_id', permission: 'orders/view'},
-    'product': {name: 'view_product', param: 'product_id', permission: 'products/view'},
-    'customer': {name: 'view_customer', param: 'customer_id', permission: 'customers/view'},
-    'coupon': {name: 'view_coupon', param: 'coupon_id', permission: 'coupons/view'},
-  };
-  
-
   let moduleName = activity?.module_name?.toLowerCase();
 
 
@@ -85,7 +93,6 @@ const activityRouteHandler = (activity) => {
       params: {[route.param]: activity.module_id},
     });
   } else {
-    console.warn('Invalid activity or module not supported:', activity);
   }
 }
 
@@ -97,6 +104,10 @@ const checkPermission = (activity) => {
   const permission = Arr.get(permissionMap, Str.capitalize(activity.module_name));
   return permission ? Permission.has(permission) : false;
 }
+
+const visibleActivities = computed(() => {
+  return dashBoardReport.data.recentActivities.filter(activity => checkPermission(activity));
+});
 
 onMounted(() => {
   getData();
@@ -113,14 +124,14 @@ onMounted(() => {
 
         <template v-if="selectedGroupKey === 'all'">
           {{
-            /* translators: %s - number of activities */
-            translate('%s new activities', translateNumber(dashBoardReport.data.recentActivities.length) )
+            /* translators: %1$s: number of activities */
+            translate('%1$s new activities', translateNumber(visibleActivities.length) )
           }}
         </template>
         <template v-else>
           {{
-            /* translators: %1$s - number of activities, %2$s - filtered title */
-            translate('%1$s new activities %2$s', translateNumber(dashBoardReport.data.recentActivities.length), getFilteredTitle())
+            /* translators: %1$s: number of activities, %2$s: filtered title */
+            translate('%1$s new activities %2$s', translateNumber(visibleActivities.length), getFilteredTitle())
           }}
         </template>
       </p>
@@ -131,11 +142,10 @@ onMounted(() => {
       </el-radio-group>
     </div>
 
-    <div v-if="dashBoardReport.data.recentActivities.length" class="fct-dashboard-recent-activities__body">
+    <div v-if="visibleActivities.length" class="fct-dashboard-recent-activities__body">
 
-      <template v-for="(activity, index) in dashBoardReport.data.recentActivities" :key="index">
-        <div v-if="checkPermission(activity)"
-             class="fct-dashboard-recent-activities__item has-icon">
+      <template v-for="(activity, index) in visibleActivities" :key="index">
+        <div class="fct-dashboard-recent-activities__item has-icon">
         <span class="icon">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -145,11 +155,11 @@ onMounted(() => {
         </span>
           <div class="content">
             <h3 class="title">
-                <span v-if="activity.module_name !== ''" @click="activityRouteHandler(activity)" class="cursor-pointer">
+                <span v-if="moduleRoutes[activity.module_name?.toLowerCase()]" @click="activityRouteHandler(activity)" class="cursor-pointer">
                   {{ activity.title || '--' }}
                 </span>
               <template v-else>
-                {{ activity.title }}
+                {{ activity.title || '--' }}
               </template>
               <span class="date">
                 <ConvertedTime :date-time="activity.created_at"/>

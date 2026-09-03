@@ -83,6 +83,7 @@
                                 :expanded="allRowsExpanded"
                                 @stock-save="emit('stock-save', $event)"
                                 @open-history="openAdjustmentHistory"
+                                @variants-loaded="updateSelectAll"
                             />
                         </template>
                     </template>
@@ -91,7 +92,7 @@
         </div>
 
         <!-- Empty State -->
-        <Empty v-else icon="Empty/ListView" :text="translate('No inventory data')" />
+        <Empty v-else icon="Empty/ListView" :has-dark="true" :text="translate('No inventory data')" />
 
         <!-- Bulk Adjust Modal Component -->
         <InventoryBulkAdjustModal

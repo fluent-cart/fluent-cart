@@ -2,9 +2,9 @@
 
 
 .fct-order-bump-price-box {
-  @apply border-[1px] border-solid border-gray-divider rounded w-full p-3 relative flex items-center justify-between gap-3;
+  @apply border-[1px] border-solid border-gray-divider rounded w-full p-3 relative flex items-center justify-between gap-3 dark:border-dark-400;
   &-image {
-    @apply w-[58px] h-[58px] flex-shrink-0 rounded-xs border-[1px] border-solid border-gray-divider;
+    @apply w-[58px] h-[58px] flex-shrink-0 rounded-xs border-[1px] border-solid border-gray-divider dark:border-dark-400;
     img {
       @apply w-full h-full object-cover rounded-xs;
     }

@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node;
 
 /**
@@ -22,23 +23,35 @@ namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node;
  */
 class ClassNode extends AbstractNode
 {
-    public function __construct(private NodeInterface $selector, private string $name)
+    private $selector;
+    private $name;
+
+    public function __construct(NodeInterface $selector, string $name)
     {
+        $this->selector = $selector;
+        $this->name = $name;
     }
-    public function getSelector() : NodeInterface
+
+    public function getSelector(): NodeInterface
     {
         return $this->selector;
     }
-    public function getName() : string
+
+    public function getName(): string
     {
         return $this->name;
     }
-    public function getSpecificity() : Specificity
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSpecificity(): Specificity
     {
         return $this->selector->getSpecificity()->plus(new Specificity(0, 1, 0));
     }
-    public function __toString() : string
+
+    public function __toString(): string
     {
-        return \sprintf('%s[%s.%s]', $this->getNodeName(), $this->selector, $this->name);
+        return sprintf('%s[%s.%s]', $this->getNodeName(), $this->selector, $this->name);
     }
 }

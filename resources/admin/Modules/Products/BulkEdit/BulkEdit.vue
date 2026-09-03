@@ -314,8 +314,10 @@ const deleteProduct = async (product) => {
   const title = product.post_title || self.$t('Untitled product');
   const variantCount = Array.isArray(product.variants) ? product.variants.length : 0;
   const message = variantCount > 0
-    ? self.$t('This will permanently delete "%s" and its %s variant(s).').replace('%s', title).replace('%s', variantCount)
-    : self.$t('This will permanently delete "%s".').replace('%s', title);
+    /* translators: %1$s: product title; %2$s: number of variants */
+    ? self.$t('This will permanently delete "%1$s" and its %2$s variant(s).', title, variantCount)
+    /* translators: %1$s: product title */
+    : self.$t('This will permanently delete "%1$s".', title);
 
   try {
     await ElMessageBox.confirm(message, self.$t('Delete Product'), {
@@ -338,7 +340,8 @@ const removeVariant = (product, variant) => {
 
   const title = variant.variation_title || self.$t('Untitled variant');
   ElMessageBox.confirm(
-    self.$t('This will remove the variant "%s".').replace('%s', title),
+    /* translators: %1$s: variant title */
+    self.$t('This will remove the variant "%1$s".', title),
     self.$t('Remove Variant'),
     {
       confirmButtonText: self.$t('Remove'),
@@ -817,7 +820,7 @@ onBeforeUnmount(() => {
                                     :disabled="isRowDisabled(group.product)"
                                     size="small"
                                     :class="{ 'is-error': hasFieldError(group.product, 'post_title') }"
-                                    @update:modelValue="(val) => {
+                                    @update:model-value="(val) => {
                                       markDirty(group.product)
                                       onSync('title', val, `p:${group.productId}`)
                                     }"
@@ -865,7 +868,7 @@ onBeforeUnmount(() => {
                                     size="small"
                                     :disabled="isRowDisabled(group.product)"
                                     :class="{ 'is-error': hasFieldError(group.product, 'variants.0.sku') }"
-                                    @update:modelValue="(val) => {
+                                    @update:model-value="(val) => {
                                       markDirty(group.product)
                                       onSync('sku', val, `p:${group.productId}`)
                                     }"
@@ -984,7 +987,7 @@ onBeforeUnmount(() => {
                                     size="small"
                                     v-model="group.product.variants[0].available"
                                     :disabled="isRowDisabled(group.product)"
-                                    @update:modelValue="(val) => {
+                                    @update:model-value="(val) => {
                                       group.product.variants[0].total_stock = val;
                                       markDirty(group.product);
                                       bulkEditModel.syncStockStatus(group.product);
@@ -998,7 +1001,7 @@ onBeforeUnmount(() => {
                              <!-- actions -->
                               <td class="fct-bulk-actions-cell" :class="{ 'sticky-col sticky-col-right': stickyActions }">
                               <div class="fct-btn-group sm justify-end">
-                                  <icon-button
+                                  <IconButton
                                       tag="a"
                                       size="x-small"
                                       v-if="group.product.view_url"
@@ -1007,10 +1010,10 @@ onBeforeUnmount(() => {
                                       :title="$t('View Product')"
                                   >
                                     <DynamicIcon name="External" />
-                                  </icon-button>
+                                  </IconButton>
 
                                 <!-- duplicate -->
-                                <icon-button
+                                <IconButton
                                     tag="button"
                                     size="x-small"
                                     @click.prevent="duplicateProduct(group.product)"
@@ -1019,10 +1022,10 @@ onBeforeUnmount(() => {
                                 >
                                   <el-icon v-if="isDuplicating(group.product)" class="is-loading" :size="14"><Loading /></el-icon>
                                   <DynamicIcon v-else name="Copy" />
-                                </icon-button>
+                                </IconButton>
 
 
-                                  <icon-button
+                                  <IconButton
                                       tag="button"
                                       size="x-small"
                                       hover="danger"
@@ -1032,7 +1035,7 @@ onBeforeUnmount(() => {
                                   >
                                     <el-icon v-if="isDeleting(group.product)" class="is-loading" :size="14"><Loading /></el-icon>
                                     <DynamicIcon v-else name="Delete" />
-                                  </icon-button>
+                                  </IconButton>
                               </div>
                               </td>
 
@@ -1072,7 +1075,7 @@ onBeforeUnmount(() => {
                                                 :placeholder="$t('Variation title')"
                                                 :disabled="isRowDisabled(group.product)"
                                                 :class="{ 'is-error': hasVariantFieldError(group.product, vi, 'variation_title') }"
-                                                @update:modelValue="(val) => {
+                                                @update:model-value="(val) => {
                                                   markDirty(group.product)
                                                   onSync('title', val, `v:${variant.id}`)
                                                 }"
@@ -1098,7 +1101,7 @@ onBeforeUnmount(() => {
                                             :placeholder="$t('SKU')"
                                             :disabled="isRowDisabled(group.product)"
                                             :class="{ 'is-error': hasVariantFieldError(group.product, vi, 'sku') }"
-                                            @update:modelValue="(val) => {
+                                            @update:model-value="(val) => {
                                               markDirty(group.product)
                                               onSync('sku', val, `v:${variant.id}`)
                                             }"
@@ -1175,7 +1178,7 @@ onBeforeUnmount(() => {
                                             size="small"
                                             v-model="variant.available"
                                             :disabled="isRowDisabled(group.product)"
-                                            @update:modelValue="(val) => {
+                                            @update:model-value="(val) => {
                                               variant.total_stock = val;
                                               markDirty(group.product);
                                               bulkEditModel.syncStockStatus(group.product);
@@ -1188,7 +1191,7 @@ onBeforeUnmount(() => {
                                       <td class="text-center" :class="{ 'sticky-col sticky-col-right': stickyActions }">
                                           <div class="fct-btn-group sm justify-end">
 
-                                            <icon-button
+                                            <IconButton
                                                 tag="button"
                                                 size="x-small"
                                                 @click.prevent="duplicateVariant(group.product, variant)"
@@ -1196,9 +1199,9 @@ onBeforeUnmount(() => {
                                                 :title="$t('Duplicate')"
                                             >
                                                 <DynamicIcon name="Copy" />
-                                            </icon-button>
+                                            </IconButton>
 
-                                            <icon-button
+                                            <IconButton
                                                 tag="button"
                                                 size="x-small"
                                                 hover="danger"
@@ -1207,7 +1210,7 @@ onBeforeUnmount(() => {
                                                 :title="$t('Delete')"
                                             >
                                                 <DynamicIcon name="Delete" />
-                                            </icon-button>
+                                            </IconButton>
                                           </div>
                                       </td>
                                       </tr>

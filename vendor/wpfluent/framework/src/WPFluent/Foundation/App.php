@@ -5,16 +5,15 @@ namespace FluentCart\Framework\Foundation;
 use FluentCart\Framework\Container\Contracts\BindingResolutionException;
 
 /**
- * @method static db();
- * @method static view();
- * @method static events();
- * @method static config();
- * @method static request();
- * @method static response();
- * @method static encrypter();
- * @method static validator();
+ * @method static \FluentCart\Framework\Database\DatabaseManager db()
+ * @method static \FluentCart\Framework\View\View view()
+ * @method static \FluentCart\Framework\Events\Dispatcher events()
+ * @method static \FluentCart\Framework\Foundation\Config config()
+ * @method static \FluentCart\Framework\Http\Request\Request request()
+ * @method static \FluentCart\Framework\Http\Response\Response response()
+ * @method static \FluentCart\Framework\Encryption\Encrypter encrypter()
+ * @method static \FluentCart\Framework\Validator\Validator validator()
  */
-
 class App
 {
     /**

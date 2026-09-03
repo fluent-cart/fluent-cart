@@ -46,6 +46,15 @@ class SubscriptionFilter extends BaseFilter
                     foreach ($columns as $column) {
                         $query->orWhere($column, 'like', '%' . $search . '%');
                     }
+
+                    // A partial email rarely contains "@" — the branch above
+                    // only covers full-ish addresses, so without this join a
+                    // search like "rare-zenith" could never match a customer
+                    // email. Additive orWhere: every local-column match above
+                    // still matches.
+                    $query->orWhereHas('customer', function ($query) use ($search) {
+                        $query->where('email', 'like', '%' . $search . '%');
+                    });
                 }
             });
         });
@@ -74,6 +83,84 @@ class SubscriptionFilter extends BaseFilter
     public static function getFilterName(): string
     {
         return 'subscriptions';
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'id'                => ['label' => __('Subscription ID', 'fluent-cart'), 'column' => 'id'],
+            'next_billing_date' => ['label' => __('Next Billing Date', 'fluent-cart'), 'column' => 'next_billing_date'],
+            'bill_count'        => ['label' => __('Bills Count', 'fluent-cart'), 'column' => 'bill_count'],
+            'created_at'        => ['label' => __('Created At', 'fluent-cart'), 'column' => 'created_at'],
+            'status'            => ['label' => __('Status', 'fluent-cart'), 'column' => 'status'],
+        ];
+    }
+
+    /**
+     * `GET /subscriptions` requires `subscriptions/view`, which says nothing
+     * about customers, so the customer relation carries its own bar through
+     * BOTH doors below.
+     *
+     * SCREEN key — `admin_subscription_list` loads what SubscriptionTable.js
+     * renders. PUBLIC key — `customer` is the plain relation name a consumer
+     * can reasonably ask a subscription endpoint for, and it was an accepted
+     * value before this allow-list existed; keeping it is what stops the
+     * conversion from silently narrowing a published response.
+     *
+     * Deliberately NOT allowlisted: `transactions` (gateway ids and card
+     * metadata), `license`/`licenses` (`license_key` serializes verbatim),
+     * `meta` (arbitrary stored keys).
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [
+            'admin_subscription_list' => [$this, 'adminSubscriptionList'],
+
+            'customer' => [$this, 'publicCustomer'],
+        ];
+    }
+
+    /**
+     * `GET /subscriptions`, sent by SubscriptionTable.js — the customer column
+     * is the only relation this screen renders.
+     *
+     * No select: Customer::$appends (`full_name`, `photo`, `country_name`,
+     * `formatted_address`, `user_link`) reads first_name, last_name, country,
+     * state, city, postcode and user_id.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function adminSubscriptionList($query)
+    {
+        // `subscriptions/view` says nothing about customers.
+        if ($this->userCanAny('customers/view')) {
+            $query->with(['customer']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * `with[]=customer` — a public entry point, carrying the same
+     * `customers/view` bar as the screen key. A public name is not a way
+     * around the gate.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return bool|\FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function publicCustomer($query)
+    {
+        if (!$this->userCanAny('customers/view')) {
+            return false;
+        }
+
+        return $query->with(['customer']);
     }
 
     public function applyActiveViewFilter(?string $activeView = null): void

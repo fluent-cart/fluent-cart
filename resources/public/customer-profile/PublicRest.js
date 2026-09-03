@@ -90,8 +90,6 @@ const request = function (method, route, data = {}) {
         };
 
         xhr.onerror = function () {
-            console.info('Your server firewall blocked the request or it\'s a plugin conflict. Please check the detailed error.');
-            console.log({
                 status: xhr.status,
                 statusText: xhr.statusText,
                 responseText: xhr.responseText

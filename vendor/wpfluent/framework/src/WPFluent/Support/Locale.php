@@ -54,6 +54,18 @@ class Locale
      */
     protected function populateLocaleInfo($userIdOrLocale = null)
     {
+        // Defensive: if WP's i18n stack hasn't fully booted yet (plugin
+        // activation hooks, early CLI, pre-`init` code paths), fall back
+        // to en_US-style defaults instead of fataling on null wp_locale.
+        if (
+            !function_exists('switch_to_locale')
+            || !function_exists('get_user_locale')
+            || empty($GLOBALS['wp_locale'])
+            || !is_object($GLOBALS['wp_locale'])
+        ) {
+            return $this->buildFallbackLocaleInfo($userIdOrLocale);
+        }
+
         if ($userIdOrLocale) {
             if (is_int($userIdOrLocale)) {
                 $this->locale = get_user_locale($userIdOrLocale);
@@ -140,6 +152,56 @@ class Locale
                 restore_previous_locale();
             }
         }
+    }
+
+    /**
+     * Build a minimal en_US-style locale info object for use when WP's
+     * i18n stack isn't available (plugin activation, early CLI, etc.).
+     * Matches the shape produced by the full populateLocaleInfo() so
+     * downstream callers don't need to know the difference.
+     *
+     * @param  int|string|null $userIdOrLocale
+     * @return \stdClass
+     */
+    protected function buildFallbackLocaleInfo($userIdOrLocale = null)
+    {
+        $this->locale = (is_string($userIdOrLocale) && $userIdOrLocale !== '')
+            ? $userIdOrLocale
+            : 'en_US';
+
+        $monthNumbers = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+
+        $userLocale = new \stdClass();
+        $userLocale->weekday          = static::$weekdayNames;
+        $userLocale->weekday_initial  = array_combine(
+            static::$weekdayNames, ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+        );
+        $userLocale->weekday_abbrev   = array_combine(
+            static::$weekdayNames, ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        );
+        $userLocale->month            = array_combine($monthNumbers, static::$monthNames);
+        $userLocale->month_genitive   = $userLocale->month;
+        $userLocale->month_abbrev     = array_combine(
+            static::$monthNames,
+            ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        );
+        $userLocale->meridiem         = ['am' => 'am', 'pm' => 'pm', 'AM' => 'AM', 'PM' => 'PM'];
+        $userLocale->text_direction   = 'ltr';
+        $userLocale->number_format    = ['decimal_point' => '.', 'thousands_sep' => ','];
+        $userLocale->list_item_separator = ', ';
+        $userLocale->word_count_type  = 'words';
+        $userLocale->start_day_of_week = 1;
+        $userLocale->id               = $this->locale;
+        $userLocale->mappings = [
+            'month_index_to_num' => array_combine(
+                array_keys(static::$monthNames),
+                range(1, 12)
+            ),
+            'month'   => static::$monthNames,
+            'weekday' => static::$weekdayNames,
+        ];
+
+        return $userLocale;
     }
 
     /**

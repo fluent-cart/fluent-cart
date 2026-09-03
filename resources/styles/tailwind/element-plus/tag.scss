@@ -1,5 +1,5 @@
 .el-tag{
-    @apply font-normal rounded-xs border-0 h-auto py-1 px-2 !important;
+    @apply font-normal rounded-xs border-0 h-auto py-0.5 px-2 !important;
 
     white-space: normal;
     &.el-tag--info {
@@ -7,6 +7,12 @@
     }
     &.el-tag--primary{
         @apply bg-primary-25 text-system-dark-light dark:bg-primary-500 dark:text-gray-50;
+    }
+    &.el-tag--success {
+        @apply bg-success-25 text-success-500 dark:bg-success-500 dark:text-white;
+        .el-tag__content {
+            @apply text-success-500 dark:text-white;
+        }
     }
     .el-tag__content {
         @apply leading-[1.2];

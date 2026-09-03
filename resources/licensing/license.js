@@ -1,7 +1,10 @@
+import translate from '@/utils/translator/Translator';
 import LicenseSettings from './components/ProductLicenseSettings.vue';
 import Licenses from './components/Licenses.vue';
 import ViewLicense from './components/ViewLicense.vue';
 import CustomerLicenses from './components/CustomerLicenses.vue';
+import ActivatedSitesList from './components/ActivatedSitesList.vue';
+import ViewSite from './components/ViewSite.vue';
 
 window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_licenses', function (routes) {
     routes.product_route.children.push({
@@ -11,7 +14,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_licen
         component: LicenseSettings,
         meta: {
             active_menu: 'products',
-            title: 'License Settings',
+            title: translate('License Settings'),
             permission: "store/sensitive"
         }
     });
@@ -22,7 +25,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_licen
         component: Licenses,
         meta: {
             active_menu: 'licenses',
-            title: 'Licenses',
+            title: translate('Licenses'),
             permission: "store/sensitive"
         }
     };
@@ -34,7 +37,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_licen
         props: true,
         meta: {
             active_menu: 'licenses',
-            title: 'View License',
+            title: translate('View License'),
             permission: "store/sensitive"
         }
     };
@@ -46,7 +49,30 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_licen
         props: true,
         meta: {
             active_menu: 'licenses',
-            title: 'View License',
+            title: translate('View License'),
+            permission: "store/sensitive"
+        }
+    };
+
+    routes.activated_sites = {
+        name: 'activated_sites',
+        path: '/licenses/sites',
+        component: ActivatedSitesList,
+        meta: {
+            active_menu: 'licenses',
+            title: translate('Activated Sites'),
+            permission: "store/sensitive"
+        }
+    };
+
+    routes.view_site = {
+        name: 'view_site',
+        path: '/licenses/sites/:site_id/view',
+        component: ViewSite,
+        props: true,
+        meta: {
+            active_menu: 'licenses',
+            title: translate('View Site'),
             permission: "store/sensitive"
         }
     };

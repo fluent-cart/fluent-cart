@@ -88,16 +88,10 @@
 <script type="text/babel">
 import {isEmpty} from "@/utils/Utils";
 import {each} from "@/utils/Utils";
-import {Close} from '@element-plus/icons-vue';
-import {markRaw} from "vue";
-
 export default {
   name: 'OrderFilterItem',
   props: ['filters', 'filterOptions'],
   emits: ['updateFilters'],
-  components: {
-    Close: markRaw(Close)
-  },
   data() {
     return {
       selectedFilters: [],
@@ -113,6 +107,18 @@ export default {
         'gt': 'greater than',
         'lt': 'less than'
       }
+    }
+  },
+  mounted() {
+
+    if (!isEmpty(this.filters)) {
+      each(this.filters, (filter, filterKey) => {
+        this.filterArray[filterKey] = ({
+          item_key: filterKey,
+          item_values: filter.value,
+          operator: filter.operator
+        });
+      });
     }
   },
   methods: {
@@ -168,18 +174,6 @@ export default {
       }
     },
 
-  },
-  mounted() {
-
-    if (!isEmpty(this.filters)) {
-      each(this.filters, (filter, filterKey) => {
-        this.filterArray[filterKey] = ({
-          item_key: filterKey,
-          item_values: filter.value,
-          operator: filter.operator
-        });
-      });
-    }
   }
 }
 </script>

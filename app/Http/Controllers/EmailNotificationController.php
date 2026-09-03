@@ -10,6 +10,7 @@ use FluentCart\App\Http\Requests\EmailSettingsRequest;
 use FluentCart\App\Http\Requests\SchedulingSettingsRequest;
 use FluentCart\App\Services\Email\EmailNotificationMailer;
 use FluentCart\App\Services\Email\EmailNotifications;
+use FluentCart\App\Services\Email\StoreDigestService;
 use FluentCart\App\Services\PDF\ReceiptPdfTemplateService;
 use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
@@ -55,6 +56,10 @@ class EmailNotificationController extends Controller
 
             $pdfTemplates = $hasFluentPdf ? (new ReceiptPdfTemplateService())->getTemplateList() : [];
 
+            // Let add-ons inject their custom field data (settings.extra / extra_fields)
+            // into the editor payload from their own storage.
+            $notification = apply_filters('fluent_cart/email_notification_data', $notification, $name);
+
             return $this->sendSuccess([
                 'data'           => $notification,
                 'shortcodes'     => EditorShortCodeHelper::getEmailNotificationShortcodes(),
@@ -85,6 +90,10 @@ class EmailNotificationController extends Controller
 
         $updated = EmailNotifications::updateNotification($notification, $settings);
         if ($updated) {
+            // Core does not persist custom fields (settings.extra). It fires this after a
+            // successful update so add-ons can store their own data in their own storage.
+            do_action('fluent_cart/email_notification_updated', $notification, $settings);
+
             return $this->sendSuccess([
                 'message' => __('Notification updated successfully', 'fluent-cart')
             ]);
@@ -130,8 +139,30 @@ class EmailNotificationController extends Controller
     public function previewDefaultTemplate(Request $request)
     {
         $template = sanitize_text_field($request->get('template'));
+
+        // Validate the template against the known notification template paths so an
+        // invalid or missing value returns a clean REST error instead of an uncaught
+        // "view not found" fatal from the template renderer.
+        $validTemplates = array_filter(array_column(
+            EmailNotifications::getNotifications(), 'template_path'
+        ));
+
+        if (!$template || !in_array($template, $validTemplates, true)) {
+            return $this->sendError([
+                'message' => __('Invalid or missing "template" parameter.', 'fluent-cart')
+            ], 422);
+        }
+
         $previewService = new EmailPreviewService();
         $data = $previewService->getPreviewData($template);
+
+        // Let add-ons adjust the preview data for their own templates — e.g. unset
+        // `order` so an orderless notification (wishlist, withdrawal, …) previews
+        // without the order header (emails.parts.order_header renders only when
+        // $order is non-empty), or add the sample context their smartcodes need.
+        // Core templates are untouched: no core listener changes $data. The context
+        // is an array so more keys can be added later without changing the signature.
+        $data = apply_filters('fluent_cart/email/preview_data', $data, ['template' => $template]);
 
         $body = TemplateService::getTemplateByPathName($template, $data);
 
@@ -203,6 +234,49 @@ class EmailNotificationController extends Controller
                 'message' => __('Failed to save email settings', 'fluent-cart')
             ]);
         }
+    }
+
+    public function getDigestSettings(): \WP_REST_Response
+    {
+        return $this->sendSuccess([
+            'data' => StoreDigestService::getSettings(),
+        ]);
+    }
+
+    public function saveDigestSettings(Request $request): \WP_REST_Response
+    {
+        $saved = StoreDigestService::saveSettings($request->all());
+
+        return $this->sendSuccess([
+            'data'    => $saved,
+            'message' => __('Store digest settings saved successfully', 'fluent-cart'),
+        ]);
+    }
+
+    public function sendDigestTest(Request $request): \WP_REST_Response
+    {
+        $frequency = sanitize_text_field(Arr::get($request->all(), 'frequency', 'daily'));
+        if (!in_array($frequency, StoreDigestService::CADENCES, true)) {
+            $frequency = 'daily';
+        }
+
+        // Send the test to the configured recipients, falling back to the WP admin email.
+        $recipients = StoreDigestService::getSettings('recipients');
+        if (empty($recipients)) {
+            $recipients = get_bloginfo('admin_email');
+        }
+
+        $sent = StoreDigestService::sendDigest($frequency, (string) $recipients);
+
+        if ($sent) {
+            return $this->sendSuccess([
+                'message' => __('Test digest email sent.', 'fluent-cart'),
+            ]);
+        }
+
+        return $this->sendError([
+            'message' => __('Could not send the test email. Please check your mailing settings and recipients.', 'fluent-cart'),
+        ]);
     }
 
     public function getSchedulingSettings(StoreSettings $storeSettings): array

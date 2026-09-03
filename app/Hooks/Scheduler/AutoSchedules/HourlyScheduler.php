@@ -5,6 +5,7 @@ namespace FluentCart\App\Hooks\Scheduler\AutoSchedules;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\ScheduledAction;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Services\Email\StoreDigestService;
 
 class HourlyScheduler
 {
@@ -13,6 +14,11 @@ class HourlyScheduler
     public function register(): void
     {
         add_action('fluent_cart/scheduler/hourly_tasks', [$this, 'handle'], 10);
+
+        // On-demand digest trigger (WP-CLI / debugging): do_action('fluent_cart/store_digest/send', 'daily')
+        add_action('fluent_cart/store_digest/send', function ($frequency) {
+            StoreDigestService::sendDigest((string) $frequency);
+        }, 10, 1);
     }
 
     public function handle()
@@ -23,6 +29,9 @@ class HourlyScheduler
         $this->removeCompleteTasks();
 
         $this->checkAndExpireSubscriptions();
+
+        // Store digest (daily/weekly/monthly): evaluated each hour against the configured send time.
+        StoreDigestService::runDueDigests();
     }
 
 

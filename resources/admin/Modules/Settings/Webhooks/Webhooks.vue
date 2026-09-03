@@ -118,11 +118,6 @@ import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 
 export default {
     name: "Webhooks",
-    computed: {
-        Str() {
-            return Str
-        }
-    },
     components: {
         IconButton, Empty,
         DynamicIcon,
@@ -136,6 +131,14 @@ export default {
             loading: false,
             event_trigger_options: []
         };
+    },
+    computed: {
+        Str() {
+            return Str
+        }
+    },
+    mounted() {
+        this.fetchWebhookFeeds();
     },
     methods: {
         fetchWebhookFeeds() {
@@ -179,10 +182,10 @@ export default {
                 });
         },
         deleteWebhook(scope) {
-            this.$confirm('Are you sure you want to delete this webhook?', 'Confirm Delete!',
+            this.$confirm(this.$t('Are you sure you want to delete this webhook?'), this.$t('Confirm Delete!'),
                 {
-                    confirmButtonText: 'Yes, Delete!',
-                    cancelButtonText: 'Cancel',
+                    confirmButtonText: this.$t('Yes, Delete!'),
+                    cancelButtonText: this.$t('Cancel'),
                     type: 'warning'
                 }
             )
@@ -200,9 +203,6 @@ export default {
                     // cancel response....
                 });
         }
-    },
-    mounted() {
-        this.fetchWebhookFeeds();
     }
 
 }

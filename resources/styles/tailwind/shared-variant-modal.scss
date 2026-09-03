@@ -154,6 +154,25 @@
         @apply mb-0 flex-1;
     }
   }
+
+  /* Advanced-variation read-only title block (e.g. "Blue" / "S / Back").
+     Element Plus's --el-text-color-primary doesn't flip in this project
+     (dark mode is .fluent_theme_dark on <html>, not Element Plus's own
+     dark theme), so any rule relying on that var rendered near-black on
+     the dark drawer. Explicit dark-mode tokens here. */
+  .fct-variant-title-group {
+    @apply text-system-dark dark:text-white;
+  }
+
+  .fct-variant-title-detail {
+    @apply text-system-mid dark:text-gray-200;
+  }
+
+  .fct-inline-select-wrap {
+    .el-select {
+        @apply w-[100px];
+    }
+  }
 }
 
 
@@ -259,6 +278,16 @@
     @apply text-red-500;
 }
 
+/* Group-edit "Unchanged" select popper — adds breathing room above the first option */
+.fct-group-select-popper .el-select-dropdown__list {
+    padding-top: 6px;
+}
+
+/* Smaller labels for group-edit select controls */
+.fct-group-select-label .el-form-item__label {
+    font-size: 11px;
+}
+
 /* Shared variant drawer styles */
 .ghost {
   @apply opacity-50;
@@ -329,7 +358,122 @@
 }
 
 .fct-shared-variant-nav__list {
-  @apply flex-1 overflow-y-auto p-2.5;
+  @apply overflow-y-auto p-2.5;
+}
+
+/* Search + filter chips for the drawer's sidebar. State is shared with the
+   main AdvancedVariationTable so filtering in either surface narrows the
+   nav consistently. Compact layout because the sidebar is narrow. */
+.fct-shared-variant-nav__filters {
+  @apply flex flex-col gap-2 p-2.5 border border-x-0 border-t-0 border-b border-solid border-gray-divider dark:border-dark-400;
+}
+
+.fct-shared-variant-nav__search {
+  @apply w-full;
+}
+
+.fct-shared-variant-nav__chips {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.fct-shared-variant-nav__clear {
+  @apply self-start text-[12px] text-blue-500 hover:text-blue-600 bg-transparent border-0 p-0 cursor-pointer underline;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+}
+
+/* Grouped nav (Advanced Variation) — collapsible group header + body. The
+   body mounts inside an existing nav list so all per-item styling below
+   continues to apply without changes. */
+.fct-shared-variant-nav__group {
+  @apply mb-1.5;
+
+  & + .fct-shared-variant-nav__group {
+    @apply mt-2 pt-2 border border-x-0 border-b-0 border-t border-solid border-gray-divider dark:border-dark-400;
+  }
+}
+
+.fct-shared-variant-nav__group-header {
+  @apply flex items-center gap-1 rounded hover:bg-neutral-100 dark:hover:bg-dark-400;
+
+  &:hover .fct-shared-variant-nav__group-edit {
+    @apply opacity-100;
+  }
+}
+
+.fct-shared-variant-nav__group-toggle {
+  @apply flex-1 flex items-center gap-2 px-2 py-1.5 bg-transparent border-0 rounded cursor-pointer text-left min-w-0;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+.fct-shared-variant-nav__group-edit {
+  @apply flex-shrink-0 border-0 bg-transparent w-6 h-6 rounded inline-flex items-center justify-center cursor-pointer text-system-mid opacity-0 transition-opacity duration-150 dark:text-gray-300;
+
+  svg {
+    @apply w-3.5 h-3.5;
+  }
+
+  &:hover {
+    @apply opacity-100 text-primary-500 bg-primary-50 dark:bg-dark-300 dark:text-gray-300;
+  }
+
+  &:focus-visible {
+    @apply opacity-100 outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+.fct-group-edit-aside {
+  // Fill the remaining aside height (below the product summary) and let only
+  // the variant list scroll — matches the single-variant nav's full-height
+  // model instead of capping the list at a fixed box. flex-1 + min-h-0 is the
+  // flexbox scroll pattern: without min-h-0 the list can't shrink below its
+  // content and the overflow never kicks in.
+  @apply mt-4 px-3 flex-1 min-h-0 flex flex-col;
+
+  &__label {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-system-mid dark:text-gray-400 mb-1 mt-0;
+  }
+
+  &__title {
+    @apply text-sm font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &__hint {
+    @apply text-[12px] text-system-mid dark:text-gray-400 mb-5 mt-0 leading-snug;
+  }
+
+  &__list {
+    @apply list-none p-0 m-0 space-y-1 flex-1 min-h-0 overflow-y-auto;
+  }
+
+  &__item {
+    @apply text-[13px] text-system-dark cursor-pointer;
+  }
+}
+
+.fct-shared-variant-nav__group-caret {
+  @apply inline-flex items-center justify-center w-3.5 h-3.5 text-system-mid flex-shrink-0 dark:text-gray-300;
+
+  svg {
+    @apply w-3 h-3;
+  }
+}
+
+.fct-shared-variant-nav__group-title {
+  @apply flex-1 text-[13px] font-semibold text-system-dark dark:text-gray-50 truncate;
+}
+
+.fct-shared-variant-nav__group-count {
+  @apply text-[11px] text-system-mid dark:text-gray-300 flex-shrink-0;
+}
+
+.fct-shared-variant-nav__group-body {
+  @apply pl-2.5 mt-1;
 }
 
 .fct-shared-variant-nav__item-shell {
@@ -342,7 +486,7 @@
 }
 
 .fct-shared-variant-nav__item {
-  @apply flex items-center gap-2.5 flex-1 w-full border-0 bg-transparent text-left py-[11px] px-2.5 cursor-pointer relative;
+  @apply flex items-center gap-2.5 flex-1 w-full border-0 bg-transparent text-left py-[7px] px-2.5 cursor-pointer relative;
   &.is-disabled {
     @apply cursor-not-allowed opacity-50 pointer-events-none;
   }
@@ -368,7 +512,7 @@
 }
 
 .fct-shared-variant-nav__item-image {
-  @apply w-10 h-10 overflow-hidden rounded-[6px];
+  @apply w-8 h-8 overflow-hidden rounded-[6px];
 
   img {
     @apply w-full h-full object-cover;
@@ -424,6 +568,59 @@
   @apply flex-1 min-w-0 flex flex-col min-h-0;
 }
 
+.fct-compact-group-edit-bar {
+  @apply flex gap-1.5 overflow-x-auto py-2 px-3.5 bg-primary-50 border border-x-0 border-t-0 border-solid border-primary-100 dark:bg-dark-400 dark:border-dark-300;
+
+  &__btn {
+    @apply whitespace-nowrap inline-flex items-center gap-1.5 border border-solid border-primary-200 rounded-full bg-white text-primary-600 text-[12px] font-semibold py-1.5 px-3 cursor-pointer leading-none dark:border-dark-300 dark:bg-dark-500 dark:text-gray-50;
+
+    svg {
+      @apply w-3 h-3 flex-shrink-0;
+    }
+
+    &:disabled {
+      @apply cursor-not-allowed opacity-50;
+    }
+
+    &:hover:not(:disabled) {
+      @apply bg-primary-500 border-primary-500 text-white dark:bg-gray-600 dark:border-gray-500;
+    }
+  }
+}
+
+.fct-compact-group-edit-summary {
+  @apply px-3.5 border pt-3 pb-4 border-x-0 border-t-0 border-solid border-gray-divider dark:border-dark-400;
+
+  &__title {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-system-mid dark:text-gray-400;
+    span {
+        @apply text-sm font-semibold text-system-dark dark:text-gray-50;
+    }
+  }
+
+  &__count {
+    @apply text-[12px] text-system-mid dark:text-gray-300 whitespace-nowrap flex-shrink-0;
+  }
+  &__list {
+    @apply flex items-center gap-2 overflow-x-auto mt-4;
+    li {
+        @apply transition m-0 flex-shrink-0 bg-gray-50 rounded-full py-1 px-3 hover:bg-gray-100 dark:bg-dark-500;
+        &:hover {
+            @apply bg-dark-400;
+            .el-checkbox__inner {
+                @apply bg-dark-300;
+            }
+        }
+    }
+    .el-checkbox__label {
+        @apply text-xs;
+    }
+    .el-checkbox__inner {
+        @apply w-3.5 h-3.5 rounded-[3px];
+    }
+  }
+}
+
 .fct-shared-variant-nav-mobile {
   @apply flex gap-1.5 overflow-x-auto py-3 px-3.5 border border-x-0 border-t-0 border-solid border-gray-outline bg-white sticky top-0 z-[2] dark:border-dark-400 dark:bg-dark-500;
 }
@@ -445,7 +642,7 @@
 }
 
 .fct-shared-variant-drawer__form {
-  @apply flex-1 min-h-0 py-0 px-7.5;
+  @apply flex-1 min-h-0 pt-5 pb-0 px-7.5;
   //overscroll-behavior: contain;
   .dialog-footer {
     @apply -mx-[30px] bg-white dark:bg-dark-500;
@@ -458,6 +655,13 @@
     height: calc(100% - 90px);
 }
 
+.simple-product-pricing {
+    .fct-product-pricing-form-inner {
+        overflow: visible;
+        height: auto;
+    }
+}
+
 .fct-variant-dirty-dialog {
   .el-dialog__body {
     @apply pt-2;
@@ -466,11 +670,11 @@
 
 .fct-variant-dirty-dialog__header {
   h3 {
-    @apply m-0 mb-2 text-xl leading-tight text-system-dark;
+    @apply m-0 mb-2 text-xl leading-tight text-system-dark dark:text-white;
   }
 
   p {
-    @apply m-0 text-system-mid leading-normal;
+    @apply m-0 text-system-mid leading-normal dark:text-gray-300;
   }
 }
 
@@ -551,6 +755,10 @@
 
 .fct-stock-number {
     @apply text-lg text-gray-400 font-medium dark:text-gray-50;
+}
+
+.fct-variant-pricing-add-button-wrap {
+    @apply text-right p-4 border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400;
 }
 
 @keyframes rotation {
@@ -674,5 +882,59 @@
 .fct-variant-inventory--simple {
     .fct-shared-variant-item-box__body {
         @apply pt-0;
+    }
+}
+
+/* Product-level Inventory Management off: one slim WARNING strip at the
+   bottom of the variant Inventory box — icon + note left, enable action right */
+.fct-variant-inventory-global-off {
+    @apply mt-0 mb-2 flex items-center justify-between gap-2 rounded bg-warning-50 px-2.5 py-1.5 dark:bg-dark-500;
+
+    .fct-variant-inventory-global-off__text {
+        @apply flex items-center gap-1.5 text-xs leading-4 text-warning-800 dark:text-warning-400 flex-1 min-w-0;
+
+        svg {
+            @apply w-3.5 h-3.5 text-warning-500 flex-shrink-0;
+        }
+    }
+
+    .fct-variant-inventory-global-off__action {
+        @apply flex items-center gap-2 flex-shrink-0;
+
+        label {
+            @apply text-xs font-medium text-system-dark dark:text-gray-50 cursor-default;
+        }
+    }
+}
+
+/* Price field with inline tax inclusion selector */
+.fct-price-with-inclusion {
+    @apply flex items-start flex-wrap w-full;
+    gap: 8px;
+    margin-bottom: var(--el-form-item-margin-bottom, 18px);
+
+    .el-form-item {
+        @apply mb-0;
+    }
+}
+
+.fct-price-with-inclusion__price {
+    flex: 2 1 120px;
+    min-width: 0;
+}
+
+.fct-price-with-inclusion__tax {
+    flex: 1 1 100px;
+    min-width: 0;
+
+    .el-select {
+        @apply w-full;
+    }
+}
+
+@media (max-width: 480px) {
+    .fct-price-with-inclusion__price,
+    .fct-price-with-inclusion__tax {
+        flex: 0 0 100%;
     }
 }

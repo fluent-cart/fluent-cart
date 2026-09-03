@@ -12,6 +12,7 @@ use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\User;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Services\URL;
@@ -33,6 +34,31 @@ class Helper
 
     const USER_ROLE = 'fluent_cart_customer';
 
+    const MIN_INSTALLMENT_TIMES = 2;
+
+    /**
+     * An installment plan must bill at least twice. times = 0 means unlimited
+     * (a plain recurring subscription) and times = 1 collects a single payment,
+     * which is a one-time purchase, not an installment plan.
+     *
+     * @param array $otherInfo A variant's other_info payload
+     * @return string|null Error message, or null when valid
+     */
+    public static function installmentTimesError($otherInfo)
+    {
+        if (Arr::get($otherInfo, 'installment', 'no') !== 'yes') {
+            return null;
+        }
+
+        $times = Arr::get($otherInfo, 'times', 0);
+
+        if (!is_numeric($times) || (int)$times < static::MIN_INSTALLMENT_TIMES) {
+            return __('Installment count must be 2 or more. A single installment is just a one-time payment — set the payment type to one-time instead.', 'fluent-cart');
+        }
+
+        return null;
+    }
+
     public static function getUidSerial()
     {
         static $id = 0;
@@ -41,6 +67,44 @@ class Helper
 
         return $id;
 
+    }
+
+    /**
+     * Build a spec-compliant "Upgrade to Pro" URL.
+     *
+     * Follows the shared Fluent* UTM spec:
+     *   utm_source  = fluent-cart (fixed vocabulary, never the wp.org slug)
+     *   utm_medium  = free_plugin | pro_plugin (acquisition vs cross-sell)
+     *   utm_campaign= upgrade_pro (override for xsell_<target> / license_*)
+     *   utm_content = the exact placement, e.g. feature_lock_advanced_inventory
+     *   utm_term    = plugin version that generated the link
+     *   utm_id      = promo id, blank normally (omit unless passed)
+     *
+     * @param string $content   The utm_content placement.
+     * @param array  $overrides Override any utm_* param (e.g. utm_campaign for cross-sell).
+     * @return string
+     */
+    public static function getUpgradeUrl($content = 'upgrade_page', $overrides = []): string
+    {
+        $baseUrl = (string) apply_filters(
+            'fluent_cart/pro_upgrade_base_url',
+            'https://fluentcart.com/discount-deal/'
+        );
+
+        $params = wp_parse_args($overrides, [
+            'utm_source'   => 'fluent-cart',
+            'utm_medium'   => App::isProActive() ? 'pro_plugin' : 'free_plugin',
+            'utm_campaign' => 'upgrade_pro',
+            'utm_content'  => $content,
+            'utm_term'     => defined('FLUENTCART_VERSION') ? FLUENTCART_VERSION : '',
+        ]);
+
+        // Drop any blank params (e.g. an unset utm_id) so they never hit the URL.
+        $params = array_filter($params, function ($value) {
+            return $value !== '' && $value !== null;
+        });
+
+        return add_query_arg($params, $baseUrl);
     }
 
     public static function getRestInfo()
@@ -135,7 +199,7 @@ class Helper
     public static function convertWeight($value, $fromUnit, $toUnit)
     {
         if ($fromUnit === $toUnit || !$value) {
-            return (float) $value;
+            return (float)$value;
         }
 
         $toGrams = [
@@ -179,7 +243,7 @@ class Helper
                 return $package;
             }
         }
-        return !empty($packages) ? $packages[0] : null;
+        return null;
     }
 
     /**
@@ -216,70 +280,60 @@ class Helper
 
     public static function getOrderStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/order_statuses', [
-            [
-                'on-hold'    => __('On Hold', 'fluent-cart'),
-                'processing' => __('Processing', 'fluent-cart'),
-                'completed'  => __('Completed', 'fluent-cart'),
-                //'archived' => __('Archived', 'fluent-cart'),
-                'cancelled'  => __('Cancelled', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/order_statuses', 'Use fluent_cart/order_statuses instead of fluent-cart/order_statuses.');
+        $statuses = [
+            'on-hold'    => __('On Hold', 'fluent-cart'),
+            'processing' => __('Processing', 'fluent-cart'),
+            'completed'  => __('Completed', 'fluent-cart'),
+            //'archived' => __('Archived', 'fluent-cart'),
+            'cancelled'  => __('Cancelled', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/order_statuses', $statuses, []);
     }
 
     public static function getEditableOrderStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_order_statuses', [
-            [
-                'on-hold'    => __('On Hold', 'fluent-cart'),
-                'processing' => __('Processing', 'fluent-cart'),
-                'completed'  => __('Completed', 'fluent-cart'),
-                //  'archived' => __('Archived', 'fluent-cart'),
-                'cancelled'  => __('Cancelled', 'fluent-cart')
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_order_statuses', 'Use fluent_cart/editable_order_statuses instead of fluent-cart/editable_order_statuses.');
+        $statuses = [
+            'on-hold'    => __('On Hold', 'fluent-cart'),
+            'processing' => __('Processing', 'fluent-cart'),
+            'completed'  => __('Completed', 'fluent-cart'),
+            //  'archived' => __('Archived', 'fluent-cart'),
+            'cancelled'  => __('Cancelled', 'fluent-cart')
+        ];
 
         return apply_filters('fluent_cart/editable_order_statuses', $statuses, []);
     }
 
     public static function getEditableCustomerStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_customer_statuses', [
-            [
-                'active'   => __('Active', 'fluent-cart'),
-                'inactive' => __('Inactive', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_customer_statuses', 'Use fluent_cart/editable_customer_statuses instead of fluent-cart/editable_customer_statuses.');
+        $statuses = [
+            'active'   => __('Active', 'fluent-cart'),
+            'inactive' => __('Inactive', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/editable_customer_statuses', $statuses, []);
     }
 
     public static function getShippingStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/shipping_statuses', [
-            [
-                'unshipped'   => __('Unshipped', 'fluent-cart'),
-                'shipped'     => __('Shipped', 'fluent-cart'),
-                'delivered'   => __('Delivered', 'fluent-cart'),
-                'unshippable' => __('Unshippable', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/shipping_statuses', 'Use fluent_cart/shipping_statuses instead of fluent-cart/shipping_statuses.');
+        $statuses = [
+            'unshipped'   => __('Unshipped', 'fluent-cart'),
+            'shipped'     => __('Shipped', 'fluent-cart'),
+            'delivered'   => __('Delivered', 'fluent-cart'),
+            'unshippable' => __('Unshippable', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/shipping_statuses', $statuses, []);
     }
 
     public static function getEditableShippingStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_order_statuses', [
-            [
-                'unshipped'   => __('Unshipped', 'fluent-cart'),
-                'shipped'     => __('Shipped', 'fluent-cart'),
-                'delivered'   => __('Delivered', 'fluent-cart'),
-                'unshippable' => __('Unshippable', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_shipping_statuses', 'Use fluent_cart/editable_shipping_statuses instead of fluent-cart/editable_order_statuses.');
+        $statuses = [
+            'unshipped'   => __('Unshipped', 'fluent-cart'),
+            'shipped'     => __('Shipped', 'fluent-cart'),
+            'delivered'   => __('Delivered', 'fluent-cart'),
+            'unshippable' => __('Unshippable', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/editable_shipping_statuses', $statuses, []);
     }
@@ -311,16 +365,14 @@ class Helper
 
     public static function getTransactionStatuses($withLabel = true)
     {
-        $statuses = apply_filters_deprecated('fluent-cart/transaction_statuses', [
-            [
-                'pending'         => __('Pending', 'fluent-cart'),
-                'paid'            => __('Paid', 'fluent-cart'),
-                'require_capture' => __('Authorized (Require Capture)', 'fluent-cart'),
-                'failed'          => __('Failed', 'fluent-cart'),
-                'refunded'        => __('Refunded', 'fluent-cart'),
-                'active'          => __('Active', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/transaction_statuses', 'Use fluent_cart/transaction_statuses instead of fluent-cart/transaction_statuses.');
+        $statuses = [
+            'pending'         => __('Pending', 'fluent-cart'),
+            'paid'            => __('Paid', 'fluent-cart'),
+            'require_capture' => __('Authorized (Require Capture)', 'fluent-cart'),
+            'failed'          => __('Failed', 'fluent-cart'),
+            'refunded'        => __('Refunded', 'fluent-cart'),
+            'active'          => __('Active', 'fluent-cart'),
+        ];
 
         $statuses = apply_filters('fluent_cart/transaction_statuses', $statuses, []);
 
@@ -333,14 +385,12 @@ class Helper
 
     public static function getEditableTransactionStatuses($withLabel = true)
     {
-        $statuses = apply_filters_deprecated('fluent-cart/editable_transaction_statuses', [
-            [
-                'pending'  => __('Pending', 'fluent-cart'),
-                'paid'     => __('Paid', 'fluent-cart'),
-                'failed'   => __('Failed', 'fluent-cart'),
-                'refunded' => __('Refunded', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/editable_transaction_statuses', 'Use fluent_cart/editable_transaction_statuses instead of fluent-cart/editable_transaction_statuses.');
+        $statuses = [
+            'pending'  => __('Pending', 'fluent-cart'),
+            'paid'     => __('Paid', 'fluent-cart'),
+            'failed'   => __('Failed', 'fluent-cart'),
+            'refunded' => __('Refunded', 'fluent-cart'),
+        ];
 
         $statuses = apply_filters('fluent_cart/editable_transaction_statuses', $statuses, []);
 
@@ -349,19 +399,6 @@ class Helper
         }
 
         return array_keys($statuses);
-    }
-
-    public static function loadSpoutLib()
-    {
-        static $loaded;
-
-        if ($loaded) {
-            return $loaded;
-        }
-
-        require_once FLUENTCART_PLUGIN_PATH . 'app/Services/Libs/Spout/Autoloader/autoload.php';
-
-        return true;
     }
 
     public static function productStatuses($withLabel = true): array
@@ -472,7 +509,7 @@ class Helper
                 }
             }
 
-            if($withTranslatedDigit) {
+            if ($withTranslatedDigit) {
                 $amount = self::translateNumber($amount);
             }
         }
@@ -514,6 +551,39 @@ class Helper
         $amount = floatval($amount) * 100; // Convert to float and multiply
         $amount = (int)round($amount); // Round to nearest integer, then cast
         return $amount;
+    }
+
+    /**
+     * Normalize a value that is ALREADY in cents to a whole-cent int.
+     *
+     * Unlike toCent(), this does not scale — use it when the incoming value is a
+     * cents amount that may have arrived as a float. Clients computing cents in
+     * JavaScript send artifacts like 1998.9999999999998 for 1999, and a bare
+     * (int) cast truncates those, silently undercharging by a cent. Non-numeric
+     * input (including the null the request pipeline injects for omitted keys)
+     * normalizes to 0.
+     *
+     * Magnitudes beyond float's exact-integer range (2^53) are REJECTED, not
+     * coerced: is_numeric() accepts exponential notation like 1e19, and casting
+     * that float to int wraps to -8446744073709551616 — a VALID signed BIGINT —
+     * so the corrupt value would persist silently where an un-normalized float
+     * used to fail loudly at MySQL. No real cents amount approaches this bound.
+     */
+    public static function roundCent($amount): int
+    {
+        if (!is_numeric($amount)) {
+            return 0;
+        }
+
+        $amount = (float) $amount;
+
+        if (!is_finite($amount) || $amount > 9.0e15 || $amount < -9.0e15) {
+            throw new \InvalidArgumentException(
+                'Value is out of the representable cents range: ' . var_export($amount, true)
+            );
+        }
+
+        return (int) round($amount);
     }
 
     public static function toDecimalWithoutComma($amount)
@@ -571,8 +641,7 @@ class Helper
 
     public static function getAvailableCurrencyList()
     {
-        $currencies = apply_filters_deprecated('fluent-cart/available_currencies', [
-            [
+        $currencies = [
             'BDT' => [
                 "label"  => __('Bangladeshi Taka', 'fluent-cart'),
                 "value"  => 'BDT',
@@ -588,8 +657,7 @@ class Helper
                 "value"  => 'GBP',
                 "symbol" => '£',
             ],
-            ], []
-        ], '1.3.16', 'fluent_cart/available_currencies', 'Use fluent_cart/available_currencies instead of fluent-cart/available_currencies.');
+        ];
 
         return apply_filters('fluent_cart/available_currencies', $currencies, []);
     }
@@ -708,16 +776,23 @@ class Helper
 
     public static function getVariationTypes($withLabel = true)
     {
-        $statues = [
-            'simple'            => __('Simple', 'fluent-cart'),
-            'simple_variations' => __('Simple Variation', 'fluent-cart'),
+        // advanced_variations is advertised in free too so the variation-type
+        // dropdown can offer it (shown Pro-locked with a crown and an upgrade
+        // modal while Pro is inactive). Pro re-registers the same key via the
+        // filter below when active.
+        $types = [
+            'simple'              => __('Simple', 'fluent-cart'),
+            'simple_variations'   => __('Simple Variations', 'fluent-cart'),
+            'advanced_variations' => __('Advanced Variations', 'fluent-cart'),
         ];
 
+        $types = apply_filters('fluent_cart/variation_types', $types);
+
         if ($withLabel) {
-            return $statues;
+            return $types;
         }
 
-        return array_keys($statues);
+        return array_keys($types);
     }
 
     public static function isValueEncrypted($raw_value)
@@ -931,13 +1006,11 @@ class Helper
 
     public static function getCouponStatuses()
     {
-        $statuses = apply_filters_deprecated('fluent-cart/coupon_statuses', [
-            [
-                'active'   => __('Active', 'fluent-cart'),
-                'expired'  => __('Expired', 'fluent-cart'),
-                'disabled' => __('Disabled', 'fluent-cart'),
-            ], []
-        ], '1.3.16', 'fluent_cart/coupon_statuses', 'Use fluent_cart/coupon_statuses instead of fluent-cart/coupon_statuses.');
+        $statuses = [
+            'active'   => __('Active', 'fluent-cart'),
+            'expired'  => __('Expired', 'fluent-cart'),
+            'disabled' => __('Disabled', 'fluent-cart'),
+        ];
 
         return apply_filters('fluent_cart/coupon_statuses', $statuses, []);
     }
@@ -976,7 +1049,7 @@ class Helper
 
         // Normalize / defaults
         $trialDays = $data['trial_days'] ?? 0;
-        $interval = (string)($data['interval'] ?  $data['interval'] : 'monthly');
+        $interval = (string)($data['interval'] ? $data['interval'] : 'monthly');
 
         $unit = '';
         if (isset($intervalOptions[$interval])) {
@@ -1132,19 +1205,19 @@ class Helper
         }
     }
 
-    public static function generateSubscriptionInfo($otherInfo, $itemPrice): ?string
+    public static function generateSubscriptionInfo($otherInfo, $itemPrice, $currencyCode = null): ?string
     {
         // Convert to array only if it's an object
         if (is_object($otherInfo)) {
             $otherInfo = json_decode(json_encode($otherInfo), true);
         }
 
-        $price = self::toDecimal($itemPrice);
+        $price = self::toDecimal($itemPrice, true, $currencyCode);
         $recurringDiscountAmount = Arr::get($otherInfo, 'recurring_discounts.amount', 0);
 
         if ($recurringDiscountAmount) {
             $newRecurringAmount = $itemPrice - $recurringDiscountAmount;
-            $price = "<del>" . $price . "</del> " . self::toDecimal($newRecurringAmount);
+            $price = "<del>" . $price . "</del> " . self::toDecimal($newRecurringAmount, true, $currencyCode);
         }
 
         $repeatInterval = Arr::get($otherInfo, 'repeat_interval', '');
@@ -1156,24 +1229,24 @@ class Helper
         if (isset($intervalOptions[$repeatInterval])) {
             $intervalUnit = $intervalOptions[$repeatInterval];
         } else if ($repeatInterval) {
-                $intervalOptions = static::getAvailableSubscriptionIntervalOptions();
-                foreach ($intervalOptions as $option) {
-                    if ($option['value'] === $repeatInterval) {
-                        $intervalUnit = strtolower($option['label']);
-                        break;
-                    }
+            $intervalOptions = static::getAvailableSubscriptionIntervalOptions();
+            foreach ($intervalOptions as $option) {
+                if ($option['value'] === $repeatInterval) {
+                    $intervalUnit = strtolower($option['label']);
+                    break;
                 }
+            }
 
-                if (!$intervalUnit) {
-                    $intervalUnit = ucwords(str_replace(['_', '-'], ' ', $repeatInterval));
-                }
+            if (!$intervalUnit) {
+                $intervalUnit = ucwords(str_replace(['_', '-'], ' ', $repeatInterval));
+            }
         }
 
         $intervalLabel = Helper::getTranslatedIntervalUnit($intervalUnit);
 
         $interval = $intervalUnit
             ? sprintf(
-                /* translators: %s is the interval (e.g., day, week, month, quarter, half_year, year) */
+            /* translators: %s is the interval (e.g., day, week, month, quarter, half_year, year) */
                 __('per %s', 'fluent-cart'),
                 $intervalLabel
             )
@@ -1205,7 +1278,147 @@ class Helper
         return !empty($otherInfo) ? $paymentInfo : null;
     }
 
-    public static function generateSetupFeeInfo($otherInfo): ?string
+    /**
+     * Billing-cycle text for a subscription with a config-defined schedule
+     * (see SubscriptionHelper::getBillingSchedule()) — cadences the
+     * billing_interval enum cannot express, e.g. "$100 per 3 years on Aug 19".
+     * Subscriptions without a schedule keep generateSubscriptionInfo().
+     */
+    public static function generateScheduleSubscriptionInfo(array $schedule, $otherInfo, $itemPrice, $currencyCode = null): ?string
+    {
+        if (is_object($otherInfo)) {
+            $otherInfo = json_decode(json_encode($otherInfo), true);
+        }
+
+        $count = max(1, (int) Arr::get($schedule, 'interval', 1));
+
+        switch (Arr::get($schedule, 'period')) {
+            case 'day':
+                $unitLabel = _n('day', 'days', $count, 'fluent-cart');
+                break;
+            case 'week':
+                $unitLabel = _n('week', 'weeks', $count, 'fluent-cart');
+                break;
+            case 'month':
+                $unitLabel = _n('month', 'months', $count, 'fluent-cart');
+                break;
+            case 'year':
+                $unitLabel = _n('year', 'years', $count, 'fluent-cart');
+                break;
+            default:
+                return self::generateSubscriptionInfo($otherInfo, $itemPrice, $currencyCode);
+        }
+
+        $price = self::toDecimal($itemPrice, true, $currencyCode);
+        $recurringDiscountAmount = Arr::get($otherInfo, 'recurring_discounts.amount', 0);
+
+        if ($recurringDiscountAmount) {
+            $newRecurringAmount = $itemPrice - $recurringDiscountAmount;
+            $price = "<del>" . $price . "</del> " . self::toDecimal($newRecurringAmount, true, $currencyCode);
+        }
+
+        $interval = $count === 1
+            ? sprintf(
+            /* translators: %s is the interval unit (e.g., day, week, month, year) */
+                __('per %s', 'fluent-cart'),
+                $unitLabel
+            )
+            : sprintf(
+            /* translators: %1$d is the count number, %2$s is the plural unit name (e.g., days, months, years) */
+                __('per %1$d %2$s', 'fluent-cart'),
+                $count,
+                $unitLabel
+            );
+
+        if ($anchorText = self::getScheduleAnchorText($schedule['period'], Arr::get($schedule, 'anchor', []))) {
+            $interval .= ' ' . $anchorText;
+        }
+
+        $occurrence = (int) Arr::get($otherInfo, 'times', 0);
+
+        if (empty($occurrence)) {
+            return sprintf(
+            /* translators: %1$s is the price, %2$s is the interval, %3$s is "until cancel" text */
+                __('%1$s %2$s %3$s', 'fluent-cart'),
+                $price,
+                $interval,
+                __('until cancel', 'fluent-cart')
+            );
+        }
+
+        return sprintf(
+        /* translators: %1$s is the price, %2$s is the interval, %3$s is the occurrence count, %4$s is "cycle(s)" */
+            __('%1$s %2$s, for %3$s %4$s', 'fluent-cart'),
+            $price,
+            $interval,
+            $occurrence,
+            _n('cycle', 'cycles', $occurrence, 'fluent-cart')
+        );
+    }
+
+    /**
+     * Human-readable billing anchor, e.g. "on Friday", "on the 10th",
+     * "on the last day", "on Aug 19". Anchor day 31 encodes "last day of
+     * the month" (see SubscriptionHelper::getBillingSchedule()).
+     */
+    private static function getScheduleAnchorText(string $period, $anchor): string
+    {
+        if (!is_array($anchor) || !$anchor) {
+            return '';
+        }
+
+        if ($period === 'week' && !empty($anchor['weekday'])) {
+            $weekdays = [
+                1 => __('Monday', 'fluent-cart'),
+                2 => __('Tuesday', 'fluent-cart'),
+                3 => __('Wednesday', 'fluent-cart'),
+                4 => __('Thursday', 'fluent-cart'),
+                5 => __('Friday', 'fluent-cart'),
+                6 => __('Saturday', 'fluent-cart'),
+                7 => __('Sunday', 'fluent-cart'),
+            ];
+
+            if (isset($weekdays[$anchor['weekday']])) {
+                /* translators: %s is a weekday name, e.g. "on Friday" */
+                return sprintf(__('on %s', 'fluent-cart'), $weekdays[$anchor['weekday']]);
+            }
+
+            return '';
+        }
+
+        if ($period === 'month' && !empty($anchor['day'])) {
+            $day = (int) $anchor['day'];
+
+            if ($day === 31) {
+                return __('on the last day', 'fluent-cart');
+            }
+
+            /* translators: %s is an ordinal day of month, e.g. "on the 10th" */
+            return sprintf(__('on the %s', 'fluent-cart'), gmdate('jS', gmmktime(12, 0, 0, 1, $day, 2001)));
+        }
+
+        if ($period === 'year' && (!empty($anchor['day']) || !empty($anchor['month']))) {
+            $day   = (int) Arr::get($anchor, 'day', 0);
+            $month = (int) Arr::get($anchor, 'month', 0);
+
+            if ($month && $day) {
+                /* translators: %s is a date, e.g. "on Aug 19" */
+                return sprintf(__('on %s', 'fluent-cart'), gmdate('M', gmmktime(12, 0, 0, $month, 1, 2001)) . ' ' . $day);
+            }
+
+            if ($month) {
+                /* translators: %s is a month name, e.g. "in August" */
+                return sprintf(__('in %s', 'fluent-cart'), gmdate('F', gmmktime(12, 0, 0, $month, 1, 2001)));
+            }
+
+            /* translators: %s is an ordinal day of month, e.g. "on the 10th" */
+            return sprintf(__('on the %s', 'fluent-cart'), gmdate('jS', gmmktime(12, 0, 0, 1, $day, 2001)));
+        }
+
+        return '';
+    }
+
+    public static function generateSetupFeeInfo($otherInfo, $asArray = false)
     {
         // Convert to array if it's an object
         if (is_object($otherInfo)) {
@@ -1223,12 +1436,31 @@ class Helper
 
         if ($originalSetupFee = Arr::get($otherInfo, 'original_signup_fee', 0)) {
             if ($fee != $originalSetupFee) {
-                return __('Adjusted setup fee', 'fluent-cart') . CurrencySettings::getPriceHtml($fee, null, true, true);
+                $title = __('Adjusted setup fee', 'fluent-cart');
+                $formattedAmount = CurrencySettings::getPriceHtml($fee, null, true, true);
+
+                if ($asArray) {
+                    return [
+                        'signup_fee_name'      => $title,
+                        'signup_fee'           => $fee,
+                        'signup_fee_formatted' => $formattedAmount,
+                    ];
+                }
+                return $title . $formattedAmount;
             }
         }
 
+        $formattedAmount = CurrencySettings::getPriceHtml($fee, null, true, true);
+        if ($asArray) {
+            return [
+                'signup_fee_name'      => $signupFeeName,
+                'signup_fee'           => $fee,
+                'signup_fee_formatted' => $formattedAmount,
+            ];
+        }
 
-        return $signupFeeName . ' ' . CurrencySettings::getPriceHtml($fee, null, true, true);
+
+        return $signupFeeName . ' ' . $formattedAmount;
     }
 
     public static function generateTrialInfo($otherInfo)
@@ -1252,7 +1484,6 @@ class Helper
     public static function getCountryList(): array
     {
         $options = App::getInstance('localization')->countriesOptions();
-        $options = apply_filters_deprecated('fluent-cart/util/countries', [$options, []], '1.3.16', 'fluent_cart/util/countries', 'Use fluent_cart/util/countries instead of fluent-cart/util/countries.');
 
         return apply_filters('fluent_cart/util/countries', $options, []);
     }
@@ -1501,11 +1732,11 @@ class Helper
      * Get the current user Model.
      * @return User|\FluentCart\Framework\Database\Orm\Builder|\FluentCart\Framework\Database\Orm\Builder[]|\FluentCart\Framework\Database\Orm\Collection|\FluentCart\Framework\Database\Orm\Model|null
      */
-    public static function getCurrentUser()
+    public static function getCurrentUser($refresh = false)
     {
         static $user = false;
 
-        if ($user !== false) {
+        if (!$refresh && $user !== false) {
             return $user;
         }
 
@@ -1598,10 +1829,12 @@ class Helper
     public static function humanIntervalMaps($interval = '')
     {
         $intervals = [
-            'daily'   => 'day',
-            'weekly'  => 'week',
-            'monthly' => 'month',
-            'yearly'  => 'year'
+            'daily'       => __('day', 'fluent-cart'),
+            'weekly'      => __('week', 'fluent-cart'),
+            'monthly'     => __('month', 'fluent-cart'),
+            'quarterly'   => __('quarter', 'fluent-cart'),
+            'half_yearly' => __('six month', 'fluent-cart'),
+            'yearly'      => __('year', 'fluent-cart'),
         ];
 
         return Arr::get($intervals, $interval);
@@ -1614,33 +1847,33 @@ class Helper
     {
         $intervals = [
             [
-                'label' => __('Yearly', 'fluent-cart'),
-                'value' => 'yearly',
+                'label'     => __('Yearly', 'fluent-cart'),
+                'value'     => 'yearly',
                 'map_value' => 'year',
             ],
             [
-                'label' => __('Half Yearly', 'fluent-cart'),
-                'value' => 'half_yearly',
+                'label'     => __('Half Yearly', 'fluent-cart'),
+                'value'     => 'half_yearly',
                 'map_value' => 'half_year',
             ],
             [
-                'label' => __('Quarterly', 'fluent-cart'),
-                'value' => 'quarterly',
+                'label'     => __('Quarterly', 'fluent-cart'),
+                'value'     => 'quarterly',
                 'map_value' => 'quarter',
             ],
             [
-                'label' => __('Monthly', 'fluent-cart'),
-                'value' => 'monthly',
+                'label'     => __('Monthly', 'fluent-cart'),
+                'value'     => 'monthly',
                 'map_value' => 'month',
             ],
             [
-                'label' => __('Weekly', 'fluent-cart'),
-                'value' => 'weekly',
+                'label'     => __('Weekly', 'fluent-cart'),
+                'value'     => 'weekly',
                 'map_value' => 'week',
             ],
             [
-                'label' => __('Daily', 'fluent-cart'),
-                'value' => 'daily',
+                'label'     => __('Daily', 'fluent-cart'),
+                'value'     => 'daily',
                 'map_value' => 'day',
             ]
         ];
@@ -1682,8 +1915,8 @@ class Helper
 
         $maxTrialDaysAllowed = apply_filters('fluent_cart/max_trial_days_allowed', 365, [
             'existing_trial_days' => $trialDays,
-            'repeat_interval' => $repeatInterval,
-            'interval_in_days' => $intervalInDays,
+            'repeat_interval'     => $repeatInterval,
+            'interval_in_days'    => $intervalInDays,
         ]);
 
         return min($trialDays + $intervalInDays, $maxTrialDaysAllowed); // return the minimum of the sum of the existing trial days and the interval days, and the max trial allowed
@@ -1692,24 +1925,7 @@ class Helper
 
     public static function subscriptionIntervalInDays($interval)
     {
-        switch ($interval) {
-            case 'daily':
-                return 1;
-            case 'weekly':
-                return 7;
-            case 'monthly':
-                return 30;
-            case 'quarterly':
-                return 90;
-            case 'half_yearly':
-                return 182;
-            case 'yearly':
-                return 365;
-            default:
-                return apply_filters('fluent_cart/subscription_interval_in_days', 0, [
-                    'interval' => $interval,
-                ]);
-        }
+        return PaymentHelper::getIntervalDays($interval);
     }
 
     public static function parseTermIdsForFilter($filters): array
@@ -1766,10 +1982,10 @@ class Helper
         $allChildVariants = Arr::pluck($variants, 'other_info.bundle_child_ids');
 
         $allChildVariants = array_unique(Arr::flatten($allChildVariants));
-        $allChildVariants = Arr::except(
+        $allChildVariants = array_values(array_diff(
             $allChildVariants,
             Arr::pluck($variants, 'id')
-        );
+        ));
         $allChildVariants = array_filter($allChildVariants);
         $childVariants = ProductVariation::query()
             ->whereIn('id', $allChildVariants)
@@ -1824,8 +2040,8 @@ class Helper
 
         return strtr(
             (string)$number,
-            array_combine(range(0,9),
-            $digits)
+            array_combine(range(0, 9),
+                $digits)
         );
     }
 
@@ -1866,5 +2082,31 @@ class Helper
         }
 
         return $default;
+    }
+
+    public static function formatTaxRatePercent(float $rate): string
+    {
+        $formatted = number_format($rate, 4, '.', '');
+        if (strpos($formatted, '.') !== false) {
+            $formatted = rtrim($formatted, '0');
+            $formatted = rtrim($formatted, '.');
+        }
+        return $formatted;
+    }
+
+    /**
+     * Returns the tax label for order-level tax rows (tax_total, not per-item).
+     * For mixed orders, indicates tax varies per item.
+     *
+     * @param \FluentCart\App\Models\Order $order
+     * @return string
+     */
+    public static function getOrderTaxLabel($order) {
+        if ((int) $order->tax_behavior === 3) {
+            return esc_html__('(Varies)', 'fluent-cart');
+        }
+        return (int) $order->tax_behavior === 2
+            ? esc_html__('(Included)', 'fluent-cart')
+            : esc_html__('(Excluded)', 'fluent-cart');
     }
 }

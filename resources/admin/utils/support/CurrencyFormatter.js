@@ -5,21 +5,26 @@ import {translateNumber} from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
 
 export default class CurrencyFormatter {
-    static #currencySign = AppConfig.get('shop.currency_sign', '$');
-    static #currencySigns = AppConfig.get('currency_signs', {});
-    static #currencyPosition = AppConfig.get('shop.currency_position', 'before');
-    static #wpLocale = AppConfig.get('wp_locale', 'en-US');
-
-
     static #locale = null;
     static #decimalSeparator;
 
-    static setLocale() {
+    static {
+        AppConfig.onShopUpdate(() => CurrencyFormatter.setLocale());
+    }
 
-        CurrencyFormatter.#wpLocale = CurrencyFormatter.#wpLocale.replace('_', '-');
+    static #currencyConfig() {
+        return {
+            signs:    AppConfig.get('currency_signs', {}),
+            sign:     AppConfig.get('shop.currency_sign', '$'),
+            position: AppConfig.get('shop.currency_position', 'before'),
+        };
+    }
+
+    static setLocale() {
+        const wpLocale = (AppConfig.get('wp_locale', 'en-US')).replace('_', '-');
         const shopConfig = AppConfig.get('shop', {});
         CurrencyFormatter.#decimalSeparator = shopConfig.decimal_separator || null;
-        CurrencyFormatter.#locale = this.#wpLocale;
+        CurrencyFormatter.#locale = wpLocale;
 
         if (shopConfig.decimal_separator) {
             CurrencyFormatter.#locale = shopConfig.decimal_separator === 'comma' ? 'de-DE' : 'en-US';
@@ -28,29 +33,28 @@ export default class CurrencyFormatter {
         }
     }
 
+    static formatForOrder(amount, orderOrCurrency, withCurrency = true, hideEmpty = false) {
+        let currency = null;
+        if (typeof orderOrCurrency === 'string') {
+            currency = orderOrCurrency || null;
+        } else if (orderOrCurrency && orderOrCurrency.currency) {
+            currency = orderOrCurrency.currency;
+        }
+        return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currency);
+    }
+
     // Core method to format a single amount (similar to your formatNumber)
     static formatNumber(amount, withCurrency = true, hideEmpty = false, currencyName = null) {
         if (!amount && hideEmpty) {
             return '';
         }
-        const currency = Arr.get(CurrencyFormatter.#currencySigns, currencyName || '', CurrencyFormatter.#currencySign);
-
-        if (!amount) {
-            amount = '0.00';
-        } else {
-            amount = (amount / 100).toFixed(2); // Convert cents to dollars
-        }
-
-        if (!withCurrency) {
-            return amount;
-        }
-
+        const { signs: currencySigns, sign: currencySign, position } = CurrencyFormatter.#currencyConfig();
+        const currency = Arr.get(currencySigns, (currencyName || '').toUpperCase(), currencySign);
 
         let formatted = new Intl.NumberFormat(CurrencyFormatter.#locale, {
-            minimumFractionDigits: 2,
+            minimumFractionDigits: 0,
             maximumFractionDigits: 2
-        }).format(amount);
-
+        }).format(amount ? amount / 100 : 0);
 
         formatted = translateNumber(formatted);
 
@@ -58,7 +62,7 @@ export default class CurrencyFormatter {
             return formatted;
         }
 
-        return CurrencyFormatter.#currencyPosition === 'before' ? `${currency}${formatted}` : `${formatted}${currency}`;
+        return position === 'before' ? `${currency}${formatted}` : `${formatted}${currency}`;
     }
 
     static #replaceDecimalSeparator(value) {
@@ -73,7 +77,8 @@ export default class CurrencyFormatter {
             return '';
         }
 
-        const currency = Arr.get(CurrencyFormatter.#currencySigns, currencyName || '', CurrencyFormatter.#currencySign);
+        const { signs: currencySigns, sign: currencySign, position } = CurrencyFormatter.#currencyConfig();
+        const currency = Arr.get(currencySigns, (currencyName || '').toUpperCase(), currencySign);
 
         // Format the scaled number using Intl.NumberFormat for locale-aware formatting
         let formattedAmount;
@@ -105,7 +110,7 @@ export default class CurrencyFormatter {
 
 
         // Apply currency sign based on position
-        if (CurrencyFormatter.#currencyPosition === 'before') {
+        if (position === 'before') {
             return `${currency}${valueWithSuffix}`;
         }
         return `${valueWithSuffix}${currency}`;
@@ -116,17 +121,8 @@ export default class CurrencyFormatter {
             return '0';
         }
 
-        const currency = Arr.get(
-            CurrencyFormatter.#currencySigns,
-            currencyName || '',
-            CurrencyFormatter.#currencySign
-        )
-            // decode HTML entities to real characters for canvas
-            .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&nbsp;/g, ' ');
+        const { signs: currencySigns, sign: currencySign, position } = CurrencyFormatter.#currencyConfig();
+        const currency = Arr.get(currencySigns, (currencyName || '').toUpperCase(), currencySign);
 
         let suffix = '';
 
@@ -142,13 +138,13 @@ export default class CurrencyFormatter {
         }
 
         const formatted = new Intl.NumberFormat(undefined, {
-            minimumFractionDigits: 2,
+            minimumFractionDigits: 0,
             maximumFractionDigits: 2
         }).format(amount/100);
 
         const value = `${formatted}${suffix}`;
 
-        return CurrencyFormatter.#currencyPosition === 'before'
+        return position === 'before'
             ? `${currency}${value}`
             : `${value}${currency}`;
     }
@@ -162,21 +158,21 @@ export default class CurrencyFormatter {
     }
 
     // Format a list of amounts
-    static formatBulk(amounts, useScaling = false, currency = CurrencyFormatter.#currencySign, hideEmpty = false) {
+    static formatBulk(amounts, useScaling = false, currency = CurrencyFormatter.#currencyConfig().sign, hideEmpty = false) {
         return amounts.map(amount => {
             if (useScaling) {
-                return CurrencyFormatter.formatScaled(amount, currency, hideEmpty);
+                return CurrencyFormatter.formatScaled(amount, true, hideEmpty, currency);
             }
-            return CurrencyFormatter.formatNumber(amount, currency, hideEmpty);
+            return CurrencyFormatter.formatNumber(amount, true, hideEmpty, currency);
         });
     }
 
     static get currencySign() {
-        return CurrencyFormatter.#currencySign;
+        return CurrencyFormatter.#currencyConfig().sign;
     }
 
     static get currencyPosition() {
-        return CurrencyFormatter.#currencyPosition;
+        return CurrencyFormatter.#currencyConfig().position;
     }
 
     static get locale() {

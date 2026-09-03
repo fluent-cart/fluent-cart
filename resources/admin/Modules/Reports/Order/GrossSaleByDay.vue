@@ -11,6 +11,7 @@ import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
   tooltipSuffix,
@@ -132,19 +133,14 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: (params) => {
         let result = params[0].name;
 
         params.forEach((param) => {
-          const value = param.seriesName === "Gross Sale" ? `${CurrencyFormatter.scaled(param.value)}` : param.value;
+          const value = param.seriesName === "Gross Sale" ? chartTooltipAmount(param.value * 100) : param.value;
           const color = isDarkTheme.value ? "#ffffff" : "#565865";
 
           result += `<div>
@@ -315,11 +311,18 @@ const handleThemeChange = () => {
   });
 };
 
+const handleCurrencyChange = () => {
+  nextTick(() => {
+    updateChart();
+  });
+};
+
 onMounted(() => {
   nextTick(() => {
     initChart();
     props.reportFilter.addListener("spend-by-day", initChart);
     window.addEventListener("onFluentCartThemeChange", handleThemeChange);
+    window.addEventListener("fluentCartCurrencyChange", handleCurrencyChange);
   });
 });
 
@@ -327,6 +330,7 @@ onUnmounted(() => {
   if (chartInstance) {
     chartInstance.dispose();
     window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+    window.removeEventListener("fluentCartCurrencyChange", handleCurrencyChange, false);
     props.reportFilter.removeListener("spend-by-day", initChart, false);
     window.removeEventListener("resize", () => {
       chartInstance.resize();

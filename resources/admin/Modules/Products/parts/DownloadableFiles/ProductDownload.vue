@@ -44,15 +44,15 @@ const handleDropdownCommand = (command) => {
     <Card.Container>
       <Card.Header class="pb-5">
         <template #action>
+          <!-- Staged through onChangeInputField so the column actually reaches the
+               save payload; setting hasChange alone left the toggle to revert on
+               reload. Attaching files enables the option server-side
+               (ProductDownloadablesController), not by flipping this switch, so
+               @change only fires on a real click and there is no initial-setup
+               case to guard against. -->
           <el-switch v-if="product.detail" v-model="product.detail.manage_downloadable" active-value="1"
                      inactive-value="0" :active-text="$t('Downloadable Asset(s)')"
-                     @change="value =>{
-                          //Trigger the change when the Downloadable Asset option is turned off or if files are already attached.
-                          // However, do not trigger the change on the initial setup, as the option is automatically enabled when files are saved.
-                       if(value.toString() === '0' || productDownloadableModel.hasDownloadableFiles()){
-                         productEditModel.setHasChange(true)
-                       }
-                     }">
+                     @change="value => productEditModel.onChangeInputField('manage_downloadable', value)">
           </el-switch>
         </template>
       </Card.Header>

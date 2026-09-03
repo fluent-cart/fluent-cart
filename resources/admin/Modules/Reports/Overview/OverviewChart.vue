@@ -7,6 +7,7 @@ import Theme from "@/utils/Theme";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
 // Define props
@@ -125,7 +126,6 @@ const initChart = () => {
 const updateChart = () => {
   if (!chartInstance) return;
   if (error.value) {
-    console.error(error.value);
     return;
   }
 
@@ -155,20 +155,15 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.report.dark_cyan_blue_16 : colors.report.light_gray_cyan_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.report.dark_cyan_blue_16, colors.report.light_gray_cyan_blue, chartType.value),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: params => {
         let tooltipContent = params[0].name;
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
-      
+
         params.forEach(param => {
-          const value = CurrencyFormatter.formatScaled(param.value);
+          const value = chartTooltipAmount(param.value);
 
           tooltipContent += `<div>
             ${param.marker} 
@@ -230,7 +225,6 @@ const updateChart = () => {
     chartInstance.setOption(option, {notMerge: true, replaceMerge: ["series"]});
   } catch (e) {
     error.value = `Error updating chart: ${e.message}`;
-    console.error(error.value);
   }
 };
 
@@ -272,6 +266,7 @@ watch(
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", updateChart, false);
+  window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
   if (chartInstance) {
     chartInstance.dispose();
     chartInstance = null;
@@ -280,6 +275,7 @@ onUnmounted(() => {
 
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", updateChart);
+  window.addEventListener("fluentCartCurrencyChange", updateChart);
   nextTick(initChart);
 });
 </script>

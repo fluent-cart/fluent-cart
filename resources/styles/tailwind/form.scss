@@ -23,3 +23,58 @@
 .form-note{
     @apply dark:text-gray-300;
 }
+
+@keyframes fct-highlight-bg {
+    0%, 20% { background-color: color-mix(in srgb, theme('colors.gray.100') 60%, transparent); }
+    100%     { background-color: transparent; }
+}
+
+@keyframes fct-highlight-bg-dark {
+    0%, 20% { background-color: color-mix(in srgb, theme('colors.gray.800') 30%, transparent); }
+    100%     { background-color: transparent; }
+}
+
+.fct-scroll-highlight {
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        animation: fct-highlight-bg 2s ease-out forwards;
+        pointer-events: none;
+        z-index: 1;
+
+        .fluent_theme_dark & {
+            animation: fct-highlight-bg-dark 2s ease-out forwards;
+        }
+    }
+
+    &.grid {
+        isolation: isolate;
+
+        &::before {
+            inset: -10px;
+            border-radius: theme('borderRadius.sm');
+            z-index: -1;
+        }
+    }
+}
+
+.form-section,
+.fct-card {
+    @apply border border-solid border-transparent
+}
+.form-section.fct-scroll-highlight,
+.fct-card.fct-scroll-highlight {
+    @apply rounded border-gray-200 dark:border-gray-700;
+}
+
+.fct-content-card-list-item.fct-scroll-highlight {
+     &::before {
+        top: 0;
+        left: -10px;
+        bottom: 0px;
+        right: -10px;
+    }
+}

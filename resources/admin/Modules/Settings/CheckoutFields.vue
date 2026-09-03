@@ -3,10 +3,12 @@
     <SettingsHeader
         :heading="translate('Checkout Fields')"
         :loading="saving"
-        @onSave="saveFields"
+        @on-save="saveFields"
     />
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div class="fct-checkout-fields-wrapp">
         <Card>
           <CardBody>
@@ -97,7 +99,7 @@
                               v-model="settings[sectionKey][fieldKey].enabled"
                               active-value="yes"
                               inactive-value="no"
-                              :disabled="isFirstNameDisabled(sectionKey, fieldKey)"
+                              :disabled="isFirstNameDisabled(sectionKey, fieldKey) || isB2BOnlyModeDisabled(sectionKey, fieldKey)"
                           >
                           </el-switch>
 
@@ -133,7 +135,7 @@
                       </div><!-- .fct-checkout-field-info -->
 
                       <div class="fct-checkout-field-action"
-                           v-if="field.can_alter === 'yes' && fieldKey!=='first_name'">
+                           v-if="field.can_alter === 'yes' && fieldKey!=='first_name' && fieldKey!=='b2b_only_mode'">
                         <el-checkbox
                             v-model="settings[sectionKey][fieldKey].required"
                             true-label="yes"
@@ -155,7 +157,7 @@
 
         <div class="form-section-save-action">
           <el-button type="primary" @click="saveFields" :loading="saving">
-            {{ saving ? translate('Saving') : translate('Save') }}
+            {{ translate('Save') }}
           </el-button>
         </div>
       </div>
@@ -170,6 +172,7 @@ import CardHeader from '@/Bits/Components/Card/CardHeader.vue';
 import Animation from "@/Bits/Components/Animation.vue";
 import translate from "@/utils/translator/Translator";
 import SettingsHeader from "./Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 export default {
   name: 'CheckoutFields',
@@ -178,7 +181,8 @@ export default {
     CardHeader,
     Card,
     CardBody,
-    SettingsHeader
+    SettingsHeader,
+    AdminNotice
   },
   data() {
     return {
@@ -194,13 +198,35 @@ export default {
       if (newVal === 'yes' && this.settings.basic_info?.first_name?.enabled === 'no') {
         this.settings.basic_info.first_name.enabled = 'yes';
       }
+    },
+    'settings.business_details': {
+      deep: true,
+      handler(businessDetails) {
+        if (!businessDetails || !businessDetails.b2b_only_mode) return;
+        const anyEnabled = businessDetails.company_name?.enabled === 'yes'
+            || businessDetails.vat_number?.enabled === 'yes'
+            || businessDetails.legal_registration_id?.enabled === 'yes';
+        if (!anyEnabled) {
+          businessDetails.b2b_only_mode.enabled = 'no';
+        }
+      }
     }
+  },
+  mounted() {
+    this.getFields();
   },
 
   methods: {
     translate,
     isFirstNameDisabled(sectionKey, fieldKey) {
       return sectionKey === 'basic_info' && fieldKey === 'first_name' && this.settings.basic_info?.last_name?.enabled === 'yes';
+    },
+    isB2BOnlyModeDisabled(sectionKey, fieldKey) {
+      if (sectionKey !== 'business_details' || fieldKey !== 'b2b_only_mode') return false;
+      const businessDetails = this.settings.business_details || {};
+      return businessDetails.company_name?.enabled !== 'yes'
+          && businessDetails.vat_number?.enabled !== 'yes'
+          && businessDetails.legal_registration_id?.enabled !== 'yes';
     },
     shouldDimLabel(sectionKey, fieldKey) {
       if (this.settings?.[sectionKey]?.[fieldKey]?.enabled === 'no') {
@@ -259,11 +285,8 @@ export default {
           });
     },
     formatSectionTitle(key) {
-      return key.replace('_', ' ');
+      return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     },
-  },
-  mounted() {
-    this.getFields();
   },
 }
 </script>

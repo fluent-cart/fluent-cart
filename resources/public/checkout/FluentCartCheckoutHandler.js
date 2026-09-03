@@ -38,7 +38,8 @@ class FluentCartCheckoutHandler {
             'billing_first_name',
             'billing_last_name',
             'billing_email',
-            'billing_company_name'
+            'billing_company_name',
+            'fct_billing_tax_id'
         ],
         '.fct_error_billing_address_section_section': [
             'billing_address_1',
@@ -123,8 +124,8 @@ class FluentCartCheckoutHandler {
 
         });
 
-        // init tax service if needed
-        if (window.fluentcart_checkout_vars?.tax_settings?.enable_tax === 'yes') {
+        // Initialize VAT/tax ID UI whenever the checkout renders that field.
+        if (this.form.querySelector('[data-fluent-cart-checkout-page-tax-wrapper]')) {
             TaxService.init(this);
         }
 
@@ -197,7 +198,6 @@ class FluentCartCheckoutHandler {
             }
             return this.#cartData;
         } catch (error) {
-            console.error('Error loading cart data:', error);
         }
     }
 
@@ -205,7 +205,6 @@ class FluentCartCheckoutHandler {
         try {
             return await this.#fluentCartCart.getCart();
         } catch (error) {
-            console.error('Error fetching cart items:', error);
             throw error;
         }
     }
@@ -225,7 +224,6 @@ class FluentCartCheckoutHandler {
                         location.reload();
                     }
                 } catch (error) {
-                    console.error('Failed to remove product:', error);
                 }
             }
         });
@@ -333,7 +331,6 @@ class FluentCartCheckoutHandler {
         const paymentElementState = window["is_" + this.payMethod + "_ready"];
 
         if (this.payMethod !== "offline_payment" && !paymentElementState) {
-            console.warn("Dev Warn FCT: Payment method is not ready yet!");
             window.dispatchEvent(
                 new CustomEvent("fluent_cart_validate_checkout_" + this.payMethod)
             );
@@ -368,6 +365,9 @@ class FluentCartCheckoutHandler {
         }
 
         if (proceed === false) {
+            // A vetoing callback shows its own message — re-enable the button
+            // and hide the spinner so checkout isn't left permanently stuck.
+            this.cleanupAfterProcessing();
             return;
         }
 
@@ -537,7 +537,7 @@ class FluentCartCheckoutHandler {
         const formData = new FormData(this.form);
         formData.append("_wpnonce", this.nonce);
 
-        const utmData = window.fluentCartUtmManager.get();
+        const utmData = window.fluentCartUtmManager?.get() || {};
 
         Object.keys(utmData).forEach((key) => {
             const value = utmData[key];
@@ -586,6 +586,11 @@ class FluentCartCheckoutHandler {
                     await callback(data);
                 }
             }
+        }
+
+        const searchParams = new URLSearchParams(window.location.search);
+        if (!searchParams.has('fct_cart_hash') && window.fluentCartCart) {
+            window.fluentCartCart.broadcastCartCleared();
         }
 
         if (data?.redirect_to) {

@@ -12,6 +12,8 @@ const props = defineProps({
 const emit = defineEmits(['save']);
 
 const visible = ref(false);
+
+defineExpose({ toggle: () => visible.value = !visible.value });
 </script>
 
 <template>
@@ -27,8 +29,8 @@ const visible = ref(false);
                         :placeholder="translate('Quantity')"
                         type="number"
                         v-model.number="variant.adjusted_quantity"
-                        @keyup="event => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', event.target.value, fieldKey) }"
-                        @change="value => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', value, fieldKey) }"
+                        @keyup="event => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', event.target.value, fieldKey, variant) }"
+                        @change="value => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', value, fieldKey, variant) }"
                     />
                 </div>
                 <div class="fct-adjust-by-col">
@@ -41,7 +43,7 @@ const visible = ref(false);
                         type="number"
                         :min="1"
                         v-model.number="variant.new_stock"
-                        @keyup="event => { productEditModel.onChangeNewStock('new_stock', event.target.value, fieldKey) }"
+                        @keyup="event => { productEditModel.onChangeNewStock('new_stock', event.target.value, fieldKey, variant) }"
                     />
                 </div>
             </div>

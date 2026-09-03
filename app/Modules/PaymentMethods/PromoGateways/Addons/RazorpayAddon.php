@@ -17,7 +17,7 @@ class RazorpayAddon extends AbstractPaymentGateway
 
     public function __construct()
     {
-        $settings = new AddonGatewaySettings('razorpay');
+        $settings = new AddonGatewaySettings('razorpay', 'fluent_cart_payment_settings_razorpay');
         
         $settings->setCustomStyles([
             'light' => [

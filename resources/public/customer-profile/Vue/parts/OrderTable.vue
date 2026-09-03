@@ -3,8 +3,8 @@ import {dateTimeI18, translateNumber} from "../../translator/Translator";
 import translate from "../../translator/Translator";
 import {pluralizeTranslate} from "../../translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Badge from "@/Bits/Components/Badge.vue";
-import Str from "@/utils/support/Str";
+import Badge from "../parts/Badge.vue";
+import getStatusText from "../../utils/statusLabels";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 
 const props = defineProps({
@@ -67,65 +67,10 @@ const getImageUrl = (product) => {
 
 const placeholderImage = fluentcart_customer_profile_vars.placeholder_image;
 
+const orderLinkTag = (uuid) => uuid ? 'router-link' : 'span';
+const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { order_id: uuid } } } : {};
 
-const getStatusText = (status) => {
-  switch (status) {
-    case 'completed':
-      return translate('Completed');
-    case 'paid':
-      return translate('Paid');
-    case 'active':
-      return translate('Active');
-    case 'publish':
-      return translate('Published');
-    case 'draft':
-      return translate('Draft');
-    case 'shipped':
-      return translate('Shipped');
-    case 'success':
-      return translate('Success');
-    case 'licensed':
-      return translate('Licensed');
-    case 'succeeded':
-      return translate('Succeeded');
-    case 'failed':
-      return translate('Failed');
-    case 'error':
-      return translate('Error');
-    case 'canceled':
-      return translate('Canceled');
-    case 'expired':
-      return translate('Expired');
-    case 'partially_paid':
-      return translate('Partially Paid');
-    case 'intended':
-      return translate('Intended');
-    case 'scheduled':
-      return translate('Scheduled');
-    case 'on-hold':
-      return translate('On Hold');
-    case 'pending':
-      return translate('Pending');
-    case 'unpaid':
-      return translate('Unpaid');
-    case 'warning':
-      return translate('Warning');
-    case 'processing':
-      return translate('Processing');
-    case 'future':
-      return translate('Future');
-    case 'inactive':
-      return translate('Inactive');
-    case 'dispute':
-      return translate('Dispute');
-    case 'disabled':
-      return translate('Disabled');
-    case 'beta':
-      return translate('Beta');
-    default:
-      return Str.headline(status);
-  }
-}
+
 
 </script>
 
@@ -140,46 +85,36 @@ const getStatusText = (status) => {
           <div class="item-header">
             <h3 class="sr-only">{{ $t('Order Number') }}</h3>
 
-            <router-link class="link text-sm" :to="{ name: 'view_order', params: { order_id: order.uuid } }"  :aria-label="$t('View order') + ' #' + order.invoice_no">
+            <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="link text-sm" :aria-label="$t('View order') + ' #' + order.invoice_no">
               <span class="block truncate max-w-[100px]">#{{ order.invoice_no }}</span>
-            </router-link>
-            <span class="text-system-light text-sm">{{ dateTimeI18(order.created_at) }}</span>
+            </component>
+            <span class="text-system-light text-sm">{{ dateTimeI18(order.created_at, 'MMM DD, YYYY') }}</span>
           </div><!-- item-header -->
 
           <div class="item-body">
             <div class="fct-customer-orders-items fct-customer-orders-items-2">
               <div v-if="filteredOrderItems(order).length === 1">
-                <router-link
-                    :to="{
-                        name: 'view_order',
-                        params: { order_id: order.uuid }
-                    }"
-                    class="fct-customer-orders-items-title"
-                >
+                <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="fct-customer-orders-items-title">
                   {{ filteredOrderItems(order)[0]?.post_title }}
-                  <span class="text-gray-800 text-sm">
-                       &#8211; {{ filteredOrderItems(order)[0]?.title }}
+                  <span
+                      v-if="filteredOrderItems(order)[0]?.title && filteredOrderItems(order)[0]?.title !== filteredOrderItems(order)[0]?.post_title"
+                      class="text-gray-800 text-sm"
+                  >
+                       &#8211; {{ filteredOrderItems(order)[0]?.variation_display_title || filteredOrderItems(order)[0]?.title }}
                   </span>
-                </router-link>
+                </component>
 
                 <span class="fct-customer-orders-items-sub-title !max-w-full" v-if="order.renewals_count > 0">
                   {{ pluralizeTranslate('%s Renewal', '%s Renewals', order.renewals_count) }}
                 </span>
               </div>
 
-              <router-link
-                  :to="{
-                    name: 'view_order',
-                    params: { order_id: order.uuid }
-                  }"
-                  :aria-label="$t('View order') + ' #' + order.invoice_no"
-                  v-else
-              >
+              <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" :aria-label="$t('View order') + ' #' + order.invoice_no" v-else>
                 {{
                   /* translators: %s is the number of items in the order */
                   translate("%s items", filteredOrderItems(order).length)
                 }}
-              </router-link>
+              </component>
               <el-popover
                   placement="top"
                   :width="360"
@@ -189,15 +124,11 @@ const getStatusText = (status) => {
                 <div class="fct-popover-content">
                   <div class="fct-product-orders-items">
                     <p v-for="item in filteredOrderItems(order)" :key="item.id">
-                      <router-link :to="{
-                        name: 'view_order',
-                        params: { order_id: order.uuid }
-                      }" class="title">
+                      <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="title">
                         {{ item.post_title }}
-                      </router-link>
+                      </component>
                       <span class="variation-title">
-                        <b>{{ translateNumber(item.quantity) }} </b> x
-                        {{ item.title }}
+                        <b>{{ translateNumber(item.quantity) }} </b> x {{ item.variation_display_title || item.title }}
                       </span>
                     </p>
 
@@ -242,10 +173,12 @@ const getStatusText = (status) => {
             <el-table-column label="#" :width="120">
                 <template #default="scope">
                   <div class="invoice-id-date">
-                    <router-link class="link text-sm" :to="{ name: 'view_order', params: { order_id: scope.row.uuid } }">
+                    <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)" class="link text-sm">
                       <span class="block truncate max-w-[100px]">#{{ scope.row.invoice_no }}</span>
-                    </router-link>
-                    <span class="text">{{ dateTimeI18(scope.row.created_at) }}</span>
+                    </component>
+                    <span class="text">
+                        {{ dateTimeI18(scope.row.created_at, 'MMM DD, YYYY') }}
+                    </span>
                   </div>
                 </template>
             </el-table-column>
@@ -254,21 +187,17 @@ const getStatusText = (status) => {
                 <template #default="scope">
                     <div class="fct-customer-orders-items" :class="filteredOrderItems(scope.row).length === 1 ? 'grid' : ''">
                         <template v-if="filteredOrderItems(scope.row).length === 1">
-                            <router-link
-                                :to="{
-                                    name: 'view_order',
-                                    params: { order_id: scope.row.uuid }
-                                }"
-                                class="fct-customer-orders-items-title"
-                                :aria-label="$t('View single item for this order')"
-                            >
+                            <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)" class="fct-customer-orders-items-title" :aria-label="$t('View single item for this order')">
                                 {{ filteredOrderItems(scope.row)[0]?.post_title }}
-                            </router-link>
+                            </component>
 
                             <!-- Renewal and variant name -->
                             <div class="inline-flex items-center gap-2">
-                                <span class="fct-customer-orders-items-sub-title leading-[1]">
-                                    &#8211; {{ filteredOrderItems(scope.row)[0]?.title }}
+                                <span
+                                    v-if="filteredOrderItems(scope.row)[0]?.title && filteredOrderItems(scope.row)[0]?.title !== filteredOrderItems(scope.row)[0]?.post_title"
+                                    class="fct-customer-orders-items-sub-title leading-[1]"
+                                >
+                                    &#8211; {{ filteredOrderItems(scope.row)[0]?.variation_display_title || filteredOrderItems(scope.row)[0]?.title }}
                                 </span>
 
                                 <Badge v-if="scope.row.renewals_count > 0" size="small" class="fct-renewal-badge">
@@ -278,11 +207,7 @@ const getStatusText = (status) => {
                             </div>
                         </template>
 
-                        <router-link
-                            :to="{
-                              name: 'view_order',
-                              params: { order_id: scope.row.uuid }
-                            }"
+                        <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)"
                             :aria-label="
                             /* translators: %s is the number of items in the order */
                             translate('%s items in this order') + filteredOrderItems(scope.row).length
@@ -291,7 +216,7 @@ const getStatusText = (status) => {
                         >
                           <!-- translators: %s is the number of items -->
                             {{ translate("%s items", filteredOrderItems(scope.row).length) }}
-                        </router-link>
+                        </component>
                         <el-popover
                             placement="top"
                             :width="360"
@@ -301,15 +226,12 @@ const getStatusText = (status) => {
                             <div class="fct-popover-content">
                                 <div class="fct-product-orders-items">
                                     <p v-for="item in filteredOrderItems(scope.row)" :key="item.id">
-                                        <router-link :to="{
-                                          name: 'view_order',
-                                          params: { order_id: scope.row.uuid }
-                                        }" class="title" :aria-label="$t('View item details:') + item.post_title">
+                                        <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)" class="title" :aria-label="$t('View item details:') + item.post_title">
                                             {{ item.post_title }}
-                                        </router-link>
-                                        <span class="variation-title"><b>{{ translateNumber(item.quantity) }} </b> x {{
-                                                item.title
-                                            }}</span>
+                                        </component>
+                                        <span class="variation-title">
+                                            <b>{{ translateNumber(item.quantity) }} </b> x {{ item.variation_display_title || item.title }}
+                                        </span>
                                     </p>
 
                                     <p v-if="filteredOrderItems(scope.row).length === 0">

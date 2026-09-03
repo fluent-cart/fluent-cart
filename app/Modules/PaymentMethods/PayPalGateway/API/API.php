@@ -60,10 +60,12 @@ class API
      * @param string $version API version ex: v1, v2 (Optional)
      * @param string $method HTTP method ex: GET, POST, DELETE (Optional)
      * @param array $args API request arguments (Optional)
+     * @param string $mode PayPal mode ex: live, test (Optional)
+     * @param array $extraHeaders Additional request headers ex: PayPal-Request-Id (Optional)
      * @return mixed $response API response
      * @throws \Exception if error occurs
      */
-    public static function makeRequest($path, $version = 'v1', $method = 'POST', $args = [], $mode = '')
+    public static function makeRequest($path, $version = 'v1', $method = 'POST', $args = [], $mode = '', $extraHeaders = [])
     {
         if (empty($path)) {
             return new \WP_Error('invalid_path', esc_html__('API path is required', 'fluent-cart'));
@@ -120,10 +122,16 @@ class API
             $headers['Prefer'] = 'return=representation';
         }
 
+        foreach ($extraHeaders as $headerKey => $headerValue) {
+            $headers[$headerKey] = $headerValue;
+        }
+
         $response = wp_remote_post($paypal_api_url, [
             'headers' => $headers,
             'method'  => $method,
-            'body'    => json_encode($args)
+            // An empty array encodes to a literal [], which PayPal rejects
+            // with MALFORMED_REQUEST_JSON — it requires a {} body.
+            'body'    => json_encode($args ?: new \stdClass())
         ]);
 
         if (is_wp_error($response)) {
@@ -273,18 +281,54 @@ class API
         return new \WP_Error($http_code, $message, $body);
     }
 
-    public static function createOrder($purchaseUnit)
+    public static function createOrder($purchaseUnit, $extraBody = [], $extraHeaders = [])
     {
-        return self::makeRequest('checkout/orders', 'v2', 'POST', [
+        $body = [
             'intent'              => 'CAPTURE',
             'purchase_units'      => [$purchaseUnit],
             'application_context' => ['shipping_preference' => 'NO_SHIPPING'],
-        ]);
+        ];
+
+        if ($extraBody) {
+            // The legacy application_context cannot be combined with the
+            // payment_source object (vaulting / merchant-initiated charges) —
+            // shipping preference then rides experience_context instead.
+            if (isset($extraBody['payment_source'])) {
+                unset($body['application_context']);
+            }
+            $body = array_merge($body, $extraBody);
+        }
+
+        return self::makeRequest('checkout/orders', 'v2', 'POST', $body, '', $extraHeaders);
     }
 
     public static function verifyPayment($paymentId)
     {
         return self::makeRequest('checkout/orders/' . $paymentId, 'v2', 'GET');
+    }
+
+    /**
+     * Captures an APPROVED PayPal order server-side, moving the money. FluentCart creates
+     * the order with intent=CAPTURE but the buyer only AUTHORIZES it in the popup; the funds
+     * are not captured until this call runs. The server must never trust the browser to have
+     * captured — an APPROVED-but-uncaptured order means PayPal is holding $0.
+     *
+     * Capture MOVES MONEY, so it carries a PayPal-Request-Id for idempotency (see
+     * .claude/skills/coding-rules/payment-idempotency.md). The id is keyed on the PayPal
+     * order id, which is stable and unique per checkout attempt: a duplicate capture of the
+     * same order replays the cached response instead of double-capturing, while capturing an
+     * already-captured order returns 422 ORDER_ALREADY_CAPTURED (the caller re-GETs and
+     * continues). PayPal retains request ids for 6h — longer than the 3h order lifetime — so
+     * a keyed capture never replays a dead id.
+     *
+     * @param string $paymentId The PayPal order id (payId)
+     * @return mixed API response (the captured order) or WP_Error
+     */
+    public static function captureOrder($paymentId)
+    {
+        return self::makeRequest('checkout/orders/' . $paymentId . '/capture', 'v2', 'POST', [], '', [
+            'PayPal-Request-Id' => 'fct_paypal_capture_' . md5($paymentId),
+        ]);
     }
 
     public function verifySubscription($subscriptionId, $mode = '')
@@ -379,6 +423,50 @@ class API
             $errorMessage,
             $error
         );
+    }
+
+    /**
+     * Browser-safe id token for the JS SDK vault (save-without-purchase) flow —
+     * rendered as the SDK script's data-user-id-token attribute. Short-lived
+     * (~15 min), so it is generated per checkout page render and never cached.
+     *
+     * @param string $mode The PayPal mode (live/test).
+     * @return string|\WP_Error
+     */
+    public static function getUserIdToken($mode = '')
+    {
+        if (!$mode) {
+            $mode = self::getPayPalSettings()->getMode();
+        }
+
+        $headers = [
+            'Accept'                        => 'application/json',
+            'PayPal-Partner-Attribution-ID' => 'FLUENTCART_SP_PPCP',
+            'Authorization'                 => 'Basic ' . base64_encode(
+                self::getPayPalSettings()->getPublicKey($mode) . ':' . self::getPayPalSettings()->getApiKey($mode)
+            ),
+        ];
+
+        $response = wp_remote_post(self::getAuthAPI($mode), [
+            'headers' => $headers,
+            'body'    => [
+                'grant_type'    => 'client_credentials',
+                'response_type' => 'id_token'
+            ],
+            'timeout' => 30
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (wp_remote_retrieve_response_code($response) !== 200 || empty($body['id_token'])) {
+            return new \WP_Error('id_token_error', __('Could not generate a PayPal id token.', 'fluent-cart'), $body);
+        }
+
+        return $body['id_token'];
     }
 
     /**

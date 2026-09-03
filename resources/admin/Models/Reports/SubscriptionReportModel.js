@@ -64,7 +64,6 @@ class SubscriptionReportModel extends Model {
                 }
             })
             .catch((error) => {
-                console.log(error, "error");
             })
             .finally(() => {
                 this.data.isBusy[key] = false;

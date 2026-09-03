@@ -2,9 +2,11 @@
   <el-input
       :class="errorClass"
       :id="id"
+      :size="size"
       :placeholder="placeholder"
       :model-value="displayValue"
       :disabled="disabled"
+      @focus="onFocus"
       @blur="onBlur"
       @input="onInput"
       @keydown="onKeydown">
@@ -14,14 +16,40 @@
     <template v-if="$slots.suffix" #suffix>
       <slot name="suffix"/>
     </template>
+    <template v-if="$slots.append" #append>
+      <slot name="append"/>
+    </template>
   </el-input>
 </template>
 
 <script setup>
 import { ref, watch, computed } from 'vue';
 import AppConfig from "@/utils/Config/AppConfig";
+import {
+  resolveSeparators,
+  stripLeadingZeros,
+  sanitizeInput,
+  normalizeTypingValue as normalizeTypingValueCore,
+  parseNormalizedValue as parseNormalizedValueCore,
+  dollarsToCents,
+  centsToDollarValue,
+} from "@/Bits/moneyInput";
 
+/**
+ * The single dollars <-> cents boundary in the admin.
+ *
+ * `modelValue` is in CENTS (integer), matching the database, every REST read
+ * response and every REST write payload. The merchant still sees and types
+ * dollars — this component owns the conversion so no other file has to.
+ *
+ *   modelValue 400000  ->  displays "4,000"  ->  emits 400000
+ *
+ * Never hand this component a dollar value, and never divide by 100 before
+ * passing a price in. If a value looks 100x wrong on screen, the caller is
+ * pre-converting.
+ */
 const props = defineProps({
+  // CENTS, not dollars. See the note above.
   modelValue: {
     type: [Number, String],
     default: '',
@@ -47,36 +75,35 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // Forwarded to el-input so compact contexts (bulk tables) keep their sizing.
+  size: {
+    type: String,
+    default: '',
+  },
   disabled: {
     type: Boolean,
     default: false,
   },
 });
 
-const emit = defineEmits(['update:modelValue', 'change']);
+// `change` carries native change semantics: it fires on blur only when the
+// merchant leaves a different value than the field held when they focused it.
+// It deliberately does NOT compare against `modelValue`, which a caller that
+// syncs on `update:modelValue` (every inline price table does) has already
+// moved by blur time — that comparison made `change` unreachable for them.
+// `focus`/`blur` are forwarded because el-input owns those listeners, so they
+// are not reachable through attribute fallthrough.
+const emit = defineEmits(['update:modelValue', 'change', 'focus', 'blur']);
 
 const currencySign = computed(() => AppConfig.get('shop.currency_sign', '$'));
 
-const isDotComma = computed(() => props.numberFormat === 'dot_comma');
-const shopDecimalSeparator = computed(() => {
-  const configuredSeparator = AppConfig.get('shop.decimal_separator', '');
-
-  if (configuredSeparator === 'comma') {
-    return ',';
-  }
-
-  if (configuredSeparator === 'dot') {
-    return '.';
-  }
-
-  return isDotComma.value ? ',' : '.';
-});
-const shopThousandSeparator = computed(() => {
-  return shopDecimalSeparator.value === ',' ? '.' : ',';
-});
-const shopLocale = computed(() => {
-  return shopDecimalSeparator.value === ',' ? 'de-DE' : 'en-US';
-});
+const separators = computed(() => resolveSeparators(
+  AppConfig.get('shop.decimal_separator', ''),
+  props.numberFormat
+));
+const shopDecimalSeparator = computed(() => separators.value.decimal);
+const shopThousandSeparator = computed(() => separators.value.thousand);
+const shopLocale = computed(() => separators.value.locale);
 
 // Allowed characters: digits + dot + comma
 const allowedChars = /[\d.,]/;
@@ -95,69 +122,12 @@ const onKeydown = (event) => {
   }
 };
 
-const stripLeadingZeros = (value) => {
-  return String(value || '').replace(/^0+(?=\d)/, '');
-};
+// Thin wrappers so the shop's thousands separator does not have to be threaded
+// through every call site below. The parsing itself lives in Bits/moneyInput.js,
+// shared with the CSV importer so both boundaries read a value the same way.
+const normalizeTypingValue = (value) => normalizeTypingValueCore(value, shopThousandSeparator.value);
 
-const sanitizeInput = (value) => {
-  return String(value ?? '').replace(/[^\d.,]/g, '');
-};
-
-const normalizeTypingValue = (value) => {
-  const cleaned = sanitizeInput(value);
-
-  if (!cleaned) {
-    return '';
-  }
-
-  const lastDotIndex = cleaned.lastIndexOf('.');
-  const lastCommaIndex = cleaned.lastIndexOf(',');
-  const decimalIndex = Math.max(lastDotIndex, lastCommaIndex);
-
-  if (decimalIndex === -1) {
-    return stripLeadingZeros(cleaned.replace(/[.,]/g, ''));
-  }
-
-  const integerDigits = stripLeadingZeros(cleaned.slice(0, decimalIndex).replace(/[^\d]/g, ''));
-  const fractionDigits = cleaned.slice(decimalIndex + 1).replace(/[^\d]/g, '');
-  const separatorChar = cleaned.charAt(decimalIndex);
-  const separatorCount = (cleaned.match(new RegExp(`\\${separatorChar}`, 'g')) || []).length;
-  const hasTrailingSeparator = decimalIndex === cleaned.length - 1;
-
-  const hasBothSeparatorTypes = cleaned.includes('.') && cleaned.includes(',');
-  const shouldTreatAsThousandsSeparator = !hasTrailingSeparator
-    && !hasBothSeparatorTypes
-    && separatorChar === shopThousandSeparator.value
-    && (separatorCount > 1 || fractionDigits.length > 2);
-
-  if (shouldTreatAsThousandsSeparator) {
-    return stripLeadingZeros(cleaned.replace(/[^\d]/g, ''));
-  }
-
-  const normalizedInteger = integerDigits || '0';
-
-  if (hasTrailingSeparator) {
-    return `${normalizedInteger}.`;
-  }
-
-  return `${normalizedInteger}.${fractionDigits.slice(0, 2)}`;
-};
-
-const parseNormalizedValue = (value) => {
-  if (value === null || value === undefined || value === '') {
-    return NaN;
-  }
-
-  const normalizedValue = typeof value === 'number'
-    ? String(value)
-    : normalizeTypingValue(value);
-
-  if (!normalizedValue) {
-    return NaN;
-  }
-
-  return parseFloat(normalizedValue.replace(/\.$/, ''));
-};
+const parseNormalizedValue = (value) => parseNormalizedValueCore(value, shopThousandSeparator.value);
 
 const formatViewValue = (value) => {
   const parsed = parseNormalizedValue(value);
@@ -167,7 +137,7 @@ const formatViewValue = (value) => {
   }
 
   return parsed.toLocaleString(shopLocale.value, {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
 };
@@ -212,6 +182,15 @@ const normalizeMinValue = (num) => {
   return num < props.min ? props.min : num;
 };
 
+// --- Cents <-> dollars boundary -------------------------------------------
+// Everything above this line parses and formats DOLLARS. `props.modelValue`
+// and every emit are CENTS. These two functions are the only crossing point.
+// Both come from Bits/moneyInput.js — dollarValueToCents is dollarsToCents
+// bound to the shop's separators, so a typed "1.234,56" and an imported
+// "1.234,56" resolve to the same number of cents.
+
+const dollarValueToCents = (dollars) => dollarsToCents(dollars, shopThousandSeparator.value);
+
 // --- Internal state ---
 const displayValue = ref('');
 const internalRaw = ref('');
@@ -219,7 +198,7 @@ const internalRaw = ref('');
 const dirty = ref(false);
 
 const syncFromModel = (value) => {
-  const normalizedValue = toNormalizedModelValue(value);
+  const normalizedValue = toNormalizedModelValue(centsToDollarValue(value));
 
   if (!normalizedValue) {
     displayValue.value = '';
@@ -245,17 +224,36 @@ const onInput = (value) => {
 
   const normalizedModelValue = toNormalizedModelValue(normalizedTypingValue);
 
-  if (normalizedModelValue !== '') {
-    emit('update:modelValue', normalizedModelValue);
+  if (normalizedModelValue !== '' && normalizedModelValue !== centsToDollarValue(props.modelValue)) {
+    emit('update:modelValue', dollarValueToCents(normalizedModelValue));
   }
 };
 
+// The normalized dollars string the field held when it was focused, so blur
+// can tell an actual edit from a tab-through. See the `change` note above.
+const valueAtFocus = ref('');
+
+const onFocus = () => {
+  valueAtFocus.value = toNormalizedModelValue(centsToDollarValue(props.modelValue));
+  emit('focus');
+};
+
 const onBlur = () => {
-  const source = dirty.value ? internalRaw.value : props.modelValue;
+  // internalRaw is already a dollars string; props.modelValue is cents, so it
+  // has to cross the boundary before the dollars parser sees it.
+  const source = dirty.value ? internalRaw.value : centsToDollarValue(props.modelValue);
+
+  // What this field settled on, in cents. Emitted with `blur` below rather
+  // than re-reading props.modelValue, which is still the pre-blur value at
+  // this point — the parent has not re-rendered from the emit above yet.
+  let committedCents = props.modelValue;
 
   if (source === '') {
+    committedCents = '';
     emit('update:modelValue', '');
-    emit('change', '');
+    if (valueAtFocus.value !== '') {
+      emit('change', '');
+    }
     displayValue.value = '';
     internalRaw.value = '';
   } else {
@@ -264,14 +262,21 @@ const onBlur = () => {
     if (normalizedValue === '') {
       syncFromModel(props.modelValue);
     } else {
-      emit('update:modelValue', normalizedValue);
-      emit('change', normalizedValue);
+      const centsValue = dollarValueToCents(normalizedValue);
+      committedCents = centsValue;
+      emit('update:modelValue', centsValue);
+      if (normalizedValue !== valueAtFocus.value) {
+        emit('change', centsValue);
+      }
       displayValue.value = formatViewValue(normalizedValue);
       internalRaw.value = normalizedValue;
     }
   }
 
   dirty.value = false;
+  valueAtFocus.value = '';
+
+  emit('blur', committedCents);
 };
 
 watch([() => props.modelValue, () => props.numberFormat], ([newVal]) => {

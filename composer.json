@@ -27,7 +27,6 @@
   "require": {
     "ext-json": "*",
     "ext-simplexml": "*",
-    "openspout/openspout": "^3.7",
     "woocommerce/action-scheduler": "^3.9",
     "wpfluent/framework": "^2.11.4"
   },
@@ -46,8 +45,7 @@
     "exclude-from-classmap": [
       "/dev/",
       "/vendor/fakerphp/",
-      "/app/Services/Libs/Emogrifier/scoped-vendor",
-      "/app/Services/Libs/Spout"
+      "/app/Services/Libs/Emogrifier/scoped-vendor"
     ]
   },
   "extra": {

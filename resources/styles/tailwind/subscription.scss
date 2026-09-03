@@ -1,3 +1,9 @@
+// Distinct from the default el-tag--success mint (Automatic badge) so the
+// System collection-method badge still reads greenish but not identical.
+.fct-billing-badge--system.el-tag--success {
+  @apply bg-success-100 text-success-700 dark:bg-success-500 dark:text-gray-50;
+}
+
 .fct-single-subscription-details{
   @apply m-0 p-0 list-none grid grid-cols-3 gap-7.5;
   li{
@@ -35,6 +41,12 @@
   }
 }
 
+.fct-vendor-ids-edit {
+  &__row {
+    @apply flex items-center gap-2 w-full;
+  }
+}
+
 .fct-single-subscription-pricing-addi-info{
   @apply grid gap-1;
   .title{
@@ -51,10 +63,10 @@
   &-table {
     @apply mb-6;
     p {
-      @apply text-system-mid text-xs m-0 mb-1;
+      @apply text-xs m-0 mb-1;
     }
     h3 {
-      @apply m-0 text-system-dark text-sm leading-5 font-medium;
+      @apply m-0 text-sm leading-5 font-medium;
     }
   }
 }

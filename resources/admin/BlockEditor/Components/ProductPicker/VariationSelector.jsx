@@ -122,9 +122,10 @@ const VariationSelector = (props) => {
                 //     value: '"use_pricing_table": "yes"'
                 // }
             },
+            // A screen key, not a relation name — ProductFilter::allowedWiths()
+            // decides what it loads for the block-editor pickers.
             'with': [
-                'detail',
-                'variants'
+                'block_picker'
             ],
             'active_view': 'publish',
             "per_page": 10,

@@ -54,8 +54,9 @@
 }
 
 .fct-cart-drawer-overlay {
-  @apply fixed top-0 left-0 w-full h-full z-[999999] opacity-0 invisible transition-all duration-150;
+  @apply fixed top-0 left-0 w-full h-full z-[999999] opacity-0 invisible;
   background-color: rgba(0,0,0, 0.5);
+  transition: 500ms cubic-bezier(0.16, 1, 0.3, 1);
   &.active{
     @apply visible opacity-100;
   }
@@ -67,9 +68,10 @@
     @apply box-border;
   }
 
-  @apply z-[999999] bg-[var(--fct-cart-drawer-bg)] fixed w-[500px] max-w-full left-full bottom-0 transition-all shadow-lg;
+  @apply z-[999999] bg-[var(--fct-cart-drawer-bg)] fixed w-[500px] max-w-full left-full bottom-0 shadow-lg;
   height: 100vh;
   height: 100dvh;
+  transition: 500ms cubic-bezier(0.16, 1, 0.3, 1);
 
   &.open {
     @apply left-[calc(100%-min(100%,500px))];
@@ -214,7 +216,7 @@
 
 
 .fct-cart-drawer-open-btn {
-  @apply fixed z-[999] bottom-5 right-5 cursor-pointer rounded p-1 flex items-center justify-center bg-[var(--fct-cart-drawer-open-btn-bg-color)] w-14 h-14 border-0 hover:bg-[var(--fct-cart-drawer-open-btn-bg-color)];
+  @apply fixed z-[999] bottom-5 right-5 cursor-pointer rounded p-1 flex items-center justify-center bg-[var(--fct-cart-drawer-open-btn-bg-color)] w-14 h-14 border-0 hover:bg-[var(--fct-cart-drawer-open-btn-bg-color)] focus:fixed;
   box-shadow: 0 16px 32px -4px rgba(27, 37, 51, 0.12);
   img{
     @apply h-7;
@@ -313,6 +315,9 @@
 }
 .toastify {
     max-width: 350px !important;
+    span {
+        @apply inline-flex items-center;
+    }
 }
 .warn.warning::before {
     content: "";

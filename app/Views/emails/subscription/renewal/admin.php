@@ -24,7 +24,7 @@ if (!empty($celebration)) {
             /* translators: %1$s is the customer name, %2$s is the subscription item name */
             esc_html__('%1$s just renewed their subscription: %2$s.', 'fluent-cart'),
             esc_html($subscription->customer->full_name),
-            '<b>' . esc_html($subscription->item_name) . '</b>'
+            '<b>' . esc_html($subscription->display_item_name) . '</b>'
         );
         ?></p>
 </div>

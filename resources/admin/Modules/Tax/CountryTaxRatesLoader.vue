@@ -1,80 +1,90 @@
 <script setup>
 import translate from "@/utils/translator/Translator";
+
+const stateRows = [1, 2, 3];
 </script>
 
 <template>
-  <el-table :data="[1,2,3,4,5]">
-    <el-table-column :label="translate('Tax Label')" width="150">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('City')" width="100">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('State')">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Postcode')">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Rate (%)')">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Tax Class')" width="130">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Compound')" width="100">
-      <el-skeleton animated class="flex items-center justify-center">
-        <template #template>
-          <el-skeleton-item variant="p" class="w-1/2 h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Priority')" width="100">
-      <el-skeleton animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-full h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column :label="translate('Shipping')">
-      <el-skeleton animated class="flex items-center justify-center">
-        <template #template>
-          <el-skeleton-item variant="p" class="w-1/2 h-4"/>
-        </template>
-      </el-skeleton>
-    </el-table-column>
-    <el-table-column>
-      <div class="fct-tax-rates-country-modal-actions">
-        <el-skeleton animated>
-          <template #template>
-            <el-skeleton-item variant="p" class="w-full h-4"/>
-          </template>
-        </el-skeleton>
+  <div>
+
+
+    <div class="fct-base-taxes">
+      <div class="fct-tax-class-tabs">
+        <div class="fct-tax-class-tabs__list">
+          <div v-for="index in 3" :key="index" class="fct-tax-class-tabs__tab">
+            <el-skeleton animated>
+              <template #template>
+                <el-skeleton-item variant="text" class="w-16 h-5"/>
+              </template>
+            </el-skeleton>
+          </div>
+          <el-skeleton animated>
+            <template #template>
+            <el-skeleton-item variant="text" class="w-5 h-5"/>
+            </template>
+         </el-skeleton>
+        </div>
       </div>
-    </el-table-column>
-  </el-table>
+
+      <div class="fct-base-taxes__header">
+        <span class="fct-base-taxes__header-label">{{ translate('Regions') }}</span>
+      </div>
+
+      <div class="fct-base-taxes__state-row fct-base-taxes__state-row--federal">
+        <div class="fct-base-taxes__region-name fct-base-taxes__region-name--federal">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="text" class="w-40 h-5"/>
+            </template>
+          </el-skeleton>
+        </div>
+        <div class="fct-base-taxes__state-fields">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="rect" class="fct-base-taxes__field-rate h-8"/>
+            </template>
+          </el-skeleton>
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="rect" class="fct-base-taxes__field-name h-8"/>
+            </template>
+          </el-skeleton>
+          <div class="fct-base-taxes__field-compound"></div>
+        </div>
+      </div>
+
+      <div class="fct-base-taxes__divider"></div>
+
+      <div
+          v-for="row in stateRows"
+          :key="row"
+          class="fct-base-taxes__state-row"
+      >
+        <div class="fct-base-taxes__region-name">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="text" class="w-32 h-4"/>
+            </template>
+          </el-skeleton>
+        </div>
+        <div class="fct-base-taxes__state-fields">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="rect" class="fct-base-taxes__field-rate h-8"/>
+            </template>
+          </el-skeleton>
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="rect" class="fct-base-taxes__field-name h-8"/>
+            </template>
+          </el-skeleton>
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="rect" class="fct-base-taxes__field-compound h-8"/>
+            </template>
+          </el-skeleton>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

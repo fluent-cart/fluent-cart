@@ -2,14 +2,10 @@
 
 namespace FluentCart\App\Services\Renderer;
 
-use FluentCart\Api\CurrencySettings;
+
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
-use FluentCart\App\Models\Product;
-use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\App;
 use FluentCart\Framework\Support\Str;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\AddToCartShortcode;
@@ -44,6 +40,9 @@ class PricingTableRenderer
     protected $licenseEnable = 'no';
 
 
+    protected $productPerRow = 4;
+
+
     public function __construct($viewData)
     {
         $this->viewData = $viewData;
@@ -55,28 +54,154 @@ class PricingTableRenderer
         $this->sign = CurrenciesHelper::getCurrencySign($signName);
 
         $this->showCartButton = Arr::get($this->viewData, 'show_cart_button', 1);
-
-
+        $productPerRow = absint(Arr::get($this->viewData, 'product_per_row', 4));
+        $this->productPerRow = $productPerRow > 0 ? $productPerRow : 4;
     }
 
     public function render()
     {
+        $groupBy = Arr::get($this->viewData, 'group_by', 'repeat_interval');
+        $groups = $this->groupVariants($groupBy);
+        $useTabs = $groupBy !== 'none' && count($groups) > 1;
 
         ?>
         <div class="fluent-cart-pricing-table" data-fluent-cart-pricing-table role="region"
              aria-label="<?php esc_attr_e('Pricing table', 'fluent-cart'); ?>">
-            <div class="fluent-cart-pricing-table-variants-iterator" role="list">
-                <?php $this->renderVariant(); ?>
+            <?php if ($useTabs) : ?>
+                <?php $this->renderTabs($groups); ?>
+            <?php else : ?>
+                <div 
+                    class="fluent-cart-pricing-table-variants-iterator" 
+                    role="list" 
+                    style="--fluent-cart-pricing-table-product-per-row: <?php echo esc_attr($this->productPerRow); ?>;"
+                >
+                    <?php $this->renderVariant($this->variants); ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    protected function groupVariants(string $groupBy): array
+    {
+        if ($groupBy === 'none') {
+            return ['onetime' => $this->variants];
+        }
+
+        $key = $groupBy === 'payment_type' ? 'payment_type' : 'repeat_interval';
+
+        $groups = [];
+        foreach ($this->variants as $variant) {
+            $bucket = Arr::get($variant, "other_info.{$key}") ?: 'onetime';
+            if (Arr::get($variant, 'other_info.installment') === 'yes') {
+                $bucket = 'installment';
+            }
+            $groups[$bucket][] = $variant;
+        }
+
+        return $groups;
+    }
+
+    protected function renderTabs(array $groups)
+    {
+        $groupKeys = array_keys($groups);
+        $activeIndex = (int) Arr::get($this->viewData, 'active_tab', 0);
+        if (!isset($groupKeys[$activeIndex])) {
+            $activeIndex = 0;
+        }
+        $activeKey = $groupKeys[$activeIndex];
+        $activeVariantMap = Arr::get($this->viewData, 'active_variant', []);
+        if (!\is_array($activeVariantMap)) {
+            $activeVariantMap = [];
+        }
+
+        ?>
+        <div class="fluent-cart-pricing-table-tab" data-fluent-cart-pricing-table-tab>
+            <div class="fluent-cart-pricing-table-tab-nav">
+                <div class="fluent-cart-pricing-table-tab-nav-inner-wrap">
+                    <div class="fluent-cart-pricing-table-tab-nav-inner" role="tablist">
+                        <div class="tab-active-bar" data-tab-active-bar></div>
+                        <?php foreach ($groupKeys as $key) :
+                            $isActive = $key === $activeKey;
+                            ?>
+                            <div class="fluent-cart-pricing-table-tab-nav-item<?php echo $isActive ? ' active' : ''; ?>"
+                                 data-tab="<?php echo esc_attr($key); ?>">
+                                <?php echo esc_html($this->getTabLabel($key)); ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="fluent-cart-pricing-table-tab-content" data-tab-contents>
+                <?php foreach ($groups as $key => $groupVariants) :
+                    $isActive = $key === $activeKey;
+                    $currentActiveVariant = Arr::get($activeVariantMap, $key, '');
+                    ?>
+                    <div id="<?php echo esc_attr($key); ?>"
+                         class="fluent-cart-pricing-table-tab-pane<?php echo $isActive ? ' active' : ''; ?>"
+                         data-tab-content
+                         data-active_variant="<?php echo esc_attr($currentActiveVariant); ?>"
+                         role="tabpanel">
+                        <div 
+                            class="fluent-cart-pricing-table-variants-iterator" 
+                            role="list"
+                            style="--fluent-cart-pricing-table-product-per-row: <?php echo esc_attr($this->productPerRow); ?>;"
+                        >
+                            <?php $this->renderVariant($groupVariants); ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
         <?php
     }
 
-    public function renderVariant()
+    protected function getTabLabel(string $key): string
     {
+        $labels = [
+            'daily'        => __('Daily', 'fluent-cart'),
+            'weekly'       => __('Weekly', 'fluent-cart'),
+            'monthly'      => __('Monthly', 'fluent-cart'),
+            'yearly'       => __('Yearly', 'fluent-cart'),
+            'onetime'      => __('One Time', 'fluent-cart'),
+            'subscription' => __('Subscription', 'fluent-cart'),
+            'installment'  => __('Installment', 'fluent-cart'),
+        ];
 
+        return $labels[$key] ?? ucfirst(str_replace('_', ' ', $key));
+    }
 
-        foreach ($this->variants as $index => $variant) {
+    protected function isVariantActive($variant): bool
+    {
+        $groupBy = Arr::get($this->viewData, 'group_by', 'repeat_interval');
+
+        if ($groupBy === 'none') {
+            $variantGroupKey = 'onetime';
+        } else {
+            $groupKey = $groupBy === 'payment_type' ? 'payment_type' : 'repeat_interval';
+
+            $variantGroupKey = Arr::get($variant, "other_info.{$groupKey}") ?: 'onetime';
+
+            if (Arr::get($variant, 'other_info.installment') === 'yes') {
+                $variantGroupKey = 'installment';
+            }
+        }
+
+        $activeVariantMap = Arr::get($this->viewData, 'active_variant', []);
+        if (!\is_array($activeVariantMap)) {
+            $activeVariantMap = [];
+        }
+
+        $variantId = Arr::get($variant, 'id');
+
+        return isset($activeVariantMap[$variantGroupKey]) && $activeVariantMap[$variantGroupKey] == $variantId;
+    }
+
+    public function renderVariant(?array $variants = null)
+    {
+        $variants = $variants ?? $this->variants;
+
+        foreach ($variants as $index => $variant) {
             $this->repeatInterval = Arr::get($variant, 'other_info.repeat_interval', null);
 
             $this->itemPrice = esc_html(Helper::toDecimal(Arr::get($variant, 'item_price', 0), false, false, false));
@@ -99,9 +224,22 @@ class PricingTableRenderer
 
             $this->licenseEnable = Arr::get($licenseMeta, 'enabled', 'no');
 
+            $isActiveVariant = $this->isVariantActive($variant);
+
+            // Parse badge settings from viewData
+            $badgeData = Arr::get($this->viewData, 'badge', '');
+            $badgeConfig = is_string($badgeData) ? self::stringToAssocArray($badgeData) : (is_array($badgeData) ? $badgeData : []);
+            $badgeText = Arr::get($badgeConfig, 'text', __('Recommended', 'fluent-cart'));
+            $badgePosition = Arr::get($badgeConfig, 'position', 'right');
+
             ?>
 
-            <div class="fluent-cart-pricing-table-variant" data-fluent-cart-pricing-table-variant role="listitem">
+            <div class="fluent-cart-pricing-table-variant<?php echo $isActiveVariant ? ' active' : ''; ?>" data-fluent-cart-pricing-table-variant role="listitem">
+                <?php if ($isActiveVariant) : ?>
+                    <div class="fluent-cart-pricing-table-variant-badge <?php echo esc_attr($badgePosition); ?>">
+                        <?php echo esc_html($badgeText); ?>
+                    </div>
+                <?php endif; ?>
 
                 <div class="fluent-cart-pricing-table-variant-contents">
                     <div class="fluent-cart-pricing-table-variant-title">
@@ -236,6 +374,7 @@ class PricingTableRenderer
                     'quantity'                => 1,
                     'variation_type'          => Arr::get($variant, 'variation_type', ''),
                     'payment_type'            => Arr::get($variant, 'payment_type', ''),
+                    'variation_id'          => Arr::get($variant, 'id', ''),
             ];
 
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in view template
@@ -313,7 +452,11 @@ class PricingTableRenderer
                     'quantity'                    => 1,
                     'variation_type'              => Arr::get($variant, 'variation_type', ''),
                     'stock_availability'          => Arr::get($variant, 'stock_status', ''),
+                    'variation_id'                => Arr::get($variant, 'id', ''),
             ];
+
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in view template
+            echo DirectCheckoutShortcode::make()->enqueueAssets()->render($data);
         }
     }
 

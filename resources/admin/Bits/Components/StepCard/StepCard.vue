@@ -24,10 +24,10 @@
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 export default {
     name: 'StepCard',
-    props: ['title', 'text', 'active', 'url'],
     components: {
       DynamicIcon
-    }
+    },
+    props: ['title', 'text', 'active', 'url']
 }
 </script>
 

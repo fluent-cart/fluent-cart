@@ -38,7 +38,6 @@ const createBump = () => {
         emit('bumpCreated');
       })
       .catch((errors) => {
-        console.log(errors);
       })
       .finally(() => {
         showDialog.value = false;

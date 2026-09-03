@@ -561,3 +561,37 @@ export const formatOrderItems = (items) => {
 
     return result;
 };
+
+
+/**
+ * Build a placement-specific "Upgrade to Pro" URL from the PHP-generated base.
+ *
+ * app_config.upgrade_url already carries the fixed UTM params built by
+ * Helper::getUpgradeUrl() (utm_source, utm_medium, utm_campaign, utm_term).
+ * This helper only swaps utm_content (and optionally utm_campaign) so the
+ * fixed vocabulary can never drift in the frontend.
+ *
+ * @param {string} content utm_content placement, e.g. 'feature_lock_advanced_inventory'
+ * @param {string} [campaign] optional utm_campaign override, e.g. 'xsell_fluent-crm'
+ * @returns {string}
+ */
+export const upgradeUrl = (content, campaign) => {
+    const base = AppConfig.get('app_config.upgrade_url');
+
+    if (!base) {
+        return base;
+    }
+
+    try {
+        const url = new URL(base);
+        if (content) {
+            url.searchParams.set('utm_content', content);
+        }
+        if (campaign) {
+            url.searchParams.set('utm_campaign', campaign);
+        }
+        return url.toString();
+    } catch (e) {
+        return base;
+    }
+};

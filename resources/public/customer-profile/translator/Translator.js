@@ -7,7 +7,11 @@ dayjs.extend(timezone);
 
 export default function translate(string) {
 
-    string = window.fluentcart_customer_profile_vars?.trans[string] || string;
+    // Optional-chain `trans` itself too — the localized vars object may
+    // ship without it (e.g. the subscription purchase-history view loads
+    // a leaner config), in which case `null[string]` would throw and
+    // crash every Badge / status component on the page.
+    string = window.fluentcart_customer_profile_vars?.trans?.[string] || string;
 
     // Prepare the arguments, excluding the first one (the string itself)
     const args = Array.prototype.slice.call(arguments, 1);
@@ -62,15 +66,16 @@ export function translateNumber(number) {
 
 export function dateTimeI18(dateTime, format = 'MMM DD') {
 
+    const dateObject = dayjs.utc(dateTime).local();
+
     if (format === 'MMM DD') {
-        const dateObject = new Date(dateTime);
-        if(dateObject.getFullYear() !== new Date().getFullYear()) {
+        if (dateObject.toDate().getFullYear() !== new Date().getFullYear()) {
             format = 'MMM DD, YYYY';
         }
     }
 
     const datei18 = window.fluentcart_customer_profile_vars.datei18;
-    const date = dayjs(dateTime).locale({
+    const date = dateObject.locale({
         name: 'fluent_date_time',
         weekdays: Object.values(datei18.weekdays),
         weekdaysShort: Object.values(datei18.weekdaysShort),

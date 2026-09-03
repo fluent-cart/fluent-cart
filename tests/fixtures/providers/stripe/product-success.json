@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "prod_phase22",
+    "object": "product",
+    "name": "Phase 22 product"
+  }
+}

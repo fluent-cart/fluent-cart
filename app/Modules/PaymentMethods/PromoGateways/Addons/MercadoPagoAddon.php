@@ -17,7 +17,7 @@ class MercadoPagoAddon extends AbstractPaymentGateway
 
     public function __construct()
     {
-        $settings = new AddonGatewaySettings('mercado_pago');
+        $settings = new AddonGatewaySettings('mercado_pago', 'fluent_cart_payment_settings_mercado_pago');
         
         $settings->setCustomStyles([
             'light' => [

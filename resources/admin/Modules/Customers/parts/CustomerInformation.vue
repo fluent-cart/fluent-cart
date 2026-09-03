@@ -209,7 +209,7 @@
     <!-- edit customer modal -->
     <NewCustomerModal
         v-if="customerModalInfos.showModal"
-        @update:customerModal="fetch"
+        @update:customer-modal="fetch"
         :customerModalInfos="customerModalInfos"
         :customer_id="customerModalInfos.customer_id"
         :customer="customerModalInfos.customer"
@@ -220,10 +220,11 @@
     <ManageAddressModal
         :modalAction="modalAction"
         @refresh-address="refresh"
-        @update:showAddressModal="(val) => (showAddressModal = val)"
+        @update:show-address-modal="(val) => (showAddressModal = val)"
         :showAddressModal="showAddressModal"
         :customer_id="customer_id"
-        @addNewAddress="addNewAddress"
+        :showBusinessDetailsSection="true"
+        @add-new-address="addNewAddress"
     />
 
     <!-- add address modal -->
@@ -236,7 +237,7 @@
           closingModal = true;
         }"
     >
-      <div class="fluent-cart-admin-pages">
+      <div class="fct-customer-address-wrap">
         <el-button
             text
             @click="
@@ -245,7 +246,6 @@
               addOrEditAddress = false;
             }
           "
-            class="mb-4"
         >
           <el-icon>
             <Back/>
@@ -259,6 +259,7 @@
             :address="address"
             :showAddressModal="addOrEditAddress"
             :showSetAsAlsoCheckbox="shouldShowSetAsAlsoCheckbox"
+            :showBusinessDetailsSection="true"
             @close-modal="addOrEditAddress = false"
             :closing_modal="closingModal"
         />
@@ -289,7 +290,6 @@ import UserAttchModal from "@/Modules/Customers/parts/UserAttchModal.vue";
 
 export default {
   name: "CustomerInformations",
-  props: ["customer", "customer_id"],
   components: {
     CustomerPurchaseValue,
     NewCustomerModal,
@@ -300,6 +300,7 @@ export default {
     UserAttchModal,
     Back
   },
+  props: ["customer", "customer_id"],
   data() {
     this.localizedData = window.fluentCartAdminApp;
     return {
@@ -317,6 +318,9 @@ export default {
         name: "",
         phone: "",
         email: "",
+        company_name: "",
+        vat_number: "",
+        legal_registration_id: "",
         address_1: "",
         address_2: "",
         city: "",
@@ -354,6 +358,12 @@ export default {
           (address) => address.is_primary == "1"
       );
     },
+  },
+  mounted() {
+    this.billingAddress = this.customer.billing_address;
+    this.shippingAddress = this.customer.shipping_address;
+    this.customerModalInfos.customer = this.customer;
+    this.customerModalInfos.customer_id = this.customer.id;
   },
   methods: {
     handleCustomerBulkCommand(command) {
@@ -445,19 +455,12 @@ export default {
             if (error.message) {
               return Notify.error(error.message);
             } else {
-              console.log(error);
             }
           })
           .finally(() => {
             this.detaching = false;
           });
     },
-  },
-  mounted() {
-    this.billingAddress = this.customer.billing_address;
-    this.shippingAddress = this.customer.shipping_address;
-    this.customerModalInfos.customer = this.customer;
-    this.customerModalInfos.customer_id = this.customer.id;
   },
 };
 </script>

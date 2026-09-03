@@ -7,7 +7,7 @@ const widths = ref(
 </script>
 
 <template>
-  <div class="fct-tax-rates-wrap-loader">
+  <div class="fct-tax-rates-wrap-loader px-5">
     <div v-for="(width, index) in widths" :key="index" class="flex items-center justify-between border-[1px] border-solid border-gray-divider dark:border-dark-400 rounded h-12 pr-4 pl-6 mb-4">
       <el-skeleton animated :style="{ width }" class="h-4">
         <template #template>

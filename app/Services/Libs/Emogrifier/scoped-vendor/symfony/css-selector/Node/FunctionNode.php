@@ -8,9 +8,11 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node;
 
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\Token;
+
 /**
  * Represents a "<selector>:<name>(<arguments>)" node.
  *
@@ -23,36 +25,52 @@ use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\Token;
  */
 class FunctionNode extends AbstractNode
 {
-    private string $name;
+    private $selector;
+    private $name;
+    private $arguments;
+
     /**
      * @param Token[] $arguments
      */
-    public function __construct(private NodeInterface $selector, string $name, private array $arguments = [])
+    public function __construct(NodeInterface $selector, string $name, array $arguments = [])
     {
-        $this->name = \strtolower($name);
+        $this->selector = $selector;
+        $this->name = strtolower($name);
+        $this->arguments = $arguments;
     }
-    public function getSelector() : NodeInterface
+
+    public function getSelector(): NodeInterface
     {
         return $this->selector;
     }
-    public function getName() : string
+
+    public function getName(): string
     {
         return $this->name;
     }
+
     /**
      * @return Token[]
      */
-    public function getArguments() : array
+    public function getArguments(): array
     {
         return $this->arguments;
     }
-    public function getSpecificity() : Specificity
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSpecificity(): Specificity
     {
         return $this->selector->getSpecificity()->plus(new Specificity(0, 1, 0));
     }
-    public function __toString() : string
+
+    public function __toString(): string
     {
-        $arguments = \implode(', ', \array_map(fn(Token $token) => "'" . $token->getValue() . "'", $this->arguments));
-        return \sprintf('%s[%s:%s(%s)]', $this->getNodeName(), $this->selector, $this->name, $arguments ? '[' . $arguments . ']' : '');
+        $arguments = implode(', ', array_map(function (Token $token) {
+            return "'".$token->getValue()."'";
+        }, $this->arguments));
+
+        return sprintf('%s[%s:%s(%s)]', $this->getNodeName(), $this->selector, $this->name, $arguments ? '['.$arguments.']' : '');
     }
 }

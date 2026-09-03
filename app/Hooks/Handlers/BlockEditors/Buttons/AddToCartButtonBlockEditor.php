@@ -112,7 +112,12 @@ class AddToCartButtonBlockEditor extends BlockEditor
         }
 
         ob_start();
-        (new ProductRenderer($product))->renderAddToCartButtonBlock($shortCodeAttribute);
+        // Pass the block's selected variant as the renderer's default variation
+        // so the button's data-cart-id (and stock/price) reflect that variant.
+        // Without this the renderer falls back to the product's first/default
+        // variant, and the button always adds the wrong variant to the cart.
+        (new ProductRenderer($product, ['default_variation_id' => $variant->id]))
+            ->renderAddToCartButtonBlock($shortCodeAttribute);
         return ob_get_clean();
     }
 

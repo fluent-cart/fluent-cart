@@ -1,0 +1,594 @@
+// Review single page layout
+.fct-single-review-layout {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+
+// Thread badges per the approved design. Wrapper id outranks el-tag's
+// own effect colors.
+#fct_admin_app_wrapper .el-tag.fct-admin-reply-badge {
+  @apply bg-success-50 text-success-700 border-success-100 dark:bg-success-alpha-16 dark:text-success-400 dark:border-success-alpha-16;
+}
+
+#fct_admin_app_wrapper .el-tag.fct-customer-review-badge {
+  @apply bg-information-lighter text-information-dark border-information-light dark:bg-information-lighter-dark dark:text-information-dark-dark dark:border-information-light-dark;
+}
+
+
+// Destructive dropdown item (e.g. Delete Permanently).
+// Stacked selector + focus/hover overrides el-dropdown-menu__item's
+// @apply text-system-dark / focus:text-system-dark cascade.
+.el-dropdown-menu__item.fct-dropdown-item--danger {
+  color: #ef4444;
+
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    color: #dc2626;
+  }
+}
+
+.fct-single-review-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fct-single-review-aside {
+  width: 380px;
+}
+
+// Tighter card spacing within this page
+.fct-single-review-main .fct-card,
+.fct-admin-sidebar .fct-card {
+  margin-bottom: 16px;
+}
+
+// Section divider within a card
+.fct-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fct-section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+// Review media inline
+.fct-review-media-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+// Review display
+.fct-review-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.fct-review-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  white-space: pre-wrap;
+}
+
+// Soft status action buttons in the page header (Trash / Spam).
+// Scoped to the admin wrapper id so these outrank el-button's own colors.
+#fct_admin_app_wrapper {
+  .el-button.fct-review-soft-btn {
+    @apply border-0;
+
+    &:disabled {
+      @apply opacity-60;
+    }
+
+    &:focus-visible {
+      @apply outline outline-2 outline-blue-500 outline-offset-2;
+    }
+  }
+
+  .el-button.fct-review-soft-btn--danger {
+    @apply bg-red-50 text-red-600 dark:bg-red-alpha-16 dark:text-red-400;
+
+    &:hover,
+    &:focus,
+    &:active {
+      @apply bg-red-100 text-red-700 dark:bg-red-alpha-16 dark:text-red-300;
+    }
+  }
+
+  .el-button.fct-review-soft-btn--warning {
+    @apply bg-warning-50 text-warning-dark dark:bg-warning-alpha-16 dark:text-warning-400;
+
+    &:hover,
+    &:focus,
+    &:active {
+      @apply bg-warning-100 text-warning-dark dark:bg-warning-alpha-16 dark:text-warning-300;
+    }
+  }
+}
+
+// Comment-thread style review conversation
+.fct-review-thread-container {
+  @apply flex flex-col bg-white rounded-b overflow-hidden dark:bg-dark-700;
+  max-height: calc(100dvh - 240px);
+}
+
+.fct-review-thread {
+  @apply flex-1 overflow-y-auto px-6 pt-5 pb-2;
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded;
+
+    &:hover {
+      @apply bg-gray-600;
+    }
+  }
+}
+
+.fct-thread-item {
+  @apply flex items-start gap-3.5 pt-1 pb-5;
+
+  & + & {
+    @apply border-0 border-t border-solid border-gray-divider pt-5 dark:border-gray-alpha-16;
+  }
+
+}
+
+.fct-thread-avatar {
+  @apply flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold overflow-hidden;
+
+  &--customer {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-alpha-16 dark:text-blue-300;
+  }
+
+  &--store {
+    @apply bg-success-100 text-success-800 dark:bg-success-alpha-16 dark:text-success-300;
+  }
+}
+
+.fct-thread-content {
+  @apply flex-1 min-w-0;
+}
+
+.fct-thread-name-row {
+  @apply flex items-center flex-wrap gap-1.5;
+}
+
+.fct-thread-name {
+  @apply text-sm font-semibold text-system-dark dark:text-gray-100;
+}
+
+.fct-thread-meta {
+  @apply flex items-center gap-1.5 mt-0.5 text-xs text-system-mid dark:text-gray-400;
+}
+
+.fct-thread-meta-dot {
+  @apply text-system-mid dark:text-gray-400;
+}
+
+.fct-thread-title {
+  @apply mt-2.5 text-sm font-semibold text-system-dark dark:text-gray-100;
+}
+
+.fct-thread-text {
+  @apply mt-2.5 text-sm leading-[22px] text-system-dark dark:text-gray-300;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.fct-thread-title + .fct-thread-text {
+  @apply mt-1;
+}
+
+.fct-thread-media {
+  @apply flex flex-wrap gap-2 mt-3;
+}
+
+.fct-thread-media-thumb {
+  // Button reset (rendered as <button>)
+  @apply p-0 border-0 w-[96px] h-[96px] rounded-[10px] overflow-hidden cursor-pointer bg-gray-100;
+  font: inherit;
+  transition: transform 0.15s, opacity 0.15s;
+
+  &:hover {
+    @apply opacity-90;
+    transform: scale(1.02);
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  img {
+    @apply block w-full h-full object-cover;
+  }
+}
+
+.fct-thread-media-video {
+  @apply flex items-center justify-center w-full h-full bg-primary-600 text-white;
+}
+
+.fct-thread-media-play {
+  @apply text-[24px];
+}
+
+// Store replies — tinted cards indented to the review's content column
+// (avatar 36px + 14px gap)
+.fct-thread-reply-group {
+  @apply pl-[50px] pb-5;
+}
+
+
+.fct-thread-reply-card {
+  @apply flex items-start gap-3.5 p-4 rounded-[10px] bg-gray-25 dark:bg-dark-600;
+
+  & + & {
+    @apply mt-2;
+  }
+}
+
+// Delete-reply button — always visible.
+// The wrapper id gives this rule enough specificity over el-button defaults.
+#fct_admin_app_wrapper .el-button.fct-thread-delete-btn {
+  @apply p-1 h-auto text-system-mid;
+  min-height: auto;
+
+  &:hover {
+    @apply text-red-500;
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+}
+
+// Reply form — bordered box with the Reply button inside, bottom-right
+.fct-thread-form {
+  @apply flex-shrink-0 bg-white px-6 pb-5 pt-2 dark:bg-dark-700;
+}
+
+.fct-thread-form-box {
+  @apply border border-solid border-gray-outline rounded-[10px] bg-white px-2.5 pb-2.5 pt-1.5 transition-colors dark:bg-dark-700 dark:border-gray-alpha-16;
+
+  &:focus-within {
+    @apply border-blue-500;
+  }
+
+  // Strip el-input's own textarea chrome so only the outer box shows
+  .el-textarea__inner {
+    @apply border-0 shadow-none bg-transparent px-0.5 py-1.5;
+  }
+}
+
+.fct-thread-form-actions {
+  @apply flex justify-end mt-1;
+}
+
+// Dark solid Reply button, per design.
+#fct_admin_app_wrapper .el-button.fct-thread-reply-btn {
+  @apply bg-primary-500 border-primary-500 text-white;
+
+  &:hover,
+  &:focus,
+  &:active {
+    @apply bg-primary-600 border-primary-600 text-white;
+  }
+
+  &:disabled {
+    @apply opacity-50;
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+}
+
+// Status list
+.fct-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fct-status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #4b5563;
+  transition: background 0.15s;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  &--active {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.fct-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &--approved { background: #10b981; }
+  &--pending { background: #3b82f6; }
+  &--spam { background: #f59e0b; }
+  &--trash { background: #ef4444; }
+}
+
+.fct-status-label {
+  flex: 1;
+}
+
+// Reviewer sidebar
+.fct-reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fct-reviewer-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.fct-reviewer-details {
+  min-width: 0;
+}
+
+.fct-reviewer-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.fct-reviewer-email {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 1px;
+  word-break: break-all;
+}
+
+.fct-reviewer-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Helpful votes — stacked tinted rows (thumbs up / down)
+.fct-vote-rows {
+  @apply flex flex-col gap-2.5;
+}
+
+.fct-vote-row {
+  @apply flex items-center gap-2 px-3.5 py-2.5 rounded text-sm font-semibold border border-solid;
+
+  svg {
+    @apply flex-shrink-0;
+  }
+
+  &--helpful {
+    @apply bg-success-25 text-success-700 border-success-100 dark:bg-success-alpha-16 dark:text-success-400 dark:border-success-alpha-16;
+  }
+
+  &--not-helpful {
+    @apply bg-red-25 text-red-600 border-red-100 dark:bg-red-alpha-16 dark:text-red-400 dark:border-red-alpha-16;
+  }
+}
+
+.fct-vote-row-count {
+  @apply text-sm font-semibold;
+}
+
+// Review media (preview dialog)
+.fct-review-media-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fct-review-media-thumb {
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: #3b82f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.fct-review-media-video-thumb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  gap: 4px;
+}
+
+.fct-review-media-play-icon {
+  font-size: 24px;
+  color: #6b7280;
+}
+
+.fct-review-media-preview {
+  text-align: center;
+}
+
+.fct-review-media-preview-img,
+.fct-review-media-preview-video {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 6px;
+}
+
+.fct-review-media-preview-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1359px) {
+  .fct-single-review-layout {
+    display: grid;
+  }
+  .fct-single-review-main {
+    width: 100%;
+  }
+  .fct-single-review-aside {
+    width: 100%;
+  }
+}
+
+// Respect users who prefer reduced motion (vestibular accessibility)
+@media (prefers-reduced-motion: reduce) {
+  .fct-review-thread {
+    scroll-behavior: auto;
+  }
+  .fct-thread-media-thumb,
+  .fct-status-item,
+  .fct-review-media-thumb,
+  .fct-thread-form-box {
+    transition: none;
+  }
+  .fct-thread-media-thumb:hover {
+    transform: none;
+  }
+}
+
+// Product Reviews settings page (admin) — moved from ReviewSettings.vue
+// scoped styles; tokens per DESIGN_SYSTEM.md.
+.fct-review-settings-card {
+  @apply bg-white rounded-md p-6 dark:bg-dark-700;
+}
+
+.fct-review-heading {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.fct-review-subtext {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.fct-review-icon {
+  @apply flex items-center justify-center w-10 h-10 rounded-[10px] bg-warning-100 text-warning-500 shrink-0;
+
+  svg {
+    @apply w-5 h-5;
+  }
+}
+
+.fct-review-radio-card {
+  @apply block p-3 border border-solid border-gray-200 rounded-lg cursor-pointer transition-all duration-150;
+  @apply dark:border-gray-600;
+
+  &:hover {
+    @apply border-gray-300 dark:border-gray-500;
+  }
+
+  &.is-selected {
+    @apply border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-500/15;
+  }
+
+  &:focus-within {
+    @apply outline outline-2 outline-indigo-500 outline-offset-2;
+  }
+}
+
+.fct-review-radio-sr-only {
+  @apply sr-only;
+}
+
+.fct-review-section-divider {
+  @apply mb-4 pb-4;
+  border-bottom: 2px solid var(--el-border-color-lighter);
+}
+
+.fct-review-pro-pill {
+  @apply ml-auto;
+}
+
+.fct-review-pro-note {
+  @apply mt-0.5;
+}
+
+.fct-review-upgrade-cta {
+  @apply flex justify-end mt-4;
+}
+
+// Outranks setting.scss's `.fct-setting-container .setting-wrap
+// .form-section-save-action { mt-0 }`, which is imported later.
+.fct-setting-container .setting-wrap .form-section-save-action.fct-review-save-action {
+  @apply mt-4;
+}

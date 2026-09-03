@@ -1,5 +1,5 @@
 <script setup>
-import {computed, ref, onMounted, nextTick, watch} from "vue";
+import {computed, ref, onMounted, nextTick, watch, onBeforeUnmount} from "vue";
 import * as Fluid from "@/Bits/Components/FluidTab/FluidTab.js";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
@@ -12,7 +12,7 @@ const props = defineProps({
 const selectedExtraTab = ref('');
 
 const tabsData = computed(() => {
-  const allTabs = props.table.getTabs();
+  const allTabs = props.table.getTabs() || {};
   const staticEntries = Object.entries(allTabs);
 
   // Append saved views as tab entries
@@ -41,7 +41,47 @@ const tabsData = computed(() => {
   };
 });
 
+const visibleTabSignature = computed(() => {
+  return Object.entries(tabsData.value.visibleTabs).map(([key, viewLabel]) => {
+    if (typeof viewLabel === 'object') {
+      return [
+        key,
+        viewLabel.title,
+        viewLabel.description || '',
+        viewLabel.is_public ? '1' : '0'
+      ].join(':');
+    }
+
+    return `${key}:${viewLabel}`;
+  }).join('|');
+});
+
 const fluidTab = ref(null);
+let repositionTimer = null;
+
+const syncActiveTabIndicator = () => {
+  nextTick(() => {
+    if (repositionTimer) {
+      clearTimeout(repositionTimer);
+    }
+
+    repositionTimer = setTimeout(() => {
+      if (!fluidTab.value) {
+        return;
+      }
+
+      const activeSavedViewId = props.table.getActiveSavedViewId();
+
+      if (activeSavedViewId && tabsData.value.excludedTabs.hasOwnProperty(activeSavedViewId)) {
+        selectedExtraTab.value = activeSavedViewId;
+        fluidTab.value.setActiveByIndex(-1);
+        return;
+      }
+
+      fluidTab.value.setActiveByActiveClass();
+    }, 50);
+  });
+};
 
 onMounted(() => {
   const activeSavedViewId = props.table.getActiveSavedViewId();
@@ -50,21 +90,26 @@ onMounted(() => {
   } else if (tabsData.value.excludedTabs.hasOwnProperty(props.table.getSelectedTab())) {
     selectedExtraTab.value = props.table.getSelectedTab();
   }
-})
+  syncActiveTabIndicator();
+});
+
+onBeforeUnmount(() => {
+  if (repositionTimer) {
+    clearTimeout(repositionTimer);
+  }
+});
 
 // Reposition tab bar when active saved view changes
 watch(() => props.table.data.activeSavedViewId, (newId) => {
-  nextTick(() => {
-    if (fluidTab.value) {
-      if (newId && tabsData.value.excludedTabs.hasOwnProperty(newId)) {
-        selectedExtraTab.value = newId;
-        fluidTab.value.setActiveByIndex(-1);
-      } else {
-        fluidTab.value.setActiveByActiveClass();
-      }
-    }
-  });
-})
+  if (newId && tabsData.value.excludedTabs.hasOwnProperty(newId)) {
+    selectedExtraTab.value = newId;
+  }
+  syncActiveTabIndicator();
+});
+
+watch(visibleTabSignature, () => {
+  syncActiveTabIndicator();
+});
 
 const isTabActive = (viewKey, viewLabel) => {
   const activeSavedViewId = props.table.getActiveSavedViewId();
@@ -159,6 +204,7 @@ const deleteSavedView = async (viewId) => {
         v-for="(viewLabel, viewKey) in tabsData.visibleTabs"
         :key="viewKey"
         :class="isTabActive(viewKey, viewLabel) ? 'active' : ''"
+        :aria-pressed="isTabActive(viewKey, viewLabel)"
         @click="() => handleTabClick(viewKey, viewLabel)"
     >
       <template v-if="viewLabel && viewLabel.isCustomView">
@@ -177,7 +223,6 @@ const deleteSavedView = async (viewId) => {
                 trigger="click"
                 @command="(cmd) => {
                   if (cmd === 'rename') renameSavedView(viewLabel.viewId, viewLabel.title);
-                  else if (cmd === 'update') table.updateSavedView(viewLabel.viewId);
                   else if (cmd === 'delete') deleteSavedView(viewLabel.viewId);
                 }"
                 @click.stop
@@ -188,7 +233,6 @@ const deleteSavedView = async (viewId) => {
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="rename">{{ $t('Rename') }}</el-dropdown-item>
-                  <el-dropdown-item command="update">{{ $t('Update filters') }}</el-dropdown-item>
                   <el-dropdown-item command="delete" divided>{{ $t('Delete') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -256,4 +300,3 @@ const deleteSavedView = async (viewId) => {
   </Fluid.Tab>
 
 </template>
-

@@ -75,5 +75,4 @@ glob(componentsDir).then(function (files) {
 
     // Write the updated content to the destination file
     fs.writeFileSync(destinationFile, finalFileContent);
-    console.log("File updated: useElementPlusComponents.js");
 });

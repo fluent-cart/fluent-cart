@@ -178,7 +178,8 @@
 .fct-create-order-main,
 .fct-single-order-main,
 .fct-single-subscription-main {
-  @apply w-[900px] 3xl:w-[1230px];
+  @apply 3xl:w-[1230px];
+  width: calc(100% - 360px - 30px);
   @media (max-width: 1359px) {
     @apply w-full;
   }
@@ -187,7 +188,7 @@
 .fct-create-order-aside,
 .fct-single-order-aside,
 .fct-single-subscription-aside {
-  @apply w-[330px];
+  @apply w-[360px];
 }
 
 .fct-address-copy-wrap {
@@ -214,6 +215,30 @@
 .fct-media-content-list {
   &-wrapper {
     @apply border border-solid border-gray-divider rounded dark:border-dark-400;
+  }
+
+  // Table variant — shared link + label styles (mirrors &-item rules)
+  @at-root table#{&} {
+    .link {
+      @apply inline-block h-full w-full text-system-dark text-sm font-medium dark:text-gray-50;
+      @apply hover:underline focus:shadow-none focus:outline-none #{!important};
+    }
+
+    .product-title {
+      @apply mb-0.5;
+    }
+
+    .product-variation-title {
+      @apply text-[13px] text-system-mid leading-[20px] mb-2 font-normal dark:text-gray-300;
+    }
+
+    .product-details-action-row {
+      @apply flex gap-2.5 items-center;
+      a {
+        @apply text-dark-500 text-xs font-medium shadow-none outline-none dark:text-gray-300;
+        @apply hover:underline #{!important};
+      }
+    }
   }
 
   &-header {
@@ -277,6 +302,10 @@
 
         .del {
           @apply line-through pr-1 text-system-dark-light;
+        }
+
+        .fct-unit-price-rounding-icon {
+          @apply text-system-dark dark:text-gray-300 opacity-75 cursor-help;
         }
       }
 
@@ -357,6 +386,21 @@
 
 // Responsive
 @media (max-width: 600px) {
+  table.fct-media-content-list {
+    .fct-order-item-qty-col,
+    .fct-order-item-price-col {
+      @apply hidden;
+    }
+
+    .product-details-price-mobile {
+      @apply flex items-center flex-wrap gap-1.5 mt-1 text-xs text-system-dark dark:text-gray-50;
+
+      .del {
+        @apply line-through text-system-dark-light;
+      }
+    }
+  }
+
   .fct-order-stats-wrap {
     .card {
       .card-header {
@@ -404,7 +448,7 @@
   }
 }
 
-.dark{
+.fluent_theme_dark{
   .fct-status-group{
     .img{
       &.offline_payment{

@@ -36,9 +36,8 @@ onBeforeMount(() => {
                productDownloadableModel.closeEditModal(index)
     }">
 
-    <div class="fluent-cart-admin-pages">
-      <div class="fct-product-download-inner-wrap flex flex-col gap-4">
-        <div class="rounded p-3 bg-gray-25 dark:bg-dark-500">
+    <div class="fct-product-download-form-wrap">
+        <div class="fct-product-download-form-box">
           <SingleFileForm
               :product="product"
               :file="editableFile"
@@ -48,9 +47,6 @@ onBeforeMount(() => {
               is-editing
           />
         </div>
-
-      </div>
-
     </div>
 
     <template #footer>
@@ -59,7 +55,7 @@ onBeforeMount(() => {
                  @click="()=>{
            productDownloadableModel.updateDownloadableFile();
           }">
-        {{ productDownloadableModel.saving ? translate('Updating') : translate('Update') }}
+        {{ translate('Update') }}
       </el-button>
     </template>
   </el-drawer>

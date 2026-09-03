@@ -245,17 +245,7 @@ class AddressSelectRenderer
 
                         <?php $this->renderNameFields(); ?>
 
-                        <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                            id="<?php echo esc_attr($this->address_type); ?>_name_wrapper">
-                            <label for="<?php echo esc_attr($this->address_type); ?>_company_name" class="sr-only">
-                                <?php echo esc_html__('Company Name', 'fluent-cart'); ?>
-                            </label>
-
-                            <input type="text" name="<?php echo esc_attr($this->address_type); ?>_company_name"
-                                autocomplete="name" placeholder="<?php echo esc_attr__('Company Name', 'fluent-cart'); ?>"
-                                data-required="no" data-type="input"
-                                id="<?php echo esc_attr($this->address_type); ?>_company_name">
-                        </div>
+                        <?php $this->renderBusinessDetailsFields(); ?>
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'phone'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
@@ -462,5 +452,69 @@ class AddressSelectRenderer
             <?php endif; ?>
 
         <?php endif;
+    }
+
+    public function renderBusinessDetailsFields()
+    {
+        if ($this->address_type !== 'billing') {
+            return;
+        }
+
+        $fields = [
+            'company_name' => __('Company Name', 'fluent-cart'),
+            'vat_number' => __('VAT/GST/Tax Number', 'fluent-cart'),
+            'legal_registration_id' => __('Legal Registration ID', 'fluent-cart'),
+        ];
+
+        $visibleFields = [];
+        foreach ($fields as $fieldKey => $label) {
+            $requirement = Arr::get($this->requirements_fields, $fieldKey);
+
+            if (empty($requirement)) {
+                continue;
+            }
+
+            $visibleFields[$fieldKey] = $label;
+        }
+
+        if (empty($visibleFields)) {
+            return;
+        }
+
+        ?>
+        <div id="<?php echo esc_attr($this->address_type); ?>_business_details_section"
+            data-fluent-cart-checkout-page-form-section=""
+            class="fct_checkout_form_section additional-address-field">
+            <div class="fct_form_section_header">
+                <h4 class="fct_form_section_header_label"><?php echo esc_html__('Business Details', 'fluent-cart'); ?></h4>
+            </div>
+
+            <div class="fct_form_section_body">
+                <div class="fct_checkout_input_group">
+                    <?php
+                    foreach ($visibleFields as $fieldKey => $label) {
+                        $requirement = Arr::get($this->requirements_fields, $fieldKey);
+                        $fieldId = $this->address_type . '_' . $fieldKey;
+                        $isRequired = $requirement === 'required';
+                        $placeholder = $label . ($isRequired ? ' *' : '');
+                        ?>
+                        <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                            id="<?php echo esc_attr($fieldId); ?>_wrapper">
+                            <label for="<?php echo esc_attr($fieldId); ?>" class="sr-only">
+                                <?php echo esc_html($label); ?>
+                            </label>
+
+                            <input type="text" name="<?php echo esc_attr($fieldId); ?>"
+                                autocomplete="off" placeholder="<?php echo esc_attr($placeholder); ?>"
+                                data-required="<?php echo $isRequired ? 'yes' : 'no'; ?>" data-type="input"
+                                id="<?php echo esc_attr($fieldId); ?>">
+                        </div>
+                        <?php
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 }

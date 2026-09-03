@@ -59,6 +59,13 @@ export default {
     }
   },
   emits: ['update:modelValue', 'visible-change'],
+  data() {
+    return {
+      products: [],
+      selectedVariationIds: this.modelValue,
+      loading: false
+    }
+  },
   computed: {
     Utils() {
       return Utils;
@@ -124,12 +131,13 @@ export default {
       this.selectedVariationIds = newVal;
     }
   },
-  data() {
-    return {
-      products: [],
-      selectedVariationIds: this.modelValue,
-      loading: false
+  mounted() {
+    if (!this.is_multiple) {
+      this.selectedVariationIds = this.selectedVariationIds ? parseInt(this.selectedVariationIds) : null;
+    } else if (!Array.isArray(this.selectedVariationIds)) {
+      this.selectedVariationIds = [];
     }
+    this.searchProducts();
   },
   methods: {
     onVisibleChange(visible) {
@@ -149,7 +157,6 @@ export default {
             this.products = response.products;
           })
           .catch((errors) => {
-            console.error('error -> ', errors);
           })
           .finally(() => {
             this.loading = false;
@@ -158,14 +165,6 @@ export default {
     filterNodeMethod(value, data) {
       return data;
     }
-  },
-  mounted() {
-    if (!this.is_multiple) {
-      this.selectedVariationIds = this.selectedVariationIds ? parseInt(this.selectedVariationIds) : null;
-    } else if (!Array.isArray(this.selectedVariationIds)) {
-      this.selectedVariationIds = [];
-    }
-    this.searchProducts();
   }
 }
 </script>

@@ -49,12 +49,12 @@
     <el-row v-if="'paypal' === selectedMethod && use_vendor_checkout" class="el-form--label-top" :gutter="20">
       <el-col :md="24" :lg="11">
         <el-form-item :label="translate('PayPal Business/Seller Email')">
-          <el-input v-model="business_email" placeholder="Enter your PayPal business/seller email"/>
+          <el-input v-model="business_email" :placeholder="translate('Enter your PayPal business/seller email')"/>
         </el-form-item>
       </el-col>
       <el-col :md="24" :lg="11">
         <el-form-item :label="translate('PayPal Buyer Email (optional)')">
-          <el-input v-model="buyer_email" placeholder="Enter The buyer email"/>
+          <el-input v-model="buyer_email" :placeholder="translate('Enter The buyer email')"/>
         </el-form-item>
       </el-col>
     </el-row>
@@ -75,6 +75,12 @@ import AppConfig from "@/utils/Config/AppConfig";
 
 export default {
   name: "PaymentLink",
+  components: {
+    IconButton,
+    DynamicIcon,
+    CopyToClipboard,
+    InfoFilled
+  },
   props: ['order', 'order_id'],
   data() {
     return {
@@ -108,11 +114,9 @@ export default {
       return AppConfig.get('admin_url');
     }
   },
-  components: {
-    IconButton,
-    DynamicIcon,
-    CopyToClipboard,
-    InfoFilled
+  mounted() {
+    this.makeSelectableId();
+    this.generatePaymentUrl()
   },
   methods: {
     translate,
@@ -164,10 +168,6 @@ export default {
       //to-do should implement from localization
       this.paymentUrl = this.order.custom_checkout_url;
     }
-  },
-  mounted() {
-    this.makeSelectableId();
-    this.generatePaymentUrl()
   }
 }
 </script>

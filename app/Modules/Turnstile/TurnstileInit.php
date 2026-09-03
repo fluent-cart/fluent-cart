@@ -35,12 +35,17 @@ class TurnstileInit
             return $values;
         }, 10, 2);
 
-        // Boot the module if active
-        $isActive = ModuleSettings::isActive('turnstile');
-        
-        if ($isActive) {
-            (new TurnstileBoot())->register();
-        }
+        // Boot the module if active.
+        // Deferred to `init` on purpose: ModuleSettings::getAllSettings() memoizes on its
+        // first call, and that is where `module_setting/default_values` is applied. Reading
+        // settings here would freeze the cache before modules registered later in
+        // Hooks/actions.php add their own defaults, leaving those modules permanently
+        // inactive. Every module must read settings after registration has finished.
+        add_action('init', function () {
+            if (ModuleSettings::isActive('turnstile')) {
+                (new TurnstileBoot())->register();
+            }
+        }, 1);
     }
 }
 

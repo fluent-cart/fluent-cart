@@ -62,4 +62,32 @@ class BricksHelper
 
         echo '</div>';
     }
+
+    public static function isTemplate()
+    {
+         $is_template = false;
+
+        if (isset($_GET['bricks']) && $_GET['bricks'] === 'run') {
+            $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+            $is_template = strpos($request_uri, '/template/') !== false;
+        }
+
+        return $is_template;
+    }
+
+    public static function getAllowedHtmlForContent()
+    {
+        $allowed_html = wp_kses_allowed_html('post');
+        $allowed_html['iframe'] = [
+            'src'             => true,
+            'width'           => true,
+            'height'          => true,
+            'frameborder'     => true,
+            'allow'           => true,
+            'allowfullscreen' => true,
+            'title'           => true,
+            'referrerpolicy'  => true,
+        ];
+        return $allowed_html;
+    }
 }

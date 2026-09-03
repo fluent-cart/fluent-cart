@@ -83,9 +83,6 @@
     .fct-inventory-selected-item-info {
         @apply grid;
     }
-    .fct-inventory-selected-item-price {
-        @apply text-xs text-system-mid dark:text-gray-300;
-    }
     li {
         @apply py-2 px-3.5 flex items-center gap-2 justify-between border border-solid border-x-0 border-t-0 border-gray-100 m-0 last:border-0 dark:border-dark-400;
     }
@@ -435,6 +432,34 @@
 }
 
 /* Module disable notice */
+// Mirrors .fct-attr-add-attr-btn (the Attributes & Terms "Load More (10/13)"
+// footer button) so both screens' load-more actions look identical, without
+// coupling this screen to attribute-scoped class names.
+.fct-inventory-load-more-row {
+    td {
+        @apply py-2 text-center;
+    }
+}
+
+.fct-inventory-load-more-btn {
+    @apply inline-flex items-center justify-center gap-1.5 bg-transparent text-[13px] font-medium text-system-dark dark:text-gray-50 cursor-pointer rounded border border-solid border-gray-200 dark:border-dark-400 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-dark-600;
+    padding: 7px 16px;
+
+    svg { @apply w-4 h-4; }
+
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-500;
+    }
+
+    &:disabled {
+        @apply cursor-not-allowed opacity-60 hover:bg-transparent dark:hover:bg-transparent;
+    }
+}
+
+.fct-inventory-load-more-count {
+    @apply text-system-mid dark:text-gray-400 text-[12px];
+}
+
 .fct-module-disabled-notice {
     @apply bg-white p-7.5 rounded text-center dark:bg-dark-600;
     .fct-disabled-notice-title {

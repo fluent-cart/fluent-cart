@@ -29,7 +29,6 @@ $router->prefix('reports')
         // Default
         $router->get('fetch-report-meta', [ReportingController::class, 'getReportMeta']);
         $router->get('quick-order-stats', [ReportingController::class, 'getOrderQuickStats']);
-        $router->get('sales-growth', [ReportingController::class, 'getSalesGrowth']);
         $router->get('report-overview', [ReportingController::class, 'getReportOverview']);
         $router->get('search-repeat-customer', [ReportingController::class, 'searchRepeatCustomer']);
         $router->get('top-products-sold', [ReportingController::class, 'getTopProductsSold']); //Using Resource Api

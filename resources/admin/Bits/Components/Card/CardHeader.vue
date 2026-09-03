@@ -3,7 +3,7 @@
         <div class="flex-1" v-if="title || text || $slots['title']">
           <template v-if="title || text">
             <h2 :class="`fct-card-header-title ${title_size ? 'is-' + title_size : ''}`" v-if="title">
-              <dynamic-icon v-if="icon" :name="icon"/>
+              <DynamicIcon v-if="icon" :name="icon"/>
               <img v-if="img" :src="img" alt="">
               {{title}}
             </h2>

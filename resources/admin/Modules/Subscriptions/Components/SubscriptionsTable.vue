@@ -31,7 +31,7 @@
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
 
-            <div class="truncate"> {{ scope.row.item_name }}</div>
+            <div class="truncate"> {{ scope.row.display_item_name }}</div>
           </RouteCell>
         </template>
       </el-table-column>
@@ -76,7 +76,7 @@
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
-            {{ scope.row.collection_method }}
+            {{ collectionMethodLabel(scope.row.collection_method) }}
           </RouteCell>
         </template>
       </el-table-column>
@@ -128,7 +128,15 @@ import translate from "@/utils/translator/Translator";
 
 export default {
   name: 'SubscriptionsTable',
-  emits: ['fetch'],
+  components: {
+    ConvertedTime,
+    RouteCell,
+    Badge,
+    DynamicIcon,
+    ArrowDown,
+    Empty,
+    CustomerInfoPopover,
+  },
   props: {
     subscriptions: {
       type: Array,
@@ -142,15 +150,7 @@ export default {
       }
     }
   },
-  components: {
-    ConvertedTime,
-    RouteCell,
-    Badge,
-    DynamicIcon,
-    ArrowDown,
-    Empty,
-    CustomerInfoPopover,
-  },
+  emits: ['fetch'],
   computed: {
     Str() {
       return Str
@@ -159,6 +159,14 @@ export default {
   methods: {
     translate,
     translateNumber,
+    collectionMethodLabel(method) {
+      const labels = {
+        manual: translate('Manual'),
+        automatic: translate('Automatic'),
+        system: translate('Auto-charge'),
+      };
+      return labels[method] || method;
+    },
     subscriptionStatus(subscription) {
       // overridden_status is only for customer view, admin should see the actual status
       // if (subscription?.overridden_status) {

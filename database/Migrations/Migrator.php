@@ -118,7 +118,8 @@ abstract class Migrator
         $wpdb = Schema::db();
         $tableName = static::getTableName();
 
-        // SHOW INDEX is translated by the WP SQLite integration plugin
+        // SHOW INDEX works on both MySQL and SQLite (the WP SQLite integration
+        // plugin translates it).
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $results = $wpdb->get_results($wpdb->prepare(
             "SHOW INDEX FROM %i WHERE Key_name = %s",
@@ -169,7 +170,23 @@ abstract class Migrator
             return;
         }
 
-        Schema::dropIndex(static::$tableName, $indexName);
+        // Drop the index with a single direct ALTER rather than routing through
+        // Schema::dropIndex(), which calls WP core drop_index(). That core helper
+        // fires 25 speculative "DROP INDEX {name}_0".."_24" queries to clean up
+        // stray dbDelta-created duplicates; none of those variants exist for our
+        // explicitly-named indexes, so each one errors as "Can't DROP ..., check
+        // that column/key exists" and floods migration/test output with noise.
+        // hasIndex() above already confirmed the real index is present, so one
+        // ALTER is sufficient. The %i placeholder mirrors hasIndex() and keeps
+        // this safe on both MySQL and the WP SQLite integration.
+        $wpdb = Schema::db();
+        $tableName = static::getTableName();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query($wpdb->prepare(
+            "ALTER TABLE %i DROP INDEX %i",
+            $tableName,
+            $indexName
+        ));
     }
 
     public static function getTableName(bool $withPrefix = true): string

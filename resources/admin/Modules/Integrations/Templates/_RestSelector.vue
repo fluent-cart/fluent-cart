@@ -38,6 +38,9 @@ export default {
             this.$emit('update:modelValue', value);
         }
     },
+    mounted() {
+        this.fetchOptions('');
+    },
     methods: {
         fetchOptions(query) {
             let optionKey = this.field.option_key;
@@ -94,9 +97,6 @@ export default {
                     this.loading = false;
                 });
         }
-    },
-    mounted() {
-        this.fetchOptions('');
     }
 }
 </script>

@@ -17,7 +17,7 @@ class OrderCanceled extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
 

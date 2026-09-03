@@ -30,7 +30,6 @@ const captureScreenshot = () => {
       link.click();
     });
   } else {
-    console.error("Target element for screenshot not found.");
   }
 };
 

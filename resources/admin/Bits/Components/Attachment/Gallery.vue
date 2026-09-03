@@ -37,7 +37,7 @@
         </li>
         <li :class="attachments.length < 1 ? 'is-full-media' : ''" :key="attachments.length">
           <MediaButton icon="GalleryAdd" :title="attachments.length < 1 ? $t('Add Media') : ''"
-                       :attachments="attachments" @onMediaSelected="onMediaSelected" :multiple='true'></MediaButton>
+                       :attachments="attachments" @on-media-selected="onMediaSelected" :multiple='true'></MediaButton>
         </li>
       </transition-group>
 
@@ -49,7 +49,7 @@
       :imgs="lightboxData"
       :index="imageIndex"
       @hide="()=>{
-        this.visible = false
+        visible = false
       }"
   ></VueEasyLightbox>
 </template>
@@ -82,6 +82,7 @@ export default {
       default: null,
     }
   },
+  emits: ['removeImage', 'mediaUploaded', 'onMediaChange'],
   data() {
     return {
       visible: false,
@@ -90,7 +91,34 @@ export default {
       images: ref([])
     };
   },
-  emits: ['removeImage', 'mediaUploaded', 'onMediaChange'],
+  computed: {
+    dragOptions() {
+      return {
+        animation: 600
+      }
+    },
+  },
+  watch: {
+    attachments: {
+      handler: function (newval, oldval) {
+        this.lightboxData = [];
+        if (Array.isArray(newval) && newval.length > 0) {
+          newval.map((val, index) => {
+            this.lightboxData.push(val.url)
+          })
+        }
+        return newval
+      },
+      deep: true
+    },
+  },
+  mounted() {
+    if (this.attachments !== undefined) {
+      this.attachments.map((val, index) => {
+        this.lightboxData.push(val.url);
+      })
+    }
+  },
   methods: {
     showLightbox(idx) {
       this.imageIndex = idx;
@@ -110,34 +138,6 @@ export default {
     },
     onMediaChange(event) {
       this.$emit('onMediaChange', this.attachments)
-    },
-  },
-  computed: {
-    dragOptions() {
-      return {
-        animation: 600
-      }
-    },
-  },
-  mounted() {
-    if (this.attachments !== undefined) {
-      this.attachments.map((val, index) => {
-        this.lightboxData.push(val.url);
-      })
-    }
-  },
-  watch: {
-    attachments: {
-      handler: function (newval, oldval) {
-        this.lightboxData = [];
-        if (Array.isArray(newval) && newval.length > 0) {
-          newval.map((val, index) => {
-            this.lightboxData.push(val.url)
-          })
-        }
-        return newval
-      },
-      deep: true
     },
   }
 };

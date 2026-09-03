@@ -24,6 +24,9 @@ const savingCountryConfig = ref(false);
 const searchTerm = ref('');
 
 
+const flagCodeMap = { 'XI': 'gb' };
+const getFlagCode = (code) => (flagCodeMap[code] || code).toLowerCase();
+
 const showConfig = () => {
   showModal.value = true;
 }
@@ -37,7 +40,6 @@ const getTaxRates = () => {
         taxRates.value = response.tax_rates;
       })
       .catch((errors) => {
-        console.error('Error fetching tax rates:', errors);
       })
       .finally(() => {
         loading.value = false;
@@ -88,7 +90,6 @@ const saveConfig = () => {
         emit('refresh');
       })
       .catch((error) => {
-        console.error("Failed to save config", error);
       })
       .finally(() => {
         savingCountryConfig.value = false;
@@ -171,7 +172,7 @@ const filteredTaxRates = computed(() => {
                 <div v-for="(taxCountry, index) in taxRate.countries" :key="index" class="fct-tax-rates-country">
                   <div class="fct-tax-rates-country-name">
                     <img class="w-[22px] block"
-                         :src="`https://flagcdn.com/w40/`+taxCountry.country_code.toLowerCase()+`.png`" alt="US flag">
+                         :src="`https://flagcdn.com/w40/${getFlagCode(taxCountry.country_code)}.png`" alt="flag">
                     {{ taxCountry.country_name }}
                   </div>
                   <div class="fct-tax-rates-country-actions">

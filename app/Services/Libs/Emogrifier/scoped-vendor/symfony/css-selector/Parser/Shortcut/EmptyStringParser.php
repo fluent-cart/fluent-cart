@@ -8,11 +8,13 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\Shortcut;
 
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\ElementNode;
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\SelectorNode;
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\ParserInterface;
+
 /**
  * CSS selector class parser shortcut.
  *
@@ -29,12 +31,16 @@ use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Parser\ParserInterface
  */
 class EmptyStringParser implements ParserInterface
 {
-    public function parse(string $source) : array
+    /**
+     * {@inheritdoc}
+     */
+    public function parse(string $source): array
     {
         // Matches an empty string
         if ('' == $source) {
             return [new SelectorNode(new ElementNode(null, '*'))];
         }
+
         return [];
     }
 }

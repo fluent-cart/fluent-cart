@@ -130,7 +130,6 @@ class RateLimiter
     protected function getSettings($request, $currentTime)
     {
         $settings = get_transient($this->makeTransientKey($request));
-
         return $settings ?: ['count' => 0, 'firstTime' => $currentTime];
     }
 
@@ -178,7 +177,6 @@ class RateLimiter
     protected function updateSettings($request, $settings, $currentTime)
     {
         $ttl = $this->interval - ($currentTime - $settings['firstTime']);
-        
         set_transient(
             $this->makeTransientKey($request),
             $settings,
@@ -195,9 +193,7 @@ class RateLimiter
     protected function makeTransientKey($request)
     {
         $slug = App::config()->get('app.slug');
-        
         $endpoint = $request->getRoute() ?: 'unknown';
-
         return "{$slug}_rate_limit_" . md5($request->getIp() . '|' . $endpoint);
     }
 }

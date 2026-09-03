@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Http\Requests;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Foundation\RequestGuard;
@@ -41,6 +42,12 @@ class ProductCreateRequest extends RequestGuard
                 }
                 return null;
             }],
+            'detail.variation_type' => ['sanitizeText', function ($attribute, $value) {
+                if ($value !== null && $value !== '' && !in_array($value, Helper::getVariationTypes(false), true)) {
+                    return __('Invalid variation type.', 'fluent-cart');
+                }
+                return null;
+            }],
         ];
     }
 
@@ -72,6 +79,10 @@ class ProductCreateRequest extends RequestGuard
                     return 'digital';
                 }
                 return sanitize_text_field($value);
+            },
+
+            'detail.variation_type' => function ($value) {
+                return in_array($value, Helper::getVariationTypes(false), true) ? $value : 'simple';
             },
 
             'detail.other_info.is_bundle_product' => function ($value) {

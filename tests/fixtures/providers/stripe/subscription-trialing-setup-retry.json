@@ -1,0 +1,60 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "sub_phase30_trialing",
+    "object": "subscription",
+    "status": "trialing",
+    "customer": "cus_phase30_guard",
+    "default_payment_method": null,
+    "metadata": {
+      "fct_ref_id": "phase30-guard-order-ref"
+    },
+    "items": {
+      "object": "list",
+      "data": [
+        {
+          "id": "si_phase30_trialing",
+          "object": "subscription_item",
+          "quantity": 1,
+          "plan": {
+            "id": "price_phase30_guard",
+            "object": "plan"
+          },
+          "price": {
+            "id": "price_phase30_guard",
+            "object": "price"
+          }
+        }
+      ]
+    },
+    "pending_setup_intent": {
+      "id": "seti_phase30_guard",
+      "object": "setup_intent",
+      "status": "requires_payment_method",
+      "client_secret": "seti_phase30_guard_secret_live"
+    },
+    "latest_invoice": {
+      "id": "in_phase30_trialing",
+      "object": "invoice",
+      "status": "paid",
+      "amount_due": 0,
+      "confirmation_secret": null,
+      "payment_intent": null,
+      "lines": {
+        "object": "list",
+        "data": [
+          {
+            "id": "il_phase30_trialing",
+            "object": "line_item",
+            "amount": 0,
+            "price": {
+              "id": "price_phase30_guard",
+              "object": "price"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

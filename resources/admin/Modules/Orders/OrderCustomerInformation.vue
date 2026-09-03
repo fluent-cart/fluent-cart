@@ -50,7 +50,7 @@ const currentShippingAddress = ref(
     entity.value?.shipping_address ? entity.value.shipping_address : null
 );
 
-const emit = defineEmits(["onAddressSelected", "onAddressRemove"]);
+const emit = defineEmits(["onAddressSelected", "onAddressRemove", "onOrderUpdated"]);
 
 const showCustomerChangeModal = ref(false);
 
@@ -85,7 +85,9 @@ const resetCustomer = () => {
 const searchCustomer = (name, cb) => {
   Rest.get("customers/", {
     search: name,
-    with: ["shipping_address", "billing_address"],
+    // A screen key, not a relation name — CustomerFilter::allowedWiths()
+    // resolves it to both address sets in one eager load.
+    with: ["admin_customer_search"],
   })
       .then((response) => {
         let customers = response.customers.data;
@@ -184,6 +186,18 @@ const setAddress = (address) => {
   if (!address) {
     return;
   }
+
+  if (!orderId.value) {
+    if (address.type === "shipping") {
+      currentShippingAddress.value = address;
+    } else {
+      currentBillingAddress.value = address;
+    }
+    customerAddressModalInfos.value.showModal = false;
+    emit("onAddressSelected", address);
+    return;
+  }
+
   Rest.post(`orders/${orderId.value}/update-address-id`, {
     address_id: address.id,
     address_type: address.type,
@@ -197,6 +211,12 @@ const setAddress = (address) => {
     customerAddressModalInfos.value.showModal = false;
 
     emit("onAddressSelected", address);
+
+    // The address change recalculated tax server-side — propagate the refreshed
+    // order so the parent updates the tax summary/totals without a page reload.
+    if (response.order) {
+      emit("onOrderUpdated", response.order);
+    }
   }).catch((errors) => {
     Notify.error(errors);
   });
@@ -253,6 +273,9 @@ const customerAddressModalInfos = ref({
     name: "",
     phone: "",
     email: "",
+    company_name: "",
+    vat_number: "",
+    legal_registration_id: "",
     address_1: "",
     address_2: "",
     city: "",
@@ -321,6 +344,12 @@ const refreshAddress = (showModal, address) => {
   customerAddressModalInfos.value.showManageAddressModal = true;
   setAddress(address);
 };
+const isB2bOrder = computed(() => {
+    const info = entity.value && entity.value.business_info;
+    if (!info) return false;
+    return !!(info.company_name || info.tax_number || info.legal_registration_id);
+});
+
 watch(() => entity.value, (newVal, oldVal) => {
   if (newVal.customer_id !== oldVal.customer_id) {
     resetCustomer();
@@ -561,10 +590,6 @@ onMounted(() => {
                   </a>
                 </span>
 
-                <span v-if="currentBillingAddress?.meta?.other_data?.company_name" class="mt-3">
-                  <strong class="pr-1">{{ translate("Company") }}:</strong>
-                  <span>{{ currentBillingAddress.meta.other_data.company_name }}</span>
-                </span>
               </div>
 
               <CopyToClipboard
@@ -588,7 +613,46 @@ onMounted(() => {
               </p>
             </template>
           </div>
+
         </template>
+      </Card.Body>
+    </Card.Container>
+
+    <Card.Container v-if="isB2bOrder" class="mt-4">
+      <Card.Header
+          :title="translate('Business Information')"
+          title_size="small"
+          border_bottom
+      />
+      <Card.Body>
+        <div class="fct-admin-sidebar-item">
+          <div class="flex flex-col gap-2">
+            <div v-if="entity.business_info.company_name" class="flex items-baseline gap-1">
+              <strong class="shrink-0">{{ translate("Company") }}:</strong>
+              <span>{{ entity.business_info.company_name }}</span>
+            </div>
+
+            <div v-if="entity.business_info.tax_number" class="flex items-baseline gap-1">
+              <strong class="shrink-0">{{ translate("VAT/Tax ID") }}:</strong>
+              <span>{{ entity.business_info.tax_number }}</span>
+            </div>
+
+            <div v-if="entity.business_info.legal_registration_id" class="flex items-baseline gap-1">
+              <strong class="shrink-0">{{ translate("Reg. ID") }}:</strong>
+              <span>{{ entity.business_info.legal_registration_id }}</span>
+            </div>
+
+            <div class="flex items-baseline gap-1">
+              <strong class="shrink-0">{{ translate("Charge Reversed") }}:</strong>
+              <span>{{ entity.is_reverse_charge_tax_order ? translate('Yes') : translate('No') }}</span>
+            </div>
+
+            <div v-if="entity.business_info.reverse_charge_declaration">
+              <strong class="block">{{ translate("Reverse Charge Declaration") }}:</strong>
+              <span>{{ entity.business_info.reverse_charge_declaration }}</span>
+            </div>
+          </div>
+        </div>
       </Card.Body>
     </Card.Container>
   </div>
@@ -608,14 +672,15 @@ onMounted(() => {
 
   <ManageCustomerAddressModal
       :modalAction="customerAddressModalInfos.modalAction"
-      @onAddressSelected="setAddress"
-      @update:showAddressModal="
+      @on-address-selected="setAddress"
+      @update:show-address-modal="
       (val) => (customerAddressModalInfos.showManageAddressModal = val)
     "
       :showAddressModal="customerAddressModalInfos.showManageAddressModal"
       :customer_id="currentlySelectedCustomer?.id"
       :order_id="orderId"
-      @addNewAddress="addNewAddress"
+      :showBusinessDetailsSection="true"
+      @add-new-address="addNewAddress"
   />
 
   <el-dialog
@@ -648,6 +713,7 @@ onMounted(() => {
           :address="customerAddressModalInfos.address"
           :showAddressModal="customerAddressModalInfos.showModal"
           :showSetAsAlsoCheckbox="shouldShowSetAsAlsoCheckbox"
+          :showBusinessDetailsSection="true"
           :order_id="orderId"
           @close-modal="
           () => {

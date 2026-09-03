@@ -14,10 +14,10 @@
       <tbody>
       <tr v-for="(header, index) in settings.custom_header_values" :key="index">
         <td>
-          <el-input v-model="header.header_name" placeholder="Header Key"/>
+          <el-input v-model="header.header_name" :placeholder="$t('Header Key')"/>
         </td>
         <td>
-          <el-input v-model="header.header_value" placeholder="Enter Value"/>
+          <el-input v-model="header.header_value" :placeholder="$t('Enter Value')"/>
         </td>
         <td>
           <div class="action-btns">

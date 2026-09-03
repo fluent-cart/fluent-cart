@@ -57,14 +57,19 @@
           </el-table-column>
           
           <el-table-column
-                v-if="taxTable.isColumnVisible('order_id')" 
+                v-if="taxTable.isColumnVisible('order_id')"
                 :label="translate('Order ID')"
                 :width="100"
             >
             <template #default="scope">
-              <router-link class="link" :to="{ name: 'view_order', params: { order_id: scope.row.order_id } }">
-                  #{{ scope.row.order_id }}
-              </router-link>
+              <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+                <router-link class="link" :to="{ name: 'view_order', params: { order_id: scope.row.order_id } }">
+                    #{{ scope.row.order_id }}
+                </router-link>
+                <el-tag v-if="scope.row.reverse_charge" type="warning" size="small" disable-transitions>
+                  {{ translate('Reverse Charge') }}
+                </el-tag>
+              </span>
             </template>
           </el-table-column>
 
@@ -94,13 +99,13 @@
           
           <el-table-column v-if="taxTable.isColumnVisible('rate')" :label="translate('Tax Rate')" :width="120">
             <template #default="scope">
-              <span>{{ scope.row.rate }}</span>
+              <span>{{ scope.row.rate }}%</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column :label="translate('Sale Taxes')" :width="120">
             <template #default="scope">
-              <span>{{ scope.row.total_tax }}</span>
+              <span>{{ CurrencyFormatter.formatForOrder(scope.row.total_tax_cents, scope.row.currency) }}</span>
             </template>
           </el-table-column>
           
@@ -111,7 +116,7 @@
           </el-table-column>
 
           <template #empty>
-            <Empty icon="Empty/ListView" :text="translate('We could\'t find any taxes matching your filter.')"/>
+            <Empty icon="Empty/ListView" :has-dark="true" :text="translate('We could\'t find any taxes matching your filter.')"/>
           </template>
 
         </el-table>
@@ -155,9 +160,14 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column :label="translate('Order ID')" :width="100">
+                <el-table-column :label="translate('Order ID')" :min-width="100">
                     <template #default="scope">
-                        <span>{{ scope.row.order_id }}</span>
+                        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+                            <span>{{ scope.row.order_id }}</span>
+                            <el-tag v-if="scope.row.reverse_charge" type="warning" size="small" disable-transitions>
+                                {{ translate('Reverse Charge') }}
+                            </el-tag>
+                        </span>
                     </template>
                 </el-table-column>
 
@@ -187,13 +197,13 @@
                 
                 <el-table-column :label="translate('Tax Rate')" :width="120">
                     <template #default="scope">
-                    <span>{{ scope.row.rate }}</span>
+                    <span>{{ scope.row.rate }}%</span>
                     </template>
                 </el-table-column>
-                
+
                 <el-table-column :width="150" :label="translate('Sale Taxes')" >
                     <template #default="scope">
-                    <span>{{ scope.row.total_tax }}</span>
+                    <span>{{ CurrencyFormatter.formatForOrder(scope.row.total_tax_cents, scope.row.currency) }}</span>
                     </template>
                 </el-table-column>
                 
@@ -271,14 +281,16 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import translateNumber from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import { exportCSV } from "@/utils/Export.js";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-// import { countryList } from "@/Bits/common";
+import { countryList } from "@/Bits/common";
 import TaxesLoader from "@/Modules/Tax/TaxesLoader.vue";
 import AllCouponsLoader from "@/Modules/Coupons/AllCouponsLoader.vue";
 
-
+const countryMap = Object.fromEntries(countryList.map(c => [c.value, c.label]));
+const resolveCountry = (code) => countryMap[code] || code;
 
 const selfRef = getCurrentInstance().ctx;
 const taxTable = useTaxesTable();
@@ -287,17 +299,20 @@ const successDialogVisible = ref(false);
 const enableTaxesModal = ref(false);
 const selectedTaxes = ref([]);
 
-const tableData = computed(() => 
+const tableData = computed(() =>
   taxTable.getTableData().map(item => ({
     id: item.id,
     order_id: item.order_id,
-    country: item.tax_rate?.country,
-    state: item.tax_rate?.state,
-    postcode: item.tax_rate?.postcode,
-    name: item.tax_rate?.name,
-    rate: item.tax_rate?.rate,
-    total_tax: parseFloat(item.total_tax / 100).toFixed(2),
-    filed_at: item.filed_at ? 'Yes' : 'No',
+    country: resolveCountry(item.tax_rate?.country ?? item.meta?.tax_country ?? ''),
+    state: item.tax_rate?.formatted_state ?? item.tax_rate?.state ?? '',
+    postcode: item.tax_rate?.postcode ?? '',
+    name: item.tax_rate?.name ?? item.meta?.label ?? '',
+    reverse_charge: !!item.meta?.reverse_charge_applied,
+    rate: item.tax_rate?.rate ?? item.meta?.rate_percent ?? '',
+    total_tax: String(parseFloat((item.total_tax / 100).toFixed(2))),
+    currency: item.order?.currency || '',
+    total_tax: String(parseFloat((item.total_tax / 100).toFixed(2))),
+    filed_at: item.filed_at ? translate('Yes') : translate('No'),
   }))
 );
 
@@ -317,7 +332,6 @@ const exportAndContinue = async () => {
         
         closeTaxesModal();
     } catch (error) {
-        console.error('Export failed:', error);
     }
 };
 
@@ -355,11 +369,11 @@ const selectedTaxesTableRef = ref(null);
 const modalSelectedTaxes = ref([]);
 
 const modalSummary = computed(() => {
-  const totalTax = modalSelectedTaxes.value.reduce((sum, item) => sum + item.total_tax, 0);
+  const totalTax = modalSelectedTaxes.value.reduce((sum, item) => sum + parseFloat(item.total_tax || 0), 0);
   const uniqueOrders = [...new Set(modalSelectedTaxes.value.map(item => item.order_id))];
 
   return {
-    totalTax,
+    totalTax: CurrencyFormatter.formatNumber(Math.round(totalTax * 100), false),
     totalOrders: uniqueOrders.length,
     items: modalSelectedTaxes.value,
   };

@@ -1,6 +1,6 @@
 .el-tabs{
     &__item{
-        @apply dark:text-gray-50;
+        @apply dark:text-gray-50 dark:hover:text-gray-50;
         &.is-active{
             @apply text-primary-500 dark:text-gray-50;
         }
@@ -158,4 +158,7 @@
 
 .fct-tabs-button.hidden-switch .el-tabs__header{
     @apply hidden;
+}
+.el-tabs__item{
+    @apply dark:hover:text-gray-50;
 }

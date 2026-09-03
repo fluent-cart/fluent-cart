@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted, onBeforeMount, nextTick} from "vue";
+import {ref, onMounted, onBeforeMount, onBeforeUnmount, nextTick} from "vue";
 import Theme from "@/utils/Theme";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
@@ -33,13 +33,19 @@ const themeOptions = [
 ];
 
 onBeforeMount(() => {
-  currentTheme.value = localStorage.getItem('fcart_admin_theme') ?? Theme.MODE_SYSTEM;
+  // Remove the PHP pre-rendered placeholder before Vue appends its own button.
+  // Vue teleport appends rather than replaces, so without this both would show.
+  const container = document.getElementById('theme-button-container');
+  if (container) {
+    const placeholder = container.querySelector('.fct-theme-button-container');
+    if (placeholder) placeholder.remove();
+  }
+
+  currentTheme.value = Theme.getCurrentTheme();
 
   if (currentTheme.value.toString().startsWith(Theme.MODE_SYSTEM)) {
     currentTheme.value = Theme.MODE_SYSTEM;
   }
-  //Theme.apply(currentTheme.value, true);
-
 });
 
 const onThemeChanged = (event) => {
@@ -53,7 +59,11 @@ const handleThemeChange = (command) => {
 }
 
 onMounted(() => {
-  window.addEventListener("onFluentCartThemeChange", onThemeChanged, false);
+  window.addEventListener(Theme.THEME_CHANGE_EVENT, onThemeChanged, false);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener(Theme.THEME_CHANGE_EVENT, onThemeChanged, false);
 });
 </script>
 <template>

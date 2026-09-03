@@ -16,6 +16,21 @@
           />
         </el-form-item>
 
+        <el-form-item v-if="customModal !== 'order_modal'" :label="translate('Variation Type')">
+          <el-select
+              v-model="product.detail.variation_type"
+              :placeholder="translate('Select Variation Type')"
+              class="w-full"
+          >
+            <el-option
+                v-for="(label, value) in variationTypes"
+                :key="value"
+                :label="label"
+                :value="value"
+            />
+          </el-select>
+        </el-form-item>
+        
         <el-form-item>
           <ul class="fct-product-item-selector">
             <li
@@ -68,6 +83,7 @@ import Notify from '@/utils/Notify';
 import translate from '@/utils/translator/Translator';
 import {useRouter} from 'vue-router';
 import Rest from "@/utils/http/Rest";
+import AppConfig from "@/utils/Config/AppConfig";
 
 const props = defineProps({
   customModal: String
@@ -76,6 +92,11 @@ const props = defineProps({
 const emit = defineEmits(['process_custom', 'update:createProductModal']);
 
 const router = useRouter();
+
+// variation_types is the canonical { value: label } map shared with the product
+// edit page (Helper::getVariationTypes). Read from AppConfig so the modal never
+// drifts from the edit-page dropdown options.
+const variationTypes = AppConfig.get('variation_types', {});
 
 const product = ref({
   post_title: '',

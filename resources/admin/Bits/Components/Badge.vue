@@ -1,6 +1,6 @@
 <template>
   <span :class="`badge ${badgeType} ${badgeSize} ${HighContrast}`">
-    <template v-if="status">
+    <template v-if="status || text">
       <span v-if="icon">
         <DynamicIcon :name="icon"/>
       </span>
@@ -64,14 +64,20 @@ export default {
         case 'success':
         case 'licensed':
         case 'succeeded':
+        case 'approved':
           return 'success';
 
         case 'failed':
         case 'error':
         case 'canceled':
         case 'expired':
+        case 'trash':
           return 'danger';
 
+        case 'spam':
+          return 'warning';
+
+        case 'blue':
         case 'partially_paid':
         case 'intended':
           return 'blue';

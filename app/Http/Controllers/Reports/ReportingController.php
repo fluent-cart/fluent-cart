@@ -11,7 +11,6 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Http\Controllers\Controller;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Modules\ReportingModule\OrdersReport;
-use FluentCart\App\Modules\ReportingModule\SalesReport;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Report\DashBoardReportService;
 use FluentCart\App\Services\Report\ReportHelper;
@@ -40,29 +39,15 @@ class ReportingController extends Controller
         ];
     }
 
-    public function getSalesGrowth(Request $request, SalesReport $salesReport): array
-    {
-
-        $endYear = $request->get('end_date', Order::query()->max('created_at'));
-        $startYear = $request->get('start_date', Order::query()->min('created_at'));
-
-        $filters = [
-            "status" => ["column" => "status", "operator" => "in", "value" => Status::getOrderSuccessStatuses()],
-            "payment_status" => ["column" => "payment_status", "operator" => "in", "value" => Status::getTransactionSuccessStatuses()],
-            "created_at" => ["column" => "created_at", "operator" => "between", "value" => [$startYear, $endYear]]
-        ];
-
-        return [
-            'sales_data' => $salesReport->getSalesGrowth($filters)
-        ];
-    }
-
+    /**
+     * @deprecated since v1.4. Use GET reports/overview (OverviewReportController::getOverview) instead.
+     */
     public function getReportOverview(Request $request): array
     {
+        _deprecated_function(__METHOD__, '1.4', 'GET /fluent-cart/v2/reports/overview');
 
         $params = $request->get('params');
         $params["status"] = ["column" => "status", "operator" => "in", "value" => Status::getOrderSuccessStatuses()];
-        // $params["payment_status"] = [ "column" => "payment_status", "operator" => "in", "value" => Status::getTransactionSuccessStatuses() ];
         $queryParam = Arr::only($params, ['created_at', 'status', 'payment_status']);
 
         $reportOverview = OrderResource::reportOverview($queryParam);
@@ -70,10 +55,10 @@ class ReportingController extends Controller
         $ordersByPaymentMethod = OrderResource::orderSummaryByPayment($queryParam);
 
         return [
-            'data' => $reportOverview,
+            '_deprecated'             => 'This endpoint is deprecated since v1.4 and will be removed in a future release. Use GET /fluent-cart/v2/reports/overview instead.',
+            'data'                    => $reportOverview,
             'orders_by_payment_method' => $ordersByPaymentMethod,
         ];
-
     }
 
     public function searchRepeatCustomer(Request $request): array
@@ -85,12 +70,16 @@ class ReportingController extends Controller
         ];
     }
 
+    /**
+     * @deprecated since v1.4. Use GET reports/fetch-top-sold-products (DefaultReportController::getTopSoldProducts) instead.
+     */
     public function getTopProductsSold(Request $request): array
     {
-
+        _deprecated_function(__METHOD__, '1.4', 'GET /fluent-cart/v2/reports/fetch-top-sold-products');
 
         return [
-            'top_products_sold' => OrderItemResource::topProductsSold($request->get('params'))
+            '_deprecated'      => 'This endpoint is deprecated since v1.4 and will be removed in a future release. Use GET /fluent-cart/v2/reports/fetch-top-sold-products instead.',
+            'top_products_sold' => OrderItemResource::topProductsSold($request->get('params')),
         ];
     }
 

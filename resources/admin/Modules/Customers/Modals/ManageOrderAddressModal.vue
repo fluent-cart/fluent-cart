@@ -76,7 +76,6 @@
       </div>
       <div class="dialog-footer is-border" v-if="!isEditAddress">
         <el-button size="small" @click="emitAddNewAddress(modalAction.type)">
-          <DynamicIcon name="Plus"/>
           {{ translate('Add new address') }}
         </el-button>
       </div>

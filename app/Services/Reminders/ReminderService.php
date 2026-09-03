@@ -46,6 +46,12 @@ class ReminderService
                 $stats['renewal_queued'] = $result['renewal'];
                 $stats['trial_queued'] = $result['trial'];
             }
+
+            $renewalReminderService = new RenewalReminderService();
+
+            if ($renewalReminderService->isEnabled()) {
+                $stats['renewal_order_queued'] = $renewalReminderService->queueActions($startedAt, $maxRuntime);
+            }
         } catch (\Throwable $e) {
             fluent_cart_error_log('Reminder hourly scan error', $e->getMessage());
         }
@@ -99,13 +105,7 @@ class ReminderService
      */
     public function canSendPaymentReminder(array $orderData): bool
     {
-        $eligibleStatuses = [
-            Status::PAYMENT_PENDING,
-            Status::PAYMENT_PARTIALLY_PAID,
-            Status::PAYMENT_FAILED
-        ];
-
-        if (!in_array(Arr::get($orderData, 'payment_status'), $eligibleStatuses, true)) {
+        if (!in_array(Arr::get($orderData, 'payment_status'), RenewalReminderService::getReminderPaymentStatuses(), true)) {
             return false;
         }
 
@@ -129,16 +129,33 @@ class ReminderService
     /**
      * Send a manual reminder for a specific order or subscription.
      *
-     * @param string $event The reminder event hook (invoice_reminder_overdue, subscription_renewal_reminder, subscription_trial_end_reminder)
+     * @param string $event The reminder event hook (renewal_reminder_overdue, subscription_renewal_reminder, subscription_trial_end_reminder)
      * @param int $entityId The order ID or subscription ID
      * @return array{success: bool, message: string}
      */
     public function sendManualReminder(string $event, int $entityId): array
     {
+        if (!$this->isRemindersEnabled()) {
+            return [
+                'success' => false,
+                'message' => __('Reminders are disabled for this store.', 'fluent-cart'),
+            ];
+        }
+
+        // renewal_reminder_overdue has no active/inactive toggle of its own
+        // (manage_toggle: 'no', on-demand) — only the scheduled renewal/trial
+        // reminders have a real per-event switch worth checking.
+        if ($event !== 'renewal_reminder_overdue' && !$this->isNotificationEnabled($event)) {
+            return [
+                'success' => false,
+                'message' => __('This reminder notification is currently disabled.', 'fluent-cart'),
+            ];
+        }
+
         try {
             switch ($event) {
-                case 'invoice_reminder_overdue':
-                    return $this->sendManualInvoiceReminder($entityId);
+                case 'renewal_reminder_overdue':
+                    return $this->sendRenewalOrderReminder($entityId);
                 case 'subscription_renewal_reminder':
                     return $this->sendManualRenewalReminder($entityId);
                 case 'subscription_trial_end_reminder':
@@ -158,7 +175,7 @@ class ReminderService
         }
     }
 
-    protected function sendManualInvoiceReminder(int $orderId): array
+    protected function sendRenewalOrderReminder(int $orderId): array
     {
         $order = Order::query()->with(['customer'])->find($orderId);
 
@@ -166,14 +183,7 @@ class ReminderService
             return ['success' => false, 'message' => __('Order or customer not found', 'fluent-cart')];
         }
 
-        $eligibleStatuses = [
-            Status::PAYMENT_PENDING,
-            Status::PAYMENT_PARTIALLY_PAID,
-            Status::PAYMENT_FAILED,
-            Status::PAYMENT_AUTHORIZED,
-        ];
-
-        if (!in_array($order->payment_status, $eligibleStatuses, true)) {
+        if (!in_array($order->payment_status, RenewalReminderService::getReminderPaymentStatuses(), true)) {
             return ['success' => false, 'message' => __('Order is not eligible for payment reminder', 'fluent-cart')];
         }
 
@@ -188,7 +198,7 @@ class ReminderService
             return ['success' => false, 'message' => __('Invalid order date', 'fluent-cart')];
         }
 
-        $dueDays = (int)$this->storeSettings->get('invoice_reminder_due_days', 0);
+        $dueDays = (int)$this->storeSettings->get('renewal_reminder_due_days', 0);
         $dueAt = $base + (max($dueDays, 0) * DAY_IN_SECONDS);
 
         $orderRef = !empty($order->invoice_no) ? (string)$order->invoice_no : '#' . (string)$order->id;
@@ -206,9 +216,9 @@ class ReminderService
             ]
         ];
 
-        do_action('fluent_cart/invoice_reminder_overdue', $data);
+        do_action('fluent_cart/renewal_reminder_overdue', $data);
 
-        $state = $this->normalizeReminderState($order->getMeta(InvoiceReminderService::META_KEY, []));
+        $state = $this->normalizeReminderState($order->getMeta(RenewalReminderService::META_KEY, []));
         $cycleKey = md5(implode('|', ['order', $order->id, $dueAt, (int)$order->total_amount, (int)$order->total_paid]));
         $cycleState = $this->getCycleState($state, $cycleKey);
 
@@ -220,7 +230,7 @@ class ReminderService
 
         $state = $this->setCycleState($state, $cycleKey, $cycleState);
         $state['updated_at'] = gmdate('Y-m-d H:i:s');
-        $order->updateMeta(InvoiceReminderService::META_KEY, $state);
+        $order->updateMeta(RenewalReminderService::META_KEY, $state);
 
         return ['success' => true, 'message' => __('Payment reminder sent successfully', 'fluent-cart')];
     }
@@ -365,6 +375,8 @@ class ReminderService
         } elseif (!is_array($values)) {
             $values = $defaults;
         }
+
+        $values = array_slice($values, 0, 10);
 
         $days = [];
         foreach ($values as $value) {

@@ -8,7 +8,7 @@
           :key="itemKey"
           :filterLabels="filterLabels"
           :item="item"
-          @removeItem="removeItem(itemKey)"
+          @remove-item="removeItem(itemKey)"
       />
       </tbody>
     </table>

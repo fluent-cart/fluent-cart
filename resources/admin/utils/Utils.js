@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import AppConfig from "@/utils/Config/AppConfig";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -138,3 +139,84 @@ export function parseAddress(object, type = 'billing', shouldExcludeName = false
 
 // Usage example
 
+
+/**
+ * Amount for a chart tooltip.
+ *
+ * Axis labels stay abbreviated ($1K, $5K) because they only have to give a
+ * sense of scale. Tooltip amounts must not be: abbreviating them there mixes
+ * three formats in one list ("$2.22K", "$1.2K", "$103.38") and rounds the rows
+ * so they no longer add up to the total printed under them.
+ *
+ * Takes cents, like everything else that handles money here. Charts that plot
+ * dollars (value / 100) pass `param.value * 100`.
+ *
+ * @param {number} amountInCents
+ * @param {string|null} currencyName order currency, when the chart is not in the store currency
+ */
+export function chartTooltipAmount(amountInCents, currencyName = null) {
+    return CurrencyFormatter.formatNumber(Math.round(Number(amountInCents) || 0), true, false, currencyName);
+}
+
+/**
+ * Places a chart tooltip on whichever side of the hovered point has more room,
+ * so it stops covering the bars and points it is describing. Pass as the
+ * `position` of an ECharts tooltip, together with `confine: true`.
+ */
+export function chartTooltipPosition(point, params, dom, rect, size) {
+    const gap = 16;
+    const chartWidth = size.viewSize[0];
+    const chartHeight = size.viewSize[1];
+    const boxWidth = size.contentSize[0];
+    const boxHeight = size.contentSize[1];
+
+    const toLeft = point[0] - gap - boxWidth;
+    const toRight = point[0] + gap;
+
+    let left = point[0] > (chartWidth / 2) ? toLeft : toRight;
+
+    if (left < gap) {
+        left = toRight;
+    } else if (left + boxWidth > chartWidth - gap) {
+        left = toLeft;
+    }
+
+    left = Math.min(Math.max(gap, left), Math.max(gap, chartWidth - boxWidth - gap));
+
+    const top = Math.min(
+        Math.max(gap, point[1] - (boxHeight / 2)),
+        Math.max(gap, chartHeight - boxHeight - gap)
+    );
+
+    return [left, top];
+}
+
+/**
+ * Hover highlight for the category under the cursor.
+ *
+ * Bars get a shadow band, because the band is sized to the category and so
+ * lands exactly on the hovered column. Lines keep the thin pointer: the same
+ * band under a line chart with few categories covers a quarter of the plot.
+ *
+ * The band colour has to stay translucent — ECharts paints the axis pointer
+ * over the series, so an opaque band hides the bar it is meant to highlight.
+ */
+export function chartAxisPointer(isDarkTheme, darkColor, lightColor = null, chartType = 'line') {
+    if (chartType === 'bar') {
+        return {
+            type: 'shadow',
+            shadowStyle: {
+                color: isDarkTheme ? darkColor : 'rgba(103, 129, 168, 0.10)'
+            }
+        };
+    }
+
+    return {
+        type: 'line',
+        lineStyle: {
+            type: 'solid',
+            width: 2,
+            color: isDarkTheme ? darkColor : lightColor
+        }
+    };
+}

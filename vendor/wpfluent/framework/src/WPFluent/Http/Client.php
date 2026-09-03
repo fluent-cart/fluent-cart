@@ -85,14 +85,25 @@ class Client
 
 	/**
 	 * Request query params to pass with the url.
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $query = [];
 
 	/**
+	 * Whether to reject unsafe URLs via wp_safe_remote_request.
+	 * When true, dispatch() uses wp_safe_remote_request() instead of
+	 * wp_remote_request(), which runs the URL through wp_http_validate_url()
+	 * and refuses loopback addresses, private IP ranges, and non-standard
+	 * ports. Off by default for backwards compatibility with internal calls.
+	 *
+	 * @var bool
+	 */
+	protected $useSafeRemote = false;
+
+	/**
 	 * Stores args temporarily for then().
-	 * 
+	 *
 	 * @var null|array
 	 */
 	private $args = null;
@@ -153,12 +164,31 @@ class Client
 
 	/**
 	 * Sets the sslverify option.
-	 * 
+	 *
 	 * @return self
 	 */
 	public function secure($verify = true)
 	{
 		return $this->withOption('sslverify', $verify);
+	}
+
+	/**
+	 * Route dispatch through wp_safe_remote_request() instead of
+	 * wp_remote_request() — mirrors WordPress's wp_safe_remote_* family.
+	 *
+	 * Runs the URL through wp_http_validate_url() first, which refuses
+	 * loopback addresses, private IP ranges, and non-standard ports. Use
+	 * when the target URL is user/admin-configurable and you need SSRF
+	 * protection. Standard external HTTPS endpoints on ports 80/443/8080
+	 * are unaffected.
+	 *
+	 * @param  bool $enabled
+	 * @return self
+	 */
+	public function safe($enabled = true)
+	{
+		$this->useSafeRemote = $enabled;
+		return $this;
 	}
 
 	/**
@@ -390,7 +420,8 @@ class Client
 	 */
 	protected function dispatch($url, $args)
 	{
-		$response = wp_remote_request($url, $args);
+		$fn = $this->useSafeRemote ? 'wp_safe_remote_request' : 'wp_remote_request';
+		$response = $fn($url, $args);
 
 	    if (is_wp_error($response)) {
 	        throw new Exception($response->get_error_message(), 500);

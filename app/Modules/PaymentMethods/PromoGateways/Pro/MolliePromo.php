@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\PromoGateways\Pro;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Vite;
@@ -28,7 +29,7 @@ class MolliePromo extends AbstractPaymentGateway
             'brand_color' => '#7c3aed',
             'status' => false,
             'requires_pro' => true,
-            'upgrade_url' => '',
+            'upgrade_url' => Helper::getUpgradeUrl('feature_lock_gateway_mollie'),
             'supported_features' => $this->supportedFeatures
         ];
     }

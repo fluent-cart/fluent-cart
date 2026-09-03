@@ -67,8 +67,88 @@ class Cookie
     }
 
     /**
+     * Set a cookie whose value is base64(json($value)).
+     *
+     * Pairs with Request::cookie(), which auto-detects this exact format
+     * and decodes back to the original value on read. Use this when you
+     * need to store arrays/objects in a cookie — strings, numbers, and
+     * scalars work just fine through plain set() and don't need encoding.
+     *
+     * @param string                $name
+     * @param mixed                 $value     Anything json_encode can serialize
+     * @param int|DateTimeInterface $minutes
+     * @param string                $path
+     * @param string                $domain
+     * @param bool                  $secure
+     * @param bool                  $httponly
+     * @param string                $samesite
+     *
+     * @return void
+     */
+    public static function setEncoded(
+        $name,
+        $value,
+        $minutes = 0,
+        $path = '/',
+        $domain = '',
+        $secure = false,
+        $httponly = false,
+        $samesite = 'Lax'
+    ) {
+        static::set(
+            $name,
+            base64_encode(json_encode($value)),
+            $minutes,
+            $path,
+            $domain,
+            $secure,
+            $httponly,
+            $samesite
+        );
+    }
+
+    /**
+     * Queue a cookie whose value is base64(json($value)) for send_headers.
+     *
+     * Same encoding contract as setEncoded() — pairs with Request::cookie()
+     * auto-decode on the read side.
+     *
+     * @param string                $name
+     * @param mixed                 $value
+     * @param int|DateTimeInterface $minutes
+     * @param string                $path
+     * @param string                $domain
+     * @param bool                  $secure
+     * @param bool                  $httponly
+     * @param string                $samesite
+     *
+     * @return void
+     */
+    public static function queueEncoded(
+        $name,
+        $value,
+        $minutes = 0,
+        $path = '/',
+        $domain = '',
+        $secure = false,
+        $httponly = false,
+        $samesite = 'Lax'
+    ) {
+        static::queue(
+            $name,
+            base64_encode(json_encode($value)),
+            $minutes,
+            $path,
+            $domain,
+            $secure,
+            $httponly,
+            $samesite
+        );
+    }
+
+    /**
      * Set a cookie that lasts 5 years.
-     * 
+     *
      * @param string $name
      * @param mixed  $value
      * @param string $path = '/'
@@ -76,7 +156,7 @@ class Cookie
      * @param bool   $secure
      * @param bool   $httponly
      * @param string $samesite
-     * 
+     *
      * @return void
      */
     public static function setForever(

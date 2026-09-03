@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "sub_phase30_dead",
+    "object": "subscription",
+    "status": "canceled",
+    "customer": "cus_phase30_guard",
+    "canceled_at": 1788134400
+  }
+}

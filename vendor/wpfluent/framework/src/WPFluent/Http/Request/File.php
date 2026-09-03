@@ -105,7 +105,7 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
         if (!$mimeType) {
             $path = $this->getPathname() ?: $this->getRealPath();
 
-            if (!file_exists($path)) {
+            if (!$path || !is_file($path)) {
                 throw new RuntimeException(
                     "File does not exist at path: $path"
                 );
@@ -113,9 +113,12 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
 
             if ($handle = @fopen($path, 'rb')) {
                 $data = fread($handle, 8192);
-                $finfo = new \finfo(FILEINFO_MIME_TYPE);
-                $mimeType = $finfo->buffer($data);
                 fclose($handle);
+
+                if ($data !== false) {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->buffer($data);
+                }
             } else {
                 throw new RuntimeException(
                     "Failed to open file at path: $path"

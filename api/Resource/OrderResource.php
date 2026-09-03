@@ -31,12 +31,15 @@ use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Query\QueryParser;
 use FluentCart\App\Models\Query\Sort;
+use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentInstance;
+use FluentCart\App\Services\Tax\AdminOrderTaxService;
+use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Collection;
 use FluentCart\Framework\Support\Arr;
@@ -169,8 +172,7 @@ class OrderResource extends BaseResourceApi
 
         // because of decimal issue commented this below line, using OrderService::getCouponDiscountTotal instead
         // $subtotalWithDiscount = OrderService::getItemsAmountTotal($orderItems, false, false); //get order total with discount
-        $coupon_discount_total = OrderService::getCouponDiscountTotal($orderItems);
-        $couponDiscountTotal = $coupon_discount_total;
+        $couponDiscountTotal = OrderService::getCouponDiscountTotal($orderItems);
 
         $totalAmount = floatVal($subtotal + Arr::get($order, 'tax_total', 0) + Arr::get($order, 'shipping_total', 0) - Arr::get($order, 'manual_discount_total', 0) - $couponDiscountTotal);
 
@@ -231,6 +233,42 @@ class OrderResource extends BaseResourceApi
     /**
      * @throws \Exception
      */
+    /**
+     * Validate a shipping cents value for the DIRECT Resource API boundary.
+     * REST callers can reach neither branch (OrderRequest's numeric/min:0 rules
+     * 422 them first); both exist purely for direct callers.
+     *
+     * - Only absent/null may default to zero — that is the omitted-key shape
+     *   REST produces (pickKeys null-fill). A present non-numeric is a caller
+     *   bug, and coercing it to 0 would silently grant free shipping.
+     * - The sign is checked on the RAW value, BEFORE rounding: roundCent(-0.4)
+     *   is 0, so a post-rounding check would wave fractional negatives through
+     *   as free shipping instead of rejecting them.
+     *
+     * @param mixed $value
+     * @return mixed the value, unchanged, when null or a non-negative numeric
+     */
+    protected static function assertShippingCents($value)
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (!is_numeric($value)) {
+            throw new \InvalidArgumentException(
+                'Shipping total must be a numeric cents amount or omitted, got: ' . gettype($value)
+            );
+        }
+
+        if ((float) $value < 0) {
+            throw new \InvalidArgumentException(
+                'Shipping total cannot be a negative cents amount: ' . var_export($value, true)
+            );
+        }
+
+        return $value;
+    }
+
     public static function updatedPlaceOrder($data, $params = [])
     {
         $order = $data;
@@ -253,7 +291,13 @@ class OrderResource extends BaseResourceApi
             'customer_id'               => $customer->id,
             'payment_method'            => $paymentMethod,
             'applied_coupons'           => Arr::get($data, 'applied_coupon', []),
-            'shipping_total'            => Arr::get($data, 'shipping_total', []),
+            // Normalized here as well as in OrderRequest::sanitize(): this is a public
+            // Resource API, and a direct caller never passes through the request layer. The
+            // shared helper also absorbs the null that pickKeys() injects for an omitted key
+            // AFTER Sanitizer::sanitize() has run, which no sanitizer can reach. Negative
+            // and PRESENT-but-malformed shipping are rejected here too, on the RAW value
+            // and BEFORE rounding — see assertShippingCents().
+            'shipping_total'            => Helper::roundCent(static::assertShippingCents(Arr::get($data, 'shipping_total'))),
             'billing_address'           => Arr::get($customer, 'billing_address', []),
             'shipping_address'          => Arr::get($customer, 'shipping_address', []),
             'user_tz'                   => Arr::get($data, 'user_tz', ''),
@@ -269,12 +313,21 @@ class OrderResource extends BaseResourceApi
 
                 static::commitEvents($order);
 
-                static::createOrderAddresses($order->id, $data);
+                static::createOrderAddresses($order->id, $data, $order->customer_id);
 
                 static::triggerStockChangedEvents($order);
 
+                // Calculate and persist tax for admin-created orders
+                static::applyAdminOrderTax($order, $items, $customer, $data);
+
                 if ($gateway = App::gateway($paymentMethod)) {
                     $paymentInstance = new PaymentInstance($order);
+
+                    if ($paymentInstance->subscription && $paymentInstance->subscription->status === Status::SUBSCRIPTION_PENDING) {
+                        $paymentInstance->subscription->status = Status::SUBSCRIPTION_INTENDED;
+                        $paymentInstance->subscription->save();
+                    }
+
                     $gateway->makePaymentFromPaymentInstance($paymentInstance);
                 }
 
@@ -289,6 +342,1023 @@ class OrderResource extends BaseResourceApi
                 ['code' => 400, 'message' => $e->getMessage()]
             ]);
         }
+    }
+
+    /**
+     * Calculate tax for an admin-created order and persist it to fct_order_tax_rate.
+     * Updates order.tax_total and order.shipping_tax. Never throws — tax failure must
+     * not block order creation.
+     *
+     * @param \FluentCart\App\Models\Order    $order    The freshly created order.
+     * @param array                           $items    Raw order_items from the create-order request.
+     * @param \FluentCart\App\Models\Customer $customer Customer with primary_billing_address loaded.
+     * @param array                           $data     Raw request data (may include billing_address_id).
+     */
+    private static function applyAdminOrderTax($order, $items, $customer, $data = [])
+    {
+        try {
+            // Resolve billing address: prefer the address explicitly selected in the
+            // admin UI (billing_address_id), fall back to customer's primary address.
+            $billingAddress = null;
+            $billingAddressId = (int) Arr::get($data, 'billing_address_id', 0);
+            if ($billingAddressId > 0) {
+                $addr = CustomerAddresses::query()
+                    ->where('customer_id', $order->customer_id)
+                    ->find($billingAddressId);
+                if ($addr) {
+                    $billingAddress = [
+                        'country'  => $addr->country ?: '',
+                        'state'    => $addr->state ?: '',
+                        'city'     => $addr->city ?: '',
+                        'postcode' => $addr->postcode ?: '',
+                    ];
+                }
+            }
+            $billingFallbackAddress = null;
+            if (!$billingAddress && $customer && $customer->primary_billing_address) {
+                $addr = $customer->primary_billing_address;
+                $billingFallbackAddress = $addr;
+                $billingAddress = [
+                    'country'  => $addr->country ?: '',
+                    'state'    => $addr->state ?: '',
+                    'city'     => $addr->city ?: '',
+                    'postcode' => $addr->postcode ?: '',
+                ];
+            }
+
+            // Resolve shipping address for basis=shipping
+            $shippingAddress = null;
+            $shippingAddressId = (int) Arr::get($data, 'shipping_address_id', 0);
+            if ($shippingAddressId > 0) {
+                $addr = CustomerAddresses::query()
+                    ->where('customer_id', $order->customer_id)
+                    ->find($shippingAddressId);
+                if ($addr) {
+                    $shippingAddress = [
+                        'country'  => $addr->country ?: '',
+                        'state'    => $addr->state ?: '',
+                        'city'     => $addr->city ?: '',
+                        'postcode' => $addr->postcode ?: '',
+                    ];
+                }
+            }
+            $shippingFallbackAddress = null;
+            if (!$shippingAddress && $customer && $customer->primary_shipping_address) {
+                $addr = $customer->primary_shipping_address;
+                $shippingFallbackAddress = $addr;
+                $shippingAddress = [
+                    'country'  => $addr->country ?: '',
+                    'state'    => $addr->state ?: '',
+                    'city'     => $addr->city ?: '',
+                    'postcode' => $addr->postcode ?: '',
+                ];
+            }
+
+            $taxSettings = (new TaxModule())->getSettings();
+            $basis       = Arr::get($taxSettings, 'tax_calculation_basis', 'shipping');
+            $taxAddress  = AdminOrderTaxService::resolveAddressForBasis($basis, $billingAddress, $shippingAddress);
+
+            if (empty($taxAddress['country'])) {
+                // No address — can't calculate tax. Still write the zero-tax
+                // sentinel row so every order records "tax ran, no address"
+                // (same guarantee checkout gives via persistTaxRates).
+                TaxModule::persistTaxRates($order->id, [], [
+                    'tax_country' => '',
+                    'source'      => 'admin_order',
+                    'note'        => 'no_tax_address',
+                ], 0);
+                return;
+            }
+
+            // Build line items from raw order_items
+            $taxItems = [];
+            foreach ($items as $item) {
+                $unitPrice = (int) Arr::get($item, 'unit_price', 0);
+                $qty       = max(1, (int) Arr::get($item, 'quantity', 1));
+                $subtotal  = $unitPrice * $qty;
+
+                // Include manual_discount (set by distributeManualDiscount) so tax is
+                // calculated on the after-discount amount, not the full subtotal.
+                $taxItems[] = [
+                    'id'             => (int) Arr::get($item, 'id', 0),
+                    'post_id'        => (int) Arr::get($item, 'post_id', 0),
+                    'object_id'      => (int) Arr::get($item, 'object_id', 0),
+                    'subtotal'       => $subtotal,
+                    'discount_total' => (int) Arr::get($item, 'discount_total', 0) + (int) Arr::get($item, 'manual_discount', 0),
+                    'shipping_charge'=> (int) Arr::get($item, 'shipping_charge', 0),
+                    'quantity'       => $qty,
+                    'other_info'     => Arr::get($item, 'other_info', []),
+                ];
+            }
+
+            $taxResult = AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+
+            if ($taxResult === null) {
+                return; // Tax disabled or no result
+            }
+
+            $taxTotal           = (int) Arr::get($taxResult, 'tax_total', 0);
+            $exclusiveTaxTotal   = (int) Arr::get($taxResult, 'exclusive_tax_total', 0);
+            $storeTaxBehavior    = (int) Arr::get($taxResult, 'store_tax_behavior', 0);
+            $feeTax              = (int) Arr::get($taxResult, 'fee_tax', 0);
+            $shippingTax         = (int) Arr::get($taxResult, 'shipping_tax', 0);
+            $shippingTaxLines    = Arr::get($taxResult, 'shipping_tax_lines', []);
+            $taxLines            = Arr::get($taxResult, 'tax_lines', []);
+            $taxCountry          = Arr::get($taxResult, 'tax_country', $taxAddress['country']);
+
+            // Always persist tax fields for reporting, even when amounts are zero
+            $taxBehavior = (int) Arr::get($taxResult, 'tax_behavior', 0);
+            $order->tax_behavior = $taxBehavior;
+            $order->tax_total    = $taxTotal;
+            $order->shipping_tax = $shippingTax;
+
+            // Calculate total_amount based on tax behavior
+            if ($taxBehavior === 1) {
+                // Pure exclusive: all tax (product + fee) is on top of subtotals.
+                $order->total_amount = $order->total_amount + $taxTotal + $shippingTax;
+            } elseif ($taxBehavior === 3) {
+                // Mixed: only exclusive product tax + store-exclusive fee/shipping on top.
+                $order->total_amount = $order->total_amount + $exclusiveTaxTotal;
+                if ($storeTaxBehavior === 1) {
+                    $order->total_amount = $order->total_amount + $feeTax + $shippingTax;
+                }
+            }
+            // behavior=2 (inclusive) or 0 (reverse charge): tax already in item prices
+
+            $DB = App::db();
+            $DB->beginTransaction();
+
+            $order->save();
+
+            // When tax was calculated from the customer's primary address (no address
+            // explicitly attached to the order), persist that address onto the order —
+            // the edit path reads fct_order_addresses, and without this row the next
+            // save would hit the no-country branch and clear the tax charged here.
+            if ($billingFallbackAddress) {
+                static::createOrderAddress($billingFallbackAddress->toArray(), $order->id);
+            }
+            if ($shippingFallbackAddress) {
+                static::createOrderAddress($shippingFallbackAddress->toArray(), $order->id);
+            }
+
+            // Always persist these meta keys so a later recalculation that returns
+            // zero values does not leave stale non-zero data from a prior edit.
+            $order->updateMeta('exclusive_tax_total', $exclusiveTaxTotal);
+            $order->updateMeta('store_tax_behavior', $storeTaxBehavior);
+            $order->updateMeta('fee_tax', $feeTax);
+
+            // Patch per-item tax_amount and line_meta so tax badges display correctly.
+            $lineItemsFromTax = Arr::get($taxResult, 'line_items', []);
+            if (!empty($lineItemsFromTax)) {
+                $savedItems = OrderItem::query()
+                    ->where('order_id', $order->id)
+                    ->whereNotIn('payment_type', ['fee', 'signup_fee'])
+                    ->get()
+                    ->toArray();
+                static::patchOrderItemTaxMeta($savedItems, $lineItemsFromTax);
+                static::patchSignupFeeTaxMeta($order->id, $lineItemsFromTax);
+                static::patchSubscriptionTax($order, $lineItemsFromTax, $taxBehavior);
+            }
+
+            // Persist tax-rate rows
+            $taxMeta = [
+                'tax_country'        => $taxCountry,
+                'tax_behavior'       => $taxBehavior,
+                'inclusive'          => $taxBehavior === 2,
+                'shipping_inclusive' => $storeTaxBehavior === 2,
+                'source'             => 'admin_order',
+            ];
+
+            TaxModule::persistTaxRates($order->id, $taxLines, $taxMeta, $shippingTax, $shippingTaxLines);
+
+            // Sync the pending charge transaction total so it matches the tax-adjusted order total.
+            $pendingTx = OrderTransaction::query()
+                ->where('order_id', $order->id)
+                ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+                ->where('status', 'pending')
+                ->first();
+            if ($pendingTx) {
+                $pendingTx->total = $order->total_amount;
+                $pendingTx->save();
+            }
+
+            $DB->commit();
+
+        } catch (\Exception $e) {
+            if (isset($DB)) {
+                $DB->rollBack();
+            }
+            // Log but never block order creation — tax calculation is non-critical
+            fluent_cart_warning_log(
+                'Admin order tax calculation failed',
+                get_class($e) . ': ' . wp_strip_all_tags($e->getMessage()),
+                ['module_name' => 'tax', 'module_id' => $order->id, 'log_type' => 'api']
+            );
+        }
+    }
+
+    /**
+     * Rebuild an order's item-derived totals from the rows actually in
+     * fct_order_items, then let the tax pass derive total_amount from the new
+     * subtotal.
+     *
+     * The whole-order save posts client-computed totals alongside the items, so
+     * it does not need this. A caller that writes a single line item on its own
+     * does — without it the order keeps the subtotal it had before the line
+     * existed. Same aggregation as AdminOrderProcessor: fee lines live in
+     * fee_total, and trial lines are not billed now.
+     */
+    public static function syncItemDerivedTotals(Order $order)
+    {
+        $order->load('order_items');
+
+        // The tax pass early-returns for these before reaching the pending
+        // charge transaction sync, so a total written here would go stale
+        // against the recorded charge. Refuse instead of desynchronizing.
+        if ($order->isSubscription() || $order->type === 'refund') {
+            throw new \Exception(esc_html__('Order Not valid!', 'fluent-cart'));
+        }
+
+        $subtotal = 0;
+
+        foreach ($order->order_items as $item) {
+            if (in_array($item->payment_type, ['fee', 'signup_fee'], true)) {
+                continue;
+            }
+
+            if (Arr::get($item->other_info, 'trial_days', 0) > 0) {
+                continue;
+            }
+
+            $subtotal += (int) $item->subtotal;
+        }
+
+        $order->subtotal = $subtotal;
+
+        // The parent's fulfillment fields are item-derived too — creation sets
+        // them from whether any line is physical (AdminOrderProcessor). A
+        // physical line added to a digital order must pull the order into the
+        // shipping workflow. Upgrade only: a rebuild must never downgrade the
+        // type or reset shipping progress already recorded.
+        $hasPhysical = $order->order_items
+            ->where('fulfillment_type', Status::FULFILLMENT_TYPE_PHYSICAL)
+            ->isNotEmpty();
+
+        if ($hasPhysical) {
+            if ($order->fulfillment_type !== Status::FULFILLMENT_TYPE_PHYSICAL) {
+                $order->fulfillment_type = Status::FULFILLMENT_TYPE_PHYSICAL;
+            }
+            if (!$order->shipping_status) {
+                $order->shipping_status = 'unshipped';
+            }
+        }
+
+        // Tax-free baseline; the tax pass recomputes it with tax on every path
+        // it completes.
+        $order->total_amount = max(0, $subtotal
+            + (int) $order->shipping_total
+            + (int) $order->fee_total
+            - (int) $order->coupon_discount_total
+            - (int) $order->manual_discount_total);
+
+        $order->save();
+
+        // The tax pass swallows its own failures so a whole-order save is never
+        // blocked, but this caller has nothing else persisting the order — a
+        // swallowed failure here would commit the new subtotal beside stale tax
+        // fields and rate rows. Escalate so the caller's transaction rolls the
+        // item and totals back together.
+        if (!static::reapplyTaxAfterUpdate($order->id, $order->refresh())) {
+            throw new \Exception(esc_html__('Order totals could not be recalculated. Please try again.', 'fluent-cart'));
+        }
+
+        return $order->refresh();
+    }
+
+    /**
+     * Recalculate and persist tax for an existing order after create or update.
+     * Reads saved items + billing address from the DB, runs AdminOrderTaxService,
+     * recomputes total_amount from scratch, and rewrites fct_order_tax_rate rows.
+     * Never throws — tax failure must not block the save.
+     *
+     * @return bool false when the order was left carrying tax data the current
+     *              items no longer justify (transient calculator failure or a
+     *              rolled-back write); true when it reached a coherent state.
+     */
+    private static function reapplyTaxAfterUpdate($orderId, $order)
+    {
+        try {
+            if (!$order->relationLoaded('order_items')) {
+                $order->load('order_items');
+            }
+
+            if ($order->isSubscription()) {
+                return true;
+            }
+
+            if ($order->type === 'refund') {
+                return true;
+            }
+
+            // Query addresses directly — ORM relation load() does not reliably apply
+            // the type WHERE constraint, so we query fct_order_addresses ourselves.
+            $billingAddr  = OrderAddress::query()->where('order_id', $orderId)->where('type', 'billing')->first();
+            $shippingAddr = OrderAddress::query()->where('order_id', $orderId)->where('type', 'shipping')->first();
+
+            $billingAddress  = null;
+            $shippingAddress = null;
+
+            if ($billingAddr) {
+                $billingAddress = [
+                    'country'  => $billingAddr->country ?: '',
+                    'state'    => $billingAddr->state ?: '',
+                    'city'     => $billingAddr->city ?: '',
+                    'postcode' => $billingAddr->postcode ?: '',
+                ];
+            }
+            if ($shippingAddr) {
+                $shippingAddress = [
+                    'country'  => $shippingAddr->country ?: '',
+                    'state'    => $shippingAddr->state ?: '',
+                    'city'     => $shippingAddr->city ?: '',
+                    'postcode' => $shippingAddr->postcode ?: '',
+                ];
+            }
+
+            $taxSettings = (new TaxModule())->getSettings();
+            $basis       = Arr::get($taxSettings, 'tax_calculation_basis', 'shipping');
+            $taxAddress  = AdminOrderTaxService::resolveAddressForBasis($basis, $billingAddress, $shippingAddress);
+
+            if (empty($taxAddress['country'])) {
+                return static::clearOrderTax($orderId, $order);
+            }
+
+            $productItems = $order->order_items->filter(function ($item) {
+                return !in_array($item->payment_type, ['fee', 'signup_fee'], true);
+            })->values();
+
+            $taxItems = [];
+            foreach ($productItems as $item) {
+                $unitPrice = (int) Arr::get($item, 'unit_price', 0);
+                $qty       = max(1, (int) Arr::get($item, 'quantity', 1));
+                $taxItems[] = [
+                    'id'              => (int) Arr::get($item, 'id', 0),
+                    'post_id'         => (int) Arr::get($item, 'post_id', 0),
+                    'object_id'       => (int) Arr::get($item, 'object_id', 0),
+                    'subtotal'        => $unitPrice * $qty,
+                    'discount_total'  => (int) Arr::get($item, 'discount_total', 0),
+                    'shipping_charge' => (int) Arr::get($item, 'shipping_charge', 0),
+                    'quantity'        => $qty,
+                    'other_info'      => Arr::get($item, 'other_info', []),
+                ];
+            }
+
+            if (empty($taxItems)) {
+                return static::clearOrderTax($orderId, $order);
+            }
+
+            // Fee items only exist on checkout-created orders that are edited in
+            // admin. Mirror checkout (TaxModule::calculateCartTax()): only taxable,
+            // non-zero fees enter the calculator as is_fee lines. Fee item subtotal
+            // holds the NET fee amount (CheckoutProcessor::syncFeeItems() stores it
+            // tax-free), so it doubles as the net fee base for the total recompute.
+            // Guard: when the order has NO fee order items, the stored fee_total
+            // column is the only source (legacy / manually set) — keep it as-is and
+            // skip fee tax entirely.
+            $feeOrderItems = $order->order_items->filter(function ($item) {
+                return $item->payment_type === 'fee';
+            })->values();
+
+            $hasFeeItems = !$feeOrderItems->isEmpty();
+            $netFeeTotal = 0;
+            foreach ($feeOrderItems as $feeItem) {
+                $feeSubtotal = (int) Arr::get($feeItem, 'subtotal', 0);
+                $netFeeTotal += $feeSubtotal;
+
+                $feeOtherInfo = Arr::get($feeItem, 'other_info', []);
+                if (!is_array($feeOtherInfo)) {
+                    $feeOtherInfo = [];
+                }
+                if (empty($feeOtherInfo['taxable']) || $feeSubtotal <= 0) {
+                    continue;
+                }
+
+                $taxItems[] = [
+                    'is_fee'          => true,
+                    'title'           => (string) Arr::get($feeItem, 'title', ''),
+                    'post_id'         => 0,
+                    'object_id'       => 0,
+                    'subtotal'        => $feeSubtotal,
+                    'discount_total'  => 0,
+                    'shipping_charge' => 0,
+                    'quantity'        => 1,
+                    'other_info'      => $feeOtherInfo,
+                ];
+            }
+
+            $taxResult = AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+
+            if ($taxResult === null) {
+                if (!TaxModule::isTaxEnabled()) {
+                    // Deterministic: tax was turned off — clear stale tax instead of leaving it.
+                    return static::clearOrderTax($orderId, $order);
+                }
+                // Transient calculation failure: keep existing tax untouched.
+                return false;
+            }
+
+            $taxTotal          = (int) Arr::get($taxResult, 'tax_total', 0);
+            $exclusiveTaxTotal = (int) Arr::get($taxResult, 'exclusive_tax_total', 0);
+            $storeTaxBehavior  = (int) Arr::get($taxResult, 'store_tax_behavior', 0);
+            $feeTax            = (int) Arr::get($taxResult, 'fee_tax', 0);
+            $feeTaxLines       = (array) Arr::get($taxResult, 'fee_tax_lines', []);
+            $shippingTax       = (int) Arr::get($taxResult, 'shipping_tax', 0);
+            $shippingTaxLines  = Arr::get($taxResult, 'shipping_tax_lines', []);
+            $taxLines          = Arr::get($taxResult, 'tax_lines', []);
+            $taxCountry        = Arr::get($taxResult, 'tax_country', $taxAddress['country']);
+            $taxBehavior       = (int) Arr::get($taxResult, 'tax_behavior', 0);
+            $lineItemsFromTax  = Arr::get($taxResult, 'line_items', []);
+
+            // Respect a checkout-time VIES validation: when the order carries a
+            // validated VAT number and reverse charge still applies for the
+            // (possibly edited) address, zero the recalculated tax and keep the
+            // RC audit meta instead of re-adding tax the buyer does not owe.
+            $rcMeta    = [];
+            $rcContext = static::resolveAdminReverseChargeContext($order, $taxAddress);
+            if ($rcContext !== null) {
+                $rcMode           = $order->getOrderRcMode();
+                // tax_total includes fee tax; the inclusive portion must not
+                // (same formula as checkout: taxTotal - exclusiveTaxTotal - feeTax).
+                $inclusivePortion = max(0, $taxTotal - $exclusiveTaxTotal - $feeTax);
+
+                $rcMeta = [
+                    'reverse_charge_applied'               => true,
+                    'vat_reverse'                          => $rcContext,
+                    'reverse_charge_original_tax_total'    => $exclusiveTaxTotal + $feeTax + $shippingTax + ($rcMode === 'dynamic' ? $inclusivePortion : 0),
+                    'reverse_charge_original_shipping_tax' => $shippingTax,
+                    'reverse_charge_price_mode'            => $rcMode,
+                ];
+
+                // Zero RC-style — rate rows keep their identity with zero amounts,
+                // line items keep their tax_config rates (strikethrough display)
+                // while top-level tax_amount is zeroed. Same convention as checkout.
+                foreach ($taxLines as $lineIndex => $taxLine) {
+                    $taxLines[$lineIndex]['tax_amount'] = 0;
+                }
+                foreach ($lineItemsFromTax as $itemIndex => $taxLineItem) {
+                    $lineItemsFromTax[$itemIndex]['tax_amount']     = 0;
+                    $lineItemsFromTax[$itemIndex]['signup_fee_tax'] = 0;
+                }
+                $taxTotal          = 0;
+                $exclusiveTaxTotal = 0;
+                $shippingTax       = 0;
+                $shippingTaxLines  = [];
+                $taxBehavior       = 0;
+                $feeTax            = 0;
+                $feeTaxLines       = [];
+            }
+
+            // Fee base for the total recompute. The stored fee_total column on a
+            // behavior-1 checkout order already contains the ORIGINAL fee tax
+            // (CheckoutProcessor rolled it in) — trusting it would double-count
+            // fee tax against the freshly calculated one. When fee order items
+            // exist, their subtotals are the net fee amounts; rebuild fee_total
+            // from net + new fee tax (checkout invariant: gateways read fee_total
+            // as the gross fee). Without fee items, keep the stored column as-is.
+            $feeBaseTotal = (int) $order->fee_total;
+            if ($hasFeeItems) {
+                $feeBaseTotal = $netFeeTotal;
+                $newFeeTotal  = $netFeeTotal;
+                if ($feeTax && ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1))) {
+                    $newFeeTotal += $feeTax;
+                }
+                $order->fee_total = $newFeeTotal;
+            }
+
+            // Recompute total_amount from first principles so old tax is never double-counted.
+            // fee base must be included — checkout orders carry payment/processing fees
+            // outside subtotal (see CheckoutProcessor::prepareOrderData()).
+            $baseTotal = (int)$order->subtotal
+                       + (int)$order->shipping_total
+                       + $feeBaseTotal
+                       - (int)$order->coupon_discount_total
+                       - (int)$order->manual_discount_total;
+
+            $order->tax_behavior = $taxBehavior;
+            $order->tax_total    = $taxTotal;
+            $order->shipping_tax = $shippingTax;
+            $order->total_amount = $baseTotal;
+
+            if ($taxBehavior === 1) {
+                // taxTotal already includes feeTax → net fee + fee tax counted exactly once.
+                $order->total_amount += $taxTotal + $shippingTax;
+            } elseif ($taxBehavior === 3) {
+                // exclusiveTaxTotal excludes fee lines → add feeTax explicitly for exclusive stores.
+                $order->total_amount += $exclusiveTaxTotal;
+                if ($storeTaxBehavior === 1) {
+                    $order->total_amount += $feeTax + $shippingTax;
+                }
+            }
+
+            $DB = App::db();
+            $DB->beginTransaction();
+
+            $order->save();
+
+            // Always persist these meta keys so a later recalculation that returns
+            // zero values does not leave stale non-zero data from a prior edit.
+            $order->updateMeta('exclusive_tax_total', $exclusiveTaxTotal);
+            $order->updateMeta('store_tax_behavior', $storeTaxBehavior);
+            $order->updateMeta('fee_tax', $feeTax);
+
+            // Same persist/delete pattern as CheckoutProcessor::persistTaxMeta() —
+            // a stale checkout-written fee_tax_lines must not survive an admin edit
+            // that produced no fee tax.
+            if (!empty($feeTaxLines)) {
+                $order->updateMeta('fee_tax_lines', $feeTaxLines);
+            } else {
+                $order->deleteMeta('fee_tax_lines');
+            }
+
+            // Patch per-item tax_amount and line_meta so tax badges display correctly.
+            // patchSignupFeeTaxMeta() is always called (even when no items have signup-fee tax)
+            // so it can zero out items that were previously taxed but are now exempt.
+            static::patchOrderItemTaxMeta($productItems->toArray(), $lineItemsFromTax);
+            static::patchSignupFeeTaxMeta($orderId, $lineItemsFromTax);
+
+            $taxMeta = array_merge([
+                'tax_country'        => $taxCountry,
+                'tax_behavior'       => $taxBehavior,
+                'inclusive'          => $taxBehavior === 2,
+                'shipping_inclusive' => $storeTaxBehavior === 2,
+                'source'             => 'admin_order_edit',
+            ], $rcMeta);
+
+            OrderTaxRate::query()->where('order_id', $orderId)->delete();
+            TaxModule::persistTaxRates($orderId, $taxLines, $taxMeta, $shippingTax, $shippingTaxLines);
+
+            $pendingTx = OrderTransaction::query()
+                ->where('order_id', $orderId)
+                ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+                ->where('status', 'pending')
+                ->first();
+            if ($pendingTx) {
+                $pendingTx->total = $order->total_amount;
+                $pendingTx->save();
+            }
+
+            // Paid orders: settled transactions are never touched — reflect the new
+            // total as a due / refund-owed state instead.
+            static::syncPaymentStatusWithTotals($order);
+
+            $DB->commit();
+
+            return true;
+        } catch (\Exception $e) {
+            if (isset($DB)) {
+                $DB->rollBack();
+            }
+            fluent_cart_warning_log(
+                'Admin order tax recalculation failed on update',
+                get_class($e) . ': ' . wp_strip_all_tags($e->getMessage()),
+                ['module_name' => 'tax', 'module_id' => $orderId, 'log_type' => 'api']
+            );
+
+            return false;
+        }
+    }
+
+    /**
+     * Re-derive payment_status after a tax recalculation changed total_amount on
+     * an order that already received money. A fully-paid order whose total grew
+     * becomes partially_paid (the admin UI then shows Total Due + Collect
+     * Payments); a partially_paid order whose total shrank to within total_paid
+     * becomes paid. Overpayment keeps status paid — the Total Refund Owed row is
+     * derived from the columns directly. Intentionally event-free: no payment was
+     * received, so OrderPaid side effects (emails) must not fire.
+     */
+    private static function syncPaymentStatusWithTotals($order)
+    {
+        $totalPaid = (int) $order->total_paid;
+        if ($totalPaid <= 0) {
+            return; // unpaid orders keep their pending/failed lifecycle
+        }
+
+        $totalAmount = (int) $order->total_amount;
+        if ($totalPaid < $totalAmount && $order->payment_status === Status::PAYMENT_PAID) {
+            $order->updatePaymentStatus(Status::PAYMENT_PARTIALLY_PAID);
+        } elseif ($totalPaid >= $totalAmount && $order->payment_status === Status::PAYMENT_PARTIALLY_PAID) {
+            $order->updatePaymentStatus(Status::PAYMENT_PAID);
+        }
+    }
+
+    /**
+     * Resolve whether a checkout-time VIES validation still grants reverse charge
+     * for an admin order edit.
+     *
+     * Sources the validated VAT from order business_info (rate-row vat_reverse
+     * meta as legacy fallback), then re-checks eligibility against the current
+     * tax address: the VAT's member state must match the tax country and the
+     * store settings must allow reverse charge for it. When the tax country
+     * changed since the order was placed, the VAT is re-validated against VIES —
+     * a definitive "invalid" drops reverse charge; an unreachable service trusts
+     * the stored validation (fail open, matching checkout behavior).
+     *
+     * @return array|null vat_reverse payload to persist, or null when reverse
+     *                    charge must not apply.
+     */
+    private static function resolveAdminReverseChargeContext($order, $taxAddress)
+    {
+        $businessInfo = $order->getBusinessInfo();
+        $vatNumber    = (string) Arr::get($businessInfo, 'tax_number', '');
+        $validated    = (bool) Arr::get($businessInfo, 'tax_number_validated', false);
+        $vatCountry   = (string) Arr::get($businessInfo, 'tax_number_country', '');
+        $vatName      = (string) Arr::get($businessInfo, 'tax_number_name', '');
+
+        $primaryRate     = $order->getPrimaryOrderTaxRate();
+        $primaryRateMeta = $primaryRate ? (array) $primaryRate->meta : [];
+
+        if (!$validated || !$vatNumber) {
+            // Legacy orders: VAT data only exists on the rate-row meta.
+            $vatReverse = (array) Arr::get($primaryRateMeta, 'vat_reverse', []);
+            if (Arr::get($vatReverse, 'valid', false) && Arr::get($vatReverse, 'vat_number', '')) {
+                $vatNumber  = (string) Arr::get($vatReverse, 'vat_number', '');
+                $vatCountry = (string) Arr::get($vatReverse, 'country', '');
+                $vatName    = (string) Arr::get($vatReverse, 'name', '');
+                $validated  = true;
+            }
+        }
+
+        if (!$validated || !$vatNumber) {
+            return null;
+        }
+
+        $taxCountry = strtoupper((string) Arr::get($taxAddress, 'country', ''));
+
+        // The validated VAT belongs to one member state — reverse charge only
+        // applies while the order is taxed in that country (same rule as checkout).
+        if (!$taxCountry || strtoupper($vatCountry) !== $taxCountry) {
+            return null;
+        }
+
+        $taxModule = new TaxModule();
+        if (!$taxModule->canApplyVatValidation($taxCountry)) {
+            return null;
+        }
+
+        // Excluded categories: refuse reverse charge when any order product belongs
+        // to a category listed in eu_vat_settings.vat_reverse_excluded_categories.
+        // Checkout applies this only under local_reverse_charge = yes
+        // (TaxModule::shouldApplyReverseCharge() / handleVatValidation()) — same gate
+        // here for exact parity.
+        $taxSettings        = $taxModule->getSettings();
+        $excludedCategories = array_map('intval', (array) Arr::get(
+            $taxSettings, 'eu_vat_settings.vat_reverse_excluded_categories', []
+        ));
+        if (Arr::get($taxSettings, 'eu_vat_settings.local_reverse_charge', 'no') === 'yes' && !empty($excludedCategories)) {
+            if (!$order->relationLoaded('order_items')) {
+                $order->load('order_items');
+            }
+
+            $productIds = [];
+            foreach ($order->order_items as $orderItem) {
+                if (!in_array($orderItem->payment_type, ['fee', 'signup_fee'], true) && $orderItem->post_id) {
+                    $productIds[] = (int) $orderItem->post_id;
+                }
+            }
+            $productIds = array_values(array_unique($productIds));
+
+            if (!empty($productIds)) {
+                // TaxModule::getTermsByProductIds() is protected — replicate its
+                // term_relationships lookup (object_id → term_taxonomy_id).
+                $termRows = App::db()->table('term_relationships')
+                    ->whereIn('object_id', $productIds)
+                    ->get();
+                foreach ($termRows as $termRow) {
+                    if (in_array((int) $termRow->term_taxonomy_id, $excludedCategories, true)) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        // Tax country changed since placement → re-validate the VAT against VIES.
+        $previousTaxCountry = strtoupper((string) Arr::get($primaryRateMeta, 'tax_country', ''));
+        if ($previousTaxCountry && $previousTaxCountry !== $taxCountry) {
+            $revalidation = $taxModule->validateVatForAdmin($vatCountry, $vatNumber);
+            if (is_array($revalidation)) {
+                if (empty($revalidation['valid'])) {
+                    return null;
+                }
+                $vatName = (string) Arr::get($revalidation, 'name', $vatName);
+            } elseif (is_wp_error($revalidation) && $revalidation->get_error_code() === 'invalid') {
+                // Definitive VIES answer: the number is no longer registered.
+                return null;
+            }
+            // service_unavailable / soap_fault → VIES unreachable: keep stored validation.
+        }
+
+        return [
+            'vat_number' => $vatNumber,
+            'country'    => $vatCountry,
+            'valid'      => true,
+            'name'       => $vatName,
+        ];
+    }
+
+    /**
+     * Zero out all tax fields, rate rows, and per-item tax amounts for an order
+     * that has become definitively non-taxable (no address, no taxable items).
+     * Only called for deterministic states — not on transient calculation failures.
+     *
+     * @return bool false when the clear rolled back and the stale tax data remains.
+     */
+    private static function clearOrderTax($orderId, $order)
+    {
+        try {
+            // No tax ⇒ no fee tax. When fee order items exist their subtotals are
+            // the net fee amounts — reset fee_total to net so a behavior-1 order
+            // whose fee_total had checkout fee tax rolled in doesn't keep it.
+            // Orders without fee items keep the stored fee_total untouched.
+            $feeSubtotals = OrderItem::query()
+                ->where('order_id', $orderId)
+                ->where('payment_type', 'fee')
+                ->pluck('subtotal')
+                ->toArray();
+            if (!empty($feeSubtotals)) {
+                $order->fee_total = (int) array_sum(array_map('intval', $feeSubtotals));
+            }
+
+            $baseTotal = (int)$order->subtotal
+                       + (int)$order->shipping_total
+                       + (int)$order->fee_total
+                       - (int)$order->coupon_discount_total
+                       - (int)$order->manual_discount_total;
+
+            $order->tax_behavior = 0;
+            $order->tax_total    = 0;
+            $order->shipping_tax = 0;
+            $order->total_amount = $baseTotal;
+
+            $DB = App::db();
+            $DB->beginTransaction();
+
+            $order->save();
+            $order->updateMeta('exclusive_tax_total', 0);
+            $order->updateMeta('store_tax_behavior', 0);
+            $order->updateMeta('fee_tax', 0);
+            $order->deleteMeta('fee_tax_lines');
+
+            $productItemIds = OrderItem::query()
+                ->where('order_id', $orderId)
+                ->whereNotIn('payment_type', ['fee'])
+                ->pluck('id')
+                ->toArray();
+            if (!empty($productItemIds)) {
+                OrderItem::query()->whereIn('id', $productItemIds)->update(['tax_amount' => 0]);
+            }
+
+            // Strip stale tax_config from signup_fee line_meta so rate pills don't
+            // show a previous rate when tax is now zero.
+            $signupFeeItems = OrderItem::query()
+                ->where('order_id', $orderId)
+                ->where('payment_type', 'signup_fee')
+                ->get();
+            if (!$signupFeeItems->isEmpty()) {
+                $signupFeeUpdates = [];
+                foreach ($signupFeeItems as $signupFeeItem) {
+                    $meta = $signupFeeItem->line_meta ?: [];
+                    if (!is_array($meta)) {
+                        $meta = json_decode($meta ?: '{}', true, 16) ?: [];
+                    }
+                    unset($meta['tax_config']);
+                    $signupFeeUpdates[] = [
+                        'id'        => $signupFeeItem->id,
+                        'line_meta' => json_encode($meta),
+                    ];
+                }
+                OrderItem::query()->batchUpdate($signupFeeUpdates);
+            }
+
+            // persistTaxRates with empty lines deletes all non-sentinel rate rows and
+            // upserts the zero-tax sentinel (tax_rate_id=0) — same guarantee checkout
+            // gives that every order keeps at least one fct_order_tax_rate row.
+            TaxModule::persistTaxRates($orderId, [], [
+                'tax_country' => '',
+                'source'      => 'admin_order_edit',
+                'note'        => 'tax_cleared',
+            ], 0);
+
+            $pendingTx = OrderTransaction::query()
+                ->where('order_id', $orderId)
+                ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+                ->where('status', 'pending')
+                ->first();
+            if ($pendingTx) {
+                $pendingTx->total = $order->total_amount;
+                $pendingTx->save();
+            }
+
+            // Paid orders: reflect the lowered total as paid / refund-owed state.
+            static::syncPaymentStatusWithTotals($order);
+
+            $DB->commit();
+
+            return true;
+        } catch (\Exception $e) {
+            if (isset($DB)) {
+                $DB->rollBack();
+            }
+            fluent_cart_warning_log(
+                'Admin order tax clear failed on update',
+                get_class($e) . ': ' . wp_strip_all_tags($e->getMessage()),
+                ['module_name' => 'tax', 'module_id' => $orderId, 'log_type' => 'api']
+            );
+
+            return false;
+        }
+    }
+
+    private static function patchOrderItemTaxMeta(array $savedItems, array $lineItemsFromTax)
+    {
+        // Custom lines all carry post_id/object_id 0:0, so the composite key
+        // cannot tell two of them apart — match by order-item id first and only
+        // fall back to the key for tax results that did not carry one.
+        $savedById  = [];
+        $savedByKey = [];
+        foreach ($savedItems as $item) {
+            $savedById[(int) $item['id']] = $item;
+            $key = $item['post_id'] . ':' . $item['object_id'];
+            $savedByKey[$key] = $item;
+        }
+
+        $updateData = [];
+
+        foreach ($lineItemsFromTax as $taxLineItem) {
+            $itemId = (int) Arr::get($taxLineItem, 'id', 0);
+
+            if ($itemId && isset($savedById[$itemId])) {
+                $savedItem = $savedById[$itemId];
+            } else {
+                $key = Arr::get($taxLineItem, 'post_id', 0) . ':' . Arr::get($taxLineItem, 'object_id', 0);
+                if (!isset($savedByKey[$key])) {
+                    continue;
+                }
+                $savedItem = $savedByKey[$key];
+            }
+
+            $taxAmount    = (int) Arr::get($taxLineItem, 'tax_amount', 0);
+            $taxLineMeta  = Arr::get($taxLineItem, 'line_meta', []);
+            $existingMeta = isset($savedItem['line_meta']) ? $savedItem['line_meta'] : [];
+            if (!is_array($existingMeta)) {
+                $existingMeta = json_decode($existingMeta ?: '{}', true, 16) ?: [];
+            }
+            if (!empty($taxLineMeta)) {
+                $existingMeta = array_merge($existingMeta, $taxLineMeta);
+            }
+            $updateData[] = [
+                'id'         => $savedItem['id'],
+                'tax_amount' => $taxAmount,
+                'line_meta'  => json_encode($existingMeta),
+            ];
+        }
+
+        if (!empty($updateData)) {
+            OrderItem::query()->batchUpdate($updateData);
+        }
+    }
+
+    private static function patchSignupFeeTaxMeta($orderId, array $lineItemsFromTax)
+    {
+        // Build a map of post_id:object_id -> tax data for items that have signup fee tax.
+        // Items absent from this map had their signup fee tax recalculated to zero.
+        $taxByKey = [];
+        foreach ($lineItemsFromTax as $taxLineItem) {
+            $signupFeeTax = (int) Arr::get($taxLineItem, 'signup_fee_tax', 0);
+            if (!$signupFeeTax) {
+                continue;
+            }
+            $key = Arr::get($taxLineItem, 'post_id', 0) . ':' . Arr::get($taxLineItem, 'object_id', 0);
+            $taxByKey[$key] = $taxLineItem;
+        }
+
+        // Always fetch ALL signup_fee items for this order — not only those with non-zero
+        // tax — so items that became untaxed after recalculation get their tax_amount cleared.
+        $signupFeeItems = OrderItem::query()
+            ->where('order_id', $orderId)
+            ->where('payment_type', 'signup_fee')
+            ->get();
+
+        if ($signupFeeItems->isEmpty()) {
+            return;
+        }
+
+        $updateData = [];
+        foreach ($signupFeeItems as $signupFeeItem) {
+            $key         = $signupFeeItem->post_id . ':' . $signupFeeItem->object_id;
+            $taxLineItem = isset($taxByKey[$key]) ? $taxByKey[$key] : null;
+
+            $signupFeeTax = $taxLineItem ? (int) Arr::get($taxLineItem, 'signup_fee_tax', 0) : 0;
+            $existingMeta = $signupFeeItem->line_meta ?: [];
+            if (!is_array($existingMeta)) {
+                $existingMeta = json_decode($existingMeta ?: '{}', true, 16) ?: [];
+            }
+
+            if ($taxLineItem) {
+                $signupFeeTaxConfig = Arr::get($taxLineItem, 'signup_fee_tax_config', []);
+                if ($signupFeeTaxConfig) {
+                    $existingMeta['tax_config'] = $signupFeeTaxConfig;
+                } else {
+                    unset($existingMeta['tax_config']);
+                }
+            } else {
+                unset($existingMeta['tax_config']);
+            }
+
+            $updateData[] = [
+                'id'         => $signupFeeItem->id,
+                'tax_amount' => $signupFeeTax,
+                'line_meta'  => json_encode($existingMeta),
+            ];
+        }
+
+        if (!empty($updateData)) {
+            OrderItem::query()->batchUpdate($updateData);
+        }
+    }
+
+    /**
+     * Patch subscription tax fields after admin order tax calculation.
+     *
+     * AdminOrderProcessor creates the subscription row before tax runs, with
+     * recurring_tax_total = 0 and recurring_total at the untaxed recurring price.
+     * Renewals read recurring_tax_total (and the parent item's
+     * other_info.recurring_tax for inclusive items) — without this patch every
+     * renewal of an admin-created subscription invoices zero tax.
+     *
+     * Mirrors CheckoutProcessor::prepareSubscriptionData(): the recurring tax is
+     * folded into recurring_total only when additive (exclusive store, or mixed
+     * cart with this line exclusive).
+     */
+    private static function patchSubscriptionTax($order, array $lineItemsFromTax, $taxBehavior)
+    {
+        $subscription = Subscription::query()->where('parent_order_id', $order->id)->first();
+        if (!$subscription) {
+            return;
+        }
+
+        $subscriptionItem = OrderItem::query()
+            ->where('order_id', $order->id)
+            ->where('payment_type', 'subscription')
+            ->first();
+        if (!$subscriptionItem) {
+            return;
+        }
+
+        $taxLine = null;
+        foreach ($lineItemsFromTax as $lineItem) {
+            if ((int) Arr::get($lineItem, 'post_id', 0) === (int) $subscriptionItem->post_id
+                && (int) Arr::get($lineItem, 'object_id', 0) === (int) $subscriptionItem->object_id
+            ) {
+                $taxLine = $lineItem;
+                break;
+            }
+        }
+        if ($taxLine === null) {
+            return;
+        }
+
+        $recurringTax = (int) Arr::get($taxLine, 'recurring_tax', 0);
+        $signupFeeTax = (int) Arr::get($taxLine, 'signup_fee_tax', 0);
+
+        // Renewals fall back to the parent item's other_info for inclusive items;
+        // checkout writes both keys on the cart line, mirror that here.
+        $otherInfo = $subscriptionItem->other_info ?: [];
+        if (!is_array($otherInfo)) {
+            $otherInfo = json_decode($otherInfo ?: '{}', true, 16) ?: [];
+        }
+        $otherInfo['recurring_tax'] = $recurringTax;
+        if ($signupFeeTax) {
+            $otherInfo['signup_fee_tax'] = $signupFeeTax;
+        }
+        $subscriptionItem->other_info = $otherInfo;
+        $subscriptionItem->save();
+
+        $lineInclusive = (bool) Arr::get($taxLine, 'line_meta.tax_config.inclusive', false);
+        $isAdditive    = (int) $taxBehavior === 1 || ((int) $taxBehavior === 3 && !$lineInclusive);
+
+        // Runs once, at order creation, while recurring_tax_total is still the 0 that
+        // AdminOrderProcessor wrote. Guard against double-folding tax into
+        // recurring_total if a future caller ever invokes this on a patched row.
+        if ((int) $subscription->recurring_tax_total !== 0) {
+            return;
+        }
+
+        $subscription->recurring_tax_total = $recurringTax;
+        if ($isAdditive && $recurringTax > 0) {
+            $subscription->recurring_total = (int) $subscription->recurring_total + $recurringTax;
+        }
+        $subscription->save();
     }
 
     private static function distributeManualDiscount(&$items, $manualDiscountTotal)
@@ -348,6 +1418,7 @@ class OrderResource extends BaseResourceApi
         }
 
         if (!empty($shipping)) {
+            $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
             static::addOrUpdateOrderMeta([
                 'order_id'   => $orderId,
                 //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
@@ -403,16 +1474,18 @@ class OrderResource extends BaseResourceApi
 
     }
 
-    private static function createOrderAddresses($orderId, $data)
+    private static function createOrderAddresses($orderId, $data, $customerId = 0)
     {
+        $billingAddressId  = (int) Arr::get($data, 'billing_address_id', 0);
+        $shippingAddressId = (int) Arr::get($data, 'shipping_address_id', 0);
 
-        $billingAddress = CustomerAddresses::query()->find(
-            Arr::get($data, 'billing_address_id')
-        );
+        $billingAddress = $billingAddressId > 0
+            ? CustomerAddresses::query()->where('customer_id', $customerId)->find($billingAddressId)
+            : null;
 
-        $shippingAddress = CustomerAddresses::query()->find(
-            Arr::get($data, 'shipping_address_id')
-        );
+        $shippingAddress = $shippingAddressId > 0
+            ? CustomerAddresses::query()->where('customer_id', $customerId)->find($shippingAddressId)
+            : null;
 
         if (!empty($billingAddress)) {
             static::createOrderAddress($billingAddress->toArray(), $orderId);
@@ -527,7 +1600,10 @@ class OrderResource extends BaseResourceApi
             ]);
         }
 
-        $orderData = $data['orderData'];
+        // Server-authoritative columns (tax_total, shipping_tax, tax_behavior,
+        // discount_tax, total_paid, total_refund, item tax_amount) must never
+        // come from the client — see stripClientTaxFields().
+        $orderData = static::stripClientTaxFields($data['orderData']);
         $deletedItems = $data['deletedItems'];
         $appliedCoupons = Arr::get($orderData, 'applied_coupon');
         $discount = $data['discount'];
@@ -573,6 +1649,7 @@ class OrderResource extends BaseResourceApi
             }
         }
         if (!empty($shipping)) {
+            $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
             static::addOrUpdateOrderMeta([
                 'order_id'   => $orderId,
                 //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
@@ -588,6 +1665,7 @@ class OrderResource extends BaseResourceApi
         if ($isUpdatedOrderItems) {
             unset($orderData['order_items']);
             unset($orderData['customer']);
+            unset($orderData['tax_lines']);
 
 
             $orderData['currency'] = Helper::shopConfig('currency');
@@ -627,6 +1705,10 @@ class OrderResource extends BaseResourceApi
                 // if(in_array($newOrder->shipping_status, $getOrderNoActionableStatuses)) {
                 //     $newOrder->shipping_status = OrderMetaResource::find($orderId, ['meta_key' => 'shipping_previous_status']);
                 // }
+                static::reapplyTaxAfterUpdate($orderId, $newOrder);
+
+                $newOrder = $newOrder->refresh();
+
                 (new OrderUpdated($newOrder, $oldOrder))->dispatch();
 
                 $oldOrderItems = json_decode(json_encode(Arr::get($oldOrder, 'order_items', [])), true);
@@ -652,6 +1734,61 @@ class OrderResource extends BaseResourceApi
         ]);
     }
 
+    /**
+     * Strip server-authoritative columns from a client-supplied order payload
+     * before it is persisted by update().
+     *
+     * The admin edit screen sends the whole order object back — including
+     * tax_total, shipping_tax, tax_behavior, discount_tax and per-item
+     * tax_amount. For normal orders reapplyTaxAfterUpdate() recalculates and
+     * overwrites these server-side right after the save, but subscription and
+     * refund-type orders skip that recalc — whatever the client sent would
+     * become final (stale values from a race, or forged values from a
+     * tampered request). These columns must therefore never be
+     * client-writable on this path: the existing DB values persist unless
+     * the server-side recalc changes them.
+     *
+     * total_paid / total_refund only move via payment & refund flows. The
+     * controller already drops them (OrderRequest::sanitize() is a whitelist
+     * and getSafe() only returns whitelisted keys), so stripping them here is
+     * defense in depth for direct OrderResource::update() callers.
+     *
+     * total_amount is intentionally NOT stripped: it is client-computed for
+     * legitimate item edits on subscription/refund orders, and for normal
+     * orders reapplyTaxAfterUpdate() recomputes it from scratch anyway.
+     *
+     * Removing the per-item tax_amount key (rather than zeroing it) makes
+     * OrderItemResource::updateOrInsertOrderItems() leave the existing DB
+     * value untouched on updated rows; inserted rows fall back to the column
+     * default (0) and normal orders get patched by patchOrderItemTaxMeta()
+     * after the recalc.
+     *
+     * @param array $orderData The 'orderData' payload consumed by update().
+     * @return array
+     */
+    private static function stripClientTaxFields($orderData)
+    {
+        $orderData = Arr::except((array) $orderData, [
+            'tax_total',
+            'shipping_tax',
+            'tax_behavior',
+            'discount_tax',
+            'total_paid',
+            'total_refund',
+        ]);
+
+        $items = Arr::get($orderData, 'order_items');
+        if (is_array($items)) {
+            foreach ($items as $itemIndex => $item) {
+                if (is_array($item)) {
+                    unset($orderData['order_items'][$itemIndex]['tax_amount']);
+                }
+            }
+        }
+
+        return $orderData;
+    }
+
     public static function updateOrderAddressId($data, Order $order)
     {
 
@@ -664,10 +1801,14 @@ class OrderResource extends BaseResourceApi
             $order->load($addressRelation);
             $currentAddress = $order->{$addressRelation};
             if (empty($currentAddress)) {
-                return static::createOrderAddress($address->toArray(), $order->id);
+                $result = static::createOrderAddress($address->toArray(), $order->id);
             } else {
-                return static::mergeOrderAddress($currentAddress, $address->toArray());
+                $result = static::mergeOrderAddress($currentAddress, $address->toArray());
             }
+            if (!$order->isSubscription() && $order->type !== 'refund') {
+                static::reapplyTaxAfterUpdate($order->id, $order->refresh());
+            }
+            return $result;
         }
     }
 
@@ -685,7 +1826,14 @@ class OrderResource extends BaseResourceApi
         $updateData = Arr::only($data, ['name', 'first_name', 'last_name', 'full_name', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country']);
         // sanitize the data before updating
         $updateData = array_map('sanitize_text_field', $updateData);
-        return $orderAddress->update($updateData);
+        $result = $orderAddress->update($updateData);
+
+        $reloadedOrder = Order::find($orderId);
+        if ($reloadedOrder && !$reloadedOrder->isSubscription() && $reloadedOrder->type !== 'refund') {
+            static::reapplyTaxAfterUpdate($orderId, $reloadedOrder);
+        }
+
+        return $result;
 
     }
 
@@ -813,9 +1961,9 @@ class OrderResource extends BaseResourceApi
                         [
                             'parentOrder'    => function ($query) {
                                 return $query->select('id')
-                                    ->with('subscriptions');
+                                    ->with('subscriptions.product');
                             },
-                            'subscriptions',
+                            'subscriptions.product',
                             'activities.user',
                             'labels',
                             'customer',
@@ -823,16 +1971,21 @@ class OrderResource extends BaseResourceApi
                                 return $query->select('id', 'parent_id', 'created_at');
                             },
                             //'order_items.variants.product_detail',
+                            'order_items' => function ($query) {
+                                $query->addAppends(['coupon_discount']);
+                            },
                             'order_items.variants.media',
                             'transactions',
                             'order_addresses',
+                            'orderTaxRates.tax_rate',
                             'billing_address',
                             'shipping_address',
                             'appliedCoupons' => function ($query) {
                                 $query->select('*');
                             }
                         ]
-                    );
+                    )
+                    ->addAppends(['business_info', 'customer_tax_number', 'is_b2b_order', 'display_tax_lines', 'display_shipping_tax_lines', 'is_reverse_charge_tax_order', 'tax_summary']);
             }
         );
 
@@ -860,16 +2013,40 @@ class OrderResource extends BaseResourceApi
             $selectedLabels = Collection::make($order['labels'])->pluck('label_id');
             $order['custom_checkout_url'] = PaymentHelper::getCustomPaymentLink(Arr::get($order, 'uuid'));
 
+            $orderModel = Order::find($id);
+            $rcMode = $orderModel ? $orderModel->getOrderRcMode() : 'fixed';
+
+            //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+            $shippingMeta = OrderMetaResource::find($order['id'], ['meta_key' => 'order_shipping']);
+
+            $orderConfig = is_array($order['config']) ? $order['config'] : (array)json_decode((string)($order['config'] ?? ''), true);
+            $methodId    = (int)Arr::get($orderConfig, 'shipping_method_id', 0);
+            $methodTitle = (string)Arr::get($orderConfig, 'shipping_method_title', '');
+
+            if (!$methodId && is_array($shippingMeta) && isset($shippingMeta['id'], $shippingMeta['title'])) {
+                $methodId    = (int)$shippingMeta['id'];
+                $methodTitle = (string)$shippingMeta['title'];
+            }
+
+            // Gate on the title alone. Live-rate carriers use non-numeric method
+            // ids (e.g. "carrier:shippo:usps_priority") which (int) casts to 0,
+            // so requiring a truthy id silently hid the method name.
+            $checkoutShipping = $methodTitle ? [
+                'method_id'      => $methodId,
+                'method_title'   => $methodTitle,
+                'shipping_total' => (int)Arr::get($order, 'shipping_total', 0),
+            ] : null;
+
             $data = [
-                'order'           => $order,
+                'order'             => $order,
                 //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'discount_meta'   => OrderMetaResource::find($order['id'], ['meta_key' => 'order_discount']),
-                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'shipping_meta'   => OrderMetaResource::find($order['id'], ['meta_key' => 'order_shipping']),
-                'order_settings'  => [
-                    // 'has_vendor_refund' => PaymentMethodFactory::instance()->hasVendorRefund($order->payment_method)
+                'discount_meta'     => OrderMetaResource::find($order['id'], ['meta_key' => 'order_discount']),
+                'shipping_meta'     => $shippingMeta,
+                'checkout_shipping' => $checkoutShipping,
+                'order_settings'    => [
+                    'reverse_charge_price_mode' => $rcMode,
                 ],
-                'selected_labels' => $selectedLabels,
+                'selected_labels'   => $selectedLabels,
                 //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'tax_id' => OrderMetaResource::find($order['id'], ['meta_key' => 'tax_id'])
             ];
@@ -909,6 +2086,9 @@ class OrderResource extends BaseResourceApi
      *        ]
      *
      */
+    /**
+     * @deprecated since v1.4. Use OverviewReportController::getOverview() via GET reports/overview instead.
+     */
     public static function reportOverview($params = [])
     {
         return static::getQuery()->when(
@@ -919,7 +2099,7 @@ class OrderResource extends BaseResourceApi
         )
             ->selectRaw('sum(total_amount) as total_sales')
             ->selectRaw('sum(total_amount - manual_discount_total - shipping_total - tax_total) as net_sales')
-            ->selectRaw('sum(discount_total) as total_discounts')
+            ->selectRaw('sum(manual_discount_total + coupon_discount_total) as total_discounts')
             ->selectRaw('sum(shipping_total) as total_shipping_tax')
             ->selectRaw('avg(total_amount) as average_order_value')
             ->selectRaw('count(*) as customer_order_count')
@@ -1019,6 +2199,17 @@ class OrderResource extends BaseResourceApi
         $order = static::getQuery()->with("order_items.variants.product_detail")->where('id', $orderId)->first();
 
         $action = Arr::get($params, 'action');
+
+        // This endpoint's contract is order/shipping status only — payment-status
+        // transitions flow through their dedicated surfaces (mark-as-paid,
+        // transaction status updates, refunds, gateway webhooks) so money state
+        // stays consistent with transactions. Rejecting unknown actions up front
+        // also keeps them out of the order_status fallback below.
+        if (!in_array($action, ['change_order_status', 'change_shipping_status'], true)) {
+            return static::makeErrorResponse([
+                ['code' => 400, 'message' => __('Unsupported action — this endpoint changes order or shipping status only.', 'fluent-cart')]
+            ], 400);
+        }
 
         $changeType = $action === 'change_shipping_status' ? 'shipping_status' : 'order_status';
         $actionActivity = [];
@@ -1309,6 +2500,10 @@ class OrderResource extends BaseResourceApi
             $address->{$key} = $addressData[$key];
         }
 
+        if (array_key_exists('meta', $addressData)) {
+            $address->meta = $addressData['meta'];
+        }
+
         if ($address->save()) {
             return $address;
         }
@@ -1319,7 +2514,7 @@ class OrderResource extends BaseResourceApi
 
     private static function createOrderAddress(array $address, $orderId)
     {
-        $keysToInclude = ['order_id', 'type', 'name', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country'];
+        $keysToInclude = ['order_id', 'type', 'name', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'meta'];
         $address = Arr::only($address, $keysToInclude);
         $address['order_id'] = $orderId;
 
@@ -1331,6 +2526,15 @@ class OrderResource extends BaseResourceApi
     public static function getOrderByHash($orderHash)
     {
         return (new Orders())->getByHash($orderHash);
+    }
+
+    private static function resolveShippingTitle(array $shipping): array
+    {
+        if (isset($shipping['id']) && empty($shipping['title'])) {
+            $sm = ShippingMethod::find((int)$shipping['id']);
+            $shipping['title'] = $sm ? $sm->title : '';
+        }
+        return $shipping;
     }
 
 }

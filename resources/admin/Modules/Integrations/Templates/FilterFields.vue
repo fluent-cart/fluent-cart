@@ -129,17 +129,17 @@ export default {
             return this.conditionals.conditions;
         }
     },
+    mounted() {
+        if (!this.conditionals.conditions.length) {
+            this.conditionals.conditions.push({...this.defaultRules});
+        }
+    },
     methods: {
         add(index) {
             this.items.splice(index + 1, 0, {...this.defaultRules});
         },
         remove(index) {
             this.items.splice(index, 1);
-        }
-    },
-    mounted() {
-        if (!this.conditionals.conditions.length) {
-            this.conditionals.conditions.push({...this.defaultRules});
         }
     }
 };

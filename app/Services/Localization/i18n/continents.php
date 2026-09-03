@@ -162,6 +162,7 @@ return array(
 			'FO',
 			'FR',
 			'GB',
+			'XI',
 			'GG',
 			'GI',
 			'GR',

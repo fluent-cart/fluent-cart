@@ -29,16 +29,33 @@
               <div class="fct-table-date-col">
                 <span class="id">#{{ row.id }}</span>
                 <span class="bullet">•</span>
-                <ConvertedTime :date-time="row.created_at"/>
+                <ConvertedTime :date-time="row?.meta?.settled_at || row.created_at"/>
               </div><!-- fct-table-date-col -->
             </div><!-- fct-table-mobile-header-left -->
 
             <div class="fct-table-price-col">
-              {{ formatNumber(row.total) }}
+              <template v-if="row?.meta?.mor_vat_removed > 0">
+                {{ formatNumberForOrder(row.total - row.meta.mor_vat_removed, orderCurrency) }}
+                <p class="p-0 m-0 text-xs text-gray-500">
+                  {{ translate('Tax reversed') }}: {{ formatNumberForOrder(row.meta.mor_vat_removed, orderCurrency) }}
+                </p>
+              </template>
+              <template v-else>
+                {{ formatNumberForOrder(row.total, orderCurrency) }}
+              </template>
             </div>
 
-
-
+            <el-tooltip
+                v-if="row.transaction_type == 'charge' && row.status == 'pending' && row.vendor_charge_id"
+                effect="dark"
+                :placement="'top'"
+                :content="translate('Sync payment status from %1$s', row.payment_method)"
+                popper-class="fct-tooltip"
+            >
+              <el-button size="small" :aria-label="translate('Sync payment status from %1$s', row.payment_method)" :loading="syncing_transaction === row.id" @click="syncTransaction(row)">
+                <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
+              </el-button>
+            </el-tooltip>
 
 
           </div>
@@ -79,6 +96,7 @@
                   </a>
                 </div>
               </li>
+
             </ul>
 
           </div><!-- fct-table-mobile-body -->
@@ -96,18 +114,15 @@ import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import translate from "@/utils/translator/Translator";
 import Str from "@/utils/support/Str";
 import {getCardBrand} from "@/Bits/common.js";
+import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 
 export default {
   name: 'Transaction',
   components: {
     ConvertedTime,
-    Badge
-  },
-  computed: {
-    Str() {
-      return Str
-    }
+    Badge,
+    DynamicIcon
   },
   props: {
     transactions: {
@@ -117,12 +132,43 @@ export default {
     order_id: {
       type: Number,
       required: true,
-    }
+    },
+    orderCurrency: {
+      type: String,
+      default: null,
+    },
   },
   emits: ['reload'],
+  data() {
+    return {
+      syncing_transaction: null
+    }
+  },
+  computed: {
+    Str() {
+      return Str
+    }
+  },
   methods: {
     translate,
-    getCardBrand
+    getCardBrand,
+    syncTransaction(transaction) {
+      if (this.syncing_transaction) {
+        return;
+      }
+      this.syncing_transaction = transaction.id;
+      this.$post('orders/' + this.order_id + '/transactions/' + transaction.id + '/sync')
+          .then(response => {
+            this.$notify.success(response.message);
+            this.$emit('reload');
+          })
+          .catch(errors => {
+            this.$notify.error(errors?.data?.message || translate('Something went wrong!'));
+          })
+          .finally(() => {
+            this.syncing_transaction = null;
+          });
+    }
   }
 
 

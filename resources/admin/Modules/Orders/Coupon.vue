@@ -89,7 +89,7 @@
       </div>
     </td>
     <td></td>
-    <td>- {{ formatNumber(coupon.amount) }}</td>
+    <td>- {{ formatNumberForOrder(coupon.amount, order) }}</td>
   </tr>
   <!--End Coupon List-->
 </template>
@@ -141,6 +141,9 @@ export default {
       newCoupon: "",
       coupons: [...this.couponsAttributes],
     };
+  },
+  mounted() {
+    // this.fetchCoupon();
   },
   methods: {
     translate,
@@ -269,7 +272,7 @@ export default {
 
       this.order.order_items.forEach((order_item, index) => {
         // TODO: item.object_id is not present in the response items, so we have to use the id. need to fix the apply coupon return data to fix this
-        const orderItem = responseItems.find(item => item.id == order_item['object_id']);
+        const orderItem = responseItems.find(item => item.id == order_item['object_id'] || item.id == order_item['id']);
 
         if (orderItem != null) {
           this.order.order_items[index]['price'] = orderItem['price'];
@@ -279,6 +282,10 @@ export default {
           discountTotal += orderItem['discount_total'];
           this.order.order_items[index]['line_total_formatted'] = orderItem['line_total_formatted'];
           this.order.order_items[index]['discount_total'] = orderItem['discount_total'];
+          this.order.order_items[index]['coupon_discount'] = orderItem['coupon_discount'] || 0;
+          if (this.order.order_items[index]['line_meta']) {
+            this.order.order_items[index]['line_meta']['coupon_discount'] = orderItem['coupon_discount'] || 0;
+          }
         }
       });
 
@@ -289,9 +296,6 @@ export default {
 
       this.$emit('update:coupons', this.coupons, this.appliedCoupons, this.hasCoupon);
     }
-  },
-  mounted() {
-    // this.fetchCoupon();
   },
 };
 </script>

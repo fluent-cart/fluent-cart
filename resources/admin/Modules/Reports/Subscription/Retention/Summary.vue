@@ -144,7 +144,8 @@ const retentionSummary = computed(() => {
             average_value: `${avgRetention}%`,
             month_name: monthName,
             sub_title: translate("Average in period"),
-            description: translate(`You retained ${lastItem.retention_rate}% (${formatNumber(retainedCount)}) of your ${prevMonthName} subscriptions (${formatNumber(startCount)}).`),
+            /* translators: %1$s: retention rate percentage; %2$s: retained count; %3$s: month name; %4$s: starting count */
+            description: translate('You retained %1$s (%2$s) of your %3$s subscriptions (%4$s).', `${lastItem.retention_rate}%`, formatNumber(retainedCount), prevMonthName, formatNumber(startCount)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
         },
         {
@@ -153,7 +154,8 @@ const retentionSummary = computed(() => {
             average_value: `${avgMrrRetention}%`,
             month_name: monthName,
             sub_title: translate("Average in period"),
-            description: translate(`You retained ${lastItem.retention_rate_money}% (${CurrencyFormatter.scaled(retainedMrr)}) of your ${prevMonthName} subscription MRR (${CurrencyFormatter.scaled(startMrr)}).`),
+            /* translators: %1$s: retention rate percentage; %2$s: retained MRR amount; %3$s: month name; %4$s: starting MRR amount */
+            description: translate('You retained %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${lastItem.retention_rate_money}%`, CurrencyFormatter.scaled(retainedMrr), prevMonthName, CurrencyFormatter.scaled(startMrr)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
         }
     ];

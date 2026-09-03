@@ -116,6 +116,16 @@ export default {
       singleProductRow: {}
     }
   },
+  watch: {
+    // Watch for changes to the 'product' prop
+    product: {
+      immediate: true, // Run the handler immediately on component mount
+      handler(newVal) {
+        // Update the 'data' object with the new value of 'product'
+        this.productData = { ...newVal }; // Spread operator to create a new object
+      }
+    }
+  },
   methods: {
     updateProductValue (name, value) {
       if (name === 'post_date') {
@@ -153,16 +163,6 @@ export default {
         .finally(() => {
 
         });
-    }
-  },
-  watch: {
-    // Watch for changes to the 'product' prop
-    product: {
-      immediate: true, // Run the handler immediately on component mount
-      handler(newVal) {
-        // Update the 'data' object with the new value of 'product'
-        this.productData = { ...newVal }; // Spread operator to create a new object
-      }
     }
   },
 }

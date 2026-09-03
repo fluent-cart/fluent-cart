@@ -12,6 +12,7 @@ import ChartTab from "@/Bits/Components/ChartTab.vue";
 import { formatNumber } from "../Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import {
   makeXAxisLabels,
@@ -20,6 +21,7 @@ import {
   getEmphasisColor,
   getXAxisConfig,
 } from '../Utils/decorator';
+import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
 // Define props
 const props = defineProps({
@@ -109,11 +111,7 @@ watch(() => props.appliedGroupKey, (value) => {
   selectedGroupKey.value = value
 })
 
-const groupKeys = [
-  { label: translate("Default"), value: "default" },
-  { label: translate("Monthly"), value: "monthly" },
-  { label: translate("Yearly"), value: "yearly" },
-];
+const { groupKeys } = useGroupKeyOptions(props.reportFilter, selectedGroupKey);
 
 const emit = defineEmits(["filter-data"]);
 
@@ -216,16 +214,11 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#565865",
       },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue, chartType.value),
+      confine: true,
+      position: chartTooltipPosition,
       alwaysShowContent: false,
-      valueFormatter: (value) => `${CurrencyFormatter.scaled(value)}`,
+      valueFormatter: (value) => chartTooltipAmount(value * 100),
       formatter: (params) => {
         let tooltipContent = '';
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
@@ -233,7 +226,7 @@ const updateChart = () => {
         params.forEach(function (param, index) {
           const isDataObject = typeof param.data === 'object' && param.data !== null;
           const customDate = isDataObject ? prepareLabel(param.data.date) : param.name;
-          const value = CurrencyFormatter.scaled(param.value);
+          const value = chartTooltipAmount(param.value * 100);
           const needMarginBottom = params.length > 1 && index === 0;
 
           if (needMarginBottom) {
@@ -381,11 +374,13 @@ const handleThemeChange = () => {
 
 onUnmounted(() => {
   window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", handleThemeChange, false);
 });
 
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange);
-  
+  window.addEventListener("fluentCartCurrencyChange", handleThemeChange);
+
   nextTick(() => {
     initChart();
   });

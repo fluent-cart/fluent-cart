@@ -52,10 +52,17 @@ class UrlGenerator
         $params = $this->validateExpiryTime(array_merge($query, $params));
 
         $payload = $encrypter->encrypt(http_build_query($params));
-        
+
         $signature = hash_hmac('sha256', $payload, $encrypter->getKey());
 
-        return "{$baseUrl}?_data={$payload}&_signature={$signature}";
+        // URL-encode via http_build_query so payload/signature stay safe
+        // even if their alphabet ever includes '+', '/', or '='. Old-style
+        // URLs (raw values) keep verifying because parse_str on the verify
+        // side decodes both forms identically.
+        return $baseUrl . '?' . http_build_query([
+            '_data' => $payload,
+            '_signature' => $signature,
+        ]);
     }
 
     /**
@@ -102,10 +109,12 @@ class UrlGenerator
 
     /**
      * Normalize the expiry time.
-     * 
+     *
      * @param  array $params
      * @return array
      * @throws InvalidArgumentException
+     *
+     * @phpstan-ignore-next-line
      */
     public function validateExpiryTime(array $params): array
     {

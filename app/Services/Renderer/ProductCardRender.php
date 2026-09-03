@@ -5,7 +5,6 @@ namespace FluentCart\App\Services\Renderer;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
-use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
@@ -38,6 +37,19 @@ class ProductCardRender
     public function render()
     {
         AssetLoader::loadSingleProductAssets();
+        // Lets extensions (e.g. Pro's advanced-variation selector) enqueue the
+        // CSS/JS a product purchase UI needs. Backs the card surfaces that go
+        // through this renderer's render() — Shop, Product List, the product
+        // shortcode, and the quick-view modal. Surfaces that render card parts
+        // via the individual render* methods instead of render() (Product
+        // Carousel, Related Products) fire this same hook from their own block
+        // render. Guarded with a static flag so a grid of N cards fires it once
+        // per request, not once per card. No payload — assets are uniform.
+        static $assetsHookFired = false;
+        if (!$assetsHookFired) {
+            $assetsHookFired = true;
+            do_action('fluent_cart/advanced_variation/enqueue_assets');
+        }
         $cursor = '';
         if (!empty($this->config['cursor'])) {
             $cursor = 'data-fluent-cart-cursor="' . esc_attr($this->config['cursor']) . '"';
@@ -51,9 +63,22 @@ class ProductCardRender
         }
 
 
+        // Card wrapper classes are filterable so an integration can tag cards
+        // (sale, low-stock, layout variants) without wrapping or re-rendering
+        // the whole card. Sanitised in RenderGate, so listeners may return a
+        // plain array of class names.
+        $cardClasses = RenderGate::cardClasses(['fct-product-card'], [
+                'product' => $this->product,
+                'scope'   => RenderGate::SCOPE_CARD,
+        ]);
+
+        do_action('fluent_cart/product/group/before_card', RenderContext::decorate([
+                'product' => $this->product,
+                'scope'   => RenderGate::SCOPE_CARD,
+        ]));
         ?>
         <article data-fluent-cart-shop-app-single-product data-fct-product-card=""
-                 class="fct-product-card"
+                 class="<?php echo esc_attr($cardClasses); ?>"
                 <?php echo $cursor; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Already escaped ?>
                 <?php echo $cardWidth; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Already escaped ?>
                  aria-label="<?php echo esc_attr(sprintf(
@@ -62,173 +87,141 @@ class ProductCardRender
                  ?>">
             <?php $this->renderProductImage(); ?>
             <?php $this->renderTitle(); ?>
-            <?php $this->renderExcerpt(); ?>
+            <?php $this->renderStarRating(); ?>
+            <?php if (!Arr::get($this->config, 'hide_excerpt', false)) { $this->renderExcerpt(); } ?>
             <?php $this->renderPrices(); ?>
             <?php $this->showBuyButton(); ?>
         </article>
         <?php
+        do_action('fluent_cart/product/group/after_card', RenderContext::decorate([
+                'product' => $this->product,
+                'scope'   => RenderGate::SCOPE_CARD,
+        ]));
     }
 
     /**
-     * Build package info string from snapshotted other_info fields.
+     * @deprecated Use PackageDescriptionRenderer::buildPackageInfoFromOtherInfo() directly.
+     * Kept as a compatibility shim for external callers (themes, extensions).
      *
      * @param array $otherInfo Order item's other_info array
      * @return string e.g. "Gift (Box) · 30 × 20 × 15 cm · Wt: 2 kg · Shipping: 2.5 kg"
      */
     public static function buildPackageInfoFromOtherInfo($otherInfo)
     {
-        $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
-        $parts = [];
-
-        // Package name
-        $name = Arr::get($otherInfo, 'package_name', '');
-        if ($name) {
-            $parts[] = $name;
-        }
-
-        // Dimensions
-        $length = Arr::get($otherInfo, 'package_length', '');
-        $width = Arr::get($otherInfo, 'package_width', '');
-        $height = Arr::get($otherInfo, 'package_height', '');
-        $dimensionUnit = Arr::get($otherInfo, 'package_dimension_unit', 'cm');
-        $dimParts = array_filter([$length, $width, $height], function ($val) {
-            return $val !== '' && $val !== null && $val != 0;
-        });
-        if ($dimParts) {
-            $parts[] = implode(' × ', $dimParts) . ' ' . $dimensionUnit;
-        }
-
-        // Product weight
-        $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
-        $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
-        $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
-        if ($convertedProductWeight) {
-            $formatted = rtrim(rtrim(number_format($convertedProductWeight, 2), '0'), '.');
-            $parts[] = __('Wt:', 'fluent-cart') . ' ' . $formatted . ' ' . $storeWeightUnit;
-        }
-
-        // Shipping weight (product + package)
-        $packageWeight = floatval(Arr::get($otherInfo, 'package_weight', 0));
-        $packageWeightUnit = Arr::get($otherInfo, 'package_weight_unit', $storeWeightUnit);
-        $convertedPackageWeight = Helper::convertWeight($packageWeight, $packageWeightUnit, $storeWeightUnit);
-        $totalWeight = $convertedProductWeight + $convertedPackageWeight;
-        if ($totalWeight && $convertedPackageWeight) {
-            $formatted = rtrim(rtrim(number_format($totalWeight, 2), '0'), '.');
-            $parts[] = __('Shipping wt:', 'fluent-cart') . ' ' . $formatted . ' ' . $storeWeightUnit;
-        }
-
-        $info = implode(' · ', $parts);
-
-        return $info ? __('Package:', 'fluent-cart') . ' ' . $info : '';
+        return PackageDescriptionRenderer::buildPackageInfoFromOtherInfo($otherInfo);
     }
 
+    /**
+     * @deprecated Use PackageDescriptionRenderer::renderPackageDescription() directly.
+     * Kept as a compatibility shim for external callers (themes, extensions) —
+     * package-description rendering now lives in PackageDescriptionRenderer.
+     */
     public function renderPackageDescription(
         $wrapper_attributes = '',
         $showName = true,
         $showDimensions = true,
         $showProductWeight = true,
         $showTotalWeight = true,
-        $variant = null
+        $variant = null,
+        $defaultVariant = null
     ) {
-        $variant = $variant ?: $this->product->variants->first();
-
-        if (!$variant) {
-            return;
-        }
-
-        if (!$wrapper_attributes) {
-            $wrapper_attributes = 'class="fct-package-description" data-fluent-cart-package-description';
-        }
-
-        $this->renderPackageDescriptionForVariant($variant, $wrapper_attributes, $showName, $showDimensions, $showProductWeight, $showTotalWeight);
+        (new PackageDescriptionRenderer($this->product))->renderPackageDescription(
+            $wrapper_attributes,
+            $showName,
+            $showDimensions,
+            $showProductWeight,
+            $showTotalWeight,
+            $variant,
+            $defaultVariant
+        );
     }
 
-    private function renderPackageDescriptionForVariant(
-        ProductVariation $variant,
-        $wrapper_attributes,
-        $showName,
-        $showDimensions,
-        $showProductWeight,
-        $showTotalWeight
-    ) {
-        $packageSlug = Arr::get($variant->other_info, 'package_slug', '');
-        $package = Helper::getPackageBySlug($packageSlug);
-
-        if (!$package) {
+    public function renderStarRating()
+    {
+        if (!ModuleSettings::isActive('reviews')) {
             return;
         }
 
-        $name = Arr::get($package, 'name', '');
-        $length = Arr::get($package, 'length', '');
-        $width = Arr::get($package, 'width', '');
-        $height = Arr::get($package, 'height', '');
-        $dimensionUnit = Arr::get($package, 'dimension_unit', 'cm');
-        $packageWeight = floatval(Arr::get($package, 'weight', 0));
-        $packageWeightUnit = Arr::get($package, 'weight_unit', 'kg');
+        // Store-level toggles: Settings → Store Settings → Product Page →
+        // Product Rating. Shop grid/carousels gate on show_rating_in_shop;
+        // relevant/related product sections gate on show_rating_in_relevant
+        // (callers tag those cards with config rating_context = 'relevant').
+        // The explicit product-rating block (renderStarRatingBlock) stays
+        // unaffected — it is user-placed.
+        $ratingContext = Arr::get($this->config, 'rating_context', 'shop');
 
-        $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
-        $otherInfo = $variant->other_info ?: [];
-        $productWeight = floatval(Arr::get($otherInfo, 'weight', 0));
-        $productWeightUnit = Arr::get($otherInfo, 'weight_unit', $storeWeightUnit);
+        $ratingVisibilitySettingKey = $ratingContext === 'relevant'
+            ? 'show_rating_in_relevant'
+            : 'show_rating_in_shop';
 
-        $convertedProductWeight = Helper::convertWeight($productWeight, $productWeightUnit, $storeWeightUnit);
-        $convertedPackageWeight = Helper::convertWeight($packageWeight, $packageWeightUnit, $storeWeightUnit);
-        $totalWeight = $convertedProductWeight + $convertedPackageWeight;
-
-        $hasVisibleContent = ($showName && $name)
-            || ($showDimensions && ($length || $width || $height))
-            || ($showProductWeight && $convertedProductWeight)
-            || ($showTotalWeight && $totalWeight);
-
-        if (!$hasVisibleContent) {
+        if ((new \FluentCart\Api\StoreSettings())->get($ratingVisibilitySettingKey, 'yes') !== 'yes') {
             return;
         }
 
-        echo sprintf('<div %s>', $wrapper_attributes); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '<table class="fct-package-description__table" role="presentation"><tbody>';
+        $otherInfo = $this->product->detail->other_info ?: [];
+        $avgRating = Arr::get($otherInfo, 'average_rating', 0);
+        $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
 
-        if ($showName && $name) {
-            echo sprintf(
-                '<tr><th>%s</th><td>%s</td></tr>',
-                esc_html__('Package', 'fluent-cart'),
-                esc_html($name)
-            );
+        if ($reviewCount < 1) {
+            return;
         }
 
-        if ($showDimensions && ($length || $width || $height)) {
-            $dimensionParts = array_filter([$length, $width, $height], function ($val) {
-                return $val !== '' && $val !== null;
-            });
-            if ($dimensionParts) {
-                $formattedDimensions = implode(' × ', $dimensionParts) . ' ' . $dimensionUnit;
-                echo sprintf(
-                    '<tr><th>%s</th><td>%s</td></tr>',
-                    esc_html__('Dimensions', 'fluent-cart'),
-                    esc_html($formattedDimensions)
-                );
-            }
-        }
+        $fullStars = (int) floor($avgRating);
+        $halfStar = ($avgRating - $fullStars) >= 0.5;
+        $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
 
-        if ($showProductWeight && $convertedProductWeight) {
-            $formattedProductWeight = rtrim(rtrim(number_format($convertedProductWeight, 2), '0'), '.');
-            echo sprintf(
-                '<tr><th>%s</th><td>%s</td></tr>',
-                esc_html__('Weight', 'fluent-cart'),
-                esc_html($formattedProductWeight . ' ' . $storeWeightUnit)
-            );
-        }
+        ?>
+        <div class="fct-product-card-rating" aria-label="<?php echo esc_attr(sprintf(
+            /* translators: %1$s: average rating, %2$d: review count */
+            __('Rated %1$s out of 5 based on %2$d reviews', 'fluent-cart'), $avgRating, $reviewCount)); ?>">
+            <span class="fct-product-card-stars" aria-hidden="true">
+                <?php
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                }
+                if ($halfStar) {
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                }
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                }
+                ?>
+            </span>
+            <span class="fct-product-card-review-count">(<?php echo esc_html($reviewCount); ?>)</span>
+        </div>
+        <?php
+    }
 
-        if ($showTotalWeight && $totalWeight && $convertedPackageWeight) {
-            $formattedTotalWeight = rtrim(rtrim(number_format($totalWeight, 2), '0'), '.');
-            echo sprintf(
-                '<tr><th>%s</th><td>%s</td></tr>',
-                esc_html__('Shipping Weight', 'fluent-cart'),
-                esc_html($formattedTotalWeight . ' ' . $storeWeightUnit)
-            );
-        }
+    public function renderStarRatingBlock($wrapperAttributes = '')
+    {
+        $otherInfo = $this->product->detail->other_info ?: [];
+        $avgRating = Arr::get($otherInfo, 'average_rating', 0);
+        $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
 
-        echo '</tbody></table>';
-        echo '</div>';
+        $fullStars = (int) floor($avgRating);
+        $halfStar = ($avgRating - $fullStars) >= 0.5;
+        $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+
+        ?>
+        <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> aria-label="<?php echo esc_attr(sprintf(
+            /* translators: %1$s: average rating, %2$d: review count */
+            __('Rated %1$s out of 5 based on %2$d reviews', 'fluent-cart'), $avgRating, $reviewCount)); ?>">
+            <span class="fct-product-card-stars" aria-hidden="true">
+                <?php
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                }
+                if ($halfStar) {
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                }
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                }
+                ?>
+            </span>
+            <span class="fct-product-card-review-count">(<?php echo esc_html($reviewCount); ?>)</span>
+        </div>
+        <?php
     }
 
     public function renderExcerpt($atts = '')
@@ -237,6 +230,14 @@ class ProductCardRender
             return;
         }
 
+        $gateContext = RenderGate::context($this->product, RenderGate::SCOPE_CARD);
+
+        if (!RenderGate::shouldRender('excerpt', $gateContext)) {
+            return;
+        }
+
+        do_action('fluent_cart/product/group/before_excerpt_block', $gateContext);
+
         echo sprintf(
             '<p %1$s class="fct-product-card-excerpt">
                    %2$s
@@ -244,10 +245,20 @@ class ProductCardRender
             $atts, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             wp_kses_post($this->product->post_excerpt),
         );
+
+        do_action('fluent_cart/product/group/after_excerpt_block', $gateContext);
     }
 
     public function renderTitle($atts = '', $config = [])
     {
+        $gateContext = RenderGate::context($this->product, RenderGate::SCOPE_CARD);
+
+        if (!RenderGate::shouldRender('title', $gateContext)) {
+            return;
+        }
+
+        do_action('fluent_cart/product/group/before_title_block', $gateContext);
+
         $link = Arr::get($config, 'isLink', true);
         $target = Arr::get($config, 'target', '_self');
 
@@ -279,10 +290,16 @@ class ProductCardRender
                 esc_html($titleText)
             );
         }
+
+        do_action('fluent_cart/product/group/after_title_block', $gateContext);
     }
 
     public function renderProductImage()
     {
+        if (!RenderGate::shouldRender('image', RenderGate::context($this->product, RenderGate::SCOPE_CARD))) {
+            return;
+        }
+
         $image = $this->product->thumbnail;
         $isPlaceholder = false;
 
@@ -297,10 +314,10 @@ class ProductCardRender
                         __('Placeholder image for %s', 'fluent-cart'), $this->product->post_title)
                 : $this->product->post_title;
 
-        do_action('fluent_cart/product/group/before_image_block', [
+        do_action('fluent_cart/product/group/before_image_block', RenderContext::decorate([
                 'product'       => $this->product,
                 'scope'         => 'product_card'
-        ]);
+        ]));
         ?>
         <a class="fct-product-card-image-wrap"
            href="<?php echo esc_url($this->viewUrl); ?>"
@@ -318,19 +335,24 @@ class ProductCardRender
         </a>
         <?php
 
-        do_action('fluent_cart/product/group/after_image_block', [
+        do_action('fluent_cart/product/group/after_image_block', RenderContext::decorate([
                 'product'       => $this->product,
                 'scope'         => 'product_card'
-        ]);
+        ]));
     }
 
     public function renderPrices($wrapper_attributes = '')
     {
+        if (!RenderGate::shouldRender('price', RenderGate::context($this->product, RenderGate::SCOPE_CARD))) {
+            return;
+        }
+
         $priceFormat = Arr::get($this->config, 'price_format', 'starts_from');
         $isSimple = $this->product->detail->variation_type === 'simple';
         $minPrice = $this->product->detail->min_price;
         $maxPrice = $this->product->detail->max_price;
         $comparePrice = 0;
+        $firstVariant = null;
 
         if ($isSimple) {
             $firstVariant = $this->product->variants->first();
@@ -351,67 +373,85 @@ class ProductCardRender
         $formattedMaxPrice = Helper::toDecimal($maxPrice);
         $formattedComparePrice = Helper::toDecimal($comparePrice);
 
-        do_action('fluent_cart/product/group/before_price_block', [
+        do_action('fluent_cart/product/group/before_price_block', RenderContext::decorate([
                 'product'       => $this->product,
                 'current_price' => $minPrice,
                 'scope'         => 'product_card'
-        ]);
+        ]));
         ?>
         <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 class="fct-product-card-prices"
                 role="region"
                 aria-label="<?php echo esc_attr__('Product pricing', 'fluent-cart'); ?>">
             <?php if ($comparePrice): ?>
-                <span class="fct-compare-price" aria-label="<?php echo esc_attr(sprintf(
-                /* translators: %s: product price */
-                        __('Original price: %s', 'fluent-cart'), $formattedComparePrice)); ?>">
-                    <del aria-hidden="true"><?php echo esc_html($formattedComparePrice); ?></del>
+                <span class="fct-compare-price">
+                    <span class="fct-sr-only"><?php echo esc_html__('Original price:', 'fluent-cart'); ?></span>
+                    <del><?php echo esc_html($formattedComparePrice); ?></del>
                 </span>
             <?php endif; ?>
 
             <?php if (!$comparePrice && $maxPrice && $maxPrice > $minPrice): ?>
                 <!-- Case 2: price range -->
                 <?php if ($priceFormat === 'range'): ?>
-                    <span class="fct-item-price" aria-label="<?php echo esc_attr(sprintf(
-                    /* translators: %1$s: min price, %2$s: max price */
-                            __('Price range from %1$s to %2$s', 'fluent-cart'), $formattedMinPrice, $formattedMaxPrice)); ?>">
-                        <span aria-hidden="true"><?php echo esc_html($formattedMinPrice); ?> - <?php echo esc_html($formattedMaxPrice); ?></span>
+                    <span class="fct-item-price">
+                        <span class="fct-sr-only"><?php echo esc_html__('Price range:', 'fluent-cart'); ?></span>
+                        <?php echo esc_html($formattedMinPrice); ?>
+                        <span aria-hidden="true">-</span>
+                        <span class="fct-sr-only"><?php echo esc_html__('to', 'fluent-cart'); ?></span>
+                        <?php echo esc_html($formattedMaxPrice); ?>
                     </span>
                 <?php else: ?>
-                    <span class="fct-item-price" aria-label="<?php echo esc_attr(sprintf(
-                    /* translators: %s: min price */
-                            __('Starting from %s', 'fluent-cart'), $formattedMinPrice)); ?>">
-                        <span aria-hidden="true"><?php
+                    <span class="fct-item-price"><?php
                             /* translators: %s is the minimum price */
                             printf(esc_html__('From %s', 'fluent-cart'), esc_html($formattedMinPrice));
                             ?></span>
-                    </span>
                 <?php endif; ?>
 
             <?php else: ?>
                 <!-- Case 3: Simple or single price -->
-                <span class="fct-item-price" aria-label="<?php echo esc_attr(sprintf(
-                /* translators: %s: product price */
-                        __('Price: %s', 'fluent-cart'), $formattedMinPrice)); ?>">
-                    <span aria-hidden="true"><?php echo esc_html($formattedMinPrice); ?></span>
+                <span class="fct-item-price">
+                    <span class="fct-sr-only"><?php echo esc_html__('Price:', 'fluent-cart'); ?></span>
+                    <?php echo esc_html($formattedMinPrice); ?>
                 </span>
             <?php endif; ?>
 
-            <?php do_action('fluent_cart/product/after_price', [
+            <?php
+            do_action('fluent_cart/product/after_price', RenderContext::decorate([
                     'product'       => $this->product,
+                    'variant'       => $firstVariant,
                     'current_price' => $minPrice,
                     'scope'         => 'product_card'
-            ]); ?>
+            ]));
+            RenderHelper::renderPriceSuffix($this->product, $firstVariant, 'product_card');
+            ?>
         </div>
         <?php
-        do_action('fluent_cart/product/group/after_price_block', [
+        do_action('fluent_cart/product/group/after_price_block', RenderContext::decorate([
                 'product'       => $this->product,
                 'current_price' => $minPrice,
                 'scope'         => 'product_card'
-        ]);
+        ]));
     }
 
     public function showBuyButton($atts = '')
+    {
+        $gateContext = RenderGate::context($this->product, RenderGate::SCOPE_CARD);
+
+        // 'actions' gates the whole affordance slot, including the disabled
+        // out-of-stock placeholder — hiding the row should not leave a stray
+        // "Not Available" button behind.
+        if (!RenderGate::shouldRender('actions', $gateContext)) {
+            return;
+        }
+
+        do_action('fluent_cart/product/group/before_actions_block', $gateContext);
+
+        $this->renderBuyButtonMarkup($atts, $gateContext);
+
+        do_action('fluent_cart/product/group/after_actions_block', $gateContext);
+    }
+
+    protected function renderBuyButtonMarkup($atts, array $gateContext)
     {
         $isOutOfStock = ModuleSettings::isActive('stock_management') && !$this->product->isStock();
 
@@ -460,6 +500,22 @@ class ProductCardRender
                 $ariaLabel = sprintf(
                 /* translators: %s: product title */
                         __('Add %s to cart', 'fluent-cart'), $this->product->post_title);
+            }
+        }
+
+        // The card fills this slot with one of three things: an instant-checkout
+        // Buy Now anchor (simple + subscription), an Add to Cart button (simple),
+        // or a "View Options" link through to the product page (variable). The
+        // first two are purchase affordances and answer to their own gates.
+        // "View Options" is navigation, so it stays under 'actions' alone — a
+        // catalog-mode listener hides the buying, not the browsing.
+        if ($isInstantCheckout) {
+            if (!RenderGate::shouldRender('buy_now_button', $gateContext)) {
+                return;
+            }
+        } elseif ($firstVariant) {
+            if (!RenderGate::shouldRender('add_to_cart_button', $gateContext)) {
+                return;
             }
         }
 

@@ -3,14 +3,15 @@
 namespace FluentCart\Api\Resource;
 
 use FluentCart\Api\Taxonomy;
+use FluentCart\App\App;
 use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Events\StockChanged;
 use FluentCart\App\Helpers\Helper;
-use FluentCart\App\Helpers\ProductAdminHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductMeta;
+use FluentCart\App\Models\AttributeRelation;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -129,10 +130,10 @@ class ProductResource extends BaseResourceApi
      *          'id'               => (int) Required. The variant ID.
      *          'post_id'          => (int) Required. The product ID.
      *          'variant_title'  => (string) Required. The variant title.
-     *          'item_price'     => (float) Required. The item price.
-     *          'compare_price'  => (float) Required. The compare price.
+     *          'item_price'     => (int) Required. The item price in CENTS (129900 = $1,299.00).
+     *          'compare_price'  => (int) Required. The compare price, in cents.
      *          'manage_cost'    => (string) Optional. Whether to manage costs.
-     *          'item_cost'      => (float) Required if manage cost is yes. The item cost.
+     *          'item_cost'      => (int) Required if manage cost is yes. The item cost, in cents.
      *          'manage_stock'   => (string) Required. Whether to manage stock.
      *          'stock_status'   => (string) Required. The stock status.
      *          'stock'          => (int) Required. The stock quantity.
@@ -176,6 +177,7 @@ class ProductResource extends BaseResourceApi
         if (count($variants) > 0) {
 
             $variationType = Arr::get($detail, 'variation_type', 'simple');
+
             if ($variationType === 'simple') {
                 $variant = $variants[0];
                 $otherInfo = Arr::get($variant, 'other_info', []);
@@ -186,9 +188,10 @@ class ProductResource extends BaseResourceApi
                     'item_cost',
                 ];
 
+                // Amounts arrive in CENTS; normalize float artifacts without scaling.
                 foreach ($priceColumns as $column) {
                     if (Arr::has($variant, $column)) {
-                        $variant[$column] = Arr::get($variant, $column) * 100;
+                        $variant[$column] = Helper::roundCent(Arr::get($variant, $column));
                     }
                 }
 
@@ -208,10 +211,13 @@ class ProductResource extends BaseResourceApi
 
                 $variantData = $variant;
 
-                // Remove empty sku and shipping_class to prevent unique constraint violation
-                if (array_key_exists('sku', $variantData) && empty($variantData['sku'])) {
-                    unset($variantData['sku']);
+                // An explicitly cleared sku ('' or null) must persist as NULL so the
+                // stored value is actually cleared, while still avoiding the sku_unique
+                // constraint (MySQL treats multiple NULLs as distinct, unlike '').
+                if (array_key_exists('sku', $variantData) && ($variantData['sku'] === '' || $variantData['sku'] === null)) {
+                    $variantData['sku'] = null;
                 }
+                // Remove empty shipping_class to prevent unique constraint violation
                 if (array_key_exists('shipping_class', $variantData) && empty($variantData['shipping_class'])) {
                     unset($variantData['shipping_class']);
                 }
@@ -220,7 +226,7 @@ class ProductResource extends BaseResourceApi
                 if (!empty($otherInfo)) {
                     if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
                         if (Arr::get($otherInfo, 'manage_setup_fee') == 'yes') {
-                            $signupFee = Helper::toCent(floatval(Arr::get($otherInfo, 'signup_fee', 0)));
+                            $signupFee = Helper::roundCent(Arr::get($otherInfo, 'signup_fee', 0));
                             Arr::set($otherInfo, 'signup_fee', $signupFee);
                         }
                         $variantData['payment_type'] = 'subscription';
@@ -248,13 +254,32 @@ class ProductResource extends BaseResourceApi
                         'item_cost',
                     ];
 
+                    // Amounts arrive in CENTS; normalize without scaling.
                     foreach ($priceColumns as $column) {
                         if (Arr::has($variant, $column)) {
-                            $variant[$column] = Arr::get($variant, $column) * 100;
+                            $variant[$column] = Helper::roundCent(Arr::get($variant, $column));
                         }
                     }
                     unset($variant['rowId']);
-                    $variant['serial_index'] = $index + 1;
+
+                    // serial_index is display ordering the caller owns, not a column derived
+                    // from this loop. An advanced-variation save carries only the rows the
+                    // merchant actually touched, so deriving it from the payload index
+                    // renumbered an edited row to the front and left two variations sharing a
+                    // position. The reorder path sends an explicit serial_index for every row
+                    // and bulk edit round-trips the stored one, so an absent value means
+                    // "unchanged": drop the column and let batchUpdate's `ELSE serial_index`
+                    // keep what is stored.
+                    if (!isset($variant['serial_index']) || $variant['serial_index'] === '') {
+                        unset($variant['serial_index']);
+                    }
+
+                    // An explicitly cleared sku ('' or null) must persist as NULL so the
+                    // stored value is actually cleared, while still avoiding the sku_unique
+                    // constraint (MySQL treats multiple NULLs as distinct, unlike '').
+                    if (array_key_exists('sku', $variant) && ($variant['sku'] === '' || $variant['sku'] === null)) {
+                        $variant['sku'] = null;
+                    }
 
                     // Recalculate stock_status from available and manage_stock
                     if (isset($variant['manage_stock'])) {
@@ -270,29 +295,45 @@ class ProductResource extends BaseResourceApi
                     if (!empty($otherInfo)) {
                         if (Arr::get($otherInfo, 'payment_type') == 'subscription') {
                             if (Arr::get($otherInfo, 'manage_setup_fee') == 'yes') {
-                                $signupFee = Helper::toCent(floatval(Arr::get($otherInfo, 'signup_fee', 0)));
+                                $signupFee = Helper::roundCent(Arr::get($otherInfo, 'signup_fee', 0));
                                 Arr::set($otherInfo, 'signup_fee', $signupFee);
                             }
                         }
                         $variant['other_info'] = $otherInfo;
                     }
-                    $variantData[] = $variant;
-
+                    $variantData[] = apply_filters('fluent_cart/product/variant_save_data', $variant, $postId);
                 }
 
-                // Only batch update if there's data
+                // Only batch update if there's data. Wrap the write in a transaction so
+                // a mid-batch failure (UNIQUE constraint, deadlock, etc.) rolls back the
+                // entire variant update instead of leaving the product in a partially-saved
+                // state. The variants_updated action fires only after a successful commit
+                // so listeners never observe a rolled-back state.
                 if (!empty($variantData)) {
-                    ProductVariation::query()->batchUpdate($variantData);
+                    $db = App::db();
+                    $db->beginTransaction();
+                    try {
+                        ProductVariation::query()->batchUpdate($variantData);
+                        $db->commit();
+                    } catch (\Exception $e) {
+                        $db->rollBack();
+                        throw $e;
+                    }
+                    do_action('fluent_cart/product/variants_updated', [
+                        'post_id'  => $postId,
+                        'variants' => $variantData,
+                    ]);
                 }
             }
 
 
-//            $variationDetails = $detail;
-//            $variants = ProductAdminHelper::syncProduct($variationDetails, $variants);
         }
 
-        $defaultVariationId = Arr::get($detail, 'default_variation_id');
-        $detail['default_variation_id'] = $defaultVariationId;
+        // Deliberately NOT defaulted here. $detail is a partial row — the editor
+        // stages only what the merchant touched — so materialising this key as null
+        // told ProductDetailResource::update() to clear the stored Default Variant
+        // on every unrelated save (an inline price edit was enough). Absent now
+        // means "unchanged"; an explicit empty value still clears it.
 
         // Recalculate min_price / max_price from current variant prices
         $variantPriceRange = ProductVariation::query()
@@ -337,6 +378,62 @@ class ProductResource extends BaseResourceApi
         );
     }
 
+    public static function partialUpdate(array $data, $postId)
+    {
+        $product = get_post($postId);
+
+        if (!$product || $product->post_type !== 'fluent-products') {
+            return new \WP_Error('not_found', __('Product not found', 'fluent-cart'));
+        }
+
+        $postData = ['ID' => (int) $postId];
+
+        $allowedFields = ['post_title', 'post_content', 'post_excerpt', 'post_status', 'post_date'];
+
+        foreach ($allowedFields as $field) {
+            if (\array_key_exists($field, $data)) {
+                $postData[$field] = $data[$field];
+            }
+        }
+
+        if (\count($postData) === 1) {
+            return new \WP_Error('no_fields', __('No valid fields provided for update', 'fluent-cart'));
+        }
+
+        $newStatus    = $postData['post_status'] ?? null;
+        $syncOrmDates = false;
+
+        if ($newStatus === 'future') {
+            $postDate = DateTime::anyTimeToGmt($postData['post_date'])->format('Y-m-d H:i:s');
+            $postData['post_date']     = $postDate;
+            $postData['post_date_gmt'] = $postDate;
+            $syncOrmDates              = true;
+        } elseif ($newStatus === 'publish' && $product->post_status === 'future') {
+            $now = DateTime::gmtNow()->format('Y-m-d H:i:s');
+            $postData['post_date']     = $now;
+            $postData['post_date_gmt'] = $now;
+            $syncOrmDates              = true;
+        }
+
+        $updated = wp_update_post($postData, true);
+
+        if (is_wp_error($updated)) {
+            return $updated;
+        }
+
+        if ($syncOrmDates) {
+            Product::query()->where('ID', $postId)->update([
+                'post_status'   => $newStatus,
+                'post_date'     => $postData['post_date'],
+                'post_date_gmt' => $postData['post_date_gmt'],
+            ]);
+        }
+
+        $product = static::getQuery()->with('variants')->addAppends(['viewUrl'])->find($postId);
+
+        return static::makeSuccessResponse($product, __('Product has been updated', 'fluent-cart'));
+    }
+
     public static function updateWpPost($postId, $params = [])
     {
 
@@ -346,14 +443,6 @@ class ProductResource extends BaseResourceApi
         $postExcerpt = Arr::get($params, 'post_excerpt');
         $commentStatus = Arr::get($params, 'comment_status');
         $postName = Arr::get($params, 'post_name');
-        $postDate = Arr::get($params, 'post_date');
-        if (empty($postDate) || $postStatus !== 'future') {
-            $postDate = DateTime::gmtNow()->format('Y-m-d H:i:s');
-        }
-
-        if ($postStatus === 'future') {
-            $postDate = DateTime::anyTimeToGmt($postDate)->format('Y-m-d H:i:s');
-        }
 
         $data = [
             'ID'             => $postId,
@@ -374,23 +463,39 @@ class ProductResource extends BaseResourceApi
         if (isset($postContent)) {
             $data['post_content'] = $postContent;
         }
-        if (!empty($postDate)) {
-            $data['post_date'] = $postDate;
+
+        // Only write post_date when the product is being scheduled (status
+        // "future") — the admin editor exposes the date picker in that case
+        // only. For ordinary edits we must NOT rewrite post_date/post_date_gmt,
+        // otherwise the creation date changes on every save and "sort by newest"
+        // breaks. WordPress updates post_modified on its own.
+        $postDate = null;
+        if ($postStatus === 'future') {
+            $scheduledDate = Arr::get($params, 'post_date');
+            if (empty($scheduledDate)) {
+                $scheduledDate = DateTime::gmtNow()->format('Y-m-d H:i:s');
+            }
+            $postDate = DateTime::anyTimeToGmt($scheduledDate)->format('Y-m-d H:i:s');
+            $data['post_date']     = $postDate;
             $data['post_date_gmt'] = $postDate;
-            $data['post_modified'] = $postDate;
-            $data['post_modified_gmt'] = $postDate;
+        } elseif ($postStatus === 'publish' && get_post_field('post_status', $postId) === 'future') {
+            // Publishing a scheduled product early: stamp the creation date to
+            // now so it doesn't go live with a future date (which would sort as
+            // "newest"). Mirrors partialUpdate().
+            $postDate = DateTime::gmtNow()->format('Y-m-d H:i:s');
+            $data['post_date']     = $postDate;
+            $data['post_date_gmt'] = $postDate;
         }
 
         $updated = wp_update_post($data);
 
         if ($updated) {
-            Product::query()->where('ID', $postId)->update([
-                'post_status'       => $postStatus,
-                'post_date'         => $postDate,
-                'post_date_gmt'     => $postDate,
-                'post_modified'     => $postDate,
-                'post_modified_gmt' => $postDate,
-            ]);
+            $ormData = ['post_status' => $postStatus];
+            if ($postDate !== null) {
+                $ormData['post_date']     = $postDate;
+                $ormData['post_date_gmt'] = $postDate;
+            }
+            Product::query()->where('ID', $postId)->update($ormData);
         }
 
         return $updated;
@@ -423,8 +528,12 @@ class ProductResource extends BaseResourceApi
                     ['code' => 400, 'message' => __('This product cannot be deleted at the moment. There are pending orders associated with it. Deleting the product will disrupt the order processing and might cause inconvenience to our customers.', 'fluent-cart')]
                 ]);
             }
+            $variantIds = $product->variants->pluck('id')->toArray();
             foreach ($product->variants as $variant) {
                 $variant->media()->delete();
+            }
+            if ($variantIds) {
+                AttributeRelation::query()->whereIn('object_id', $variantIds)->delete();
             }
             $product->detail()->delete();
             $product->variants()->delete();
@@ -483,23 +592,24 @@ class ProductResource extends BaseResourceApi
      */
     public static function syncVariantOption($productId, $data = [])
     {
-        $srcPricing = ProductDetail::where('post_id', $productId)->first();
-        $settings = Arr::get($data, 'options');
-        $variationType = Arr::get($data, 'variation_type');
+        $preprocessed = apply_filters('fluent_cart/product/variant_option_payload', [
+            'product_id' => (int) $productId,
+            'data'       => $data,
+        ]);
+        if (!is_array($preprocessed) || !isset($preprocessed['data'])) {
+            $preprocessed = ['product_id' => (int) $productId, 'data' => $data];
+        }
+        $data = $preprocessed['data'];
 
-        if (!empty($variationType) && $variationType === Helper::PRODUCT_TYPE_ADVANCE_VARIATION) {
+        $result = apply_filters('fluent_cart/product/variant_option_sync', [
+            'product_id' => (int) $productId,
+            'data'       => $data,
+            'handled'    => false,
+            'response'   => null,
+        ]);
 
-            $variants = ProductAdminHelper::syncProduct($srcPricing, $settings);
-
-            $srcPricing->fill([
-                'other_info'     => $settings,
-                'variation_type' => Helper::PRODUCT_TYPE_ADVANCE_VARIATION,
-            ])->save();
-
-            return static::makeSuccessResponse(
-                $variants,
-                __('Variation combination updated!', 'fluent-cart')
-            );
+        if (!empty($result['handled'])) {
+            return $result['response'];
         }
 
         return static::makeErrorResponse([

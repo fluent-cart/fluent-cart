@@ -35,7 +35,7 @@ class Webhook
     public static function getWebhookURL(): string
     {
         // return 'https://webhook.site/9f647f0d-3514-47b7-acca-95a2c168b917';
-        return site_url() . self::WEBHOOK_ENDPOINT;
+        return trailingslashit(site_url()) . self::WEBHOOK_ENDPOINT;
     }
 
     public static function webhookInstruction(): string

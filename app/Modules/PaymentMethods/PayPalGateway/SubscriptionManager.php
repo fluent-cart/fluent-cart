@@ -5,7 +5,6 @@ namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
@@ -133,7 +132,7 @@ class SubscriptionManager
 
         wp_send_json([
             'status'  => 'success',
-            'message' => 'Plan created successfully',
+            'message' => __('Plan created successfully', 'fluent-cart'),
             'plan'    => $plan,
         ], 200);
     }
@@ -187,8 +186,6 @@ class SubscriptionManager
             $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($nextBillingDate));
         }
 
-        $config = $subscription->config ?: [];
-
         // update subscription in table
         $data = array_filter([
             'vendor_subscription_id' => $vendorSubscriptionId,
@@ -197,10 +194,11 @@ class SubscriptionManager
             'vendor_customer_id'     => $vendorCustomerId,
             'next_billing_date'      => $nextBillingDate,
             'status'                 => $this->getCorrectSubscriptionStatus(Arr::get($paypalSubscription, 'status')),
-            'config'                 => array_merge($config, ['is_trial_days_simulated' => 'yes'])
         ]);
 
         Subscription::query()->where('id', $subscriptionId)->update($data);
+
+        $subscription->mergeConfig(['is_trial_days_simulated' => 'yes']);
 
         $billingInfo = PaymentHelper::parsePaymentMethodDetails('paypal', [
             'email'    => Arr::get($paypalSubscription, 'subscriber.email_address'),
@@ -313,10 +311,7 @@ class SubscriptionManager
             $trialDays = ceil(($nextBillingTimestamp - time()) / 86400);
         }
 
-        $billCount = OrderTransaction::query()->where('subscription_id', $subscriptionModel->id)
-            ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
-            ->where('status', Status::TRANSACTION_SUCCEEDED)
-            ->count();
+        $billCount = $subscriptionModel->calculateBillCount();
 
 
         $trialDays = SubscriptionHelper::checkTrailDaysLoopHole($subscriptionModel, $trialDays);
@@ -341,8 +336,8 @@ class SubscriptionManager
 
         $processedSubscriptionItem = [
             'billing_interval' => Arr::get($subscriptionModel, 'billing_interval'),
-            'recurring_amount' => Arr::get($subscriptionModel, 'recurring_amount'),
-            'line_total'       => intval(Arr::get($subscriptionModel, 'recurring_amount')),
+            'recurring_amount' => Arr::get($subscriptionModel, 'recurring_total'),
+            'line_total'       => intval(Arr::get($subscriptionModel, 'recurring_total')),
             'id'               => Arr::get($subscriptionModel, 'variation_id'),
             'trial_days'       => $trialDays,
             'product_id'       => Arr::get($subscriptionModel, 'product_id'),

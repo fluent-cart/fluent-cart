@@ -1,11 +1,12 @@
 const { useBlockProps } = wp.blockEditor;
+import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 const ProductFilterApplyButtonBlock = {
     edit: (props) => {
         const blockProps = useBlockProps({
             className: 'fct-product-block-filter-button',
         });
 
-        return <button {...props} {...blockProps}>Apply Filter</button>;
+        return <button {...props} {...blockProps}>{blocktranslate('Apply Filter')}</button>;
     },
     save: (props) => {
         return null;

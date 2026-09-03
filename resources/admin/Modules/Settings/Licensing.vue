@@ -3,6 +3,8 @@
     <SettingsHeader :heading="translate('Licensing')" :show-save-button="false"/>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+      
       <CardContainer>
         <CardBody>
           <el-skeleton :loading="loading" animated :rows="6"/>
@@ -84,7 +86,7 @@
                     <DynamicIcon name="External" class="w-4 h-4"/>
                   </a></p>
                 </div>
-                <p class="fluent_cart_warning" v-html="errorMessage"></p>
+                <p class="fluent_cart_warning text-red-500 m-0" v-html="errorMessage"></p>
                 <!--              <a :href="licenseData.renew_url" target="_blank"-->
                 <!--                 class="el-button el-button&#45;&#45;danger el-button&#45;&#45;small">{{-->
                 <!--                  translate("Click Here to Renew your License")-->
@@ -97,7 +99,8 @@
                 </el-button>
                 <el-button v-else-if="!['valid', 'expired'].includes(licenseData.status)"
                            type="primary"
-                           @click="verifyLicense()">
+                           @click="verifyLicense()"
+                >
                   <DynamicIcon name="Lock" class="w-5 h-5"/>
                   {{ translate('Verify License') }}
                 </el-button>
@@ -127,10 +130,10 @@ import {
   Container as CardContainer,
   Body as CardBody
 } from '@/Bits/Components/Card/Card.js';
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 export default {
-  name: 'licensing',
-  props: ['disabled'],
+  name: 'Licensing',
   components: {
     Lock,
     Refresh,
@@ -140,8 +143,10 @@ export default {
     CopyToClipboard,
     SettingsHeader,
     CardBody,
-    CardContainer
+    CardContainer,
+    AdminNotice
   },
+  props: ['disabled'],
   data() {
     return {
       loading: true,
@@ -155,6 +160,11 @@ export default {
   computed: {
     purchaseLink() {
       return AppConfig.get('purchase_fluent_cart_link');
+    }
+  },
+  mounted() {
+    if (!this.disabled) {
+      this.getSettings();
     }
   },
   methods: {
@@ -244,11 +254,6 @@ export default {
       const last4 = key.slice(-4);
       const masked = '*'.repeat(key.length - 8);
       return `${prefix}${masked}${last4}`;
-    }
-  },
-  mounted() {
-    if (!this.disabled) {
-      this.getSettings();
     }
   }
 };

@@ -26,7 +26,6 @@ export default class FluentCartPricingTableTab {
         const parentTabContainer = variationButton.closest('[data-tab-content]');
 
         if (parentTabContainer) {
-            console.log(parentTabContainer.id);
         }
     }
 

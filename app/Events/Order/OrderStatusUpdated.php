@@ -17,7 +17,7 @@ class OrderStatusUpdated extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
     public ?string $oldStatus;

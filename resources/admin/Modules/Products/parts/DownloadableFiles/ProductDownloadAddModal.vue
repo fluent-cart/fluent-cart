@@ -50,7 +50,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
     <div class="fct-product-download-inner-wrap flex flex-col gap-4">
       <template v-if="productDownloadableModel.insertableFiles.length">
         <div v-for="(file, index) of productDownloadableModel.insertableFiles"
-             class="rounded p-3 bg-gray-25 dark:bg-dark-500 relative">
+             class="fct-product-download-form-box">
           <el-button
               v-if="productDownloadableModel.insertableFiles.length > 1"
               @click="productDownloadableModel.deleteInsertableFile(index)"
@@ -71,7 +71,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
       <div v-if="productDownloadableModel.insertableFiles.length > 1">
         <FileUploaderDialog
             :uploadBtnText="translate('Add More Files')"
-            @onFileSelected="value => {
+            @on-file-selected="value => {
               const fileIndex = productDownloadableModel.insertableFiles.length - 1;
               const $selected = value;
 
@@ -124,6 +124,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
             @click="()=>{
               productDownloadableModel.attachInsertableFiles(product.ID);
             }"
+            :loading="productDownloadableModel.data.saving"
         >
           {{$t('Save Asset')}}
         </el-button>

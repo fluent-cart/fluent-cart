@@ -27,15 +27,15 @@
 }
 
 // form row
-.form-row {
+.fct-form-row {
   @apply flex justify-between;
   .form-col {
     @apply flex-1;
   }
-  &.col-2{
+  &.fct-col-2{
     @apply gap-[15px];
   }
-  .form-group{
+  .fct-form-group{
     @apply w-full;
   }
 }
@@ -75,7 +75,7 @@
   box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
 }
 
-.form-group {
+.fct-form-group {
   @apply mb-4;
   label {
     @apply block mb-1 text-sm font-medium text-system-dark;

@@ -10,6 +10,7 @@ use FluentCart\App\Http\Controllers\FrontendControllers\CustomerController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerOrderController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerProfileController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerSubscriptionController;
+use FluentCart\App\Http\Controllers\FrontendControllers\ProductReviewFrontendController;
 use FluentCart\App\Http\Controllers\ShopController;
 use FluentCart\App\Http\Controllers\UserController;
 use FluentCart\App\Modules\Shipping\Http\Controllers\Frontend\ShippingFrontendController;
@@ -47,16 +48,16 @@ $router->prefix('user')->withPolicy('PublicPolicy')->group(function (Router $rou
 });
 
 $router->prefix('customers')
-    ->withPolicy('CustomerFrontendPolicy')->group(function (Router $router) {
-        //$router->post('/', [CustomerController::class, 'store']);
-        $router->get('/{customerId}', [CustomerController::class, 'getDetails']);
-        $router->put('/{customerId}', [CustomerController::class, 'updateDetails']);
-        $router->get('/{customerId}/orders', [CustomerController::class, 'getCustomerOrders']);
+    ->withPolicy('PublicPolicy')->group(function (Router $router) {
+        // Customer self-service (details/orders/address CRUD) lives under the
+        // customer-profile group — the duplicates that used to sit here shadowed
+        // the admin customers group and were unreachable dead code (audit #5).
+        // Only these checkout-context routes, with no admin counterpart, remain.
+        // PublicPolicy rather than a login gate (audit #6): guests reach these
+        // from checkout, and both controllers fully self-guard (current-customer
+        // resolution + ownership), answering guests with their own envelopes.
         $router->get('/{customerAddressId}/update-address-select', [CustomerController::class, 'updateAddressSelect']);
-        $router->put('/{customerId}/address', [CustomerController::class, 'updateAddress']);
         $router->post('/add-address', [CustomerController::class, 'createAddress']);
-        $router->delete('/{customerId}/address', [CustomerController::class, 'removeAddress']);
-        $router->post('/{customerId}/address/make-primary', [CustomerController::class, 'setAddressPrimary']);
     });
 
 $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group(function (Router $router) {
@@ -64,6 +65,7 @@ $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group
     $router->get('/downloads', [CustomerProfileController::class, 'getDownloads']);
 
     $router->get('/profile', [CustomerProfileController::class, 'getCustomerProfileDetails']);
+    $router->get('/sections', [CustomerProfileController::class, 'getSections']);
     $router->post('/create-address', [CustomerProfileController::class, 'createCustomerProfileAddress']);
 
     $router->post('/edit-address', [CustomerProfileController::class, 'updateCustomerProfileAddress']);
@@ -93,5 +95,18 @@ $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group
     $router->post('subscriptions/{subscription_uuid}/confirm-subscription-switch', [CustomerSubscriptionController::class, 'confirmSubscriptionSwitch'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/cancel-auto-renew', [CustomerSubscriptionController::class, 'cancelAutoRenew'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/initiate-early-payment', [CustomerSubscriptionController::class, 'initiateEarlyPayment'])->alphaNumDash('subscription_uuid');
+    $router->post('subscriptions/{subscription_uuid}/pause', [CustomerSubscriptionController::class, 'pauseSubscription'])->alphaNumDash('subscription_uuid');
+    $router->post('subscriptions/{subscription_uuid}/resume', [CustomerSubscriptionController::class, 'resumeSubscription'])->alphaNumDash('subscription_uuid');
 
 });
+
+// Public product reviews routes
+$router->prefix('public/reviews')
+    ->withPolicy('PublicPolicy')->group(function (Router $router) {
+        $router->get('/{postId}', [ProductReviewFrontendController::class, 'getReviews'])->int('postId');
+        $router->get('/{postId}/summary', [ProductReviewFrontendController::class, 'getRatingSummary'])->int('postId');
+        $router->post('/{postId}', [ProductReviewFrontendController::class, 'submitReview'])->int('postId');
+        $router->put('/{postId}/{reviewId}', [ProductReviewFrontendController::class, 'updateReview'])->int('postId')->int('reviewId');
+        $router->get('/{postId}/{reviewId}/replies', [ProductReviewFrontendController::class, 'getReplies'])->int('postId')->int('reviewId');
+        $router->post('/{postId}/{reviewId}/reply', [ProductReviewFrontendController::class, 'submitReply'])->int('postId')->int('reviewId');
+    });

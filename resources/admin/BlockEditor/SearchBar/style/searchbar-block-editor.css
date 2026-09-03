@@ -25,12 +25,6 @@
 /*    @apply mr-0;*/
 /*}*/
 
-/*.fca_product_menu_items li a {*/
-/*    @apply text-neutral-1000 no-underline focus:shadow-none dark:text-neutral-200;*/
-/*}*/
-/*.dark .fca_product_menu_items li a {*/
-/*    @apply text-gray-300;*/
-/*}*/
 /*.fca_product_menu_items li a:hover {*/
 /*    @apply text-dark-500;*/
 /*}*/
@@ -84,3 +78,12 @@
     @apply px-4 py-2.5 text-system-dark text-sm font-normal leading-[1.1] !important;
 }
 
+.fct-searchbar-block-select-wrap {
+    @apply mr-2 max-w-180 min-w-180;
+}
+
+.fct-searchbar-block-select-wrap select {
+    @apply w-full outline-none px-3 py-1 h-10 rounded bg-white text-sm border border-solid border-gray-outline;
+    margin-right: 0 !important;
+    box-shadow: none !important;
+}

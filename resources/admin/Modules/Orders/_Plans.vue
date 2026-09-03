@@ -6,7 +6,7 @@
       <Badge :status="subscriptionStatus"/>
     </div>
     <router-link :to="{name: 'view_subscription', params: {subscription_id: subscription?.id}}">
-      <p class="fct-subs-title underline">{{ $t(subscription?.item_name) }}</p>
+      <p class="fct-subs-title underline">{{ $t(subscription?.display_item_name) }}</p>
     </router-link>
     <p v-html="subscription?.payment_info"></p>
 
@@ -25,10 +25,10 @@ import translate from "../../utils/translator/Translator";
 export default {
   name: "_Plans.vue",
   components: {Badge},
+  props: ['subscription', 'header', 'order', 'getOrderUrl'],
   data() {
     return {}
   },
-  props: ['subscription', 'header', 'order', 'getOrderUrl'],
   computed: {
     subscriptionStatus() {
       return this.subscription?.status;

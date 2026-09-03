@@ -41,7 +41,7 @@
     .el-checkbox__inner{
         @apply border-gray-outline rounded-xs w-4 h-4;
         &::after{
-            @apply top-0.5 left-[5px] border-[1.5px];
+            @apply border-[1.5px];
         }
     }
     .el-checkbox__input{
@@ -57,6 +57,10 @@
             }
         }
     }
+
+    .el-checkbox__input.is-checked + .el-checkbox__label {
+         @apply text-primary-500;
+    }
 }
 
 // input
@@ -70,7 +74,7 @@
             @apply inline-flex items-center;
         }
         input {
-            @apply outline-none shadow-none #{!important};
+            @apply outline-none shadow-none h-auto #{!important};
         }
     }
     &__inner{

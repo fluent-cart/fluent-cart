@@ -4,29 +4,24 @@
 
 namespace Composer\Autoload;
 
-class ComposerFluentStaticInit6ba88f1695515329cfc7e4b26033cc69
+class ComposerFluentStaticInitFcart6ba88f1695515329cfc7e4b26033cc69
 {
     public static $prefixLengthsPsr4 = array (
         'F' =>
         array (
-            'FluentEmogrifier\Vendor\\Symfony\\Component\\CssSelector\\' => 30,
-            'FluentEmogrifier\Vendor\\Pelago\\Emogrifier\\' => 18,
-            'FluentEmogrifier\Vendor\\Sabberworm\\CSS\\' => 15,
+            'FluentEmogrifier\Vendor\\TijsVerkoyen\\CssToInlineStyles\\' => 55,
+            'FluentEmogrifier\Vendor\\Symfony\\Component\\CssSelector\\' => 54,
         )
     );
 
     public static $prefixDirsPsr4 = array (
+        'FluentEmogrifier\Vendor\\TijsVerkoyen\\CssToInlineStyles\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/tijsverkoyen/css-to-inline-styles/src',
+        ),
         'FluentEmogrifier\Vendor\\Symfony\\Component\\CssSelector\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/css-selector',
-        ),
-        'FluentEmogrifier\Vendor\\Sabberworm\\CSS\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/src',
-        ),
-        'FluentEmogrifier\Vendor\\Pelago\\Emogrifier\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/pelago/emogrifier/src',
         ),
     );
 
@@ -37,9 +32,9 @@ class ComposerFluentStaticInit6ba88f1695515329cfc7e4b26033cc69
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerFluentStaticInit6ba88f1695515329cfc7e4b26033cc69::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerFluentStaticInit6ba88f1695515329cfc7e4b26033cc69::$prefixDirsPsr4;
-            $loader->classMap = ComposerFluentStaticInit6ba88f1695515329cfc7e4b26033cc69::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerFluentStaticInitFcart6ba88f1695515329cfc7e4b26033cc69::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerFluentStaticInitFcart6ba88f1695515329cfc7e4b26033cc69::$prefixDirsPsr4;
+            $loader->classMap = ComposerFluentStaticInitFcart6ba88f1695515329cfc7e4b26033cc69::$classMap;
 
         }, null, ClassLoader::class);
     }

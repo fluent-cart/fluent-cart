@@ -53,27 +53,6 @@ class OrderTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Order ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Total'),
-                value: 'total_amount'
-            },
-            {
-                label: translate('Payment Status'),
-                value: 'payment_status'
-            },
-            {
-                label: translate('Order Status'),
-                value: 'status'
-            }
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by invoice no, customer name, or customer email.")
     }
@@ -90,9 +69,13 @@ class OrderTable extends Table {
         return 'order_table';
     }
 
+    // A SCREEN key, not a relation name — OrderFilter::allowedWiths() owns
+    // which relations, selects and permission checks it resolves to. One key
+    // per screen: this one loads the line items and the customer popover, and
+    // gates the customer half on customers/view server-side.
     with() {
         return [
-            'customer.primary_billing_address', 'order_items'
+            'admin_order_list'
         ];
     }
 }

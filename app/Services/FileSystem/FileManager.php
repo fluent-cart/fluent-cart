@@ -11,7 +11,7 @@ use FluentCart\Framework\Support\Arr;
 class FileManager
 {
     /**
-     * @var $driver BaseDriver|S3Driver|LocalDriver
+     * @var BaseDriver|S3Driver|LocalDriver $driver
      **/
     private $driver;
     protected ?string $dirPath;

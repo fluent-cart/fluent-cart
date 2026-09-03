@@ -3,6 +3,7 @@
 namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\App\App;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\StorageDrivers\Local\Local;
 use FluentCart\App\Modules\StorageDrivers\S3\S3;
 use FluentCart\App\Vite;
@@ -72,7 +73,7 @@ class GlobalStorageHandler
             'brand_color'  => '#f38020',
             'has_bucket'   => true,
             'requires_pro' => true,
-            'upgrade_url'  => 'https://fluentcart.com/pricing/',
+            'upgrade_url'  => Helper::getUpgradeUrl('feature_lock_storage_r2'),
             'instance'     => new class {
                 public function isEnabled()
                 {

@@ -27,31 +27,31 @@
         <CardBody>
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Name" :required="true"/>
+              <LabelHint :title="$t('Name')" :required="true"/>
               <p class="fct-inline-tip">{{$t('Webhook Feed Name')}}</p>
             </div><!-- .fct-setting-form-content -->
 
             <div class="fct-setting-form-fields">
               <el-input v-model="settings.name" :class="errors.has('name') ? 'is-error' : ''"/>
-              <error-view field="name" :errors="errors"></error-view>
+              <ErrorView field="name" :errors="errors"></ErrorView>
             </div><!-- .fct-setting-form-fields -->
           </div>
 
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Request URL" :required="true"/>
+              <LabelHint :title="$t('Request URL')" :required="true"/>
               <p class="fct-inline-tip">{{$t('This endpoint receives data from webhooks when events occur')}}</p>
             </div><!-- .fct-setting-form-content -->
 
             <div class="fct-setting-form-fields">
               <el-input v-model="settings.request_url" :class="errors.has('request_url') ? 'is-error' : ''"/>
-              <error-view field="request_url" :errors="errors"></error-view>
+              <ErrorView field="request_url" :errors="errors"></ErrorView>
             </div><!-- .fct-setting-form-fields -->
           </div>
 
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Request Method" :required="true"/>
+              <LabelHint :title="$t('Request Method')" :required="true"/>
               <p class="fct-inline-tip">{{$t('Specifies the HTTP method (e.g., GET, POST) used to send data to the webhook URL.')}}</p>
             </div><!-- .fct-setting-form-content -->
 
@@ -63,13 +63,13 @@
                 <el-option value="PATCH" label="PATCH"/>
                 <el-option value="DELETE" label="DELETE"/>
               </el-select>
-              <error-view field="request_method" :errors="errors"></error-view>
+              <ErrorView field="request_method" :errors="errors"></ErrorView>
             </div><!-- .fct-setting-form-fields -->
           </div>
 
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Request Format"/>
+              <LabelHint :title="$t('Request Format')"/>
               <p class="fct-inline-tip">
                 {{$t('Defines the structure and method used to send data in the webhook request.')}}
               </p>
@@ -84,7 +84,7 @@
           </div>
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Request Headers"/>
+              <LabelHint :title="$t('Request Headers')"/>
               <p class="fct-inline-tip">
                 {{$t('Key-value pairs sent with the request for context like auth or content type.')}}
               </p>
@@ -102,7 +102,7 @@
 
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Request Body" :required="true"/>
+              <LabelHint :title="$t('Request Body')" :required="true"/>
               <p class="fct-inline-tip">
                 {{$t('The data sent in the request body.')}}
               </p>
@@ -120,7 +120,7 @@
 
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
-              <LabelHint title="Event Trigger" :required="true"/>
+              <LabelHint :title="$t('Event Trigger')" :required="true"/>
               <p class="fct-inline-tip">
                 {{$t('Defines the action that initiates the workflow or process.')}}
               </p>
@@ -146,7 +146,7 @@
                   />
                 </el-option-group>
               </el-select>
-              <error-view field="event_trigger" :errors="errors"></error-view>
+              <ErrorView field="event_trigger" :errors="errors"></ErrorView>
             </div><!-- .fct-setting-form-fields -->
           </div>
 
@@ -155,7 +155,7 @@
 
       <div class="setting-save-action">
         <el-button :loading="saving" type="primary" @click="saveSettings">
-          {{saving ? $t('Saving') : $t('Save')}} {{$t('Feed')}}
+          {{$t('Save Feed')}}
         </el-button>
       </div>
     </template>
@@ -334,6 +334,15 @@ export default {
       saving: false
     };
   },
+  computed: {
+    ArrowRight() {
+      return ArrowRight
+    }
+  },
+  mounted() {
+    this.webhook.id = this.$route?.params?.feed_id;
+    this.getSettings();
+  },
   methods: {
     saveSettings() {
       this.saving = true;
@@ -353,9 +362,8 @@ export default {
             this.webhook.id = response.id;
           })
           .catch((error) => {
-            console.log(error)
             this.errors.record(error);
-            this.handleError(error?.data?.message || 'Failed to save webhook settings');
+            this.handleError(error?.data?.message || this.$t('Failed to save webhook settings'));
             this.saving = false;
           }).finally(() => {
             this.saving = false;
@@ -372,19 +380,10 @@ export default {
             this.loading = false;
           })
           .catch((error) => {
-            this.handleError(error?.data?.message || 'Failed to load webhook settings');
+            this.handleError(error?.data?.message || this.$t('Failed to load webhook settings'));
             this.loading = false;
           });
     }
-  },
-  computed: {
-    ArrowRight() {
-      return ArrowRight
-    }
-  },
-  mounted() {
-    this.webhook.id = this.$route?.params?.feed_id;
-    this.getSettings();
   }
 }
 </script>

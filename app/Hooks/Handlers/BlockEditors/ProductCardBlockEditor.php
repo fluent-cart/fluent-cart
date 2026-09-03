@@ -71,18 +71,12 @@ class ProductCardBlockEditor extends BlockEditor
             return '';
         }
 
-        $selectedProductId = 'product_id=' . $product->ID;
-
-        $selectedVariantId = '';
-        if ($variationId = Arr::get($shortCodeAttribute, 'variant_id', false)) {
-            $selectedVariantId = 'variant_id=' . $variationId;
-        }
-
-        $priceFormat = Arr::get($shortCodeAttribute, 'price_format', 'starts_from');
-        $cardWidth = Arr::get($shortCodeAttribute, 'card_width', 216);
-
-        $shortcodeName = ProductCardShortCode::getShortCodeName();
-        return "[$shortcodeName $selectedVariantId $selectedProductId price_format=$priceFormat card_width=$cardWidth]";
+        return ProductCardShortCode::make([
+            'product_id'   => $product->ID,
+            'variant_id'   => Arr::get($shortCodeAttribute, 'variant_id', ''),
+            'price_format' => Arr::get($shortCodeAttribute, 'price_format', 'starts_from'),
+            'card_width'   => Arr::get($shortCodeAttribute, 'card_width', 216),
+        ])->renderShortcode($block);
     }
 
 

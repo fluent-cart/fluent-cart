@@ -67,6 +67,246 @@ class ProductFilter extends BaseFilter
         return 'products';
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'ID'         => ['label' => __('Product ID', 'fluent-cart'), 'column' => 'ID'],
+            'post_title' => ['label' => __('Title', 'fluent-cart'), 'column' => 'post_title'],
+            'post_date'  => ['label' => __('Created at', 'fluent-cart'), 'column' => 'post_date'],
+        ];
+    }
+
+    /**
+     * SCREEN keys — one per calling screen. Four genuinely different screens
+     * read products and each renders a different DEPTH of the same two
+     * relations, so each gets a key it can re-scope without widening the
+     * payload for the other three. Every screen wants both `detail` and
+     * `variants`, which is why there is one key per screen rather than one per
+     * relation per screen — a second key would only ever be sent alongside the
+     * first.
+     *
+     * PUBLIC keys — `detail` and `variants` are the two relations an external
+     * consumer can reasonably ask a product endpoint for, and `GET /products`
+     * is a public REST route where they were accepted values already. They give
+     * the plain, unnested version; the screens' deeper subtrees are properties
+     * of those screens, not of the endpoint's published shape.
+     *
+     * `GET /products` requires `products/view`, and every callback re-states
+     * that same bar rather than inheriting it — the map is also reachable from
+     * `BulkProductUpdateService` and from any add-on that builds the filter
+     * directly, where no route ran.
+     *
+     * Deliberately NOT allowlisted: `downloadable_files` (protected file
+     * paths), `licensesMeta`, `integrations`, `postmeta` and `wpTerms` (raw
+     * meta / taxonomy joins that leak far more than the catalogue),
+     * `orderItems`, and every dotted path.
+     *
+     * `categories` used to be on this map and is gone: three clients requested
+     * it and none of them read it — a three-join hasMany per row for a value
+     * nothing renders.
+     *
+     * No entry declares a select, and that is deliberate. `Product::$appends`
+     * carries `thumbnail`, which reads `detail->featured_media` — itself a
+     * `ProductDetail` append backed by the `galleryImage` relation.
+     * `ProductVariation::$appends` carries `thumbnail`, which lazy-loads `media`
+     * keyed on the variant `id`, and `ProductVariation::booted()` appends
+     * `formatted_total` from `item_price` to every retrieved row. Dropping `id`
+     * blanks every picker thumbnail; dropping `post_id` returns an empty
+     * relation outright.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [
+            'admin_product_list'      => [$this, 'adminProductList'],
+            'block_picker'            => [$this, 'blockPicker'],
+            'elementor_picker'        => [$this, 'elementorPicker'],
+            'admin_order_add_product' => [$this, 'adminOrderAddProduct'],
+
+            'detail'   => [$this, 'publicDetail'],
+            'variants' => [$this, 'publicVariants'],
+        ];
+    }
+
+    /**
+     * `utils/table-new/ProductTable.js` — the admin product list. Renders the
+     * detail thumbnail and the min/max price, and the stock column sums
+     * `variants[].available` and reads `manage_stock` per row.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function adminProductList($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with([
+            'detail',
+            'variants',
+        ]);
+    }
+
+    /**
+     * The Gutenberg product pickers — `BlockEditor/Components/SearchableSelect.jsx`
+     * and `BlockEditor/Components/ProductPicker/{ProductDropdownPicker,
+     * ProductSelector,VariationSelector}.jsx`. They render the product
+     * thumbnail, which resolves through `detail->featured_media`, and they list
+     * the variation rows with a per-variant thumbnail.
+     *
+     * `media` comes down in the SAME with() call as `variants` — a later entry
+     * naming `variants.something` would otherwise inject an empty closure over
+     * `variants` and drop whatever this one constrained.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function blockPicker($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with([
+            'detail',
+            'variants',
+            'variants.media',
+        ]);
+    }
+
+    /**
+     * `elementor/VariationSelector/SelectorModel.js` and
+     * `elementor/PricingTable/App.vue`.
+     *
+     * `detail` is loaded in its own right, not as an ORM-injected parent
+     * segment of a dotted path: without it
+     * `elementor/VariationSelector/ListItem.vue` reads
+     * `product.detail.stock_availability`, `min_price` and `max_price` as
+     * undefined and the picker goes silently blank. ListItem.vue also iterates
+     * `product.variants` and calls `model.getVariantThumbnail(variant)`, which
+     * reads `variant.thumbnail` — the append backed by `media`, loaded in one
+     * call for the clobber reason above.
+     *
+     * A separate key from `block_picker` even though the subtree matches today:
+     * either picker must be re-scopable without moving the other.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function elementorPicker($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with([
+            'detail',
+            'variants',
+            'variants.media',
+        ]);
+    }
+
+    /**
+     * `Modules/Orders/Modals/AddProductItemModal.vue` — picking a product to add
+     * to an existing order. The whole subtree is loaded in ONE with() call so no
+     * segment can be clobbered by an empty closure from another entry.
+     *
+     * `bundleChildren` is load-bearing, not decorative: `Bits/productService.js`
+     * assigns `bundle_items = variant.bundle_children`, and the modal calls
+     * `.length` on it with no optional chaining. Dropping it is a TypeError on
+     * every bundle product, not a blank cell. That regression has already
+     * shipped once.
+     *
+     * This is also the only key that loads `detail.variants`, which is what
+     * `AttributeHelper::attachVariationDisplayTitles()` walks in
+     * `ProductController::index()` to resolve `variation_display_title`.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function adminOrderAddProduct($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with([
+            'detail',
+            'detail.variants',
+            'detail.variants.media',
+            'detail.variants.bundleChildren',
+        ]);
+    }
+
+    /**
+     * `with[]=detail` — a public entry point. The catalogue detail row, gated
+     * on the same `products/view` bar as every screen key: a public name is not
+     * a way around the check.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function publicDetail($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with(['detail']);
+    }
+
+    /**
+     * `with[]=variants` — a public entry point. The variation rows, carrying
+     * the same `products/view` bar.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder|bool
+     */
+    protected function publicVariants($query)
+    {
+        if (!$this->userCanAny('products/view')) {
+            return false;
+        }
+
+        return $query->with(['variants']);
+    }
+
+    /**
+     * `cartable` is sent by the Gutenberg and Elementor product pickers to hide
+     * subscription/licensed products from a one-off add-to-cart widget.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedScopes(): array
+    {
+        return [
+            'cartable' => [$this, 'applyCartableScope'],
+        ];
+    }
+
+    /**
+     * Declared `($query)` on purpose: the array request form `scopes[]=['cartable',
+     * 'anything']` would deliver that tail as `$args`, and a one-parameter
+     * callback structurally cannot see it.
+     *
+     * No permission bar here, unlike the `with` entries. `cartable` NARROWS the
+     * result set, so refusing it would return MORE rows, not fewer — a
+     * permission check on a narrowing scope is a widening bug. Access to the
+     * list itself is already gated by the route and by the `with` callbacks.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function applyCartableScope($query)
+    {
+        return $query->scopes(['cartable']);
+    }
+
 
 //    public static function parseableKeys(): array
 //    {
@@ -93,8 +333,8 @@ class ProductFilter extends BaseFilter
                         $detailQuery->where('payment_type', 'subscription');
                     });
                 } else if ($activeView === 'not_subscribable') {
-                    $q->whereHas('variants', function ($detailQuery) {
-                        $detailQuery->where('payment_type', '!=', 'subscription');
+                    $q->whereDoesntHave('variants', function ($detailQuery) {
+                        $detailQuery->where('payment_type', 'subscription');
                     });
                 } else if (in_array($activeView, ['bundle', 'non_bundle'])) {
                     $q->{$column}();
@@ -285,8 +525,9 @@ class ProductFilter extends BaseFilter
                         'column'      => 'variation_type',
                         'type'        => 'selections',
                         'options'     => [
-                            Helper::PRODUCT_TYPE_SIMPLE           => __('Simple', 'fluent-cart'),
-                            Helper::PRODUCT_TYPE_SIMPLE_VARIATION => __('Simple Variations', 'fluent-cart'),
+                            Helper::PRODUCT_TYPE_SIMPLE            => __('Simple', 'fluent-cart'),
+                            Helper::PRODUCT_TYPE_SIMPLE_VARIATION  => __('Simple Variations', 'fluent-cart'),
+                            Helper::PRODUCT_TYPE_ADVANCE_VARIATION => __('Advanced Variations', 'fluent-cart'),
                         ],
                         'is_multiple' => false,
                         //'is_only_in'  => true

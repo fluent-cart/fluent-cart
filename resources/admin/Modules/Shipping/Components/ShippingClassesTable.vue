@@ -33,11 +33,11 @@
       <el-table-column :label="translate('Actions')" width="200" align="right">
         <template #default="scope">
           <div class="fct-btn-group sm justify-end">
-            <icon-button size="small"
+            <IconButton size="small"
                          @click="openEditClassDrawer(scope.row)"
                          class="cursor-pointer">
               <DynamicIcon name="Edit"/>
-            </icon-button>
+            </IconButton>
 
             <el-popconfirm
                 :title="translate('Are you sure to delete this shipping class?')"
@@ -45,9 +45,9 @@
                 width="220"
             >
               <template #reference>
-                <icon-button size="small" class="cursor-pointer">
+                <IconButton size="small" class="cursor-pointer">
                   <DynamicIcon name="Delete"/>
-                </icon-button>
+                </IconButton>
               </template>
             </el-popconfirm>
           </div>
@@ -99,7 +99,6 @@ const deleteClass = (id) => {
         emit('refresh');
       })
       .catch(error => {
-        console.error('Error deleting shipping class:', error);
         Notify.error(translate('Failed to delete shipping class'));
       })
       .finally(() => {

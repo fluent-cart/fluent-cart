@@ -1,6 +1,7 @@
 <script setup>
 
-import {getCurrentInstance, nextTick, onMounted, ref} from "vue";
+import {getCurrentInstance, nextTick, onMounted, onUnmounted, ref} from "vue";
+import {useRouter} from "vue-router";
 import Fuse from 'fuse.js';
 import SearchData from './SearchData.js';
 import SearchOptions from './SearchOptions.js';
@@ -12,6 +13,7 @@ import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import Animation from "@/Bits/Components/Animation.vue";
 
 const selfRef = getCurrentInstance().ctx;
+const router = useRouter();
 
 const showSearchModal = ref(false);
 const searchQuery = ref('');
@@ -37,13 +39,14 @@ const deletingSpeed = ref(40);
 const holdDuration = ref(1700);
 
 const onModalOpened = () => {
-  //focusInput();
+  nextTick(() => {
+    focusInput();
+  });
 }
 
 const onModalClosed = () => {
-  if (showSearchModal.value) {
+  if (useRemoteSearch.value) {
     remoteResultRef.value?.resetSelection();
-
   } else {
     resultListRef.value?.resetSelection();
   }
@@ -186,35 +189,48 @@ const onRemoteSearchStateChange = (state) => {
 const remoteResultRef = ref();
 
 const keyboardShortcuts = useKeyboardShortcuts();
-keyboardShortcuts.bind('/', (event) => {
-  if (showSearchModal.value) {
-    event.preventDefault();
-    focusInput()
-  }
-});
 
-keyboardShortcuts.bind(['mod+k'], (event, combo) => {
-  event.preventDefault();
-  let selectedTag = null;
+const openSearch = () => {
+  if (showSearchModal.value) {
+    focusInput();
+    return;
+  }
+
   const binders = ['o', 'p', 'c', 'd'];
   keyboardShortcuts.bind(binders, (event) => {
     event.preventDefault();
-    selectedTag = tags.value[event.key];
-    if (selectedTag) {
-      handleTagSelect(selectedTag);
+    const tag = tags.value[event.key];
+    if (tag) {
+      handleTagSelect(tag);
     }
   });
 
   showSearchModal.value = true;
-  resultListRef.value?.fetchRecentActions();
 
+  nextTick(() => {
+    resultListRef.value?.fetchRecentActions();
+  });
 
   setTimeout(() => {
-    focusInput();
     keyboardShortcuts.unbind(binders);
-  }, 500);
+  }, 800);
+};
 
+keyboardShortcuts.bind(['/'], (event) => {
+  if (!showSearchModal.value && isInputFocused()) {
+    return;
+  }
+  event.preventDefault();
+  openSearch();
 });
+
+const isInputFocused = () => {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+};
+
 
 const startPlaceholderCycling = () => {
   if (placeholderInterval.value) return;
@@ -264,24 +280,43 @@ const startPlaceholderCycling = () => {
   loop();
 };
 
+const searchContainerExists = ref(false);
+
 let fuse;
 onMounted(() => {
   startPlaceholderCycling();
   fuse = new Fuse(SearchData, SearchOptions());
-})
+
+  // Remove the PHP pre-rendered placeholder before Vue appends its own button.
+  const searchContainer = document.getElementById('fct_admin_menu_search');
+  if (searchContainer) {
+    const placeholder = searchContainer.querySelector('.fct-global-search-input-wrap');
+    if (placeholder) placeholder.remove();
+  }
+
+  searchContainerExists.value = !!searchContainer;
+
+  window.fluentCart = window.fluentCart || {};
+  window.fluentCart.openSearch = openSearch;
+});
+
+onUnmounted(() => {
+  if (window.fluentCart) {
+    delete window.fluentCart.openSearch;
+  }
+});
 </script>
 
 <template>
 
-  <teleport to="#fct_admin_menu_search">
+  <teleport to="#fct_admin_menu_search" v-if="searchContainerExists">
     <div class="fct-global-search-input-wrap">
-      <button @click="showSearchModal = true" type="button" class="fct-setting-search-button" aria-label="Search">
+      <button @click="openSearch" type="button" class="fct-setting-search-button" :aria-label="translate('Search')">
           <span class="fct-setting-search-icon">
             <DynamicIcon name="Search"/>
           </span>
         <span class="fct-global-search-button-keys">
-            <kbd class="fct-global-search-button-key">⌘</kbd>
-            <kbd class="fct-global-search-button-key">K</kbd>
+            <kbd class="fct-global-search-button-key">/</kbd>
           </span>
       </button>
     </div>
@@ -303,7 +338,7 @@ onMounted(() => {
         </div>
         <el-input
             class="mousetrap"
-            :placeholder="translate('Search for %s', currentPlaceholder)"
+            :placeholder="translate('Search for %1$s', currentPlaceholder)"
             autofocus
             ref="searchRef"
             id="fct-global-search-input"
@@ -373,7 +408,7 @@ onMounted(() => {
 
     <template v-if="useRemoteSearch">
       <RemoteResult ref="remoteResultRef" :query="searchQuery" :tag="selectedTag" @close-modal="reset"
-                    @onRemoteSearchStateChange="onRemoteSearchStateChange"/>
+                    @on-remote-search-state-change="onRemoteSearchStateChange"/>
     </template>
     <template v-else>
       <ResultList ref="resultListRef" :query="searchQuery" :search-results="searchResult.value"
@@ -393,6 +428,10 @@ onMounted(() => {
         <li>
           <span class="command-key"><DynamicIcon name="Enter"/></span>
           <span class="label">{{ translate('To select') }}</span>
+        </li>
+        <li>
+          <kbd class="command-key">esc</kbd>
+          <span class="label">{{ translate('To close') }}</span>
         </li>
       </ul>
     </div>

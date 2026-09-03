@@ -3,6 +3,8 @@
     <SettingsHeader :heading="translate('Roles & Permissions')" :show-save-button="false"/>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <Card.Container class="overflow-hidden">
         <Card.Header :title="translate('Existing Roles & Permissions')">
           <template #action>
@@ -93,13 +95,14 @@
         <Card.Body v-else class="px-0 pb-0">
           <ProFeatureNotice
               class="py-7.5"
+              placement="feature_lock_roles_permissions"
               :title="translate('Upgrade to Pro for Roles & Permission')"
               :text="translate('This feature is only available in FluentCart Pro.')"
           />
         </Card.Body>
       </Card.Container>
 
-      <RoleAssignmentModal ref="roleModal" @fetchRoles="fetchManagers"/>
+      <RoleAssignmentModal ref="roleModal" @fetch-roles="fetchManagers"/>
     </div>
   </div>
 </template>
@@ -118,9 +121,9 @@ import ProFeatureNotice from "@/Bits/Components/ProFeatureNotice.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Str from "@/utils/support/Str";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const loading = ref(false);
-const showModal = ref(false);
 const managers = ref([]);
 const roleModal = ref();
 const deletingRole = ref(false);
@@ -151,7 +154,6 @@ const deleteRoleHandler = (row) => {
     if (error.message) {
       return Notify.error(error.message);
     } else {
-      console.log(error);
     }
 
   }).finally(() => {

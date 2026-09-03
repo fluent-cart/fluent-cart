@@ -46,7 +46,6 @@ const getDailyMRRData = () => {
         });
       })
       .catch((error) => {
-        console.error(error, "error");
       })
       .finally(() => {
       });

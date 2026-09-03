@@ -310,9 +310,9 @@ onUnmounted(() => {
         </div>
         <template #reference>
           <div class="fct-action-link-btn">
-            <icon-button>
+            <IconButton>
               <DynamicIcon name="More"/>
-            </icon-button>
+            </IconButton>
           </div>
         </template>
       </el-popover>

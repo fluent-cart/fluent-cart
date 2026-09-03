@@ -122,6 +122,36 @@ abstract class BlockEditor
     }
 
     /**
+     * Product for blocks that support a query_type attribute — same
+     * resolution ProductInfoBlockEditor::render() uses: 'custom' +
+     * product_id renders the picked product, anything else falls back
+     * to the current product context (single product page, Product
+     * Info wrapper, shop loops).
+     *
+     * @return object|null Product model, or null when nothing resolves
+     */
+    protected function resolveProduct(array $attributes)
+    {
+        if (Arr::get($attributes, 'query_type', 'default') === 'custom') {
+            $productId = absint(Arr::get($attributes, 'product_id', 0));
+
+            if (!$productId) {
+                return null;
+            }
+
+            // Published only, so a hand-edited product_id cannot surface a
+            // draft/private product on a public page. No eager loading —
+            // callers only read the ID; a caller that needs relations loads
+            // them itself.
+            return \FluentCart\App\Models\Product::query()
+                ->where('post_status', 'publish')
+                ->find($productId);
+        }
+
+        return fluent_cart_get_current_product();
+    }
+
+    /**
      * Register just the block type (render callback, attributes, supports)
      * without editor scripts/styles. Used for email-only blocks that handle
      * asset enqueuing through the email editor handler instead of globally.

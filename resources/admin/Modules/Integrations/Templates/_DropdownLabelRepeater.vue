@@ -14,10 +14,10 @@
                     <el-input :placeholder="field.field_label || 'Field Label'" v-model="item.label"></el-input>
                 </td>
                 <td>
-                    <field-general
+                    <FieldGeneral
                         :editorShortcodes="editorShortcodes"
                         v-model="item.item_value"
-                    ></field-general>
+                    ></FieldGeneral>
                 </td>
                 <td>
                     <el-button-group>
@@ -36,10 +36,10 @@
 
     export default {
         name: 'DropdownLabelRepeater',
-        props: ['settings', 'field', 'inputs', 'errors', 'editorShortcodes'],
         components: {
             FieldGeneral
         },
+        props: ['settings', 'field', 'inputs', 'errors', 'editorShortcodes'],
         data() {
           return {
               loading: false

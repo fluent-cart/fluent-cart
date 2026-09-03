@@ -40,12 +40,22 @@ class MiniCartShortcode extends ShortCode
             $cart = CartHelper::getCart(null, false);
             if ($cart) {
                 $cartData = $cart->cart_data ?? [];
-                $itemCount = count($cartData);
             }
         }
 
+        $countMode = Arr::get($data, 'count_mode', 'distinct_products');
+
+        if ($countMode === 'total_quantity') {
+            foreach ($cartData as $item) {
+                $itemCount += (int) ($item['quantity'] ?? 1);
+            }
+        } else {
+            $itemCount = count($cartData);
+        }
+
         $miniCartRenderer = new MiniCartRenderer($cartData, [
-            'item_count' => $itemCount
+            'item_count' => $itemCount,
+            'count_mode' => $countMode,
         ]);
 
         $data['is_shortcode'] = true;

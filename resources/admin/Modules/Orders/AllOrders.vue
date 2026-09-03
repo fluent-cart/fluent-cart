@@ -17,6 +17,8 @@ import OrdersTableMobile from "@/Modules/Orders/Components/OrdersTableMobile.vue
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import Animation from "@/Bits/Components/Animation.vue";
+import ExportDialog from "@/Bits/Components/ExportDialog.vue";
+import {useExport} from "@/utils/export/useExport";
 
 const orderTable = useOrderTable({
   instance: getCurrentInstance()
@@ -32,6 +34,49 @@ const deleteTestOrdersStats = ref({
   failed: 0
 });
 const deleteTestOrdersMessage = ref('');
+const isExportDialogVisible = ref(false);
+const selectedOrders = ref([]);
+
+const buildExportParams = (includeFilters = true) => {
+  const baseParams = orderTable.buildQueryParams();
+  if (!includeFilters) {
+    delete baseParams.active_view;
+    delete baseParams.filter_type;
+    delete baseParams.search;
+    delete baseParams.advanced_filters;
+  }
+
+  return baseParams;
+};
+
+const exportInstance = useExport({
+  entity: 'orders',
+  buildParams: () => buildExportParams(),
+  buildAllParams: () => buildExportParams(false),
+  filenamePrefix: 'orders-export',
+});
+
+const handleExport = ({ scope, columns, modules, format }) => {
+  let ids = [];
+
+  if (scope === 'current_page') {
+    ids = orderTable.getTableData().map(o => o.id).filter(Boolean);
+  } else if (scope === 'selected') {
+    ids = selectedOrders.value.map(o => o.id).filter(Boolean);
+  }
+
+  exportInstance.startExport({
+    scope,
+    ids,
+    columns,
+    modules,
+    format
+  });
+};
+
+const handleSelectionChange = (orders) => {
+  selectedOrders.value = orders;
+};
 
 const deleteTestOrdersProgress = computed(() => {
   if (!deleteTestOrdersStats.value.total) {
@@ -73,7 +118,8 @@ const deleteTestOrdersProgressStatus = computed(() => {
   }
 
   return isDeletingTestOrders.value
-    ? translate('Deleting... %s%', deleteTestOrdersProgress.value)
+    ? /* translators: %1$s: delete progress percentage, e.g. "45%" */
+      translate('Deleting... %1$s', `${deleteTestOrdersProgress.value}%`)
     : translate('Completed');
 });
 
@@ -226,7 +272,7 @@ onUnmounted(() => {
   <div class="fct-all-orders-page fct-layout-width">
     <PageHeading :title="translate('Orders')">
       <template #action>
-        <UserCan :permission="['reports/view', 'orders/manage']">
+        <UserCan :permission="['reports/view', 'orders/manage', 'orders/export']">
           <el-dropdown trigger="click" popper-class="fct-dropdown" @command="handleShowOrderStats"
                        placement="bottom-end">
             <el-button>
@@ -265,6 +311,13 @@ onUnmounted(() => {
                   >
                     <DynamicIcon name="Delete"/>
                     {{ isDeletingTestOrders ? translate('Deleting Test Orders...') : translate('Delete Test Orders') }}
+                  </el-dropdown-item>
+                </UserCan>
+
+                <UserCan permission="orders/export">
+                  <el-dropdown-item @click="isExportDialogVisible = true">
+                    <DynamicIcon name="Download"/>
+                    {{ translate('Export Orders') }}
                   </el-dropdown-item>
                 </UserCan>
               </el-dropdown-menu>
@@ -405,7 +458,14 @@ onUnmounted(() => {
 
           <OrdersLoader v-if="orderTable.isLoading()" :orderTable="orderTable"
                         :next-page-count="orderTable.nextPageCount"/>
-          <OrderTableComponent v-else :table="orderTable" :orders="orderTable.getTableData()" :columns="orderTable.data.columns" :empty-text="orderTable.emptyMessage"/>
+          <OrderTableComponent
+              v-else
+              :table="orderTable"
+              :orders="orderTable.getTableData()"
+              :columns="orderTable.data.columns"
+              :empty-text="orderTable.emptyMessage"
+              @selection-change="handleSelectionChange"
+          />
 
           <template #mobile>
             <OrdersLoaderMobile v-if="orderTable.isLoading()"/>
@@ -417,6 +477,18 @@ onUnmounted(() => {
       </div>
     </UserCan>
 
+    <ExportDialog
+        v-model="isExportDialogVisible"
+        :title="translate('Export Orders')"
+        :selected-count="selectedOrders.length"
+        :current-page-count="orderTable.getTableData().length"
+        :total-count="orderTable.data.paginate.total"
+        :item-label-singular="translate('order')"
+        :item-label-plural="translate('orders')"
+        :has-active-filter="Boolean(orderTable.isFiltering())"
+        :export-state="exportInstance"
+        @export="handleExport"
+    />
+
   </div>
 </template>
-

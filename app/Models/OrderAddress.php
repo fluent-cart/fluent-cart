@@ -45,6 +45,8 @@ class OrderAddress extends Model
         'full_name',
         'formatted_address',
         'company_name',
+        'vat_number',
+        'legal_registration_id',
         'phone',
         'label'
     ];
@@ -88,7 +90,7 @@ class OrderAddress extends Model
         return end($nameParts);
     }
 
-    public function order(): \FluentCart\Framework\Database\Orm\Relations\belongsTo
+    public function order(): \FluentCart\Framework\Database\Orm\Relations\BelongsTo
     {
         return $this->belongsTo(Order::class, 'order_id', 'id');
     }
@@ -177,7 +179,9 @@ class OrderAddress extends Model
             '' . $prefix . 'phone' => $this->phone,
             '' . $prefix . 'postcode' => $this->postcode,
             '' . $prefix . 'country' => $this->country,
-            '' . $prefix . 'company_name' => $this->company_name,
+            '' . $prefix . 'company_name'          => $this->company_name,
+            '' . $prefix . 'vat_number'            => $this->vat_number,
+            '' . $prefix . 'legal_registration_id' => $this->legal_registration_id,
         ];
 
         if ($prefix === 'billing_') {
@@ -207,6 +211,42 @@ class OrderAddress extends Model
     public function getCompanyNameAttribute()
     {
         return Arr::get($this->meta, 'other_data.company_name', '');
+    }
+
+    public function setVatNumberAttribute($value)
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        if ($value) {
+            Arr::set($meta, 'other_data.vat_number', $value);
+        } else {
+            unset($meta['other_data']['vat_number']);
+        }
+
+        $this->attributes['meta'] = json_encode($meta);
+    }
+
+    public function getVatNumberAttribute()
+    {
+        return Arr::get($this->meta, 'other_data.vat_number', '');
+    }
+
+    public function setLegalRegistrationIdAttribute($value)
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        if ($value) {
+            Arr::set($meta, 'other_data.legal_registration_id', $value);
+        } else {
+            unset($meta['other_data']['legal_registration_id']);
+        }
+
+        $this->attributes['meta'] = json_encode($meta);
+    }
+
+    public function getLegalRegistrationIdAttribute()
+    {
+        return Arr::get($this->meta, 'other_data.legal_registration_id', '');
     }
 
     public function setLabelAttribute($value)

@@ -51,6 +51,13 @@ add_filter('fluent_cart/dummy_product_info', function ($info) {
             'category' => 'menswear',
             'icon'     => 'Cloth'
         ],
+
+        'AdvancedVariations' => [
+            'title'    => __("Advanced Variations", 'fluent-cart'),
+            'count'    => "0",
+            'category' => 'AdvancedVariations',
+            'icon'     => 'Palette'
+        ],
 //        'clothing' => [
 //            'title' => __("Clothing's", 'fluent-cart'),
 //            'count' => "0",

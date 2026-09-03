@@ -1,3 +1,4 @@
+import translate from '@/utils/translator/Translator';
 import AddonAssetsSettings from './AddonAssetsSettings.vue';
 
 window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_cart_addon_assets', function (routes) {
@@ -8,7 +9,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_cart_addo
         component: AddonAssetsSettings,
         meta: {
             active_menu: 'products',
-            title: 'Addon Assets',
+            title: translate('Addon Assets'),
             permission: 'store/sensitive',
         },
     });

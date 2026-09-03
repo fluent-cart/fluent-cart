@@ -82,7 +82,7 @@ onMounted(() => {
     </div>
 
 
-    <AddProductItemModal v-else @onVariationSelectionUpdated="(ids, products) => {
+    <AddProductItemModal v-else @on-variation-selection-updated="(ids, products) => {
     setDefaultVariant(ids[0]);
     let ver = null;
     products.forEach((product) => {

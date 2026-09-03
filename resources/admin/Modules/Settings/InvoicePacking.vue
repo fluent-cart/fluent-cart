@@ -9,6 +9,7 @@ import SettingsHeader from "./Parts/SettingsHeader.vue";
 
 import { useSaveShortcut } from "@/mixin/saveButtonShortcutMixin";
 import Alert from "@/Bits/Components/Alert.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const invoicePacking = ref([]);
 const confirmationShortcodes = ref([]);
@@ -89,6 +90,8 @@ onMounted(() => {
     />
 
     <div class="setting-wrap-inner">
+    <AdminNotice/>
+
       <Alert
           class="mb-5"
           type="information"
@@ -127,7 +130,7 @@ onMounted(() => {
         </Card.Container>
         <div class="setting-save-action">
           <el-button @click="saveTemplate()" type="primary" :loading="Saving" v-if="false">
-            {{Saving ? translate('Saving') : translate('Save')}}
+            {{translate('Save')}}
           </el-button>
         </div>
       </template>

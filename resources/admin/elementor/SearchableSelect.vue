@@ -29,7 +29,13 @@ const searchProducts = async (search, includeIds) => {
       "search": search,
       'filter_type': 'simple',
       'sort_by': 'ID',
-      'with': ['detail', 'variants']
+      // Deliberately empty, not an oversight. This component emits
+      // { value, label, product } and its only consumer,
+      // elementor/ProductDetailsButton/App.vue, reads product.ID and
+      // product.post_title — both columns on the product row itself. Nothing
+      // downstream touches detail or variants, so asking for them would be a
+      // hasOne + hasMany per page of results for data no one renders.
+      'with': []
     };
 
     if (includeIds) {
@@ -50,14 +56,12 @@ const searchProducts = async (search, includeIds) => {
 
         })
         .catch((errors) => {
-          console.log(errors);
         })
         .finally(() => {
 
         });
 
   } catch (error) {
-    console.error('Error loading products:', error);
   } finally {
     loading.value = false;
   }

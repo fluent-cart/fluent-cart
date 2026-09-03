@@ -15,7 +15,7 @@
             <tr>
                 <td style="width: 50%;border:none;padding: 1px 0;vertical-align: middle;">
                     <p style="margin: 0;">
-                        <?php echo esc_html($subs->item_name); ?>
+                        <?php echo esc_html($subs->display_item_name); ?>
                     </p>
 
 
@@ -36,7 +36,7 @@
                                     /* translators: %s is the auto-renewal date and time */
                                     esc_html__('- Auto renews on %s', 'fluent-cart'),
                                     esc_html(
-                                        \FluentCart\App\Services\DateTime\DateTime::anyTimeToGmt($subs->next_billing_date)->format('M d, Y h:i A')
+                                        \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($subs->next_billing_date)->format('M d, Y h:i A')
                                     )
                                 );
                                 ?>

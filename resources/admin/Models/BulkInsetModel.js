@@ -2,6 +2,7 @@ import ProductBaseModel from "@/Models/Product/ProductBaseModel";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import {generateCid} from "@/utils/cid";
+import translate from "@/utils/translator/Translator";
 
 class BulkInsertModel extends ProductBaseModel {
 
@@ -151,7 +152,7 @@ class BulkInsertModel extends ProductBaseModel {
         const unsaved = allProducts.filter(p => !this.data.savedIds.has(p._cid));
 
         if (unsaved.length === 0) {
-            Notify.error('No products to save.');
+            Notify.error(translate('No products to save.'));
             return;
         }
 
@@ -245,7 +246,7 @@ class BulkInsertModel extends ProductBaseModel {
             } else if (createdIds.length > 0) {
                 Notify.info(`${createdIds.length} product(s) created, ${errors.length} error(s)`);
             } else {
-                Notify.error('All products failed to save');
+                Notify.error(translate('All products failed to save'));
             }
         } finally {
             this.data.saving = false;

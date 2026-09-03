@@ -2,10 +2,10 @@
   <div>
     <el-form>
       <el-form-item>
-        <el-input v-model="notification.title" placeholder="Title"></el-input>
+        <el-input v-model="notification.title" :placeholder="$t('Title')"></el-input>
       </el-form-item>
       <el-form-item>
-        <el-input type="textarea" v-model="notification.content" placeholder="Content"></el-input>
+        <el-input type="textarea" v-model="notification.content" :placeholder="$t('Content')"></el-input>
       </el-form-item>
     </el-form>
   </div>

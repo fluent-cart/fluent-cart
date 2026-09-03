@@ -72,6 +72,7 @@ onMounted(() => {
     is_button: props.is_button,
   });
 
+  keepSelectButtonLabel();
   setPreselected();
   listenForMediaChange();
 
@@ -90,6 +91,18 @@ const setUpPreSelectedIds = () => {
       }
     })
   }
+}
+
+// wp.media.view.Button strips `text` off the shared `frame.options.button`
+// object on first render, so returning from the image editor rebuilds the
+// select toolbar with an empty label. Hand it a fresh object every time.
+const keepSelectButtonLabel = () => {
+  mediaFrame.on('toolbar:create:select', function (toolbar) {
+    toolbar.view = new window.wp.media.view.Toolbar.Select({
+      text: props.action_title,
+      controller: mediaFrame
+    });
+  });
 }
 
 const setPreselected = () => {

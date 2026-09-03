@@ -1,5 +1,4 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
-<?php
+<?php if ( ! defined( 'ABSPATH' ) ) exit; 
 
 return [
     'Confirming Payment...' => __('Confirming Payment...', 'fluent-cart'),
@@ -9,6 +8,6 @@ return [
     'Payment completed! Updating order...' => __('Payment completed! Updating order...', 'fluent-cart'),
     'Payment failed!' => __('Payment failed!', 'fluent-cart'),
     'Payment failed. Please try again.' => __('Payment failed. Please try again.', 'fluent-cart'),
-    'Please wait...' => __('Please wait...', 'fluent-cart'),
+    'Please Don\'t close the browser' => __('Please Don\'t close the browser', 'fluent-cart'),
     'Redirecting to receipt...' => __('Redirecting to receipt...', 'fluent-cart'),
 ];

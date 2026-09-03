@@ -282,7 +282,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="fct-term-container">
     <div class="fct-term-input-wrap">
-      <el-input ref="inputRef" v-model="labelName" v-on:keydown.enter="onEnter" v-if="shouldEnableEditing"/>
+      <el-input ref="inputRef" v-model="labelName" @keydown.enter="onEnter" v-if="shouldEnableEditing"/>
 
       <div class="fct-term-search-result" v-if="showSuggestions" ref="suggestionsRef"
            :style="labelName == '' ? 'display: none' : ''">

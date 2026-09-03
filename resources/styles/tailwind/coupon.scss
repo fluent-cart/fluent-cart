@@ -30,11 +30,23 @@
     }
 }
 .fct-add-edit-coupon-main{
-    @apply w-[900px] 3xl:w-[1230px];
+    @apply w-[915px] 3xl:w-[1230px];
     @media (max-width: 1359px) {
         @apply w-full;
     }
 }
 .fct-add-edit-coupon-aside{
-    @apply w-[330px];
+    @apply w-[345px];
+}
+
+.folded {
+    .fct-add-edit-coupon-main {
+        @apply w-[950px];
+        @media (max-width: 1359px) {
+            @apply w-full;
+        }
+    }
+    .fct-add-edit-coupon-aside {
+        @apply w-[370px];
+    }
 }

@@ -506,7 +506,7 @@
                     {{ translate('Cancel') }}
                 </el-button>
 
-                <el-button v-if="!editMode && currentStep === 2" @click="currentStep = 1">
+                <el-button v-if="currentStep === 2" @click="currentStep = 1">
                     {{ translate('Back') }}
                 </el-button>
 
@@ -644,7 +644,10 @@ export default {
         }
       ];
 
-      return this.editMode ? steps.filter((step) => step.number > 1) : steps;
+      // Keep the credential step reachable in edit mode: dropping it strands
+      // anyone whose stored keys are missing or rejected, leaving Reset as the
+      // only way back to the key fields.
+      return steps;
     },
     connectionMethodLabel() {
       if (this.form.auth_method === 'define') {
@@ -898,10 +901,9 @@ define( 'FCT_S3_SECRET_KEY', '****************************************' );`;
       this.saving = true;
       return Rest.post(this.getSaveEndpoint(), {
         driver: this.getDriver(),
-        settings: {
-          ...this.form,
+        settings: this.buildSettingsPayload({
           is_active: 'yes'
-        }
+        })
       }).then((response) => {
         this.mergeResponseSettings(response);
         Notify.success(this.translate('S3 activated successfully.'));
@@ -917,11 +919,10 @@ define( 'FCT_S3_SECRET_KEY', '****************************************' );`;
       this.saving = true;
       return Rest.post(this.getSaveEndpoint(), {
         driver: this.getDriver(),
-        settings: {
-          ...this.form,
+        settings: this.buildSettingsPayload({
           is_active: 'no',
           preserve_settings: true
-        }
+        })
       }).then(() => {
         Notify.success(this.translate('S3 deactivated successfully.'));
       }).catch((errors) => {
@@ -956,7 +957,7 @@ define( 'FCT_S3_SECRET_KEY', '****************************************' );`;
       Rest.post(this.getBucketListEndpoint(), {
         driver: this.getDriver(),
         query: query,
-        settings: this.form
+        settings: this.buildSettingsPayload()
       }).then((response) => {
         this.bucketOptions = response.options || [];
       }).catch((errors) => {
@@ -1001,6 +1002,15 @@ define( 'FCT_S3_SECRET_KEY', '****************************************' );`;
       delete settings.create_new_bucket;
       delete settings.new_bucket_name;
       delete settings.new_bucket_region;
+
+      // Never post blank credentials: the server hides them from the settings
+      // response, so an untouched field must read as "not submitted" and keep
+      // the stored value instead of overwriting it with an empty string.
+      ['access_key', 'secret_key'].forEach((key) => {
+        if (!settings[key]) {
+          delete settings[key];
+        }
+      });
 
       return settings;
     },

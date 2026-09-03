@@ -109,8 +109,10 @@ const lifetimeSummary = computed(() => {
     const monthName = monthNames[currentMonthDate.getMonth()] + " " + currentMonthDate.getFullYear().toString();
 
     return {
-        expected_lifetime_text: translate(`Based on an average monthly subscription retention rate of ${avgRetentionPercent.toFixed(1)}%, your expected subscription lifetime is ${expectedLifetime.toFixed(1)} months.`),
-        ltv_text: translate(`In ${monthName}, your average monthly revenue per subscriber was ${CurrencyFormatter.scaled(arpu)}, giving you an expected subscription lifetime value of ${CurrencyFormatter.scaled(ltv)}.`)
+        /* translators: %1$s: retention rate percentage; %2$s: number of months */
+        expected_lifetime_text: translate('Based on an average monthly subscription retention rate of %1$s, your expected subscription lifetime is %2$s months.', `${avgRetentionPercent.toFixed(1)}%`, expectedLifetime.toFixed(1)),
+        /* translators: %1$s: month name; %2$s: formatted revenue amount; %3$s: formatted lifetime value */
+        ltv_text: translate('In %1$s, your average monthly revenue per subscriber was %2$s, giving you an expected subscription lifetime value of %3$s.', monthName, CurrencyFormatter.scaled(arpu), CurrencyFormatter.scaled(ltv))
     };
 });
 </script>

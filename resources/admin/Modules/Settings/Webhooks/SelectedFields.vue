@@ -14,10 +14,10 @@
       <tbody>
       <tr v-for="(field, index) in settings.selected_field_values" :key="index">
         <td width="50%">
-          <el-input v-model="field.field_name" placeholder="Field Name"/>
+          <el-input v-model="field.field_name" :placeholder="$t('Field Name')"/>
         </td>
         <td width="45%">
-          <el-select v-model="field.value" placeholder="Field Value" clearable class="w-full">
+          <el-select v-model="field.value" :placeholder="$t('Field Value')" clearable class="w-full">
             <el-option-group
                 v-for="group in selected_field_options"
                 :key="group.label"

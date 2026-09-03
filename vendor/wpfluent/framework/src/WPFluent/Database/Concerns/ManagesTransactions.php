@@ -61,7 +61,7 @@ trait ManagesTransactions
 
             $this->transactions++;
 
-            if ($this->supportsSavepoints()) {
+            if ($this->queryGrammar->supportsSavepoints()) {
                 $this->createSavepoint();
             }
 
@@ -72,7 +72,16 @@ trait ManagesTransactions
                 );
             }
 
+            $this->fireConnectionEvent('beganTransaction');
+
             return;
+        }
+
+        // Run any registered pre-transaction callbacks before issuing
+        // the BEGIN — useful for setting session vars, acquiring locks,
+        // or other per-transaction connection setup.
+        foreach ($this->beforeStartingTransaction as $callback) {
+            $callback($this);
         }
 
         $this->transactions++;
@@ -85,6 +94,8 @@ trait ManagesTransactions
                 $this->transactions
             );
         }
+
+        $this->fireConnectionEvent('beganTransaction');
     }
 
     /**
@@ -92,14 +103,19 @@ trait ManagesTransactions
      */
     protected function createTransaction()
     {
-        try {
-            if ($this->isSqlite()) {
-                $this->unprepared('BEGIN;');
-            } else {
-                $this->unprepared('START TRANSACTION;');
+        // Defensive: only issue the top-level BEGIN if we just entered
+        // the first transaction level. Prevents duplicate BEGIN on
+        // mis-call from a subclass or refactor.
+        if ($this->transactions === 1) {
+            try {
+                if ($this->isSqlite()) {
+                    $this->unprepared('BEGIN;');
+                } else {
+                    $this->unprepared('START TRANSACTION;');
+                }
+            } catch (Throwable $e) {
+                $this->handleBeginTransactionException($e);
             }
-        } catch (Throwable $e) {
-            $this->handleBeginTransactionException($e);
         }
     }
 
@@ -109,7 +125,9 @@ trait ManagesTransactions
     protected function createSavepoint()
     {
         $name = $this->getSavepointName($this->transactions);
-        $this->unprepared("SAVEPOINT {$name};");
+        $this->unprepared(
+            $this->queryGrammar->compileSavepoint($name) . ';'
+        );
     }
 
     /**
@@ -123,12 +141,15 @@ trait ManagesTransactions
 
         if ($this->transactions === 1) {
 
+            $this->fireConnectionEvent('committing');
             $this->unprepared('COMMIT;');
 
-        } elseif ($this->supportsSavepoints()) {
+        } elseif ($this->queryGrammar->supportsSavepoints()) {
 
             $name = $this->getSavepointName($this->transactions);
-            $this->unprepared("RELEASE SAVEPOINT {$name};");
+            $this->unprepared(
+                $this->queryGrammar->compileSavepointRelease($name) . ';'
+            );
         }
 
         [$levelBeingCommitted, $this->transactions] = [
@@ -143,6 +164,8 @@ trait ManagesTransactions
                 $this->transactions
             );
         }
+
+        $this->fireConnectionEvent('committed');
     }
 
     /**
@@ -172,6 +195,8 @@ trait ManagesTransactions
                 $this->transactions
             );
         }
+
+        $this->fireConnectionEvent('rollingBack');
     }
 
     /**
@@ -181,26 +206,25 @@ trait ManagesTransactions
     {
         if ($toLevel === 0) {
 
-            $this->unprepared('ROLLBACK;');
+            // Defensive: only ROLLBACK if we actually have an active
+            // transaction, and only decrement the counter if the SQL
+            // succeeded — protects against counter drift if the
+            // ROLLBACK silently fails (e.g., connection drop).
+            if ($this->inTransaction()) {
+                $transaction = $this->unprepared('ROLLBACK;');
 
-        } elseif ($this->supportsSavepoints()) {
+                if ($transaction !== false) {
+                    $this->transactions--;
+                }
+            }
+
+        } elseif ($this->queryGrammar->supportsSavepoints()) {
 
             $name = $this->getSavepointName($toLevel + 1);
-            $this->unprepared("ROLLBACK TO SAVEPOINT {$name};");
+            $this->unprepared(
+                $this->queryGrammar->compileSavepointRollBack($name) . ';'
+            );
         }
-    }
-
-    /**
-     * Determine if savepoints are supported.
-     */
-    protected function supportsSavepoints()
-    {
-        // SQLite under WordPress does NOT support savepoints
-        if ($this->isSqlite()) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

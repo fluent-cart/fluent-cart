@@ -1,5 +1,6 @@
 const {useBlockProps, InspectorControls} = wp.blockEditor;
 const {ToggleControl, TextControl} = wp.components
+import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 const ProductFilterFilters = {
     attributes: {},
     edit: (props) => {
@@ -11,7 +12,7 @@ const ProductFilterFilters = {
             setAttributes({filters: {...filter}});
         }
         return <div {...props} {...useBlockProps()}>
-            <h2>Product Filters</h2>
+            <h2>{blocktranslate('Product Filters')}</h2>
         </div>;
     },
     save: (props) => {

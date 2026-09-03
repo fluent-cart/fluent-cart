@@ -5,7 +5,12 @@
         :show-save-button="false"
     />
 
+    
     <div class="setting-wrap-inner">
+    
+     <AdminNotice/>
+
+
       <Card.Container>
         <Card.Body>
           <el-skeleton :loading="loading" animated :rows="6"/>
@@ -23,7 +28,7 @@
                   :class="gateway?.upcoming ? 'upcoming fct-content-card-list-item' : 'fct-content-card-list-item'"
               >
                 <div class="flex items-start gap-3">
-                <span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 mt-1 w-7.5 h-7.5" title="Drag to reorder">
+                <span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 mt-1 w-7.5 h-7.5" :title="translate('Drag to reorder')">
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 6h8v2H8V6zm0 4h8v2H8v-2zm0 4h8v2H8v-2z"/>
                   </svg>
@@ -36,7 +41,9 @@
                   $router.push({name: gateway.route})
                 }" class="cursor-pointer grid gap-2 flex-1">
                     <div class="fct-content-card-list-head" :class="gateway.route">
-                      <img :src="gateway.icon" :alt="gateway.admin_title || gateway.title"/>
+                      <img :src="gateway.logo" :alt="gateway.admin_title || gateway.title" :class="gateway.logo_light ? 'dark:hidden' : ''"/>
+                      
+                      <img v-if="gateway.logo_light" :src="gateway.logo_light" :alt="gateway.admin_title || gateway.title" class="hidden dark:block"/>
 
                       <span v-if="gateway?.tag" class="fct_payment_method_tag">
                       <Badge size="small" status="info" :text="gateway.tag" />
@@ -83,7 +90,7 @@ import translate from "@/utils/translator/Translator";
 import { VueDraggableNext } from 'vue-draggable-next';
 import AppConfig from "@/utils/Config/AppConfig";
 import SettingsHeader from "./Parts/SettingsHeader.vue";
-
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const selfRef = getCurrentInstance().ctx;
 const loading = ref(false);
@@ -98,7 +105,19 @@ const dragOptions = computed(() => {
 });
 
 const showBadge = (gateway) => {
-  return (gateway?.upcoming != true) && (!gateway?.requires_pro || (gateway?.requires_pro && isProActive)) && (gateway?.is_addon != true || (gateway?.is_addon && gateway?.addon_status?.is_installed));
+  if (gateway?.upcoming == true) {
+    return false;
+  }
+  if (gateway?.requires_pro && !isProActive) {
+    return false;
+  }
+  // Hide only for inactive, uninstalled addon placeholders; an addon gateway that
+  // registered itself without reporting addon_status is installed by definition,
+  // and an active gateway always gets its badge.
+  if (gateway?.is_addon == true && !gateway?.status && gateway?.addon_status && !gateway.addon_status.is_installed) {
+    return false;
+  }
+  return true;
 };
 
 const getBadgeTitle = (status) => {
@@ -112,7 +131,6 @@ const getPaymentMethods = () => {
         availableGateways.value = response.gateways;
       })
       .catch((e) => {
-        console.error(e);
       })
       .finally(() => {
         loading.value = false;
@@ -127,7 +145,6 @@ const onDragEnd = () => {
         Notify.success(response.message);
       })
       .catch((e) => {
-        console.error('Failed to save payment method order:', e);
       });
 };
 

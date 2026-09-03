@@ -74,9 +74,9 @@ class CustomerProfileBlockEditor extends BlockEditor
 
         $allColorStrings = implode(', ', $colorStrings);
 
-        return "[" . CustomerProfileHandler::SHORT_CODE .
-            " section_titles='{$jsonTitles}'" .
-            " colors='{$allColorStrings}'" .
-            " ]";
+        return CustomerProfileHandler::make([
+            'section_titles' => $jsonTitles,
+            'colors'         => $allColorStrings,
+        ])->renderShortcode($block);
     }
 }

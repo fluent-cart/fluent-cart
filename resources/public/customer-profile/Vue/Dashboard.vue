@@ -28,7 +28,9 @@
 
             <div v-if="sectionParts.before_orders_table" v-html="sectionParts.before_orders_table"></div>
 
-            <OrderTable v-else :orders="dashboardData.orders"/>
+            <template v-else>
+                <OrderTable v-if="!loading" :orders="dashboardData.orders"/>
+            </template>
 
             <div v-if="sectionParts.after_orders_table" v-html="sectionParts.after_orders_table"></div>
 
@@ -59,6 +61,9 @@ export default {
             loading: false
         };
     },
+    mounted() {
+        this.fetchDashboardData();
+    },
     methods: {
       formatOrderItems,
         fetchDashboardData() {
@@ -79,9 +84,6 @@ export default {
                     this.loading = false;
                 });
         }
-    },
-    mounted() {
-        this.fetchDashboardData();
     }
 }
 </script>

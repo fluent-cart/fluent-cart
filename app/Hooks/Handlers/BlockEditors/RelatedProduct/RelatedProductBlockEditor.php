@@ -99,6 +99,11 @@ class RelatedProductBlockEditor extends BlockEditor
             }
         }
 
+        // Related products render via per-product inner blocks rather than
+        // ProductCardRender, so fire the advanced-variation asset hook here too
+        // — Pro's advanced-variation selector assets load for related items.
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
+
         // Return the rendered InnerBlocks content
         return $content;
     }

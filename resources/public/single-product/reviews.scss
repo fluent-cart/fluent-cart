@@ -1,0 +1,1350 @@
+@config "./single-product.config.js";
+@tailwind utilities;
+
+/* Product Reviews Section */
+.fct-product-reviews-section {
+    @apply border border-solid border-gray-divider border-x-0 border-b-0 pt-10;
+}
+
+/* 2-column layout: summary left, list right */
+.fct-reviews-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+// No summary aside (Review List block, or showSummary off) — the list
+// owns the full width instead of landing in the 320px aside track.
+.fct-reviews-layout--single {
+    grid-template-columns: 1fr;
+}
+
+// Rating Summary with Review wrapper — the wrapper IS the card box, so
+// the summary content and the Write a Review button share one card.
+// The children's own section chrome (separator, card border) flattens
+// inside it.
+.fct-review-summary-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 20px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    .fct-product-reviews-section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .fct-reviews-summary {
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+}
+
+.fct-reviews-layout-left {
+    position: sticky;
+    top: 20px;
+}
+
+.fct-reviews-layout-right {
+    min-width: 0;
+}
+
+.fct-reviews-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.fct-reviews-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--fct-single-product-primary-text-color, #1f2937);
+}
+
+/* Rating Summary — big number + stars head, bars beneath */
+.fct-reviews-summary {
+    @apply border border-solid border-gray-outline p-5 rounded;
+}
+
+.fct-reviews-summary-left {
+    @apply flex gap-1 border border-solid border-gray-divider border-x-0 border-t-0 mb-5 pb-5;
+}
+
+.fct-reviews-average-number {
+    @apply text-[40px] leading-[48px] font-medium;
+    color: var(--fct-single-product-primary-text-color, #1f2937);
+}
+
+.fct-reviews-average-max {
+    @apply text-sm text-system-light;
+}
+
+.fct-reviews-summary-head-meta {
+    @apply pl-4 ml-2.5 border border-solid border-gray-divider border-r-0 border-y-0;
+}
+.fct-reviews-total {
+    @apply text-[13px] text-system-dark-light;
+}
+
+.fct-reviews-summary-right {
+    @apply w-full mb-5 flex flex-col gap-2;
+}
+
+
+.fct-review-cta-icon {
+    line-height: 1;
+}
+
+.fct-reviews-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fct-reviews-bar-label {
+    @apply text-sm text-system-dark-light flex items-center gap-1;
+    white-space: nowrap;
+}
+
+.fct-bar-star-icon {
+    @apply text-sm leading-none;
+    color: var(--fct-star-color, #F7A539);
+}
+
+// flex-1 + min-w-0 rather than a fixed min-width: in the 320px summary
+// aside the track still settles at ~210px, but it can shrink below that
+// on narrow phones and at the WCAG 320px reflow width instead of pushing
+// the row wider than the card.
+.fct-reviews-bar-track {
+    @apply bg-gray-50 h-3 rounded-[2px] overflow-hidden flex-1 min-w-0;
+}
+
+.fct-reviews-bar-fill {
+    @apply h-full rounded-[2px];
+    background: var(--fct-star-color, #F7A539);
+    transition: width 0.3s ease;
+}
+
+/* All bars use the same star color (amber/gold) */
+
+.fct-reviews-bar-count {
+    @apply text-sm text-system-dark-light;
+}
+
+/* Controls (Filter Chips + Sort) */
+.fct-reviews-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+}
+
+/* Filter Chips */
+.fct-reviews-filter-chips {
+    @apply flex items-center gap-1.5 flex-wrap;
+    .fct-filter-chip {
+        @apply px-2.5 py-2 flex items-center gap-1 border border-solid border-gray-outline rounded bg-white text-system-mid text-[13px] shadow-none transition-colors duration-200 hover:bg-gray-100;
+        &.active {
+            @apply bg-gray-100;
+        }
+    }
+}
+
+
+.fct-reviews-sort {
+    @apply relative flex items-center flex-shrink-0;
+
+    &::before {
+        content: '';
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid #6b7280;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    select {
+        appearance: none;
+        -webkit-appearance: none;
+        @apply h-auto py-2 text-sm text-system-mid cursor-pointer shadow-none leading-none px-2.5 border border-solid border-gray-outline rounded hover:bg-gray-50 focus:outline-none focus:border-gray-100;
+
+        &:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 1px;
+        }
+    }
+}
+
+/* Bars are display-only (no click interaction) */
+
+/* Stars */
+.fct-star {
+    @apply text-gray-400 text-lg leading-none;
+}
+
+.fct-star-filled {
+    color: var(--fct-star-color, #F7A539);
+}
+
+.fct-star-half {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+}
+
+.fct-star-half-empty {
+    color: #d1d5db;
+}
+
+.fct-star-half-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    width: 50%;
+    color: var(--fct-star-color, #F7A539);
+}
+
+.fct-star-empty {
+    color: #d1d5db;
+}
+
+/* Review List */
+.fct-reviews-list {
+    margin-bottom: 20px;
+}
+
+.fct-reviews-loading {
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.fct-reviews-empty {
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.fct-reviews-error {
+    padding: 20px;
+    text-align: center;
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+}
+
+/* Screen-reader only text for accessibility */
+.fct-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Review Card */
+.fct-review-item {
+    @apply bg-white border border-solid border-gray-outline rounded mb-3 p-4 last:mb-0;
+    .fct-review-view-replies {
+        @apply flex items-center gap-1 bg-white border border-solid border-gray-outline leading-none py-1.5 px-2 rounded text-system-dark shadow-none text-sm hover:bg-gray-50;
+
+        &:focus-visible {
+            outline: 2px solid #6b7280;
+            outline-offset: 2px;
+        }
+    }
+
+    .fct-review-reply-icon {
+        flex-shrink: 0;
+    }
+}
+
+.fct-review-avatar-circle {
+    @apply w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[13px] text-white flex-shrink-0 leading-none;
+    letter-spacing: 0.5px;
+}
+
+.fct-review-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fct-review-item-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fct-review-item-name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.fct-review-item-stars .fct-star {
+    font-size: 15px;
+}
+
+/* Verified Pill */
+.fct-review-verified {
+    @apply bg-success-50 text-success-500 py-1 px-1.5 rounded-lg leading-none text-xs;
+    &::before {
+        content: "";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 2px;
+        vertical-align: middle;
+        background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.75358 3.81504C7.87761 3.53147 6.92534 3.92591 6.50643 4.74584L6.00282 5.73158C5.94298 5.8487 5.84772 5.94396 5.7306 6.00379L4.74487 6.50741C3.92493 6.92631 3.53049 7.87858 3.81406 8.75456L4.15497 9.80768C4.19548 9.93281 4.19548 10.0676 4.15497 10.1927L3.81406 11.2458C3.53049 12.1218 3.92493 13.0741 4.74487 13.493L5.7306 13.9966C5.84772 14.0564 5.94298 14.1517 6.00282 14.2688L6.50643 15.2546C6.92534 16.0745 7.87761 16.4689 8.75358 16.1854L9.80671 15.8444C9.93183 15.8039 10.0666 15.8039 10.1917 15.8444L11.2448 16.1854C12.1208 16.4689 13.0731 16.0745 13.492 15.2546L13.9956 14.2688C14.0555 14.1517 14.1507 14.0564 14.2678 13.9966L15.2536 13.493C16.0735 13.0741 16.468 12.1218 16.1844 11.2458L15.8435 10.1927C15.803 10.0676 15.803 9.93281 15.8435 9.80768L16.1844 8.75456C16.468 7.87858 16.0735 6.92631 15.2536 6.50741L14.2678 6.00379C14.1507 5.94396 14.0555 5.8487 13.9956 5.73158L13.492 4.74584C13.0731 3.92591 12.1208 3.53147 11.2448 3.81504L10.1917 4.15595C10.0666 4.19645 9.93183 4.19646 9.80671 4.15595L8.75358 3.81504ZM6.72406 9.84849L7.60795 8.96456L9.37571 10.7324L12.9113 7.19684L13.7951 8.08072L9.37571 12.5001L6.72406 9.84849Z' fill='%23189877'/%3E%3C/svg%3E") no-repeat center;
+        background-size: contain;
+    }
+}
+
+.fct-review-item-meta-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.fct-review-item-author {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--fct-single-product-primary-text-color, #1f2937);
+    overflow-wrap: break-word;
+}
+
+.fct-review-item-date {
+    @apply text-xs leading-[1.5] text-system-mid;
+}
+
+.fct-review-item-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: var(--fct-single-product-primary-text-color, #1f2937);
+    overflow-wrap: break-word;
+}
+
+.fct-review-item-content {
+    @apply text-sm text-system-mid leading-[1.6] mb-1;
+    overflow-wrap: break-word;
+}
+
+/* Review Footer (Pro votes injection target) */
+.fct-review-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+
+    &:empty {
+        display: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+}
+
+/* Helpful votes (Pro-injected) — "Helpful?" label + outlined thumb chips */
+.fct-review-footer .fct-vote-label {
+    font-size: 13px;
+    color: #4b5563;
+    margin-right: 2px;
+}
+
+.fct-review-footer .fct-vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px !important;
+    background: #fff !important;
+    color: #1f2937 !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    line-height: 1.4 !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+        background: #f9fafb !important;
+        border-color: #9ca3af !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #6b7280 !important;
+        outline-offset: 2px !important;
+    }
+
+    &.fct-vote-active {
+        background: #1f2937 !important;
+        border-color: #1f2937 !important;
+        color: #fff !important;
+    }
+}
+
+.fct-review-footer .fct-vote-count {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Admin Replies — Green Theme */
+.fct-review-replies {
+    margin-top: 12px;
+    padding-left: 16px;
+    border-left: 3px solid #22c55e;
+}
+
+.fct-review-reply {
+    padding: 10px 12px;
+    background: #f0fdf4;
+    border-radius: 6px;
+    margin-bottom: 8px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.fct-review-reply-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.fct-review-reply-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    background: #dcfce7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.fct-review-reply-meta {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.fct-review-reply-content {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+/* Reviewer follow-up replies — neutral theme to differentiate from store */
+.fct-review-reply--reviewer {
+    background: #f3f4f6;
+}
+
+.fct-review-reply-badge--reviewer {
+    color: #4338ca;
+    background: #e0e7ff;
+}
+
+
+
+/* Modal overlay */
+.fct-review-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.fct-review-modal {
+    background: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    .fct-review-modal-close {
+        @apply absolute top-1/2 right-4 w-6 h-6 rounded-full bg-white p-0 flex items-center justify-center text-system-mid border-0 shadow-none text-lg hover:bg-gray-50;
+        transform: translateY(-50%);
+    }
+}
+
+.fct-review-modal-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 56px 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    min-height: 56px;
+}
+
+.fct-review-modal-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    text-align: left;
+}
+
+.fct-review-modal-author-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .fct-review-avatar-circle {
+        flex-shrink: 0;
+    }
+}
+
+.fct-review-modal-name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-width: 0;
+    line-height: 1;
+
+    .fct-review-modal-stars {
+        margin-bottom: 0;
+    }
+    .fct-star {
+        @apply text-base;
+    }
+}
+
+.fct-review-modal-meta-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.fct-review-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.fct-review-modal-original {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.fct-review-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.fct-review-modal-author {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.fct-review-modal-date {
+    @apply text-xs text-system-mid;
+}
+
+.fct-review-modal-stars {
+    margin-bottom: 8px;
+}
+
+.fct-review-modal-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 6px;
+}
+
+.fct-review-modal-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    white-space: pre-wrap;
+}
+
+.fct-review-modal-media {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+
+    .fct-review-media-thumb {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: opacity 0.15s;
+
+        &:hover {
+            opacity: 0.85;
+        }
+    }
+}
+
+.fct-review-modal-replies {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Uppercase "1 REPLY" / "N REPLIES" label above the thread */
+.fct-review-replies-count {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+/* ─── Flat comment items in review thread ────── */
+.fct-comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.fct-comment-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+}
+
+.fct-comment-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.fct-comment-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fct-comment-author {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.fct-comment-text {
+    margin-top: 2px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.fct-comment-time {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.fct-review-modal-empty {
+    text-align: center;
+    // #6b7280 (Tailwind gray-500) — ~4.83:1 against white, passes WCAG AA;
+    // #9ca3af was ~2.54:1 and failed the 4.5:1 minimum for body text.
+    color: #6b7280;
+    font-size: 13px;
+    padding: 16px 0;
+}
+
+.fct-review-modal-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 16px 20px 20px;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Reviewer reply form — bordered box with the counter inside,
+   full-width dark submit button below */
+.fct-review-reply-form {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.fct-review-reply-box {
+    position: relative;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 12px 28px;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus-within {
+        border-color: #1f2937;
+        box-shadow: 0 0 0 1px #1f2937;
+    }
+}
+
+.fct-review-reply-input {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f2937;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 72px;
+    box-sizing: border-box;
+
+    &:focus,
+    &:focus-visible {
+        // The wrapping .fct-review-reply-box:focus-within border + ring is the
+        // visible focus indicator for this field.
+        outline: none;
+        border: none;
+        box-shadow: none;
+    }
+}
+
+.fct-review-reply-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    pointer-events: none;
+}
+
+.fct-review-reply-submit {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px 18px !important;
+    background: #1f2937 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    box-shadow: none !important;
+    text-shadow: none !important;
+
+    &:hover:not(:disabled) {
+        background: #111827 !important;
+        color: #fff !important;
+        opacity: 1;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &:focus,
+    &:focus-visible {
+        background: #111827 !important;
+        color: #fff !important;
+        outline: 2px solid #6b7280 !important;
+        outline-offset: 2px !important;
+    }
+}
+
+.fct-review-reply-error {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #b91c1c;
+}
+
+/* Reply accepted but held for moderation — informational, not an error. */
+.fct-review-reply-notice {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #4b5563;
+}
+
+/* Pagination */
+.fct-reviews-pagination-inner {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.fct-reviews-page-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db !important;
+    background: #fff !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1 !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+
+    &:hover:not(:disabled):not(.active) {
+        background: #f3f4f6 !important;
+        border-color: #6b7280 !important;
+        color: #374151 !important;
+    }
+
+    &.active {
+        background: #1f2937 !important;
+        color: #fff !important;
+        border-color: #1f2937 !important;
+        font-weight: 600 !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #3b82f6 !important;
+        outline-offset: 2px !important;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: default;
+        pointer-events: none;
+    }
+}
+
+.fct-reviews-page-nav {
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: #6b7280 !important;
+    min-width: 38px;
+
+    &:hover:not(:disabled) {
+        color: #374151 !important;
+    }
+}
+
+.fct-reviews-page-ellipsis {
+    min-width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #6b7280;
+    letter-spacing: 2px;
+}
+
+/* ─── CTA Bar ("Bought this product?") ──────────────────── */
+
+.fct-review-form-section {
+    max-width: 800px;
+}
+
+.fct-review-cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 20px 24px;
+    background: #f8f8f7;
+    border-radius: 10px;
+}
+
+.fct-review-cta-text {
+    strong {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 2px;
+    }
+
+    span {
+        font-size: 13px;
+        color: #6b7280;
+    }
+}
+
+
+.fct-review-cta-btn {
+    @apply inline-flex items-center justify-center gap-1 bg-white border border-solid border-gray-outline text-sm text-system-dark font-medium px-4 py-2 rounded no-underline shadow-none transition-colors duration-200 hover:bg-primary-500 hover:text-white hover:border-primary-500 focus:bg-primary-500 focus:text-white focus:border-primary-500;
+
+    &:focus-visible {
+        outline: 2px solid #6b7280;
+        outline-offset: 2px;
+    }
+}
+
+// Layout-specific only: inside the summary card the CTA spans the column.
+.fct-reviews-layout .fct-reviews-summary-write-btn {
+    @apply w-full;
+}
+
+/* ─── Review Drawer (slide-in panel) ────────────────────── */
+
+.fct-review-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    justify-content: flex-end;
+    transition: background 0.3s;
+
+    &.fct-drawer-open {
+        background: rgba(0, 0, 0, 0.4);
+
+        .fct-review-drawer {
+            transform: translateX(0);
+        }
+    }
+}
+
+.fct-review-drawer {
+    width: 540px;
+    max-width: 100vw;
+    height: 100%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+
+    .fct-review-drawer-close {
+        @apply w-6 h-6 rounded-full bg-white p-0 flex items-center justify-center text-system-mid border-0 shadow-none text-lg hover:bg-gray-50;
+    }
+}
+
+.fct-review-drawer-header {
+    @apply flex items-center justify-between border border-solid border-gray-divider border-x-0 border-t-0 p-5;
+}
+
+.fct-review-drawer-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+
+
+/* ─── Stepper ───────────────────────────────── */
+
+.fct-review-stepper {
+    @apply flex items-center pt-5 px-5 flex items-center flex-shrink-0;
+}
+
+.fct-review-step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.fct-step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid #d1d5db;
+    color: #6b7280;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.fct-step-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.fct-review-step-indicator.active .fct-step-circle {
+    background: #1f2937;
+    border-color: #1f2937;
+    color: #fff;
+}
+
+.fct-review-step-indicator.active .fct-step-label {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.fct-review-step-indicator.completed .fct-step-circle {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+}
+
+.fct-review-step-indicator.completed .fct-step-label {
+    color: #22c55e;
+}
+
+.fct-step-line {
+    flex: 1;
+    height: 2px;
+    background: #e5e7eb;
+    margin: 0 8px;
+    margin-bottom: 18px;
+}
+
+/* ─── Drawer Body (scrollable) ──────────────────────────── */
+
+.fct-review-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.fct-review-step-question {
+    @apply text-system-dark block font-medium mb-2.5;
+    .required {
+        color: #ef4444;
+    }
+}
+
+.fct-review-step-description {
+    font-size: 14px;
+    color: #4b5563;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.fct-review-step-hint {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 16px;
+    font-style: italic;
+}
+
+/* Rating label (Poor, Fair, Good...) */
+.fct-rating-label {
+    @apply pt-2.5 text-center text-sm font-medium text-system-mid;
+}
+
+/* ─── Form Fields ───────────────────────────────────────── */
+
+.fct-review-form-message {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.fct-review-form-message-success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.fct-review-form-message-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.fct-review-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.fct-review-form-field {
+    margin-bottom: 14px;
+    position: relative;
+
+    label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #374151;
+
+        .required {
+            color: #ef4444;
+        }
+    }
+
+    .fct-label-hint {
+        font-weight: 400;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d6dae1;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #2f3448;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        font-family: inherit;
+
+        &:focus {
+            outline: none;
+            border-color: #1f2937;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 1px;
+        }
+
+        &::placeholder {
+            color: #6b7280;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+}
+
+.fct-char-count {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* ─── Star Selector ─────────────────────────────────────── */
+.fct-review-selector-wrap {
+    @apply inline-block;
+}
+.fct-star-selector-wrap {
+    @apply flex items-center gap-2;
+}
+
+.fct-star-selector {
+    @apply inline-flex gap-2;
+    .fct-star-select {
+        @apply border border-solid border-gray-outline rounded p-2 w-10 h-10 bg-white flex items-center justify-center text-base text-gray-500 shadow-none;
+
+        &.selected,
+        &.hover {
+            color: var(--fct-star-color, #F7A539);
+        }
+
+        &:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+    }
+}
+
+.fct-star-selector {
+    @apply flex justify-center gap-2;
+}
+
+
+
+/* ─── Drawer Footer ─────────────────────────────────────── */
+
+.fct-review-drawer-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #f3f4f6;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.fct-review-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    background: #fff !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+
+    &:hover {
+        background: #f3f4f6 !important;
+        color: #374151 !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #3b82f6 !important;
+        outline-offset: 2px !important;
+    }
+}
+
+.fct-review-next-btn,
+.fct-review-submit-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 24px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    background: #1f2937 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+
+    &:hover {
+        background: #374151 !important;
+        color: #fff !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #3b82f6 !important;
+        outline-offset: 2px !important;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.fct-review-step-info {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .fct-reviews-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .fct-reviews-layout-left {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .fct-reviews-summary-left {
+        flex-direction: row;
+        gap: 12px;
+    }
+
+    .fct-review-item {
+        padding: 14px 16px;
+    }
+
+    .fct-review-item-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .fct-reviews-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fct-review-drawer {
+        width: 100vw;
+    }
+
+    .fct-review-cta-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .fct-review-form-row {
+        grid-template-columns: 1fr;
+    }
+}

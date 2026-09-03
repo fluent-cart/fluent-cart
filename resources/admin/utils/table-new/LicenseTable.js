@@ -40,31 +40,6 @@ class LicenseTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: 'Order ID',
-                value: 'order_id'
-            },
-            {
-                label: 'Activation Count',
-                value: 'activation_count'
-            },
-            {
-                label: 'Expiration Date',
-                value: 'expiration_date'
-            },
-            {
-                label: 'Date',
-                value: 'created_at'
-            },
-            {
-                label: 'Status',
-                value: 'status'
-            },
-        ];
-    }
-
     getSearchHint() {
         return translate("by license key, order id, customer name/email or connected sites.")
     }
@@ -81,11 +56,12 @@ class LicenseTable extends Table {
         return 'licenses';
     }
 
+    // A SCREEN key, not a relation name — the product/variant column selects
+    // live server-side in LicenseFilter::adminLicenseList(), which also gates
+    // the customer on customers/view and the catalogue on products/view.
     with() {
         return [
-            'customer',
-            'product:ID,post_title',
-            'productVariant:id,variation_title'
+            'admin_license_list'
         ];
     }
 }

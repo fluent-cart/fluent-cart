@@ -26,15 +26,19 @@ use FluentCart\App\Http\Routes\WebRoutes;
 (new \FluentCart\App\Hooks\Handlers\ReminderHandler)->register();
 
 (new \FluentCart\App\Hooks\Handlers\ShortCodes\ShopAppHandler)->register();
-(new \FluentCart\App\Hooks\Handlers\ExportHandler)->register();
 
 (new FluentCart\App\Hooks\Handlers\CustomCheckout\CustomCheckout())->register();
 
 // Tax Module Init
-(new \FluentCart\App\Modules\Tax\TaxModule())->register();
+add_action('init', function () {
+    (new \FluentCart\App\Modules\Tax\TaxModule())->register();
+}, 1);
 
 // Turnstile Module Init
 (new \FluentCart\App\Modules\Turnstile\TurnstileInit())->register(\FluentCart\App\App::getInstance());
+
+// Reviews Module Init
+(new \FluentCart\App\Modules\Reviews\ReviewModule())->register();
 
 // Register Pro Gateways Promo
 (new \FluentCart\App\Hooks\Handlers\PromoGatewaysHandler())->register();
@@ -74,6 +78,7 @@ use FluentCart\App\Http\Routes\WebRoutes;
 \FluentCart\App\Hooks\Handlers\BlockEditors\Buttons\AddToCartButtonBlockEditor::register();
 
 \FluentCart\App\Hooks\Handlers\BlockEditors\MiniCartBlockEditor::register();
+\FluentCart\App\Hooks\Handlers\BlockEditors\Cart\CartBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\ProductCategoriesListBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\RelatedProduct\RelatedProductBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\DirectCheckoutShortcode::register();
@@ -82,6 +87,7 @@ use FluentCart\App\Http\Routes\WebRoutes;
 \FluentCart\App\Hooks\Handlers\ShortCodes\ProductCategoriesListShortcode::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\ProductTitleShortCode::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\ProductImageShortCode::register();
+\FluentCart\App\Hooks\Handlers\ShortCodes\SingleProductShortCode::register();
 
 
 \FluentCart\App\Hooks\Handlers\BlockEditors\ProductSkuBlockEditor::register();
@@ -97,6 +103,15 @@ use FluentCart\App\Http\Routes\WebRoutes;
 if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
     \FluentCart\App\Hooks\Handlers\BlockEditors\StockBlock::register();
     \FluentCart\App\Hooks\Handlers\BlockEditors\SoldOutBadgeBlockEditor::register();
+}
+
+if (\FluentCart\Api\ModuleSettings::isActive('reviews') && class_exists(\FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::class)) {
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductRatingBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewFormBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewListBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryGroupBlockEditor::register();
 }
 
 (new \FluentCart\App\Hooks\Cart\CartLoader)->register();
@@ -131,11 +146,19 @@ $orderPaidAsyncHandler = function ($data) {
     }
 
     $order = \FluentCart\App\Models\Order::find($orderId);
-    if (!$order || $order->payment_status !== 'paid' || !$order->getMeta('action_scheduler_id')) {
+    if (!$order || $order->payment_status !== 'paid') {
         return;
     }
 
-    $order->deleteMeta('action_scheduler_id');
+    // Claim the run by deleting the meta and branching on the affected-row count.
+    // The Action Scheduler worker and the receipt-page AJAX nudge
+    // (IntegrationEventListener::runOrderActionsAjax) can arrive together, so a
+    // read-then-delete would let both pass the guard and fire order_paid_done
+    // twice. A single DELETE is atomic: MySQL hands the row to exactly one
+    // caller, and the loser sees 0 rows and returns.
+    if (!$order->deleteMeta('action_scheduler_id')) {
+        return;
+    }
 
     $transaction = \FluentCart\App\Models\OrderTransaction::query()
         ->where('order_id', $order->id)
@@ -160,7 +183,6 @@ $orderPaidAsyncHandler = function ($data) {
 
 };
 add_action('fluent_cart/order_paid_async_private_handle', $orderPaidAsyncHandler, 1, 1);
-add_action('fluent_cart/order_paid_ansyc_private_handle', $orderPaidAsyncHandler, 1, 1);
 
 
 //
@@ -176,6 +198,13 @@ if (defined('WP_CLI') && WP_CLI) {
 
 \FluentCart\App\Modules\Subscriptions\SubscriptionModule::register();
 \FluentCart\App\Modules\Shipping\ShippingModule::register();
+\FluentCart\App\Modules\StoreManagedRenewal\RenewalModule::register();
+(new \FluentCart\App\Hooks\Handlers\AttributesHandler())->register();
+(new \FluentCart\App\Hooks\Handlers\AdvancedVariationHandler())->register();
+
+// MCP (Model Context Protocol) — operator AI tools. Ships OFF; enabled in
+// Settings → Features & addon → MCP. See MCPInit::boot() for the bootstrap.
+\FluentCart\App\Modules\MCP\MCPInit::boot();
 
 $app->ready(function () use ($app) {
     \FluentCart\App\Models\Connection\ConnectionManager::connect($this->app);

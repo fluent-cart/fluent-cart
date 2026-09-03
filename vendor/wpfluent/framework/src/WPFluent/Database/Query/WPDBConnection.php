@@ -134,6 +134,67 @@ class WPDBConnection implements ConnectionInterface
         $this->wpdb->show_errors(
             $this->shouldShowErrors()
         );
+
+        $this->registerSqliteFunctions();
+    }
+
+    /**
+     * Register a PHP-backed SOUNDEX() function on the SQLite connection so
+     * phonetic ("sounds like") queries work, mirroring MySQL's native
+     * equivalent.
+     *
+     * SQLite doesn't ship the function; PHP provides it natively, so we bind
+     * it as a UDF. Using PHP's soundex() here matches the term that
+     * SQLiteGrammar encodes with the same soundex() on the binding side.
+     *
+     * No-ops on MySQL and silently skips if the underlying PDO is unreachable,
+     * so a missing SQLite layer never breaks booting.
+     *
+     * @return void
+     */
+    protected function registerSqliteFunctions()
+    {
+        if (! $this->isSqlite()) {
+            return;
+        }
+
+        if (! ($pdo = $this->resolveSqlitePdo())) {
+            return;
+        }
+
+        try {
+            $pdo->sqliteCreateFunction('soundex', 'soundex', 1);
+        } catch (\Throwable $e) {
+            // Leave the function unregistered rather than break booting;
+            // whereSoundsLike() will only surface a SQL error if it is
+            // actually used on this connection.
+        }
+    }
+
+    /**
+     * Resolve the real PDO handle behind the WordPress SQLite layer.
+     *
+     * Supports the official "SQLite Database Integration" plugin
+     * (WP_SQLite_Translator::get_pdo()), a dbh that is itself a PDO
+     * (WP-SQLite-DB's PDOEngine), and the shared $GLOBALS['@pdo'] cache.
+     *
+     * @return \PDO|null
+     */
+    protected function resolveSqlitePdo()
+    {
+        $dbh = $this->wpdb->dbh ?? null;
+
+        if ($dbh && method_exists($dbh, 'get_pdo')) {
+            $pdo = $dbh->get_pdo();
+        } elseif ($dbh instanceof \PDO) {
+            $pdo = $dbh;
+        } elseif (isset($GLOBALS['@pdo'])) {
+            $pdo = $GLOBALS['@pdo'];
+        } else {
+            $pdo = null;
+        }
+
+        return $pdo instanceof \PDO ? $pdo : null;
     }
 
     /**
@@ -306,6 +367,15 @@ class WPDBConnection implements ConnectionInterface
         $query = str_replace(['%', '?'], ['%%', '%s'], $query);
 
         if ($this->wpdb->dbh instanceof \mysqli) {
+            // wpdb->prepare() casts null to '' for %s, which on TIMESTAMP
+            // columns becomes 0000-00-00 00:00:00. Splice literal NULL into
+            // the SQL for null bindings before prepare() ever sees them.
+            [$query, $bindings] = $this->spliceNullBindings($query, $bindings, '%s');
+
+            if (empty($bindings)) {
+                return $query;
+            }
+
             return $this->wpdb->prepare($query, ...$bindings);
         }
 
@@ -317,6 +387,51 @@ class WPDBConnection implements ConnectionInterface
         }, $bindings);
 
         return vsprintf($query, $bindings);
+    }
+
+    /**
+     * Replace placeholder occurrences whose binding is null with the
+     * literal SQL keyword NULL, returning the rewritten query and the
+     * remaining (non-null) bindings re-indexed.
+     *
+     * @param  string  $query
+     * @param  array   $bindings
+     * @param  string  $placeholder  '%s' for wpdb->prepare path, '?' for mysqli native prepare
+     * @return array{0:string,1:array}
+     *
+     * @phpstan-ignore-next-line
+     */
+    protected function spliceNullBindings(string $query, array $bindings, string $placeholder): array
+    {
+        $bindings = array_values($bindings);
+
+        if (empty($bindings) || strpos($query, $placeholder) === false) {
+            return [$query, $bindings];
+        }
+
+        $parts = explode($placeholder, $query);
+        $last  = count($parts) - 1;
+        $rebuilt = '';
+        $kept = [];
+
+        foreach ($parts as $idx => $part) {
+            $rebuilt .= $part;
+
+            if ($idx === $last) {
+                continue;
+            }
+
+            if (array_key_exists($idx, $bindings) && $bindings[$idx] === null) {
+                $rebuilt .= 'NULL';
+            } else {
+                $rebuilt .= $placeholder;
+                if (array_key_exists($idx, $bindings)) {
+                    $kept[] = $bindings[$idx];
+                }
+            }
+        }
+
+        return [$rebuilt, $kept];
     }
 
     /**
@@ -342,6 +457,10 @@ class WPDBConnection implements ConnectionInterface
         $preparedQuery = str_replace('%', '%%', $preparedQuery);
 
         $bindings = $this->prepareBindings($bindings);
+
+        // mysqli's bind_param can't bind null with type 's' (becomes '').
+        // Replace null bindings with literal NULL in the SQL itself.
+        [$preparedQuery, $bindings] = $this->spliceNullBindings($preparedQuery, $bindings, '?');
 
         $this->wpdb->flush();
         $this->wpdb->insert_id = 0;
@@ -715,6 +834,10 @@ class WPDBConnection implements ConnectionInterface
      */
     public function getDatabaseName()
     {
+        if ($this->isSqlite()) {
+            return 'sqlite';
+        }
+
         return $this->wpdb->dbname;
     }
 
@@ -722,6 +845,8 @@ class WPDBConnection implements ConnectionInterface
      * Get the server version for the connection.
      *
      * @return string
+     *
+     * @phpstan-ignore-next-line
      */
     public function getServerVersion(): string
     {

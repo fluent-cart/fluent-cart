@@ -1,0 +1,202 @@
+[
+  {
+    "categories": ["Apparel", "T-Shirts"],
+    "post_title": "Raglan T-Shirt",
+    "post_excerpt": "Two-tone raglan T-shirts in cotton and polyester across five handpicked colorways and four sizes.",
+    "post_content": "Elevate your casual wardrobe with our signature Raglan T-Shirt — a classic two-tone design that pairs a rich body color with contrasting sleeves. Available in soft, breathable cotton or moisture-wicking polyester, and offered in five distinctive colorways: Clay Cream, Mocha Taupe, Ochre Olive, Sage Stone, and Sand Olive. Each combination is photographed and varies by material, so you see exactly what you get. Sizes run from S to XL for a relaxed, athletic-inspired fit.",
+    "gallery": [
+      "https://fcimage.sirv.com/products/reglan-tshirt/cotton/clay-cream.jpg",
+      "https://fcimage.sirv.com/products/reglan-tshirt/cotton/ochre-olive.jpg",
+      "https://fcimage.sirv.com/products/reglan-tshirt/polyster/sage-stone.jpg"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "advanced_variations",
+      "stock_availability": "in-stock",
+      "min_price": "2499",
+      "max_price": "3499"
+    },
+    "default_variant_data": {
+      "item_price": 2999,
+      "compare_price": 3499,
+      "total_stock": 100,
+      "available": 100,
+      "stock_status": "in-stock"
+    },
+    "attribute_options": [
+      {
+        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "terms": [
+          {"slug": "cotton",    "title": "Cotton"},
+          {"slug": "polyester", "title": "Polyester"}
+        ]
+      },
+      {
+        "group": {"slug": "tshirt-color", "title": "T-Shirt Color", "type": "text"},
+        "terms": [
+          {"slug": "clay-cream",  "title": "Clay Cream"},
+          {"slug": "mocha-taupe", "title": "Mocha Taupe"},
+          {"slug": "ochre-olive", "title": "Ochre Olive"},
+          {"slug": "sage-stone",  "title": "Sage Stone"},
+          {"slug": "sand-olive",  "title": "Sand Olive"}
+        ]
+      },
+      {
+        "group": {"slug": "size", "title": "Size", "type": "text"},
+        "terms": [
+          {"slug": "s",  "title": "S"},
+          {"slug": "m",  "title": "M"},
+          {"slug": "l",  "title": "L"},
+          {"slug": "xl", "title": "XL"}
+        ]
+      }
+    ],
+    "image_key_groups": ["material", "tshirt-color"],
+    "variant_images": {
+      "cotton/clay-cream":     ["https://fcimage.sirv.com/products/reglan-tshirt/cotton/clay-cream.jpg"],
+      "cotton/mocha-taupe":    ["https://fcimage.sirv.com/products/reglan-tshirt/cotton/mocha-taupe.jpg"],
+      "cotton/ochre-olive":    ["https://fcimage.sirv.com/products/reglan-tshirt/cotton/ochre-olive.jpg"],
+      "cotton/sage-stone":     ["https://fcimage.sirv.com/products/reglan-tshirt/cotton/sage-stone.jpg"],
+      "cotton/sand-olive":     ["https://fcimage.sirv.com/products/reglan-tshirt/cotton/sand-olive.jpg"],
+      "polyester/clay-cream":  ["https://fcimage.sirv.com/products/reglan-tshirt/polyster/clay-cream.jpg"],
+      "polyester/mocha-taupe": ["https://fcimage.sirv.com/products/reglan-tshirt/polyster/mocha-taupe.jpg"],
+      "polyester/ochre-olive": ["https://fcimage.sirv.com/products/reglan-tshirt/polyster/ochre-olive.jpg"],
+      "polyester/sage-stone":  ["https://fcimage.sirv.com/products/reglan-tshirt/polyster/sage-stone.jpg"],
+      "polyester/sand-olive":  ["https://fcimage.sirv.com/products/reglan-tshirt/polyster/sand-olive.jpg"]
+    }
+  },
+  {
+    "categories": ["Watches", "Accessories"],
+    "post_title": "Velmora Watch Collection",
+    "post_excerpt": "Premium timepiece crafted for every occasion. Available in leather, nylon, and metal bands across three sophisticated colorways.",
+    "post_content": "<p>The Velmora Watch Collection combines refined craftsmanship with everyday versatility. Choose from three distinct band materials — supple leather, lightweight nylon, or sleek metal — each available in Dark Navy, Dark Green, and Gold colorways.</p><ul><li><strong>Package:</strong> Special Box</li><li><strong>Dimensions:</strong> 12 × 6 × 6 in</li><li><strong>Shipping Weight:</strong> 0.3 kg</li></ul>",
+    "gallery": [
+      "https://fcimage.sirv.com/products/velmora-watch/leather/dark-navy.png",
+      "https://fcimage.sirv.com/products/velmora-watch/metal/gold.png",
+      "https://fcimage.sirv.com/products/velmora-watch/nylon/dark-green.png"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "advanced_variations",
+      "stock_availability": "in-stock",
+      "min_price": "4499",
+      "max_price": "9999"
+    },
+    "default_variant_data": {
+      "item_price": 4499,
+      "compare_price": 5999,
+      "total_stock": 100,
+      "available": 100,
+      "stock_status": "in-stock"
+    },
+    "attribute_options": [
+      {
+        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "terms": [
+          {"slug": "leather", "title": "Leather"},
+          {"slug": "nylon",   "title": "Nylon"},
+          {"slug": "metal",   "title": "Metal"}
+        ]
+      },
+      {
+        "group": {"slug": "watch-color", "title": "Color", "type": "color"},
+        "terms": [
+          {"slug": "dark-navy",  "title": "Dark Navy",  "color": "#1B2B4A"},
+          {"slug": "dark-green", "title": "Dark Green", "color": "#3A5C2A"},
+          {"slug": "gold",       "title": "Gold",       "color": "#B8960C"}
+        ]
+      }
+    ],
+    "price_key_groups": ["material"],
+    "variant_prices": {
+      "leather": {"item_price": 4499, "compare_price": 5999},
+      "nylon":   {"item_price": 6999, "compare_price": 8999},
+      "metal":   {"item_price": 9999, "compare_price": 12999}
+    },
+    "image_key_groups": ["material", "watch-color"],
+    "variant_images": {
+      "leather/dark-navy":  ["https://fcimage.sirv.com/products/velmora-watch/leather/dark-navy.png"],
+      "leather/dark-green": ["https://fcimage.sirv.com/products/velmora-watch/leather/dark-green.png"],
+      "leather/gold":       ["https://fcimage.sirv.com/products/velmora-watch/leather/gold.png"],
+      "nylon/dark-navy":    ["https://fcimage.sirv.com/products/velmora-watch/nylon/dark-navy.png"],
+      "nylon/dark-green":   ["https://fcimage.sirv.com/products/velmora-watch/nylon/dark-green.png"],
+      "nylon/gold":         ["https://fcimage.sirv.com/products/velmora-watch/nylon/gold.png"],
+      "metal/dark-navy":    ["https://fcimage.sirv.com/products/velmora-watch/metal/dark-navy.png"],
+      "metal/dark-green":   ["https://fcimage.sirv.com/products/velmora-watch/metal/dark-green.png"],
+      "metal/gold":         ["https://fcimage.sirv.com/products/velmora-watch/metal/gold.png"]
+    }
+  },
+  {
+    "categories": ["Home Decor", "Vases"],
+    "post_title": "Vase",
+    "post_excerpt": "Elegant vases in metal and plastic, available in Burnt Orange and Blue across three sizes.",
+    "post_content": "<p>Add a touch of elegance to any space with our versatile vase collection. Choose from durable metal or lightweight plastic, in warm Burnt Orange or cool Blue, and find the perfect size for your arrangement.</p><ul><li><strong>Package:</strong> Special Box</li><li><strong>Dimensions:</strong> 12 × 6 × 6 in</li><li><strong>Shipping Weight:</strong> 0.3 kg</li></ul>",
+    "gallery": [
+      "https://fcimage.sirv.com/products/vase/large/steel-orange.png",
+      "https://fcimage.sirv.com/products/vase/large/blue.png",
+      "https://fcimage.sirv.com/products/vase/medium/steel-blue.png"
+    ],
+    "detail": {
+      "fulfillment_type": "physical",
+      "manage_stock": "1",
+      "variation_type": "advanced_variations",
+      "stock_availability": "in-stock",
+      "min_price": "3500",
+      "max_price": "6900"
+    },
+    "default_variant_data": {
+      "item_price": 3500,
+      "compare_price": 4500,
+      "total_stock": 100,
+      "available": 100,
+      "stock_status": "in-stock"
+    },
+    "attribute_options": [
+      {
+        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "terms": [
+          {"slug": "metal",   "title": "Metal"},
+          {"slug": "plastic", "title": "Plastic"}
+        ]
+      },
+      {
+        "group": {"slug": "vase-color", "title": "Color", "type": "color"},
+        "terms": [
+          {"slug": "burnt-orange", "title": "Burnt Orange", "color": "#CC4A1B"},
+          {"slug": "blue",         "title": "Blue",         "color": "#4A7CC9"}
+        ]
+      },
+      {
+        "group": {"slug": "size", "title": "Size", "type": "text"},
+        "terms": [
+          {"slug": "xl", "title": "XL"},
+          {"slug": "m",  "title": "M"},
+          {"slug": "xs", "title": "XS"}
+        ]
+      }
+    ],
+    "price_key_groups": ["size"],
+    "variant_prices": {
+      "xl": {"item_price": 6900, "compare_price": 8900},
+      "m":  {"item_price": 4900, "compare_price": 5900},
+      "xs": {"item_price": 3500, "compare_price": 4500}
+    },
+    "image_key_groups": ["size", "material", "vase-color"],
+    "variant_images": {
+      "xl/metal/burnt-orange":   ["https://fcimage.sirv.com/products/vase/large/steel-orange.png"],
+      "xl/metal/blue":           ["https://fcimage.sirv.com/products/vase/large/steel-blue.png"],
+      "xl/plastic/burnt-orange": ["https://fcimage.sirv.com/products/vase/large/orange.png"],
+      "xl/plastic/blue":         ["https://fcimage.sirv.com/products/vase/large/blue.png"],
+      "m/metal/burnt-orange":    ["https://fcimage.sirv.com/products/vase/medium/steel-orange.png"],
+      "m/metal/blue":            ["https://fcimage.sirv.com/products/vase/medium/steel-blue.png"],
+      "m/plastic/burnt-orange":  ["https://fcimage.sirv.com/products/vase/medium/orange.png"],
+      "m/plastic/blue":          ["https://fcimage.sirv.com/products/vase/medium/blue.png"],
+      "xs/metal/burnt-orange":   ["https://fcimage.sirv.com/products/vase/small/steel-orange.png"],
+      "xs/metal/blue":           ["https://fcimage.sirv.com/products/vase/small/steel-blue.png"],
+      "xs/plastic/burnt-orange": ["https://fcimage.sirv.com/products/vase/small/orange.png"],
+      "xs/plastic/blue":         ["https://fcimage.sirv.com/products/vase/small/blue.png"]
+    }
+  }
+]

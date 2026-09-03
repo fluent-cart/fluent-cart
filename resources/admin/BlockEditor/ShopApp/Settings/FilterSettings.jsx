@@ -192,6 +192,33 @@ const FilterSettings = (props) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {filter.filter_type === 'options' && filter.enabled &&
+                                        <div className="fct-block-editor-control-item">
+                                            <div className="fct-inspector-control-row">
+                                                <span className="label">{blocktranslate('Show empty')}</span>
+                                                <div className="actions">
+                                                    <ToggleControl
+                                                        checked={filter.show_empty !== false}
+                                                        onChange={(checked) => {
+                                                            let updatedFilter = {};
+                                                            if (attributes.filters?.hasOwnProperty(key)) {
+                                                                updatedFilter = {...attributes.filters[key]};
+                                                            } else if (attributes.default_filter_options?.hasOwnProperty(key)) {
+                                                                updatedFilter = {...attributes.default_filter_options[key]};
+                                                            }
+                                                            updatedFilter['show_empty'] = checked;
+                                                            setFilters(key, updatedFilter);
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* translators: %1$s: taxonomy name (e.g. "categories", "brands") */}
+                                            <span className="text-xs text-system-light leading-tight">
+                                                {blocktranslate('Display %1$s even if they have no products.', key.replace('product-', ''))}
+                                            </span>
+                                        </div>
+                                    }
                                 </div> : <></>
                         })
                     }

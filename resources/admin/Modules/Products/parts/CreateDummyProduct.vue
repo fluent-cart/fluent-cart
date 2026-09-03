@@ -106,8 +106,8 @@ onMounted(() => {
             <div v-for="i in 8" :key="i" class="bar-block" :id="`bar-block-${i + 1}`"></div>
           </div>
           {{
-            /* translators: %s - upload progress */
-            translate('Uploading... %s%', percentage)
+            /* translators: %1$s: upload progress percentage, e.g. "45%" */
+            translate('Uploading... %1$s', `${percentage}%`)
           }}
         </div>
       </div>

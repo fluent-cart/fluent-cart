@@ -9,6 +9,17 @@ const CheckoutEuVatBlock = {
         });
 
         return <div {...props} {...blockProps}>
+            <div style={{
+                padding: '8px 12px',
+                backgroundColor: '#fcf0c2',
+                border: '1px solid #f0b429',
+                borderRadius: '4px',
+                marginBottom: '8px',
+                fontSize: '12px',
+                lineHeight: '1.5',
+            }}>
+                {blocktranslate('⚠ Deprecated: VAT is now rendered inside the B2B section automatically. This block will be removed in a future version — please remove it from your template.')}
+            </div>
             <div className="fc-checkout-section-title">
                 {blocktranslate('EU VAT')}
             </div>

@@ -2,28 +2,24 @@
 
 namespace FluentCart\App\Http\Requests;
 
-use FluentCart\App\Models\TaxClass;
 use FluentCart\Framework\Foundation\RequestGuard;
-use FluentCart\Framework\Support\Arr;
 
 class TaxClassRequest extends RequestGuard
 {
 
     public function rules()
     {
-        $classId = intval(Arr::get($this->all(), 'id', 0));
-
         return [
-            'title'       => 'required|sanitizeText|maxLength:192',
+            'title'       => 'required|sanitizeText|maxLength:30',
             'description' => 'nullable|sanitizeTextArea',
-            'categories'  => 'nullable|array',
         ];
     }
 
     public function messages()
     {
         return [
-            'title.required' => esc_html__('Tax class title is required.', 'fluent-cart'),
+            'title.required'   => esc_html__('Tax class title is required.', 'fluent-cart'),
+            'title.maxLength'  => esc_html__('Tax class title must be 30 characters or fewer.', 'fluent-cart'),
         ];
     }
 
@@ -33,12 +29,6 @@ class TaxClassRequest extends RequestGuard
             'title'       => 'sanitize_text_field',
             'description' => 'sanitize_text_field',
             'priority'    => 'intval',
-            'categories'  => function ($value) {
-                if (is_array($value)) {
-                    return array_map('intval', $value);
-                }
-                return $value;
-            }
         ];
     }
 

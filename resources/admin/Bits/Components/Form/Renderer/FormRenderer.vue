@@ -71,7 +71,7 @@ const isNestingDisabled = (field) => {
                        :placement="field.tooltip_placement">
               <span v-if="field.labelOptional">&#40;{{ field.labelOptional }}&#41;</span>
             </LabelHint>
-            <resolver
+            <Resolver
                 v-model="value[fieldKey]"
                 :name="field.component"
                 :form="form"
@@ -82,12 +82,12 @@ const isNestingDisabled = (field) => {
                 :nesting="isNestingDisabled(field)"
             >
               <template #fieldNote>
-                <field-note v-if="field.note && field.hide_note !== true" :note="field.note"/>
+                <FieldNote v-if="field.note && field.hide_note !== true" :note="field.note"/>
               </template>
               <template #validationError>
-                <validation-error :form="form" :error-key="fullStatePath+fieldKey"/>
+                <ValidationError :form="form" :error-key="fullStatePath+fieldKey"/>
               </template>
-            </resolver>
+            </Resolver>
           </div>
         </template>
 
@@ -126,9 +126,9 @@ const isNestingDisabled = (field) => {
                 :field-key="fieldKey"
             />
 
-            <field-note v-if="field.note && !field.component" :note="field.note"/>
+            <FieldNote v-if="field.note && !field.component" :note="field.note"/>
 
-            <validation-error v-if="!field.component" :form="form" :error-key="fullStatePath+fieldKey"/>
+            <ValidationError v-if="!field.component" :form="form" :error-key="fullStatePath+fieldKey"/>
 
           </div>
         </template>

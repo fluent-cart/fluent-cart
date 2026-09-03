@@ -28,7 +28,7 @@ class CartShortcode extends ShortCode
                 return;
             }
 
-            if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/cart_cart')) {
+            if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/cart')) {
                 (new static())->enqueueStyles();
             }
         }, 10);

@@ -1,10 +1,10 @@
 .fct-alert{
-  @apply flex gap-1 py-2 px-2.5 rounded text-system-dark border border-solid border-blue-100 bg-blue-50 dark:text-gray-50 dark:bg-blue-800 dark:border-blue-800;
+  @apply flex gap-1 py-2 px-2.5 rounded text-system-dark border border-solid border-blue-100 bg-blue-50 dark:text-blue-400 dark:bg-blue-alpha-16 dark:border-blue-alpha-16;
   a{
-    @apply text-blue-500 underline focus:underline focus:outline-none focus:shadow-none dark:text-white !important;
+    @apply text-blue-500 underline focus:underline focus:outline-none focus:shadow-none dark:text-gray-300;
   }
   .icon{
-    @apply text-blue-500 dark:text-gray-50;
+    @apply text-blue-500 dark:text-blue-400;
     svg{
       @apply w-5;
     }
@@ -16,27 +16,27 @@
     }
   }
   &-info{
-    @apply bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-50;
+    @apply bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-alpha-16 dark:border-gray-alpha-16;
     .icon{
-      @apply text-gray-800 dark:text-gray-50;
+      @apply text-gray-800 dark:text-gray-400;
     }
   }
   &-warning{
-    @apply bg-warning-50 border-warning-100 dark:bg-warning-800 dark:border-warning-800 dark:text-gray-50;
+    @apply bg-warning-50 border-warning-100 dark:text-warning-400 dark:bg-warning-alpha-16 dark:border-warning-alpha-16;
     .icon{
-      @apply text-warning-500 dark:text-gray-50;
+      @apply text-warning-500 dark:text-warning-400;
     }
   }
   &-success{
-    @apply bg-success-50 border-success-100 dark:bg-success-800 dark:border-success-800 dark:text-gray-50;
+    @apply bg-success-50 border-success-100 dark:text-success-400 dark:bg-success-alpha-16 dark:border-success-alpha-16;
     .icon{
-      @apply text-success-500 dark:text-gray-50;
+      @apply text-success-500 dark:text-success-400;
     }
   }
   &-error{
-    @apply bg-red-50 border-red-100 dark:bg-red-800 dark:border-red-800 dark:text-gray-50;
+    @apply bg-red-50 border-red-100 dark:text-red-400 dark:bg-red-alpha-16 dark:border-red-alpha-16;
     .icon{
-      @apply text-red-500 dark:text-gray-50;
+      @apply text-red-500 dark:text-red-400;
     }
     .fct-alert-close{
       @apply text-red-500 hover:bg-red-100 dark:hover:bg-red-700;
@@ -47,14 +47,11 @@
 .fct-notices-wrap {
   @apply grid gap-2 mb-5;
   .fct-alert {
-    @apply m-0 !important;
+    @apply m-0;
   }
 
   &.settings {
-    @apply max-w-full mb-0;
-    .fct-alert {
-      @apply rounded-none;
-    }
+    @apply max-w-full;
   }
 }
 

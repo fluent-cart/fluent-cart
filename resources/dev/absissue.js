@@ -32,7 +32,6 @@ function processDirectory(dir) {
             stat = fs.statSync(filePath);
         } catch (err) {
             if (err.code === 'ENOENT') {
-                console.log(`Skipped missing file: ${filePath}`);
                 return;
             }
             throw err;
@@ -93,7 +92,6 @@ function checkAbspathBeforeNamespace(filePath) {
     }
 
     if(absFound && nameSpaceFound){
-        console.log(`Missing ABSPATH check before namespace: ${filePath}`);
     }
 
     // If there is no namespace, ignore
@@ -114,4 +112,3 @@ function checkAbspathBeforeNamespace(filePath) {
 
 processDirectory(path.resolve(entryFolder));
 
-console.log('Scan complete.');

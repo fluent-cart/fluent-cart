@@ -35,7 +35,10 @@
 import TransitionAccordion from "@/Bits/Components/TransitionAccordion.vue";
 
 export default {
-  name: "_CascaderPanel",
+  name: "CascaderPanel",
+  components: {
+    TransitionAccordion
+  },
   props: {
     options: {
       type: Array,
@@ -45,9 +48,6 @@ export default {
       type: Array,
       default: () => []
     }
-  },
-  components: {
-    TransitionAccordion
   },
   emits: ["update:modelValue", "change"],
   data() {

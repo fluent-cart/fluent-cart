@@ -158,13 +158,8 @@ class InstalledVersions
             return implode(' || ', $ranges);
         }
 
-        throw new \OutOfBoundsException(
-            sprintf(
-            /* translators: %s is the package name */
-                esc_html__('Package "%s" is not installed', 'fluent-cart'),
-                esc_html($packageName)
-            )
-        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Composer-generated file
+        throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
     }
 
     /**
@@ -185,13 +180,8 @@ class InstalledVersions
             return $installed['versions'][$packageName]['version'];
         }
 
-        throw new \OutOfBoundsException(
-            sprintf(
-            /* translators: %s is the package name */
-                esc_html__('Package "%s" is not installed', 'fluent-cart'),
-                esc_html($packageName)
-            )
-        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Composer-generated file
+        throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
     }
 
     /**
@@ -212,13 +202,8 @@ class InstalledVersions
             return $installed['versions'][$packageName]['pretty_version'];
         }
 
-        throw new \OutOfBoundsException(
-            sprintf(
-            /* translators: %s is the package name */
-                esc_html__('Package "%s" is not installed', 'fluent-cart'),
-                esc_html($packageName)
-            )
-        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Composer-generated file
+        throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
     }
 
     /**
@@ -239,13 +224,8 @@ class InstalledVersions
             return $installed['versions'][$packageName]['reference'];
         }
 
-        throw new \OutOfBoundsException(
-            sprintf(
-            /* translators: %s is the package name */
-                esc_html__('Package "%s" is not installed', 'fluent-cart'),
-                esc_html($packageName)
-            )
-        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Composer-generated file
+        throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
     }
 
     /**
@@ -262,13 +242,8 @@ class InstalledVersions
             return isset($installed['versions'][$packageName]['install_path']) ? $installed['versions'][$packageName]['install_path'] : null;
         }
 
-        throw new \OutOfBoundsException(
-            sprintf(
-            /* translators: %s is the package name */
-                esc_html__('Package "%s" is not installed', 'fluent-cart'),
-                esc_html($packageName)
-            )
-        );
+        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
+        throw new \OutOfBoundsException('Package "' . $packageName . '" is not installed');
     }
 
     /**
@@ -291,7 +266,6 @@ class InstalledVersions
      */
     public static function getRawData()
     {
-        //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
         @trigger_error('getRawData only returns the first dataset loaded, which may not be what you expect. Use getAllRawData() instead which returns all datasets for all autoloaders present in the process.', E_USER_DEPRECATED);
 
         if (null === self::$installed) {

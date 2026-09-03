@@ -16,7 +16,7 @@ function recursiveFlatten(obj, prefix = '') {
     return newObj;
 }
 
-const request = function (baseURL = null, method, route, data = {}) {
+const request = function (baseURL = null, method, route, data = {}, options = {}) {
     const cleanRoute = route.startsWith('/') ? route.slice(1) : route;
     const baseUrl = `${baseURL ? baseURL : window.fluentCartRestVars.rest.url}/${cleanRoute}`;
 
@@ -33,6 +33,7 @@ const request = function (baseURL = null, method, route, data = {}) {
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        const signal = options.signal;
 
         let url = baseUrl;
         if (method.toUpperCase() === 'GET') {
@@ -99,17 +100,24 @@ const request = function (baseURL = null, method, route, data = {}) {
         };
 
         xhr.onerror = function () {
-            console.info('Your server firewall blocked the request or it\'s a plugin conflict. Please check the detailed error.');
-            console.log({
-                status: xhr.status,
-                statusText: xhr.statusText,
-                responseText: xhr.responseText
-            });
             reject({
                 status: xhr.status,
                 statusText: xhr.statusText
             });
         };
+
+        xhr.onabort = function () {
+            reject(new DOMException('The request was aborted.', 'AbortError'));
+        };
+
+        if (signal) {
+            if (signal.aborted) {
+                xhr.abort();
+                return;
+            }
+
+            signal.addEventListener('abort', () => xhr.abort(), {once: true});
+        }
 
         if (method.toUpperCase() === 'GET') {
             xhr.send();
@@ -124,8 +132,8 @@ export default {
     get(route, data = {}, baseURL = null) {
         return request(baseURL, 'GET', route, data);
     },
-    post(route, data = {}, baseURL = null) {
-        return request(baseURL, 'POST', route, data);
+    post(route, data = {}, baseURL = null, options = {}) {
+        return request(baseURL, 'POST', route, data, options);
     },
     delete(route, data = {}, baseURL = null) {
         return request(baseURL, 'DELETE', route, data);

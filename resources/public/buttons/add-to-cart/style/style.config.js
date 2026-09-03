@@ -5,7 +5,7 @@ import borderRadius from "../../../../styles/tailwind/extends/borderRadius";
 import fontSize from "../../../../styles/tailwind/extends/fontSize";
 
 module.exports = {
-    darkMode: 'class',
+    darkMode: ['selector', '.fluent_theme_dark'],
     //important: '.fluent-cart-shop-app-wrapper .fluent-cart-default-product-page-style',
     content: [
         './app/FC/Template/DefaultTemplate/Views/buttons/add_to_cart.php',
@@ -26,4 +26,3 @@ module.exports = {
 
     },
 }
-

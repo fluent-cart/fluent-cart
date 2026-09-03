@@ -63,6 +63,6 @@ class OrderTaxRate extends Model
 
     public function scopeValidOrder($query)
     {
-        return $query->whereHas('order', fn ($o) => $o->where('status', 'completed'));
+        return $query->whereHas('order', fn ($o) => $o->whereIn('payment_status', ['paid', 'partially_paid']));
     }
 }

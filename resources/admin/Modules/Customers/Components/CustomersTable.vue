@@ -13,14 +13,21 @@ const props = defineProps({
     required: true,
   }
 });
+
+const emit = defineEmits(['selectionChange']);
+
+const handleSelectionChange = (selectedRows) => {
+  emit('selectionChange', selectedRows);
+};
 </script>
 
 <template>
   <el-table
       :data="table.getTableData()"
       class="w-full compact-table"
+      @selection-change="handleSelectionChange"
   >
-    <el-table-column v-if="false" type="selection" width="50"/>
+    <el-table-column type="selection" width="45"/>
 
     <el-table-column :label="translate('Customer')" width="300">
       <template #default="scope">

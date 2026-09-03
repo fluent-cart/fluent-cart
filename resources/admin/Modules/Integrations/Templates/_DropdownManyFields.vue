@@ -27,11 +27,11 @@
                 </td>
                 <td>
                     <!--need to fix the defaultValue object issue-->
-                    <field-general
+                    <FieldGeneral
                         :editorShortcodes="editorShortcodes"
                         :defaultValue="typeof item.item_value=== 'object' ? '' : item.item_value"
                         v-model="item.item_value"
-                    ></field-general>
+                    ></FieldGeneral>
                 </td>
                 <td>
                   <div class="action-btns">
@@ -67,6 +67,11 @@
 
     export default {
         name: 'DropdownManyFields',
+        components: {
+            FieldGeneral,
+            DynamicIcon,
+            IconButton
+        },
         props: [
             'settings',
             'field',
@@ -83,10 +88,15 @@
                 },
             }
         },
-        components: {
-            FieldGeneral,
-            DynamicIcon,
-            IconButton
+        mounted() {
+            if(!this.settings[this.field.key] || !this.settings[this.field.key].length) {
+                this.settings[this.field.key] = [
+                    {
+                        item_value: this.field,
+                        label: ''
+                    }
+                ]
+            }
         },
         methods: {
             addNewItem() {
@@ -100,16 +110,6 @@
                     return;
                 }
                 this.settings[this.field.key].splice(index, 1);
-            }
-        },
-        mounted() {
-            if(!this.settings[this.field.key] || !this.settings[this.field.key].length) {
-                this.settings[this.field.key] = [
-                    {
-                        item_value: this.field,
-                        label: ''
-                    }
-                ]
             }
         }
     }

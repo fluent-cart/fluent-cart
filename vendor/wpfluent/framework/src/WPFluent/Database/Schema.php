@@ -34,6 +34,21 @@ class Schema
 	{
 		$db = static::db();
 
+		if (static::isSqlite()) {
+			$info = [
+			    'dbname' => 'sqlite',
+			    'prefix' => $db->prefix,
+			    'dbhost' => '',
+			    'username' => '',
+			    'password' => '',
+			    'charset' => 'utf8',
+			    'collation' => '',
+			    'tables' => static::getTableList(),
+			];
+
+			return $key ? ($info[$key] ?? null) : $info;
+		}
+
 		$info = [
 		    // @phpstan-ignore-next-line
 		    'dbname' => $db->dbname,
@@ -136,7 +151,7 @@ class Schema
 		// error will be not shown if there is no temporary
 		// table, then restore the error state.
 		$isErrorSuppressed = $wpdb->suppress_errors;
-		
+
 		$wpdb->suppress_errors = true;
 
 		static::query("SELECT 1 FROM %{$table}% WHERE 0");
@@ -380,15 +395,11 @@ class Schema
 	    // via native ALTER TABLE DROP COLUMN.
 	    //
 	    // Workarounds:
-	    //   - Indexed columns: drop the index first with ALTER TABLE DROP INDEX,
+	    //   - Indexed columns: drop the index first with DROP INDEX,
 	    //     then drop the column.
 	    //   - PRIMARY KEY columns: use CHANGE COLUMN to rebuild the table without
 	    //     the PK attribute (renaming the column to a temp name), then drop
 	    //     the renamed column.
-	    //
-	    // Note: ALTER TABLE … RENAME TO and standalone DROP INDEX are NOT
-	    // supported by this version of the WP SQLite integration, so we cannot
-	    // use a full-table-rebuild via rename.
 	    if (static::isSqlite()) {
 	        // Collect PRIMARY KEY columns and per-column index key names.
 	        $indexRows     = (array) static::db()->get_results("SHOW INDEX FROM {$tbl}");
@@ -545,7 +556,60 @@ class Schema
 	 */
 	public static function dropIndex($table, $index)
 	{
+		if (static::isSqlite()) {
+			$tbl = static::table($table);
+			return static::db()->query("ALTER TABLE {$tbl} DROP INDEX {$index}");
+		}
+
 		return drop_index(static::table($table), $index);
+	}
+
+	/**
+	 * Add a FULLTEXT index to the given columns, required by the query
+	 * builder's relevance ranking (selectRelevance/orderByRelevance and the
+	 * Searchable relevanceSearch scope). No-ops on SQLite, which has no
+	 * native FULLTEXT support and degrades to LIKE-based matching.
+	 *
+	 * @param  string  $table   Table name without prefix
+	 * @param  string|array  $columns
+	 * @param  string|null  $name  Optional index name
+	 * @return mixed
+	 */
+	public static function fullText($table, $columns, $name = null)
+	{
+		if (static::isSqlite()) {
+			return false;
+		}
+
+		$columns = is_array($columns)
+			? $columns
+			: array_map('trim', explode(',', $columns));
+
+		$tbl = static::table($table);
+		$name = $name ?: ('ft_' . implode('_', $columns));
+		$list = implode(', ', $columns);
+
+		return static::db()->query(
+			"ALTER TABLE {$tbl} ADD FULLTEXT {$name} ({$list})"
+		);
+	}
+
+	/**
+	 * Drop a FULLTEXT index by name.
+	 *
+	 * @param  string  $table  Table name without prefix
+	 * @param  string  $name   Index name
+	 * @return mixed
+	 */
+	public static function dropFullText($table, $name)
+	{
+		if (static::isSqlite()) {
+			return false;
+		}
+
+		$tbl = static::table($table);
+
+		return static::db()->query("ALTER TABLE {$tbl} DROP INDEX {$name}");
 	}
 
 	/**
@@ -582,7 +646,7 @@ class Schema
 		}
 
 		return static::db()->get_col(
-            'SHOW COLUMNS FROM ' . static::table($table), 0
+            'DESCRIBE ' . static::table($table), 0
         );
 	}
 
@@ -596,10 +660,45 @@ class Schema
 	{
 		if (!static::hasTable($table)) return;
 
-		// @phpstan-ignore-next-line		
-		$db = static::db()->dbname;
-		
 		$table = static::table($table);
+
+		if (static::isSqlite()) {
+			// INFORMATION_SCHEMA is not available in SQLite.
+			// Use DESCRIBE which the WP SQLite plugin translates with
+			// proper MySQL type mapping from its data type cache.
+			$columns = (array) static::db()->get_results("DESCRIBE {$table}");
+			return array_map(function ($col, $pos) {
+				$extra = $col->Extra ?? '';
+				// SQLite INTEGER PRIMARY KEY is auto_increment but DESCRIBE
+				// doesn't report it in Extra — detect from Key + Type.
+				if (empty($extra) && ($col->Key ?? '') === 'PRI') {
+					$type = strtoupper($col->Type ?? '');
+					if (in_array($type, ['INTEGER', 'BIGINT', 'BIGINT(20)', 'BIGINT(20) UNSIGNED', 'INT'])) {
+						$extra = 'auto_increment';
+					}
+				}
+
+				return [
+					'column_name' => $col->Field,
+					'ordinal_position' => $pos + 1,
+					'column_default' => $col->Default,
+					'is_nullable' => ($col->Null === 'YES' ? 'YES' : 'NO'),
+					'data_type' => strtolower(
+						preg_replace('/\(.*/', '', $col->Type)
+					),
+					'character_maximum_length' => preg_match(
+						'/\((\d+)\)/', $col->Type, $matches
+					) ? (int)$matches[1] : null,
+					'numeric_precision' => null,
+					'numeric_scale' => null,
+					'column_key' => $col->Key ?? '',
+					'extra' => $extra,
+				];
+			}, $columns, array_keys($columns));
+		}
+
+		// @phpstan-ignore-next-line
+		$db = static::db()->dbname;
 
 		$fields = [
 			'COLUMN_NAME',
@@ -613,7 +712,7 @@ class Schema
 			'COLUMN_KEY',
 			'EXTRA',
 		];
-		
+
 		$sql = "SELECT " . implode(',', $fields) . " FROM INFORMATION_SCHEMA.COLUMNS";
 		$sql .= " WHERE TABLE_NAME = '".$table."' AND TABLE_SCHEMA = '".$db."'";
 
@@ -633,6 +732,10 @@ class Schema
 	    if (!empty($columns)) {
 	    	return $columns;
 	    }
+
+		if (static::isSqlite()) {
+			return [];
+		}
 
 	    $columns = static::db()->get_results(
 	    	'SHOW COLUMNS FROM `'.static::table($table).'`'
@@ -680,13 +783,28 @@ class Schema
 	    $table = static::table($table);
 
 	    if (static::isSqlite()) {
-	        return array_map(function ($i) {
-	            return [
-	                'column_name'       => $i->from,
-	                'referenced_table'  => $i->table,
-	                'referenced_column' => $i->to,
-	            ];
-	        }, (array) static::db()->get_results("PRAGMA foreign_key_list({$table})"));
+	        // Parse foreign keys from the CREATE TABLE statement in sqlite_master
+	        // since PRAGMA queries cannot go through $wpdb.
+	        $row = static::db()->get_row(
+	            "SELECT sql FROM sqlite_master WHERE type='table' AND name='{$table}'"
+	        );
+	        if (!$row || empty($row->sql)) {
+	            return [];
+	        }
+	        $fks = [];
+	        if (preg_match_all(
+	            '/FOREIGN\s+KEY\s*\(\s*[`"]?(\w+)[`"]?\s*\)\s*REFERENCES\s+[`"]?(\w+)[`"]?\s*\(\s*[`"]?(\w+)[`"]?\s*\)/i',
+	            $row->sql, $matches, PREG_SET_ORDER
+	        )) {
+	            foreach ($matches as $m) {
+	                $fks[] = [
+	                    'column_name'       => $m[1],
+	                    'referenced_table'  => $m[2],
+	                    'referenced_column' => $m[3],
+	                ];
+	            }
+	        }
+	        return $fks;
 	    }
 
 		// @phpstan-ignore-next-line
@@ -831,6 +949,10 @@ class Schema
      */
     public static function isMaria()
     {
+        if (static::isSqlite()) {
+            return false;
+        }
+
         return str_contains(
         	static::db()->get_var('SELECT VERSION()'), 'MariaDB'
         );
@@ -844,6 +966,10 @@ class Schema
 	 */
 	public static function getEngine($table)
 	{
+		if (static::isSqlite()) {
+			return 'sqlite';
+		}
+
 		return static::db()->get_var(
             'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = "' . static::table($table) . '"'
         );

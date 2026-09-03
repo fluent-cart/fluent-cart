@@ -12,7 +12,7 @@ use FluentCart\App\Models\WpModels\TermRelationship;
 use FluentCart\App\Models\WpModels\TermTaxonomy;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Database\Orm\Builder;
-use FluentCart\Framework\Database\Orm\Relations\hasOne;
+use FluentCart\Framework\Database\Orm\Relations\HasOne;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 
@@ -149,9 +149,9 @@ class Product extends Model
 
     /**
      * One2One: Product belongs to one Post meta which is : Gallery Image
-     * @return hasOne
+     * @return HasOne
      */
-    public function postmeta(): hasOne
+    public function postmeta(): HasOne
     {
         return $this->hasOne(PostMeta::class, 'post_id', 'ID')
             ->where('postmeta.meta_key', 'fluent-products-gallery-image');
@@ -177,12 +177,6 @@ class Product extends Model
     }
 
 
-    public function getTags()
-    {
-        return get_the_terms($this->ID, 'product-tags');
-    }
-
-
     public function getMediaUrl($size = 'thumbnail')
     {
         return get_the_post_thumbnail_url($this->ID, $size);
@@ -193,12 +187,6 @@ class Product extends Model
      * Transforming old getters with accessor
      * Todo check
      */
-    public function getTagsAttribute($value)
-    {
-        return get_the_terms($this->ID, 'product-tags');
-    }
-
-
     public function getCategoriesAttribute($value)
     {
         return get_the_terms($this->ID, 'product-categories');
@@ -257,12 +245,6 @@ class Product extends Model
     public function categories()
     {
         return $this->getTermByType('product-categories');
-    }
-
-
-    public function tags()
-    {
-        return $this->getTermByType('product-tags');
     }
 
 
@@ -698,14 +680,57 @@ class Product extends Model
                     $newVariant = ProductVariation::query()->create($variantData);
                     $variationIdMap[$originalVariant->id] = $newVariant->id;
 
+                    // Copy the variant's thumbnail meta to the new variant.
+                    // $originalVariant->media is hasOne on fct_product_meta
+                    // where meta_key = 'product_thumbnail'; the old code
+                    // foreach'd over it (treating a single Model as a
+                    // collection — iterating its attribute scalars) and
+                    // mis-routed the data through wp_set_object_terms (the
+                    // WordPress taxonomy API, unrelated to fct_product_meta).
+                    // Mirror the Pro AdvancedVariationService pattern: a
+                    // fresh fct_product_meta row owned by the new variant id
+                    // with the same meta_value payload.
                     if ($originalVariant->media && $newVariant) {
-                        foreach ($originalVariant->media as $media) {
-                            \wp_set_object_terms(
-                                $newVariant->id,
-                                $media->term_id ?? $media->id,
-                                'product_media'
-                            );
+                        $media = $originalVariant->media;
+                        ProductMeta::query()->create([
+                            'object_id'   => $newVariant->id,
+                            'object_type' => 'product_variant_info',
+                            'meta_key'    => 'product_thumbnail',
+                            'meta_value'  => $media->meta_value,
+                        ]);
+                    }
+                }
+            }
+
+            // Mirror advanced-variation attribute relations onto the new
+            // variants. Without this, fct_atts_relations stays empty for
+            // the duplicated product so variant.attr_map is empty
+            // downstream — AdvancedVariationTable can't group by an
+            // attribute, the per-variant breadcrumb collapses to "—", and
+            // (with the Pro variation_title snapshot) future re-saves
+            // would compose blank titles. Re-key on the variationIdMap
+            // built above so each (old_variant_id, group_id, term_id)
+            // tuple becomes a (new_variant_id, group_id, term_id) tuple.
+            if (!empty($variationIdMap)) {
+                $originalVariantIds = array_keys($variationIdMap);
+                $relations = AttributeRelation::query()
+                    ->whereIn('object_id', $originalVariantIds)
+                    ->get();
+                if ($relations->isNotEmpty()) {
+                    $rows = [];
+                    foreach ($relations as $rel) {
+                        $newVariantId = Arr::get($variationIdMap, $rel->object_id);
+                        if (!$newVariantId) {
+                            continue;
                         }
+                        $rows[] = [
+                            'group_id'  => (int) $rel->group_id,
+                            'term_id'   => (int) $rel->term_id,
+                            'object_id' => (int) $newVariantId,
+                        ];
+                    }
+                    if (!empty($rows)) {
+                        AttributeRelation::query()->insert($rows);
                     }
                 }
             }
@@ -779,5 +804,12 @@ class Product extends Model
     public function integrations(): \FluentCart\Framework\Database\Orm\Relations\HasMany
     {
         return $this->hasMany(ProductMeta::class, 'object_id')->where('object_type', 'product_integration');
+    }
+
+    public function reviews(): \FluentCart\Framework\Database\Orm\Relations\HasMany
+    {
+        return $this->hasMany(ProductReview::class, 'comment_post_ID', 'ID')
+            ->where('comment_parent', 0)
+            ->where('comment_approved', '1');
     }
 }

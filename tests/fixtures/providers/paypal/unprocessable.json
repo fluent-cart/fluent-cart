@@ -1,0 +1,17 @@
+{
+  "status": 422,
+  "message": "Unprocessable Entity",
+  "body": {
+    "name": "UNPROCESSABLE_ENTITY",
+    "message": "The requested action could not be performed.",
+    "debug_id": "phase22-unprocessable",
+    "details": [
+      {
+        "field": "/plan_id",
+        "location": "body",
+        "issue": "INVALID_PARAMETER_VALUE",
+        "description": "The plan identifier is invalid."
+      }
+    ]
+  }
+}

@@ -60,6 +60,7 @@ const onConfirm = () => {
     // Multiple files
     selectedFiles.value.forEach((selectedFile) => {
       const filename = selectedFile.name;
+      const filePath = selectedFile.path || filename;
       let title = filename.split('_____fluent-cart_____')[0];
       title = title.split('__fluent-cart__')[0];
 
@@ -70,6 +71,7 @@ const onConfirm = () => {
         driver: selectedFile.driver,
         bucket: selectedFile.bucket,
         file_name: filename,
+        file_path: filePath,
         file_size: selectedFile.size,
         settings: {
           download_limit: '',
@@ -83,6 +85,7 @@ const onConfirm = () => {
     // Single file
     const selectedFile = selectedFiles.value[0];
     const filename = selectedFile.name;
+    const filePath = selectedFile.path || filename;
     let title = filename.split('_____fluent-cart_____')[0];
     title = title.split('__fluent-cart__')[0];
 
@@ -93,6 +96,7 @@ const onConfirm = () => {
       driver: selectedFile.driver,
       bucket: selectedFile.bucket,
       file_name: filename,
+      file_path: filePath,
       file_size: selectedFile.size,
       settings: {
         download_limit: '',
@@ -105,7 +109,7 @@ const onConfirm = () => {
 
   dialogVisible.value = false;
   isFileSelected.value = false;
-  emit('onFileSelected', file);
+  emit('onFileSelected', file.value);
 }
 
 const selectedView = ref('list');
@@ -169,7 +173,7 @@ const onSelectFile = (selected, hasIssue) => {
                 <FileList
                     :storageDriverModel="storageDriverModel"
                     :driver="tab.route"
-                    @onFileSelected="(selected, hasIssue)=>{
+                    @on-file-selected="(selected, hasIssue)=>{
                       onSelectFile(selected, hasIssue)
                     }"
                     :multiple="isMultiple"
@@ -191,7 +195,7 @@ const onSelectFile = (selected, hasIssue) => {
                   </div>
                 </template>
 
-                <file-uploader
+                <FileUploader
                     :storageDriverModel="storageDriverModel"
                     @on-uploaded="(response, uploadFile, uploadFiles)=>{
                       selectedView = 'list';

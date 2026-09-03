@@ -20,14 +20,13 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
         'permissions' => 'subscriptions/manage'
     ]);
     $router->put('/{order}/subscriptions/{subscription}/fetch', [SubscriptionController::class, 'fetchSubscription'])->meta([
-        'permissions' => 'subscriptions/view'
+        'permissions' => 'subscriptions/manage'
     ]);
 
     $router->post('/{order}/subscriptions/{subscription}/early-payment-link', [SubscriptionController::class, 'generateEarlyPaymentLink'])->meta([
         'permissions' => 'subscriptions/manage'
     ]);
 
-    // Not available these 3
     $router->put('/{order}/subscriptions/{subscription}/reactivate', [SubscriptionController::class, 'reactivateSubscription'])->meta([
         'permissions' => 'subscriptions/manage'
     ]);
@@ -35,6 +34,24 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
         'permissions' => 'subscriptions/manage'
     ]);
     $router->put('/{order}/subscriptions/{subscription}/resume', [SubscriptionController::class, 'resumeSubscription'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->put('/{order}/subscriptions/{subscription}/update', [SubscriptionController::class, 'updateSubscription'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->put('/{order}/subscriptions/{subscription}/vendor-ids', [SubscriptionController::class, 'updateVendorIds'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->post('/{order}/subscriptions/{subscription}/verify-vendor-ids', [SubscriptionController::class, 'verifyVendorIds'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->post('/{order}/subscriptions/{subscription}/create-renewal', [SubscriptionController::class, 'createRenewalNow'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->post('/{order}/subscriptions/{subscription}/skip-renewal', [SubscriptionController::class, 'skipRenewal'])->meta([
+        'permissions' => 'subscriptions/manage'
+    ]);
+    $router->post('/{order}/subscriptions/{subscription}/charge-now', [SubscriptionController::class, 'chargeNow'])->meta([
         'permissions' => 'subscriptions/manage'
     ]);
 });

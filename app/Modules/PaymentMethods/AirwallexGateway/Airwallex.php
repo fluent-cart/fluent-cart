@@ -28,6 +28,7 @@ class Airwallex extends AbstractPaymentGateway
             'route' => 'airwallex',
             'description' => __('Pay securely with Airwallex - Global payment processing', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/airwallex-logo.svg"),
+            'logo_light' => Vite::getAssetUrl("images/payment-methods/airwallex-logo-light.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/airwallex-logo.svg"),
             'brand_color' => '#6c5ce7',
             'status' => $this->settings->get('is_active') === 'yes',
@@ -55,6 +56,25 @@ class Airwallex extends AbstractPaymentGateway
 
     public function handleIPN(): void
     {
+        // Airwallex is not released yet (meta 'upcoming' => true). The event
+        // handlers below are unfinished scaffolding that write order state
+        // directly, outside the transaction/event pipeline every live gateway
+        // uses, and without the cross-checks a real listener needs. Refuse to
+        // process any event while the gateway is upcoming so no forged or
+        // replayed payload can reach them.
+        //
+        // Before removing this guard at GA, the handlers MUST:
+        //  - resolve the order by the intent id we stamped at intent creation,
+        //    never by attacker-supplied metadata.order_id;
+        //  - verify amount, currency and payment mode against the stored order;
+        //  - reject stale callbacks (timestamp-age window + per-event dedup) and
+        //    guard terminal states (do not flip a paid order to failed);
+        //  - route through the shared PaymentHelper/transaction machinery.
+        if ($this->isUpcoming()) {
+            http_response_code(404);
+            exit();
+        }
+
         $payload = json_decode(file_get_contents('php://input'), true); // will get from request after verification
         // Verify webhook signature
         if (!$this->verifyWebhookSignature($payload)) {
@@ -104,7 +124,7 @@ class Airwallex extends AbstractPaymentGateway
 
     public function fields()
     {
-        $webhook_url = site_url() . '?fct_payment_listener=1&method=airwallex';
+        $webhook_url = Arr::get($this->getListenerUrl(), 'listener_url');
         $webhook_instructions = sprintf(
             '<div>
                 <p><b>%1$s</b><code class="copyable-content">%2$s</code></p>

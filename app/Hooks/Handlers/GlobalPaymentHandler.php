@@ -7,7 +7,6 @@ use FluentCart\App\Modules\PaymentMethods\AirwallexGateway\Airwallex;
 use FluentCart\App\Modules\PaymentMethods\Cod\Cod;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\PayPal;
-use FluentCart\App\Modules\PaymentMethods\SquareGateway\Square;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Stripe;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Connect\ConnectConfig;
 use FluentCart\Framework\Support\Arr;
@@ -28,7 +27,6 @@ class GlobalPaymentHandler
             $gateway->register('stripe', new Stripe());
             $gateway->register('paypal', new PayPal());
             $gateway->register('offline_payment', new Cod());
-            $gateway->register('square', new Square());
             $gateway->register('airwallex', new Airwallex());
 
             $this->verifyStripeConnect();

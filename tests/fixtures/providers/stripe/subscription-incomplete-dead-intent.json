@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "sub_phase30_dead",
+    "object": "subscription",
+    "status": "incomplete",
+    "customer": "cus_phase30_guard",
+    "metadata": {
+      "fct_ref_id": "phase30-guard-order-ref"
+    },
+    "items": {
+      "object": "list",
+      "data": [
+        {
+          "id": "si_phase30_dead",
+          "object": "subscription_item",
+          "quantity": 1,
+          "plan": {
+            "id": "price_phase30_guard",
+            "object": "plan"
+          },
+          "price": {
+            "id": "price_phase30_guard",
+            "object": "price"
+          }
+        }
+      ]
+    },
+    "pending_setup_intent": null,
+    "latest_invoice": {
+      "id": "in_phase30_dead",
+      "object": "invoice",
+      "status": "void",
+      "payment_intent": {
+        "id": "pi_phase30_dead",
+        "object": "payment_intent",
+        "status": "canceled"
+      }
+    }
+  }
+}

@@ -41,12 +41,29 @@ class CheckoutPageHandler extends ShortCode
             $primaryBillingAddress = $currentCustomer->primary_billing_address;
             if ($primaryBillingAddress) {
                 $formData['billing_address_id'] = $primaryBillingAddress->id;
+            } else {
+                // Case 3: no primary address — use the first available billing address
+                $firstBillingAddress = $currentCustomer->billing_address()
+                    ->where('status', 'active')
+                    ->orderBy('id', 'ASC')
+                    ->first();
+                if ($firstBillingAddress) {
+                    $formData['billing_address_id'] = $firstBillingAddress->id;
+                }
             }
 
             if ($cart->isShipToDifferent()) {
                 $primaryShippingAddress = $currentCustomer->primary_shipping_address;
                 if ($primaryShippingAddress) {
                     $formData['shipping_address_id'] = $primaryShippingAddress->id;
+                } else {
+                    $firstShippingAddress = $currentCustomer->shipping_address()
+                        ->where('status', 'active')
+                        ->orderBy('id', 'ASC')
+                        ->first();
+                    if ($firstShippingAddress) {
+                        $formData['shipping_address_id'] = $firstShippingAddress->id;
+                    }
                 }
             }
         }

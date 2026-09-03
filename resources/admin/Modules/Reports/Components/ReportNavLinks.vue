@@ -38,7 +38,11 @@
       >
         <li v-for="(route, i) in navLinks" :key="i" class="fct-settings-nav-item" :class="{'fct-settings-nav-item-active': isRouteActive(route)}">
           <div @click="handleRouterPush(route)" class="fct-settings-nav-link">
-            <DynamicIcon v-if="route.icon" :name="route.icon" class="w-5 h-5"/>
+            <template v-if="route.icon_img">
+              <img :src="route.icon_img" :alt="route.label" :class="route.icon_img_dark ? 'w-5 h-5 dark:hidden' : 'w-5 h-5'"/>
+              <img v-if="route.icon_img_dark" :src="route.icon_img_dark" :alt="route.label" class="w-5 h-5 hidden dark:block"/>
+            </template>
+            <DynamicIcon v-else-if="route.icon" :name="route.icon" class="w-5 h-5"/>
 
             <span class="fct-settings-nav-link-text">
                 {{ route.label }}
@@ -79,6 +83,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Animation from "@/Bits/Components/Animation.vue";
+import AppConfig from "@/utils/Config/AppConfig";
 
 const router = useRouter();
 const route = useRoute();
@@ -157,6 +162,14 @@ const navLinks = [
     icon: 'Source'
   },
 ];
+
+// Add-ons may append report nav items via the `addon_report_sidebar` admin_app_data key. Each item's
+// `route` (name) must be registered as a router route by the add-on through the existing
+// `fluent_cart_routes` filter (the same extension point core modules use in bootstrap/app.js), or the
+// item renders but navigation fails. For the icon, pass either `icon` (a bundled DynamicIcon name) or
+// `icon_img` — plus an optional `icon_img_dark` for dark mode — as image URLs; these render via <img>
+// (like the payment/addon logos), so add-on-supplied icon markup is never executed.
+AppConfig.get('addon_report_sidebar', []).forEach(item => navLinks.push(item));
 const isMenuCollapsed = ref(false);
 const isMenuExpanded = ref(false);
 const isDesktopView = ref(window.innerWidth >= 1024);
@@ -215,7 +228,6 @@ const handleRouterPush = (route) => {
   router.push({ name: route.route }).catch(err => {
     // Ignore navigation duplicated errors
     if (err.name !== 'NavigationDuplicated') {
-      console.error('Navigation error:', err);
     }
   });
 

@@ -3,11 +3,12 @@
 namespace FluentCart\App\Modules\PaymentMethods\Cod;
 
 
+use FluentCart\App\Events\Subscription\SubscriptionActivated;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Cart;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Services\DateTime\DateTime;
-use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Models\Subscription;
 
 class CodHandler {
@@ -26,7 +27,7 @@ class CodHandler {
             return $this->handleZeroTotalPayment($paymentInstance);
         }
 
-        if (!$settings['is_active'] === 'yes') {
+        if (($settings['is_active'] ?? 'no') !== 'yes') {
             throw new \Exception(esc_html__('Offline payment is not activated', 'fluent-cart'));
         }
 
@@ -52,10 +53,12 @@ class CodHandler {
                 'transaction' => $paymentInstance->transaction ?? []
             ];
             
-            do_action('fluent_cart/order_placed_offline', $data);
+            // Renewal invoices are not new orders — skip placement emails.
+            // SubscriptionRenewed fires separately once the invoice is paid.
+            if ($paymentInstance->order->type !== Status::ORDER_TYPE_RENEWAL) {
+                do_action('fluent_cart/order_placed_offline', $data);
+            }
         }
-
-        $paymentHelper = new PaymentHelper('offline_payment');
 
         $relatedCart = Cart::query()->where('order_id', $order->id)
             ->where('stage', '!=', 'completed')
@@ -67,7 +70,7 @@ class CodHandler {
             $relatedCart->save();
         }
 
-        return $paymentHelper->successUrl($paymentInstance->transaction->uuid);
+        return $paymentInstance->transaction->getSuccessUrl();
     }
 
     public function handleZeroTotalPayment($paymentInstance)
@@ -88,13 +91,17 @@ class CodHandler {
                 ->first();
 
                 if ($subscription) {
-                    $subscription->status = 'active';
-                    $subscription->next_billing_date = null; // No future billing needed
-                    $subscription->save();
+                    $oldStatus = $subscription->status;
+                    $subscription = SubscriptionService::syncSubscriptionStates($subscription, [
+                        'status'            => Status::SUBSCRIPTION_ACTIVE,
+                        'next_billing_date' => null,
+                    ]);
+                    if ($oldStatus !== Status::SUBSCRIPTION_ACTIVE && $subscription->status === Status::SUBSCRIPTION_ACTIVE) {
+                        (new SubscriptionActivated($subscription, $order, $order->customer))->dispatch();
+                    }
                 }
         }
 
-        $paymentHelper = new PaymentHelper('offline_payment');
-        return $paymentHelper->successUrl($transaction->uuid);
+        return $transaction->getSuccessUrl();
     }
 }

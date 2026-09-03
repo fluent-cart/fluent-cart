@@ -2,7 +2,8 @@ export function useNavigationMenuUpdateService(router) {
     // Submenu grouping: map parent WP menu class → child classes that should toggle with it
     const groupedSubMenus = {
         'fluent_cart_products': [
-            'fluent_cart_inventory'
+            'fluent_cart_inventory',
+            'fluent_cart_attributes'
         ]
     };
 

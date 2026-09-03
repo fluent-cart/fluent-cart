@@ -1,95 +1,102 @@
 <template>
-	<div class="fct-add-term-modal">
-		<el-form label-position='top' :data="term">
-			<el-form-item :label="$t('Title')">
-				<el-input size="large" type="text" v-model="term.title" :placeholder="$t('Unique title')" @blur="titleIsBlurred" />
-			</el-form-item>
+    <div class="fct-add-term-modal">
+        <TermForm
+            ref="formRef"
+            :term="term"
+            :group-type="groupType"
+            :show-remove-button="false"
+            :validation-errors="validationErrors"
+            field-key="terms.0"
+            @submit="createTerm"
+            @remove="emit('isTermCreatingDone')"
+        />
 
-			<el-form-item :label="$t('Slug')">
-				<el-input size="large" type="text" v-model="term.slug" :placeholder="$t('Unique slug....')"/>
-			</el-form-item>
-
-			<el-form-item :label="$t('Description')">
-				<el-input size="large" type="textarea" v-model="term.description" :placeholder="$t('Description ...')"/>
-			</el-form-item>
-
-			<el-form-item :label="$t('Serial')">
-				<el-input size="large" type="number" v-model="term.serial" :placeholder="$t('Term serial...')"/>
-			</el-form-item>
-		</el-form>
-		<div class="dialog-footer">
-			<el-button size="large" :disabled="!term.title || loading"
-					:loading="loading"
-					@click="createTerm()"
-					type="primary">
-				{{ $t('Add term')}}
-			</el-button>
-		</div>
-	</div>
+        <div class="dialog-footer">
+            <el-button
+                :disabled="!hasValidTitle || loading"
+                :loading="loading"
+                type="primary"
+                @click="createTerm"
+            >
+                {{ translate('Add term') }}
+            </el-button>
+        </div>
+    </div>
 </template>
 
-<script type="text/babel">
+<script setup>
+import { ref, computed } from "vue";
+import Rest from '@/utils/http/Rest';
+import translate from "@/utils/translator/Translator";
+import { handleSuccess } from "@/Bits/common";
+import Notify from "@/utils/Notify";
+import TermForm from "./TermForm.vue";
 
-import {reactive, ref} from "vue";
-import Api from '@/utils/http/Rest'
-import {handleSuccess, handleError} from "@/Bits/common";
+const props = defineProps({
+    groupId: { type: [String, Number], required: true },
+    group: { type: Object, default: () => ({}) },
+    // Pre-seeded title. Used by the advanced-variation editor: when the
+    // merchant types an unknown term name in the color / image option-values
+    // picker and hits Enter, we open this modal with the typed text already
+    // staged so they only need to pick a color or image, not retype the
+    // name.
+    initialTitle: { type: String, default: '' },
+});
 
-export default {
-	name: 'AddTermModal',
-	props: ['groupId', 'group'],
-	setup(props, ctx) {
+const emit = defineEmits(['isTermCreatingDone']);
 
-		const loading = ref(false);
+const loading = ref(false);
+const validationErrors = ref({});
+const formRef = ref(null);
 
-		const term = reactive({
-			title: '',
-			slug: '',
-			serial: 10,
-			description: '',
-			settings: '',
-			group_id: props.groupId,
-		});
+const groupType = computed(() => {
+    const settings = props.group && props.group.settings;
+    return settings && settings.type ? settings.type : 'options';
+});
 
-		const createTerm = () => {
+const term = ref({
+    title: (props.initialTitle || '').trim(),
+    settings: { color: '', image: '' },
+});
 
-			loading.value = true;
+const hasValidTitle = computed(() => (term.value.title || '').trim() !== '');
 
-			Api.post('options/attr/group/' + props.groupId + '/term', {
-				...term
-			}).then(response => {
-				handleSuccess(response.message);
+const createTerm = () => {
+    if (!hasValidTitle.value || loading.value) return;
+    loading.value = true;
+    validationErrors.value = {};
 
-			}).catch(errors => {
-				handleError(errors);
+    const payload = {
+        terms: [{
+            title: term.value.title.trim(),
+            settings: {
+                color: term.value.settings.color || '',
+                image: term.value.settings.image || '',
+            },
+        }],
+    };
 
-			}).finally(() => {
-				loading.value = false;
-				ctx.emit('isTermCreatingDone');
-			});
-		}
-
-		const titleIsBlurred = () => {
-			if(!term.slug && term.title) {
-				term.slug = makeASlug(term.title);
-			}
-		}
-
-		const makeASlug = ($str) => {
-			let str = $str.toLowerCase();
-			str = str.trim();
-			str = str.replace(/ /g, '-');
-			str = str.replace(/&/g, 'and');
-			str = str.replace(/'/g, '_');
-
-			return str;
-		}
-
-		return {
-			term,
-			loading,
-			createTerm,
-			titleIsBlurred
-		}
-	}
-}
+    Rest.post('options/attr/group/' + props.groupId + '/terms', payload)
+        .then(response => {
+            handleSuccess(response.message);
+            // The bulk-create endpoint returns response.data as an array of
+            // created terms. The single-add consumer (AdvancedVariationConfig
+            // termCreatingIsDone) expects a single object — push the first
+            // (and only) created term up.
+            const created = Array.isArray(response.data) ? response.data[0] : response.data;
+            emit('isTermCreatingDone', created);
+        }).catch(errors => {
+            if (errors?.status_code == 422 && errors.data) {
+                // Bulk-create returns keys like `terms.0.title` — pass the
+                // raw map straight through. TermForm composes lookups via
+                // its `fieldKeyPrefix="terms.0."` prop so the inline error
+                // resolves dynamically without any renaming step here.
+                validationErrors.value = errors.data;
+            } else {
+                Notify.error(errors?.data?.message || errors?.message || translate('Failed to add the term.'));
+            }
+        }).finally(() => {
+            loading.value = false;
+        });
+};
 </script>

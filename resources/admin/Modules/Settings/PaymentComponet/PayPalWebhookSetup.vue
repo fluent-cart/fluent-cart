@@ -21,6 +21,10 @@
 import Notify from "@/utils/Notify";
 export default {
   name: "PayPalWebhookSetup",
+  components: {
+    Notify
+  },
+  props: ['mode', 'webhook_info', 'testConnect', 'liveConnect'],
   data() {
     return {
       isLoading: false,
@@ -28,7 +32,11 @@ export default {
       checkingWebhook: false
     }
   },
-  props: ['mode', 'webhook_info', 'testConnect', 'liveConnect'],
+  computed: {
+    isConnected() {
+      return (this.mode === 'test' && this.testConnect) || (this.mode === 'live' && this.liveConnect);
+    }
+  },
   watch: {
     testConnect() {
       this.checkWebhookStatus();
@@ -37,13 +45,8 @@ export default {
       this.checkWebhookStatus();
     }
   },
-  computed: {
-    isConnected() {
-      return (this.mode === 'test' && this.testConnect) || (this.mode === 'live' && this.liveConnect);
-    }
-  },
-  components: {
-    Notify
+  mounted() {
+    this.checkWebhookStatus();
   },
   methods: {
     checkWebhookStatus() {
@@ -79,9 +82,6 @@ export default {
         }, 2000);
       })
     }
-  },
-  mounted() {
-    this.checkWebhookStatus();
   }
 }
 </script>

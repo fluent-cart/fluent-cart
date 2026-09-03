@@ -49,8 +49,8 @@ import {ElMessage} from "element-plus";
 export default {
   name: 'BulkAction',
   components: {},
-  emits: ['reload'],
   props: ['selectedProducts'],
+  emits: ['reload'],
   data() {
     return {
       // doing_bulk_actions: false,
@@ -79,6 +79,9 @@ export default {
     }
   },
   computed: {},
+  mounted() {
+
+  },
   methods: {
     handleBulkAction() {
       if (this.bulkOptionValue === '') {
@@ -109,11 +112,11 @@ export default {
         return;
       }
 
-      this.$confirm('Are you sure you want to delete these ' + productIds.length + ' products. This action is not recoverable',
-          'Confirm Delete!',
+      this.$confirm(this.$t('Are you sure you want to delete these %1$s products. This action is not recoverable', productIds.length),
+          this.$t('Confirm Delete!'),
           {
-            confirmButtonText: 'Yes, Delete these products',
-            cancelButtonText: 'Cancel',
+            confirmButtonText: this.$t('Yes, Delete these products'),
+            cancelButtonText: this.$t('Cancel'),
             type: 'error'
           }).then(() => {
         // this.doing_bulk_actions = true;
@@ -174,9 +177,6 @@ export default {
       this.selected_action = '';
       this.$emit('reload');
     }
-  },
-  mounted() {
-
   }
 }
 </script>

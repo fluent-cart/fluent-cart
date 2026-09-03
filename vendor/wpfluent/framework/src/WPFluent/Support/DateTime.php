@@ -235,6 +235,8 @@ class DateTime extends PHPDateTime
      * @param string|DateTimeInterface $date1
      * @param string|DateTimeInterface $date2,
      * @return bool
+     *
+     * @phpstan-ignore-next-line
      */
     public function between($date1, $date2): bool
     {
@@ -1056,6 +1058,8 @@ class DateTime extends PHPDateTime
      * Check if the current instance is a weekend.
      *
      * @return bool
+     *
+     * @phpstan-ignore-next-line
      */
     public function isWeekend($startOfWeek = null): bool
     {
@@ -1114,7 +1118,10 @@ class DateTime extends PHPDateTime
 
     /**
      * Check if the year is a leap year.
+     *
      * @return boolean
+     *
+     * @phpstan-ignore-next-line
      */
     public function isLeapYear(): bool
     {

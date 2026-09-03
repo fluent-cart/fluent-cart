@@ -1,8 +1,11 @@
 <script setup>
 import {getCurrentInstance, nextTick, onMounted, ref, watch} from "vue";
+import {useRoute} from "vue-router";
 import FormRenderer from "@/Bits/Components/Form/Renderer/FormRenderer.vue";
 import translate from "@/utils/translator/Translator";
+import Url from "@/utils/support/Url";
 
+const route = useRoute();
 
 const props = defineProps({
   form: {
@@ -29,13 +32,18 @@ const props = defineProps({
   }
 })
 const emit = defineEmits(['onSubmit', 'onChange', 'onSubmitButtonClick']);
-let called = false;
 
+watch(() => props.form.isReady, () => {
+  nextTick(() => Url.scrollToHashSection(route.hash));
+}, { once: true });
 
 onMounted(() => {
   nextTick(() => {
-    selfRef.registerCopyAction()
-  })
+    selfRef.registerCopyAction();
+    if (props.form.isReady) {
+      Url.scrollToHashSection(route.hash);
+    }
+  });
 })
 
 const data = ref({});
@@ -69,9 +77,10 @@ defineExpose({
     <div v-if="showSubmitButton" class="form-section-save-action">
       <el-button @click="onSubmitBtnClick" type="primary" :loading="loading">
         <span v-if="!loading" class="cmd block leading-none">⌘s</span>
-        {{ loading ? translate('Saving') : submitButtonText }}
+        {{ submitButtonText }}
       </el-button>
     </div>
   </div>
 
 </template>
+

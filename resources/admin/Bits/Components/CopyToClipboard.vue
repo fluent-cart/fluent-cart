@@ -52,7 +52,9 @@ const props = defineProps({
       type: String,
       default: translate('Copy')
     },
-    text: String,
+    // Accept Number too — callers commonly pass a numeric id (e.g. variant.id);
+    // it's stringified on copy. Avoids a noisy prop type-check warning per row.
+    text: [String, Number],
     placeholder: String,
     buttonText: {
       type: String,

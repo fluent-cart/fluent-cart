@@ -14,6 +14,13 @@ class Pages
 
     public function pages(): array
     {
+        // Lets addons register their own generatable pages ('key' => title + content),
+        // so the Pages Setup "+" create button and onboarding can build them.
+        return apply_filters('fluent_cart/generatable_pages', $this->corePages());
+    }
+
+    public function corePages(): array
+    {
         return [
             'checkout'         => [
                 'title'   => 'Checkout',

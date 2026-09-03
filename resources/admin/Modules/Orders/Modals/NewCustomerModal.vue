@@ -182,9 +182,7 @@ const getWpUserCheckboxLabel = computed(() => {
 
 const getActionButtonLabel = computed(() => {
 
-  return loading.value
-      ? (props.customerModalInfos.action === "edit" ? translate("Updating") : translate("Creating"))
-      : (props.customerModalInfos.action === "edit" ? translate("Update Customer") : translate("Create Customer"));
+  return (props.customerModalInfos.action === "edit" ? translate("Update Customer") : translate("Create Customer"));
 });
 
 const normalizedErrors = computed(() => {

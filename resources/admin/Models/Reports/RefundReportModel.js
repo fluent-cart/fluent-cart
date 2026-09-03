@@ -43,7 +43,6 @@ class RefundReportModel extends Model {
         }
       })
       .catch((error) => {
-        console.log(error, "error");
       })
       .finally(() => {
         if (key) this.data.isBusy[key] = false;

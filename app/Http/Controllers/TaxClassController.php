@@ -4,8 +4,6 @@ namespace FluentCart\App\Http\Controllers;
 
 use FluentCart\App\Models\TaxClass;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\Framework\Support\Str;
-use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Http\Requests\TaxClassRequest;
 
@@ -23,10 +21,7 @@ class TaxClassController extends Controller
                 return $b->id <=> $a->id; // newer first when priority equal
             }
             return $bPriority <=> $aPriority;
-        })->values()->map(function ($taxClass) {
-            $taxClass->categories = Arr::get($taxClass->meta, 'categories', []);
-            return $taxClass;
-        });
+        })->values();
 
         return $this->sendSuccess([
             'tax_classes' => $taxClasses
@@ -40,9 +35,7 @@ class TaxClassController extends Controller
 
         $taxClassData = [
             'title' => Arr::get($data, 'title'),
-            'description' => Arr::get($data, 'description', ''),
             'meta' => [
-                'categories' => Arr::get($data, 'categories', []),
                 'priority' => Arr::get($data, 'priority', 0),
             ]
         ];
@@ -56,7 +49,7 @@ class TaxClassController extends Controller
         }
 
         return $this->sendSuccess([
-            'message' => __('Tax class has been created successfully', 'fluent-cart')
+            'message' => __('Tax profile has been created successfully', 'fluent-cart')
         ]);
 
     }
@@ -67,48 +60,14 @@ class TaxClassController extends Controller
             return;
         }
 
-        $taxClasses = [
+        TaxClass::query()->firstOrCreate(
+            ['slug' => 'standard'],
             [
                 'title' => __('Standard', 'fluent-cart'),
-                'slug' => 'standard',
-                'description' => __('Standard tax rate for most products', 'fluent-cart'),
-                'meta' => [
-                    'categories' => [],
-                    'priority' => 10,
-                ]
-            ],
-            [
-                'title' => __('Reduced', 'fluent-cart'),
-                'slug' => 'reduced',
-                'description' => __('Reduced tax rate for essential goods', 'fluent-cart'),
-                'meta' => [
-                    'categories' => [],
-                    'priority' => 5,
-                ]
-            ],
-            [
-                'title' => __('Zero', 'fluent-cart'),
-                'slug' => 'zero',
-                'description' => __('Zero tax rate for exempt products', 'fluent-cart'),
-                'meta' => [
-                    'categories' => [],
-                    'priority' => 2,
-                ]
-            ]
-        ];
-
-       foreach ($taxClasses as $taxClass) {
-        $taxClass = TaxClass::query()->firstOrCreate(
-            ['slug' => $taxClass['slug']],
-            [
-                'title' => $taxClass['title'],
-                'description' => $taxClass['description'],
-                'meta' => $taxClass['meta']
             ]
         );
-       }
 
-       update_option('fluent_cart_has_tax_configure', true);
+        update_option('fluent_cart_has_tax_configure', true);
     }
 
     public function update(TaxClassRequest $request, $id)
@@ -118,9 +77,7 @@ class TaxClassController extends Controller
 
         $taxClassData = [
             'title' => Arr::get($data, 'title'),
-            'description' => Arr::get($data, 'description', ''),
             'meta' => [
-                'categories' => Arr::get($data, 'categories', []),
                 'priority' => Arr::get($data, 'priority', 0),
             ]
         ];
@@ -129,12 +86,12 @@ class TaxClassController extends Controller
 
         if (!$isUpdated) {
             return $this->sendError([
-                'message' => __('Failed to update tax class', 'fluent-cart')
+                'message' => __('Failed to update tax profile', 'fluent-cart')
             ]);
         }
 
         return $this->sendSuccess([
-            'message' => __('Tax class has been updated successfully', 'fluent-cart')
+            'message' => __('Tax profile has been updated successfully', 'fluent-cart')
         ]);
     }
 
@@ -143,16 +100,23 @@ class TaxClassController extends Controller
     public function delete(Request $request, $id)
     {
         $taxClass = TaxClass::query()->findOrFail($id);
+
+        if ($taxClass->slug === 'standard') {
+            return $this->sendError([
+                'message' => __('Cannot delete the Standard tax class', 'fluent-cart')
+            ], 423);
+        }
+
         $isDeleted = $taxClass->delete();
 
         if (!$isDeleted) {
             return $this->sendError([
-                'message' => __('Failed to delete tax class', 'fluent-cart')
+                'message' => __('Failed to delete tax profile', 'fluent-cart')
             ]);
         }
 
         return $this->sendSuccess([
-            'message' => __('Tax class has been deleted successfully', 'fluent-cart')
+            'message' => __('Tax profile has been deleted successfully', 'fluent-cart')
         ]);
     }
 

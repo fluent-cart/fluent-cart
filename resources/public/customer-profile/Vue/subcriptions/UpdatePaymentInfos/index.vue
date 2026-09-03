@@ -57,11 +57,17 @@
                     <div class="fct-update-payment-method-form">
                         <div v-if="selectedPaymentMethod == 'stripe'" class="fct-update-payment-method-stripe">
                             <Stripe :subscription="subscription" @close="closeUpdatePaymentModal"
-                                    @fetchSubscription="fetchSubscription" :updateMethod="updateMethod"/>
+                                    @fetch-subscription="fetchSubscription" :updateMethod="updateMethod"/>
                         </div>
                         <div v-if="selectedPaymentMethod == 'paypal'" class="fct-update-payment-method-paypal">
                             <Paypal :subscription="subscription" @close="closeUpdatePaymentModal"
-                                    @fetchSubscription="fetchSubscription" :updateMethod="updateMethod"/>
+                                    @fetch-subscription="fetchSubscription" :updateMethod="updateMethod"/>
+                        </div>
+                        <div v-if="subscription.card_update_url && !['stripe', 'paypal'].includes(selectedPaymentMethod)" class="fct-update-payment-method-redirect">
+                            <p>{{ translate('You will be redirected to complete the update.') }}</p>
+                            <el-button type="primary" @click="openCardUpdateUrl">
+                                {{ translate('Continue') }}
+                            </el-button>
                         </div>
                     </div>
                 </div>
@@ -82,7 +88,7 @@ export default {
     components: {
         InputField,
         Stripe,
-        Paypal
+        Paypal,
     },
     props: {
         subscription: {
@@ -131,6 +137,9 @@ export default {
           return (this.getAllPaymentMethods || []).filter(method => method.slug === this.subscription.current_payment_method);
         },
     },
+    mounted() {
+
+    },
     methods: {
         translate,
         showUpdatePaymentModal() {
@@ -139,12 +148,12 @@ export default {
         closeUpdatePaymentModal() {
             this.updatePaymentModal = false;
         },
+        openCardUpdateUrl() {
+            window.open(this.subscription.card_update_url, '_blank');
+        },
         fetchSubscription() {
             this.$emit('fetch');
         }
-    },
-    mounted() {
-
     }
 }
 </script>

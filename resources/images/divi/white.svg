@@ -1,0 +1,10 @@
+<svg width="136" height="136" viewBox="0 0 136 136" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_divi_white)">
+<path d="M68 0C30.4446 0 0 30.4446 0 68C0 105.555 30.4446 136 68 136C105.555 136 136 105.555 136 68C136 30.4446 105.555 0 68 0ZM46 38H72C90 38 102 51 102 68C102 85 90 98 72 98H46V38ZM59 51V85H72C81 85 89 78 89 68C89 58 81 51 72 51H59Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_divi_white">
+<rect width="136" height="136" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -14,6 +14,8 @@ use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Tax\TaxCalculator;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
 
 class CheckoutProcessor
 {
@@ -44,6 +46,10 @@ class CheckoutProcessor
     private $couponDiscountTotal = 0;
 
     private $manualDiscountTotal = 0;
+
+    private $prorateCreditTotal = 0;
+
+    private $upgradeDiscountTotal = 0;
 
     public function __construct($cartItems = [], $args = [])
     {
@@ -97,6 +103,9 @@ class CheckoutProcessor
             $this->orderModel->updateMeta('tax_id', Arr::get($this->args, 'tax_id', 0));
         }
 
+        // Store tax meta for mixed carts (tax_behavior=3) - used by payment gateways and renewals
+        $this->persistTaxMeta();
+
         // Let's create the order items
         $normalOrderItems = array_filter($this->formattedIOrderItems, function ($item) {
             return $item['payment_type'] != 'signup_fee';
@@ -118,6 +127,12 @@ class CheckoutProcessor
                 unset($orderItem['bundle_items']);
             }
 
+            if (!empty($orderItem['coupon_discount'])) {
+                $lineMeta = Arr::get($orderItem, 'line_meta', []);
+                $lineMeta['coupon_discount'] = (int) $orderItem['coupon_discount'];
+                $orderItem['line_meta'] = $lineMeta;
+            }
+
             $createdItem = OrderItem::query()->create($orderItem);
 
             if ($additionalItems) {
@@ -127,6 +142,9 @@ class CheckoutProcessor
                     $additionalItem['line_total'] = Arr::get($additionalItem, 'subtotal', 0) - Arr::get($additionalItem, 'discount_total', 0);
                     $mata = Arr::get($additionalItem, 'line_meta', []);
                     $mata['parent_item_id'] = $createdItem->id;
+                    if (!empty($additionalItem['coupon_discount'])) {
+                        $mata['coupon_discount'] = (int) $additionalItem['coupon_discount'];
+                    }
                     $additionalItem['line_meta'] = $mata;
                     $childItem = OrderItem::query()->create($additionalItem);
                     $additionalItemIds[] = $childItem->id;
@@ -150,6 +168,9 @@ class CheckoutProcessor
                     $bundleItem['payment_type'] = 'bundle';
                     $meta = Arr::get($bundleItem, 'line_meta', []);
                     $meta['bundle_parent_item_id'] = $createdItem->id;
+                    if (!empty($bundleItem['coupon_discount'])) {
+                        $meta['coupon_discount'] = (int) $bundleItem['coupon_discount'];
+                    }
                     $bundleItem['line_meta'] = $meta;
                     $bundleItem = OrderItem::query()->create($bundleItem);
                     $bundleItemIds[] = $bundleItem->id;
@@ -181,6 +202,7 @@ class CheckoutProcessor
             $subscriptionData['parent_order_id'] = $this->orderModel->id;
 
             $this->subscriptionModel = Subscription::query()->create($subscriptionData);
+            $this->syncInitialCycleCounting();
         }
 
         // Let's create the transaction
@@ -225,6 +247,16 @@ class CheckoutProcessor
                 }
 
                 $cart->save();
+
+                // Carry the traffic source onto the order while the cart still exists.
+                // Carts are pruned on a schedule, so this is the last reliable point at
+                // which the click that produced the sale can still be recovered.
+                UtmHelper::addUtmToOrder(
+                    $this->orderModel->id,
+                    UtmHelper::resolveUtmData(UtmHelper::getUtmDataOfRequest(), $cart->utm_data),
+                    $cart->cart_hash
+                );
+
                 $actions = Arr::get($cart->checkout_data, '__after_draft_created_actions__', []);
                 if ($actions) {
                     foreach ($actions as $actionName) {
@@ -287,6 +319,13 @@ class CheckoutProcessor
         if ($isLocked && $taxEnabled !== 'yes') {
             // Locked orders skip full item sync, but fee items must stay in sync with fee_total
             $this->syncFeeItems();
+
+            // Load existing subscription so the transaction gets the correct subscription_id
+            if ($this->orderModel->type === Status::ORDER_TYPE_SUBSCRIPTION) {
+                $this->subscriptionModel = Subscription::query()
+                    ->where('parent_order_id', $this->orderModel->id)
+                    ->first();
+            }
         }
 
         if (!$isLocked || $taxEnabled === 'yes') {
@@ -378,7 +417,7 @@ class CheckoutProcessor
                     ])->save();
                 }
             }
-            if ($taxTotal && !$this->orderModel->tax_total) {
+            if ($taxTotal && !$this->orderModel->tax_total && !$isLocked) {
                 $this->orderModel->tax_total = $taxTotal;
                 $this->orderModel->total_amount += $taxTotal;
                 $this->orderModel->save();
@@ -405,6 +444,7 @@ class CheckoutProcessor
                     } else {
                         $this->subscriptionModel = Subscription::query()->create($subscriptionData);
                     }
+                    $this->syncInitialCycleCounting();
                 }
             } else {
                 Subscription::query()->where('parent_order_id', $this->orderModel->id)->delete();
@@ -413,6 +453,8 @@ class CheckoutProcessor
 
         // Reload the order to get fresh item data after updates
         $this->orderModel = $this->orderModel->fresh();
+
+        $this->persistTaxMeta();
 
         // Let's create the transaction
         $transactionData = [
@@ -445,6 +487,18 @@ class CheckoutProcessor
             ->first();
 
         if ($existingTransaction) {
+            // Retry vs duplicate for gateway idempotency (PaymentInstance::getIdempotencySeed):
+            // re-submitting a pending transaction is a duplicate (keep attempt -> gateway
+            // dedupes); re-submitting a FAILED one is a retry (bump attempt -> fresh seed,
+            // never answered with the failed attempt's cached gateway response).
+            $attempt = (int) Arr::get($existingTransaction->meta ?: [], 'payment_attempt', 0);
+            if ($existingTransaction->status === Status::PAYMENT_FAILED) {
+                $attempt++;
+            }
+            if ($attempt) {
+                $transactionData['meta'] = ['payment_attempt' => $attempt];
+            }
+
             $existingTransaction->fill($transactionData);
             $existingTransaction->save();
             $this->transactionModel = $existingTransaction;
@@ -475,6 +529,24 @@ class CheckoutProcessor
         return $this->orderModel;
     }
 
+    private function persistTaxMeta()
+    {
+        $exclusiveTaxTotal = (int) Arr::get($this->args, 'exclusive_tax_total', 0);
+        $storeTaxBehavior  = (int) Arr::get($this->args, 'store_tax_behavior', 0);
+        $feeTax            = (int) Arr::get($this->args, 'fee_tax', 0);
+        $feeTaxLines       = (array) Arr::get($this->args, 'fee_tax_lines', []);
+
+        $this->orderModel->updateMeta('exclusive_tax_total', $exclusiveTaxTotal);
+        $this->orderModel->updateMeta('store_tax_behavior', $storeTaxBehavior);
+        $this->orderModel->updateMeta('fee_tax', $feeTax);
+
+        if (!empty($feeTaxLines)) {
+            $this->orderModel->updateMeta('fee_tax_lines', $feeTaxLines);
+        } else {
+            $this->orderModel->deleteMeta('fee_tax_lines');
+        }
+    }
+
     private function insertAppliedCoupons($appliedCoupons, $removeOlds = false, $order = null): void
     {
         if ($removeOlds) {
@@ -489,9 +561,19 @@ class CheckoutProcessor
         }
 
         if (!empty($couponCodes)) {
-            $coupons = Coupon::query()->whereIn('code', $couponCodes)->get()
-                ->keyBy('code')
-                ->toArray();
+            $coupons = Coupon::query()->whereIn('code', $couponCodes)->get();
+
+            /*
+             * Resolve virtual (un-persisted) coupons so an AppliedCoupon row is written for
+             * them too — the row stores coupon_id = null (the column is nullable) with the
+             * code and computed discount, so it shows in the order's Coupons section like any
+             * coupon. See DiscountService::applyCouponCodes() for the same filter.
+             */
+            $coupons = apply_filters('fluent_cart/coupon/resolve_coupons', $coupons, $couponCodes, [
+                'order' => $this->orderModel,
+            ]);
+
+            $coupons = $coupons->keyBy('code')->toArray();
 
             foreach ($coupons as $code => &$coupon) {
                 $coupon['coupon_id'] = $appliedCoupons[$code]['id'];
@@ -535,7 +617,7 @@ class CheckoutProcessor
             $discountTotal = (int)Arr::get($cartItem, 'manual_discount', 0) + (int)Arr::get($cartItem, 'coupon_discount', 0);
             $shippingCharge = (int)Arr::get($cartItem, 'shipping_charge', 0);
 
-            $subtotal = $unitPrice * $quantity;
+            $subtotal = (int) Arr::get($cartItem, 'subtotal', $unitPrice * $quantity);
             $args = Arr::get($cartItem, 'other_info', []);
             $paymentType = Arr::get($args, 'payment_type', 'default');
 
@@ -565,19 +647,34 @@ class CheckoutProcessor
             }
 
             // Snapshot package dimensions into other_info for email/PDF rendering
-            $packageSlug = Arr::get($args, 'package_slug', '');
-            if ($packageSlug) {
+            if (Arr::get($cartItem, 'fulfillment_type') === 'physical') {
+                $packageSlug = Arr::get($args, 'package_slug', '');
                 $package = Helper::getPackageBySlug($packageSlug);
                 if ($package) {
-                    $args['package_name']       = Arr::get($package, 'name', '');
-                    $args['package_type']       = Arr::get($package, 'type', '');
+                    $args['package_name']           = Arr::get($package, 'name', '');
+                    $args['package_type']           = Arr::get($package, 'type', '');
                     $args['package_length']         = Arr::get($package, 'length', '');
                     $args['package_width']          = Arr::get($package, 'width', '');
                     $args['package_height']         = Arr::get($package, 'height', '');
                     $args['package_dimension_unit'] = Arr::get($package, 'dimension_unit', 'cm');
-                    $args['package_weight']     = Arr::get($package, 'weight', 0);
-                    $args['package_weight_unit'] = Arr::get($package, 'weight_unit', 'kg');
+                    $args['package_weight']         = Arr::get($package, 'weight', 0);
+                    $args['package_weight_unit']    = Arr::get($package, 'weight_unit', 'kg');
                 }
+            }
+
+            // Carry the attribute snapshot onto the order item. It normally
+            // arrives via the cart item's other_info; rebuild it here as a
+            // fallback for items that reach checkout without one (instant
+            // checkout, legacy carts).
+            if (!isset($args['item_attributes'])) {
+                $args['item_attributes'] = AttributeHelper::getProductItemAttributes(
+                    Arr::get($cartItem, 'object_id', 0),
+                    Arr::get($cartItem, 'post_id', 0)
+                );
+            }
+
+            if (!isset($args['variation_type'])) {
+                $args['variation_type'] = (string) Arr::get($cartItem, 'variation_type', '');
             }
 
             $item = [
@@ -594,6 +691,7 @@ class CheckoutProcessor
                 'tax_amount'       => (int)Arr::get($cartItem, 'tax_amount', 0),
                 'shipping_charge'  => $shippingCharge,
                 'discount_total'   => $discountTotal,
+                'coupon_discount'  => (int)Arr::get($cartItem, 'coupon_discount', 0),
                 'other_info'       => $args,
                 'line_meta'        => Arr::get($cartItem, 'line_meta', []),
             ];
@@ -609,17 +707,27 @@ class CheckoutProcessor
 
                 $signupFeeTax = (int)Arr::get($cartItem, 'other_info.signup_fee_tax', 0);
 
+                // Nest under tax_config — the same shape regular items and the admin
+                // order path use. Readers keep a fallback for the legacy flat shape.
+                $signupFeeTaxConfig = Arr::get($cartItem, 'signup_fee_tax_config', []);
+
                 $childDiscountTotal = 0;
+                $childCouponDiscount = 0;
                 $signupFeeSubtotal = $signupFeeAmount * $quantity;
+                $couponDiscount = $item['coupon_discount'];
 
                 $hasTrialDays = Arr::get($cartItem, 'other_info.trial_days', 0) > 0;
 
                 if ($discountTotal && !$hasTrialDays) {
                     $childDiscountTotal = (float)($discountTotal / ($subtotal + $signupFeeSubtotal) * $signupFeeSubtotal);
                     $discountTotal -= $childDiscountTotal;
+                    $childCouponDiscount = (int) round($couponDiscount * $signupFeeSubtotal / ($subtotal + $signupFeeSubtotal));
+                    $couponDiscount -= $childCouponDiscount;
                 } elseif ($discountTotal && $hasTrialDays) { // if trial days , then discount should be applied on signup fee only
                     $childDiscountTotal = min($discountTotal, $signupFeeSubtotal);
                     $discountTotal = 0;
+                    $childCouponDiscount = min($couponDiscount, $signupFeeSubtotal);
+                    $couponDiscount = 0;
                 }
 
                 $childItem = [
@@ -636,10 +744,12 @@ class CheckoutProcessor
                     'tax_amount'       => $signupFeeTax,
                     'shipping_charge'  => 0,
                     'discount_total'   => $childDiscountTotal,
-                    'line_meta'        => Arr::get($cartItem, 'signup_fee_tax_config', []),
+                    'coupon_discount'  => $childCouponDiscount,
+                    'line_meta'        => $signupFeeTaxConfig ? ['tax_config' => $signupFeeTaxConfig] : [],
                 ];
 
                 $item['discount_total'] = $discountTotal;
+                $item['coupon_discount'] = $couponDiscount;
                 $item['additional_items'] = [$childItem];
 
                 Arr::set($item, 'other_info.signup_fee', $signupFeeAmount);
@@ -755,7 +865,7 @@ class CheckoutProcessor
         $item = reset($subscriptionItems);
         $signupFeeItem = reset($signupFeeItems) ?? [];
         $signupFeeTax = (int)Arr::get($signupFeeItem, 'tax_amount', 0);
-        $taxBehavior = Arr::get($this->args, 'tax_behavior', 0);
+        $taxBehavior = (int)Arr::get($this->args, 'tax_behavior', 0);
 
         $recurringTotal = (int)$item['subtotal'];
         $recurringTax = (int)Arr::get($item, 'other_info.recurring_tax', 0);
@@ -766,14 +876,22 @@ class CheckoutProcessor
             $recurringTotal -= $recurringDiscountAmount;
         }
 
-        // Add shipping charges to recurring total for physical subscription products
+        // Add shipping charges (and tax) to recurring total for physical subscription products
         $shippingCharge = (int)Arr::get($this->args, 'shipping_charge', 0);
         $isPhysicalProduct = Arr::get($item, 'fulfillment_type') === 'physical';
         if ($isPhysicalProduct && $shippingCharge > 0) {
             $recurringTotal += $shippingCharge;
+            $shippingTax = (int)Arr::get($this->args, 'shipping_tax', 0);
+            if ($shippingTax > 0) {
+                $storeTaxBehavior = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
+                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1)) {
+                    $recurringTotal += $shippingTax;
+                }
+            }
         }
 
-        if ($taxBehavior === 1) {
+        $itemInclusive = (bool) Arr::get($item, 'line_meta.tax_config.inclusive', false);
+        if ($taxBehavior === 1 || ($taxBehavior === 3 && !$itemInclusive)) {
             $recurringTotal += $recurringTax;
         }
 
@@ -782,14 +900,20 @@ class CheckoutProcessor
         // in case of discount applied 'tax_amount' is different than recurring tax ,
         $firstIterationTax = (int)Arr::get($item, 'tax_amount', 0) + $signupFeeTax;
 
-
         // Calculate recurring amount including shipping for physical products
         $recurringAmount = (int)$item['subtotal'];
         if ($isPhysicalProduct && $shippingCharge > 0) {
             $recurringAmount += $shippingCharge;
+            $shippingTaxForFirst = (int)Arr::get($this->args, 'shipping_tax', 0);
+            if ($shippingTaxForFirst > 0) {
+                $storeTaxBehaviorForFirst = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
+                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehaviorForFirst === 1)) {
+                    $firstIterationTax += $shippingTaxForFirst;
+                }
+            }
         }
 
-        $discountTotal = $item['discount_total'] + Arr::get($signupFeeItem, 'discount_total', 0);
+        $discountTotal = $item['discount_total'] + Arr::get($signupFeeItem, 'discount_total', 0) + $this->prorateCreditTotal + $this->upgradeDiscountTotal;
         $subscriptionPricing = $this->convertToSubscriptionFormat([
             'initial_trial_days'  => Arr::get($item, 'other_info.trial_days', 0),
             'repeat_interval'     => Arr::get($item, 'other_info.repeat_interval', 'monthly'),
@@ -798,6 +922,7 @@ class CheckoutProcessor
             'recurring_tax_total' => $recurringTax,
             'recurring_total'     => $recurringTotal,
             'tax_behavior'        => $taxBehavior,
+            'line_meta'           => Arr::get($item, 'line_meta', []),
             'signup_fee'          => $signupFee,
             'signup_fee_tax'      => $signupFeeTax,
             'first_iteration_tax' => $firstIterationTax,
@@ -819,7 +944,11 @@ class CheckoutProcessor
             'status'                 => Status::SUBSCRIPTION_PENDING,
             'config'                 => [
                 'is_trial_days_simulated' => Arr::get($subscriptionPricing, 'is_trial_days_simulated', 'no'),
-                'currency'                => $this->orderData['currency']
+                'currency'                => $this->orderData['currency'],
+                // Snapshot the variant attribute map + variation type from the order
+                // item so the subscription carries the same pa_* set behind its item_name.
+                'item_attributes'         => Arr::get($item, 'other_info.item_attributes', []),
+                'variation_type'          => Arr::get($item, 'other_info.variation_type', '')
             ]
         ];
 
@@ -828,7 +957,49 @@ class CheckoutProcessor
             $subscriptionItem['recurring_total'] -= $discountTotal;
         }
 
-        $this->subscriptionData = wp_parse_args($subscriptionPricing, $subscriptionItem);
+        $subscriptionData = wp_parse_args($subscriptionPricing, $subscriptionItem);
+        $paymentMethod = Arr::get($this->orderData, 'payment_method', '');
+
+        $collectionMethod = apply_filters('fluent_cart/subscription_collection_method_' . $paymentMethod, $this->determineCollectionMethod());
+
+        // A filter can hand back anything, but `system` only means something on a
+        // gateway that can charge a saved payment method.
+        $subscriptionData['collection_method'] = SubscriptionManagementMode::sanitizeCollectionMethod(
+            $collectionMethod,
+            GatewayManager::getInstance()->get($paymentMethod)
+        );
+
+        // Stamp store-managed origin durably on the subscription. Gateways consult
+        // the stamp (not the current store setting) before converting a manual
+        // subscription to automatic, so switching the mode back to gateway-managed
+        // later never flips subscriptions born under store-managed.
+        if (in_array($subscriptionData['collection_method'], ['manual', 'system'], true) && SubscriptionManagementMode::isStoreManaged()) {
+            $subscriptionConfig = Arr::get($subscriptionData, 'config', []);
+            $subscriptionConfig[SubscriptionManagementMode::CONFIG_KEY] = SubscriptionManagementMode::STORE_MANAGED;
+            $subscriptionData['config'] = $subscriptionConfig;
+        }
+
+        $this->subscriptionData = $subscriptionData;
+    }
+
+    private function determineCollectionMethod(): string
+    {
+        if (SubscriptionManagementMode::isStoreManaged()) {
+            $paymentMethod = Arr::get($this->orderData, 'payment_method', '');
+
+            return SubscriptionManagementMode::resolveCollectionMethodFor(
+                GatewayManager::getInstance()->get($paymentMethod)
+            );
+        }
+
+        $paymentMethod = Arr::get($this->orderData, 'payment_method', '');
+        $gateway = GatewayManager::getInstance()->get($paymentMethod);
+
+        if ($gateway && $gateway->has('subscriptions')) {
+            return 'automatic';
+        }
+
+        return 'manual';
     }
 
     private function prepareOrderData()
@@ -852,6 +1023,22 @@ class CheckoutProcessor
             return $carry + $item['subtotal'];
         }, 0);
 
+        $taxBehavior = (int) Arr::get($this->args, 'tax_behavior', 0);
+        $storeTaxBehavior = (int) Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
+        $exclusiveTaxTotal = (int) Arr::get($this->args, 'exclusive_tax_total', 0);
+        $feeTax = (int) Arr::get($this->args, 'fee_tax', 0);
+
+        // Roll fee tax into fee_total for exclusive scenarios — gateways use fee_total as source of truth.
+        if ($feeTax && ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1))) {
+            $this->feeTotal += $feeTax;
+        }
+
+        $this->prorateCreditTotal = (int) Arr::get($this->args, 'prorate_credit', 0);
+        // Upgrade-path discount is a post-tax adjustment like the prorate credit: it does
+        // not reduce the taxable base (tax args were computed on the full price), it only
+        // reduces the payable total via manual_discount_total below.
+        $this->upgradeDiscountTotal = (int) Arr::get($this->args, 'upgrade_discount', 0);
+
         $orderData = [
             'status'                => Status::ORDER_ON_HOLD,
             'fulfillment_type'      => $hasPhysical ? Status::FULFILLMENT_TYPE_PHYSICAL : Status::FULFILLMENT_TYPE_DIGITAL,
@@ -865,13 +1052,13 @@ class CheckoutProcessor
             'currency'              => $this->storeSettings->get('currency'),
             'subtotal'              => $itemsSubtotal,
             'discount_tax'          => 0,
-            'manual_discount_total' => $this->manualDiscountTotal,
+            'manual_discount_total' => $this->manualDiscountTotal + $this->prorateCreditTotal + $this->upgradeDiscountTotal,
             'coupon_discount_total' => $this->couponDiscountTotal,
             'shipping_tax'          => Arr::get($this->args, 'shipping_tax', 0),
             'shipping_total'        => Arr::get($this->args, 'shipping_charge', 0),
             'fee_total'             => $this->feeTotal,
             'tax_total'             => Arr::get($this->args, 'tax_total', 0),
-            'tax_behavior'          => Arr::get($this->args, 'tax_behavior', 0),
+            'tax_behavior'          => $taxBehavior,
             //            'total_amount'          => $this->orderTotals['total_amount'],
             'total_paid'            => 0,
             'total_refund'          => 0,
@@ -880,14 +1067,41 @@ class CheckoutProcessor
             'ip_address'            => Arr::get($this->args, 'ip_address', ''),
             'config'                => [
                 'user_tz'                   => Arr::get($this->args, 'user_tz', ''),
-                'create_account_after_paid' => Arr::get($this->args, 'create_account_after_paid', 'no')
+                'create_account_after_paid' => Arr::get($this->args, 'create_account_after_paid', 'no'),
+                'shipping_method_id'        => Arr::get($this->args, 'shipping_method_id', 0),
+                'shipping_method_title'     => Arr::get($this->args, 'shipping_method_title', ''),
+                'prorate_credit'            => $this->prorateCreditTotal,
+                'upgrade_discount'          => $this->upgradeDiscountTotal,
             ],
         ];
 
-        $estimatedTaxTotal = $orderData['tax_behavior'] === 1 ? $orderData['tax_total'] : 0;
-        $estimatedShippingTax = $orderData['tax_behavior'] === 1 ? $orderData['shipping_tax'] : 0;
+        if ($taxBehavior === 1) {
+            // Pure exclusive: fee_tax is already in fee_total; exclude it here to avoid double-count.
+            $estimatedTaxTotal = $orderData['tax_total'] - $feeTax;
+            $estimatedShippingTax = $orderData['shipping_tax'];
+        } elseif ($taxBehavior === 3) {
+            // Mixed: fee_tax rolled into fee_total for exclusive store; shipping still additive.
+            $estimatedTaxTotal = $exclusiveTaxTotal;
+            $estimatedShippingTax = ($storeTaxBehavior === 1) ? $orderData['shipping_tax'] : 0;
+        } else {
+            // Inclusive (2) or reverse-charge (0): nothing to add to total; tax is in item prices.
+            $estimatedTaxTotal = 0;
+            $estimatedShippingTax = 0;
+            if ($taxBehavior !== 2) {
+                // Reverse-charge (0): zero stored columns — no tax applies.
+                // Inclusive (2): keep orderData values so reporting surfaces can read them.
+                $orderData['tax_total'] = 0;
+                $orderData['shipping_tax'] = 0;
+            }
+        }
 
-        $totalAmount = $orderData['subtotal'] - $orderData['coupon_discount_total'] - $orderData['manual_discount_total'] + $orderData['fee_total'] + $orderData['shipping_total'] + $estimatedTaxTotal + $estimatedShippingTax;
+        $totalAmount = $orderData['subtotal']
+            - $orderData['coupon_discount_total']
+            - $orderData['manual_discount_total']
+            + $orderData['fee_total']
+            + $orderData['shipping_total']
+            + $estimatedTaxTotal
+            + $estimatedShippingTax;
 
         $orderData['total_amount'] = $totalAmount > 0 ? $totalAmount : 0;
 
@@ -1039,6 +1253,11 @@ class CheckoutProcessor
         $firstIterationTax = (int)($inputData['first_iteration_tax'] ?? 0);
         $totalDiscount = (int)($inputData['total_discount'] ?? 0);
 
+        // Determine if THIS subscription item is tax-inclusive (for behavior=3 mixed carts)
+        $taxBehavior = (int) Arr::get($inputData, 'tax_behavior', 0);
+        $itemInclusive = (bool) Arr::get($inputData, 'line_meta.tax_config.inclusive', false);
+        $isAdditiveTax = ($taxBehavior === 1) || ($taxBehavior === 3 && !$itemInclusive);
+
         // Validate repeat_interval
         $validIntervals = array_keys(Helper::getAvailableSubscriptionIntervalMaps());
 
@@ -1068,7 +1287,7 @@ class CheckoutProcessor
                 $result['signup_fee'] = max(0, $signupFee - $totalDiscount);
                 $result['manage_setup_fee'] = 'yes';
 
-                if (Arr::get($inputData, 'tax_behavior', 0) == 1 && $firstIterationTax) {
+                if ($isAdditiveTax && $firstIterationTax) {
                     $result['signup_fee'] += $firstIterationTax;
                 }
             } else {
@@ -1085,7 +1304,9 @@ class CheckoutProcessor
                     $result['is_trial_days_simulated'] = 'yes';
                     $result['signup_fee'] = $firstCycleCost;
                     $result['manage_setup_fee'] = 'yes';
-                    $result['times'] = $times > 0 ? $times - 1 : 0;
+                    // bill_times stays the full installment count. The simulated trial cycle IS the
+                    // first installment (charged as one-time payment / free when 100% discounted);
+                    // gateways derive the remaining remote cycles from is_trial_days_simulated.
                 } else if ($firstCycleCost > $recurringAmount) {
                     $result['trial_days'] = 0;
                     $result['signup_fee'] = $firstCycleCost - $recurringAmount;
@@ -1097,7 +1318,7 @@ class CheckoutProcessor
                 }
 
                 // only the signup fee is adjustable on our system, so we can adjust that to our needs
-                if (Arr::get($inputData, 'tax_behavior', 0) == 1 && $firstIterationTax) {
+                if ($isAdditiveTax && $firstIterationTax) {
                     if ($result['trial_days'] > 0) {
                         $result['signup_fee'] += $firstIterationTax;
                     } else {
@@ -1109,7 +1330,7 @@ class CheckoutProcessor
         } else {
             $result['signup_fee'] = $signupFee;
 
-            if (Arr::get($inputData, 'tax_behavior', 0) == 1) {
+            if ($isAdditiveTax) {
                 if ($signupFeeTax) {
                     $result['signup_fee'] += $signupFeeTax;
                 }
@@ -1129,5 +1350,56 @@ class CheckoutProcessor
             'recurring_tax_total'     => $recurringTax,
             'signup_fee'              => $result['signup_fee'] ?? 0,
         ];
+    }
+
+    /**
+     * bill_count is derived from counting total > 0 CHARGE transactions linked to
+     * the subscription (see syncSubscriptionStates / getRequiredBillTimes), which
+     * can't tell "this was a billed cycle" from "this was something else
+     * charged alongside it." Two corrections needed only at initial checkout —
+     * is_trial_days_simulated alone can't be used at runtime because
+     * payment-method switching also sets that flag:
+     *
+     * - Simulated trial, $0 first cycle: consumes a cycle but produces no
+     *   total > 0 transaction — add billed_cycles_offset so it still counts.
+     * - Real trial with a signup fee: the initial charge is the signup fee only
+     *   (the recurring item isn't billed yet), but it IS a total > 0 transaction
+     *   linked to the subscription — mark billed_cycles_deduction so it does
+     *   NOT count as a cycle.
+     */
+    private function syncInitialCycleCounting()
+    {
+        if (!$this->subscriptionModel) {
+            return;
+        }
+
+        $isSimulated = Arr::get($this->subscriptionData, 'config.is_trial_days_simulated', 'no') === 'yes';
+        $trialDays = (int)Arr::get($this->subscriptionData, 'trial_days', 0);
+        $billTimes = (int)$this->subscriptionModel->bill_times;
+        $orderTotal = (int)$this->orderModel->total_amount;
+
+        // signup_fee <= 0 (not just == 0): prorate/upgrade credit can push the
+        // first cycle cost negative — still a free first cycle for counting
+        $isFreeFirstCycle = $isSimulated
+            && $billTimes > 0
+            && (int)$this->subscriptionModel->signup_fee <= 0
+            && !$orderTotal;
+
+        if ($isFreeFirstCycle) {
+            $this->subscriptionModel->updateMeta('billed_cycles_offset', 1);
+        } else {
+            $this->subscriptionModel->deleteMeta('billed_cycles_offset');
+        }
+
+        $isRealTrialWithCharge = !$isSimulated
+            && $trialDays > 0
+            && $billTimes > 0
+            && $orderTotal > 0;
+
+        if ($isRealTrialWithCharge) {
+            $this->subscriptionModel->updateMeta('billed_cycles_deduction', 1);
+        } else {
+            $this->subscriptionModel->deleteMeta('billed_cycles_deduction');
+        }
     }
 }

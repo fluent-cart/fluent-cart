@@ -54,6 +54,7 @@ class CustomerSubscriptionController extends BaseFrontendController
         // Sort the results by 'id' in descending order and fetch the data
         $subscriptions = Subscription::query()
             ->where('customer_id', $customer->id)
+            ->with(['product'])
             ->whereNotIn('status', [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])
             ->orderBy('id', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
@@ -119,20 +120,32 @@ class CustomerSubscriptionController extends BaseFrontendController
             'variation_id'              => $subscription->variation_id,
             'product_id'                => $subscription->product_id,
             'config'                    => $subscription->config,
+            'collection_method'         => $subscription->collection_method,
             'reactivate_url'            => $subscription->getReactivateUrl(),
-            'title'                     => $subscription->product ? $subscription->product->post_title : $subscription->item_name,
-            'subtitle'                  => $subscription->variation && $subscription->product ? $subscription->variation->variation_title : '',
+            // item_name resolves to "<product> - <attributes>" (or the raw name),
+            // so it carries the labeled combination on a single line.
+            'title'                     => $subscription->display_item_name,
+            'subtitle'                  => '',
             'can_upgrade'               => $subscription->canUpgrade(),
             'can_switch_payment_method' => $subscription->canSwitchPaymentMethod(),
             'switchable_payment_methods' => $subscription->switchablePaymentMethods(),
             'can_update_payment_method' => $subscription->canUpdatePaymentMethod(),
+            'can_pause'                 => $subscription->canPause(),
+            'can_resume'                => $subscription->canResume(),
             'order'                     => [
                 'uuid' => $subscription->order ? $subscription->order->uuid : ''
             ],
             'billing_addresses'         => $subscription->billing_addresses,
             'recurring_amount'          => $subscription->recurring_amount,
+            'currency'                  => $subscription->currency,
             'can_early_pay'             => EarlyPaymentFeature::canPay($subscription),
             'remaining_installments'    => max(0, $subscription->bill_times - $subscription->bill_count),
+            'card_update_url'           => $subscription->url,
+            // Auto-charged (system) subscriptions: the saved card is charged
+            // automatically on each renewal date — the portal says so, and surfaces
+            // the last failure so the customer knows to update the card.
+            'is_auto_charged'           => $subscription->isSystem(),
+            'auto_charge_error'         => Arr::get((array) $subscription->system_charge_state, 'last_error', ''),
         ];
 
 
@@ -151,7 +164,13 @@ class CustomerSubscriptionController extends BaseFrontendController
             ->get();
 
         $formattedData['transactions'] = $transactions->map(function ($transaction) {
-            return OrderService::transformTransaction($transaction);
+            $transformedTransaction = OrderService::transformTransaction($transaction);
+            if ($transaction->status === Status::TRANSACTION_PENDING
+                && !empty($transformedTransaction['custom_checkout_url'])
+            ) {
+                $transformedTransaction['show_pay_now'] = true;
+            }
+            return $transformedTransaction;
         });
 
         $formattedData = apply_filters('fluent_cart/customer_portal/subscription_data', $formattedData, [
@@ -159,14 +178,34 @@ class CustomerSubscriptionController extends BaseFrontendController
             'customer'     => $customer
         ]);
 
+        $sectionParts = apply_filters('fluent_cart/customer/subscription_details_section_parts', [
+            'end_of_subscription' => ''
+        ], [
+            'subscription'  => $subscription,
+            'formattedData' => $formattedData
+        ]);
+
+        $sectionParts = array_map('wp_kses_post', $sectionParts);
+
         return $this->sendSuccess([
-            'message'      => __('Success', 'fluent-cart'),
-            'subscription' => $formattedData
+            'message'       => __('Success', 'fluent-cart'),
+            'subscription'  => $formattedData,
+            'section_parts' => $sectionParts
         ]);
     }
 
     public function updatePaymentMethod(Request $request, $subscription_uuid)
     {
+        $errorResponse = $this->checkUserLoggedIn();
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError(['message' => __('Customer not found', 'fluent-cart')]);
+        }
+
         $data = $request->input('data');
         $method = $data['method'];
         $subscriptionUuid = $subscription_uuid;
@@ -177,7 +216,10 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
-        $subscription = Subscription::query()->where('uuid', $subscriptionUuid)->first();
+        $subscription = Subscription::query()
+            ->where('uuid', $subscriptionUuid)
+            ->where('customer_id', $customer->id)
+            ->first();
 
         if (empty($subscription)) {
             return $this->sendError([
@@ -193,6 +235,11 @@ class CustomerSubscriptionController extends BaseFrontendController
                     'message' => $e->getMessage()
                 ]);
             }
+
+            return $this->sendSuccess([
+                'status'  => 'success',
+                'message' => __('Payment method updated successfully', 'fluent-cart')
+            ]);
         }
 
         return $this->sendError([
@@ -202,6 +249,16 @@ class CustomerSubscriptionController extends BaseFrontendController
 
     public function getOrCreatePlan(Request $request, $subscription_uuid)
     {
+        $errorResponse = $this->checkUserLoggedIn();
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError(['message' => __('Customer not found', 'fluent-cart')]);
+        }
+
         $data = $request->input('data');
         $method = sanitize_text_field(Arr::get($data, 'method', ''));
         $reason = sanitize_text_field(Arr::get($data, 'reason', ''));
@@ -212,7 +269,10 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
-        $subscription = Subscription::query()->where('uuid', $subscription_uuid)->first();
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
         if (empty($subscription)) {
             return $this->sendError([
                 'message' => __('Subscription not found', 'fluent-cart')
@@ -227,6 +287,11 @@ class CustomerSubscriptionController extends BaseFrontendController
                     'message' => $e->getMessage()
                 ]);
             }
+
+            return $this->sendSuccess([
+                'status'  => 'success',
+                'message' => __('Plan created successfully', 'fluent-cart')
+            ]);
         }
 
         return $this->sendError([
@@ -246,16 +311,30 @@ class CustomerSubscriptionController extends BaseFrontendController
         $newPaymentMethod = sanitize_text_field(Arr::get($data, 'newPaymentMethod', ''));
         $currentPaymentMethod = sanitize_text_field(Arr::get($data, 'currentPaymentMethod', ''));
 
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError(['message' => __('Customer not found', 'fluent-cart')]);
+        }
+
         if (!$newPaymentMethod || !$currentPaymentMethod || !$subscription_uuid) {
             return $this->sendError([
                 'message' => __('Missing required parameters', 'fluent-cart')
             ]);
         }
 
-        $subscription = Subscription::query()->where('uuid', $subscription_uuid)->first();
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
         if (empty($subscription)) {
             return $this->sendError([
                 'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        if (!$subscription->canSwitchPaymentMethod()) {
+            return $this->sendError([
+                'message' => __('This subscription cannot be moved to another payment gateway. Update the payment method on file instead.', 'fluent-cart')
             ]);
         }
 
@@ -267,6 +346,11 @@ class CustomerSubscriptionController extends BaseFrontendController
                     'message' => $e->getMessage()
                 ]);
             }
+
+            return $this->sendSuccess([
+                'status'  => 'success',
+                'message' => __('Payment method switched successfully', 'fluent-cart')
+            ]);
         }
 
         return $this->sendError([
@@ -288,16 +372,30 @@ class CustomerSubscriptionController extends BaseFrontendController
         $newVendorSubscriptionId = sanitize_text_field(Arr::get($data, 'newVendorSubscriptionId', ''));
         $method = sanitize_text_field(Arr::get($data, 'method', ''));
 
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError(['message' => __('Customer not found', 'fluent-cart')]);
+        }
+
         if (!$newVendorSubscriptionId || !$method || !$subscription_uuid) {
             return $this->sendError([
                 'message' => __('Missing required parameters', 'fluent-cart')
             ]);
         }
 
-        $subscription = Subscription::query()->where('uuid', $subscription_uuid)->first();
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
         if (empty($subscription)) {
             return $this->sendError([
                 'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        if (!$subscription->canSwitchPaymentMethod()) {
+            return $this->sendError([
+                'message' => __('This subscription cannot be moved to another payment gateway. Update the payment method on file instead.', 'fluent-cart')
             ]);
         }
 
@@ -309,6 +407,11 @@ class CustomerSubscriptionController extends BaseFrontendController
                     'message' => $e->getMessage()
                 ]);
             }
+
+            return $this->sendSuccess([
+                'status'  => 'success',
+                'message' => __('Subscription switch confirmed successfully', 'fluent-cart')
+            ]);
         }
 
         return $this->sendError([
@@ -407,6 +510,84 @@ class CustomerSubscriptionController extends BaseFrontendController
             && $subscription->bill_times > 0
             && $subscription->bill_count < $subscription->bill_times
             && in_array($subscription->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING]);
+    }
+
+    public function pauseSubscription(Request $request, $subscription_uuid)
+    {
+        $errorResponse = $this->checkUserLoggedIn();
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError([
+                'message' => __('Customer not found', 'fluent-cart')
+            ]);
+        }
+
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
+
+        if (empty($subscription)) {
+            return $this->sendError([
+                'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        $reason = __('Paused by customer from customer portal', 'fluent-cart');
+        $result = $subscription->pauseSubscription($reason);
+
+        if (is_wp_error($result)) {
+            return $this->sendError([
+                'message' => $result->get_error_message()
+            ]);
+        }
+
+        return [
+            'message' => __('Your subscription has been successfully paused', 'fluent-cart')
+        ];
+    }
+
+    public function resumeSubscription(Request $request, $subscription_uuid)
+    {
+        $errorResponse = $this->checkUserLoggedIn();
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return $this->sendError([
+                'message' => __('Customer not found', 'fluent-cart')
+            ]);
+        }
+
+        $subscription = Subscription::query()
+            ->where('uuid', $subscription_uuid)
+            ->where('customer_id', $customer->id)
+            ->first();
+
+        if (empty($subscription)) {
+            return $this->sendError([
+                'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        $reason = __('Resumed by customer from customer portal', 'fluent-cart');
+        $result = $subscription->resumeSubscription($reason);
+
+        if (is_wp_error($result)) {
+            return $this->sendError([
+                'message' => $result->get_error_message()
+            ]);
+        }
+
+        return [
+            'message' => __('Your subscription has been successfully resumed', 'fluent-cart')
+        ];
     }
 
     public function getSetupIntentRemainingAttempts($subscription_uuid)

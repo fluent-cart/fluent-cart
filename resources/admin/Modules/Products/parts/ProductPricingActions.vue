@@ -37,7 +37,7 @@ const dropdownContext = computed(() => {
     openPricingModal: (nextModeType) => {
       openEditor(nextModeType);
     },
-    vueContext: getCurrentInstance().ctx
+    vueContext: getCurrentInstance()?.ctx
   };
 });
 
@@ -155,7 +155,7 @@ const actionMenuHandler = (command) => {
               <CopyToClipboard
                   v-if="variant.id"
                   class="fct-copy-wrap-inline"
-                  :text="variant.id"
+                  :text="String(variant.id)"
                   showMode="icon_with_text"
                   :buttonText="$t('Copy Variation ID')"
               />

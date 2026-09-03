@@ -389,7 +389,7 @@ class S3ConnectionVerify
              return false;
         }
 
-        return new \WP_Error('public_access_check_failed', 'Could not check public access settings');
+        return new \WP_Error('public_access_check_failed', __('Could not check public access settings', 'fluent-cart'));
     }
 
     public function setPublicAccessBlock(bool $enable)
@@ -439,7 +439,8 @@ XML;
         $body = wp_remote_retrieve_body($response);
         $xml = simplexml_load_string($body);
         $errorMsg = $xml && isset($xml->Message) ? (string)$xml->Message : $body;
-        return new \WP_Error('s3_update_failed', 'Failed to update S3 Public Access Block: ' . $errorMsg);
+        /* translators: %1$s: error message from S3 API */
+        return new \WP_Error('s3_update_failed', sprintf(__('Failed to update S3 Public Access Block: %1$s', 'fluent-cart'), $errorMsg));
     }
 
     public function checkObjectOwnership()
@@ -488,7 +489,7 @@ XML;
              return false;
         }
 
-        return new \WP_Error('ownership_check_failed', 'Could not check object ownership settings');
+        return new \WP_Error('ownership_check_failed', __('Could not check object ownership settings', 'fluent-cart'));
     }
 
     public function getBucketLocation()
@@ -581,7 +582,8 @@ XML;
         $body = wp_remote_retrieve_body($response);
         $xml = simplexml_load_string($body);
         $errorMsg = $xml && isset($xml->Message) ? (string)$xml->Message : $body;
-        return new \WP_Error('s3_update_failed_ownership', 'Failed to update S3 Object Ownership: ' . $errorMsg);
+        /* translators: %1$s: error message from S3 API */
+        return new \WP_Error('s3_update_failed_ownership', sprintf(__('Failed to update S3 Object Ownership: %1$s', 'fluent-cart'), $errorMsg));
     }
 
     private static function validateRequestInputs(string $region, string $bucket = '')

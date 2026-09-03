@@ -64,7 +64,9 @@
     @apply max-w-[200px];
   }
   .fct-product-sku {
-    @apply block;
+    &:not(.is-hidden) {
+      @apply inline-flex;
+    }
     &::before {
         display: none;
     }

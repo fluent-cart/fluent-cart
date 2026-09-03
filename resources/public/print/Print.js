@@ -16,10 +16,8 @@ document.getElementById('print-button').addEventListener('click', () => {
         removeInline: false,
         printDelay: 100,
         beforePrint: function () {
-            console.log('About to print...');
         },
         afterPrint: function () {
-            console.log('Print completed!');
         }
     });
 

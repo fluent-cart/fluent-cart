@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "pi_phase29_succeeded",
+    "object": "payment_intent",
+    "amount": 12345,
+    "currency": "usd",
+    "status": "succeeded",
+    "latest_charge": {
+      "id": "ch_phase29_succeeded",
+      "object": "charge",
+      "amount": 12345,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "payment_intent": "pi_phase29_succeeded",
+      "payment_method": "pm_phase29_card",
+      "payment_method_details": {
+        "type": "card",
+        "card": {
+          "brand": "visa",
+          "last4": "3184"
+        }
+      }
+    }
+  }
+}

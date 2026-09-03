@@ -4,7 +4,6 @@ namespace FluentCart\App\Hooks\Handlers\ShortCodes;
 
 use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Helpers\Helper;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
 use FluentCart\App\Services\Renderer\SearchBarRenderer;
@@ -46,6 +45,7 @@ class SearchBarShortCode extends ShortCode
             'category_mode'      => Arr::get($this->shortCodeAttributes, 'category_mode'),
             'termData'           => $this->getTermsData('categories'),
             'link_with_shop_app' => Arr::get($this->shortCodeAttributes, 'link_with_shop_app'),
+            'show_thumbnail'     => filter_var(Arr::get($this->shortCodeAttributes, 'show_thumbnail', true), FILTER_VALIDATE_BOOLEAN),
         ];
     }
 

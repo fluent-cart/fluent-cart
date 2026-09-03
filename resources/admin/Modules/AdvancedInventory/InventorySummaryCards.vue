@@ -111,7 +111,6 @@ const fetchStats = () => {
             }
         })
         .catch((error) => {
-            console.error('Failed to fetch inventory stats:', error);
         })
         .finally(() => {
             isLoading.value = false;

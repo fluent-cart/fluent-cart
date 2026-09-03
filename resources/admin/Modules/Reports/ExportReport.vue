@@ -9,6 +9,9 @@
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 export default {
+  components: {
+    DynamicIcon
+  },
   props: {
     data: {
       type: Array,
@@ -18,9 +21,6 @@ export default {
       type: String,
       default: "data.csv",
     },
-  },
-  components: {
-    DynamicIcon
   },
   methods: {
     exportCSV() {

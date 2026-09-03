@@ -4,6 +4,7 @@ namespace FluentCart\App\Http\Requests;
 
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Http\Rules\RequiredWhenRule;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
@@ -44,13 +45,16 @@ class ProductRequest extends RequestGuard
         foreach ($variants as $index => &$variant) {
             $variant['fulfillment_type'] = $variant['fulfillment_type'] ?? $fulfilmentType;
 
-            $variant['other_info'] = Arr::wrap(Arr::get($variant, 'other_info')) ?? [];
+            $originalOtherInfo = Arr::wrap(Arr::get($variant, 'other_info')) ?? [];
+            $variant['other_info'] = $originalOtherInfo;
 
             // get payment_type from $variant
             $paymentType = Arr::get($variant, 'other_info.payment_type', 'onetime');
 
             $variant['shipping_class'] = Arr::get($variant, 'shipping_class', null);
 
+            // Preserve tax fields during normalization so they survive the same
+            // save pipeline as the rest of variant other_info.
             $variant['other_info'] = [
                 'payment_type'       => $paymentType,
                 'times'              => Arr::get($variant, 'other_info.times', ''),
@@ -64,6 +68,14 @@ class ProductRequest extends RequestGuard
                 'setup_fee_per_item' => Arr::get($variant, 'other_info.setup_fee_per_item', 'no'),
                 'installment'        => Arr::get($variant, 'other_info.installment', 'no'),
             ];
+
+            if (Arr::has($originalOtherInfo, 'tax_class')) {
+                $variant['other_info']['tax_class'] = Arr::get($originalOtherInfo, 'tax_class');
+            }
+
+            if (Arr::has($originalOtherInfo, 'tax_exempt')) {
+                $variant['other_info']['tax_exempt'] = Arr::get($originalOtherInfo, 'tax_exempt');
+            }
 
             $data['variants'][$index] = $variant;
         }
@@ -123,6 +135,28 @@ class ProductRequest extends RequestGuard
 
         return null;
 
+    }
+
+    function validateTaxClassSlug($attribute, $value): ?string
+    {
+        static $checked = [];
+
+        if (empty($value)) {
+            return null;
+        }
+
+        $value = sanitize_text_field($value);
+
+        if (isset($checked[$value])) {
+            return $checked[$value];
+        }
+
+        if (empty(\FluentCart\App\Models\TaxClass::query()->where('slug', $value)->first())) {
+            $checked[$value] = __("Invalid Tax Class.", 'fluent-cart');
+            return $checked[$value];
+        }
+
+        return null;
     }
 
     public function validatePostDate($attribute, $value): ?string
@@ -195,6 +229,7 @@ class ProductRequest extends RequestGuard
             'detail.other_info.tax_class'         => ['nullable', function ($attribute, $value) {
                 return $this->validateTaxClassId($attribute, $value);
             }],
+            'detail.other_info.tax_exempt'        => 'nullable|sanitizeText|in:yes,no',
             'detail.other_info.active_editor'     => 'nullable|sanitizeText',
             'product_terms'                       => 'nullable|array',
             'product_terms.*'                     => 'nullable|array',
@@ -220,6 +255,12 @@ class ProductRequest extends RequestGuard
                 },
             ],
             'variants.*.manage_cost'              => 'nullable|sanitizeText|maxLength:10',
+            // Variant tax classes are stored as slugs, not numeric IDs like the
+            // older product-detail tax field.
+            'variants.*.other_info.tax_class'     => ['nullable', function ($attribute, $value) {
+                return $this->validateTaxClassSlug($attribute, $value);
+            }],
+            'variants.*.other_info.tax_exempt'    => 'nullable|sanitizeText|in:yes,no',
 //            'variants.*.shipping_class'           => ['nullable', 'numeric', function ($attribute, $value) {
 //                return $this->validateShippingClassId($attribute, $value);
 //            }],
@@ -236,11 +277,41 @@ class ProductRequest extends RequestGuard
                 'variants.*.other_info.payment_type'     => 'required|sanitizeText|in:onetime,subscription',
                 'variants.*.other_info.times'            => 'nullable|sanitizeText|maxLength:50',
                 'variants.*.other_info.trial_days'       => 'nullable|sanitizeText|maxLength:365',
-                'variants.*.other_info.repeat_interval'  => 'required_if:variants.*.other_info.payment_type,subscription|sanitizeText|maxLength:100',
+                'variants.*.other_info.repeat_interval'  => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.payment_type',
+                        'subscription',
+                        esc_html__('Interval is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
                 'variants.*.other_info.billing_summary'  => 'nullable|sanitizeTextArea|maxLength:255',
-                'variants.*.other_info.manage_setup_fee' => 'required_if:variants.*.other_info.payment_type,subscription|sanitizeText|maxLength:100',
-                'variants.*.other_info.signup_fee'       => 'required_if:variants.*.other_info.manage_setup_fee,yes',
-                'variants.*.other_info.signup_fee_name'  => 'required_if:variants.*.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+                'variants.*.other_info.manage_setup_fee' => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.payment_type',
+                        'subscription',
+                        esc_html__('Setup Fee option is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
+                'variants.*.other_info.signup_fee'       => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.manage_setup_fee',
+                        'yes',
+                        esc_html__('Setup Fee Amount is required.', 'fluent-cart')
+                    ),
+                ],
+                'variants.*.other_info.signup_fee_name'  => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.manage_setup_fee',
+                        'yes',
+                        esc_html__('Setup Fee Name is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
             ];
             $rules = array_merge($rules, $variantsOtherInfoRules);
 
@@ -301,9 +372,6 @@ class ProductRequest extends RequestGuard
                 'variants.*.other_info.description.max'             => esc_html__('Description may not be greater than 255 characters.', 'fluent-cart'),
                 'variants.*.other_info.payment_type.required'       => esc_html__('Payment Type is required.', 'fluent-cart'),
                 'variants.*.other_info.times.required_if'           => esc_html__('Times is required.', 'fluent-cart'),
-                'variants.*.other_info.repeat_interval.required_if' => esc_html__('Interval is required.', 'fluent-cart'),
-                'variants.*.other_info.signup_fee.required_if'      => esc_html__('Setup Fee Amount is required.', 'fluent-cart'),
-                'variants.*.other_info.signup_fee_name.required_if' => esc_html__('Setup Fee Name is required.', 'fluent-cart'),
             ];
 
             $messages = array_merge($messages, $otherInfoMessages);
@@ -342,6 +410,7 @@ class ProductRequest extends RequestGuard
             'detail.other_info.use_pricing_table' => 'sanitize_text_field',
             'detail.other_info.shipping_class'    => 'intval',
             'detail.other_info.tax_class'         => 'intval',
+            'detail.other_info.tax_exempt'        => 'sanitize_text_field',
             'detail.other_info.active_editor'     => 'sanitize_text_field',
             'variants.*.id'                       => 'intval',
             'variants.*.rowId'                    => 'intval',
@@ -404,6 +473,8 @@ class ProductRequest extends RequestGuard
             'variants.*.other_info.signup_fee'       => 'floatval',
             'variants.*.other_info.signup_fee_name'  => 'sanitize_text_field',
             'variants.*.other_info.installment'      => 'sanitize_text_field',
+            'variants.*.other_info.tax_class'        => 'sanitize_text_field',
+            'variants.*.other_info.tax_exempt'       => 'sanitize_text_field',
         ];
 
 

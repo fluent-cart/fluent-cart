@@ -3,7 +3,7 @@
       :placeholder="$t('Select Products')"
       v-model="filter.data.variation_ids"
       :data="products"
-      :filter-method="Utils.debounce(searchVariantByName)"
+      :filter-method="onFilter"
       filterable
       show-checkbox
       multiple
@@ -44,6 +44,10 @@ const products = ref([]);
 const loading = ref(false);
 const selfRef = getCurrentInstance().ctx;
 
+// Searches are fired per keystroke and can resolve out of order, so only the
+// most recently issued one may write to products or clear loading.
+let latestRequest = 0;
+
 const searchVariantByName = (name) => {
   const productVariations = Storage.get('product_variations');
 
@@ -51,37 +55,68 @@ const searchVariantByName = (name) => {
     cachedProducts.value = productVariations;
   }
 
+  // Claimed before the early return so that restoring the cached list also
+  // invalidates a search still in flight — otherwise clearing the box would let
+  // that response land on top of the full list a moment later.
+  const requestId = ++latestRequest;
+
   if (cachedProducts.value.length && !name) {
     products.value = [...cachedProducts.value];
+    loading.value = false;
     return;
   }
 
-  if (name && cachedProducts.value.length) {
-    products.value = cachedProducts.value.filter(product => {
-      return product.label.toLowerCase().includes(name.toLowerCase());
-    });
-    return;
-  }
-
+  // The cache only holds the first page of products, so a search term must
+  // always reach the server — filtering the cache here hid every product that
+  // was not already in the dropdown.
   loading.value = true;
 
   selfRef
       .$get("products/searchVariantByName", { name })
       .then((response) => {
-        cachedProducts.value = response;
+        if (requestId !== latestRequest) {
+          return;
+        }
+
         products.value = response;
 
-        Storage.set('product_variations', response);
+        // Only the unfiltered list may be cached — caching a search result
+        // would make the next empty term render that narrow result as "all".
+        if (!name) {
+          cachedProducts.value = response;
+          Storage.set('product_variations', response);
+        }
       })
       .catch(() => {})
       .finally(() => {
-        loading.value = false;
+        if (requestId === latestRequest) {
+          loading.value = false;
+        }
       });
 };
 
+// Built once, not in the template: calling Utils.debounce() during render
+// returns a new function with its own timer on every re-render, so no keystroke
+// ever cancelled the one before it.
+const onFilter = Utils.debounce(searchVariantByName);
+
 const onCheck = (value, info) => {
   const checkedNodes = info.checkedNodes || [];
-  filter.setTreeSelectItem(checkedNodes);
+
+  // A checked variant only knows its own title, so the owning product is taken
+  // from the payload: fully ticked products arrive in checkedNodes, partly
+  // ticked ones in halfCheckedNodes. Without this the tag has nothing to group
+  // by once a search drops that product from the visible tree.
+  const parents = {};
+  [...checkedNodes, ...(info.halfCheckedNodes || [])].forEach(node => {
+    (node.children || []).forEach(variation => {
+      parents[variation.value] = node.label;
+    });
+  });
+
+  filter.setTreeSelectItem(
+    checkedNodes.map(node => ({...node, productName: parents[node.value]}))
+  );
 };
 
 const onRemove = (removedValue) => {
@@ -93,40 +128,19 @@ const onClear = () => {
 };
 
 const filteredProducts = computed(() => {
-  let keyedProducts = {};
-  let keyedVariations = {};
-  products.value.forEach(product => {
-      keyedProducts[product.label] = product.children;
-      product.children.forEach(variation => {
-          keyedVariations[variation.value] = {
-              productName: product.label,
-              variationName: variation.label
-          };
-      });
-  });
+  // Read the selection itself, not the visible list — a product dropped by the
+  // current search (or never loaded by this instance) still has to show a name.
+  const selectedItems = filter.data.selectedFilters.variation_ids?.value || [];
 
   let formattedItems = {};
 
-  // loop through keyedVariations and format them
-  filter.data.variation_ids.forEach(id => {
-      if (keyedVariations[id]) {
-          let variation = keyedVariations[id];
-          if (!formattedItems[variation.productName]) {
-              formattedItems[variation.productName] = [];
-          }
-          formattedItems[variation.productName].push(variation.variationName);
-      } else {
-          if (!formattedItems['Unknown']) {
-              formattedItems['Unknown'] = [];
-          }
-          formattedItems['Unknown'].push(id);
-      }
-  });
+  selectedItems.forEach(item => {
+      const productName = item.productName || 'Unknown';
 
-  Object.keys(formattedItems).forEach(key => {
-      if (formattedItems[key].length === keyedProducts[key]?.length) {
-          formattedItems[key] = [];
+      if (!formattedItems[productName]) {
+          formattedItems[productName] = [];
       }
+      formattedItems[productName].push(item.label || item.id);
   });
 
   return formattedItems;

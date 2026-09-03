@@ -92,7 +92,6 @@ const fetchStates = (countryCode) => {
         afterCountryInfoRetrieved(response);
       })
       .catch((errors) => {
-        console.log(errors, 'errors');
       })
       .finally(() => {
         loadingState.value = false;
@@ -128,7 +127,7 @@ onMounted(() => {
           :label="translate('Select Country')"
           filterable
           :options="countries"
-          @onChange="(countryCode)=>{
+          @on-change="(countryCode)=>{
           form.data.values.store_state = '';
           fetchStates(countryCode);
         }"

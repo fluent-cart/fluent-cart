@@ -119,7 +119,7 @@
                           }"
                           >
                             {{ scope.row.post_title }}
-                            <span class="product-sub-name">- {{ scope.row.title }}</span>
+                            <span class="product-sub-name product-sub-name--wrap">- {{ scope.row.variation_display_title || scope.row.title }}</span>
                           </router-link>
                         </div>
 
@@ -213,6 +213,28 @@
                     </template>
                   </el-table-column>
 
+                  <el-table-column
+                      v-if="hasSubscriptionItem"
+                      width="140"
+                      :label="$t('Custom Price')"
+                  >
+                    <template #default="scope">
+                      <div v-if="scope.row.payment_type === 'subscription'">
+                        <el-input-number
+                            v-model="scope.row.custom_price"
+                            :min="0"
+                            :precision="2"
+                            :step="0.01"
+                            controls-position="right"
+                            :placeholder="$t('Custom price')"
+                            size="small"
+                            @change="updateCustomPrice(scope.row)"
+                            style="width: 100%"
+                        />
+                      </div>
+                    </template>
+                  </el-table-column>
+
                   <el-table-column :width="50">
                     <template #default="scope">
                       <IconButton
@@ -288,11 +310,9 @@
                       @getShippingMethods="fetchShippingMethods"
                   />
                 </template>
-                <tr v-if="order.tax_total">
-                  <td>{{ $t("Estimated tax") }}</td>
-                  <td>{{ $t("Not Calculated") }}</td>
-                  <td>
-                    {{ formatNumber(order.tax_total) }}
+                <tr v-if="selectedCustomerCountry && order.order_items.length > 0">
+                  <td colspan="3" style="text-align:right; font-style:italic; opacity:0.65; font-size:0.85em;">
+                    {{ $t('Tax will be calculated on save') }}
                   </td>
                 </tr>
                 </tbody>
@@ -326,9 +346,11 @@
                   fetchShippingMethods();
                   if(address === null){
                     selectedCustomerCountry = '';
+                    selectedCustomerAddress = null;
                     return;
                   }
                   selectedCustomerCountry = address.country;
+                  selectedCustomerAddress = address;
                   if (address.type === 'shipping') {
                     order.shipping_address_id = address.id;
                   } else {
@@ -337,6 +359,9 @@
                 }"
                 @onAddressRemove="() => {
                     selectedCustomerCountry = '';
+                    selectedCustomerAddress = null;
+                    order.billing_address_id = null;
+                    order.shipping_address_id = null;
                     fetchShippingMethods();
                 }"
             />
@@ -390,7 +415,7 @@ import AddProductModal from "../Products/AddProductModal.vue";
 import SaveBar from "@/Bits/Components/SaveBar.vue";
 import NumberInput from "@/Bits/Components/Inputs/NumberInput.vue";
 import Labels from "@/Modules/Parts/Labels/Label.vue";
-import {translateNumber} from "@/utils/translator/Translator";
+import translate, {translateNumber} from "@/utils/translator/Translator";
 
 // import {getCurrentInstance} from "vue";
 // import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
@@ -496,6 +521,7 @@ export default {
       hasCoupon: false,
       selectedLabels: [],
       selectedCustomerCountry: '',
+      selectedCustomerAddress: null,
       shippingMethods: [],
       otherShippingMethods: []
     };
@@ -513,6 +539,9 @@ export default {
     beforeRouteLeave(to, from, next) {
       this.redirectRouteName = to.name;
       this.changes_made ? (this.outerVisible = true) : next();
+    },
+    hasSubscriptionItem() {
+      return this.order.order_items.some(item => item.payment_type === 'subscription');
     },
   },
   methods: {
@@ -646,7 +675,29 @@ export default {
       this.changes_made++;
     },
     isDisabled(item) {
-      return 'subscription' === item?.other_info?.payment_type;
+      return item?.payment_type === 'subscription';
+    },
+    updateCustomPrice(item) {
+      const customPrice = parseFloat(item.custom_price);
+      if (!isNaN(customPrice) && customPrice >= 0) {
+        // Store original price if not already stored
+        if (!item.has_custom_price) {
+          item.original_price = item.price;
+          item.original_unit_price = item.unit_price;
+          item.has_custom_price = true;
+        }
+        // Update both price (display as decimal) and unit_price (in cents)
+        item.price = customPrice;
+        item.unit_price = Math.round(customPrice * 100); // Convert to cents
+      } else {
+        // Restore original price if custom price is cleared
+        if (item.has_custom_price) {
+          item.price = item.original_price;
+          item.unit_price = item.original_unit_price;
+          item.has_custom_price = false;
+        }
+      }
+      this.calculateLine();
     },
     fetchShippingMethods() {
       const filteredOrderItems = [];
@@ -670,7 +721,7 @@ export default {
       }).finally(() => {
 
       });
-    }
+    },
   },
   mounted() {
     this.fetchShippingMethods();

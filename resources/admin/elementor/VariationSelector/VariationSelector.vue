@@ -32,7 +32,7 @@ const emit = defineEmits(['onVariationSelectionUpdated']);
           :preSelectedVariations="{}"
           :isMultiple="true"
           :allow_subscription="false"
-          @onVariationSelectionUpdated="()=>{
+          @on-variation-selection-updated="()=>{
                 emit('onVariationSelectionUpdated')
           }"
       />

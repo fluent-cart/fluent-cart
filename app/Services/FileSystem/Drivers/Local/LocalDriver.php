@@ -7,6 +7,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\StorageDrivers\BaseStorageDriver;
 use FluentCart\App\Modules\StorageDrivers\Local\Local as LocalStorageDriver;
 use FluentCart\App\Services\FileSystem\Drivers\BaseDriver;
+use FluentCart\App\Services\FileSystem\StoragePath;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 
@@ -187,15 +188,17 @@ class LocalDriver extends BaseDriver
 
     public function downloadFile(string $filePath, $fileName = null)
     {
-        $filePath = wp_normalize_path( $filePath );
         $fileName = sanitize_file_name($fileName);
 
-        $file = "{$this->dirPath}/{$filePath}";
+        $file = $this->getFilePath($filePath);
         if (ob_get_level()) {
             ob_end_clean();
         }
 
-        if(!file_exists($file)) {
+        // A path that escapes the storage directory reports as missing rather
+        // than as rejected, so this never answers whether a file outside the
+        // directory exists.
+        if (!$file || !file_exists($file)) {
             return new \WP_Error('file_not_found', __('File not found', 'fluent-cart'));
         }
         $fileSize = filesize($file);
@@ -212,9 +215,17 @@ class LocalDriver extends BaseDriver
         exit;
     }
 
+    /**
+     * Absolute path for a stored file, or '' when $filePath escapes the
+     * storage directory.
+     *
+     * `..` survives both sanitize_text_field() and wp_normalize_path(), so
+     * composing the path by concatenation alone let a relative path address any
+     * file the web user could reach.
+     */
     public function getFilePath(string $filePath, $fileName = null): string
     {
-        return "{$this->dirPath}/{$filePath}";
+        return StoragePath::contain($this->dirPath, $filePath);
     }
 
     protected function retrieveFileForDownload(string $downloadableFilePath)
@@ -229,13 +240,14 @@ class LocalDriver extends BaseDriver
             return new \WP_Error('permission_error', __('You are not allowed to delete file', 'fluent-cart'));
         }
 
-        $filePath = wp_normalize_path($filePath);
         $fullPath = $this->getFilePath($filePath);
-        
-        if (!file_exists($fullPath)) {
+
+        // Same as the download path: an escaping path reports as missing so the
+        // response cannot be used to probe for files outside the directory.
+        if (!$fullPath || !file_exists($fullPath)) {
             return new \WP_Error('file_not_found', __('File not found', 'fluent-cart'));
         }
-        
+
         if (!is_file($fullPath)) {
             return new \WP_Error('not_a_file', __('Path is not a file', 'fluent-cart'));
         }

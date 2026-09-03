@@ -95,7 +95,7 @@ class ShopResource extends BaseResourceApi
 
         $query = static::getQuery()
             ->select(Arr::get($params, 'select', '*'))
-            ->with(Arr::get($params, 'with', []));
+            ->with(static::expandAppendRelations(Arr::get($params, 'with', [])));
 
         $query = apply_filters('fluent_cart/shop_query', $query, $params);
 
@@ -262,10 +262,70 @@ class ShopResource extends BaseResourceApi
             $products = $query->simplePaginate(Arr::get($params, 'per_page', 10), ['*'], 'current_page', Arr::get($params, 'page'));
         }
 
+        static::primePostCaches($products);
+
         return [
             'products' => $products,
             'total'    => $totalCount
         ];
+    }
+
+    /**
+     * Expand the caller's `with` list so the relations that the models' default
+     * appends read are eager loaded rather than fetched one row at a time.
+     *
+     * `ProductVariation::$appends` renders `thumbnail` from its `media` relation and
+     * `ProductDetail::$appends` renders `featured_media` from `galleryImage`, so every
+     * serialized row issued its own query — one per variant plus one per product, on a
+     * public list endpoint. Only relations the caller already asked for are expanded,
+     * so the response shape is byte-identical; callers that never load `variants` or
+     * `detail` are untouched.
+     *
+     * @param array|string $with Relations the caller requested.
+     * @return array
+     */
+    protected static function expandAppendRelations($with): array
+    {
+        $with = Arr::wrap($with);
+
+        $appendRelations = [
+            'variants' => 'variants.media',
+            'detail'   => 'detail.galleryImage',
+        ];
+
+        foreach ($appendRelations as $relation => $nestedRelation) {
+            if (in_array($relation, $with, true) && !in_array($nestedRelation, $with, true)) {
+                $with[] = $nestedRelation;
+            }
+        }
+
+        return $with;
+    }
+
+    /**
+     * Prime the WordPress post cache for the products on this page.
+     *
+     * These rows come from the ORM, not WP_Query, so nothing populates the `posts`
+     * cache. Every `get_permalink()` behind the `view_url` append — and every core
+     * template helper a storefront card calls — then fell through to `get_post()`,
+     * one SELECT per product. This replaces them with a single `IN (...)` read.
+     * Terms and meta are deliberately not primed: no product-list path reads them
+     * here, and priming them would cost two more queries.
+     *
+     * @param mixed $products Paginator returned by the list query.
+     * @return void
+     */
+    protected static function primePostCaches($products)
+    {
+        if (!$products || !method_exists($products, 'getCollection')) {
+            return;
+        }
+
+        $postIds = $products->getCollection()->pluck('ID')->filter()->all();
+
+        if ($postIds) {
+            _prime_post_caches($postIds, false, false);
+        }
     }
 
     /**
@@ -342,6 +402,19 @@ class ShopResource extends BaseResourceApi
             $args['orderby'] = $orderField;
             $args['order']   = $orderDir;
         }
+
+        // Filters the query arguments used to fetch related products.
+        // Developers can customize the query as needed, such as excluding products
+        // or modifying the query parameters.
+        $args = apply_filters(
+            'fluent_cart/related_products/query_args',
+            $args,
+            [
+                'product_id' => $id,
+                'post'       => $post,
+                'config'     => $config,
+            ]
+        );
 
         $query = new \WP_Query($args);
 

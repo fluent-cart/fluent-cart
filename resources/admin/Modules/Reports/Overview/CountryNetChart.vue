@@ -1,11 +1,13 @@
 <script setup>
-import {computed, nextTick, onMounted, ref, watch} from "vue";
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from "vue";
 import * as echarts from 'echarts';
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
 import Theme from "@/utils/Theme";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import toCountryName from "@/Modules/Reports/Utils/toCountryName";
+import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
 const props = defineProps({
@@ -66,6 +68,7 @@ const initChart = () => {
 
 // Update chart options
 const updateChart = () => {
+  if (!chartInstance) return;
   const option = {
     legend: {
       show: false,
@@ -76,20 +79,17 @@ const updateChart = () => {
       borderColor: themeColors.value.borderColor,
       borderWidth: 1,
       textStyle: { color: themeColors.value.textColor },
-      axisPointer: {
-        type: 'line',
-        lineStyle: {
-          type: 'solid',
-          width: 2,
-          color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray_blue,
-        }
-      },
+      axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue, chartType.value),
+      confine: true,
+      position: chartTooltipPosition,
       formatter: params => {
-        let tooltipContent = params[0].name;
+        // The axis is labelled with country codes because that is all that
+        // fits; the tooltip has room for the real name.
+        let tooltipContent = toCountryName(params[0].name);
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
-      
+
         params.forEach(param => {
-          const value = CurrencyFormatter.formatScaled(param.value);
+          const value = chartTooltipAmount(param.value);
 
           tooltipContent += `<div>
             ${param.marker} 
@@ -165,9 +165,15 @@ const handleThemeChange = () => {
 // Initialize chart on mount
 onMounted(() => {
   window.addEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.addEventListener("fluentCartCurrencyChange", updateChart);
 
   nextTick(initChart);
-})
+});
+
+onUnmounted(() => {
+  window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
+  window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
+});
 </script>
 
 <template>

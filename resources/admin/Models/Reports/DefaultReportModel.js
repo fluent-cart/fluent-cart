@@ -94,7 +94,6 @@ class DefaultReportModel extends Model {
         }
       })
       .catch((error) => {
-        console.log(error, "error");
       })
       .finally(() => {
         if (key && key.startsWith("graphs.")) {

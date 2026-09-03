@@ -5,7 +5,7 @@
             v-model="fieldValue"
             icon="el-icon-arrow-down"
             :data="editorShortcodes"
-            @onValueUpdated="function(value) { 
+            @on-value-updated="function(value) { 
                 onValueUpdated(value) 
             }"
             :defaultValue="fieldValue"

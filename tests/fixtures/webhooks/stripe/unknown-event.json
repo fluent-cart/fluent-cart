@@ -1,0 +1,13 @@
+{
+  "id": "evt_phase29_stripe_unknown_1",
+  "object": "event",
+  "type": "product.updated",
+  "livemode": false,
+  "data": {
+    "object": {
+      "id": "prod_phase29_unknown_1",
+      "object": "product",
+      "metadata": {}
+    }
+  }
+}

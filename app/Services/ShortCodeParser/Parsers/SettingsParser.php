@@ -18,15 +18,19 @@ class SettingsParser extends BaseParser
     }
 
     protected array $methodMap = [
-        'store_logo'     => 'getStoreLogo',
-        'store_brand'    => 'getStoreBrandHtml',
-        'store_name'     => 'getStoreName',
-        'store_address'  => 'getStoreAddress',
-        'store_address2' => 'getStoreAddressLine2',
-        'store_country'  => 'getStoreCountry',
-        'store_state'    => 'getStoreState',
-        'store_city'     => 'getStoreCity',
-        'store_postcode' => 'getStorePostcode',
+        'store_logo'            => 'getStoreLogo',
+        'store_brand'           => 'getStoreBrandHtml',
+        'store_name'            => 'getStoreName',
+        'store_address'         => 'getStoreAddress',
+        'store_address2'        => 'getStoreAddressLine2',
+        'store_country'         => 'getStoreCountry',
+        'store_state'           => 'getStoreState',
+        'store_city'            => 'getStoreCity',
+        'store_postcode'        => 'getStorePostcode',
+        'company_name'          => 'getCompanyName',
+        'legal_registration_id' => 'getLegalRegistrationId',
+        'seller_vat_id'         => 'getSellerVatId',
+        'seller_tax_id'         => 'getSellerTaxId',
     ];
 
     public function parse($accessor = null, $code = null): ?string
@@ -97,5 +101,25 @@ class SettingsParser extends BaseParser
     public function getStorePostcode()
     {
         return $this->storeSettings->get('store_postcode');
+    }
+
+    public function getCompanyName(): ?string
+    {
+        return $this->storeSettings->get('company_name');
+    }
+
+    public function getLegalRegistrationId(): ?string
+    {
+        return $this->storeSettings->get('legal_registration_id');
+    }
+
+    public function getSellerVatId(): ?string
+    {
+        return $this->storeSettings->get('seller_vat_id');
+    }
+
+    public function getSellerTaxId(): ?string
+    {
+        return $this->storeSettings->get('seller_tax_id');
     }
 }

@@ -53,11 +53,11 @@
       <el-table-column :label="translate('Actions')" width="200" align="right">
         <template #default="scope">
           <div class="fct-btn-group sm justify-end pr-4">
-            <icon-button size="small"
+            <IconButton size="small"
                          @click="$router.push({ name: 'view_shipping_zone', params: { zone_id: scope.row.id } })"
                          class="cursor-pointer">
               <DynamicIcon name="Edit"/>
-            </icon-button>
+            </IconButton>
 
             <el-popconfirm
                 :title="translate('Are you sure to delete this shipping zone?')"
@@ -65,9 +65,9 @@
                 width="220"
             >
               <template #reference>
-                <icon-button size="small" class="cursor-pointer">
+                <IconButton size="small" class="cursor-pointer">
                   <DynamicIcon name="Delete"/>
-                </icon-button>
+                </IconButton>
               </template>
             </el-popconfirm>
           </div>
@@ -108,7 +108,6 @@ const deleteZone = (zoneId) => {
         emit('refresh');
       })
       .catch(error => {
-        console.error('Error deleting shipping zone:', error);
         Notify.error(error.message);
       })
       .finally(() => {

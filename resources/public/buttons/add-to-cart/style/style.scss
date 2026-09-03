@@ -9,7 +9,7 @@
 }
 
 .fluent-cart-add-to-cart-button {
-  @apply bg-[var(--fct-add-to-cart-btn-bg-color)] border border-solid border-[var(--fct-add-to-cart-btn-border-color)] relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fct-add-to-cart-btn-text-color)] hover:text-[var(--fct-add-to-cart-btn-text-color)] hover:border-[var(--fct-add-to-cart-btn-border-color)] hover:bg-[var(--fct-add-to-cart-btn-hover-bg-color)] transition duration-150 ease-in-out;
+  @apply bg-[var(--fct-add-to-cart-btn-bg-color)] border border-solid border-[var(--fct-add-to-cart-btn-border-color)] relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fct-add-to-cart-btn-text-color)] hover:text-[var(--fct-add-to-cart-btn-text-color)] hover:border-[var(--fct-add-to-cart-btn-border-color)] hover:bg-[var(--fct-add-to-cart-btn-hover-bg-color)] transition duration-150 ease-in-out capitalize;
   &:focus {
     @apply text-[var(--fct-add-to-cart-btn-text-color)];
   }
@@ -22,7 +22,7 @@
   }
 
   .text{
-    @apply pointer-events-none;
+    @apply pointer-events-none inline-flex items-center gap-2;
   }
 
   &:disabled{

@@ -33,7 +33,6 @@ const handleProductCommand = (command) => {
     ).then(() => {
       emit('delete', command.product.ID);
     }).catch((errors) => {
-      console.log(errors, ' handle product delete errors');
     });
   }
 }

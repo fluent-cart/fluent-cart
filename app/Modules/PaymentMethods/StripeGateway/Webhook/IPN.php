@@ -48,6 +48,16 @@ class IPN
 
         $refunds = Arr::get($charge, 'refunds.data', []);
 
+        if (empty($refunds)) {
+            $chargeId = Arr::get($charge, 'id', '');
+            if ($chargeId) {
+                $refundsResponse = (new API())->getStripeObject('charges/' . $chargeId . '/refunds');
+                if (!is_wp_error($refundsResponse)) {
+                    $refunds = Arr::get($refundsResponse, 'data', []);
+                }
+            }
+        }
+
         if (!$refunds) {
             return false;
         }
@@ -404,6 +414,7 @@ class IPN
             'checkout.session.completed',
             'customer.subscription.deleted',
             'customer.subscription.updated',
+            'setup_intent.succeeded', // recovers zero-payable system-subscription vaulting if the AJAX confirm is lost
         ];
 
         $eventType = $data->type;
@@ -412,18 +423,38 @@ class IPN
         }
 
         $eventId = $data->id;
-        $event = (new API())->getEvent($eventId);
+        $livemode = isset($data->livemode) ? (bool)$data->livemode : null;
+        $event = (new API())->getEvent($eventId, $livemode);
 
         if (!$event || is_wp_error($event)) {
-            $this->sendResponse(400, 'Event not found or error occurred.');
+            $reason = is_wp_error($event)
+                ? $event->get_error_code() . ': ' . $event->get_error_message()
+                : 'Stripe returned an empty response.';
+
+            // Warning, not error: fluent_cart_error_log() is a no-op unless
+            // FLUENT_CART_DEV_MODE is on, and this is the only surviving record of
+            // why a delivery failed.
+            fluent_cart_warning_log(
+                'Stripe Webhook: could not fetch event ' . $eventId,
+                $reason . ' (event mode: ' . (is_null($livemode) ? 'unknown' : ($livemode ? 'live' : 'test')) . ')',
+                [
+                    'module_name' => 'payment',
+                    'log_type'    => 'api',
+                ]
+            );
+
+            $this->sendResponse(400, 'Event not found or error occurred. ' . $reason);
         }
 
         // get the order from the event, in case of renewal create one
-        $order = (new Webhook())->processAndInsertOrderByEvent($event);
+        $webhook = new Webhook();
+        $order = $webhook->processAndInsertOrderByEvent($event);
 
         if (!$order) {
-            // This is already handled or not our event
-            $this->sendResponse(200, 'Event not handled or not related to an order.');
+            // Either we have no resolver for this event type, or the resolver ran and
+            // nothing local matched. Both are a 200 — neither is retryable — but they
+            // mean different things when reading the Stripe delivery log.
+            $this->sendResponse(200, $webhook->getUnresolvedReason() ?: __('Event resolved to no order.', 'fluent-cart'));
         }
 
         if (is_wp_error($order)) {

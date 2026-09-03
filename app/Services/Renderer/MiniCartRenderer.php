@@ -10,14 +10,13 @@ class MiniCartRenderer
 {
     protected $cartItems;
     protected $itemCount = 0;
+    protected $countMode = 'distinct_products';
 
     public function __construct($cartItems, $config = [])
     {
-
         $this->cartItems = $cartItems;
         $this->itemCount = Arr::get($config, 'item_count') ?? count($this->cartItems);
-
-
+        $this->countMode = Arr::get($config, 'count_mode', 'distinct_products');
     }
     public function renderMiniCart($atts = [])
     {
@@ -33,7 +32,7 @@ class MiniCartRenderer
         $iconColor = Arr::get($atts, 'icon_color', '');
         $priceColor = Arr::get($atts, 'price_color', '');
         $productCountColor = Arr::get($atts, 'product_count_color', '');
-        $buttonClass = Arr::get($atts, 'button_class', '');
+        $buttonClass = (string) Arr::get($atts, 'button_class', '');
 
 
         // Build style attribute
@@ -44,7 +43,7 @@ class MiniCartRenderer
         $isShortcode = Arr::get($atts, 'is_shortcode', false);
         $wrapperAttributes = '';
         if(!$isShortcode){
-            $wrapperAttributes = get_block_wrapper_attributes();
+            $wrapperAttributes = RenderHelper::getBlockWrapperAttributes();
         }
 
 
@@ -66,7 +65,7 @@ class MiniCartRenderer
 
         ?>
         <div <?php echo $wrapperAttributes; ?>>
-            <button class="fct-mini-cart-button <?php echo $buttonClass ?>" data-fluent-cart-cart-expand-button
+            <button class="fct-mini-cart-button <?php echo esc_attr($buttonClass); ?>" data-fluent-cart-cart-expand-button
                     aria-label="<?php esc_attr_e('Open Shopping Cart', 'fluent-cart'); ?>">
                     <span class="fct-mini-cart-wrap" <?php echo $iconStyle; ?>>
                         <?php $this->renderCartIcon($cartIcon); ?>
@@ -75,6 +74,7 @@ class MiniCartRenderer
                             <span
                                 class="fct-mini-cart-badge"
                                 data-cart-badge-count
+                                data-cart-count-mode="<?php echo esc_attr($this->countMode); ?>"
                                 <?php echo $countStyle; ?>
                             >
                                 <?php

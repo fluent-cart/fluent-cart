@@ -508,7 +508,7 @@ watch(shouldShowLabels, () => {
 
 <template>
   <div class="fct-gross-sale-vs-net-revenue-wrap">
-    <Card.Container id="chartContainer">
+    <Card.Container id="chartContainer" class="mb-0">
       <Card.Header :title="$t('Order Heat Map')" border_bottom>
         <template #action>
           <div class="fct-btn-group sm">
@@ -528,34 +528,34 @@ watch(shouldShowLabels, () => {
       <Card.Body class="p-0 pt-0 relative">
         <!-- World Map Controls -->
         <div v-if="chartType === 'world'" class="fct-world-map-action-btns absolute top-5 right-5 flex flex-col gap-1 z-10">
-          <icon-button tag="button" size="small" @click="zoomIn">
+          <IconButton tag="button" size="small" @click="zoomIn">
             <DynamicIcon name="Plus" />
-          </icon-button>
-          <icon-button tag="button" size="small" @click="zoomOut">
+          </IconButton>
+          <IconButton tag="button" size="small" @click="zoomOut">
             <DynamicIcon name="Minus" />
-          </icon-button>
-          <icon-button tag="button" size="small" @click="resetChart">
+          </IconButton>
+          <IconButton tag="button" size="small" @click="resetChart">
             <DynamicIcon name="Reload" />
-          </icon-button>
-          <icon-button tag="button" size="small lg:hidden" @click="openModal">
+          </IconButton>
+          <IconButton tag="button" size="small lg:hidden" @click="openModal">
             <DynamicIcon name="Eye" />
-          </icon-button>
+          </IconButton>
         </div>
 
         <!-- Bar Chart Controls and Info -->
         <div v-if="chartType === 'bar'" class="fct-world-map-action-btns absolute top-[10px] right-[40px] flex flex-col gap-1 z-10">
-            <icon-button tag="button" size="small" @click="resetChart">
+            <IconButton tag="button" size="small" @click="resetChart">
               <DynamicIcon name="Reload" />
-            </icon-button>
+            </IconButton>
           </div>
 
         <div class="fct-chart-wrap rounded-[0px] bg-transparent" ref="chartRef"></div>
       </Card.Body>
     </Card.Container>
 
-    <el-dialog v-model="isModalOpen" :title="$t('Order Heat Map')" class="country-heat-map-dialog">
+    <ElDialog v-model="isModalOpen" :title="$t('Order Heat Map')" class="country-heat-map-dialog">
       <div class="fct-chart-wrap" ref="modalChartRef"></div>
-    </el-dialog>
+    </ElDialog>
   </div>
 </template>
 

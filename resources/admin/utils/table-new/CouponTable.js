@@ -31,44 +31,6 @@ class CouponTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Title'),
-                value: 'title'
-            },
-            {
-                label: translate('Code'),
-                value: 'code'
-            },
-            {
-                label: translate('Amount'),
-                value: 'amount'
-            },
-            {
-                label: translate('Max Uses'),
-                value: 'max_uses'
-            },
-            {
-                label: translate('Stackable'),
-                value: 'stackable'
-            },
-            {
-                label: translate('Status'),
-                value: 'status'
-            },
-            {
-                label: translate('Expiry Date'),
-                value: 'expiry_date'
-            },
-
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by id, title, amount, code.")
     }
@@ -93,10 +55,11 @@ class CouponTable extends Table {
         return [];
     }
 
+    // Nothing to load. The redemption count this used to request was never
+    // rendered — `applied_coupons_count` appears nowhere in the admin; the
+    // table prints the real `use_count` column instead.
     with() {
-        return [
-            'appliedCouponsCount',
-        ];
+        return [];
     }
 }
 

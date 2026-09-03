@@ -3,10 +3,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from "vue";
 import * as echarts from "echarts";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {chartTooltipAmount} from "@/utils/Utils";
 
 // Define props
 const props = defineProps({
@@ -107,7 +107,7 @@ const initChart = () => {
       },
       tooltip: {
         trigger: "axis",
-        valueFormatter: (value) => props.hasCurrency ? `${CurrencyFormatter.scaled(value)}` : value,
+        valueFormatter: (value) => props.hasCurrency ? chartTooltipAmount(value * 100) : value,
       },
       grid: {
         show: false,
@@ -185,10 +185,19 @@ watch(
   }
 );
 
+const onCurrencyChanged = () => {
+  updateChart();
+};
+
 onMounted(() => {
+  window.addEventListener("fluentCartCurrencyChange", onCurrencyChanged);
   nextTick(() => {
     initChart();
   });
+});
+
+onUnmounted(() => {
+  window.removeEventListener("fluentCartCurrencyChange", onCurrencyChanged, false);
 });
 </script>
 

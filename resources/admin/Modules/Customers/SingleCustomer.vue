@@ -272,7 +272,9 @@ export default {
       this.loading = true;
       this.selectedOrders = [];
       Rest.get('customers/' + this.customer_id, {
-        with: ['shipping_address', 'billing_address', 'labels', 'subscriptions']
+        // Screen key, not a relation name — CustomerController::allowedWiths()
+        // owns what it resolves to (both addresses, labels, subscriptions).
+        with: ['admin_customer_detail']
       })
           .then(response => {
             this.changeTitle(
@@ -307,8 +309,10 @@ export default {
       Rest.get('customers/' + this.customer_id+'/orders', {
         per_page: this.paginate.per_page,
         page: this.paginate.current_page,
+        // A screen key, not a relation name — OrderFilter::allowedWiths() owns
+        // what it resolves to.
         with: [
-          'order_items'
+          'admin_customer_orders'
         ],
         search: this.search,
         order_by: 'id',
@@ -341,15 +345,6 @@ export default {
       this.selectedOrders = orders;
 
       this.selectionCount = orders.length;
-    },
-    exportOrders() {
-      location.href = window.ajaxurl + '?' + jQuery.param({
-        action: 'fluent_cart_admin_ajax',
-        route: 'export_orders',
-        customer_id: this.customer_id,
-        search: this.search,
-        format: 'csv'
-      });
     },
   },
   mounted() {

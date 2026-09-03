@@ -1,0 +1,13 @@
+{
+  "status": 402,
+  "message": "Request Failed",
+  "body": {
+    "error": {
+      "type": "card_error",
+      "code": "card_declined",
+      "decline_code": "generic_decline",
+      "message": "Your card was declined.",
+      "param": "payment_method"
+    }
+  }
+}

@@ -6,13 +6,13 @@ use Bricks\Element;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class ProductTitle extends Element {
-    public $category = 'fluent_cart_product';
+    public $category = 'fluent-cart';
     public $name     = 'fct-product-title';
-    public $icon     = 'ti-text';
+    public $icon     = 'ti-text fluent-cart-element-icon';
     public $tag      = 'h1';
 
     public function get_label() {
-        return esc_html__( 'Product title (FluentCart)', 'fluent-cart' );
+        return esc_html__( 'Product Title', 'fluent-cart' );
     }
 
     public function set_controls() {
@@ -69,40 +69,57 @@ class ProductTitle extends Element {
         ];
     }
 
-    public function render() {
+    public function render()
+    {
         $settings = $this->settings;
+        $post = get_post($this->post_id);
 
+        $prefix = !empty($settings['prefix']) ? $settings['prefix'] : false;
+        $suffix = !empty($settings['suffix']) ? $settings['suffix'] : false;
+        $linkToProduct = isset($settings['linkToProduct']);
 
-        $prefix          = ! empty( $settings['prefix'] ) ? $settings['prefix'] : false;
-        $suffix          = ! empty( $settings['suffix'] ) ? $settings['suffix'] : false;
-        $link_to_product = isset( $settings['linkToProduct'] );
-        $output          = '';
+        ?>
+        <?php
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_attributes() handles escaping internally
+            echo "<" . esc_html($this->tag) . " " . $this->render_attributes('_root') . ">";
+        ?>
+            <?php if ($linkToProduct) : ?>
+                <a href="<?php echo esc_url(get_the_permalink($this->post_id)); ?>">
+            <?php endif; ?>
 
-        if ( $link_to_product ) {
-            $output .= '<a href="' . get_the_permalink( $this->post_id ) . '">';
-        }
+            <?php if ($prefix) : ?>
+                <?php $this->set_attribute('prefix', 'class', ['post-prefix']); ?>
+                <?php if (isset($settings['prefixBlock'])) : ?>
+                    <div <?php echo $this->render_attributes('prefix'); ?>>
+                        <?php echo wp_kses_post($prefix); ?>
+                    </div>
+                <?php else : ?>
+                    <span <?php echo $this->render_attributes('prefix'); ?>>
+                        <?php echo wp_kses_post($prefix); ?>
+                    </span>
+                <?php endif; ?>
+            <?php endif; ?>
 
-        if ( $prefix ) {
-            $this->set_attribute( 'prefix', 'class', [ 'post-prefix' ] );
+            <span><?php echo esc_html($post->post_title); ?></span>
 
-            $output .= isset( $settings['prefixBlock'] ) ? "<div {$this->render_attributes( 'prefix' )}>{$prefix}</div>" : "<span {$this->render_attributes( 'prefix' )}>{$prefix}</span>";
-        }
+            <?php if ($suffix) : ?>
+                <?php $this->set_attribute('suffix', 'class', ['post-suffix']); ?>
+                <?php if (isset($settings['suffixBlock'])) : ?>
+                    <div <?php echo $this->render_attributes('suffix'); ?>>
+                        <?php echo wp_kses_post($suffix); ?>
+                    </div>
+                <?php else : ?>
+                    <span <?php echo $this->render_attributes('suffix'); ?>>
+                        <?php echo wp_kses_post($suffix); ?>
+                    </span>
+                <?php endif; ?>
+            <?php endif; ?>
 
-        $post = get_post( $this->post_id );
-
-        $output .= $post->post_title;
-
-        if ( $suffix ) {
-            $this->set_attribute( 'suffix', 'class', [ 'post-suffix' ] );
-
-            $output .= isset( $settings['suffixBlock'] ) ? "<div {$this->render_attributes( 'suffix' )}>{$suffix}</div>" : "<span {$this->render_attributes( 'suffix' )}>{$suffix}</span>";
-        }
-
-        if ( $link_to_product ) {
-            $output .= '</a>';
-        }
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_attributes() handles escaping, output is escaped
-        echo "<" . esc_html($this->tag) . " {$this->render_attributes( '_root' )}>" . wp_kses_post($output) . "</" . esc_html($this->tag) . ">";
+            <?php if ($linkToProduct) : ?>
+                </a>
+            <?php endif; ?>
+        <?php echo "</" . esc_html($this->tag) . ">"; ?>
+        <?php
     }
 
     public static function render_builder() { ?>

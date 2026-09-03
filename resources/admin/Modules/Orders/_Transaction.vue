@@ -7,7 +7,7 @@
                     <template #default="scope">
                         <div>
                               <p class="p-0 m-0 text-xs text-gray-500">#{{ translateNumber(scope.row.id) }}</p>
-                              <ConvertedTime :date-time="scope.row.created_at"/>
+                              <ConvertedTime :date-time="scope.row?.meta?.settled_at || scope.row.created_at"/>
                         </div>
                     </template>
                 </el-table-column>
@@ -36,7 +36,13 @@
                 </el-table-column>
                 <el-table-column :label="translate('Total')" width="auto">
                     <template #default="scope">
-                        <span>{{ formatNumber(scope.row.total) }}</span>
+                        <template v-if="scope.row?.meta?.mor_vat_removed > 0">
+                            <span>{{ formatNumberForOrder(scope.row.total - scope.row.meta.mor_vat_removed, orderCurrency) }}</span>
+                            <p class="p-0 m-0 text-xs text-gray-500">
+                                {{ translate('Tax reversed') }}: {{ formatNumberForOrder(scope.row.meta.mor_vat_removed, orderCurrency) }}
+                            </p>
+                        </template>
+                        <span v-else>{{ formatNumberForOrder(scope.row.total, orderCurrency) }}</span>
                     </template>
                 </el-table-column>
 
@@ -75,11 +81,22 @@
                         </Badge>
                     </template>
                 </el-table-column>
-                <el-table-column v-if="hasDisputedTransaction(transactions)" :label="translate('Actions')" width="140">
+                <el-table-column v-if="hasDisputedTransaction(transactions) || hasSyncableTransaction(transactions)" :label="translate('Actions')" width="140">
                     <template #default="scope">
                         <el-button type="warning" v-if="scope.row.transaction_type == 'dispute' && scope.row.status == 'succeeded'" size="small" @click="handleDispute(scope.row)">
                             {{ translate('Handle dispute') }}
                         </el-button>
+                        <el-tooltip
+                            v-if="scope.row.transaction_type == 'charge' && scope.row.status == 'pending' && scope.row.vendor_charge_id"
+                            effect="dark"
+                            :placement="'top'"
+                            :content="translate('Sync payment status from %1$s', scope.row.payment_method)"
+                            popper-class="fct-tooltip"
+                        >
+                            <el-button size="small" :aria-label="translate('Sync payment status from %1$s', scope.row.payment_method)" :loading="syncing_transaction === scope.row.id" @click="syncTransaction(scope.row)">
+                                <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
+                            </el-button>
+                        </el-tooltip>
                     </template>
                 </el-table-column>
             </el-table>
@@ -151,7 +168,7 @@ export default {
         Badge,
         DynamicIcon
     },
-    props: ['transactions', 'transaction', 'header', 'transaction_data', 'order_id'],
+    props: ['transactions', 'transaction', 'header', 'transaction_data', 'order_id', 'orderCurrency'],
     emits: ['reload'],
     data() {
         return {
@@ -163,7 +180,8 @@ export default {
                 dispute_note: ''
             },
             disputeTransaction: null,
-            loadingDisputeAction: false
+            loadingDisputeAction: false,
+            syncing_transaction: null
         }
     },
     methods: {
@@ -194,6 +212,26 @@ export default {
         },
         hasDisputedTransaction(transactions) {
             return transactions.some(transaction => transaction.transaction_type == 'dispute' && transaction.status == 'succeeded');
+        },
+        hasSyncableTransaction(transactions) {
+            return transactions.some(transaction => transaction.transaction_type == 'charge' && transaction.status == 'pending' && transaction.vendor_charge_id);
+        },
+        syncTransaction(transaction) {
+            if (this.syncing_transaction) {
+                return;
+            }
+            this.syncing_transaction = transaction.id;
+            this.$post('orders/' + this.order_id + '/transactions/' + transaction.id + '/sync')
+                .then(response => {
+                    this.$notify.success(response.message);
+                    this.$emit('reload');
+                })
+                .catch(errors => {
+                    this.$notify.error(errors?.data?.message || translate('Something went wrong!'));
+                })
+                .finally(() => {
+                    this.syncing_transaction = null;
+                });
         }
         // changeStatus(newStatus) {
         //   if (this.status == this.transaction.status) {

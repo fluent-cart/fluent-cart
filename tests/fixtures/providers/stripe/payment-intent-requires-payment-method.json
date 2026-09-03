@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "pi_phase29_failed",
+    "object": "payment_intent",
+    "amount": 12345,
+    "currency": "usd",
+    "status": "requires_payment_method",
+    "latest_charge": null,
+    "last_payment_error": {
+      "code": "payment_intent_authentication_failure",
+      "message": "The payment attempt failed because authentication is required."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 <template>
-  <el-table-v2
+  <ElTableV2
       :columns="columns"
       :data="data"
       :estimated-row-height="50"
@@ -16,7 +16,7 @@
 <!--      </div>-->
 
     </template>
-  </el-table-v2>
+  </ElTableV2>
 </template>
 
 <script lang="tsx" setup>

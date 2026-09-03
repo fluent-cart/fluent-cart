@@ -86,6 +86,8 @@ abstract class RequestGuard
             } else {
                 App::make()->doCustomAction('handle_exception', $e);
             }
+
+            return [];
         }
     }
 
@@ -97,7 +99,7 @@ abstract class RequestGuard
     protected function shouldThrowException()
     {
         $isTrue = $this->isRest();
-        $isTrue = $isTrue || str_contains('test', App::make()->env());
+        $isTrue = $isTrue || str_contains(App::make()->env(), 'test');
         $isTrue = $isTrue || str_contains(strtolower(php_sapi_name()), 'cli');
         return $isTrue;
     }

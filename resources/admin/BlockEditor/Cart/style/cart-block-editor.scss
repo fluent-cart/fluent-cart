@@ -1,0 +1,75 @@
+@config "./cart-block-editor.config.js";
+@tailwind utilities;
+
+// Editor-canvas wireframes for the Cart block and its three children. The
+// editor has no shopper session, so each region draws a stand-in for what it
+// renders on the front end. Frontend cart styling lives in the stylesheet
+// CartLoader enqueues — nothing here ships to visitors.
+.fct-cart-block-preview-items {
+    @apply p-4 border border-neutral-200 rounded-lg bg-white;
+
+    .fct-cart-block-preview-row {
+        @apply flex items-center gap-4 py-4 border-b border-neutral-100;
+    }
+
+    .fct-cart-block-preview-thumb {
+        @apply w-12 h-12 rounded bg-neutral-100 shrink-0;
+    }
+
+    .fct-cart-block-preview-lines {
+        @apply flex-1 flex flex-col gap-2;
+    }
+
+    .fct-cart-block-preview-qty {
+        @apply w-16 h-8 rounded border border-neutral-200;
+    }
+
+    .fct-cart-block-preview-price {
+        @apply w-14 h-3 rounded bg-neutral-100;
+    }
+}
+
+.fct-cart-block-preview-summary {
+    @apply flex items-center justify-between gap-4 p-4 border border-neutral-200 rounded-lg bg-white;
+
+    // Real label text on the left, skeleton amount on the right.
+    .fct-cart-block-preview-total-label {
+        @apply text-base font-semibold;
+    }
+}
+
+// Right-aligned link, matching the front end's a.checkout-button rather than a
+// solid button.
+.fct-cart-block-preview-checkout {
+    @apply flex justify-end p-4;
+
+    // Colour is inherited on purpose. On the front end this link takes the
+    // theme's link colour, which differs per site, so the preview should not
+    // hardcode one and claim a colour the visitor will not see.
+    .fct-cart-block-preview-checkout-link {
+        @apply text-base font-medium underline;
+    }
+}
+
+// Shared skeleton pieces — used by more than one child.
+.fct-cart-block-preview-line {
+    @apply h-3 rounded bg-neutral-100;
+}
+
+.fct-cart-block-preview-line-title {
+    @apply w-1/2;
+}
+
+.fct-cart-block-preview-line-meta {
+    @apply w-1/4 h-2;
+}
+
+// FluentCart's spacing scale replaces Tailwind's and stops at 18 (72px), so
+// widths past that are written as arbitrary values rather than w-24.
+.fct-cart-block-preview-line-total {
+    @apply w-[96px] h-4;
+}
+
+.fct-cart-block-preview-note {
+    @apply mt-4 mb-0 text-sm text-neutral-500;
+}

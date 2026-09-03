@@ -1,0 +1,1089 @@
+.fct-advanced-variation-config {
+  @apply p-0;
+}
+
+.fct-adv-var-empty-hint {
+  @apply text-[13px] text-gray-500 mb-3 dark:text-gray-400;
+}
+
+/* Outer wrapper — single border around all option rows (Shopify-style) */
+.fct-option-card-list {
+  @apply flex flex-col mb-3 border border-solid border-gray-outline rounded overflow-hidden dark:border-dark-400;
+}
+
+.fct-option-card-list > .fct-option-card + .fct-option-card {
+  /* Divider between adjacent option cards (Color / Size / Image rows in
+     the Pricing section). Same dark-mode swap pattern as the variation
+     tables — light gray-outline by default, dark-400 in dark mode so the
+     line doesn't stand out as near-white against the dark surface. */
+  border-top: 1px solid rgb(214 218 225 / var(--tw-border-opacity, 1));
+}
+
+.fluent_theme_dark .fct-option-card-list > .fct-option-card + .fct-option-card {
+  border-top-color: #2C3C4E;
+}
+
+.fct-option-card {
+  @apply bg-white dark:bg-dark-600;
+}
+
+/* Collapsed Card */
+.fct-option-card-collapsed {
+  @apply flex items-center gap-2.5 px-3 py-3 cursor-pointer bg-white transition-colors duration-150 hover:bg-gray-50 dark:bg-dark-600 dark:hover:bg-dark-500;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-[-2px] outline-blue-500;
+  }
+}
+
+.fct-option-card-summary {
+  @apply flex-1 min-w-0 flex flex-col gap-1.5 text-[13px];
+}
+
+/* Expand/collapse toggle at the right of the card header — a bordered
+   chevron button shown only while the card is expanded (rotated down).
+   Clicking it (or anywhere on the header) folds the card back up. */
+.fct-option-card-toggle {
+  @apply flex items-center justify-center shrink-0 ml-auto w-8 h-8 rounded-md border border-solid border-gray-outline bg-white text-system-mid cursor-pointer transition-all duration-200;
+  @apply dark:bg-dark-500 dark:border-dark-400 dark:text-gray-400;
+
+  &:hover {
+    @apply border-gray-500 text-system-dark;
+    @apply dark:bg-dark-400 dark:border-gray-500 dark:text-gray-50;
+  }
+}
+
+.fct-option-card-toggle--open {
+  @apply rotate-90;
+}
+
+.fct-option-card-summary-header {
+  @apply flex items-center gap-2;
+
+  strong {
+    @apply text-[14px] flex-shrink-0;
+  }
+}
+
+.fct-option-card-chips {
+  @apply flex items-center flex-wrap gap-1.5;
+}
+
+.fct-option-value-chip {
+  @apply inline-flex items-center gap-1.5 px-2 py-1 rounded text-[12px] bg-blue-50 dark:bg-dark-500 text-gray-800 dark:text-gray-200;
+  line-height: 1.2;
+}
+
+.fct-option-value-chip-label {
+  @apply leading-none;
+}
+
+.fct-option-value-swatch {
+  @apply inline-block border border-solid border-black/10 dark:border-white/10;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.fct-option-value-img {
+  @apply inline-block object-cover;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.fct-group-type-badge {
+  @apply flex-shrink-0;
+
+  /* Element Plus's warning / success / danger el-tag defaults use very
+     light cream / mint / pink fills that read as glaring on the dark
+     surface for the "Color" and "Image" type badges in the option card.
+     Mirror the info / primary dark-mode pattern (muted dark fill + light
+     text) so the tag still reads as its semantic colour without lighting
+     up the dark theme. */
+  &.el-tag--warning {
+    @apply dark:bg-warning-500 dark:text-gray-50;
+  }
+
+  &.el-tag--success {
+    @apply dark:bg-success-500 dark:text-gray-50;
+  }
+}
+
+/* Drag Handle */
+.fct-option-drag-handle {
+  @apply cursor-grab text-gray-400 leading-none select-none flex-shrink-0 inline-flex items-center justify-center w-4;
+
+  svg {
+    @apply w-4 h-4;
+  }
+
+  &:active {
+    @apply cursor-grabbing;
+  }
+}
+
+.fct-option-card-body {
+  @apply flex flex-col gap-3.5 p-3.5;
+}
+
+.fct-option-field {
+  @apply flex flex-col gap-1;
+
+  .el-select {
+    @apply w-full;
+  }
+}
+
+.fct-option-label {
+  @apply text-[13px] text-system-dark font-medium dark:text-gray-50;
+}
+
+/* Inline field validation (Shopify-style: red border + small error message) */
+.fct-option-field--error {
+  .el-select__wrapper,
+  .el-input__wrapper {
+    box-shadow: 0 0 0 1px var(--el-color-danger) inset;
+    background-color: var(--el-color-danger-light-9);
+  }
+}
+
+/* Dark mode: Element Plus's --el-color-danger-light-9 is a very pale
+   pink that reads as glaring on the dark drawer surface. Restore the
+   regular input fill in dark mode so only the red inset border carries
+   the error signal, matching the rest of the dark-mode form styling. */
+.fluent_theme_dark .fct-option-field--error {
+  .el-select__wrapper,
+  .el-input__wrapper {
+    @apply dark:bg-dark-600;
+  }
+}
+
+.fct-option-error {
+  @apply flex items-center gap-1.5 mt-1 text-[12px] text-red-600 dark:text-red-400;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.fct-option-card-actions {
+  @apply flex justify-between items-center pt-2.5 border border-solid border-gray-outline border-x-0 border-b-0 dark:border-dark-400;
+}
+
+/* Right-side action group — Discard + Save sit together, balanced
+   against Delete on the far left. Override El Plus's default 12px
+   .el-button + .el-button margin to a tighter 6px between Discard
+   and the primary Save action. */
+.fct-option-card-actions-right {
+  @apply flex items-center;
+
+  .el-button + .el-button {
+    margin-left: 6px;
+  }
+}
+
+/* Add Another Option Button */
+.fct-option-add-wrap {
+  @apply flex items-center justify-between gap-2;
+}
+
+.fct-option-add {
+  @apply border-0;
+}
+
+/* Combinations counter chip next to the "+ Add more" button — a quiet
+   reassurance that the current option config will produce N variants. */
+.fct-adv-var-combinations-chip {
+  @apply inline-flex items-center px-2 py-0.5 rounded-md text-[12px] font-medium bg-gray-100 text-system-mid dark:bg-dark-500 dark:text-gray-300;
+}
+
+/* Empty-state variant — Shopify-style prompt when no options have been added yet. */
+.fct-option-add-wrap--empty {
+  @apply flex;
+}
+
+.fct-option-add--empty {
+  @apply bg-gray-50 hover:bg-gray-100 rounded-md text-[13px] text-system-dark dark:bg-dark-500 dark:hover:bg-dark-400 dark:text-gray-50;
+  padding: 8px 14px;
+  height: auto;
+}
+
+/* Loading skeleton — three collapsed-card-shaped rows shown while the
+   attribute library is being fetched. Reuses the shared .fct-skel-block
+   shimmer primitive from attributes.scss. */
+.fct-adv-var-loading {
+  @apply flex flex-col mb-3 border border-solid border-gray-outline rounded overflow-hidden dark:border-dark-400;
+}
+
+.fct-adv-var-loading-card {
+  @apply flex items-center gap-2.5 px-3 py-3 bg-white dark:bg-dark-600 border-0 border-b border-solid border-gray-divider dark:border-dark-500 last:border-b-0;
+}
+
+.fct-adv-var-loading-handle { @apply w-4 h-4 flex-shrink-0; }
+/* Varied widths so the skeleton doesn't read as a perfect grid. The
+   pattern repeats every 3 cards; JS used to pass inline styles per
+   index, but a couple of :nth-child rules express the same intent
+   without round-tripping through the template. */
+.fct-adv-var-loading-title {
+  @apply h-3.5;
+  width: 60%;
+}
+
+.fct-adv-var-loading-card:nth-child(3n + 2) .fct-adv-var-loading-title { width: 45%; }
+.fct-adv-var-loading-card:nth-child(3n)     .fct-adv-var-loading-title { width: 55%; }
+.fct-adv-var-loading-badge  { @apply h-5 w-[64px] rounded flex-shrink-0 ml-auto; }
+
+/* V3 — Empty-state container shown when the product has zero options yet but the
+   library has groups available. The "+ Add option" button (rendered separately
+   below) sits underneath this container — together they form the first-time UX. */
+.fct-adv-var-empty-state {
+  @apply flex items-start gap-3 px-4 py-4 mb-3 rounded-md border border-solid border-gray-divider bg-gray-50 dark:bg-dark-500 dark:border-dark-400;
+
+  .fct-adv-var-empty-state__icon {
+    @apply inline-flex items-center justify-center w-6 h-6 text-system-mid dark:text-gray-300 flex-shrink-0;
+
+    svg {
+      @apply w-5 h-5;
+    }
+  }
+
+  .fct-adv-var-empty-state__copy {
+    @apply flex flex-col gap-0.5 text-[13px];
+
+    strong {
+      @apply text-system-dark dark:text-gray-50;
+    }
+
+    span {
+      @apply text-system-mid dark:text-gray-300;
+    }
+  }
+}
+
+/* Generate Section */
+.fct-adv-var-generate {
+  @apply flex items-center justify-between pt-5 mt-5 border border-x-0 border-b-0 border-solid border-gray-divider dark:border-dark-400;
+}
+
+/* Order-changed save bar — sits between the option-card list and the Add button when
+   the user has drag-reordered options. Visually distinct (warning-toned) so the unsaved
+   state is hard to miss. */
+.fct-adv-order-save-bar {
+  @apply flex items-center justify-between gap-3 mt-3 mb-3 px-3 py-2 rounded-md border border-solid border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-950;
+
+  .fct-adv-order-save-bar__msg {
+    @apply text-[13px] text-system-dark dark:text-gray-50;
+  }
+
+  .fct-adv-order-save-bar__actions {
+    @apply flex items-center gap-1.5;
+    // Override Element Plus's default 12px sibling margin on .el-button +
+    // .el-button so the Discard / Save pair sits at the flex gap above,
+    // not gap + margin stacked.
+    .el-button + .el-button {
+      margin-left: 0;
+    }
+  }
+}
+
+.fct-adv-var-generate-info {
+  @apply text-[13px] text-system-mid dark:text-gray-300;
+}
+
+.fct-color-option {
+  @apply flex items-center gap-2;
+}
+
+html body {
+  .fct-option-values-select {
+    .el-select-dropdown__header,
+    .el-select-dropdown__item {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .el-select-dropdown__check-icon {
+      display: none;
+    }
+
+    /* Collapse the header / footer rows Element Plus renders for the #header
+       and #footer slots when their content is conditionally removed — the
+       "Select all" header is hidden when the group has no terms, and the
+       options-type footer has no "Add value" button until the merchant types a
+       query. Without this the empty EP wrapper still paints its border, leaving
+       a stray bordered strip around "No data". Comment placeholders left by
+       v-if do not count toward :has(), so these collapse cleanly. */
+    .el-select-dropdown__header:not(:has(.fct-select-all-header)) {
+      display: none;
+    }
+
+    .el-select-dropdown__footer:not(:has(.fct-inline-add-btn, .fct-picker-inline-form-body)) {
+      display: none;
+    }
+
+    .fct-select-all-header,
+    .fct-option-item,
+    .fct-color-option,
+    .fct-image-option {
+      padding: 0 20px;
+    }
+
+    .fct-select-all-header {
+      padding-left: 30px;
+    }
+
+    /* Inline term-creation form in the #footer slot — must not exceed the
+       dropdown panel width. The swatch grid uses w-fit by default (grows to
+       fit all swatches in one row); override it with 100% so the grid wraps
+       within the available space instead of pushing the popper wider. */
+    .el-select-dropdown__footer {
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .fct-picker-inline-form {
+      padding: 6px 12px 8px;
+
+      .fct-color-swatch-grid {
+        width: 100%;
+      }
+    }
+
+    .fct-picker-inline-form-actions {
+      @apply flex gap-2 mt-2;
+    }
+
+    .fct-inline-add-btn {
+      @apply w-full justify-start;
+    }
+  }
+}
+
+.fct-select-all-header,
+.fct-option-item {
+  @apply flex items-center gap-2;
+}
+.fct-color-dot {
+  @apply flex-shrink-0 w-5 h-5 max-w-[20px] max-h-[20px] rounded border border-solid border-gray-outline;
+}
+
+.fct-swatch-tag {
+  @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-[12px] text-system-dark dark:bg-dark-500 dark:text-gray-50;
+}
+
+/* Draggable Option-values tags — flex-wrap row of selected-value chips inside
+   the el-select tag area, each with its own drag handle (like the option-card
+   reorder, one level down at the value level). */
+.fct-value-tag-list {
+  @apply inline-flex flex-wrap items-center gap-1;
+}
+
+.fct-value-tag-handle {
+  @apply cursor-grab text-gray-400 leading-none select-none flex-shrink-0 inline-flex items-center justify-center;
+
+  svg {
+    @apply w-3 h-3;
+  }
+
+  &:active {
+    @apply cursor-grabbing;
+  }
+}
+
+/* sortablejs drop placeholder */
+.fct-value-tag-list .sortable-ghost {
+  @apply opacity-40;
+}
+
+.fct-swatch-tag-dot {
+  @apply flex-shrink-0 w-3.5 h-3.5 max-w-[14px] max-h-[14px] rounded-sm border border-solid border-gray-outline;
+}
+
+.fct-swatch-tag-img {
+  @apply flex-shrink-0 w-3.5 h-3.5 max-w-[14px] max-h-[14px] rounded-sm object-cover;
+}
+
+.fct-swatch-tag-label {
+  @apply leading-none;
+}
+
+.fct-swatch-tag-close {
+  @apply cursor-pointer text-gray-400 leading-none hover:text-system-dark dark:hover:text-gray-50;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+}
+
+.fct-image-option {
+  @apply flex items-center gap-2;
+
+  img {
+    @apply flex-shrink-0 w-5 h-5 max-w-[20px] max-h-[20px] rounded object-cover;
+  }
+}
+
+.fct-adv-var-del-button.el-button {
+  @apply text-red-600;
+}
+
+/* Option-name dropdown — show a check mark on the selected group so the merchant
+   can tell at a glance which group is currently picked. */
+html body .fct-option-name-select {
+  .el-select-dropdown__item.is-selected {
+    @apply font-semibold;
+    color: var(--el-color-primary);
+
+    &::after {
+      content: '✓';
+      @apply ml-auto text-[12px];
+    }
+  }
+
+  .el-select-dropdown__item {
+    @apply flex items-center justify-between;
+  }
+}
+
+/* Advanced Variant Table */
+.fct-adv-variant-table-wrap {
+  @apply mt-5;
+}
+
+.fct-adv-variant-table-header {
+  @apply flex items-center justify-between mb-3;
+
+  h4 {
+    @apply text-sm font-semibold m-0;
+  }
+}
+
+/* Bulk Edit Bar — extends edge-to-edge of the Pricing card (-mx-6) to align with the
+   variant table below it, and matches the table-header background so the two read as a
+   single block (Shopify pattern: bulk actions sit immediately above the column headers
+   with no gap when a selection is active). */
+.fct-adv-bulk-bar {
+  @apply flex items-center flex-wrap gap-2 px-3 py-2 bg-gray-50 dark:bg-dark-500;
+
+  .fct-adv-bulk-count {
+    @apply flex-shrink-0 text-[13px] font-medium text-system-dark dark:text-gray-50;
+  }
+  .fct-adv-bulk-clear {
+    @apply text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer bg-transparent border-0 underline mr-auto;
+
+    &:focus-visible {
+      @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    }
+  }
+  .el-select {
+    @apply w-[180px];
+  }
+  .el-input {
+    @apply w-[120px];
+  }
+}
+
+.fct-adv-title-cell {
+  @apply flex flex-col gap-0.5;
+}
+
+.fct-adv-title-main {
+  @apply flex items-center gap-1.5 flex-wrap;
+}
+
+.fct-adv-attr-breadcrumb {
+  @apply text-[12px] text-system-mid dark:text-gray-400;
+}
+
+.fct-adv-variant-title {
+  @apply text-[13px] font-medium;
+}
+
+/*
+  Override the absolute badge positioning from product.scss .fct-table-draggable context.
+  Scoped to the inline-rendered modifiers (inactive, oos) so the
+  subscription-interval badge keeps its absolute top-right floating
+  position — without this exclusion the rule below stomped the
+  product.scss .fct-table-draggable .fct-variant-badge { absolute -top-2 right-1.5 }
+  rule and the Yearly / Monthly pill landed inline below the price
+  input on rows where a single attribute group keeps the cell narrow
+  enough for the in-flow span to fit.
+*/
+.fct-adv-variant-table-wrap .fct-table-draggable .fct-variant-badge-inactive,
+.fct-adv-variant-table-wrap .fct-table-draggable .fct-variant-badge-oos {
+  /* The generic `.fct-table-draggable .fct-variant-badge` rule (product.scss /
+     table.scss) floats every badge absolutely with a white bg + border + primary
+     text. For the inline status badges that white-bordered look wins over the
+     `.fct-variant-badge-*` fill (lower specificity), so re-assert the static
+     inline layout AND drop the border here — the filled colors are re-applied at
+     matching specificity below so the pill reads as a solid grey/red fill
+     (matching the nav + grouped table) instead of a bordered white box. */
+  @apply static inline-block text-[11px] px-1.5 rounded-[3px] align-middle border-0;
+}
+
+.fct-adv-variant-table-wrap .fct-table-draggable .fct-variant-badge-inactive {
+  @apply bg-gray-100 text-gray-500 dark:bg-dark-400 dark:text-gray-300;
+}
+
+.fct-adv-variant-table-wrap .fct-table-draggable .fct-variant-badge-oos {
+  @apply bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400;
+}
+
+.fct-variant-badge-inactive {
+  @apply bg-gray-100 text-gray-500 dark:bg-dark-400 dark:text-gray-300;
+}
+
+.fct-variant-badge-oos {
+  @apply bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400;
+}
+
+/* Group by toolbar */
+.fct-adv-groupby-bar {
+  @apply flex items-center gap-2;
+
+  .fct-adv-groupby-label {
+    @apply text-[13px] text-system-mid whitespace-nowrap dark:text-gray-300;
+  }
+  .el-select {
+    @apply w-[120px];
+
+    .el-select__wrapper {
+      min-height: 32px;
+    }
+  }
+}
+
+/* Expand all toggle in header */
+.fct-adv-expand-sep {
+  @apply mx-1 text-gray-400;
+}
+
+.fct-adv-expand-toggle {
+  @apply text-blue-400 text-xs cursor-pointer bg-transparent border-0 p-0 font-normal hover:underline;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+}
+
+/* Table base — Shopify-style: white surface, thin row separators only, no outer/cell borders.
+   Negative horizontal margin extends the table edge-to-edge of the surrounding Pricing card
+   so the card's borders read as the table's outer borders (matches simple-variation table). */
+.fct-grouped-variant-table,
+.fct-flat-variant-table {
+  @apply bg-white dark:bg-dark-600;
+  /* Centralise the table's row/connector border color so a single override
+     in dark mode reskins every separator (thead, group rows, dashed tree
+     connector, child row dashes). Default is the light gray-outline; the
+     dark-mode override below switches to dark-400 (#2C3C4E) so the lines
+     match the inventory el-table look instead of staying a near-white
+     stripe against the dark surface. */
+  --fct-adv-border-color: rgb(214 218 225);
+
+  table {
+    @apply w-full border-collapse bg-white dark:bg-dark-600;
+    border: 0;
+  }
+}
+
+/* Lock column widths to the colgroup definitions so child-row content (inline
+   price inputs, media pickers, badges) can't push columns wider on expand. */
+.fct-grouped-variant-table table {
+  table-layout: fixed;
+}
+
+.fct-grouped-variant-table,
+.fct-flat-variant-table {
+
+  /* Override WP admin defaults that add borders to every cell */
+  th,
+  td {
+    border: 0;
+  }
+
+  thead th {
+    @apply py-2.5 px-3 text-[13px] font-medium text-system-dark text-left bg-gray-50 dark:bg-dark-500 dark:text-gray-300;
+    border-bottom: 1px solid var(--fct-adv-border-color);
+
+    &.is-right {
+      @apply text-right pr-5;
+    }
+  }
+
+  tbody td {
+    @apply py-1.5 pl-3 pr-1.5 bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider dark:bg-primary-600 dark:border-dark-400;
+
+    &.is-right {
+      @apply text-right pr-5;
+    }
+  }
+
+  .media {
+    @apply w-9 h-9;
+  }
+  .fct-adv-group-child-row {
+    td {
+        @apply bg-white dark:bg-primary-700;
+        &:first-child {
+            @apply border-0;
+        }
+    }
+  }
+  .fmp-stack.is-square .fmp-thumb-wrap, 
+  .fmp-stack.is-square .fmp-thumb,
+  .fct-media-picker.is-square .fct-mp-add-compact {
+    @apply w-[34px] h-[34px] rounded-sm;
+  }
+  .fmp-stack.is-square .fmp-count {
+     @apply rounded-sm;
+  }
+}
+
+/* Dark mode: switch the advanced-variation table border palette to match
+   the inventory el-table — dark-400 (#2C3C4E) reads as a subtle separator
+   against the dark surface instead of the near-white default lines. */
+.fluent_theme_dark {
+  .fct-grouped-variant-table,
+  .fct-flat-variant-table {
+    --fct-adv-border-color: #2C3C4E;
+  }
+}
+
+/* Group header row — white surface like Shopify, just hover tint.
+   Solid separator between adjacent group rows; trimmed off the last one. */
+.fct-adv-group-row {
+  /* Whole header row toggles expand/collapse — interactive controls
+     (checkbox, image picker, group price input) stop propagation, so every
+     other area of the row, including the dead space between cells, is a
+     clickable target. The chevron button remains the keyboard control. */
+  @apply bg-white hover:bg-gray-50 dark:bg-dark-600 dark:hover:bg-dark-500 cursor-pointer;
+
+  &.is-expanded {
+    td {
+        @apply bg-gray-50 dark:bg-primary-500;
+    }
+  }
+
+  td {
+    @apply font-medium;
+  }
+}
+
+/* Tree connector — dashed lines linking child rows back to their group parent.
+   Line sits in the indent area to the RIGHT of where the parent's checkbox lives. */
+/* Slot row — one per group, sits directly below the group header row.
+   Contains TransitionAccordion so the inner table's height animates smoothly
+   (height animation works on <div>, not on <tr> — hence the slot pattern).
+   Override the generic tbody td padding and background so the cell is flush
+   and see-through, letting the inner accordion table provide its own spacing. */
+.fct-grouped-variant-table .fct-adv-slot-row > td {
+  padding: 0;
+  background: transparent;
+}
+
+/* Inner accordion table fills the full slot td width so its columns
+   align pixel-perfectly with the outer colgroup (same proportional widths). */
+.fct-adv-slot-row table {
+  width: 100%;
+}
+
+/* Solid separator after the last child row in a group — creates visual
+   separation from the next group header when the group is expanded. */
+.fct-adv-slot-row .fct-adv-group-child-row:last-child td {
+  border-bottom: 1px solid var(--fct-adv-border-color);
+}
+
+.fct-adv-group-child-row {
+  @apply transition-colors hover:bg-gray-50 dark:hover:bg-dark-500;
+
+  > td:first-child {
+    @apply relative;
+
+    /* Vertical trunk — runs the full height of each child row; because the rows
+       are contiguous the segments join into one continuous line down the group.
+       The last child overrides bottom to 50% below, so its trunk ends at the
+       branch (└ instead of ├). */
+    &::before {
+      content: '';
+      @apply absolute left-[52px] top-0 bottom-0 border border-y-0 border-r-0 border-solid border-gray-outline dark:border-dark-400;
+    }
+
+    /* Horizontal branch — links the trunk across to the row's image. Reaches a
+       little past the col1/col2 boundary so it meets the 16px-nudged child image. */
+    &::after {
+      content: '';
+      @apply absolute left-[52px] top-1/2 w-[44px] border border-x-0 border-b-0 border-solid border-gray-outline dark:border-dark-400;
+    }
+  }
+
+  &:not(:has(+ .fct-adv-group-child-row)) > td:first-child::before {
+    @apply bottom-1/2;
+  }
+
+  /* Dashed row separator between adjacent child rows — not after the last child of a group.
+     Skip the first td (tree connector lives there) and trim the last td to 50% width
+     so the dash visually fades into the action column. */
+  &:has(+ .fct-adv-group-child-row) > td:not(:first-child) {
+    @apply border border-x-0 border-t-0 border-solid border-gray-divider dark:border-dark-400;
+  }
+
+  /* Nudge child media a few px right of the group media so variants read as
+     indented under their group — children stay aligned with each other, the
+     group thumbnail keeps its position. */
+  .fct-media-picker {
+    @apply ml-4;
+  }
+}
+
+.fct-adv-group-header {
+  @apply flex items-center gap-2 cursor-pointer rounded;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+
+  strong {
+    @apply text-[13px] font-medium text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-adv-group-count {
+  @apply inline-flex items-center text-[12px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-system-mid dark:bg-dark-500 dark:text-gray-300;
+}
+
+/* Infinite-scroll sentinel — when this thin row scrolls into view the table
+   renders the next chunk of a render-capped large group. Visually inert. */
+.fct-adv-row-sentinel-row td {
+  @apply p-0 border-0;
+}
+
+.fct-adv-row-sentinel {
+  height: 1px;
+  width: 100%;
+}
+
+.fct-adv-group-chevron {
+  @apply inline-flex items-center text-gray-400 text-sm;
+  transition: transform 0.2s ease;
+
+  &.is-expanded {
+    @apply rotate-180;
+  }
+}
+
+.fct-adv-group-actions {
+  @apply inline-flex items-center gap-1;
+}
+
+.fct-adv-group-edit-btn {
+  @apply mr-3;
+}
+
+.fct-adv-group-chevron-btn {
+  @apply appearance-none outline-none inline-flex items-center justify-center rounded-xs cursor-pointer bg-transparent border-0 text-gray-500 transition-colors;
+  width: 20px;
+  height: 20px;
+
+  &:hover {
+    @apply bg-gray-100 text-gray-900 dark:bg-dark-500 dark:text-gray-50;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 bg-gray-100 text-gray-900;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.fct-adv-group-price-range {
+  @apply inline-flex items-center gap-0.5 text-sm text-gray-700 dark:text-gray-200 font-normal;
+}
+
+/* Group-row price input — placeholder should read like a real input value (Shopify behavior).
+   Override Element Plus's --el-input-placeholder-color at both the outer wrapper AND the
+   inner input so the variable wins through the cascade; plus an explicit ::placeholder
+   rule with chained-class specificity as fallback. */
+.el-input.fct-adv-group-price-input {
+  .el-input__wrapper .el-input__inner {
+    &::placeholder, &::-webkit-input-placeholder {
+      @apply text-system-dark font-medium opacity-100 dark:text-gray-50 !important;
+    }
+  }
+}
+
+/* Blank the placeholder when the merchant focuses the group-price input.
+   Modern browsers keep the placeholder visible until a keystroke; without
+   this, the formatted range ("800.00 – 900.00") stays under the caret and
+   reads as the current value, making merchants hesitate before overtyping. */
+.fct-adv-group-price-input .el-input__wrapper .el-input__inner:focus::placeholder,
+.fct-adv-group-price-input .el-input__wrapper .el-input__inner:focus::-webkit-input-placeholder {
+  @apply opacity-0;
+}
+
+/* Collapsed-state icon toggle (search + filter icons) — matches el-select default 32px */
+.fct-adv-filter-panel-toggle {
+  @apply inline-flex items-center justify-center gap-1.5 px-2.5 rounded-md border border-solid border-gray-300 dark:border-dark-400 bg-white dark:bg-dark-600 text-gray-600 dark:text-gray-300 cursor-pointer transition-colors;
+  height: 32px;
+
+  &:hover {
+    @apply border-gray-400 dark:border-dark-300 text-gray-800;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Expanded-state full-width search row */
+.fct-adv-variant-search-row {
+  @apply mt-3 mb-3;
+}
+
+/* Filter chips row (below search when expanded) */
+.fct-adv-variant-filters {
+  @apply mt-0 mb-3 flex items-center flex-wrap gap-2;
+}
+
+.fct-adv-filter-chip {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-xs rounded-md border border-dashed border-gray-300 dark:border-dark-400 bg-white dark:bg-dark-600 text-gray-600 dark:text-gray-300 cursor-pointer transition-colors leading-tight;
+  line-height: 1;
+  min-height: 24px;
+
+  &:hover {
+    @apply border-gray-400 dark:border-dark-300 text-gray-800;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+
+  &.is-active {
+    @apply border-solid border-blue-500 bg-blue-50 dark:bg-dark-500 text-blue-700 dark:text-blue-300;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  &__count {
+    @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500 text-white text-[11px] font-medium;
+    line-height: 1;
+  }
+}
+
+.fct-adv-filter-clear-all {
+  @apply inline-flex items-center px-2 py-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline cursor-pointer bg-transparent border-0;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+}
+
+.fct-adv-filter-count {
+  @apply text-xs text-gray-500 dark:text-gray-400 ml-auto;
+}
+
+.fct-adv-filter-popover {
+  @apply p-0;
+}
+
+.fct-adv-filter-options {
+  &__header {
+    @apply flex items-center justify-between gap-2 px-3 py-2 border-x-0 border-t-0 border-b border-solid border-gray-divider dark:border-dark-400 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+
+    /* A long group title ("Filter by Material") must truncate with an
+       ellipsis, not wrap mid-word, inside the fixed-width popover. */
+    > span {
+      @apply flex-1 min-w-0 truncate;
+    }
+  }
+
+  &__list {
+    @apply m-0 p-0 list-none overflow-y-auto;
+    max-height: 240px;
+
+    li {
+      @apply px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-dark-500;
+    }
+  }
+}
+
+.fct-adv-filter-clear {
+  @apply text-blue-600 hover:text-blue-700 dark:text-blue-400 normal-case font-normal cursor-pointer bg-transparent border-0 flex-shrink-0 whitespace-nowrap;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+  }
+}
+
+/* Empty state when filters match no variants */
+.fct-adv-variant-empty {
+  @apply flex flex-col items-center justify-center text-center py-10 px-4 border border-dashed border-gray-300 dark:border-dark-400 rounded-md text-gray-600 dark:text-gray-300;
+
+  svg {
+    width: 32px;
+    height: 32px;
+    @apply text-gray-400 mb-3;
+  }
+
+  &__title {
+    @apply m-0 text-sm font-medium text-gray-700 dark:text-gray-200;
+  }
+
+  &__hint {
+    @apply mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400;
+  }
+}
+
+/* Sticky save bar for inline variant edits */
+.fct-adv-variant-sticky-bar {
+  @apply fixed bottom-0 right-0 w-[calc(100%-160px)] z-[2008] bg-white dark:bg-dark-600 border-t border-solid border-gray-divider dark:border-dark-400 py-3 px-5;
+  box-shadow: 0 -4px 16px -2px rgba(27, 37, 51, 0.06);
+
+  &__inner {
+    @apply flex items-center justify-between gap-4;
+  }
+
+  &__text {
+    @apply text-sm text-system-mid dark:text-gray-300;
+  }
+}
+
+body.folded .fct-adv-variant-sticky-bar {
+  @apply w-[calc(100%-36px)];
+}
+
+@media (max-width: 782px) {
+  .fct-adv-variant-sticky-bar {
+    @apply w-full;
+  }
+}
+
+.fct-adv-sticky-bar-enter-active,
+.fct-adv-sticky-bar-leave-active {
+  transition: transform 200ms ease-out, opacity 200ms ease-out;
+}
+
+.fct-adv-sticky-bar-enter-from,
+.fct-adv-sticky-bar-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Child rows — subtle indent */
+
+.sortable-chosen.ghost .drag-icon {
+  @apply cursor-grabbing;
+}
+
+.fct-advanced-variation-config {
+    .fct-table-draggable {
+        @apply -mx-5;
+    }
+    .fct-flat-variant-table {
+        @apply -mb-5;
+    }
+}
+
+
+/* In-table skeleton rows — swapped in directly while a mutation is in
+   flight. Lives inside the same <table> so columns auto-align via the
+   colgroup. Reuses the shared .fct-skel-block shimmer primitive from
+   attributes.scss. */
+/* Sizes mirror the real grouped table's group rows so the skeleton
+   doesn't sit at a different row height:
+   - tbody td padding is py-3 px-3 (see .fct-grouped-variant-table above)
+   - group-row image is BulkMediaPicker > .fmp-thumb at w-10 h-10 (40px)
+     — NOT the inner .media class (w-9 h-9) used by expanded child rows
+   - title is a single line of strong text, ~14px
+   - inline price inputs paint at ~24px; chevron button is ~20px */
+.fct-grouped-variant-skeleton {
+  td {
+    @apply py-3 px-3;
+  }
+}
+
+.fct-skel-row-check  { @apply inline-block w-4 h-4 rounded; }
+.fct-skel-row-img    { @apply inline-block w-10 h-10 rounded; }
+.fct-skel-row-title  { @apply inline-block h-3.5 align-middle; width: 62%; }
+
+/* Varied skeleton-row title widths via :nth-child instead of inline JS.
+   6-step pattern across the skeleton tbody so the rows don't read as a
+   perfect grid. Skeleton rows live inside `tr` siblings of the
+   `.fct-grouped-variant-skeleton` tbody, so we key the cycle off the
+   row's :nth-child. */
+.fct-grouped-variant-skeleton tr:nth-child(6n + 2) .fct-skel-row-title { width: 48%; }
+.fct-grouped-variant-skeleton tr:nth-child(6n + 3) .fct-skel-row-title { width: 70%; }
+.fct-grouped-variant-skeleton tr:nth-child(6n + 4) .fct-skel-row-title { width: 55%; }
+.fct-grouped-variant-skeleton tr:nth-child(6n + 5) .fct-skel-row-title { width: 40%; }
+.fct-grouped-variant-skeleton tr:nth-child(6n)     .fct-skel-row-title { width: 60%; }
+.fct-skel-row-price  { @apply inline-block w-full h-6 rounded; }
+.fct-skel-row-action { @apply inline-block w-5 h-5 rounded; }
+
+/* ===== Mobile: separate grouped table =====
+   The component renders two copies of the grouped table — .fct-adv-table-desktop
+   and .fct-adv-table-mobile (identical markup; the mobile one is trimmed
+   independently, e.g. fewer columns). Show whichever matches the breakpoint. The
+   flat/ungrouped view still swaps to its own mobile card list. */
+.fct-adv-table-mobile {
+  @apply hidden;
+}
+
+@media (max-width: 768px) {
+  .fct-adv-table-desktop {
+    @apply hidden;
+  }
+  .fct-adv-table-mobile {
+    /* Horizontal scroll as a safety net so a wide row can never push the page
+       sideways on a narrow phone. */
+    @apply block overflow-x-auto;
+  }
+  /* Flat (ungrouped) view -> use its existing mobile card list instead. */
+  .fct-flat-variant-table {
+    @apply hidden;
+  }
+}
+
+/* Smaller media thumbnails in the mobile table (40px -> 32px) to reclaim width.
+   The mobile table only renders < 768px, so no media query is needed. Higher
+   specificity than the base .fmp-stack.is-square / .media rules so it wins. */
+.fct-adv-table-mobile {
+  .fmp-stack.is-square {
+    .fmp-thumb-wrap,
+    .fmp-thumb {
+      @apply w-6 h-6;
+    }
+  }
+
+  .fct-media-picker.is-square .fct-mp-add-compact {
+    @apply w-6 h-6;
+  }
+
+  .media {
+    @apply w-6 h-6;
+  }
+
+  /* Price surfaced under the variant title (mobile has no inline Price column). */
+  .fct-adv-variant-price {
+    @apply block mt-0.5 text-[12px] font-medium text-system-mid dark:text-gray-300;
+
+    .fct-adv-variant-compare {
+      @apply mr-1.5 line-through text-gray-400 dark:text-dark-300 font-normal;
+    }
+  }
+}

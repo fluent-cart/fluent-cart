@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node;
 
 /**
@@ -22,24 +23,37 @@ namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node;
  */
 class ElementNode extends AbstractNode
 {
-    public function __construct(private ?string $namespace = null, private ?string $element = null)
+    private $namespace;
+    private $element;
+
+    public function __construct(?string $namespace = null, ?string $element = null)
     {
+        $this->namespace = $namespace;
+        $this->element = $element;
     }
-    public function getNamespace() : ?string
+
+    public function getNamespace(): ?string
     {
         return $this->namespace;
     }
-    public function getElement() : ?string
+
+    public function getElement(): ?string
     {
         return $this->element;
     }
-    public function getSpecificity() : Specificity
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSpecificity(): Specificity
     {
         return new Specificity(0, 0, $this->element ? 1 : 0);
     }
-    public function __toString() : string
+
+    public function __toString(): string
     {
         $element = $this->element ?: '*';
-        return \sprintf('%s[%s]', $this->getNodeName(), $this->namespace ? $this->namespace . '|' . $element : $element);
+
+        return sprintf('%s[%s]', $this->getNodeName(), $this->namespace ? $this->namespace.'|'.$element : $element);
     }
 }

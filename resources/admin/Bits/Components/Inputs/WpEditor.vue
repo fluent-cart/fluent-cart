@@ -90,6 +90,16 @@ const clear = () => {
   }
 };
 
+const resetContent = (content) => {
+  const str = content || '';
+  if (editor.value !== null) {
+    editor.value.setContent(str);
+  } else {
+    plainContent.value = str;
+    cursorPos.value = str.length;
+  }
+};
+
 const setContent = (content) => {
   if (editor.value !== null) {
     editor.value.setContent(editor.value.getContent() + content);
@@ -105,7 +115,7 @@ const setContent = (content) => {
 };
 
 
-defineExpose({clear, setContent});
+defineExpose({clear, setContent, resetContent});
 
 const initEditor = () => {
   wp.editor.remove(props.editor_id);
@@ -157,7 +167,6 @@ const initEditor = () => {
               updateEditorValue();
               const $wpLinkModal = jQuery('#wp-link-wrap');
               if ($wpLinkModal.is(':visible')) {
-                console.log('Link dialog opened from Text tab');
                 $wpLinkModal.addClass('fluent-cart');
               }
             }, 100)
@@ -203,7 +212,7 @@ const updateEditorValue = () => {
 }
 
 const onShortCodeSelected = (code) => {
-  if (editor !== null) {
+  if (editor.value !== null) {
     editor.value.insertContent(code);
   } else {
     const part1 = props.modelValue.slice(0, cursorPos.value);

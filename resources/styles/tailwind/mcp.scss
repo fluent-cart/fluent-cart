@@ -1,0 +1,43 @@
+.fct-mcp-content-box {
+    @apply border border-solid border-gray-outline rounded-[12px] p-5 text-center dark:border-dark-400;
+    .fct-mcp-content-box-title {
+        @apply text-[15px] font-medium mb-1.5 mt-0;
+    }
+    .fct-mcp-content-box-logo {
+        @apply mb-2;
+    }
+    .fct-mcp-content-box-text {
+        @apply text-xs font-normal leading-[18px] m-0;
+    }
+    .fct-mcp-content-box-action {
+        @apply flex items-center justify-center gap-3 flex-wrap mt-4;
+    }
+    &.is-active {
+        @apply border-success-100 bg-success-50;
+        .fct-mcp-content-box-title,
+        .fct-mcp-content-box-text {
+            @apply text-success-500;
+        }
+    }
+}
+
+.fct-mcp-snippet {
+    .el-textarea__inner {
+        @apply bg-dark-700 border-dark-500 text-gray-300;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+    &-code {
+        @apply rounded-md p-3 overflow-x-auto text-[13px] whitespace-pre mb-3 bg-gray-100 dark:bg-dark-700;
+    }
+}
+
+.fct-mcp-agents-text {
+    @apply flex items-center gap-2 text-sm;
+    .tools-count {
+        @apply inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full bg-success-50 text-success-500 font-semibold dark:bg-dark-600 dark:text-success-300;
+    }
+    .tools-label {
+        @apply text-system-mid dark:text-gray-300;
+    }
+}

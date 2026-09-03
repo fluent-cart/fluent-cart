@@ -1,6 +1,6 @@
 <template>
-  <span :class="`badge ${badgeType} ${badgeSize} ${HighContrast}`">
-    <template v-if="status">
+  <span :class="`fct-badge ${badgeType} ${badgeSize} ${HighContrast}`">
+    <template v-if="computedStatus || text">
       <span v-if="icon">
         <DynamicIcon :name="icon"/>
       </span>
@@ -20,8 +20,7 @@
 
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Str from "@/utils/support/Str";
-import translate from "../../translator/Translator";
+import statusLabel from "../../utils/statusLabels";
 
 export default {
   name: "Badge",
@@ -64,17 +63,17 @@ export default {
         case 'success':
         case 'licensed':
         case 'succeeded':
-          return 'success';
+          return 'fct-success';
 
         case 'failed':
         case 'error':
         case 'canceled':
         case 'expired':
-          return 'danger';
+          return 'fct-danger';
 
         case 'partially_paid':
         case 'intended':
-          return 'blue';
+          return 'fct-blue';
 
         case 'scheduled':
         case 'on-hold':
@@ -83,80 +82,25 @@ export default {
         case 'warning':
         case 'processing':
         case 'future':
-          return 'warning';
+          return 'fct-warning';
         case 'inactive':
-          return 'warning';
+          return 'fct-warning';
         case 'dispute':
-          return 'warning';
+          return 'fct-warning';
         default:
-          return 'info';
+          return this.computedStatus ? `fct-${this.computedStatus}` : 'fct-info';
       }
     },
     badgeSize() {
-      return this.size ? this.size : '';
+      return this.size ? `fct-${this.size}` : '';
     },
     HighContrast() {
-      return this.highContrast ? 'is-high-contrast' : '';
+      return this.highContrast ? 'fct-is-high-contrast' : '';
     },
   },
   methods: {
     getStatusText() {
-      switch (this.computedStatus) {
-        case 'completed':
-          return translate('Completed');
-        case 'paid':
-          return translate('Paid');
-        case 'active':
-          return translate('Active');
-        case 'publish':
-          return translate('Published');
-        case 'draft':
-          return translate('Draft');
-        case 'shipped':
-          return translate('Shipped');
-        case 'success':
-          return translate('Success');
-        case 'licensed':
-          return translate('Licensed');
-        case 'succeeded':
-          return translate('Succeeded');
-        case 'failed':
-          return translate('Failed');
-        case 'error':
-          return translate('Error');
-        case 'canceled':
-          return translate('Canceled');
-        case 'expired':
-          return translate('Expired');
-        case 'partially_paid':
-          return translate('Partially Paid');
-        case 'intended':
-          return translate('Intended');
-        case 'scheduled':
-          return translate('Scheduled');
-        case 'on-hold':
-          return translate('On Hold');
-        case 'pending':
-          return translate('Pending');
-        case 'unpaid':
-          return translate('Unpaid');
-        case 'warning':
-          return translate('Warning');
-        case 'processing':
-          return translate('Processing');
-        case 'future':
-          return translate('Future');
-        case 'inactive':
-          return translate('Inactive');
-        case 'dispute':
-          return translate('Dispute');
-        case 'disabled':
-          return translate('Disabled');
-        case 'beta':
-          return translate('Beta');
-        default:
-          return Str.headline(this.computedStatus);
-      }
+      return statusLabel(this.computedStatus);
     }
   }
 };

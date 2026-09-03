@@ -73,7 +73,7 @@
                 
             </div>
 
-            <pagination
+            <Pagination
                 v-if="paginate && paginate.total !== 0"
                 :hide_on_single="true"
                 :pagination="paginate"
@@ -117,6 +117,9 @@ export default {
             app_loaded: false,
         }
     },
+    mounted() {
+        this.fetchOrders();
+    },
     methods: {
       formatOrderItems,
         fetchOrders() {
@@ -141,9 +144,6 @@ export default {
                     this.app_loaded = true;
                 });
         }
-    },
-    mounted() {
-        this.fetchOrders();
     }
 }
 </script>

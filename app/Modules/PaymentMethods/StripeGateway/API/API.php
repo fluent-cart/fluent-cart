@@ -27,10 +27,10 @@ class API
         return $this->remoteRequest($path, $data, $apiKey, 'GET');
     }
 
-    public function createStripeObject($path, $data = [], $mode = 'current')
+    public function createStripeObject($path, $data = [], $mode = 'current', $headers = [])
     {
         $apiKey = (new StripeSettingsBase())->getApiKey($mode);
-        return $this->remoteRequest($path, $data, $apiKey, 'POST');
+        return $this->remoteRequest($path, $data, $apiKey, 'POST', $headers);
     }
 
     public function deleteStripeObject($path, $data = [], $mode = 'current')
@@ -39,15 +39,33 @@ class API
         return $this->remoteRequest($path, $data, $apiKey, 'DELETE');
     }
 
-    public function remoteRequest($path, $data, $apiKey, $method)
+    public function remoteRequest($path, $data, $apiKey, $method, $extraHeaders = [])
     {
         $stripeApiKey = $apiKey;
+
+        // Never fire a request with an empty Authorization header — Stripe replies
+        // with the cryptic "You did not provide an API key" error. This happens when
+        // the secret key for the requested mode is not configured (e.g. a store in
+        // test mode charging a live-mode order, or unconfigured keys). Fail early
+        // with an actionable message instead.
+        if (empty($stripeApiKey)) {
+            return new \WP_Error(
+                'stripe_missing_api_key',
+                __('Stripe API key is not configured for this payment mode. Please add your Stripe keys in Payment Settings.', 'fluent-cart')
+            );
+        }
+
         $apiVersion = '2025-02-24.acacia';
         $sessionHeaders = array(
             'Authorization'  => 'Bearer ' . $stripeApiKey,
             'Content-Type'   => 'application/x-www-form-urlencoded',
             'Stripe-Version' => $apiVersion
         );
+
+        // Per-request headers (e.g. Idempotency-Key for off-session renewal charges)
+        if ($extraHeaders && is_array($extraHeaders)) {
+            $sessionHeaders = array_merge($sessionHeaders, $extraHeaders);
+        }
 
         $url = $this->apiUrl . $path;
 
@@ -110,16 +128,30 @@ class API
         return $data;
     }
 
-    public function getEvent($eventId)
+    /**
+     * Event ids are namespaced per mode, so a live id is unfetchable with a test key
+     * and vice versa. The store's global mode toggle is not a reliable proxy — a
+     * renewal is billed by Stripe on its own schedule, whatever the store is set to.
+     *
+     * @param string    $eventId
+     * @param bool|null $livemode Mode the event belongs to; null falls back to the store setting.
+     * @return object|null|\WP_Error Null when the response body is not decodable JSON.
+     */
+    public function getEvent($eventId, $livemode = null)
     {
-        $api = $this->getApi();
+        $mode = 'current';
+        if (!is_null($livemode)) {
+            $mode = $livemode ? 'live' : 'test';
+        }
+
+        $api = $this->getApi($mode);
         return $api::request([], 'events/' . $eventId, 'GET');
     }
 
-    public function getApi()
+    public function getApi($mode = 'current')
     {
         $api = new ApiRequest();
-        $api::set_secret_key((new StripeSettingsBase())->getApiKey());
+        $api::set_secret_key((new StripeSettingsBase())->getApiKey($mode));
         return $api;
     }
 

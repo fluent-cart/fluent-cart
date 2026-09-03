@@ -29,7 +29,10 @@ class PricingTableBlockEditor extends BlockEditor
 
     public function getStyles(): array
     {
-        return ['admin/BlockEditor/PricingTable/style/pricing-table-block-editor.scss'];
+        return [
+            'admin/BlockEditor/PricingTable/style/pricing-table-block-editor.scss',
+            'admin/BlockEditor/Components/style/fct-global-block-editor.scss'
+        ];
     }
 
     public function localizeData(): array
@@ -95,22 +98,20 @@ class PricingTableBlockEditor extends BlockEditor
 
         $activeTab = Arr::get($shortCodeAttribute, 'active_tab', 0);
 
-        $code = "[" . PricingTableShortCode::SHORT_CODE .
-            " variant_ids='{$variantIds}'" .
-            " show_cart_button='{$showCartButton}'" .
-            " show_checkout_button='{$showCheckoutButton}'" .
-            " group_by='{$groupBy}'" .
-            " active_tab='{$activeTab}'" .
-            " active_variant='{$activeVariantString}'" .
-            " badge='{$badgeString}'" .
-            " colors='{$allColorStrings}'" .
-            " product_per_row='{$productPerRow}'" .
-            " button_options='{$buttonOptionStrings}'" .
-            " url_params='$checkoutButtonUrlParams'".
-            " icon_visibility='{$iconVisibility}'" .
-            " ]";
-
-        return $code;
+        return PricingTableShortCode::make([
+            'variant_ids'          => $variantIds,
+            'show_cart_button'     => (string) $showCartButton,
+            'show_checkout_button' => (string) $showCheckoutButton,
+            'group_by'             => $groupBy,
+            'active_tab'           => $activeTab,
+            'active_variant'       => $activeVariantString,
+            'badge'                => $badgeString,
+            'colors'               => $allColorStrings,
+            'product_per_row'      => $productPerRow,
+            'button_options'       => $buttonOptionStrings,
+            'url_params'           => $checkoutButtonUrlParams,
+            'icon_visibility'      => (string) $iconVisibility,
+        ])->renderShortcode($block);
     }
 
     private function assocArrayToString(array $array, string $delimiter = ', '): string

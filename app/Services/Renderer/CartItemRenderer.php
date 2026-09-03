@@ -5,6 +5,7 @@ namespace FluentCart\App\Services\Renderer;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Cart;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Vite;
 
 class CartItemRenderer
 {
@@ -50,29 +51,53 @@ class CartItemRenderer
         } else {
             $promoPriceOriginal = '';
         }
+
+        $couponDiscount    = (int) Arr::get($this->item, 'coupon_discount', 0);
+        $lineTotal         = (int) Arr::get($this->item, 'line_total', 0);
+        $subtotal          = (int) Arr::get($this->item, 'subtotal', 0);
+        $hasCouponDiscount = $couponDiscount > 0 && $lineTotal < $subtotal;
         ?>
         <div class="<?php $this->renderCssAtts($wrapperClassAttributes); ?>" role="listitem">
-            <div class="fct_line_item_info">
-                <?php $this->renderImage(); ?>
-                <div class="fct_item_content">
-                    <?php $this->renderTitle(); ?>
-                    <?php $this->renderChildVariants(); ?>
-                    <?php do_action('fluent_cart/cart/line_item/line_meta', $this->getEventInfo()); ?>
-                </div>
-            </div><!-- .fct_line_item_info -->
+            <div class="fct_line_item_body">
+                <div class="fct_line_item_info">
+                    <?php $this->renderImage(); ?>
+                    <div class="fct_item_content">
+                        <?php $this->renderTitle(); ?>
+                        <?php $this->renderChildVariants(); ?>
+                        <?php do_action('fluent_cart/cart/line_item/line_meta', $this->getEventInfo()); ?>
+                    </div>
+                </div><!-- .fct_line_item_info -->
 
-            <div class="fct_line_item_price" aria-label="<?php esc_attr_e('Price information', 'fluent-cart'); ?>">
-                <?php do_action('fluent_cart/cart/line_item/before_total', $this->getEventInfo()); ?>
-                <?php if($promoPriceOriginal) : ?>
-                <div style="text-decoration: line-through;" class="fct_line_item_total fct_promo_price" aria-label="<?php esc_attr_e('Original price', 'fluent-cart'); ?>">
-                    <?php echo esc_html(Helper::toDecimal($promoPriceOriginal)); ?>
-                </div>
+                <div class="fct_line_item_price" aria-label="<?php esc_attr_e('Price information', 'fluent-cart'); ?>">
+                    <?php if($promoPriceOriginal) : ?>
+                        <div style="text-decoration: line-through;" class="fct_line_item_total fct_promo_price" aria-label="<?php esc_attr_e('Original price', 'fluent-cart'); ?>">
+                            <?php echo esc_html(Helper::toDecimal($promoPriceOriginal)); ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="fct_item_price_wrapper">
+                        <?php do_action('fluent_cart/cart/line_item/before_total', $this->getEventInfo()); ?>
+                        <span class="fct_line_item_total<?php echo $hasCouponDiscount ? ' fct_coupon_original_price' : ''; ?>" aria-label="<?php esc_attr_e('Total price', 'fluent-cart'); ?>">
+                            <?php echo esc_html(Helper::toDecimal($subtotal)); ?>
+                        </span>
+                        <?php if ($hasCouponDiscount) : ?>
+                            <span class="fct_line_item_total fct_coupon_discounted_price" aria-label="<?php esc_attr_e('Discounted price', 'fluent-cart'); ?>">
+                                <?php echo esc_html(Helper::toDecimal($lineTotal)); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php do_action('fluent_cart/cart/line_item/after_total', $this->getEventInfo()); ?>
+                    </div>
+                </div><!-- .fct_line_item_price -->
+            </div>
+            <div class="fct_line_item_footer">
+                <?php do_action('fluent_cart/cart/line_item/footer_start', $this->getEventInfo()); ?>
+
+                <?php $hasSetupFee = $this->maybeRenderSetupFeeInfo(); ?>
+                <?php if ($hasSetupFee) : ?>
+                    <?php $this->renderSetupFeeInfo() ?>
+                    <?php do_action('fluent_cart/cart/line_item/after_setup_fee_info', $this->getEventInfo()); ?>
                 <?php endif; ?>
-                <span class="fct_line_item_total" aria-label="<?php esc_attr_e('Total price', 'fluent-cart'); ?>">
-                    <?php echo esc_html(Helper::toDecimal(Arr::get($this->item, 'subtotal', 0))); ?>
-                </span>
-                <?php do_action('fluent_cart/cart/line_item/after_total', $this->getEventInfo()); ?>
-            </div><!-- .fct_line_item_price -->
+                <?php do_action('fluent_cart/cart/line_item/footer_end', $this->getEventInfo()); ?>
+            </div>
         </div>
         <?php
     }
@@ -82,7 +107,11 @@ class CartItemRenderer
         $href = Arr::get($this->item, 'view_url', '');
 
         $mainTitle = (string) Arr::get($this->item, 'post_title', '');
-        $subtitle = (string) Arr::get($this->item, 'title', '');
+
+        // The Cart model already resolves & appends variation_display_title on
+        // every cart item (Cart::getCartDataAttribute); fall back to the raw
+        // variation title for items it didn't decorate.
+        $subtitle = (string) Arr::get($this->item, 'variation_display_title', (string) Arr::get($this->item, 'title', ''));
 
         $quantity = Arr::get($this->item, 'quantity', 1);
 
@@ -126,7 +155,7 @@ class CartItemRenderer
     {
         $image = Arr::get($this->item, 'featured_media');
         if (!$image) {
-            return;
+            $image = Vite::getAssetUrl('images/placeholder.svg');
         }
         $href = Arr::get($this->item, 'view_url', '');
         $altText = sprintf(
@@ -157,14 +186,13 @@ class CartItemRenderer
         $otherInfo = Arr::get($this->item, 'other_info', []);
         $paymentType = Arr::get($otherInfo, 'payment_type', '');
         $itemPrice = Arr::get($this->item, 'unit_price', 0);
-        
+
         if (isset($this->item['recurring_discounts'])) {
             $otherInfo['recurring_discounts'] = $this->item['recurring_discounts'];
         }
 
         if ($paymentType === 'subscription') {
             $subscriptionInfo = Helper::generateSubscriptionInfo($otherInfo, $itemPrice);
-            $setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo);
             $trialInfo = Helper::generateTrialInfo($otherInfo);
             ?>
             <div class="fct_item_payment_info">
@@ -173,9 +201,6 @@ class CartItemRenderer
                 <span> <?php echo wp_kses($subscriptionInfo, ['del' => true]); ?> </span>
                 <?php if ($trialInfo): ?>
                     <span class="trial-days"> <?php echo esc_html($trialInfo); ?> </span>
-                <?php endif; ?>
-                <?php if (!empty($setupFeeInfo)): ?>
-                    <span class="setup-fee"> <?php echo esc_html($setupFeeInfo); ?> </span>
                 <?php endif; ?>
             </div>
             <?php
@@ -190,15 +215,58 @@ class CartItemRenderer
         ?>
         <div class="fct_item_payment_info">
             <?php
-            /* translators: %s is the item price */
-            printf(esc_html__('%s each', 'fluent-cart'), esc_html(Helper::toDecimal($itemPrice)));
+            /* translators: %1$s: formatted unit price */
+            printf(esc_html__('%1$s each', 'fluent-cart'), esc_html(Helper::toDecimal($itemPrice)));
             ?>
+            <?php do_action('fluent_cart/cart/line_item/unit_price_hint', $this->getEventInfo()); ?>
         </div>
         <?php
     }
 
+    protected function maybeRenderSetupFeeInfo()
+    {
+        $paymentType = Arr::get($this->item, 'other_info.payment_type', '');
+        if ($paymentType !== 'subscription') {
+            return false;
+        }
+
+        $otherInfo = Arr::get($this->item, 'other_info', []);
+        $setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo);
+        if (empty($setupFeeInfo)) {
+            return false;
+        }
+        return true;
+    }
+
+    protected function renderSetupFeeInfo()
+    {
+
+        $otherInfo = Arr::get($this->item, 'other_info', []);
+        $setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo, true);
+        $setupFeeName = Arr::get($setupFeeInfo, 'signup_fee_name', '');
+        $setupFeePrice = Arr::get($setupFeeInfo, 'signup_fee_formatted', 0);
+
+        ?>
+        <div class="fct_item_payment_info">
+            <div class="fct_setup_fee_info">
+                <span class="setup-fee"><?php esc_html_e($setupFeeName) ?></span>
+                <span class="setup-fee-amount">
+                    <?php esc_html_e($setupFeePrice) ?>
+                    <?php do_action('fluent_cart/cart/line_item/setup_fee_price_info', $this->getEventInfo()); ?>
+                </span>
+            </div>
+        </div>
+        <?php
+
+        return true;
+    }
+
     protected function maybeRenderPackageInfo()
     {
+        if (Arr::get($this->item, 'fulfillment_type') !== 'physical') {
+            return;
+        }
+
         $otherInfo = Arr::get($this->item, 'other_info', []);
         if (!is_array($otherInfo)) {
             return;

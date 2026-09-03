@@ -84,26 +84,33 @@ abstract class BaseResourceApi
      *       ],
      *       string
      *  ]
+     * @param int|null $status HTTP status the framework's wpErrorToResponse should use
+     *        (Route::dispatch converts any returned WP_Error via rest_convert_error_to_response,
+     *        which reads error_data['status'] and falls back to 500 when absent).
      * @return WP_Error
      */
-    public static function makeErrorResponse($errors): WP_Error
+    public static function makeErrorResponse($errors, ?int $status = null): WP_Error
     {
         $wpError = new WP_Error();
 
         if (is_array($errors)) {
             foreach ($errors as $key => $error) {
                 if (is_array($error)) {
+                    $data = Arr::get($error, 'data', '');
+                    if ($status) {
+                        $data = is_array($data) ? array_merge($data, ['status' => $status]) : ['status' => $status];
+                    }
                     $wpError->add(
                         Arr::get($error, 'code', $key),
                         Arr::get($error, 'message'),
-                        Arr::get($error, 'data', '')
+                        $data
                     );
                 } else {
-                    $wpError->add($key, $error);
+                    $wpError->add($key, $error, $status ? ['status' => $status] : '');
                 }
             }
         } else {
-            $wpError->add($errors, $errors);
+            $wpError->add($errors, $errors, $status ? ['status' => $status] : '');
         }
         return $wpError;
     }

@@ -154,6 +154,42 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            <!--
+              Release signing. Hidden unless the store opted in via
+              fluent_cart/licensing/enable_signed_releases — most vendors using
+              FluentCart as their licensing server don't sign releases.
+
+              Both fields are plain paste targets on purpose: the signature
+              covers the manifest's exact bytes, so any editing, wrapping or
+              autoformatting here breaks verification on every customer site.
+              The server rejects a bad value rather than repairing it.
+            -->
+            <template v-if="signedReleasesEnabled">
+              <el-form-item>
+                <template #label>
+                  <label-hint :title="translate('Release Manifest')"
+                              :content="translate('The signed manifest for this exact version, as base64. Paste it unchanged from your release signing step — it is stored and served byte for byte, and any edit here makes sites refuse the update.')"/>
+                </template>
+                <el-input type="textarea"
+                          :rows="3"
+                          spellcheck="false"
+                          autocomplete="off"
+                          :placeholder="translate('Base64 manifest for this version')"
+                          v-model="settings.manifest"></el-input>
+              </el-form-item>
+
+              <el-form-item>
+                <template #label>
+                  <label-hint :title="translate('Release Signature')"
+                              :content="translate('The detached signature for the manifest above: 88 characters, on one line. Paste it unchanged — a wrapped or re-typed signature will not verify.')"/>
+                </template>
+                <el-input spellcheck="false"
+                          autocomplete="off"
+                          :placeholder="translate('88-character signature for this version')"
+                          v-model="settings.signature"></el-input>
+              </el-form-item>
+            </template>
+
             <el-form-item>
               <div class="custom-wp-editor-wrapper relative">
                 <label class="absolute mb-0 font-bold">{{ translate('Changelog Description') }}</label>
@@ -261,7 +297,8 @@ export default {
       globalUpdateFile: {},
       selectedFile: null,
       fetchSettings: false,
-      isBundleProduct: false
+      isBundleProduct: false,
+      signedReleasesEnabled: false
     }
   },
   methods: {
@@ -283,8 +320,13 @@ export default {
       this.fetchSettings = true;
       this.$get(`licensing/products/${this.product_id}/settings`)
           .then((response) => {
+            const updateFile = response.settings.global_update_file;
+            if (updateFile && typeof updateFile === 'object') {
+              response.settings.global_update_file = updateFile.id ? updateFile.id.toString() : '';
+            }
             this.settings = response.settings;
             this.isBundleProduct = response.is_bundle_product || false;
+            this.signedReleasesEnabled = response.signed_releases_enabled || false;
             this.selectedFile = response.settings.global_update_file?.id ? parseInt(response.settings.global_update_file?.id) : '';
           })
           .catch((error) => {
@@ -340,4 +382,3 @@ export default {
   }
 };
 </script>
-

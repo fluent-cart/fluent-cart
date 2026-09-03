@@ -377,7 +377,7 @@ class BulkEditModel extends ProductBaseModel {
                 this.data.savedIds = new Set(this.data.savedIds);
                 this.data.productErrors.delete(postId);
                 this.data.productErrors = new Map(this.data.productErrors);
-                Notify.success('Product updated successfully');
+                Notify.success(translate('Product updated successfully'));
             } else if (response.errors?.length) {
                 const err = response.errors[0];
                 if (err?.fields) {
@@ -409,7 +409,7 @@ class BulkEditModel extends ProductBaseModel {
         const dirtyProducts = this.getDirtyProducts().filter(p => !this.data.savedIds.has(p.ID));
 
         if (dirtyProducts.length === 0) {
-            Notify.info('No changes to save');
+            Notify.info(translate('No changes to save'));
             return;
         }
 
@@ -487,7 +487,7 @@ class BulkEditModel extends ProductBaseModel {
             } else if (updatedIds.length > 0) {
                 Notify.info(`${updatedIds.length} product(s) updated, ${errors.length} error(s)`);
             } else {
-                Notify.error('All products failed to save');
+                Notify.error(translate('All products failed to save'));
             }
         } finally {
             this.data.saving = false;

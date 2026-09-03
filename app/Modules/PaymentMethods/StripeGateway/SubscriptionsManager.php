@@ -4,7 +4,6 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
 use FluentCart\App\Events\Subscription\SubscriptionActivated;
 use FluentCart\App\Helpers\Status;
-use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
@@ -78,15 +77,19 @@ class SubscriptionsManager
 
     /**
      * Check rate limit for SetupIntent creation to prevent card testing fraud.
-     * 
-     * Rate limit: 3 attempts per day per customer (for subscription card updates)
-     * 
+     *
+     * Rate limit: 5 attempts per day per customer by default (for subscription
+     * card updates), overridable via the
+     * fluent_cart/stripe/setup_intent_rate_limit_customer_daily filter. The SAME
+     * filter default feeds getRemainingRateLimit(), so enforcement and the
+     * displayed remaining count share one contract.
+     *
      * @param string $customerId Stripe customer ID
      * @return bool|\WP_Error Returns true if allowed, WP_Error if rate limited
      */
     protected static function checkRateLimit($customerId)
     {
-        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 3, $customerId);
+        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 5, $customerId);
 
         $customerDailyKey = 'fct_stripe_setup_intent_rate_daily_' . md5($customerId);
         $customerDailyAttempts = get_transient($customerDailyKey) ?: 0;
@@ -102,7 +105,7 @@ class SubscriptionsManager
 
     public function getRemainingRateLimit($customerId)
     {
-        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 3, $customerId);
+        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 5, $customerId);
         $customerDailyKey = 'fct_stripe_setup_intent_rate_daily_' . md5($customerId);
         $customerDailyAttempts = get_transient($customerDailyKey) ?: 0;
         return $customerDailyLimit - $customerDailyAttempts;
@@ -214,7 +217,7 @@ class SubscriptionsManager
         }
 
         $status = StripeHelper::transformSubscriptionStatus($response, $subscription);
-        $billCount = OrderTransaction::query()->where('subscription_id', $subscription->id)->count();
+        $billCount = $subscription->calculateBillCount();
 
         $oldStatus = $subscription->status;
 

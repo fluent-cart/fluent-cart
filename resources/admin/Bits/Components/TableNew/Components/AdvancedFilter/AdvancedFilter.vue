@@ -5,7 +5,14 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import TransitionAccordion from "@/Bits/Components/TransitionAccordion.vue";
 
 const props = defineProps({
-  table: Object
+  table: Object,
+  // Saved views are a table-only feature. Callers that are not backed by a
+  // saved-view aware model (e.g. the Order Sources report) opt out of the
+  // footer button; every existing caller keeps the button by default.
+  showSaveView: {
+    type: Boolean,
+    default: true
+  }
 });
 
 const hasFilters = computed(() => {
@@ -70,6 +77,7 @@ const saveView = () => {
         </el-button>
 
         <el-button
+            v-if="showSaveView"
             @click="saveView"
             text
             class="el-button--x-small"

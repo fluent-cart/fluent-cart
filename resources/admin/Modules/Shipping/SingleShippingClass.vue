@@ -4,7 +4,7 @@
         :save-button-text="translate('Save Shipping Class')"
         :loading-text="translate('Saving Shipping Class')"
         :loading="saving"
-        @onSave="saveClass"
+        @on-save="saveClass"
     >
       <template #heading>
         <el-breadcrumb :separator-icon="ArrowRight">
@@ -23,6 +23,8 @@
     </SettingsHeader>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div v-if="loading">
         <SingleShippingClassLoader/>
       </div>
@@ -110,7 +112,7 @@
                         :zone_id="zone.id"
                         :methods="zone.methods || []"
                         :country="zone.region"
-                        @fetchShippingMethods="fetchProfile"
+                        @fetch-shipping-methods="fetchProfile"
                     />
                   </div>
                 </div>
@@ -167,6 +169,7 @@ import Notify from "@/utils/Notify";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 import countriesList from "@/Modules/Customers/countries.json";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const saveShortcut = useSaveShortcut();
 

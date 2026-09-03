@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "sub_phase30_active",
+    "object": "subscription",
+    "status": "active",
+    "customer": "cus_phase30_guard",
+    "metadata": {
+      "fct_ref_id": "phase30-other-order-ref"
+    },
+    "pending_setup_intent": null,
+    "latest_invoice": {
+      "id": "in_phase30_active",
+      "object": "invoice",
+      "status": "paid"
+    }
+  }
+}

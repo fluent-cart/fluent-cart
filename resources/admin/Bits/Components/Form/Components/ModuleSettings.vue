@@ -1,6 +1,7 @@
 <script setup>
 import {defineModel, nextTick, onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
+import {upgradeUrl} from "@/Bits/common";
 import Badge from "@/Bits/Components/Badge.vue";
 import Animation from "@/Bits/Components/Animation.vue";
 import AppConfig from "@/utils/Config/AppConfig";
@@ -102,7 +103,7 @@ onMounted(() => {
                                         size="small"
                                         tag="a"
                                         link
-                                        href="https://fluentcart.com/discount-deal" target="_blank"
+                                        :href="upgradeUrl('feature_lock_advanced_inventory')" target="_blank"
                                         rel="noopener noreferrer"
                                     >
                                         {{ translate('Upgrade to Pro') }}

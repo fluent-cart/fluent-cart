@@ -9,6 +9,7 @@ use FluentCart\App\Http\Requests\ProductDownloadable\ProductDownloadableFileRequ
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductDownload;
+use FluentCart\App\Services\FileSystem\StoragePath;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Http\URL as BaseUrl;
@@ -21,7 +22,11 @@ class ProductDownloadablesController extends Controller
     public function syncDownloadableFiles(Request $request): \WP_REST_Response
     {
         $productDownloadableBulkFileRequest = new ProductDownloadableBulkFileRequest();
-        $validator = Validator::make($request->all(), $productDownloadableBulkFileRequest->rules());
+        $validator = Validator::make(
+            $request->all(),
+            $productDownloadableBulkFileRequest->rules(),
+            $productDownloadableBulkFileRequest->messages()
+        );
         $validationErrors = [];
 
 
@@ -77,6 +82,16 @@ class ProductDownloadablesController extends Controller
             $file['post_id'] = $productId;
             $file['file_path'] = !empty($file['file_path']) ? $file['file_path'] : $file['file_name'];
             $file['file_url'] = !empty($file['file_url']) ? $file['file_url'] : $file['file_name'];
+
+            // file_path is later composed onto the storage directory to read the
+            // file back, so a relative segment stored here would read outside it.
+            // Checked after the file_name fallback, which feeds the same column.
+            if (!StoragePath::isSafe($file['file_path'])) {
+                return $this->sendError([
+                    'message' => __('Invalid file path', 'fluent-cart')
+                ], 422);
+            }
+
             $file['product_variation_id'] = json_encode(
                 Arr::get($file, 'product_variation_id', [])
             );
@@ -141,6 +156,15 @@ class ProductDownloadablesController extends Controller
 
         $filePath = Arr::get($data, 'file_path') ?: $fileName;
         $fileUrl = Arr::get($data, 'file_url') ?: $fileName;
+
+        // Same containment as the sync path: file_path is composed onto the
+        // storage directory when the file is read back.
+        if (!StoragePath::isSafe($filePath)) {
+            return $this->sendError([
+                'message' => __('Invalid file path', 'fluent-cart')
+            ], 422);
+        }
+
         $productVariationId = Arr::get($data, 'product_variation_id', []);
         $fileName = explode('_____fluent-cart_____', $fileName)[0];
         $fileName = explode('__fluent-cart__', $fileName)[0];

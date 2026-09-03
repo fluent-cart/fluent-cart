@@ -29,6 +29,7 @@ import translate from "@/utils/translator/Translator";
 import NotFound from "@/Pages/NotFound.vue";
 import Unauthorized from "@/Pages/Unauthorized.vue";
 import AppConfig from "@/utils/Config/AppConfig";
+import Rest from "@/utils/http/Rest";
 
 
 const appRoutes = window.fluent_cart_admin.hooks.applyFilters('fluent_cart_routes', routes);
@@ -154,3 +155,23 @@ app.use(ElementPlus, {
     locale: locale
 })
 app.mount('#fluent_cart_plugin_app');
+
+// Pending one-shot data backfills: silently call the runner until the server
+// reports completed. Each call is budget-bounded server-side; 'locked' means
+// another tab/request is already on it. No UI — failures simply retry on the
+// next admin page load because has_data_migrations stays true until done.
+if (AppConfig.get('has_data_migrations')) {
+    let backfillCalls = 0;
+    const runDataBackfills = () => {
+        Rest.post('data-backfills/run')
+            .then((res) => {
+                if (res && res.status === 'running' && ++backfillCalls < 100) {
+                    runDataBackfills();
+                }
+            })
+            .catch(() => {
+                // background maintenance — retried on the next admin page load
+            });
+    };
+    runDataBackfills();
+}

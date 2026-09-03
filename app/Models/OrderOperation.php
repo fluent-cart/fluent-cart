@@ -35,6 +35,7 @@ class OrderOperation extends Model
         'utm_id',
         'cart_hash',
         'refer_url',
+        'meta',
     ];
 
 

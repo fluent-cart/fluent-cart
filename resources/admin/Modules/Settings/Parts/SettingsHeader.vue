@@ -16,7 +16,8 @@
 
     <div class="fct-setting-header-action">
       <el-button v-if="showSaveButton" type="primary" @click="saveSettings" :loading="loading" size="small">
-        {{ loading ? translate(loadingText) : translate(saveButtonText) }}
+        <span v-if="showCmndIcon && !loading" class="cmd">⌘s</span>
+        {{ translate(saveButtonText) }}
       </el-button>
 
       <slot name="action"></slot>
@@ -41,10 +42,6 @@ export default {
       type: String,
       default: translate('Save')
     },
-    loadingText: {
-      type: String,
-      default: translate('Saving')
-    },
     loading: {
       type: Boolean,
       default: false
@@ -52,13 +49,10 @@ export default {
     showSaveButton: {
       type: Boolean,
       default: true
-    }
-  },
-  methods: {
-    translate,
-    saveSettings() {
-      // Emit save event to a parent component
-      this.$emit('onSave');
+    },
+    showCmndIcon: {
+      type: Boolean,
+      default: false
     }
   },
   mounted() {
@@ -79,8 +73,14 @@ export default {
   },
   beforeUnmount() {
     this.$refs.toggleBtn?.removeEventListener('click', this.handleToggle);
+  },
+  methods: {
+    translate,
+    saveSettings() {
+      // Emit save event to a parent component
+      this.$emit('onSave');
+    }
   }
 
 }
 </script>
-

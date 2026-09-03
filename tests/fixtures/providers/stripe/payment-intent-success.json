@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "pi_phase22_success",
+    "object": "payment_intent",
+    "amount": 12345,
+    "currency": "usd",
+    "status": "requires_confirmation"
+  }
+}

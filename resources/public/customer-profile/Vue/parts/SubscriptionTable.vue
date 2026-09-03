@@ -92,10 +92,10 @@
 
 <script type="text/babel">
 import CardInfo from "./CardInfo.vue";
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "./Badge.vue";
 import PaymentInfo from "./PaymentInfo.vue";
 import translate, {dateTimeI18} from "../../translator/Translator";
-import Str from "@/utils/support/Str";
+import statusLabel from "../../utils/statusLabels";
 
 export default {
     name: 'SubscriptionTable',
@@ -121,64 +121,7 @@ export default {
             return subscription?.overridden_status ? subscription?.overridden_status : subscription?.status;
         },
 
-      getStatusText(status) {
-        switch (status) {
-          case 'completed':
-            return translate('Completed');
-          case 'paid':
-            return translate('Paid');
-          case 'active':
-            return translate('Active');
-          case 'publish':
-            return translate('Published');
-          case 'draft':
-            return translate('Draft');
-          case 'shipped':
-            return translate('Shipped');
-          case 'success':
-            return translate('Success');
-          case 'licensed':
-            return translate('Licensed');
-          case 'succeeded':
-            return translate('Succeeded');
-          case 'failed':
-            return translate('Failed');
-          case 'error':
-            return translate('Error');
-          case 'canceled':
-            return translate('Canceled');
-          case 'expired':
-            return translate('Expired');
-          case 'partially_paid':
-            return translate('Partially Paid');
-          case 'intended':
-            return translate('Intended');
-          case 'scheduled':
-            return translate('Scheduled');
-          case 'on-hold':
-            return translate('On Hold');
-          case 'pending':
-            return translate('Pending');
-          case 'unpaid':
-            return translate('Unpaid');
-          case 'warning':
-            return translate('Warning');
-          case 'processing':
-            return translate('Processing');
-          case 'future':
-            return translate('Future');
-          case 'inactive':
-            return translate('Inactive');
-          case 'dispute':
-            return translate('Dispute');
-          case 'disabled':
-            return translate('Disabled');
-          case 'beta':
-            return translate('Beta');
-          default:
-            return Str.headline(status);
-        }
-      }
+      getStatusText: statusLabel
     }
 }
 </script>

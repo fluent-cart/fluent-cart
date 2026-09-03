@@ -5,19 +5,20 @@ namespace FluentCart\App\Modules\Templating\Bricks\Elements;
 use Bricks\Element;
 use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Services\Renderer\ProductRenderer;
+use FluentCart\App\Modules\Templating\Bricks\BricksLoader;
 use FluentCart\Framework\Support\Arr;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductStock extends Element
 {
-    public $category = 'fluent_cart_product';
+    public $category = 'fluent-cart';
     public $name = 'fct-product-stock';
-    public $icon = 'ti-package';
+    public $icon = 'ti-package fluent-cart-element-icon';
 
     public function get_label()
     {
-        return esc_html__('Product stock', 'fluent-cart');
+        return esc_html__('Product Stock', 'fluent-cart');
     }
 
     public function set_control_groups()
@@ -41,6 +42,37 @@ class ProductStock extends Element
 
     public function set_controls()
     {
+        $this->controls['queryType'] = [
+            'tab'      => 'content',
+            'type'     => 'select',
+            'label'    => esc_html__('Query Type', 'fluent-cart'),
+            'options'  => [
+                'default' => esc_html__('Default', 'fluent-cart'),
+                'custom'  => esc_html__('Custom', 'fluent-cart'),
+            ],
+            'default'  => 'default',
+            'inline'   => true,
+        ];
+
+        $this->controls['productId'] = [
+            'tab'         => 'content',
+            'type'        => 'select',
+            'label'       => esc_html__('Product', 'fluent-cart'),
+            'options'     => BricksLoader::getProductOptions(),
+            'placeholder' => esc_html__('Select a product', 'fluent-cart'),
+            'searchable'  => true,
+            'rerender'    => true,
+            'required'    => ['queryType', '=', 'custom'],
+        ];
+
+        $this->controls['manualProductId'] = [
+            'tab'         => 'content',
+            'type'        => 'text',
+            'label'       => esc_html__('Manual Product ID', 'fluent-cart'),
+            'description' => esc_html__('Use this if the product is not available in dropdown.', 'fluent-cart'),
+            'required'    => [['queryType', '=', 'custom'], ['productId', '=', '']],
+        ];
+
         // In Stock
 
         $this->controls['inStockText'] = [
@@ -152,16 +184,29 @@ class ProductStock extends Element
 
     public function render()
     {
+        $settings = $this->settings;
+        $queryType = $settings['queryType'] ?? 'default';
 
-        $product = ProductDataSetup::getProductModel($this->post_id);
+        if ($queryType === 'default') {
+            $productId = $this->post_id;
+        } else {
+            $productId = !empty($settings['productId']) ? \intval($settings['productId']) : 0;
+            $manualProductId = !empty($settings['manualProductId']) ? \intval($settings['manualProductId']) : 0;
 
-        if (empty($product)) {
-            return $this->render_element_placeholder(
-                [
-                    'title'       => esc_html__('For better preview select content to show.', 'fluent-cart'),
-                    'description' => esc_html__('Go to: Settings > Template Settings > Populate Content', 'fluent-cart'),
-                ]
-            );
+            if (!$productId && $manualProductId) {
+                $productId = $manualProductId;
+            }
+        }
+
+        $product = ProductDataSetup::getProductModel($productId);
+
+        if (!$product) {
+            return $this->render_element_placeholder([
+                'title' => esc_html__(
+                    'Select a product',
+                    'fluent-cart'
+                ),
+            ]);
         }
 
         add_filter('fluent_cart/product_stock_availability', [$this, 'simulateAvailability'], 10, 2);
@@ -171,7 +216,7 @@ class ProductStock extends Element
         ob_start();
         $productRender->renderStockAvailability();
         $stock_html = ob_get_clean();
-        remove_filter('fluent_cart/product_stock_availability', [$this, 'simulateAvailability'], 10, 2);
+        remove_filter('fluent_cart/product_stock_availability', [$this, 'simulateAvailability'], 10);
 
         if (!$stock_html) {
             return $this->render_element_placeholder(
@@ -209,6 +254,17 @@ class ProductStock extends Element
             case 'out-of-stock':
                 $availability['availability'] = !empty($settings['outOfStockText']) ? $settings['outOfStockText'] : $availability['availability'];
                 break;
+        }
+
+        // Expose the configured custom labels for BOTH statuses (not just the one
+        // rendered on load) so the frontend JS — which re-derives the badge text on
+        // load and on every variant switch — can prefer them over its generic label
+        // map instead of clobbering the server-rendered custom text.
+        if (!empty($settings['inStockText'])) {
+            $availability['in_stock_text'] = $settings['inStockText'];
+        }
+        if (!empty($settings['outOfStockText'])) {
+            $availability['out_of_stock_text'] = $settings['outOfStockText'];
         }
 
         return $availability;

@@ -83,7 +83,6 @@ const updateVariationData = (key, variation) => {
 
       })
       .catch(error => {
-        console.error('Error updating variation data:', error);
         Notify.error(translate('Failed to update variation data'));
       });
 };
@@ -211,7 +210,9 @@ const fetchProducts = (ids = []) => {
     "page": 1,
     'filter_type': 'advanced',
     'sort_by': 'ID',
-    'with': ['detail.variants.media', 'categories', 'variants.media'],
+    // A screen key, not a relation name — the same one the Elementor variation
+    // picker uses. `categories` is gone: requested here and read nowhere.
+    'with': ['elementor_picker'],
     'advanced_filters': JSON.stringify(advancedFilter)
   };
 
@@ -222,7 +223,6 @@ const fetchProducts = (ids = []) => {
         handleVariationSelection(ids, selectedVariants.value);
       })
       .catch((errors) => {
-        console.log(errors);
       })
       .finally(() => {
 
@@ -308,7 +308,7 @@ onMounted(() => {
 
   <div v-else class="fluent-cart-pricing-table-block-editor">
     <div class="fluent-cart-pricing-table-block-editor-head">
-      <AddProductItemModal :isMultiple="true" :selectedIds="defaultVariantIds" @onVariationSelectionUpdated="handleVariationSelection"/>
+      <AddProductItemModal :isMultiple="true" :selectedIds="defaultVariantIds" @on-variation-selection-updated="handleVariationSelection"/>
     </div>
 
     <div class="fluent-cart-pricing-table-block-editor-body">

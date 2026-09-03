@@ -1,7 +1,9 @@
 .fct-reports-view {
   @apply w-full fixed bottom-0 right-0 z-50;
 
+  /* 100vh ignores iOS Safari's collapsible toolbar; dvh tracks the visible viewport */
   height: calc(100vh - 96px);
+  height: calc(100dvh - 96px);
 }
 .fct-reports-view-inner {
   transition: .3s;
@@ -34,11 +36,11 @@
   &-top{
     @apply border-0;
     &-inner {
-      @apply justify-between  flex-wrap flex items-center gap-2.5 max-w-[1260px] 3xl:max-w-[1600px] mx-auto border-0;
+      @apply justify-between  flex-wrap flex items-center gap-2.5 max-w-[1350px] 3xl:max-w-[1600px] mx-auto border-0;
     }
   }
   .fct-applied-filters-wrap{
-    @apply px-7.5 py-2.5 max-w-[1260px] 3xl:max-w-[1600px] mx-auto;
+    @apply px-7.5 py-2.5 max-w-[1350px] 3xl:max-w-[1600px] mx-auto;
   }
   &.is-fixed{
     //@apply fixed top-0 w-[calc(100%-160px)] right-0 z-[1024];
@@ -50,6 +52,10 @@
   scrollbar-width: none;
 
   @apply flex-1 pl-[420px] overflow-x-hidden max-h-[calc(100vh-106px)] min-h-[calc(100vh-106px)] transition-all duration-300 ease-in-out;
+
+  /* dvh override — the vh values above stay as fallback for older browsers */
+  max-height: calc(100dvh - 106px);
+  min-height: calc(100dvh - 106px);
   .fct-report-filter-wrap {
     @apply flex items-center justify-between bg-white py-4 px-4 rounded-none dark:bg-dark-700 transition-all duration-300 ease-in-out;
   }
@@ -78,20 +84,38 @@
     @apply p-5;
   }
   .has-scroll{
-    @apply max-h-[304px] overflow-y-scroll;
-    &:active::-webkit-scrollbar-thumb,
-    &:focus::-webkit-scrollbar-thumb,
-    &:hover::-webkit-scrollbar-thumb {
-      @apply visible;
+    /* Overlay-style scrollbar: the track never paints, the thumb fades in on
+       hover/scroll so the card edge stays clean when the list is idle. */
+    @apply max-h-[304px] overflow-y-auto;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    &:hover,
+    &:focus-within {
+      scrollbar-color: rgb(214 218 225) transparent;
     }
-    &::-webkit-scrollbar-thumb {
-      @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-200 dark:bg-dark-500;
+    &:where(.fluent_theme_dark, .fluent_theme_dark *) {
+      &:hover,
+      &:focus-within {
+        scrollbar-color: rgb(44 60 78) transparent;
+      }
     }
     &::-webkit-scrollbar {
-      @apply h-[3px] w-[3px];
+      @apply h-1.5 w-1.5 bg-transparent;
+    }
+    &::-webkit-scrollbar-track {
+      @apply bg-transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-transparent rounded-[6px];
+      transition: background-color 0.2s ease-in-out;
+    }
+    &:active::-webkit-scrollbar-thumb,
+    &:focus-within::-webkit-scrollbar-thumb,
+    &:hover::-webkit-scrollbar-thumb {
+      @apply bg-gray-200 dark:bg-dark-400;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      @apply bg-gray-300 dark:bg-dark-500;
     }
   }
   .fct-empty-text{

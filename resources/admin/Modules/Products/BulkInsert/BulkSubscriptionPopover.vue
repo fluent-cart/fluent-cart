@@ -2,6 +2,8 @@
 import {computed, getCurrentInstance, ref} from 'vue';
 import AppConfig from '@/utils/Config/AppConfig';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
+import PriceInput from '@/Bits/Components/Inputs/PriceInput.vue';
+import {formatNumber} from '@/Bits/productService';
 
 const props = defineProps({
   variant: {
@@ -30,6 +32,8 @@ const isSubscription = computed(() => otherInfo.value.payment_type === 'subscrip
 
 const hasInstallment = computed(() => otherInfo.value.installment === 'yes');
 
+const MIN_INSTALLMENT_TIMES = 2;
+
 const installmentCount = computed(() => Number(otherInfo.value.times) || 1);
 
 const totalPrice = computed(() => {
@@ -44,8 +48,9 @@ const tooltipContent = computed(() => {
   }
   if (otherInfo.value.manage_setup_fee === 'yes') {
     const name = otherInfo.value.signup_fee_name || self.$t('Setup fee');
+    // signup_fee is stored in cents; formatNumber renders it as currency.
     const amount = otherInfo.value.signup_fee || 0;
-    parts.push(self.$t('Setup fee') + ': ' + name + ' (' + currencySign.value + amount + ')');
+    parts.push(self.$t('Setup fee') + ': ' + name + ' (' + formatNumber(amount, true) + ')');
   }
   return parts.length > 0 ? parts.join('\n') : self.$t('Subscription settings');
 });
@@ -53,10 +58,19 @@ const tooltipContent = computed(() => {
 const onInstallmentChange = (val) => {
   if (val === 'no') {
     props.variant.other_info.times = '';
-  } else if (!props.variant.other_info.times) {
-    props.variant.other_info.times = 1;
+  } else {
+    clampInstallmentTimes();
   }
   emit('changed');
+};
+
+// An installment plan must bill at least twice: 0 means unlimited and 1 is a
+// one-time payment. Snap back on commit so the invalid value never reaches save.
+const clampInstallmentTimes = () => {
+  const times = Number(props.variant.other_info.times);
+  if (!Number.isFinite(times) || times < MIN_INSTALLMENT_TIMES) {
+    props.variant.other_info.times = MIN_INSTALLMENT_TIMES;
+  }
 };
 
 const onSetupFeeChange = (val) => {
@@ -135,17 +149,18 @@ const closePopover = () => {
             <label class="fct-bulk-sub-label">{{ $t('Installment Count') }}</label>
             <el-input
               type="number"
-              :min="1"
+              :min="MIN_INSTALLMENT_TIMES"
               size="small"
               v-model.number="variant.other_info.times"
               :placeholder="$t('Count')"
               style="width: 100px;"
               @input="onFieldChange"
+              @change="clampInstallmentTimes"
             />
           </div>
           <div class="fct-bulk-sub-row">
             <span class="fct-bulk-sub-label">{{ $t('Total Price') }}</span>
-            <span class="fct-bulk-sub-value" v-html="currencySign + totalPrice"></span>
+            <span class="fct-bulk-sub-value" v-html="formatNumber(totalPrice, true)"></span>
           </div>
         </template>
       </div>
@@ -180,18 +195,12 @@ const closePopover = () => {
           </div>
           <div class="fct-bulk-sub-row">
             <label class="fct-bulk-sub-label">{{ $t('Amount') }}</label>
-            <el-input
+            <PriceInput
               size="small"
-              type="number"
-              :min="0"
-              v-model.number="variant.other_info.signup_fee"
+              :model-value="variant.other_info.signup_fee"
               :placeholder="$t('Amount')"
-              @input="onFieldChange"
-            >
-              <template #prefix>
-                <span v-html="currencySign"></span>
-              </template>
-            </el-input>
+              @update:model-value="variant.other_info.signup_fee = $event; onFieldChange()"
+            />
           </div>
         </template>
       </div>

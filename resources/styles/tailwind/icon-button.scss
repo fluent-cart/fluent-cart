@@ -47,6 +47,7 @@
         @apply rounded-[9999px];
     }
     &.success{
+        @apply bg-success-500 text-white border-success-500 hover:bg-success-600 hover:border-success-600;
         &[soft]{
             @apply bg-success-50 border-success-50 text-success-500 dark:bg-dark-600 dark:border-dark-600 dark:text-white;
         }
@@ -82,7 +83,7 @@
             @apply bg-red-50 text-red-500 border-red-50 dark:bg-dark-600 dark:border-dark-400 dark:text-white;
         }
         &[outline]{
-            @apply bg-red-50 border-red-500 text-red-500;
+            @apply bg-red-50 border-red-500 text-red-500 hover:bg-red-100 hover:border-red-500 dark:bg-dark-600 dark:border-dark-400 dark:hover:bg-dark-500 dark:hover:border-red-500;
         }
         &.is-disabled,
         &:disabled{
@@ -108,11 +109,11 @@
     }
     &.hover{
         &-primary{
-            @apply hover:border-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:hover:text-gray-50;
+            @apply hover:border-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:hover:text-gray-50 dark:hover:bg-dark-500 dark:hover:border-dark-400;
         }
         &-danger{
           &:hover {
-            @apply border-red-500 bg-red-25 text-red-500;
+            @apply border-red-500 bg-red-25 text-red-500 dark:bg-dark-500 dark:border-dark-400;
             svg {
               @apply text-red-500;
             }
@@ -152,6 +153,17 @@ a.icon-button {
     @apply cursor-pointer hover:bg-gray-50 text-inherit dark:hover:bg-dark-600 dark:text-white;
     &.danger{
         @apply dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white;
+        .icon {
+            @apply text-white;
+        }
+        &[soft],
+        &[outline]{
+            .icon {
+                @apply text-red-500;
+            }
+        }
+    }
+    &.success{
         .icon {
             @apply text-white;
         }

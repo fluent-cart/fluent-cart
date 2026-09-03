@@ -3,6 +3,7 @@
 namespace FluentCart\App\Http\Requests;
 
 use FluentCart\App\App;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
@@ -25,7 +26,7 @@ class CustomerAddressRequest extends RequestGuard
             'country' => 'required|sanitizeText'
         ]);
 
-        return array_merge($validationRules, [
+        $rules = array_merge($validationRules, [
             'label'      => 'nullable|sanitizeText|maxLength:15',
             'name'       => 'required|sanitizeText|maxLength:255',
             'email'      => 'required|sanitizeText|email|maxLength:255',
@@ -34,7 +35,25 @@ class CustomerAddressRequest extends RequestGuard
             'city'       => 'required|sanitizeText|maxLength:255',
             'is_primary' => 'nullable|numeric',
             'company_name' => 'nullable|sanitizeText|maxLength:255',
+            'vat_number' => 'nullable|sanitizeText|maxLength:255',
+            'legal_registration_id' => 'nullable|sanitizeText|maxLength:255',
         ]);
+
+        if (Arr::get($this->all(), 'type') === 'billing') {
+            if (CheckoutFieldsSchema::isCompanyNameEnabled() && CheckoutFieldsSchema::isCompanyNameRequired()) {
+                $rules['company_name'] = 'required|sanitizeText|maxLength:255';
+            }
+
+            if (CheckoutFieldsSchema::isVatNumberEnabled() && CheckoutFieldsSchema::isVatNumberRequired()) {
+                $rules['vat_number'] = 'required|sanitizeText|maxLength:255';
+            }
+
+            if (CheckoutFieldsSchema::isLegalRegistrationIdEnabled() && CheckoutFieldsSchema::isLegalRegistrationIdRequired()) {
+                $rules['legal_registration_id'] = 'required|sanitizeText|maxLength:255';
+            }
+        }
+
+        return $rules;
     }
 
     /**
@@ -51,7 +70,10 @@ class CustomerAddressRequest extends RequestGuard
             'postcode.required'  => esc_html__('Postcode field is required.', 'fluent-cart'),
             'country.required'   => esc_html__('Country field is required.', 'fluent-cart'),
             'state.required'     => esc_html__('State field is required.', 'fluent-cart'),
-            'label.max'          => esc_html__('Label may not be greater than 15 characters.', 'fluent-cart')
+            'label.max'          => esc_html__('Label may not be greater than 15 characters.', 'fluent-cart'),
+            'company_name.required' => esc_html__('Company Name field is required.', 'fluent-cart'),
+            'vat_number.required' => esc_html__('VAT/GST/Tax Number field is required.', 'fluent-cart'),
+            'legal_registration_id.required' => esc_html__('Legal Registration ID field is required.', 'fluent-cart'),
         ];
     }
 
@@ -81,6 +103,8 @@ class CustomerAddressRequest extends RequestGuard
             },
             'is_primary' => 'intval',
             'company_name' => 'sanitize_text_field',
+            'vat_number' => 'sanitize_text_field',
+            'legal_registration_id' => 'sanitize_text_field',
         ];
     }
 }

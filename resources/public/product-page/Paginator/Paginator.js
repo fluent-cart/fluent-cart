@@ -15,6 +15,7 @@ export default class Paginator {
     #excludeIds = [];
     #productType = '';
     #onSale = false;
+    #hideExcerpt = false;
 
     applyingFilter = false;
     placeholderImage;
@@ -93,6 +94,11 @@ export default class Paginator {
         if (onSaleAttr) {
             this.#onSale = true;
             container.removeAttribute('data-on-sale');
+        }
+        const hideExcerptAttr = container.getAttribute('data-hide-excerpt');
+        if (hideExcerptAttr) {
+            this.#hideExcerpt = true;
+            container.removeAttribute('data-hide-excerpt');
         }
 
         this.bindFilter();
@@ -221,10 +227,10 @@ export default class Paginator {
             this.onLoadingData();
             const params = this.getQueryParams();
 
-            params['with'] = [
-                ...['licensesMeta', 'detail', 'variants', 'categories'],
-                ...params['with'] ?? []
-            ];
+            // No `with` is sent: ShopController::index() hardcodes its own
+            // eager loads (`detail`, `variants`) and ignores the request's,
+            // because the storefront route is public. Sending one here only
+            // looked like it was doing something.
 
             const query = {
                 ...params,
@@ -267,6 +273,9 @@ export default class Paginator {
             if (this.#onSale) {
                 query['on_sale'] = 1;
             }
+            if (this.#hideExcerpt) {
+                query['hide_excerpt'] = 1;
+            }
 
 
             const url = new URL(this.#baseUrl);
@@ -292,7 +301,7 @@ export default class Paginator {
                             total: response.products.total,
                             lastPage: response.products.last_page,
                             from: response.products.from,
-                            to: response.products.current_page,
+                            to: response.products.to,
                         };
                         if (isHidden) {
                             if (noResultElement) {

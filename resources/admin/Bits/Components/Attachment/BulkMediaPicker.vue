@@ -4,17 +4,14 @@ import { VueDraggableNext as draggable } from 'vue-draggable-next';
 import MediaButton from '@/Bits/Components/Buttons/MediaButton.vue';
 import translate from '@/utils/translator/Translator';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import Asset from "@/utils/support/Asset";
 
-// Track which image URLs have failed to load — hides broken icon, shows spinner instead
-const failedUrls = ref(new Set());
-const onThumbError = (url) => {
-  failedUrls.value = new Set([...failedUrls.value, url]);
-};
-const onThumbLoad = (url) => {
-  if (failedUrls.value.has(url)) {
-    const s = new Set(failedUrls.value);
-    s.delete(url);
-    failedUrls.value = s;
+// Fallback thumbnail for media whose image is missing or fails to load, so a
+// broken url shows a placeholder instead of an endless loading spinner.
+const defaultThumb = Asset.getUrl('images/placeholder.svg');
+const onThumbError = (e) => {
+  if (e.target && e.target.src !== defaultThumb) {
+    e.target.src = defaultThumb;
   }
 };
 
@@ -32,6 +29,17 @@ const props = defineProps({
   title: { type: String, default: '' },
   // Featured mode: shows first image prominently + "+N images" count tag for extras
   featured: { type: Boolean, default: false },
+  // Square thumbnails in compact mode (product/variant images) instead of the
+  // default circular avatar-stack.
+  square: { type: Boolean, default: false },
+  // Show "Apply to all variants" checkbox in modal footer (advanced variation context)
+  showApplyToAll: { type: Boolean, default: false },
+  // Initial checked state for the "Apply to all" checkbox (group row defaults to true)
+  defaultApplyToAll: { type: Boolean, default: false },
+  // Number of currently-selected variants. When > 0 the "Apply to all"
+  // label shows the count, e.g. "Apply to all (3)". Display-only — it does
+  // not change which variants the save targets.
+  selectedCount: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['update:modelValue', 'change']);
@@ -40,8 +48,19 @@ const showModal = ref(false);
 const modalImages = ref([]);
 const activeTab = ref('gallery');
 const pasteUrl = ref('');
+const applyToAll = ref(false);
 
 const dialogTitle = computed(() => props.title || translate('Manage Media'));
+
+// "Apply to all" label, with the selected-variant count appended when any
+// variants are selected. Display-only — apply scope is unchanged.
+const applyToAllLabel = computed(() => {
+  if (props.selectedCount > 0) {
+    /* translators: %1$s: number of selected variants */
+    return translate('Apply to all (%1$s)', props.selectedCount);
+  }
+  return translate('Apply to all');
+});
 
 // Only pass real WP media attachments (id > 0) to MediaButton for pre-selection
 const wpAttachments = computed(() => modalImages.value.filter(i => i.id > 0));
@@ -51,16 +70,30 @@ const importedUrlImages = computed(() => modalImages.value.filter(i => !i.id));
 
 const hasUrlTab = computed(() => props.showUrlTab);
 
+// Compact mode only counts media that actually has an image url. A variant
+// whose media has no usable url falls through to the add button — no image
+// shows the add CTA, not a placeholder.
+const mediaItems = computed(() => Array.isArray(props.modelValue) ? props.modelValue : []);
+
+const compactMedia = computed(() => mediaItems.value.filter(m => m && m.url));
+
 const openModal = () => {
-  modalImages.value = JSON.parse(JSON.stringify(props.modelValue || []));
+  modalImages.value = JSON.parse(JSON.stringify(mediaItems.value));
   activeTab.value = 'gallery';
   pasteUrl.value = '';
+  applyToAll.value = props.defaultApplyToAll;
   showModal.value = true;
 };
 
 const saveAndClose = () => {
-  emit('update:modelValue', modalImages.value);
-  emit('change', modalImages.value);
+  // A no-op Save must not emit. The grouped media picker binds a derived
+  // aggregate as model-value; re-emitting it unchanged would broadcast the
+  // union of every variant's images back onto all of them.
+  const changed = JSON.stringify(modalImages.value) !== JSON.stringify(mediaItems.value);
+  if (changed || applyToAll.value) {
+    emit('update:modelValue', modalImages.value);
+    emit('change', modalImages.value, { applyToAll: applyToAll.value });
+  }
   showModal.value = false;
 };
 
@@ -105,7 +138,14 @@ const addFromUrl = () => {
     return;
   }
   const filename = url.split('/').pop().split('?')[0] || 'image';
-  modalImages.value.push({ id: 0, url, title: filename });
+  const image = { id: 0, url, title: filename };
+  if (!props.multiple) {
+    // Single mode: a URL add replaces, mirroring onMediaSelected — otherwise
+    // the paste-URL path lets the picker exceed one image.
+    modalImages.value = [image];
+  } else {
+    modalImages.value.push(image);
+  }
   pasteUrl.value = '';
 };
 
@@ -116,17 +156,15 @@ const removeUrlImage = (url) => {
 </script>
 
 <template>
-  <div class="fct-media-picker" :class="{ 'is-compact': compact, 'is-featured': featured }" @click="openModal">
+  <div class="fct-media-picker" :class="{ 'is-compact': compact, 'is-featured': featured, 'is-square': square }" @click="openModal">
     <!-- Featured mode: single prominent image + count tag -->
     <template v-if="featured">
       <button type="button" v-if="modelValue && modelValue.length" class="fmp-featured" :aria-label="translate('Edit media')">
         <img
-          :src="modelValue[0].url"
+          :src="modelValue[0].url || defaultThumb"
           :alt="modelValue[0].title || ''"
           class="fmp-featured__image"
-          :class="{ 'is-hidden': failedUrls.has(modelValue[0].url) }"
-          @error="onThumbError(modelValue[0].url)"
-          @load="onThumbLoad(modelValue[0].url)"
+          @error="onThumbError"
         />
         <span class="fmp-featured__edit-icon">
           <DynamicIcon name="Edit" />
@@ -142,9 +180,9 @@ const removeUrlImage = (url) => {
 
     <!-- Compact inline: avatar stack (for table cells) -->
     <template v-else-if="compact">
-      <div v-if="modelValue && modelValue.length" class="fmp-stack">
+      <div v-if="compactMedia.length" class="fmp-stack" :class="{ 'is-square': square }">
         <span
-          v-for="(img, i) in modelValue.slice(0, maxThumbs)"
+          v-for="(img, i) in compactMedia.slice(0, maxThumbs)"
           :key="i"
           class="fmp-thumb-wrap"
           :style="{ zIndex: maxThumbs - i }"
@@ -153,12 +191,10 @@ const removeUrlImage = (url) => {
             :src="img.url"
             :alt="img.title || ''"
             class="fmp-thumb"
-            :class="{ 'is-hidden': failedUrls.has(img.url) }"
-            @error="onThumbError(img.url)"
-            @load="onThumbLoad(img.url)"
+            @error="onThumbError"
           />
         </span>
-        <span v-if="modelValue.length > maxThumbs" class="fmp-count">+{{ modelValue.length - maxThumbs }}</span>
+        <span v-if="compactMedia.length > maxThumbs" class="fmp-count">+{{ compactMedia.length - maxThumbs }}</span>
         <span class="fmp-edit-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" width="14" height="14">
             <path d="M11.7282 3.23787C12.3492 2.56506 12.6597 2.22865 12.9896 2.03243C13.7857 1.55896 14.766 1.54423 15.5754 1.99359C15.9108 2.17982 16.2309 2.50676 16.8709 3.16062C17.511 3.81449 17.8311 4.14143 18.0134 4.48409C18.4533 5.31092 18.4388 6.31232 17.9754 7.12558C17.7833 7.46262 17.454 7.7798 16.7953 8.41416L8.95894 15.9619C7.71081 17.1641 7.08675 17.7651 6.3068 18.0698C5.52685 18.3744 4.66942 18.352 2.95455 18.3071L2.72123 18.301C2.19917 18.2874 1.93814 18.2806 1.7864 18.1084C1.63467 17.9362 1.65538 17.6703 1.69681 17.1385L1.71931 16.8497C1.83592 15.3529 1.89423 14.6046 2.1865 13.9318C2.47878 13.2591 2.98294 12.7129 3.99127 11.6204L11.7282 3.23787Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -268,62 +304,25 @@ const removeUrlImage = (url) => {
       <MediaButton
           :attachments="wpAttachments"
           :multiple="multiple"
-          @onMediaSelected="onMediaSelected"
+          @on-media-selected="onMediaSelected"
       />
 
-      <div class="fct-btn-group sm">
-        <el-button @click="cancelModal">{{ $t('Cancel') }}</el-button>
-        <el-button type="primary" @click="saveAndClose">{{ $t('Save') }}</el-button>
+      <div class="fct-media-picker-footer-actions">
+        <label v-if="showApplyToAll" class="fct-media-picker-apply-to-group-label" :class="{ 'is-enabled': applyToAll }">
+          <el-checkbox
+              v-model="applyToAll"
+              :aria-label="$t('Apply media to all variants in this group')"
+          />
+          {{ applyToAllLabel }}
+        </label>
+        <div class="fct-btn-group sm">
+          <el-button @click="cancelModal">{{ $t('Cancel') }}</el-button>
+          <el-button type="primary" @click="saveAndClose">{{ $t('Save') }}</el-button>
+        </div>
       </div>
     </div>
   </el-dialog>
 </template>
 
-<style scoped lang="scss">
-.fmp-featured {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-  overflow: hidden;
-  background: none;
-  padding: 0;
 
-  .fmp-featured__image {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    display: block;
-
-    &.is-hidden {
-      visibility: hidden;
-    }
-  }
-
-  .fmp-featured__edit-icon {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    border-radius: 4px;
-    padding: 2px 4px;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  &:hover .fmp-featured__edit-icon,
-  &:focus-visible .fmp-featured__edit-icon {
-    opacity: 1;
-  }
-
-  .fmp-featured__count {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-  }
-}
-</style>
 

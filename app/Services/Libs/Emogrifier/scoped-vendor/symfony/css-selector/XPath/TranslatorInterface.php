@@ -8,9 +8,11 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace FluentEmogrifier\Vendor\Symfony\Component\CssSelector\XPath;
 
 use FluentEmogrifier\Vendor\Symfony\Component\CssSelector\Node\SelectorNode;
+
 /**
  * XPath expression translator interface.
  *
@@ -26,9 +28,10 @@ interface TranslatorInterface
     /**
      * Translates a CSS selector to an XPath expression.
      */
-    public function cssToXPath(string $cssExpr, string $prefix = 'descendant-or-self::') : string;
+    public function cssToXPath(string $cssExpr, string $prefix = 'descendant-or-self::'): string;
+
     /**
      * Translates a parsed selector node to an XPath expression.
      */
-    public function selectorToXPath(SelectorNode $selector, string $prefix = 'descendant-or-self::') : string;
+    public function selectorToXPath(SelectorNode $selector, string $prefix = 'descendant-or-self::'): string;
 }

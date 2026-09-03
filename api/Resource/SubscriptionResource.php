@@ -63,7 +63,9 @@ class SubscriptionResource extends BaseResourceApi
         $sortCriteria = Arr::get($params, 'sort_criteria', []);
         Sort::make()->apply($query, $sortCriteria);
 
-        $with = ['customer'];
+        // product is eager-loaded so the appended display_item_name accessor
+        // resolves the product-prefixed label without an N+1 per row.
+        $with = ['customer', 'product'];
 
         return $query->with($with)
             ->where(function ($q) use ($searchTerms) {
@@ -106,6 +108,7 @@ class SubscriptionResource extends BaseResourceApi
     {
         return Subscription::where('id', $id)
                             ->with([
+                                'product',
                                 'customer.shipping_address' => function ($query) {
                                     $query->where('is_primary', 1);
                                 },

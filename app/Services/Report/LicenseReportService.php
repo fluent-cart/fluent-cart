@@ -27,7 +27,7 @@ class LicenseReportService extends ReportService
     public function getModel(): string
     {
         if (!class_exists(License::class)) {
-            throw new \Exception('The required plugin is not installed or the License class is missing.');
+            throw new \Exception(__('The required plugin is not installed or the License class is missing.', 'fluent-cart'));
         }
 
         return License::class;

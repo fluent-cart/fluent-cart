@@ -15,7 +15,7 @@ class AdminHelper
     public static function getProductMenu($product, $echo = false, $activeMenu = '')
     {
         // Skip rendering menu when custom editor modal is open
-        if (isset($_GET['custom-editor']) && $_GET['custom-editor'] == 'true') {
+        if (App::request()->get('custom-editor') === 'true') {
             return '';
         }
 
@@ -40,21 +40,13 @@ class AdminHelper
                 'label' => __('Integrations', 'fluent-cart'),
                 'link'  => $baseUrl . 'products/' . $productId . '/integrations'
             ],
-            // 'product_pricing' => [
-            //     'label' => __('Pricing', 'fluent-cart'),
-            //     'link' => $baseUrl . 'products/' . $productId . '/pricing'
-            // ],
-//            'product_integrations' => [
-//                'label' => __('Integrations', 'fluent-cart'),
-//                'link' => $baseUrl . 'products/' . $productId . '/integrations'
-//            ]
         ], [
             'product_id' => $productId,
             'base_url'   => $baseUrl
         ]);
 
         $request = App::request()->all();
-        if (isset($request['action']) && $request['action'] == 'edit') {
+        if (isset($request['action']) && $request['action'] === 'edit') {
             $menuItems['product_details'] = [
                 'label' => __('Edit Pricing', 'fluent-cart'),
                 'link'  => admin_url('admin.php?page=fluent-cart#/products/' . $productId)
@@ -73,11 +65,11 @@ class AdminHelper
             'product_id'   => $productId
         ];
 
-        if ($echo) {
-            App::make('view')->render('admin.admin_product_menu', $data);
-        } else {
+        if (!$echo) {
             return (string)App::make('view')->make('admin.admin_product_menu', $data);
         }
+
+        App::make('view')->render('admin.admin_product_menu', $data);
     }
 
     private static function getProductsMenu($baseUrl)
@@ -88,21 +80,48 @@ class AdminHelper
             'permission' => ['products/view']
         ];
 
+        $children = [];
+
+        // Attributes power the advanced-variations feature.
+        $children['product_attributes'] = [
+            'label'      => __('Attributes', 'fluent-cart'),
+            'link'       => $baseUrl . 'products/attributes',
+            'permission' => ['products/view']
+        ];
+
+        // Inventory only when the advanced-inventory toggle is on.
         if (ModuleSettings::isActive('stock_management') &&
             ModuleSettings::getSettings('stock_management.enable_advanced_inventory') === 'yes') {
-            $menu['children'] = [
-                'product_inventory' => [
-                    'label'      => __('Inventory', 'fluent-cart'),
-                    'link'       => $baseUrl . 'products/inventory',
-                    'permission' => ['products/view']
-                ]
+            $children['product_inventory'] = [
+                'label'      => __('Inventory', 'fluent-cart'),
+                'link'       => $baseUrl . 'products/inventory',
+                'permission' => ['products/view']
             ];
         }
+
+        $menu['children'] = $children;
 
         return $menu;
     }
 
     public static function getAdminMenu($echo = false, $activeNav = '')
+    {
+        $menuItems = self::getMenuItems();
+
+        if (!$echo) {
+            return App::make('view')->make('admin.admin_menu', [
+                'menu_items' => $menuItems,
+                'active'     => $activeNav
+            ]);
+        }
+
+        App::make('view')->render('admin.admin_menu', [
+            'menu_items' => $menuItems,
+            'active'     => $activeNav
+        ]);
+    }
+
+    public static function getMenuItems($withSettings = false)
     {
         $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
         $menuItems = apply_filters('fluent_cart/global_admin_menu_items', [
@@ -132,13 +151,6 @@ class AdminHelper
                 'permission' => ['reports/view']
             ],
         ], ['base_url' => $baseUrl]);
-
-        $menuItems['more'] = [
-            'label'    => __('More', 'fluent-cart'),
-            'link'     => '#',
-            'children' => []
-        ];
-
 
         $moreItems = apply_filters('fluent_cart/global_admin_menu_more_items', array_filter([
             'integrations' => [
@@ -171,21 +183,29 @@ class AdminHelper
                 'label' => __('Logs', 'fluent-cart'),
                 'link'  => $baseUrl . 'logs',
             ],
+            'reviews'      => [
+                'label' => __('Reviews', 'fluent-cart'),
+                'link'  => $baseUrl . 'reviews',
+            ],
         ]), ['base_url' => $baseUrl]);
 
-        $menuItems['more']['children'] = $moreItems;
-
-        if ($echo) {
-            App::make('view')->render('admin.admin_menu', [
-                'menu_items' => $menuItems,
-                'active'     => $activeNav
-            ]);
-        } else {
-            return App::make('view')->make('admin.admin_menu', [
-                'menu_items' => $menuItems,
-                'active'     => $activeNav
-            ]);
+        if ($withSettings) {
+            $menuItems['settings'] = [
+                'label'      => __('Settings', 'fluent-cart'),
+                'link'       => $baseUrl . 'settings/store-settings',
+                'permission' => ['store/settings', 'store/sensitive'],
+                'icon'       => 'fluent-settings'
+            ];
         }
+
+        $menuItems['more'] = [
+            'label'    => __('More', 'fluent-cart'),
+            'link'     => '#',
+            'children' => $moreItems,
+        ];
+
+
+        return $menuItems;
     }
 
     public static function pushGlobalAdminAssets()
@@ -202,13 +222,5 @@ class AdminHelper
             FLUENTCART_VERSION,
         );
     }
-
-
 }
-
-
-
-
-
-
 

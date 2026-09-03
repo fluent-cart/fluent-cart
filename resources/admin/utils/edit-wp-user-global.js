@@ -8,7 +8,6 @@
         maybeUserProfile(profileVars) {
             const $targetElement = window.jQuery('#profile-page > .wp-header-end');
             if (!$targetElement.length) {
-                console.warn('FluentCart: Target element "#profile-page > .wp-header-end" not found');
                 return;
             }
 
@@ -20,7 +19,6 @@
                 href="${profileVars.fct_profile_url}">View FluentCart Profile</a>`);
                 $link.insertBefore($targetElement);
             } catch (error) {
-                console.error('FluentCart: Error inserting profile link:', error);
             }
         }
     };

@@ -1,8 +1,8 @@
 <template>
     <span v-if="val" class="fct_percent_change" :class="{ fct_percent_negative: val < 0 }">
         <el-icon>
-            <arrow-down v-if="val < 0" />
-            <arrow-up v-else />
+            <ArrowDown v-if="val < 0" />
+            <ArrowUp v-else />
         </el-icon>
         {{Math.abs(val)}}%
     </span>
@@ -20,13 +20,13 @@ export default {
         ArrowUp: markRaw(ArrowUp),
         ArrowDown: markRaw(ArrowDown)
     },
-    methods: {
-        calculatePercent
-    },
     computed: {
         val() {
             return this.calculatePercent(this.current, this.prev);
         }
+    },
+    methods: {
+        calculatePercent
     }
 }
 </script>

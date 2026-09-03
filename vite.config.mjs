@@ -150,6 +150,9 @@ const inputs = [
     "resources/public/cart-drawer/mini-cart.scss",
     "resources/admin/BlockEditor/Cart/style/mini-cart-block-editor.scss",
     "resources/admin/BlockEditor/Cart/MiniCartBlockEditor.jsx",
+    "resources/admin/BlockEditor/Cart/style/cart-block-editor.scss",
+    "resources/admin/BlockEditor/Cart/CartBlockEditor.jsx",
+    "resources/admin/BlockEditor/Cart/InnerBlocks/InnerBlocks.jsx",
     "resources/admin/BlockEditor/ProductTitle/ProductTitleBlockEditor.jsx",
     "resources/admin/BlockEditor/ProductTitle/style/product-title-block-editor.scss",
     "resources/admin/BlockEditor/ProductImage/ProductImageBlockEditor.jsx",
@@ -166,6 +169,7 @@ const inputs = [
     "resources/admin/global.js",
     "resources/admin/admin_hooks.js",
     "resources/admin/utils/edit-wp-user-global.js",
+    "resources/admin/dark-mode-toggle.js",
 
     // Globals
     "resources/public/globals/FluentCartApp.js",
@@ -192,8 +196,28 @@ const inputs = [
     "resources/public/single-product/single-product.scss",
     'resources/public/single-product/xzoom/xzoom.js',
     'resources/public/single-product/xzoom/xzoom.css',
+    // Reviews
+    "resources/public/single-product/Reviews.js",
+    "resources/public/single-product/ReviewForm.js",
+    "resources/public/single-product/reviews.scss",
+    // Product Reviews Block
+    "resources/admin/BlockEditor/ProductReviews/ProductReviewsBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviews/style/product-reviews-block-editor.scss",
+    // Product Rating Block
+    "resources/admin/BlockEditor/ProductRating/ProductRatingBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductRating/style/product-rating-block-editor.scss",
+    // Product Review Form Block
+    "resources/admin/BlockEditor/ProductReviewForm/ProductReviewFormBlockEditor.jsx",
+    // Review child blocks (Rating Summary / Review List)
+    "resources/admin/BlockEditor/ProductReviewSummary/ProductReviewSummaryBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewList/ProductReviewListBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewSummaryGroup/ProductReviewSummaryGroupBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewForm/style/product-review-form-block-editor.scss",
     // Similar product
     "resources/public/single-product/similar-product.scss",
+    // Advanced Variation — storefront selector (styles + interactive JS)
+    "resources/public/single-product/advanced-variations.scss",
+    "resources/public/single-product/advanced-variation-public.js",
     "resources/public/payment-methods/paypal-checkout.js",
     "resources/public/payment-methods/stripe-checkout.js",
     "resources/public/payment-methods/stripe-hosted-checkout.js",
@@ -201,10 +225,16 @@ const inputs = [
     "resources/public/receipt/style/thank_you.scss",
     // Order Bump
     "resources/order-bump/order-bump.js",
+    // Attributes
+    "resources/attributes/attributes.js",
     // Licensing
     "resources/licensing/license.js",
+    // EU Withdrawal addon (admin requests page)
+    "resources/withdrawal/withdrawal.js",
     // Addon Assets
     "resources/addon-assets/addon-assets.js",
+    // Reviews PRO
+    "resources/reviews-pro/reviews-pro.js",
     // Subscriptions
     "resources/admin/Modules/Subscriptions/subscription.js",
     "resources/admin/Modules/Shipping/shipping.js",

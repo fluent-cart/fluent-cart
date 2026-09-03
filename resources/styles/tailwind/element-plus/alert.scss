@@ -1,6 +1,23 @@
 .el-alert{
     @apply rounded;
     &--error.is-light{
-        @apply bg-red-50 text-red-500;
+        @apply bg-red-50 text-red-500 dark:text-red-400 dark:bg-red-alpha-16 dark:border-red-alpha-16;
+    }
+    &.el-alert--info {
+        a {
+            @apply text-blue-500 underline focus:underline focus:outline-none focus:shadow-none dark:text-white !important;
+        }
+        &.is-light {
+            @apply dark:bg-dark-500;
+            .el-alert__description {
+                @apply dark:text-gray-50;
+            }
+        }
+    }
+    &.el-alert--warning.is-light {
+        @apply dark:text-warning-400 dark:bg-warning-alpha-16 dark:border-warning-alpha-16;
+        .el-alert__title {
+            @apply text-warning-500;
+        }
     }
 }

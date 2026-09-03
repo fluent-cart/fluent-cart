@@ -67,7 +67,6 @@ export default class Condition {
         if (matchUsing in this.matcher && typeof this.matcher[matchUsing] === 'function') {
             return this.matcher[matchUsing](value, value2, operator, defaultMatch);
         } else {
-            console.error(`Method ${matchUsing} does not exist in Matcher Class`);
             return defaultMatch;
         }
     }
@@ -188,7 +187,6 @@ export default class Condition {
 
                     value = this.modifier[modifyUsing](value, modifierValue, operator, stateKey, this.data);
                 } else {
-                    console.error(`Method ${modifyUsing} does not exist in Modifier Class`);
                 }
             });
         }

@@ -15,7 +15,7 @@
         </div>
 
       <div v-if="!appLoaded" aria-live="polite">
-        <order-table-loader :rows-range="[1, 2, 3, 4]" />
+        <OrderTableLoader :rows-range="[1, 2, 3, 4]" />
       </div>
       
       <div v-else-if="appLoaded" v-loading="loading" class="fct-customer-dashboard-downloads-table" aria-live="polite">
@@ -32,7 +32,7 @@
       </div>
 
     
-        <pagination
+        <Pagination
             v-if="paginate.total > 0"
             :hide_on_single="true"
             :pagination="paginate"
@@ -77,6 +77,9 @@ export default {
             },
         };
     },
+    mounted() {
+        this.fetchFiles();
+    },
     methods: {
         fetchFiles() {
             this.loading = true;
@@ -96,9 +99,6 @@ export default {
                     this.appLoaded = true;
                 });
         }
-    },
-    mounted() {
-        this.fetchFiles();
     }
 };
 </script>

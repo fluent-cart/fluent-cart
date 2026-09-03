@@ -4,7 +4,7 @@
       :imgs="lightboxData"
       :index="imageIndex"
       @hide="()=>{
-        this.visible = false
+        visible = false
       }"
   ></VueEasyLightbox>
   <div class="fct-attachments-wrap" style="position: relative">
@@ -13,11 +13,11 @@
       <li v-if="showList === true" v-for="(img, idx) in attachments" :key="idx" :class="[mediaInputSize, mediaInputBg]" class="fct-attachment-item">
         <div class="fct-attachment-img-wrap">
           <img v-if="previewImage" :src="img.url" :alt="img.title" @click="()=>{
-                      this.imageIndex = idx;
-                      this.visible=true;
+                      imageIndex = idx;
+                      visible=true;
                   }"/>
           <IconButton size="x-small" v-if="showMediaButtonAsIcon && !multiple">
-            <MediaButton  :icon-mode="true" :attachments="attachments" :title="multiple?'':title" @onMediaSelected="onMediaSelected" :multiple='multiple' :icon="icon"></MediaButton>
+            <MediaButton  :icon-mode="true" :attachments="attachments" :title="multiple?'':title" @on-media-selected="onMediaSelected" :multiple='multiple' :icon="icon"></MediaButton>
           </IconButton>
         </div>
 
@@ -31,7 +31,7 @@
             </template>
           </IconButton>
           <IconButton size="x-small" v-if="showMediaButtonAsIcon && multiple">
-            <MediaButton  :icon-mode="true" :attachments="attachments" :title="multiple?'':title" @onMediaSelected="onMediaSelected" :multiple='multiple' :icon="icon"/>
+            <MediaButton  :icon-mode="true" :attachments="attachments" :title="multiple?'':title" @on-media-selected="onMediaSelected" :multiple='multiple' :icon="icon"/>
           </IconButton>
         </div>
 
@@ -42,7 +42,7 @@
         </div> -->
       </li>
       <li v-if="!showMediaButtonAsIcon" :class="[mediaInputSize, mediaInputBg]">
-        <MediaButton :icon-mode="false" :attachments="attachments" :title="multiple?'':title" @onMediaSelected="onMediaSelected" :multiple='multiple' :icon="icon"></MediaButton>
+        <MediaButton :icon-mode="false" :attachments="attachments" :title="multiple?'':title" @on-media-selected="onMediaSelected" :multiple='multiple' :icon="icon"></MediaButton>
       </li>
     </ul>
     <slot/>
@@ -59,6 +59,12 @@ import translate from "@/utils/translator/Translator";
 
 export default {
   name: "Attachments",
+  components: {
+    MediaButton,
+    VueEasyLightbox,
+    IconButton,
+    Delete
+  },
   props: {
     multiple: Boolean,
     attachments: {
@@ -98,17 +104,25 @@ export default {
       images: ref([])
     }
   },
-  components: {
-    MediaButton,
-    VueEasyLightbox,
-    IconButton,
-    Delete
-  },
 
   computed: {
     showMediaButtonAsIcon: function(){
       return !this.multiple && this.attachments.length ===1;
     }
+  },
+  watch: {
+    attachments: {
+      handler: function (newval, oldval) {
+        this.lightboxData = [];
+        if (Array.isArray(newval) && newval.length > 0) {
+          newval.map((val, index) => {
+            this.lightboxData.push(val.url)
+          })
+        }
+        return newval
+      },
+      deep: true
+    },
   },
   mounted: function () {
     // Check if attachments is an array and not empty
@@ -137,20 +151,6 @@ export default {
 
       this.$emit('mediaUploaded', this.images)
     }
-  },
-  watch: {
-    attachments: {
-      handler: function (newval, oldval) {
-        this.lightboxData = [];
-        if (Array.isArray(newval) && newval.length > 0) {
-          newval.map((val, index) => {
-            this.lightboxData.push(val.url)
-          })
-        }
-        return newval
-      },
-      deep: true
-    },
   }
 }
 </script>

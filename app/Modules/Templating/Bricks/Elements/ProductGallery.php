@@ -2,23 +2,21 @@
 
 namespace FluentCart\App\Modules\Templating\Bricks\Elements;
 
-use Bricks\Database;
+
 use Bricks\Element;
 use Bricks\Setup;
-//use FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\AddToCartShortcode;
-use FluentCart\App\Hooks\Handlers\ShortCodes\SingleProductShortCode;
 use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\ProductRenderer;
-use FluentCart\App\Vite;
+use FluentCart\App\Modules\Templating\Bricks\BricksLoader;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductGallery extends Element
 {
-    public $category = 'fluent_cart_product';
+    public $category = 'fluent-cart';
     public $name = 'fct-product-gallery';
-    public $icon = 'ti-gallery';
+    public $icon = 'ti-gallery fluent-cart-element-icon';
 
     public function enqueue_scripts()
     {
@@ -27,7 +25,7 @@ class ProductGallery extends Element
 
     public function get_label()
     {
-        return esc_html__('Product gallery', 'fluent-cart');
+        return esc_html__('Product Gallery', 'fluent-cart');
     }
 
     public function set_controls()
@@ -35,6 +33,37 @@ class ProductGallery extends Element
         $this->controls['_width']['rerender'] = true;
         $this->controls['_widthMin']['rerender'] = true;
         $this->controls['_widthMax']['rerender'] = true;
+
+        $this->controls['queryType'] = [
+            'tab'      => 'content',
+            'type'     => 'select',
+            'label'    => esc_html__('Query Type', 'fluent-cart'),
+            'options'  => [
+                'default' => esc_html__('Default', 'fluent-cart'),
+                'custom'  => esc_html__('Custom', 'fluent-cart'),
+            ],
+            'default'  => 'default',
+            'inline'   => true,
+        ];
+
+        $this->controls['productId'] = [
+            'tab'         => 'content',
+            'type'        => 'select',
+            'label'       => esc_html__('Product', 'fluent-cart'),
+            'options'     => BricksLoader::getProductOptions(),
+            'placeholder' => esc_html__('Select a product', 'fluent-cart'),
+            'searchable'  => true,
+            'rerender'    => true,
+            'required'    => ['queryType', '=', 'custom'],
+        ];
+
+        $this->controls['manualProductId'] = [
+            'tab'         => 'content',
+            'type'        => 'text',
+            'label'       => esc_html__('Manual Product ID', 'fluent-cart'),
+            'description' => esc_html__('Use this if the product is not available in dropdown.', 'fluent-cart'),
+            'required'    => [['queryType', '=', 'custom'], ['productId', '=', '']],
+        ];
 
         $this->controls['productImageSize'] = [
             'tab'         => 'content',
@@ -199,18 +228,30 @@ class ProductGallery extends Element
 
     public function render()
     {
-        $product = ProductDataSetup::getProductModel($this->post_id);
+        $settings = $this->settings;
+        $queryType = $settings['queryType'] ?? 'default';
 
-        if (empty($product)) {
-            return $this->render_element_placeholder(
-                [
-                    'title'       => esc_html__('For better preview select content to show.', 'fluent-cart'),
-                    'description' => esc_html__('Go to: Settings > Template Settings > Populate Content', 'fluent-cart'),
-                ]
-            );
+        if ($queryType === 'default') {
+            $productId = $this->post_id;
+        } else {
+            $productId = !empty($settings['productId']) ? \intval($settings['productId']) : 0;
+            $manualProductId = !empty($settings['manualProductId']) ? \intval($settings['manualProductId']) : 0;
+
+            if (!$productId && $manualProductId) {
+                $productId = $manualProductId;
+            }
         }
 
-        $settings = $this->settings;
+        $product = ProductDataSetup::getProductModel($productId);
+
+        if (!$product) {
+            return $this->render_element_placeholder([
+                'title' => esc_html__(
+                    'Select a product',
+                    'fluent-cart'
+                ),
+            ]);
+        }
 
         // Thumbnail position
         $thumbnail_position = !empty($settings['thumbnailPosition']) ? $settings['thumbnailPosition'] : 'bottom';
@@ -226,17 +267,26 @@ class ProductGallery extends Element
             $max_thumbnails = null;
         }
 
-        // STEP: Render
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_attributes() handles escaping
-        echo "<div {$this->render_attributes( '_root' )}>";
+        ?>
 
-        (new ProductRenderer($product))->renderGallery([
-            'thumb_position'    => $thumbnail_position,
-            'scrollable_thumbs' => $scrollable_thumbs,
-            'max_thumbnails'    => $max_thumbnails,
-        ]);
+            <div
+                <?php
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_attributes() handles escaping
+                    echo $this->render_attributes( '_root' );
+                ?>
+            >
+        
+                <?php 
+                    (new ProductRenderer($product))->renderGallery([
+                        'thumb_position'    => $thumbnail_position,
+                        'scrollable_thumbs' => $scrollable_thumbs,
+                        'max_thumbnails'    => $max_thumbnails,
+                    ]);
+                ?>
+        
+            </div>
 
-        echo '</div>';
+        <?php
     }
 
 }

@@ -5,7 +5,7 @@ import borderRadius from "../../../styles/tailwind/extends/borderRadius";
 import fontSize from "../../../styles/tailwind/extends/fontSize";
 
 module.exports = {
-    darkMode: 'class',
+    darkMode: ['selector', '.fluent_theme_dark'],
     important: '.fluent-cart-customer-profile-app',
     content: [
         './resources/public/customer-profile/Vue/**/*.vue',
@@ -43,4 +43,3 @@ module.exports = {
 
     },
 }
-

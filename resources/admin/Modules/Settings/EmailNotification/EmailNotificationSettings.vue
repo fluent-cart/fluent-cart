@@ -1,7 +1,6 @@
 <script setup>
-import * as Card from "@/Bits/Components/Card/Card.js";
-import {computed, getCurrentInstance, onMounted, ref} from "vue";
-import {useRoute, useRouter} from "vue-router";
+import {computed, nextTick, onMounted, ref} from "vue";
+import {useRoute} from "vue-router";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
@@ -9,15 +8,14 @@ import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Str from "@/utils/support/Str";
+import Url from "@/utils/support/Url";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
-import CardHeader from "@/Bits/Components/Card/CardHeader.vue";
-import CardBody from "@/Bits/Components/Card/CardBody.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
+const route = useRoute();
 
 const loading = ref(true);
 const notifications = ref([]);
-const router = useRouter();
-const route = useRoute();
 
 const groupedNotifications = computed(() => {
   if (!notifications.value.length) {
@@ -53,6 +51,9 @@ const getNotifications = () => {
       })
       .finally(() => {
         loading.value = false;
+        nextTick(() => {
+          requestAnimationFrame(() => Url.scrollToHashSection(route.hash));
+        });
       });
 };
 
@@ -91,11 +92,13 @@ onMounted(() => {
     </SettingsHeader>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div v-if="loading" class="fct-all-notification-table-wrap">
         <div
             v-for="i in 2"
             :key="i"
-            class="fct-card fct-notification-group mx-5 mb-4 rounded border border-solid border-gray-divider overflow-hidden dark:border-dark-400"
+            class="fct-card fct-notification-group mb-4 rounded border border-solid border-gray-divider overflow-hidden dark:border-dark-400"
         >
           <el-skeleton animated>
             <template #template>
@@ -129,13 +132,14 @@ onMounted(() => {
           <div
               v-for="group in groupedNotifications"
               :key="group.key"
-              class="fct-card fct-notification-group mx-5 mb-4 last:mb-0 rounded border border-solid border-gray-divider overflow-hidden dark:border-dark-400"
+              :id="group.key"
+              class="fct-card fct-notification-group overflow-hidden"
           >
 
             <div class="fct-card-header">
               <div class="w-full pb-2">
                 <div class="flex items-center justify-between gap-2 pb-2">
-                  <h4 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ group.label }}</h4>
+                  <h4 class="fct-card-header-title">{{ group.label }}</h4>
                   <span class="text-xs text-system-mid dark:text-gray-300">
                       {{ group.items.length }} {{ translate('Notifications') }}
                     </span>
@@ -155,60 +159,62 @@ onMounted(() => {
               </div>
 
             </div>
-            <el-table :data="group.items" :show-header="true">
-              <el-table-column
-                  prop="title"
-                  :label="translate('Notification Name')"
-                  min-width="320"
-              >
-                <template #default="scope">
-                  <h4 class="m-0 mb-1">{{ scope.row.title }}</h4>
-                  <p class="m-0 text-xs leading-5 text-system-mid dark:text-gray-300">{{ scope.row.description }}</p>
-                </template>
-              </el-table-column>
+            <div class="fct-card-body px-0 pb-0 pt-0">
+                <el-table :data="group.items" :show-header="true">
+                    <el-table-column
+                        prop="title"
+                        :label="translate('Notification Name')"
+                        min-width="320"
+                    >
+                        <template #default="scope">
+                        <h4 class="m-0 mb-1">{{ scope.row.title }}</h4>
+                        <p class="m-0 text-xs leading-5 text-system-mid dark:text-gray-300">{{ scope.row.description }}</p>
+                        </template>
+                    </el-table-column>
 
-              <el-table-column
-                  prop="recipient"
-                  :label="translate('Recipient')"
-                  min-width="120"
-              >
-                <template #default="scope">
-                  <p class="m-0 text-sm">{{ Str.headline(scope.row.recipient) }}</p>
-                </template>
-              </el-table-column>
+                    <el-table-column
+                        prop="recipient"
+                        :label="translate('Recipient')"
+                        min-width="120"
+                    >
+                        <template #default="scope">
+                        <p class="m-0 text-sm">{{ Str.headline(scope.row.recipient) }}</p>
+                        </template>
+                    </el-table-column>
 
-              <el-table-column :label="translate('Enabled')" min-width="220">
-                <template #default="scope">
-                  <div class="fct-all-notification-actions flex items-center justify-between gap-3">
-                    <el-switch
-                        v-if="scope.row?.manage_toggle !== 'no'"
-                        @change="value => enableNotification(value, scope.row.name)"
-                        v-model="scope.row.settings.active"
-                        active-value="yes"
-                        inactive-value="no"
-                    ></el-switch>
-                    <span v-if="scope.row?.manage_toggle === 'no'" class="text-system-mid text-xs leading-5 dark:text-gray-300">
-                        {{ scope.row?.toggle_label || translate('Auto-enabled') }}
-                      </span>
-                    <div class="fct-btn-group sm flex-shrink-0">
-                      <el-tooltip effect="dark" :content="translate('Edit')" placement="top"
-                                  popper-class="fct-tooltip">
+                    <el-table-column :label="translate('Enabled')" min-width="220">
+                        <template #default="scope">
+                        <div class="fct-all-notification-actions flex items-center justify-between gap-3">
+                            <el-switch
+                                v-if="scope.row?.manage_toggle !== 'no'"
+                                @change="value => enableNotification(value, scope.row.name)"
+                                v-model="scope.row.settings.active"
+                                active-value="yes"
+                                inactive-value="no"
+                            ></el-switch>
+                            <span v-if="scope.row?.manage_toggle === 'no'" class="text-system-mid text-xs leading-5 dark:text-gray-300">
+                                {{ scope.row?.toggle_label || translate('Auto-enabled') }}
+                            </span>
+                            <div class="fct-btn-group sm flex-shrink-0">
+                            <el-tooltip effect="dark" :content="translate('Edit')" placement="top"
+                                        popper-class="fct-tooltip">
 
-                        <IconButton
-                            :to="{
-                                name: 'email_notifications/edit',
-                                params: { name: scope.row.name },
-                              }"
-                            size="x-small"
-                            hover="primary">
-                          <DynamicIcon name="Edit"/>
-                        </IconButton>
-                      </el-tooltip>
-                    </div>
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
+                                <IconButton
+                                    :to="{
+                                        name: 'email_notifications/edit',
+                                        params: { name: scope.row.name },
+                                    }"
+                                    size="x-small"
+                                    hover="primary">
+                                <DynamicIcon name="Edit"/>
+                                </IconButton>
+                            </el-tooltip>
+                            </div>
+                        </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
           </div>
         </template>
 

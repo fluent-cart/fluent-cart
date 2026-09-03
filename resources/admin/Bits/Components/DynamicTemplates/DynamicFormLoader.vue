@@ -50,7 +50,7 @@ defineExpose({getState, resetForm, resetOnSave})
         :submitButtonText="submit_button_text"
         :form="form"
 
-        @onSubmitButtonClick="()=>{
+        @on-submit-button-click="()=>{
           let value = form.values;
         }"
 

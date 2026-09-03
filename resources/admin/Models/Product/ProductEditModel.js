@@ -10,6 +10,11 @@ import Rest from "@/utils/http/Rest";
 import Confirmation from "@/utils/Confirmation";
 import AppConfig from "@/utils/Config/AppConfig";
 import Arr from "@/utils/support/Arr";
+import {
+    buildSimpleVariantUpdatePayload,
+    buildVariantUpdatePayload,
+    normalizeDefaultVariationIdForSave,
+} from "@/Models/Product/productUpdatePayload";
 
 class ProductEditModel extends ProductBaseModel {
 
@@ -23,6 +28,7 @@ class ProductEditModel extends ProductBaseModel {
         hasChange: false,
         saving: false,
         product_snapshot: {},
+        discardKey: 0,
         savedVariationLength: 0,
         productDownloadableModel: null,
         metaValue: null,
@@ -40,6 +46,24 @@ class ProductEditModel extends ProductBaseModel {
         this.data.onProductUpdatedListener[name] = callback;
     }
 
+    // Fire registered product-updated listeners. The main save paths notify all
+    // listeners inline (a full save legitimately resets forms, refetches data,
+    // etc.). Flows that only change part of the product — e.g. advanced-variation
+    // regenerate, which persists variant options but nothing else — pass `names`
+    // to notify just the listeners that need it (the bundle/variant-list refetch)
+    // without invoking unrelated ones like the form-reset, which would clobber a
+    // merchant's unsaved edits in other panels. Omit `names` to notify all.
+    triggerProductUpdated(names = null) {
+        const listeners = this.data.onProductUpdatedListener;
+        const targets = Array.isArray(names) ? names : Object.keys(listeners);
+        targets.forEach(name => {
+            const callback = listeners[name];
+            if (typeof callback === 'function') {
+                callback(this.product);
+            }
+        });
+    }
+
     setProductDownloadableModel(model) {
         this.data.productDownloadableModel = model;
     }
@@ -49,11 +73,66 @@ class ProductEditModel extends ProductBaseModel {
     }
 
     saveSnapshot() {
-        this.data.product_snapshot = this.data.product;
+        this.data.product_snapshot = JSON.parse(JSON.stringify(this.data.product));
     }
 
-    restoreSnapshot() {
-        this.data.product_snapshot = this.data.product;
+    _mergeOtherInfo = (target, source) => {
+        const src = JSON.parse(JSON.stringify(source));
+        Object.keys(src).forEach(key => { target[key] = src[key]; });
+        Object.keys(target).forEach(key => { if (!(key in src)) delete target[key]; });
+    }
+
+    _mergeSnapshot = (snapshot) => {
+        const product = this.data.product;
+
+        // Skip fields that are either identifiers or managed by their own endpoints
+        const skipTop = new Set(['ID', 'guid', 'variants', 'detail', 'downloadable_files', 'product_terms', 'taxonomies', 'variantOptions']);
+
+        Object.keys(snapshot).forEach(field => {
+            if (skipTop.has(field)) return;
+            const val = snapshot[field];
+            product[field] = (val !== null && typeof val === 'object')
+                ? JSON.parse(JSON.stringify(val))
+                : val;
+        });
+
+        // Mutate detail in-place so Vue's reactive proxy chain is preserved for deeply
+        // nested bindings like product.detail.other_info.sold_individually
+        if (snapshot.detail && product.detail) {
+            const snapshotDetail = JSON.parse(JSON.stringify(snapshot.detail));
+            Object.keys(snapshotDetail).forEach(key => {
+                if (key === 'other_info') return;
+                product.detail[key] = snapshotDetail[key];
+            });
+            if (snapshotDetail.other_info) {
+                if (!product.detail.other_info) product.detail.other_info = {};
+                this._mergeOtherInfo(product.detail.other_info, snapshotDetail.other_info);
+            }
+        }
+
+        // Merge variants by ID — variants added/deleted via their own endpoints are preserved
+        // Mutate variant fields in-place (same reason as detail above)
+        if (Array.isArray(snapshot.variants) && Array.isArray(product.variants)) {
+            const snapById = {};
+            snapshot.variants.forEach(v => { if (v.id) snapById[v.id] = v; });
+
+            const skipVariant = new Set(['id', 'post_id', 'rowId', 'media', 'created_at', 'updated_at']);
+            product.variants.forEach(variant => {
+                const snap = snapById[variant.id];
+                if (!snap) return; // created after snapshot via its own endpoint — preserve it
+                Object.keys(snap).forEach(key => {
+                    if (skipVariant.has(key)) return;
+                    const val = snap[key];
+                    if (key === 'other_info' && variant.other_info) {
+                        this._mergeOtherInfo(variant.other_info, val);
+                    } else {
+                        variant[key] = (val !== null && typeof val === 'object')
+                            ? JSON.parse(JSON.stringify(val))
+                            : val;
+                    }
+                });
+            });
+        }
     }
 
     get product() {
@@ -172,6 +251,9 @@ class ProductEditModel extends ProductBaseModel {
             other_info: {
                 description: '',
                 payment_type: 'onetime',
+                tax_class: 'standard',
+                tax_exempt: 'no',
+                tax_inclusion: '',
                 times: '',
                 repeat_interval: 'yearly',
                 billing_summary: '',
@@ -188,19 +270,23 @@ class ProductEditModel extends ProductBaseModel {
         };
     }
 
+    // Amounts stay in CENTS end to end — see the note on ProductRoute.vue's
+    // formatPricing. This used to divide by 100 for the old dollars-in contract.
     formatPricing = (prices) => {
-        let result = {};
-
         prices.forEach((pricing, idx) => {
-            pricing.item_price = (pricing.item_price) ? formatNumber(pricing.item_price, false) : 0;
-            pricing.item_cost = (pricing.item_cost) ? formatNumber(pricing.item_cost, false) : 0;
-            pricing.compare_price = (pricing.compare_price) ? formatNumber(pricing.compare_price, false) : 0;
+            // Cents, end to end. #2223 fixed the same round-trip bug by storing a
+            // canonical dot-decimal string here; taking cents removes the class of
+            // bug instead — there is no string to mis-parse and no separator to
+            // truncate at. PriceInput renders these as dollars for the merchant.
+            pricing.item_price = (pricing.item_price) ? Number(pricing.item_price) : 0;
+            pricing.item_cost = (pricing.item_cost) ? Number(pricing.item_cost) : 0;
+            pricing.compare_price = (pricing.compare_price) ? Number(pricing.compare_price) : 0;
 
-            pricing.other_info.signup_fee = (pricing.other_info.signup_fee) ? formatNumber(pricing.other_info.signup_fee, false) : 0;
+            if (pricing.other_info) {
+                pricing.other_info.signup_fee = (pricing.other_info.signup_fee) ? Number(pricing.other_info.signup_fee) : 0;
+            }
 
             pricing.rowId = idx;
-
-            result[pricing.id] = pricing;
         });
 
         return prices;
@@ -220,10 +306,10 @@ class ProductEditModel extends ProductBaseModel {
         }
         this.data.product_changes.variants[index][name] = value;
         this.data.product_changes.variants[index]['id'] = this.product.variants[index]['id'];
-        // if(name === 'compare_price') {
-        //     this.product.variants[index]['compare_price'] = ( value <= 0 )? '' : value
-        // }
 
+        if (name === 'item_price' || name === 'compare_price') {
+            this.validateComparePrice(index);
+        }
 
         this.setHasChange(true)
     }
@@ -253,10 +339,14 @@ class ProductEditModel extends ProductBaseModel {
             let occurrence = !parseInt(variant.other_info.times) ? translate('Until Cancel') :
                 /* translators: %s is the number of times */
                 translate('for %s Times', variant?.other_info?.times);
-            this.data.product_changes.variants[index]['billing_summary'] = `${variant.item_price} ${variant.other_info.repeat_interval} ${occurrence}`;
+            // item_price is in cents; this string is shown to the merchant and
+            // stored for display, so it has to be formatted as currency —
+            // interpolating the raw value rendered "1999 yearly" for $19.99.
+            const billingSummary = `${formatNumber(variant.item_price, true)} ${variant.other_info.repeat_interval} ${occurrence}`;
+            this.data.product_changes.variants[index]['billing_summary'] = billingSummary;
             this.data.product_changes.variants[index]['id'] = variant.id;
             this.data.product_changes.detail['id'] = this.product.detail.id;
-            return variant.other_info.billing_summary = `${variant.item_price} ${variant.other_info.repeat_interval} ${occurrence}`;
+            return variant.other_info.billing_summary = billingSummary;
         }
         this.data.product_changes.variants[index]['billing_summary'] = '';
         this.data.product_changes.variants[index]['id'] = variant.id;
@@ -264,19 +354,48 @@ class ProductEditModel extends ProductBaseModel {
         return variant.other_info.billing_summary = "";
     }
 
+    /**
+     * Renumber the variations after a drag-reorder.
+     *
+     * The new order is merged into whatever is already staged rather than
+     * replacing it: this used to overwrite product_changes.variants outright, so
+     * editing three prices and then dragging a row sent only the serial_index
+     * values. The prices stayed visible in the grid — they live on
+     * this.product.variants — and were silently never saved.
+     *
+     * Rebuilding the array in the new order is safe because
+     * buildVariantUpdatePayload matches records by id, not by array position.
+     */
     updateVariantSerialIndexes(variants) {
         variants.forEach((variant, index) => {
             variant.serial_index = index + 1;
         });
-        if (!this.data.product_changes?.variants) {
-            this.data.product_changes.variants = [];
-        }
 
-        this.data.product_changes.variants = variants.map(v => ({
-            id: v.id,
-            serial_index: v.serial_index,
+        const staged = Array.isArray(this.data.product_changes.variants)
+            ? this.data.product_changes.variants
+            : [];
+
+        const stagedById = new Map();
+        staged.filter(Boolean).forEach((record) => {
+            if (record.id !== undefined && record.id !== null) {
+                stagedById.set(String(record.id), record);
+            }
+        });
+
+        this.data.product_changes.variants = variants.map((variant) => ({
+            ...(stagedById.get(String(variant.id)) || {}),
+            id: variant.id,
+            serial_index: variant.serial_index,
         }));
+
         this.setHasChange(true);
+    }
+
+    // Bulk-apply field changes (price, compare price, status, stock) to many
+    // variants at once. Used by the Advanced Variation editor's bulk action
+    // bar; served by ProductVariationController::bulkUpdate.
+    bulkUpdateVariants(updates) {
+        return Rest.post('products/variants/bulk-update', {updates});
     }
 
     onUploadPricingMedia = (name, index, value) => {
@@ -344,7 +463,7 @@ class ProductEditModel extends ProductBaseModel {
                     callback(this.product);
                 }
             })
-            //this.saveSnapshot();
+            this.saveSnapshot();
             return response;
         })
             .catch((errors) => {
@@ -376,15 +495,12 @@ class ProductEditModel extends ProductBaseModel {
             this.onChangePricingPayment(variant, value, index)
         }
 
-        if (name === 'fulfillment_type') {
-            // check if fulfillment_type exist in product_changes.details
-            if (!this.data.product_changes.detail) {
-                this.data.product_changes.detail = {};
-            }
-
-            this.data.product_changes.detail.fulfillment_type = value;
-            this.data.product_changes.variants[index]['fulfillment_type'] = value;
-        }
+        // No product-level write here. Fulfilment is per variation on every type
+        // except simple, where the single variation IS the product — the simple
+        // branch below stages detail.fulfillment_type for that case. Writing it
+        // unconditionally meant flipping one variant to Digital in the drawer and
+        // closing without saving still posted the whole product as digital on the
+        // next Update. The variant's own column is staged generically below.
 
         // if(name === 'compare_price') {
         //   variant['compare_price'] = ( value <= 0 )? 1 : value
@@ -424,13 +540,26 @@ class ProductEditModel extends ProductBaseModel {
             this.setHasChange(true)
         }
 
-
+        if (name === 'item_price' || name === 'compare_price') {
+            this.validateComparePrice(index);
+        }
     }
 
     updatePricingOtherValue = (name, value, index = null, variant, modeType = '') => {
         this.ensureVariationIndex(index);
 
-        if (['payment_type', 'times', 'repeat_interval', 'manage_setup_fee', 'signup_fee_name', 'signup_fee', 'billing_summary', 'setup_fee_per_item', 'purchasable', 'weight', 'length', 'width', 'height', 'package_slug', 'weight_unit', 'manage_stock'].includes(name)) {
+        // trial_days and installment were missing, so updatePricingOtherValue ran no
+        // branch for them at all and staged nothing. They survived only on simple
+        // products, where the fall-through below copies the whole live variant, and
+        // in the drawer, which saves through its own endpoint — anywhere else the
+        // edit was silently dropped. manage_cost is deliberately NOT here: it is a
+        // top-level column, not an other_info key, and routes through
+        // updatePricingValue.
+        const variantOtherInfoFields = ['payment_type', 'times', 'repeat_interval', 'trial_days', 'installment', 'manage_setup_fee', 'signup_fee_name', 'signup_fee', 'billing_summary', 'setup_fee_per_item', 'purchasable', 'tax_class', 'tax_exempt', 'tax_inclusion', 'weight', 'length', 'width', 'height', 'package_slug', 'weight_unit', 'manage_stock'];
+
+        if (variantOtherInfoFields.includes(name)) {
+            // Tax settings belong to the variation payload so product saves and
+            // the calculator both read the same contract.
             if (index !== undefined) {
                 this.clearValidationError(`${index}.other_info.${name}`)
             }
@@ -464,7 +593,11 @@ class ProductEditModel extends ProductBaseModel {
             this.data.product_changes.variants[index]['id'] = variant.id;
             this.data.product_changes.detail['id'] = this.product.detail.id;
 
-            this.onChangePricingPayment(variant, value, index);
+            // Tax fields are not payment fields; routing them through the
+            // billing-summary logic corrupts the pending save payload.
+            if (['payment_type', 'times', 'repeat_interval', 'manage_setup_fee', 'signup_fee_name', 'signup_fee', 'billing_summary', 'setup_fee_per_item', 'purchasable'].includes(name)) {
+                this.onChangePricingPayment(variant, value, index);
+            }
         }
 
         if (['media'].includes(name)) {
@@ -514,7 +647,8 @@ class ProductEditModel extends ProductBaseModel {
                 return Rest.delete(`products/variants/${id}`)
                     .then(response => {
                         Notify.success(response.message);
-                        this.afterDeletingPricing(index)
+                        this.afterDeletingPricing(index);
+                        this.saveSnapshot();
                     })
                     .catch((errors) => {
                         if (errors?.status_code == '422') {
@@ -580,33 +714,67 @@ class ProductEditModel extends ProductBaseModel {
         }
     }
 
-    onChangeNewStock = (name, value, index) => {
-        if (!this.product.variants[index]) {
-            this.data.product_changes.variants = [];
+    /**
+     * Resolve the variation these stock helpers act on.
+     *
+     * The drawer passes fieldKey="variants" where the inventory grid passes a row
+     * index, so indexing product.variants blindly returned undefined. Both callers
+     * already hand over the variation object, and on a non-simple product the
+     * drawer's copy is a clone (ProductPricingForm cloneVariant) — writing through
+     * the index would edit the grid row instead of the row being saved.
+     */
+    resolveStockVariant = (index, variant) => {
+        if (variant) {
+            return variant;
         }
 
-        this.ensureVariationIndex(index);
-
-        if (value === '') {
-            this.product.variants[index]['new_stock'] = 0;
-            this.data.product_changes.variants[index]['new_stock'] = 0;
-        }
-        let oldStock = this.product.variants[index]['total_stock'] ?? 0;
-        let newStock = this.product.variants[index]['new_stock'] ?? 0;
-        let adjustedStock = parseInt(newStock.toString()) - parseInt(oldStock);
-        this.product.variants[index]['adjusted_quantity'] = adjustedStock;
-        this.data.product_changes.variants[index]['adjusted_quantity'] = adjustedStock;
-        this.data.product_changes.variants[index]['id'] = this.product.variants[index]['id'];
+        return Array.isArray(this.product.variants) ? this.product.variants[index] : undefined;
     }
 
-    onChangeAdjustedQuantity = (name, value, index) => {
+    /**
+     * Recompute "Adjusted by" from a typed "New Stock".
+     *
+     * Nothing is staged into product_changes: `new_stock` and `adjusted_quantity`
+     * are not columns (VARIANT_MUTABLE_FIELDS drops both), and the real write is
+     * the Apply button's own PUT products/{id}/update-inventory/{variantId}. The
+     * previous version reset product_changes.variants to [] whenever the lookup
+     * missed — which is exactly when it missed — destroying every price or title
+     * edit staged before the merchant touched this field.
+     */
+    onChangeNewStock = (name, value, index, variant = null) => {
+        const target = this.resolveStockVariant(index, variant);
 
-        this.ensureVariationIndex(index);
+        if (!target) {
+            return;
+        }
+
+        if (value === '') {
+            target['new_stock'] = 0;
+        }
+
+        const oldStock = parseInt(target['total_stock'] ?? 0);
+        const newStock = parseInt(target['new_stock'] ?? 0);
+
+        target['adjusted_quantity'] = newStock - oldStock;
+    }
+
+    /**
+     * Recompute "New Stock" from a typed "Adjusted by". See onChangeNewStock.
+     */
+    onChangeAdjustedQuantity = (name, value, index, variant = null) => {
+        const target = this.resolveStockVariant(index, variant);
+
+        if (!target) {
+            return;
+        }
+
         if (value === '') {
             value = 0;
         }
-        let newStock = this.product.variants[index]['total_stock'] + parseInt(value);
-        this.product.variants[index]['new_stock'] = (newStock < 0) ? 0 : newStock;
+
+        const newStock = parseInt(target['total_stock'] ?? 0) + parseInt(value);
+
+        target['new_stock'] = (newStock < 0) ? 0 : newStock;
     }
     /* Inventory Management end */
 
@@ -637,7 +805,38 @@ class ProductEditModel extends ProductBaseModel {
                 this.product.detail = {};
             }
 
-            this.data.product_changes.detail['default_variation_id'] = value;
+            // Stage the detail row id so the backend update endpoint
+            // PATCHes the right row, and flip hasChange so the top
+            // "Update" button enables. The branch was previously only
+            // staging the value, so a picked default would render in
+            // the el-select but never persist on save.
+            //
+            // Clearing the el-select emits `undefined`, which JSON.stringify
+            // would drop from the request entirely — see
+            // productUpdatePayload.js for why that silently preserves the old
+            // default instead of clearing it.
+            this.data.product_changes.detail['default_variation_id'] = normalizeDefaultVariationIdForSave(value);
+            this.data.product_changes.detail['id'] = this.product.detail.id;
+            this.setHasChange(true);
+        }
+
+        if (name === 'manage_downloadable') {
+            if (!this.data.product_changes.detail) {
+                this.data.product_changes.detail = {};
+            }
+            if (!this.product.detail) {
+                this.product.detail = {};
+            }
+
+            // Same shape as default_variation_id above, and the same bug it had:
+            // the switch mutated product.detail through v-model and flipped
+            // hasChange, but nothing ever staged the column, so update() posted
+            // detail as {id, fulfillment_type, variation_type} and the toggle was
+            // dropped in both directions while the toast reported success.
+            this.product.detail.manage_downloadable = value;
+            this.data.product_changes.detail['manage_downloadable'] = value;
+            this.data.product_changes.detail['id'] = this.product.detail.id;
+            this.setHasChange(true);
         }
 
         if (name === 'fulfillment_type') {
@@ -687,15 +886,21 @@ class ProductEditModel extends ProductBaseModel {
         }
 
         if ([
-            'tax_class',
             'group_pricing_by',
             'use_pricing_table',
             'active_editor',
-            'sold_individually'
+            'sold_individually',
+            'reviews_enabled'
         ].includes(name)) {
 
-            this.ensureVariationIndex(0);
-
+            // No ensureVariationIndex() here: these are product-detail settings and
+            // must not open a variant change record. It created `variants[0] = {}`
+            // for every type but wrote the id only for `simple`, so on
+            // simple_variations / advanced_variations the payload builder had no id
+            // to match and could emit only {post_id} — the save then failed with
+            // "Title is required." and "Invalid fulfillment type." With no record at
+            // all, a simple product's row is rebuilt from the stored variation and
+            // the other types send no variant row, which is what they need.
             if (!this.data.product_changes.detail) {
                 this.data.product_changes.detail = {};
             }
@@ -718,10 +923,11 @@ class ProductEditModel extends ProductBaseModel {
 
             // tax_class also updates product_changes
             this.data.product_changes.detail.other_info[name] = value;
-            if (this.product.detail.variation_type === 'simple') {
-                this.data.product_changes.detail['id'] = this.product.detail.id;
-                this.data.product_changes.variants[0]['id'] = this.product.variants[0]['id'];
-            }
+
+            // Always stage the detail id: ProductDetailResource::update() bails
+            // without it and the setting is dropped while the toast still says the
+            // product was updated.
+            this.data.product_changes.detail['id'] = this.product.detail.id;
 
         }
 
@@ -762,8 +968,45 @@ class ProductEditModel extends ProductBaseModel {
         }
     }
 
+    // Strike-through pricing rule: a non-zero compare_price must be >= the
+    // variant's item_price. Surfaces an inline validation error instead of
+    // silently clearing the bad value (the old behavior wiped the field
+    // without telling the merchant). Re-evaluated whenever item_price or
+    // compare_price changes — either side moving can invalidate the pair.
+    // Returns true when the pair is valid (or no compare_price set), false
+    // when an error was raised, so callers can short-circuit downstream
+    // side-effects (e.g. block the inline commit toast).
+    validateComparePrice = (variantIndex) => {
+        if (variantIndex === undefined || variantIndex === null) return true;
+        const variant = this.product?.variants?.[variantIndex];
+        if (!variant) return true;
+        const key = `variants.${variantIndex}.compare_price`;
+        const itemPrice = parseFloat(variant.item_price);
+        const comparePrice = parseFloat(variant.compare_price);
+        // No compare_price set → nothing to validate.
+        if (isNaN(comparePrice) || comparePrice <= 0) {
+            this.clearValidationError(key);
+            return true;
+        }
+        if (!isNaN(itemPrice) && comparePrice < itemPrice) {
+            this.validationErrors[key] = [
+                translate('Compare price must be greater than or equal to item price.')
+            ];
+            return false;
+        }
+        this.clearValidationError(key);
+        return true;
+    }
+
     discard = () => {
-        return window.location.reload();
+        const snapshot = this.data.product_snapshot;
+        if (!snapshot || !Object.keys(snapshot).length) {
+            return;
+        }
+        this._mergeSnapshot(snapshot);
+        this.data.product_changes = {};
+        this.data.discardKey++;
+        this.setHasChange(false);
     }
 
     update = async (successMessage = null) => {
@@ -808,59 +1051,34 @@ class ProductEditModel extends ProductBaseModel {
         this.setSaving(true)
 
 
-        if (data.detail?.variation_type === 'simple') {
-            if (!data.variants) {
-                data.variants = [];
-            }
-            if (!Array.isArray(data.variants) || data.variants.length === 0) {
-                const firstVariant = this.product.variants?.[0] || {};
-                data.variants[0] = {
-                    id: firstVariant.id,
-                    variation_title: data.post_title || firstVariant.variation_title,
-                    item_price: firstVariant.item_price ?? '',
-                    post_id: this.product.ID,
-                };
-            }
-        }
-
-
         delete data.taxonomies;
         delete data.product_terms;
         delete data.variantOptions;
         delete data.downloadable_files;
 
 
-        if (data.detail?.variation_type !== 'simple') {
-            if (data.variants) {
-                let formattedVariants = [];
-                data.variants.forEach(variant => {
-                    formattedVariants.push({
-                        id: variant.id,
-                        variation_title: variant.variation_title,
-                        sku: variant.sku,
-                        item_price: variant.item_price,
-                        compare_price: variant.compare_price,
-                        item_cost: variant.item_cost,
-                        manage_cost: variant.manage_cost,
-                        fulfillment_type: variant.fulfillment_type,
-                        shipping_class: variant.shipping_class,
-                        other_info: variant.other_info,
-                        manage_stock: variant.manage_stock,
-                        serial_index: variant.serial_index,
-                        total_stock: variant.total_stock,
-                        available: variant.available,
-                        committed: variant.committed,
-                        on_hold: variant.on_hold,
-                        stock_status: variant.stock_status,
-                        sold_individually: variant.sold_individually,
-                        media: variant.media,
-                        downloadable: variant.downloadable,
-                        payment_type: variant.payment_type,
-                    });
-                });
-
-                data.variants = formattedVariants;
-            }
+        // data.variants holds change records, not variations: onChangePricing()
+        // writes only `{id, <changed field>}`. Reading the row's own keys sent
+        // `variation_title: undefined` and never carried post_id at all, so the save
+        // was rejected with "Title is required.", "Invalid fulfillment type." and
+        // "variants.0.post_id is required."
+        //
+        // Simple products used to skip this merge and hand-roll a row instead, which
+        // only ran when nothing on the variation had changed and carried no
+        // other_info — so editing a simple product's title, price or fulfilment
+        // failed the same way the advanced editor once did.
+        if (data.detail?.variation_type === 'simple') {
+            data.variants = buildSimpleVariantUpdatePayload(
+                data.variants,
+                this.product.variants,
+                this.product.ID
+            );
+        } else if (data.variants) {
+            data.variants = buildVariantUpdatePayload(
+                data.variants,
+                this.product.variants,
+                this.product.ID
+            );
         }
 
 
@@ -921,7 +1139,7 @@ class ProductEditModel extends ProductBaseModel {
             );
 
             this.data.product_changes = {};
-
+            this.saveSnapshot();
 
             Object.values(this.data.onProductUpdatedListener).forEach(callback => {
                 if(typeof callback === 'function'){
@@ -976,6 +1194,12 @@ class ProductEditModel extends ProductBaseModel {
     }
 
     updateVariationType = (name, value) => {
+        // Remember the current type so a rejected switch can be rolled back. The
+        // mutation below is optimistic; without the restore in catch, a failed
+        // request (e.g. the blocked advanced -> simple downgrade returns 422)
+        // would leave the editor showing a type the server rejected — which then
+        // disables the other dropdown options and strands the merchant.
+        const previousValue = this.product.detail[name];
         this.product.detail[name] = value
 
         let data = {
@@ -1000,10 +1224,18 @@ class ProductEditModel extends ProductBaseModel {
                 if (this.variantsLength() > 0) {
                     this.product.variants[0]['manage_stock'] = this.product.detail.manage_stock;
                 }
+            } else if (name === 'variation_type' && value === 'advanced_variations') {
+                // The server deletes the old Simple Variations variants on switch
+                // to Advanced — clear them locally so the editor doesn't show
+                // now-deleted rows. The merchant builds fresh combinations from
+                // attribute options, which create new variants on generate.
+                this.product.variants = [];
             }
             //this.setHasChange(false)
         })
             .catch((errors) => {
+                // Roll the optimistic change back so the editor matches the server.
+                this.product.detail[name] = previousValue;
                 if (errors.status_code == '422') {
                     Notify.validationErrors(errors);
                 } else {
@@ -1013,6 +1245,10 @@ class ProductEditModel extends ProductBaseModel {
             .finally(() => {
 
             });
+
+        // Returned so the caller (ProductPricing.vue) can roll its own select
+        // value back on failure — the model only owns product.detail.
+        return req;
     }
 
     getMaxExcerptWordCount = () => {

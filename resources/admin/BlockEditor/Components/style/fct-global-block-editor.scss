@@ -671,7 +671,7 @@
   &-list{
     @apply m-0 p-0 list-none #{!important};
     li{
-      @apply m-0 border border-solid border-gray-divider border-l-0 border-r-0 border-t-0 dark:border-dark-400 #{!important};
+      @apply m-0 border border-solid border-gray-divider border-l-0 border-r-0 border-t-0 #{!important};
     }
     .components-base-control__field{
       @apply mb-0;
@@ -725,7 +725,7 @@
     .content-collapsible-btn{
       @apply mr-7.5 w-6.5 h-7.5 inline-flex items-center cursor-pointer flex-shrink-0;
       .icon{
-        @apply flex items-center text-system-dark dark:text-gray-100;
+        @apply flex items-center text-system-dark;
         transition: 0.3s ease-in-out;
       }
       &.is-collapsed{
@@ -746,7 +746,7 @@
     .content-title{
       @apply overflow-hidden;
       .title{
-        @apply text-system-dark text-sm font-medium truncate dark:text-gray-50;
+        @apply text-system-dark text-sm font-medium truncate;
       }
       .text{
         @apply text-xs text-warning-500;
@@ -754,11 +754,11 @@
     }
   }
   &-stock-wrapper{
-    @apply text-sm font-normal text-system-mid text-right dark:text-gray-300;
+    @apply text-sm font-normal text-system-mid text-right;
     flex: 0 0 auto;
   }
   &-value-wrapper{
-    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-right dark:text-gray-300;
+    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-right;
     flex: 0 0 auto;
   }
 

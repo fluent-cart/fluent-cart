@@ -18,6 +18,9 @@ class EmailNotificationRequest extends RequestGuard
             'settings.active'          => 'nullable|sanitizeText',
             'settings.is_default_body' => 'nullable|sanitizeText',
             'settings.attach_pdf_template' => 'nullable|sanitizeText',
+            // Custom per-notification settings (declared by add-ons via the
+            // `fluent_cart/email_notifications` filter as a `fields` schema).
+            'settings.extra'           => 'nullable',
         ];
     }
 
@@ -41,7 +44,10 @@ class EmailNotificationRequest extends RequestGuard
             'settings.email_body'      => 'wp_kses_post',
             'settings.active'          => 'sanitize_text_field',
             'settings.is_default_body' => 'sanitize_text_field',
-            'settings.attach_pdf_template' => 'sanitize_text_field'
+            'settings.attach_pdf_template' => 'sanitize_text_field',
+            'settings.extra'           => function ($value) {
+                return is_array($value) ? map_deep($value, 'sanitize_text_field') : sanitize_text_field($value);
+            },
         ];
     }
 }

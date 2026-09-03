@@ -4,7 +4,7 @@
     'is-expanded': menuState.isMenuExpanded && menuState.isDesktopView
   }">
     <div class="fct-reports-view-inner">
-      <ReportNavLinks @update:menuState="onMenuStateUpdate"/>
+      <ReportNavLinks @update:menu-state="onMenuStateUpdate"/>
 
       <div class="fct-report-body" id="fct-report-body">
         <!-- setting header -->
@@ -32,7 +32,9 @@
               icon="InformationFill"
               :content="
               $t(
-                `Your store is in ${filters.storeMode} mode but you are watching data in ${filters.filterMode} mode.`
+                'Your store is in %1$s mode but you are watching data in %2$s mode.',
+                filters.storeMode,
+                filters.filterMode
               )
             "
           />

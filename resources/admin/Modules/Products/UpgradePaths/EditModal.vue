@@ -115,9 +115,9 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <icon-button size="x-small" tag="button" @click="() =>{showModal = true;}">
+  <IconButton size="x-small" tag="button" @click="() =>{showModal = true;}">
     <DynamicIcon name="Edit"/>
-  </icon-button>
+  </IconButton>
 
 
   <el-drawer
@@ -140,7 +140,7 @@ onBeforeMount(() => {
 
       <div class="fct-form-group">
         <label>{{ $t('To Plan(s)') }}</label>
-        <el-select :disabled="!form.from_variant" v-model="form.to_variants" multiple placeholder="Select" clearable>
+        <el-select :disabled="!form.from_variant" v-model="form.to_variants" multiple :placeholder="$t('Select')" clearable>
           <el-option
               v-for="variant in getVariantOption()"
               :key="variant.id"
@@ -149,7 +149,7 @@ onBeforeMount(() => {
               :disabled="variant.id == form.from_variant"
           />
         </el-select>
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('to_variants')"
             :validation-errors="validationErrors"
             field-key="to_variants"
@@ -168,7 +168,7 @@ onBeforeMount(() => {
         <label>{{ $t('Discount Amount') }}</label>
         <el-input v-model="form.discount_amount" type="number" min="0" @input="handleDiscountInput"/>
 
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('discount_amount')"
             :validation-errors="validationErrors"
             field-key="discount_amount"

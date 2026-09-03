@@ -121,7 +121,7 @@ class FluentCartProductCarousel {
                 settings = JSON.parse(
                     carousel.getAttribute('data-carousel-settings') || '{}'
                 );
-            } catch (e) { console.warn('FluentCart: Invalid carousel settings', e); }
+            } catch (e) { /* invalid JSON — keep defaults */ }
 
             const slidesToShow = Math.max(1, Number(settings.slidesToShow || 3));
             const spaceBetween = Number(settings.spaceBetween || 16);

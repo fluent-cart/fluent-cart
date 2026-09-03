@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "pi_phase29_pending_3ds",
+    "object": "payment_intent",
+    "amount": 12345,
+    "currency": "usd",
+    "status": "requires_action",
+    "latest_charge": null,
+    "next_action": {
+      "type": "use_stripe_sdk"
+    },
+    "last_payment_error": {
+      "code": "payment_intent_authentication_failure",
+      "decline_code": "authentication_required",
+      "message": "The customer did not complete 3D Secure authentication."
+    }
+  }
+}

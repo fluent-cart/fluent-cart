@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Http\Requests;
 
+use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Http\Rules\RequiredWhenRule;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
@@ -59,6 +61,13 @@ class ProductVariationRequest extends RequestGuard
         }
         $data['variants']['other_info'] = $variantOtherInfo;
 
+        if (Arr::get($variantOtherInfo, 'payment_type') === 'onetime') {
+            $subscriptionFields = ['trial_days', 'times', 'repeat_interval', 'billing_summary', 'manage_setup_fee', 'signup_fee', 'signup_fee_name', 'setup_fee_per_item'];
+            foreach ($subscriptionFields as $field) {
+                unset($data['variants']['other_info'][$field]);
+            }
+        }
+
         return $data;
     }
 
@@ -67,6 +76,30 @@ class ProductVariationRequest extends RequestGuard
      */
     public function rules()
     {
+        // total_stock / available / committed / on_hold are `INT(11) NULL DEFAULT 0`
+        // (ProductVariationMigrator), so an empty counter is a legitimate stored state for
+        // a variation that never tracked stock. ProductEditModel::createOrUpdatePricing()
+        // posts the variation back exactly as the drawer loaded it, NULLs included, so
+        // demanding a number unconditionally rejected a plain price edit on such a row.
+        //
+        // This cannot be expressed as `nullable|numeric`: Validator::filterExcludeables()
+        // drops EVERY rule for a falsy value the moment `nullable` is present, which
+        // would disarm the conditional requirement too. It cannot sit beside a
+        // `required_if` string either — filterRequiredIf() discarded this closure along
+        // with every other rule whenever tracking was off, leaving the guard inert. The
+        // requirement is a RequiredWhenRule closure below for that reason.
+        $numericWhenProvided = function ($attribute, $value) {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            if (!is_numeric($value)) {
+                return esc_html__('Stock quantity must be a number.', 'fluent-cart');
+            }
+
+            return null;
+        };
+
         return [
             'variants.variation_title'  => 'required|sanitizeText|maxLength:200',
             'variants.sku'              => 'nullable|sanitizeText|maxLength:30|unique:fct_product_variations,sku' . ($this->get('variants.id') ? ',' . $this->get('variants.id') : ''),
@@ -86,7 +119,13 @@ class ProductVariationRequest extends RequestGuard
                 },
             ],
             'variants.manage_cost'      => 'nullable|sanitizeText|maxLength:10',
-            'variants.item_cost'        => 'required_if:variants.manage_cost,true',
+            'variants.item_cost'        => [
+                RequiredWhenRule::make(
+                    'variants.manage_cost',
+                    'true',
+                    esc_html__('Item cost is required.', 'fluent-cart')
+                ),
+            ],
             'variants.fulfillment_type' => 'required|sanitizeText|maxLength:100',
             'variants.shipping_class'  => function ($attr, $value) {
                 if ($value && !(\FluentCart\App\Models\ShippingClass::find(intval($value)))) {
@@ -96,9 +135,33 @@ class ProductVariationRequest extends RequestGuard
             },
 
             'variants.manage_stock' => 'nullable|numeric',
-            'variants.stock_status' => 'required_if:variants.manage_stock,1|sanitizeText|maxLength:50',
-            'variants.total_stock'  => 'required|numeric',
-            'variants.available'    => 'required|numeric',
+            'variants.stock_status' => [
+                RequiredWhenRule::make(
+                    'variants.manage_stock',
+                    '1',
+                    esc_html__('Stock status is required.', 'fluent-cart')
+                ),
+                'sanitizeText',
+                'maxLength:50',
+            ],
+            // Quantities are only demanded once tracking is actually on, mirroring
+            // stock_status directly above.
+            'variants.total_stock'  => [
+                RequiredWhenRule::make(
+                    'variants.manage_stock',
+                    '1',
+                    esc_html__('Stock quantity is required when inventory tracking is on.', 'fluent-cart')
+                ),
+                $numericWhenProvided,
+            ],
+            'variants.available'    => [
+                RequiredWhenRule::make(
+                    'variants.manage_stock',
+                    '1',
+                    esc_html__('Available quantity is required when inventory tracking is on.', 'fluent-cart')
+                ),
+                $numericWhenProvided,
+            ],
             // 'variants.available' => [
             //     'required',
             //     'numeric',
@@ -109,27 +172,92 @@ class ProductVariationRequest extends RequestGuard
             //         return null;
             //     },
             // ],
-            'variants.committed'    => 'required|numeric',
-            'variants.on_hold'      => 'required|numeric',
+            // Ledger columns the merchant never edits — they are maintained by the stock
+            // listeners, so they only have to be a number when the payload carries one.
+            'variants.committed'    => [$numericWhenProvided],
+            'variants.on_hold'      => [$numericWhenProvided],
 
             'variants.serial_index' => 'nullable|numeric',
 
             'variants.other_info'                  => 'required|array',
             'variants.other_info.description'      => 'nullable|sanitizeTextArea|maxLength:255',
             'variants.other_info.payment_type'     => 'required|sanitizeText|in:onetime,subscription',
-            'variants.other_info.times'            => 'nullable|numeric',
-            'variants.other_info.trial_days'       => 'nullable|numeric|max:365',
-            'variants.other_info.repeat_interval'  => 'required_if:variants.other_info.payment_type,subscription|sanitizeText|maxLength:100',
+            'variants.other_info.times'            => [
+                function ($attribute, $value) {
+                    if ($this->get('variants.other_info.payment_type') !== 'subscription') {
+                        return null;
+                    }
+                    if (!empty($value) && !is_numeric($value)) {
+                        return __('Times must be a number.', 'fluent-cart');
+                    }
+                    return Helper::installmentTimesError($this->get('variants.other_info'));
+                },
+            ],
+            'variants.other_info.trial_days'       => [
+                function ($attribute, $value) {
+                    if ($this->get('variants.other_info.payment_type') !== 'subscription') {
+                        return null;
+                    }
+                    if (!empty($value) && !is_numeric($value)) {
+                        return __('Trial days must be a number.', 'fluent-cart');
+                    }
+                    if (!empty($value) && $value > 365) {
+                        return __('Trial period cannot exceed 365 days.', 'fluent-cart');
+                    }
+                    return null;
+                },
+            ],
+            'variants.other_info.repeat_interval'  => [
+                RequiredWhenRule::make(
+                    'variants.other_info.payment_type',
+                    'subscription',
+                    esc_html__('Interval is required.', 'fluent-cart')
+                ),
+                'sanitizeText',
+                'maxLength:100',
+            ],
             'variants.other_info.billing_summary'  => 'nullable|sanitizeTextArea|maxLength:255',
-            'variants.other_info.manage_setup_fee' => 'required_if:variants.other_info.payment_type,subscription|sanitizeText|maxLength:100',
-            'variants.other_info.signup_fee'       => 'required_if:variants.other_info.manage_setup_fee,yes',
-            'variants.other_info.signup_fee_name'  => 'required_if:variants.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+            'variants.other_info.manage_setup_fee' => [
+                RequiredWhenRule::make(
+                    'variants.other_info.payment_type',
+                    'subscription',
+                    esc_html__('Setup Fee option is required.', 'fluent-cart')
+                ),
+                'sanitizeText',
+                'maxLength:100',
+            ],
+            'variants.other_info.signup_fee'       => [
+                RequiredWhenRule::make(
+                    'variants.other_info.manage_setup_fee',
+                    'yes',
+                    esc_html__('Setup Fee Amount is required.', 'fluent-cart')
+                ),
+            ],
+            'variants.other_info.signup_fee_name'  => [
+                RequiredWhenRule::make(
+                    'variants.other_info.manage_setup_fee',
+                    'yes',
+                    esc_html__('Setup Fee Name is required.', 'fluent-cart')
+                ),
+                'sanitizeText',
+                'maxLength:100',
+            ],
             'variants.other_info.package_slug'     => 'nullable|sanitizeText|maxLength:100',
             'variants.other_info.weight'           => 'nullable|numeric',
             'variants.other_info.weight_unit'      => 'nullable|sanitizeText|maxLength:10',
             'variants.other_info.length'           => 'nullable|numeric',
             'variants.other_info.width'            => 'nullable|numeric',
             'variants.other_info.height'           => 'nullable|numeric',
+            'variants.other_info.tax_class'        => ['nullable', function ($attribute, $value) {
+                if (empty($value)) {
+                    return null;
+                }
+
+                return empty(\FluentCart\App\Models\TaxClass::query()->where('slug', sanitize_text_field($value))->first())
+                    ? __('Invalid Tax Class.', 'fluent-cart')
+                    : null;
+            }],
+            'variants.other_info.tax_exempt'       => 'nullable|sanitizeText|in:yes,no',
 
             'variants.downloadable' => 'nullable|sanitizeText|maxLength:10',
         ];
@@ -164,16 +292,11 @@ class ProductVariationRequest extends RequestGuard
             'variants.item_price.required'       => esc_html__('Price is required.', 'fluent-cart'),
             'variants.item_price.numeric'        => esc_html__('Price must be a number.', 'fluent-cart'),
             'variants.item_price.min'            => esc_html__('Price must be a positive number greater than 0.', 'fluent-cart'),
-            'variants.stock_status.required_if'  => esc_html__('Stock status is required.', 'fluent-cart'),
-            'variants.item_cost.required_if'     => esc_html__('Item cost is required.', 'fluent-cart'),
             'variants.fulfillment_type.required' => esc_html__('Fulfilment Type is required.', 'fluent-cart'),
 
             'variants.other_info.description.max'             => esc_html__('Description may not be greater than 255 characters.', 'fluent-cart'),
             'variants.other_info.payment_type.required'       => esc_html__('Payment Type is required.', 'fluent-cart'),
             'variants.other_info.times.required_if'           => esc_html__('Times is required.', 'fluent-cart'),
-            'variants.other_info.repeat_interval.required_if' => esc_html__('Interval is required.', 'fluent-cart'),
-            'variants.other_info.signup_fee.required_if'      => esc_html__('Setup Fee Amount is required.', 'fluent-cart'),
-            'variants.other_info.signup_fee_name.required_if' => esc_html__('Setup Fee Name is required.', 'fluent-cart'),
             'variants.other_info.trial_days.numeric'          => esc_html__('Trial days must be a number.', 'fluent-cart'),
             'variants.other_info.trial_days.max'              => esc_html__('Trial period cannot exceed 365 days.', 'fluent-cart'),
         ];
@@ -237,6 +360,8 @@ class ProductVariationRequest extends RequestGuard
             'variants.other_info.length'           => 'floatval',
             'variants.other_info.width'            => 'floatval',
             'variants.other_info.height'           => 'floatval',
+            'variants.other_info.tax_class'        => 'sanitize_text_field',
+            'variants.other_info.tax_exempt'       => 'sanitize_text_field',
             //'variants.other_info.purchasable'      => 'sanitize_text_field',
         ];
 

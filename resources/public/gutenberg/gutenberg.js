@@ -1,8 +1,4 @@
 window.addEventListener("load", (event) => {
-
-
-    console.log(window.gutenSettings,
-        window.gutenContext)
     if (typeof wp !== "undefined" && wp.editPost) {
         wp.editPost.initializeEditor(
             "gutenberg-editor",
@@ -17,13 +13,12 @@ window.addEventListener("load", (event) => {
             const content = wp.data.select("core/editor").getEditedPostContent();
             window.parent.postMessage(
                 {
-                    type: 'getuenbergContentChanged',
+                    type: 'gutenbergContentChanged',
                     content: content
                 },
                 '*'
             );
         });
     }else{
-        console.log("Not loaded")
     }
 });

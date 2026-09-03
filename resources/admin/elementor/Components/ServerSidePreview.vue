@@ -43,7 +43,6 @@ const updateIframeData = async (newAttributes) => {
         block: props.block
       }, window.location.origin);
     } catch (error) {
-      console.error('Failed to update iframe via postMessage:', error);
       // Fallback to reload if postMessage fails
       await reloadWithLoading();
     }
@@ -166,7 +165,6 @@ const handleMessage = (event) => {
 
   if (event.data.type === 'IFRAME_READY') {
     // Iframe is ready to receive updates
-    console.log('Iframe ready');
   } else if (event.data.type === 'UPDATE_COMPLETE') {
     // Iframe has finished updating
     isLoading.value = false;

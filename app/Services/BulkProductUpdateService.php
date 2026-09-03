@@ -4,19 +4,24 @@ namespace FluentCart\App\Services;
 
 use FluentCart\Api\Resource\ProductResource;
 use FluentCart\Api\Resource\ProductVariationResource;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Services\Filter\ProductFilter;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Http\Rules\RequiredWhenRule;
+use FluentCart\App\Http\Rules\WhenFilledRule;
 use FluentCart\Framework\Validator\Validator;
 
 class BulkProductUpdateService
 {
     /**
      * Fetch products formatted for bulk editing.
-     * Returns products with decimal prices and category terms.
+     * Returns money in CENTS and category terms. It said "decimal prices" back
+     * when a temporary adapter divided here for a dollars-based grid; the grid
+     * renders cents through PriceInput now, so nothing is scaled on the way out.
      */
     public function fetchForBulkEdit(Request $request): array
     {
@@ -36,7 +41,7 @@ class BulkProductUpdateService
 
     /**
      * Format a single product for the bulk edit spreadsheet.
-     * Converts prices from cents to decimal and attaches categories.
+     * Money stays in cents; PriceInput renders it as dollars in the grid.
      */
     protected function formatProductForEdit(Product $product): array
     {
@@ -70,7 +75,7 @@ class BulkProductUpdateService
             ];
         }
 
-        // Variants — convert prices from cents to decimal
+        // Variants — money stays in cents
         $data['variants'] = [];
         if ($product->variants) {
             foreach ($product->variants as $variant) {
@@ -84,8 +89,10 @@ class BulkProductUpdateService
                     'post_id'         => $variant->post_id,
                     'variation_title' => $variant->variation_title,
                     'sku'             => $variant->sku,
-                    'item_price'      => $variant->item_price / 100,
-                    'compare_price'   => $variant->compare_price / 100,
+                    // Cents, as stored and as the write endpoints now expect.
+                    // PriceInput renders these as dollars for the merchant.
+                    'item_price'      => (int) $variant->item_price,
+                    'compare_price'   => (int) $variant->compare_price,
                     'payment_type'    => $variant->payment_type,
                     'manage_stock'    => (int) $variant->manage_stock,
                     'total_stock'     => (int) $variant->total_stock,
@@ -194,11 +201,58 @@ class BulkProductUpdateService
             ],
             'variants.*.other_info'                  => 'required|array',
             'variants.*.other_info.payment_type'     => 'required|sanitizeText|in:onetime,subscription',
-            'variants.*.other_info.repeat_interval'  => 'nullable|required_if:variants.*.other_info.payment_type,subscription|sanitizeText|in:yearly,half_yearly,quarterly,monthly,weekly,daily',
+            'variants.*.other_info.times'            => [
+                function ($attribute, $value, $rules, $allData) {
+                    $index = explode('.', $attribute)[1];
+
+                    return Helper::installmentTimesError(Arr::get($allData, "variants.$index.other_info"));
+                },
+            ],
+            // Conditional requirements here are closures, not `required_if`, and
+            // the attributes carrying one have no `nullable`: filterExcludeables()
+            // drops EVERY rule — closures included — when `nullable` meets a falsy
+            // value, which is what left these requirements dead. WhenFilledRule
+            // therefore carries the value checks that `nullable` used to guard.
+            //
+            // manage_setup_fee keeps `nullable` on purpose: it is an optional flag
+            // that both services already default to 'no', so demanding it would
+            // reject payloads that simply omit it.
+            'variants.*.other_info.repeat_interval'  => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.payment_type',
+                    'subscription',
+                    __('Interval is required for subscriptions.', 'fluent-cart')
+                ),
+                WhenFilledRule::in(
+                    ['yearly', 'half_yearly', 'quarterly', 'monthly', 'weekly', 'daily'],
+                    __('Interval must be a valid frequency.', 'fluent-cart')
+                ),
+            ],
             'variants.*.other_info.trial_days'        => 'nullable|numeric|min:0|max:365',
-            'variants.*.other_info.manage_setup_fee' => 'nullable|required_if:variants.*.other_info.payment_type,subscription|sanitizeText|in:no,yes',
-            'variants.*.other_info.signup_fee'       => 'nullable|required_if:variants.*.other_info.manage_setup_fee,yes|numeric|min:0',
-            'variants.*.other_info.signup_fee_name'  => 'nullable|required_if:variants.*.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+            'variants.*.other_info.manage_setup_fee' => 'nullable|sanitizeText|in:no,yes',
+            'variants.*.other_info.signup_fee'       => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.manage_setup_fee',
+                    'yes',
+                    __('Setup Fee Amount is required.', 'fluent-cart')
+                ),
+                WhenFilledRule::numericAtLeast(
+                    0,
+                    __('Setup Fee must be a number.', 'fluent-cart'),
+                    __('Setup Fee must be 0 or more.', 'fluent-cart')
+                ),
+            ],
+            'variants.*.other_info.signup_fee_name'  => [
+                RequiredWhenRule::make(
+                    'variants.*.other_info.manage_setup_fee',
+                    'yes',
+                    __('Setup Fee Name is required.', 'fluent-cart')
+                ),
+                WhenFilledRule::text(
+                    100,
+                    __('Setup Fee Name must be plain text of 100 characters or fewer.', 'fluent-cart')
+                ),
+            ],
         ];
 
         $messages = [
@@ -213,15 +267,10 @@ class BulkProductUpdateService
             'variants.*.item_price.min'                          => __('Price must be a positive number.', 'fluent-cart'),
             'variants.*.other_info.payment_type.required'        => __('Payment Type is required.', 'fluent-cart'),
             'variants.*.other_info.payment_type.in'              => __('Payment Type must be onetime or subscription.', 'fluent-cart'),
-            'variants.*.other_info.repeat_interval.required_if'  => __('Interval is required for subscriptions.', 'fluent-cart'),
-            'variants.*.other_info.repeat_interval.in'           => __('Interval must be a valid frequency.', 'fluent-cart'),
             'variants.*.other_info.trial_days.numeric'           => __('Trial days must be a number.', 'fluent-cart'),
             'variants.*.other_info.trial_days.min'               => __('Trial days must be 0 or more.', 'fluent-cart'),
             'variants.*.other_info.trial_days.max'               => __('Trial days may not be greater than 365.', 'fluent-cart'),
             'variants.*.other_info.manage_setup_fee.in'          => __('Setup fee option must be yes or no.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee.required_if'       => __('Setup Fee Amount is required.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee.numeric'           => __('Setup Fee must be a number.', 'fluent-cart'),
-            'variants.*.other_info.signup_fee_name.required_if'  => __('Setup Fee Name is required.', 'fluent-cart'),
         ];
 
         $validator = Validator::make($data, $rules, $messages);
@@ -336,7 +385,7 @@ class BulkProductUpdateService
             throw new \RuntimeException(__('Product not found', 'fluent-cart'));
         }
 
-        // Use ProductResource::update for variants/detail (handles price * 100)
+        // Use ProductResource::update for variants/detail (amounts are cents)
         $updatePayload = [];
 
         // Detail
@@ -388,7 +437,7 @@ class BulkProductUpdateService
             $updatePayload['post_status'] = 'publish';
         }
 
-        // Use ProductResource::update which handles price conversion and variant updates
+        // Use ProductResource::update which handles the variant and detail writes
         if (!empty($updatePayload['variants']) || !empty($updatePayload['detail'])) {
             ProductResource::update($updatePayload, $postId);
         }
@@ -476,10 +525,11 @@ class BulkProductUpdateService
      */
     protected function createVariantForProduct(int $postId, Product $product, array $variantData): void
     {
+        // Amounts arrive in cents; normalize float artifacts without scaling.
         $priceColumns = ['item_price', 'compare_price', 'item_cost'];
         foreach ($priceColumns as $column) {
             if (Arr::has($variantData, $column)) {
-                $variantData[$column] = floatval(Arr::get($variantData, $column, 0)) * 100;
+                $variantData[$column] = Helper::roundCent(Arr::get($variantData, $column, 0));
             }
         }
 
@@ -553,12 +603,16 @@ class BulkProductUpdateService
     }
 
     /**
-     * Convert cents-based fields in other_info to dollars for frontend display.
+     * Normalize the money fields in other_info for the bulk edit grid.
+     *
+     * Despite what this used to say, nothing is converted to dollars: signup_fee
+     * stays in CENTS and is only int-cast, because PriceInput does the rendering.
+     * Reintroducing a division here would halve-by-100 every setup fee in the grid.
      */
     protected function formatOtherInfoForEdit(array $otherInfo): array
     {
         if (!empty($otherInfo['signup_fee']) && is_numeric($otherInfo['signup_fee'])) {
-            $otherInfo['signup_fee'] = (float) $otherInfo['signup_fee'] / 100;
+            $otherInfo['signup_fee'] = (int) $otherInfo['signup_fee'];
         }
 
         return $otherInfo;

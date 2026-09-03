@@ -1,44 +1,9 @@
-/*===== card =====*/
-.card {
-    @apply bg-[var(--fct-customer-dashboard-card-bg)] mb-7.5 mt-0 block max-h-full rounded-[12px] border border-solid border-[var(--fct-customer-dashboard-card-border-color)];
-    box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-
-    .card-header {
-        @apply flex items-center justify-between flex-wrap px-6 pt-5;
-        &.border-bottom{
-            @apply pb-5 border border-solid border-t-0 border-l-0 border-r-0 border-[var(--fct-customer-dashboard-card-border-color)];
-        }
-        &-title {
-            @apply flex items-center gap-2.5 p-0 m-0 text-lg font-semibold text-[var(--fct-customer-dashboard-card-heading-color)];
-            :not(.badge .icon).icon {
-                @apply text-system-mid h-5;
-                svg{
-                  @apply h-5 w-5;
-                }
-            }
-            &.is-small{
-                @apply text-base;
-                :not(.badge .icon).icon {
-                  svg{
-                    @apply h-4.5 w-4.5;
-                  }
-                }
-            }
-        }
-    }
-    .card-body{
-        @apply py-5 px-6;
-    }
-    .el-pagination.is-background{
-        @apply -mr-3;
-    }
-}
 
 .fct-product-info-card{
     @apply flex items-center;
-    .media{
+    .fct-media{
         a{
-            @apply block;
+            @apply block h-full;
         }
     }
     &-inner{
@@ -57,6 +22,13 @@
     .variation-title{
         @apply text-xs text-[var(--fluent-cart-customer-dashboard-text-color)] leading-[16px] mt-1 font-normal dark:text-gray-200 #{!important};
     }
+    .fct-unit-price-breakdown {
+        @apply flex items-center gap-1 mt-1 text-xs text-[var(--fluent-cart-customer-dashboard-text-color)] dark:text-gray-200;
+        .fct-unit-price-rounding-icon {
+            @apply cursor-help opacity-75;
+            color: var(--fluent-cart-customer-dashboard-text-color);
+        }
+    }
     .additional-info{
         @apply mt-2.5 grid gap-1 text-xs text-system-dark font-normal #{!important};
         span{
@@ -64,6 +36,43 @@
         }
     }
 }
+.fct-order-item-tax-rates {
+    @apply flex flex-col gap-0.5 w-full;
+}
+
+.fct-order-item-tax-rate {
+    @apply flex items-center justify-between gap-2 pl-[52px];
+
+    .fct-tax-badge {
+        @apply text-[11px] px-[7px] py-0.5 rounded-[4px] font-medium leading-none flex-shrink-0;
+    }
+
+    .fct-tax-amount {
+        @apply text-[11px] font-medium flex-shrink-0;
+    }
+
+    &.is-inclusive {
+        .fct-tax-badge {
+            background-color: #EAF3DE;
+            color: #3B6D11;
+        }
+        .fct-tax-amount {
+            color: #3B6D11;
+            @apply opacity-70;
+        }
+    }
+
+    &.is-exclusive {
+        .fct-tax-badge {
+            background-color: #FAEEDA;
+            color: #854F0B;
+        }
+        .fct-tax-amount {
+            color: #854F0B;
+        }
+    }
+}
+
 .fct-customer-single-order-table-wrap{
     p{
         @apply m-0;
@@ -77,5 +86,35 @@
         position: absolute;
         bottom: 16px;
         left: 12px;
+    }
+}
+
+/* "Write a Review" affordance under an order item — a small outlined
+   button linking to the product page's reviews section
+   (#fct-product-reviews marker hash). */
+.fct-order-item-review-btn {
+    @apply inline-flex items-center gap-1 mt-2.5 cursor-pointer no-underline #{!important};
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
+    background: transparent;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+        @apply bg-gray-25 dark:bg-dark-600;
+        border-color: #8e99aa;
+        color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
+    }
+
+    &:focus,
+    &:focus-visible {
+        @apply bg-gray-25 dark:bg-dark-600;
+        color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
+        outline: 2px solid #6b7280;
+        outline-offset: 2px;
     }
 }

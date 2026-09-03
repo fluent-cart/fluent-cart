@@ -39,7 +39,6 @@ class StorageDriverModel extends Model {
                 })
 
             }).catch((errors) => {
-            console.log(errors, 'errors');
         })
             .finally(() => {
                 this.data.isDriversLoaded = true;

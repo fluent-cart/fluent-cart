@@ -205,6 +205,9 @@ class FilterState extends Model {
       .map((node) => ({
         id: node.value,
         label: node.label,
+        // Kept so the tag row can name the product even after the tree that
+        // supplied it is filtered away by a search.
+        productName: node.productName,
       }));
 
     this.handleTreeSelections(selectedItems)

@@ -55,13 +55,13 @@ onMounted(async () => {
 
 <template>
 
-  <el-radio-group v-model="model" v-bind="attribute">
-    <el-radio v-for="(option, index) in field.options" :key="index" :value="option.value" :class="option.option_class">
-      <div>
+  <el-radio-group v-model="model" v-bind="attribute" class="inline-flex items-center gap-4">
+    <div v-for="(option, index) in field.options" :key="index" :class="option.option_class">
+      <el-radio :value="option.value">
         {{ option.label }}
-      </div>
-      <div v-html="option.note"></div>
-    </el-radio>
+      </el-radio>
+      <div v-if="option.note" v-html="option.note" class="radio-option-note"></div>
+    </div>
   </el-radio-group>
 
 </template>

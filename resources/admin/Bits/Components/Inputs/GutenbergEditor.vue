@@ -4,6 +4,7 @@ import {onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import {useRoute} from "vue-router";
 import {Loading} from '@element-plus/icons-vue';
+import AppConfig from '@/utils/Config/AppConfig';
 
 const props = defineProps({
   post_id: {
@@ -28,8 +29,7 @@ const route = useRoute();
 
 
 const initializeBaseUrl = () => {
-  const origin = window.location.origin;
-  baseUrl.value = origin + '/wp-admin';
+  baseUrl.value = AppConfig.get('wp_admin_url', window.location.origin + '/wp-admin');
 };
 
 const handlePreviewLoad = () => {
@@ -60,7 +60,6 @@ const handleDialogLoad = () => {
       }, true);
     }
   } catch (e) {
-    console.log('Could not inject navigation handler:', e);
   }
 };
 
@@ -180,7 +179,4 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.dialog-iframe {
-    margin-top: -32px;
-}
 </style>

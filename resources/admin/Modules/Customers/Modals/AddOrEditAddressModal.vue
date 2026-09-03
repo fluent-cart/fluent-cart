@@ -23,13 +23,6 @@
       />
 
       <MaterialInput
-          :label="translate('Company Name')"
-          required
-          :class="validationErrors.hasOwnProperty('company_name') ? 'is-error' : ''"
-          v-model="editableAddress.company_name"
-      />
-
-      <MaterialInput
           :label="translate('Phone')"
           required
           :class="validationErrors.hasOwnProperty('phone') ? 'is-error' : ''"
@@ -42,6 +35,36 @@
           v-model="editableAddress"
           :validationErrors="validationErrors"
       />
+
+      <div v-if="shouldShowBusinessDetailsSection" class="fct-customer-address-business-details">
+        <h3 class="fct-customer-address-business-details-title">
+          {{ translate('Business Details') }}
+        </h3>
+
+        <MaterialInput
+            v-if="businessDetails.company_name?.enabled"
+            :label="translate('Company Name')"
+            :required="businessDetails.company_name?.required"
+            :class="validationErrors.hasOwnProperty('company_name') ? 'is-error' : ''"
+            v-model="editableAddress.company_name"
+        />
+
+        <MaterialInput
+            v-if="businessDetails.vat_number?.enabled"
+            :label="translate('VAT/GST/Tax Number')"
+            :required="businessDetails.vat_number?.required"
+            :class="validationErrors.hasOwnProperty('vat_number') ? 'is-error' : ''"
+            v-model="editableAddress.vat_number"
+        />
+
+        <MaterialInput
+            v-if="businessDetails.legal_registration_id?.enabled"
+            :label="translate('Legal Registration ID')"
+            :required="businessDetails.legal_registration_id?.required"
+            :class="validationErrors.hasOwnProperty('legal_registration_id') ? 'is-error' : ''"
+            v-model="editableAddress.legal_registration_id"
+        />
+      </div>
 
     </el-form>
 
@@ -86,7 +109,7 @@
 </template>
 
 <script setup>
-import {ref, getCurrentInstance, watch} from "vue";
+import {computed, ref, getCurrentInstance, watch} from "vue";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import translate from "@/utils/translator/Translator";
@@ -104,7 +127,8 @@ const props = defineProps([
   "order_id",
   "customerAddressModalInfos",
   "showSetAsAlsoCheckbox",
-  "closing_modal"
+  "closing_modal",
+  "showBusinessDetailsSection"
 ]);
 
 // Emits
@@ -118,12 +142,40 @@ const addingAddress = ref(false);
 const updatingAddress = ref(false);
 const shouldSetAsAlso = ref(false);
 const focusedField = ref(null);
-const editableAddress = ref({
-  ...(props.address ?? {})
-});
+
+function getDefaultEditableAddress(address = {}) {
+  return {
+    label: "",
+    name: "",
+    email: "",
+    company_name: "",
+    vat_number: "",
+    legal_registration_id: "",
+    phone: "",
+    address_1: "",
+    address_2: "",
+    city: "",
+    state: "",
+    postcode: "",
+    country: "",
+    ...(address ?? {})
+  };
+}
+
+const editableAddress = ref(getDefaultEditableAddress(props.address));
 
 // Get current instance for accessing context
 const selfRef = getCurrentInstance().ctx;
+const businessDetails = computed(() => window.fluentCartAdminApp?.business_details || {});
+const shouldShowBusinessDetailsSection = computed(() => {
+  return !!props.showBusinessDetailsSection &&
+      props.modalAction?.type === "billing" &&
+      (
+          businessDetails.value.company_name?.enabled ||
+          businessDetails.value.vat_number?.enabled ||
+          businessDetails.value.legal_registration_id?.enabled
+      );
+});
 
 // Setup save shortcut
 const saveShortcut = useSaveShortcut();
@@ -172,13 +224,12 @@ const hasError = (errors) => {
 
 const addAddress = () => {
   addingAddress.value = true;
-  const getAddress = editableAddress.value;
   let others = {
     type: props.modalAction.type,
     customer_id: props.customer_id,
     order_id: props.order_id ?? null,
   };
-  let address = {...getAddress, ...others};
+  let address = {...editableAddress.value, ...others};
   address['sync'] = shouldSetAsAlso.value
 
   Rest.post("customers/" + props.customer_id + "/address", {
@@ -205,7 +256,6 @@ const addAddress = () => {
 
 const updateAddress = () => {
   updatingAddress.value = true;
-  const getAddress = props.address;
   let others = {
     type: props.modalAction.type,
     customer_id: props.customer_id,
@@ -291,6 +341,17 @@ const setAsAlso = () => {
 
 watch(() => props.closing_modal, (newVal, oldVal) => {
   if (newVal) {
+    validationErrors.value = {};
+  }
+});
+
+watch(() => props.address, (newAddress) => {
+  editableAddress.value = getDefaultEditableAddress(newAddress);
+}, {deep: true, immediate: true});
+
+watch(() => props.showAddressModal, (isVisible) => {
+  if (!isVisible) {
+    editableAddress.value = getDefaultEditableAddress({});
     validationErrors.value = {};
   }
 });

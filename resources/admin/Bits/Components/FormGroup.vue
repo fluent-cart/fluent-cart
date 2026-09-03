@@ -12,9 +12,9 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 export default {
     name: "FormGroup",
-    props: ['icon', 'iconPlacement'],
     components: {
         DynamicIcon
-    }
+    },
+    props: ['icon', 'iconPlacement']
 }
 </script>

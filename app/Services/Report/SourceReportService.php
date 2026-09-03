@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\App;
+use FluentCart\Framework\Database\Query\Builder as Query;
 
 class SourceReportService extends ReportService
 {
@@ -32,6 +33,27 @@ class SourceReportService extends ReportService
             ->orderByRaw('gross_sales DESC');
 
         $query = $this->applyFilters($query, $params);
+
+        /**
+         * Let listeners narrow the Order Sources report query.
+         *
+         * The free plugin only forwards the request params ('filter_type' and the
+         * raw 'advanced_filters' JSON among them) — it never parses or applies the
+         * advanced filters itself. FluentCart Pro owns that: it reads the params,
+         * builds the condition groups through the Orders filter engine and adds
+         * the constraints to this query.
+         *
+         * @param \FluentCart\Framework\Database\Query\Builder $query
+         * @param array $params Processed report params.
+         */
+        $filteredQuery = apply_filters('fluent_cart/report/sources_query', $query, $params);
+
+        // A callback that returns something other than a query builder (null,
+        // an array, a thrown-away clone of the wrong type) would fatal the whole
+        // report, so fall back to the unmodified query instead.
+        if ($filteredQuery instanceof Query) {
+            $query = $filteredQuery;
+        }
 
         return $query->get();
     }

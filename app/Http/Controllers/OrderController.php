@@ -6,12 +6,9 @@ namespace FluentCart\App\Http\Controllers;
 use FluentCart\Api\Resource\CustomerResource;
 use FluentCart\Api\Resource\OrderResource;
 use FluentCart\Api\StoreSettings;
-use FluentCart\App\Events\Order\OrderBulkAction;
 use FluentCart\App\Events\Order\OrderCreated;
 use FluentCart\App\Events\Order\OrderDeleting;
 use FluentCart\App\Events\Order\OrderDeleted;
-use FluentCart\App\Events\Order\OrderPaid;
-use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Events\Order\RenewalOrderDeleted;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
@@ -42,7 +39,6 @@ use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Reminders\ReminderService;
-use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\Refund;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Http\Request\Request;
@@ -79,12 +75,25 @@ class OrderController extends Controller
     {
         $data = $request->getSafe($request->sanitize());
         $type = 'payment';
-        $hasSubscription = static::hasSubscription(Arr::get($data, 'order_items', []));
+        $orderItems = Arr::get($data, 'order_items', []);
+
+        $variationPaymentTypes = static::getVariationPaymentTypes($orderItems);
+
+        foreach ($orderItems as $item) {
+            $paymentTypeError = static::getPaymentTypeConflict($item, $variationPaymentTypes);
+            if ($paymentTypeError) {
+                return $this->sendError([
+                    'message' => $paymentTypeError
+                ], 400);
+            }
+        }
+
+        $hasSubscription = static::hasSubscription($orderItems);
         if ($hasSubscription) {
             $type = 'subscription';
             // right now we don't support subscription with manual order
-            $isSubscriptionAllowedInManualOrder = apply_filters('fluent_cart/order/is_subscription_allowed_in_manual_order', false, [
-                'order_items' => Arr::get($data, 'order_items', [])
+            $isSubscriptionAllowedInManualOrder = apply_filters('fluent_cart/order/is_subscription_allowed_in_manual_order', true, [
+                'order_items' => $orderItems
             ]);
 
             if (!$isSubscriptionAllowedInManualOrder) {
@@ -114,16 +123,82 @@ class OrderController extends Controller
         ]);
     }
 
-
     public static function hasSubscription($orderItems): bool
     {
-        // check order items for subscription, payment_type == subscription
         foreach ($orderItems as $item) {
             if (Arr::get($item, 'payment_type') == 'subscription' || Arr::get($item, 'other_info.payment_type') == 'subscription') {
                 return true;
             }
         }
+
         return false;
+    }
+
+    /**
+     * The variation row decides whether a line is recurring, so every label the payload
+     * carries has to agree with it. A recurring line must additionally be labelled in
+     * other_info: that is the only copy AdminOrderProcessor reads, and the interval and
+     * installment count travel beside it.
+     *
+     * @return string empty when the line is consistent, else the rejection message
+     */
+    protected static function getPaymentTypeConflict($item, $variationPaymentTypes): string
+    {
+        $variationId = (int)Arr::get($item, 'object_id', 0);
+
+        if (!isset($variationPaymentTypes[$variationId])) {
+            return '';
+        }
+
+        $isSubscriptionVariation = $variationPaymentTypes[$variationId] === 'subscription';
+
+        foreach (['payment_type', 'other_info.payment_type'] as $labelKey) {
+            $label = Arr::get($item, $labelKey);
+            if (is_null($label) || $label === '') {
+                continue;
+            }
+
+            if (($label === 'subscription') !== $isSubscriptionVariation) {
+                return $isSubscriptionVariation
+                    ? __('Subscription product cannot be placed as a one time item.', 'fluent-cart')
+                    : __('One time product cannot be placed as a subscription item.', 'fluent-cart');
+            }
+        }
+
+        if ($isSubscriptionVariation && Arr::get($item, 'other_info.payment_type') !== 'subscription') {
+            return __('Subscription product must be placed as a subscription item.', 'fluent-cart');
+        }
+
+        return '';
+    }
+
+    /**
+     * @return array variation id => stored payment_type, for the lines that resolve
+     */
+    protected static function getVariationPaymentTypes($orderItems): array
+    {
+        $variationIds = [];
+        foreach ($orderItems as $item) {
+            $variationId = (int)Arr::get($item, 'object_id', 0);
+            if ($variationId > 0) {
+                $variationIds[$variationId] = $variationId;
+            }
+        }
+
+        if (!$variationIds) {
+            return [];
+        }
+
+        $variations = ProductVariation::query()
+            ->whereIn('id', $variationIds)
+            ->get(['id', 'payment_type']);
+
+        $paymentTypes = [];
+        foreach ($variations as $variation) {
+            $paymentTypes[(int)$variation->id] = $variation->payment_type;
+        }
+
+        return $paymentTypes;
     }
 
     public function updateOrder(OrderRequest $request, $order_id)
@@ -204,11 +279,27 @@ class OrderController extends Controller
         if (is_wp_error($data)) {
             return $this->sendError($data->get_error_message());
         }
+
+        // Changing the order address recalculates tax server-side
+        // (OrderResource::updateOrderAddressId → reapplyTaxAfterUpdate). Return the
+        // refreshed order with the tax appends so the admin UI can update the tax
+        // summary, totals and payment status without a full page reload.
+        $freshOrder = Order::query()->where('id', $order_id)
+            ->addAppends([
+                'business_info',
+                'customer_tax_number',
+                'is_b2b_order',
+                'display_tax_lines',
+                'display_shipping_tax_lines',
+                'is_reverse_charge_tax_order',
+                'tax_summary',
+            ])
+            ->first();
+
         return $this->sendSuccess([
-            'message' => 'Address updated successfully'
+            'message' => __('Address updated successfully', 'fluent-cart'),
+            'order'   => $freshOrder,
         ]);
-
-
     }
 
     public function generateMissingLicenses(Request $request, Order $order)
@@ -235,6 +326,12 @@ class OrderController extends Controller
     }
 
     /**
+     * Refund against an order transaction.
+     *
+     * `refund_info.amount` is in CENTS, matching every money value in a read response and
+     * the stored column. So {"amount": 2500} refunds $25.00. roundCent() below only
+     * normalizes float artifacts; it does not scale. See dev-docs/PRICING-AND-TAX.md §6.
+     *
      * @throws ValidationException
      */
     public function refundOrder(Request $request, $orderId)
@@ -247,9 +344,14 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $refundInfo = $request->get('refund_info', []);
+        $refundInfo = (array)$request->get('refund_info', []);
 
-        $this->validate($refundInfo, [
+        // $this->validate() reports failures only by exception, and outside a
+        // REST_REQUEST context the framework swallows that exception (no
+        // handle_exception listener) — execution would continue and crash on
+        // $refundInfo['transaction_id'] below. Fail closed: run the validator
+        // directly and return the per-field 422 payload in every context.
+        $validator = $this->app->validator->make($refundInfo, [
             'transaction_id' => 'required',
             'amount'         => 'required',
         ], [
@@ -257,8 +359,12 @@ class OrderController extends Controller
             'amount.required'         => __('Refund amount is required', 'fluent-cart'),
         ]);
 
+        if ($validator->validate()->fails()) {
+            return $this->sendError($validator->errors(), 422);
+        }
+
         $transaction = OrderTransaction::query()->where('order_id', $orderId)->findOrFail($refundInfo['transaction_id']);
-        $refundAmount = Helper::toCent($refundInfo['amount']);
+        $refundAmount = Helper::roundCent($refundInfo['amount']);
 
         // refund on our end
         $result = (new Refund())->processRefund($transaction, $refundAmount, $refundInfo);
@@ -519,7 +625,7 @@ class OrderController extends Controller
             (new OrderDeleting($order, $connectedOrderIds, $isTestMode, $order->type))->dispatch();
 
             // Pre-load relations before cleanup so the delete events have address data
-            $order->load('customer', 'shipping_address', 'billing_address');
+            $order->load(['customer', 'shipping_address', 'billing_address']);
 
             $this->deleteOrderRelatedData($connectedOrderIds, $isTestMode);
             $DB->commit();
@@ -615,15 +721,49 @@ class OrderController extends Controller
         if (empty($data['order']['receipt_url'])) {
             $data['order']['receipt_url'] = $url;
         }
-        $meta = OrderMeta::query()->where('order_id', $orderId)
-            ->where('meta_key', 'vat_tax_id')
-            ->first();
-
-        if ($meta) {
-            $data['tax_id'] =  $meta->meta_value;
+        $taxNumber = Arr::get($data, 'order.customer_tax_number', '');
+        if (!empty($taxNumber)) {
+            $data['tax_id'] = $taxNumber;
         }
+        unset($data['order']['customer_tax_number']);
 
         $data['can_send_payment_reminder'] = (new ReminderService())->canSendPaymentReminder($data['order']);
+
+        return $data;
+    }
+
+    public function getTransactionDetails($orderId, $transactionId)
+    {
+        $orderId = (int)$orderId;
+        $transactionId = (int)$transactionId;
+
+        $belongsToOrder = OrderTransaction::query()
+            ->where('id', $transactionId)
+            ->where('order_id', $orderId)
+            ->exists();
+
+        if (!$belongsToOrder) {
+            return $this->entityNotFoundError(
+                __('Transaction not found', 'fluent-cart'),
+                __('Back to orders', 'fluent-cart'),
+                '/orders'
+            );
+        }
+
+        $data = $this->getDetails($orderId);
+
+        if (!is_array($data) || empty($data['order'])) {
+            return $data;
+        }
+
+        // The path names one transaction, so the sibling rows on the same order
+        // are not part of this response.
+        $data['order']['transactions'] = array_values(array_filter(
+            (array)Arr::get($data, 'order.transactions', []),
+            function ($transaction) use ($transactionId) {
+                return (int)Arr::get($transaction, 'id') === $transactionId;
+            }
+        ));
 
         return $data;
     }
@@ -631,10 +771,15 @@ class OrderController extends Controller
     public function createCustom(Request $request, OrderItemHelper $orderItemHelper, Order $order)
     {
         try {
-            return $orderItemHelper->processCustom(
+            $orderItem = $orderItemHelper->processCustom(
                 $request->product,
                 $order->id
             );
+
+            return $this->sendSuccess([
+                'message'    => __('Custom item has been added to the order!', 'fluent-cart'),
+                'order_item' => $orderItem
+            ]);
 
         } catch (\Exception $e) {
             return $this->sendError([
@@ -682,85 +827,100 @@ class OrderController extends Controller
 
     public function markAsPaid(Request $request, Order $order)
     {
-        $dueAmount = intval($order->total_amount - $order->total_paid);
+        $db = Order::query()->getConnection();
+        $db->beginTransaction();
 
-        if ($dueAmount <= 0) {
-            return $this->sendError([
-                'message' => __('Order has already been paid', 'fluent-cart')
-            ], 423);
-        }
+        try {
+            $locked = Order::query()
+                ->where('id', $order->id)
+                ->lockForUpdate()
+                ->first();
 
-        if (Arr::get($order, 'status') === 'canceled') {
-            return $this->sendError([
-                'message' => __('Unable to mark paid for canceled order', 'fluent-cart')
-            ], 423);
-        }
+            if (!$locked) {
+                $db->rollBack();
+                return $this->sendError([
+                    'message' => __('Order not found', 'fluent-cart')
+                ], 404);
+            }
 
-        $transaction = $order->transactions->where('status', Status::TRANSACTION_PENDING)
-            ->where('payment_method', 'offline_payment')
-            ->first();
+            $dueAmount = intval($locked->total_amount - $locked->total_paid);
 
-        $newTransactionData = [
-            'total'               => $dueAmount,
-            'status'              => Status::TRANSACTION_SUCCEEDED,
-            'payment_method'      => sanitize_text_field($request->payment_method),
-            'vendor_charge_id'    => sanitize_text_field($request->vendor_charge_id),
-            'payment_mode'        => sanitize_text_field($order->mode),
-            'payment_method_type' => sanitize_text_field($request->payment_method),
-            'order_type'          => sanitize_text_field($order->type),
-            'transaction_type'    => sanitize_text_field($request->transaction_type),
-            'currency'            => sanitize_text_field($order->currency),
-        ];
+            if ($dueAmount <= 0) {
+                $db->rollBack();
+                return $this->sendError([
+                    'message' => __('Order has already been paid', 'fluent-cart')
+                ], 423);
+            }
 
-        if ($transaction) {
-            $transaction->update($newTransactionData);
-        } else {
-            $transaction = OrderTransaction::query()->create(
-                array_merge($newTransactionData, [
-                    'order_id' => $order->id
-                ])
-            );
-        }
+            if ($locked->status === Status::ORDER_CANCELED) {
+                $db->rollBack();
+                return $this->sendError([
+                    'message' => __('Unable to mark paid for canceled order', 'fluent-cart')
+                ], 423);
+            }
 
-        $order->note = sanitize_text_field($request->get('mark_paid_note', ''));
+            // Reuse an existing pending transaction without vendor_charge_id instead of
+            // creating a new one. Queried fresh (not via the route-bound relation) so it
+            // reflects the state under the lock.
+            $transaction = OrderTransaction::query()
+                ->where('order_id', $locked->id)
+                ->where('status', Status::TRANSACTION_PENDING)
+                ->where(function ($query) {
+                    $query->whereNull('vendor_charge_id')
+                        ->orWhere('vendor_charge_id', '');
+                })
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->first();
 
-        $oldStatus = $order->status;
-
-        if ($order->payment_status !== 'partially_refunded') {
-            $order->payment_status = Status::PAYMENT_PAID;
-        }
-
-        $order->status = Status::ORDER_PROCESSING;
-        $order->total_paid = $order->total_amount;
-        $order->save();
-
-        $actionActivity = [
-            'title'   => __('Order status updated', 'fluent-cart'),
-            'content' => sprintf(
-                /* translators: 1: old status, 2: new status */
-                __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), $oldStatus, $order->status)
-        ];
-
-        // dispatching events related to order status update and payment paid
-        (new OrderPaid($order, $order->customer, $transaction))->dispatch();
-
-        (new OrderStatusUpdated($order, $oldStatus, $order->status, true, $actionActivity, 'order_status'))->dispatch();
-
-        // if digital
-        if ($order->fulfillment_type == 'digital' && $order->status === Status::ORDER_PROCESSING) {
-            $order->status = Status::ORDER_COMPLETED;
-            $order->completed_at = DateTime::gmtNow();
-            $order->save();
-
-            $actionActivity = [
-                'title'   => __('Order status updated', 'fluent-cart'),
-                'content' => sprintf(
-                    /* translators: 1: old status, 2: new status */
-                    __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), Status::ORDER_PROCESSING, $order->status)
+            $newTransactionData = [
+                'total'               => $dueAmount,
+                'status'              => Status::TRANSACTION_SUCCEEDED,
+                'payment_method'      => sanitize_text_field($request->payment_method),
+                'vendor_charge_id'    => sanitize_text_field($request->vendor_charge_id),
+                'payment_mode'        => sanitize_text_field($locked->mode),
+                'payment_method_type' => sanitize_text_field($request->payment_method),
+                'order_type'          => sanitize_text_field($locked->type),
+                'currency'            => sanitize_text_field($locked->currency),
             ];
 
-            (new OrderStatusUpdated($order, Status::ORDER_PROCESSING, $order->status, true, $actionActivity, 'order_status'))->dispatch();
+            if ($transaction) {
+                // Don't include transaction_type in the update — the existing value is always 'charge'
+                // and overwriting it with the request value would break syncSubscriptionStates bill_count.
+                $transaction->update($newTransactionData);
+            } else {
+                $transaction = OrderTransaction::query()->create(
+                    array_merge($newTransactionData, [
+                        'order_id'         => $locked->id,
+                        'transaction_type' => Status::TRANSACTION_TYPE_CHARGE,
+                    ])
+                );
+            }
+
+            // Persist the settled balance while the row lock is held so the next request
+            // to acquire it computes due = 0. payment_status is deliberately left alone:
+            // syncOrderStatuses() owns the atomic pending → paid claim that dispatches
+            // OrderPaid exactly once, and it runs after commit so third-party hook
+            // callbacks (emails, integrations, subscription activation) never execute
+            // while the order row is locked.
+            $locked->total_paid = (int) OrderTransaction::query()
+                ->where('order_id', $locked->id)
+                ->whereIn('status', Status::getTransactionSuccessStatuses())
+                ->sum('total');
+
+            $note = sanitize_text_field($request->get('mark_paid_note', ''));
+            if ($note) {
+                $locked->note = $note;
+            }
+            $locked->save();
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
         }
+
+        (new StatusHelper($locked))->syncOrderStatuses($transaction);
 
         return $this->response->sendSuccess([
             'message' => __('Order has been marked as paid', 'fluent-cart')
@@ -788,9 +948,6 @@ class OrderController extends Controller
                 'message' => __('Orders selection is required', 'fluent-cart')
             ]);
         }
-
-        $orders = Order::query()->whereIn('id', $orderIds)->get();
-
 
         if ($action == 'delete_orders') {
 
@@ -825,165 +982,14 @@ class OrderController extends Controller
 
 
         }
-        if ($action == 'change_shipping_status') {
-            $newStatus = sanitize_text_field($request->get('new_status', ''));
-            if (!$newStatus) {
-                return $this->sendError([
-                    'message' => __('Please select status', 'fluent-cart')
-                ]);
-            }
 
-            $validStatuses = Helper::getShippingStatuses();
-            if (!isset($validStatuses[$newStatus])) {
-                return $this->sendError([
-                    'message' => __('Provided shipping status is not valid', 'fluent-cart')
-                ]);
-            }
-
-            // foreach ($orders as $order) {
-            //     $order->updateShippingStatus($newStatus);
-            // }
-
-            return [
-                'message' => __('Shipping Status has been changed for the selected orders', 'fluent-cart')
-            ];
-
-        }
-        if ($action == 'change_order_status') {
-
-            $newStatus = sanitize_text_field($request->get('new_status', ''));
-            if (!$newStatus) {
-                return $this->sendError([
-                    'message' => __('Please select status', 'fluent-cart')
-                ]);
-            }
-
-            $validStatuses = Status::getEditableOrderStatuses();
-            if (!isset($validStatuses[$newStatus])) {
-                return $this->sendError([
-                    'message' => __('Provided order status is not valid', 'fluent-cart')
-                ]);
-            }
-
-            $failedOrderIds = [];
-            $updatedOrderIds = [];
-
-            foreach ($orders as $order) {
-                // $order->updateStatus('status', $newStatus);
-                $isUpdated = OrderResource::updateStatuses([
-                    'order'                 => $order,
-                    'action'                => 'change_order_status',
-                    'statuses.order_status' => $newStatus,
-                    'manage_stock'          => sanitize_text_field($request->get('manage_stock')),
-                ]);
-
-                if (is_wp_error($isUpdated)) {
-                    $failedOrderIds[] = $order->id;
-                } else {
-                    $updatedOrderIds[] = $order->id;
-                }
-            }
-
-            if (count($failedOrderIds) > 0) {
-                $failedOrderIds = implode(' , ', $failedOrderIds);
-                return count($updatedOrderIds) > 0
-                    ? $this->sendSuccess([
-                        'message' => sprintf(
-                            /* translators: %s is the order ids */
-                            __("The order ID - %s cannot be updated because they are either already cancelled or have the same status. And remaining order status has been successfully changed", 'fluent-cart'), $failedOrderIds)
-                    ])
-                    :
-                    $this->sendError([
-                        'message' => sprintf(
-                            /* translators: %s is the order ids */
-                            __("The order ID - %s cannot be updated because they are either already cancelled or have the same status.", 'fluent-cart'), $failedOrderIds)
-                    ], 423);
-            }
-
-            if (count($updatedOrderIds) > 0 && count($failedOrderIds) < 1) {
-                return $this->sendSuccess([
-                    'message' => __('Order Status has been changed for the selected orders', 'fluent-cart')
-                ]);
-            }
-        }
-
-        if ($action == 'capture_payments') {
-            foreach ($orders as $order) {
-                $order->capturePayments();
-            }
-
-            return [
-                'message' => __('Selected payments has been successfully captured', 'fluent-cart')
-            ];
-        }
-
-        if ($action == 'change_payment_status') {
-            $newStatus = sanitize_text_field($request->get('new_status', ''));
-            if (!$newStatus) {
-                return $this->sendError([
-                    'message' => __('Please select status', 'fluent-cart')
-                ]);
-            }
-
-            $validStatuses = Status::getEditableTransactionStatuses();
-            if (!isset($validStatuses[$newStatus])) {
-                return $this->sendError([
-                    'message' => __('Provided payment status is not valid', 'fluent-cart')
-                ]);
-            }
-
-            $failedOrderIds = [];
-            $updatedOrderIds = [];
-            $count = 0;
-            $customerIds = [];
-
-            foreach ($orders as $order) {
-                $transaction = $order->latest_transaction;
-                $isUpdated = OrderResource::updatePaymentStatus([
-                    'order'       => $order,
-                    'status'      => $newStatus,
-                    'transaction' => $transaction,
-                ]);
-
-                if (is_wp_error($isUpdated)) {
-                    $failedOrderIds[] = $order->id;
-                } else {
-                    $updatedOrderIds[] = $order->id;
-                    $count++;
-                    $customerIds[] = $order->customer_id;
-                }
-            }
-
-            if ($count > 0 && count($customerIds) > 0) {
-                (new OrderBulkAction($customerIds))->dispatch();
-            }
-
-            if (count($failedOrderIds) > 0) {
-                $failedOrderIds = implode(' , ', $failedOrderIds);
-                return count($updatedOrderIds) > 0
-                    ? $this->sendSuccess([
-                        'message' => sprintf(
-                            /* translators: %s is the order ids */
-                            __("The order ID - %s cannot be updated at the moment because the transaction either already has the same status or does not match the provided order. The remaining order statuses have been updated successfully.", 'fluent-cart'), $failedOrderIds)
-                    ])
-                    :
-                    $this->sendError([
-                        'message' => sprintf(
-                            /* translators: %s is the order ids */
-                            __("The order ID - %s cannot be updated at the moment because its payment status is either the same as before or has already been refunded.", 'fluent-cart'), $failedOrderIds)
-                    ], 423);
-            }
-
-            if (count($updatedOrderIds) > 0 && count($failedOrderIds) < 1) {
-                return $this->sendSuccess([
-                    'message' => sprintf(
-                        /* translators: %s is the payment status */
-                        __("Selected orders payment status has been marked as %s", 'fluent-cart'),
-                        $newStatus
-                    )
-                ]);
-            }
-        }
+        // The capture_payments branch was removed: it called
+        // $order->capturePayments(), a method that has never existed anywhere
+        // in the codebase, so the action fataled on the first order (audit
+        // item #43). No UI sends it — the orders bulk bar submits
+        // delete_test_orders only. Bulk payment capture, if wanted, is a
+        // gateway feature to design (authorize/capture per gateway), not a
+        // branch to resurrect as-is.
 
         return $this->sendError([
             'message' => __('Selected action is invalid', 'fluent-cart')
@@ -1064,7 +1070,15 @@ class OrderController extends Controller
     {
 
         $order = Order::query()->find($order);
-        $newStatus = $request->get('status');
+        $newStatus = sanitize_text_field($request->get('status', ''));
+
+        $validStatuses = Status::getEditableTransactionStatuses();
+        if (!isset($validStatuses[$newStatus])) {
+            return $this->sendError([
+                'message' => __('Provided transaction status is not valid', 'fluent-cart')
+            ]);
+        }
+
         if ($transaction->status == $newStatus) {
             return $this->sendError([
                 'reload'  => true,
@@ -1078,13 +1092,52 @@ class OrderController extends Controller
             ]);
         }
 
+        // Money already counted into the order cannot be changed from a dropdown; returning
+        // it is a refund, which records a refund transaction through the refund action (FC-SEC-09).
+        if ($transaction->status === Status::TRANSACTION_SUCCEEDED) {
+            return $this->sendError([
+                'message' => __('A succeeded transaction cannot be changed here. Use the refund action to return the payment.', 'fluent-cart')
+            ], 422);
+        }
+
         $transaction->updateStatus($newStatus);
-        $order->updatePaymentStatus($newStatus);
+
+        if ($newStatus === Status::TRANSACTION_SUCCEEDED) {
+            // 'succeeded' is a transaction word, not an order payment status: derive the
+            // order's paid state and total_paid from its transactions, as mark-as-paid does.
+            (new StatusHelper($order))->syncOrderStatuses($transaction);
+        } else {
+            $order->updatePaymentStatus($newStatus);
+        }
 
         return [
             'transaction' => $transaction,
             'message'     => __('Payment status has been successfully updated', 'fluent-cart')
         ];
+    }
+
+    public function syncPendingTransaction(Request $request, $order, OrderTransaction $transaction)
+    {
+        $order = Order::query()->find($order);
+
+        if (!$order || $transaction->order_id != $order->id) {
+            return $this->sendError([
+                'message' => __('The selected transaction does not match with the provided order', 'fluent-cart')
+            ]);
+        }
+
+        $result = $transaction->syncPendingTransaction();
+
+        if (is_wp_error($result)) {
+            return $this->sendError([
+                'message' => $result->get_error_message()
+            ]);
+        }
+
+        return $this->sendSuccess([
+            'message'     => __('Transaction has been synced from the payment gateway successfully!', 'fluent-cart'),
+            'transaction' => $result
+        ]);
     }
 
     public function getStats($orderUuid): \WP_REST_Response
@@ -1148,6 +1201,72 @@ class OrderController extends Controller
             'order_items'     => $orderItems
         ]);
 
+    }
+
+    /**
+     * Calculate tax for an admin order given an address and item list.
+     * No DB writes — pure calculation helper.
+     *
+     * Accepts: { country, state, city, postcode, items: [{post_id, object_id, subtotal, discount_total}] }
+     * Returns: { tax_total, shipping_tax, tax_lines, tax_behavior, tax_country }
+     */
+    public function calculateTax(Request $request)
+    {
+        $address = [
+            'country'  => sanitize_text_field($request->get('country', '')),
+            'state'    => sanitize_text_field($request->get('state', '')),
+            'city'     => sanitize_text_field($request->get('city', '')),
+            'postcode' => sanitize_text_field($request->get('postcode', '')),
+        ];
+
+        $rawItems = $request->get('items', []);
+        if (!is_array($rawItems)) {
+            $rawItems = [];
+        } elseif (count($rawItems) > 100) {
+            $rawItems = array_slice($rawItems, 0, 100);
+        }
+
+        $items = [];
+        foreach ($rawItems as $item) {
+            $items[] = [
+                'post_id'         => (int) Arr::get($item, 'post_id', 0),
+                'object_id'       => (int) Arr::get($item, 'object_id', 0),
+                'subtotal'        => (int) Arr::get($item, 'subtotal', 0),
+                'discount_total'  => (int) Arr::get($item, 'discount_total', 0),
+                'shipping_charge' => (int) Arr::get($item, 'shipping_charge', 0),
+                'quantity'        => max(1, (int) Arr::get($item, 'quantity', 1)),
+            ];
+        }
+
+        $result = \FluentCart\App\Services\Tax\AdminOrderTaxService::calculate($items, $address);
+
+        if ($result === null) {
+            return $this->sendSuccess([
+                'tax_total'    => 0,
+                'shipping_tax' => 0,
+                'tax_lines'    => [],
+                'tax_behavior' => 0,
+                'tax_country'  => '',
+            ]);
+        }
+
+        $taxLines = Arr::get($result, 'tax_lines', []);
+        $strippedTaxLines = array_values(array_map(function ($line) {
+            return [
+                'label'        => Arr::get($line, 'label', ''),
+                'rate_percent' => Arr::get($line, 'rate_percent', 0),
+                'tax_amount'   => (int) Arr::get($line, 'tax_amount', 0),
+                'inclusive'    => (bool) Arr::get($line, 'inclusive', false),
+            ];
+        }, $taxLines));
+
+        return $this->sendSuccess([
+            'tax_total'    => (int) Arr::get($result, 'tax_total', 0),
+            'shipping_tax' => (int) Arr::get($result, 'shipping_tax', 0),
+            'tax_behavior' => (int) Arr::get($result, 'tax_behavior', 0),
+            'tax_country'  => Arr::get($result, 'tax_country', ''),
+            'tax_lines'    => $strippedTaxLines,
+        ]);
     }
 
     protected function prepareOrderItemsWithVariations($orderItems)

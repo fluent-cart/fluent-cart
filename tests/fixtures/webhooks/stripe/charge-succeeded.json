@@ -1,0 +1,16 @@
+{
+  "id": "evt_phase29_stripe_charge_1",
+  "object": "event",
+  "type": "charge.succeeded",
+  "livemode": false,
+  "data": {
+    "object": {
+      "id": "ch_phase29_signature_1",
+      "object": "charge",
+      "amount": 1001,
+      "currency": "usd",
+      "payment_intent": "pi_phase29_signature_1",
+      "metadata": {}
+    }
+  }
+}

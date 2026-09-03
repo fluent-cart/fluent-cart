@@ -10,6 +10,7 @@ import MailingSettingsLoader from "@/Modules/Settings/EmailNotification/MailingS
 import AppConfig from "@/utils/Config/AppConfig";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const settingsForm = ref({
   from_name: '',
@@ -83,11 +84,13 @@ onMounted(() => {
     <SettingsHeader
         :heading="translate('Mailing Settings')"
         :loading="saving"
-        @onSave="saveEmailSettings"
+        @on-save="saveEmailSettings"
     />
 
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <Card.Container>
         <Card.Header
             :title="translate('Email Configuration')"
@@ -172,13 +175,13 @@ receive it.`)
                 {{ translate('Email Footer') }}
               </div>
 
-              <wp-editor
+              <WpEditor
                   :short-codes="shortcodes"
                   v-model="settingsForm.email_footer"
                   @update="(val) => {
                 settingsForm.email_footer = val;
               }"
-              ></wp-editor>
+              ></WpEditor>
               <div class="mt-2 mb-2">
                 <ValidationError
                     :validation-errors="validationErrors.email_footer||{}"
@@ -247,7 +250,7 @@ compliance.`)
 
       <div class="setting-save-action">
         <el-button type="primary" @click="saveEmailSettings()" :loading="saving">
-          {{ saving ? translate('Saving Settings') : translate('Save Settings') }}
+          {{ translate('Save Settings') }}
         </el-button>
       </div>
     </div>

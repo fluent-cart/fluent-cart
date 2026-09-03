@@ -8,7 +8,6 @@ export function useRouteMiddleware(router) {
         const requiredPermission = Arr.get(to, 'meta.permission');
         if (!requiredPermission) {
             if (AppConfig.get('app_config.env') === 'dev') {
-                console.warn(`[Permission] Route "${to.name || to.path}" is missing 'meta.permission'.`);
             }
             return next();
         }

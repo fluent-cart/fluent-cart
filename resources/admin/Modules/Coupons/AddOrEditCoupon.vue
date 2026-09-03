@@ -6,8 +6,7 @@
         @save="coupon_id ? updateCoupon() : addCoupon()"
         @discard="reloadPage"
         :show-cmnd-icon="true"
-        :saveButtonText="coupon_id ? translate('Update') : translate('Create')" 
-        :loadingText="coupon_id ? translate('Updating') : translate('Creating')"
+        :saveButtonText="coupon_id ? translate('Update') : translate('Create')"
       />
 
       <SingleCouponLoader v-if="fetchingCoupon"/>
@@ -50,7 +49,7 @@
                                 id="title"
                             ></el-input>
 
-                            <validation-error
+                            <ValidationError
                                 v-if="validationErrors?.hasOwnProperty('title')"
                                 :validation-errors="validationErrors"
                                 field-key="title"
@@ -78,7 +77,7 @@
                                 maxlength="20"
                             ></el-input>
 
-                            <validation-error
+                            <ValidationError
                                 v-if="validationErrors?.hasOwnProperty('code')"
                                 :validation-errors="validationErrors"
                                 field-key="code"
@@ -118,7 +117,7 @@
                                 @keypress="preventInvalidChars"
                             ></el-input>
 
-                            <validation-error
+                            <ValidationError
                                 v-if="validationErrors?.hasOwnProperty('priority')"
                                 :validation-errors="validationErrors"
                                 field-key="priority"
@@ -194,7 +193,7 @@
                                   </template>
                                 </el-input>
 
-                                <validation-error
+                                <ValidationError
                                     v-if="validationErrors?.hasOwnProperty('amount')"
                                     :validation-errors="validationErrors"
                                     field-key="amount"
@@ -215,7 +214,7 @@
                                         </template>
                                     </el-input>
 
-                                    <validation-error
+                                    <ValidationError
                                         :validation-errors="validationErrors"
                                         field-key="max_discount_amount"
                                     />
@@ -253,7 +252,7 @@
                                         <span v-html="appVars.shop.currency_sign"></span>
                                     </template>
                                 </el-input>
-                                <validation-error
+                                <ValidationError
                                     v-if="
                                       validationErrors?.hasOwnProperty('min_purchase_amount')
                                     "
@@ -285,13 +284,28 @@
                                         <span v-html="appVars.shop.currency_sign"></span>
                                     </template>
                                 </el-input>
-                                <validation-error
+                                <ValidationError
                                     v-if="
                                       validationErrors?.hasOwnProperty('max_purchase_amount')
                                     "
                                     :validation-errors="validationErrors"
                                     field-key="max_purchase_amount"
                                 />
+                            </el-form-item>
+                        </el-col>
+
+                        <el-col :lg="24">
+                            <el-form-item>
+                                <template #label>
+                                    <LabelHint
+                                        :title="translate('Spend Amount Based On')"
+                                        :content="translate('Choose what the min/max spend limits are measured against: the cart subtotal (items only) or the order total (including shipping and fees). Applies at checkout.')"
+                                    />
+                                </template>
+                                <el-radio-group v-model="coupon.conditions.min_amount_basis">
+                                    <el-radio value="subtotal" :label="translate('Subtotal (items only)')" />
+                                    <el-radio value="total" :label="translate('Total (includes shipping &amp; fees)')" />
+                                </el-radio-group>
                             </el-form-item>
                         </el-col>
 
@@ -366,7 +380,7 @@
                                     :placeholder="translate('email1@domain.com, *@special.com, ... or regex pattern')"
                                 >
                                 </el-input>
-                                <validation-error
+                                <ValidationError
                                     v-if="
                                       validationErrors?.hasOwnProperty('email_restrictions')
                                     "
@@ -395,7 +409,7 @@
                                 false-value="no"
                             />
                           </el-form-item>
-                          <validation-error
+                          <ValidationError
                               v-if="validationErrors?.hasOwnProperty('is_recurring')"
                               :validation-errors="validationErrors"
                               field-key="is_recurring"
@@ -443,7 +457,7 @@
                                 @keypress="preventInvalidChars"
                             ></el-input>
 
-                            <validation-error
+                            <ValidationError
                               v-if="validationErrors?.hasOwnProperty('max_uses')"
                               :validation-errors="validationErrors"
                               field-key="max_uses"
@@ -455,16 +469,16 @@
                           <el-form-item>
                             <template #label>
                               <LabelHint
-                                  :title="translate('Per User Limit')"
+                                  :title="translate('Per Logged in User Limit')"
                                   :content="
-                                  translate('Maximum an user can use. 0 means unlimited')
+                                  translate('Maximum an logged in user can use. 0 means unlimited. Only logged in user can use this coupon.')
                                 "
                               />
                             </template>
                             <el-input
                                 v-model="coupon.conditions.max_per_customer"
                                 type="number"
-                                :placeholder="translate('Max limit per user')"
+                                :placeholder="translate('Max limit per logged in user')"
                                 :class="
                                 validationErrors.hasOwnProperty('max_per_customer')
                                   ? 'is-error'
@@ -479,7 +493,7 @@
                               "
                                 @keypress="preventInvalidChars"
                             ></el-input>
-                            <validation-error
+                            <ValidationError
                                 :validation-errors="validationErrors"
                                 field-key="max_per_customer"
                             />
@@ -501,7 +515,7 @@
                                 <el-radio disabled value="expired" :label='translate("Expired")' />
                               </el-radio-group>
 
-                            <validation-error
+                            <ValidationError
                                 :validation-errors="validationErrors"
                                 field-key="status"
                             />
@@ -521,7 +535,7 @@
                               "
                             ></el-input>
 
-                            <validation-error
+                            <ValidationError
                                 :validation-errors="validationErrors"
                                 field-key="notes"
                             />
@@ -545,7 +559,7 @@
                               <el-radio value="no">{{ translate("No") }}</el-radio>
                             </el-radio-group>
                           </el-form-item>
-                          <validation-error
+                          <ValidationError
                               v-if="validationErrors?.hasOwnProperty('stackable')"
                               :validation-errors="validationErrors"
                               field-key="stackable"
@@ -689,7 +703,7 @@
                                     @change="setDefaultStatus"
                                     :disabled-date="disabledEndDate"
                                 ></el-date-picker>
-                                <validation-error
+                                <ValidationError
                                     v-if="validationErrors.hasOwnProperty('end_date')"
                                     :validation-errors="validationErrors"
                                     field-key="end_date"
@@ -768,12 +782,6 @@ dayjs.extend(dayjs_plugin_timezone);
 
 export default {
   name: "AddOrEditCoupon",
-  props: {
-    coupon_id: {
-      type: [String, Number],
-      required: true
-    }
-  },
   components: {
     CardContainer,
     CardHeader,
@@ -786,6 +794,19 @@ export default {
     ProductVariationSelector,
     SingleCouponLoader
     , Activity
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.keyboardShortcuts?.unbind) {
+      this.keyboardShortcuts.unbind("mod+s");
+    }
+
+    next();
+  },
+  props: {
+    coupon_id: {
+      type: [String, Number],
+      required: true
+    }
   },
   data() {
     return {
@@ -814,6 +835,7 @@ export default {
           included_products: [],
           min_purchase_amount: '',
           max_purchase_amount: '',
+          min_amount_basis: 'subtotal',
           allowed_user_ids: [],
           allowed_user_roles: [],
           apply_to_quantity: "no",
@@ -841,6 +863,47 @@ export default {
       isInitialLoading: false,
       showDynamicTemplates: false
       , showManageActivity: false
+    }
+  },
+  computed: {
+    ArrowRight() {
+      return ArrowRight
+    },
+    maxDiscountAmount() {
+      return this.coupon.type === "percentage" ? 100 : 999999;
+    }
+  },
+  watch: {
+    coupon: {
+      handler() {
+        this.handleChangesMade();
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    this.keyboardShortcuts = useKeyboardShortcuts();
+    this.fetchTerms();
+
+    if(this.coupon_id) {
+      this.fetchCoupon();
+      
+      this.keyboardShortcuts.bind(["mod+s"], (event) => {
+        event.preventDefault();
+        this.updateCoupon();
+      });
+
+      window.onbeforeunload = () => {
+        if (this.changes_made > 1) {
+          return true;
+        }
+      };
+      
+    }else {
+      this.keyboardShortcuts.bind(['mod+s'], (event) => {
+        event.preventDefault();
+        this.addCoupon();
+      });
     }
   },
   methods: {
@@ -1095,6 +1158,12 @@ export default {
                 response.conditions.included_products
             );
 
+            // Older coupons predate the spend-basis setting and historically compared against the
+            // order total, so show 'total' for them to reflect (and preserve) their actual behavior.
+            if (!this.coupon.conditions.min_amount_basis) {
+                this.coupon.conditions.min_amount_basis = 'total';
+            }
+
             this.formatAmount();
 
             // Change the status according to the start_date and end_date
@@ -1107,7 +1176,6 @@ export default {
             } else {
               Notify.error(errors.data?.message);
             }
-            console.error('Error fetching coupon: ', error);
           })
           .finally(() => {
             this.fetchingCoupon = false;
@@ -1201,54 +1269,6 @@ export default {
             this.creating = false;
           });
     }
-  },
-  computed: {
-    ArrowRight() {
-      return ArrowRight
-    },
-    maxDiscountAmount() {
-      return this.coupon.type === "percentage" ? 100 : 999999;
-    }
-  },
-  watch: {
-    coupon: {
-      handler() {
-        this.handleChangesMade();
-      },
-      deep: true
-    }
-  },
-  mounted() {
-    this.keyboardShortcuts = useKeyboardShortcuts();
-    this.fetchTerms();
-
-    if(this.coupon_id) {
-      this.fetchCoupon();
-      
-      this.keyboardShortcuts.bind(["mod+s"], (event) => {
-        event.preventDefault();
-        this.updateCoupon();
-      });
-
-      window.onbeforeunload = () => {
-        if (this.changes_made > 1) {
-          return true;
-        }
-      };
-      
-    }else {
-      this.keyboardShortcuts.bind(['mod+s'], (event) => {
-        event.preventDefault();
-        this.addCoupon();
-      });
-    }
-  },
-  beforeRouteLeave(to, from, next) {
-    if (this.keyboardShortcuts?.unbind) {
-      this.keyboardShortcuts.unbind("mod+s");
-    }
-
-    next();
   }
 }
 </script>

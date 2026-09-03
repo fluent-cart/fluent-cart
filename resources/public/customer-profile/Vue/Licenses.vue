@@ -27,7 +27,7 @@
                 </EmptyState>
             </div>
 
-            <pagination
+            <Pagination
                 v-if="paginate && paginate.total !== 0"
                 :hide_on_single="true"
                 :pagination="paginate"
@@ -66,6 +66,9 @@ export default {
             appLoaded: false,
         };
     },
+    mounted() {
+        this.fetchLicenses();
+    },
     methods: {
         fetchLicenses() {
             this.loading = true;
@@ -90,9 +93,6 @@ export default {
                     this.appLoaded = true;
                 });
         }
-    },
-    mounted() {
-        this.fetchLicenses();
     }
 };
 </script>

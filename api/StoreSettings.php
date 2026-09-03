@@ -8,6 +8,9 @@ use FluentCart\App\CPT\Pages;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\ArrayableInterface;
 use FluentCart\Framework\Support\Str;
@@ -15,6 +18,9 @@ use FluentCart\App\Services\Permission\PermissionManager;
 
 class StoreSettings implements ArrayableInterface
 {
+    const CACHE_KEY = 'store_settings';
+    const CACHE_GROUP = 'fluentcart';
+
     /**
      * @var string
      *
@@ -31,18 +37,33 @@ class StoreSettings implements ArrayableInterface
 
     protected static $cachedStoreSettings = null;
 
+    public static function clearCache(): void
+    {
+        self::$cachedStoreSettings = null;
+        wp_cache_delete(self::CACHE_KEY, self::CACHE_GROUP);
+    }
+
     public function __construct()
     {
+        if (self::$cachedStoreSettings !== null) {
+            $this->storeSettings = self::$cachedStoreSettings;
+            return;
+        }
         $defaultSettings = $this->getDefaultSettings();
         $storeSettings = get_option($this->optionKey, []);
         $settings = wp_parse_args($storeSettings, $defaultSettings);
         $this->storeSettings = $settings;
+        self::$cachedStoreSettings = $this->storeSettings;
     }
 
     protected function getDefaultSettings(): array
     {
         $defaultSettings = [
             'store_name'                           => get_bloginfo('name'),
+            'company_name'                         => '',
+            'legal_registration_id'                => '',
+            'seller_vat_id'                        => '',
+            'seller_tax_id'                        => '',
             'note_for_user_account_creation'       => __('An user account will be created', 'fluent-cart'),
             'checkout_button_text'                 => __('Checkout', 'fluent-cart'),
             'view_cart_button_text'                => __('View Cart', 'fluent-cart'),
@@ -78,10 +99,15 @@ class StoreSettings implements ArrayableInterface
             'store_state'                          => '',
             'show_relevant_product_in_single_page' => 'yes',
             'show_relevant_product_in_modal'       => '',
+            'show_rating_in_shop'                  => 'yes',
+            'show_rating_in_relevant'              => 'yes',
             'order_mode'                           => 'test',
+            'subscription_mode_guard'              => 'yes',
             'variation_view'                       => 'both',
             'variation_columns'                    => 'masonry',
             'enable_early_payment_for_installment' => 'yes',
+            'subscription_management_mode'         => 'gateway_managed',
+            'subscription_system_charge'           => 'no',
             'modules_settings'                     => [],
             'min_receipt_number'                   => '1',
             'inv_prefix'                           => 'INV-',
@@ -112,6 +138,51 @@ class StoreSettings implements ArrayableInterface
         $isProActive = App::isProActive();
         $proFeatureIcon = Vite::getAssetUrl('images/crown.svg');
 
+        // Read-only schedule for store-managed subscription renewals. Pulled live
+        // from the same map the scheduler uses, so it stays accurate under the
+        // fluent_cart/renewal/advance_creation_days filter. No editable knob — the timing is
+        // deliberately built-in; developers tune it via that filter.
+        $invoiceScheduleMap = RenewalService::getAdvanceCreationDaysMap();
+        $invoiceScheduleLabels = [
+            'daily'       => __('Daily', 'fluent-cart'),
+            'weekly'      => __('Weekly', 'fluent-cart'),
+            'monthly'     => __('Monthly', 'fluent-cart'),
+            'quarterly'   => __('Quarterly', 'fluent-cart'),
+            'half_yearly' => __('Half-yearly', 'fluent-cart'),
+            'yearly'      => __('Yearly', 'fluent-cart'),
+        ];
+        // Structured renewal-order schedule for the SubscriptionModeManager
+        // component (status card + guarded edit dialog).
+        $invoiceScheduleList = [];
+        foreach ($invoiceScheduleLabels as $invoiceScheduleKey => $invoiceScheduleLabel) {
+            if (!isset($invoiceScheduleMap[$invoiceScheduleKey])) {
+                continue;
+            }
+            $invoiceScheduleDays = (int) $invoiceScheduleMap[$invoiceScheduleKey];
+            $invoiceScheduleList[] = [
+                'label' => $invoiceScheduleLabel,
+                'when'  => $invoiceScheduleDays <= 0
+                    ? __('on the due date', 'fluent-cart')
+                    /* translators: %d: number of days before the due date */
+                    : sprintf(_n('%d day before due date', '%d days before due date', $invoiceScheduleDays, 'fluent-cart'), $invoiceScheduleDays),
+            ];
+        }
+
+        // Gateways declaring `system_subscription` — the only ones
+        // subscription_system_charge can ever auto-charge.
+        $systemChargeGateways = [];
+        foreach (GatewayManager::getInstance()->all() as $systemChargeGateway) {
+            if (!$systemChargeGateway->has('system_subscription') || $systemChargeGateway->isUpcoming()) {
+                continue;
+            }
+            $systemChargeGatewayMeta = $systemChargeGateway->getMeta();
+            $systemChargeGateways[] = [
+                'label'  => Arr::get($systemChargeGatewayMeta, 'admin_title')
+                    ?: Arr::get($systemChargeGatewayMeta, 'label')
+                        ?: Arr::get($systemChargeGatewayMeta, 'title'),
+                'active' => $systemChargeGateway->isEnabled(),
+            ];
+        }
 
         $fields = [
             'setting_tabs' => [
@@ -121,6 +192,7 @@ class StoreSettings implements ArrayableInterface
                 'hide_tab_switch' => true,
                 'schema'          => [
                     'store_setup'          => [
+                        'id'              => '',
                         'title'           => __('Store Setup', 'fluent-cart'),
                         'show_title'      => false,
                         'type'            => 'section',
@@ -283,6 +355,59 @@ class StoreSettings implements ArrayableInterface
 
 
                             'settings_hr_2' => [
+                                'type'  => 'html',
+                                'value' => '<hr class="settings-divider">'
+                            ],
+
+                            'business_details_grid' => [
+                                'type'            => 'grid',
+                                'id'              => 'business_details',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'                   => [
+                                        'type'  => 'html',
+                                        'value' => '<span class="setting-label">' . __('Business Details', 'fluent-cart') . '</span>
+                                                            <div class="form-note">' . __('Add your legal business identity details used for store records and compliance.', 'fluent-cart') . '</div>'
+                                    ],
+                                    'business_details_fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 2
+                                        ],
+                                        'disable_nesting' => true,
+                                        'wrapperClass'    => 'col-span-2',
+                                        'schema'          => [
+                                            'company_name'          => [
+                                                'label' => __('Company Name', 'fluent-cart'),
+                                                'type'  => 'input',
+                                                'value' => '',
+                                            ],
+                                            'legal_registration_id' => [
+                                                'label' => __('Legal Registration ID', 'fluent-cart'),
+                                                'type'  => 'input',
+                                                'value' => '',
+                                            ],
+                                            'seller_vat_id'         => [
+                                                'label' => __('Seller VAT ID', 'fluent-cart'),
+                                                'type'  => 'input',
+                                                'value' => '',
+                                            ],
+                                            'seller_tax_id'         => [
+                                                'label' => __('Seller Tax ID', 'fluent-cart'),
+                                                'type'  => 'input',
+                                                'value' => '',
+                                            ],
+                                        ]
+                                    ],
+                                ]
+                            ],
+
+                            'settings_hr_3' => [
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
                             ],
@@ -533,6 +658,7 @@ class StoreSettings implements ArrayableInterface
 //                        ]
 //                    ],
                     'pages_setup'          => [
+                        'id'              => '',
                         'title'           => __('Pages Setup', 'fluent-cart'),
                         'show_title'      => false,
                         'type'            => 'section',
@@ -927,6 +1053,51 @@ class StoreSettings implements ArrayableInterface
 
                                 ]
                             ],
+
+                            'hr_product_slug' => [
+                                'type'  => 'html',
+                                'value' => '<hr class="settings-divider">'
+                            ],
+
+                            'product_rating_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'  => [
+                                        'type'  => 'html',
+                                        'value' => sprintf(
+                                            '<span class="setting-label">%1$s</span><div class="form-note">%2$s</div>',
+                                            __('Product Rating', 'fluent-cart'),
+                                            __('Show star ratings when reviews are enabled.', 'fluent-cart')
+                                        )
+                                    ],
+                                    'fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'schema'          => [
+                                            "show_rating_in_shop" => [
+                                                "label" => __('Show Rating in Shop', 'fluent-cart'),
+                                                "type"  => "checkbox",
+                                                "value" => "yes"
+                                            ],
+                                            "show_rating_in_relevant" => [
+                                                "label" => __('Show Rating in Relevant Products', 'fluent-cart'),
+                                                "type"  => "checkbox",
+                                                "value" => "yes"
+                                            ],
+                                        ]
+                                    ]
+
+                                ]
+                            ],
                         ],
                     ],
                     'cart_and_checkout'    => [
@@ -1089,7 +1260,7 @@ class StoreSettings implements ArrayableInterface
                             ],
                         ]
                     ],
-                    'subscriptions_setup' => [
+                    'subscriptions_setup'  => [
                         'title'           => __('Subscriptions', 'fluent-cart'),
                         'show_title'      => false,
                         'type'            => 'section',
@@ -1099,8 +1270,9 @@ class StoreSettings implements ArrayableInterface
                             'md'      => 1
                         ],
                         'schema'          => [
-                            'subscription_settings_grid' => [
+                            'subscription_early_payment_grid' => [
                                 'type'            => 'grid',
+                                'wrapperClass'    => 'items-start mb-6',
                                 'columns'         => [
                                     'default' => 1,
                                     'md'      => 3
@@ -1109,8 +1281,8 @@ class StoreSettings implements ArrayableInterface
                                 'schema'          => [
                                     'label'  => [
                                         'type'  => 'html',
-                                        'value' => '<span class="setting-label">' . __('Subscription Settings', 'fluent-cart') . (!$isProActive ? ' <img src="' . esc_url($proFeatureIcon) . '" alt="' . esc_attr__('Pro feature', 'fluent-cart') . '" class="pro-feature-icon" style="margin-left: 6px; width: 14px; height: 14px; display: inline-block; vertical-align: text-top;" />' : '') . '</span>
-                                                            <div class="form-note">' . __('Configure how installment subscriptions can be paid early.', 'fluent-cart') . '</div>'
+                                        'value' => '<span class="setting-label">' . __('Early Payment', 'fluent-cart') . (!$isProActive ? ' <img src="' . esc_url($proFeatureIcon) . '" alt="' . esc_attr__('Pro feature', 'fluent-cart') . '" class="pro-feature-icon" style="margin-left: 6px; width: 14px; height: 14px; display: inline-block; vertical-align: text-top;" />' : '') . '</span>
+                                                            <div class="form-note">' . __('Let customers pay remaining installments before their due date.', 'fluent-cart') . '</div>'
                                     ],
                                     'fields' => [
                                         'type'            => 'grid',
@@ -1131,6 +1303,106 @@ class StoreSettings implements ArrayableInterface
                                                     ? "<div class='pl-6'>" . __('This is a FluentCart Pro feature.', 'fluent-cart') . "</div>"
                                                     : "<div class='pl-6'>" . __('Allow customers to pay remaining installments early from subscription screens.', 'fluent-cart') . "</div>"
                                             ]
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            'subscription_management_mode_grid' => [
+                                'type'            => 'grid',
+                                'wrapperClass'    => 'items-start',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'  => [
+                                        'type'  => 'html',
+                                        'value' => sprintf(
+                                        /* translators: 1: setting label, 2: setting description */
+                                            '<span class="setting-label">%1$s</span>
+                                                            <div class="form-note">%2$s</div>',
+                                            __('Renewal Billing', 'fluent-cart'),
+                                            __('Choose how recurring subscription payments are collected.', 'fluent-cart')
+                                        )
+                                    ],
+                                    'fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'class'           => 'col-span-2',
+                                        'schema'          => [
+                                            // Compact, guarded control: shows only the CURRENT mode with a
+                                            // short how-it-works summary and a Change button. Editing goes
+                                            // through a disclaimer confirm + dialog so the store-wide
+                                            // billing decision can never be flipped by a stray click.
+                                            'subscription_management_mode' => [
+                                                'label'           => false,
+                                                'component'       => 'StoreSettings/SubscriptionModeManager',
+                                                'disable_nesting' => true,
+                                                'value'           => 'gateway_managed',
+                                                // Read-only renewal-order schedule, built live from the
+                                                // same map the scheduler uses (filterable).
+                                                'schedule_items'  => $invoiceScheduleList,
+                                                // Which gateways auto-charge is actually possible on.
+                                                'system_charge_gateways' => $systemChargeGateways,
+                                            ],
+                                            // Keep these in the form payload — the component above writes
+                                            // them; without a schema entry the keys would drop out of the
+                                            // saved values.
+                                            'subscription_system_charge'   => [
+                                                'type'  => 'hidden',
+                                                'value' => 'no',
+                                            ],
+                                            'subscription_manual_fallback' => [
+                                                'type'  => 'hidden',
+                                                'value' => 'no',
+                                            ],
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            'subscription_mode_guard_grid' => [
+                                'type'            => 'grid',
+                                'wrapperClass'    => 'items-start mt-6',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'  => [
+                                        'type'  => 'html',
+                                        'value' => sprintf(
+                                        /* translators: 1: setting label, 2: setting description */
+                                            '<span class="setting-label">%1$s</span>
+                                                            <div class="form-note">%2$s</div>',
+                                            __('Staging Protection', 'fluent-cart'),
+                                            __('Prevent staging or test copies of your store from billing real customers.', 'fluent-cart')
+                                        )
+                                    ],
+                                    'fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'class'           => 'col-span-2',
+                                        'schema'          => [
+                                            'subscription_mode_guard' => [
+                                                'label' => __('Don\'t bill live subscriptions from this site while it is in test mode', 'fluent-cart'),
+                                                'type'  => 'checkbox',
+                                                'value' => 'yes',
+                                                'note'  => sprintf(
+                                                    /* translators: 1: the setting's explanatory note text */
+                                                    "<div class='pl-6'>%1\$s</div>",
+                                                    __('In test mode, this site won\'t invoice, charge, or email live subscriptions — so a staging copy can never double-bill customers. Billing from this site resumes when it is live again.', 'fluent-cart')
+                                                )
+                                            ],
                                         ]
                                     ]
                                 ]
@@ -1195,6 +1467,15 @@ class StoreSettings implements ArrayableInterface
             ];
         }
 
+        // Product Rating toggles only apply while the reviews module is
+        // active — hide the section (and its divider) otherwise.
+        if (!ModuleSettings::isActive('reviews')) {
+            unset(
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['hr_product_slug'],
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['product_rating_grid']
+            );
+        }
+
         return apply_filters("fluent_cart/store_settings/fields", $fields, []);
     }
 
@@ -1252,6 +1533,8 @@ class StoreSettings implements ArrayableInterface
 
         update_option($this->optionKey, $settings, true);
         $this->storeSettings = $settings;
+        self::$cachedStoreSettings = $this->storeSettings;
+        wp_cache_delete(self::CACHE_KEY, self::CACHE_GROUP);
 
         $isSlugChanged = Arr::get($prevSettings, 'product_slug') !== Arr::get($settings, 'product_slug');
         $isAccountPageChanged = Arr::get($prevSettings, 'customer_profile_page_slug') !== Arr::get($settings, 'customer_profile_page_slug');
@@ -1379,7 +1662,7 @@ class StoreSettings implements ArrayableInterface
                 return $this->getPageLink($pageId);
             }
         }
-        return '';
+        return home_url();
     }
 
 
@@ -1515,7 +1798,7 @@ class StoreSettings implements ArrayableInterface
             $pageId = Arr::get($this->storeSettings, 'customer_profile_page_id');
         }
 
-        if (!$pageId) {
+        if (!$pageId || !get_post($pageId)) {
             return $slug;
         }
 
@@ -1554,6 +1837,10 @@ class StoreSettings implements ArrayableInterface
 
     public function getPageLink($pageId = null): string
     {
+        if (!$pageId || !get_post($pageId)) {
+            return '';
+        }
+
         $link = get_page_link($pageId);
 
         if (!empty($link)) {
@@ -1561,4 +1848,5 @@ class StoreSettings implements ArrayableInterface
         }
         return '';
     }
+
 }

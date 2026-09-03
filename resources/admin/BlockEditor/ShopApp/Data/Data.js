@@ -11,6 +11,7 @@ Object.keys(window.fluent_cart_shop_app_block_editor_data.taxonomies).map((key, 
         label: filter.label,
         enabled: false,
         multiple: false,
+        show_empty: false,
     }
 })
 

@@ -5,6 +5,12 @@
 
 .fct_menu_item {
   @apply mb-0 mr-1 last:mr-0 relative;
+  .fct_menu_down_arrow {
+    svg {
+        transition: .3s;
+        @apply w-3 h-3;
+    }
+  }
   a {
     text-decoration: none;
     @apply py-2.5 leading-none px-3 mb-0 tracking-wide font-medium cursor-pointer text-center text-sm box-border flex justify-center items-center rounded border border-solid border-transparent text-system-dark mr-1 last:mr-0 transition-none dark:text-gray-400 hover:bg-dark-25 hover:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-white focus:shadow-none;
@@ -12,22 +18,12 @@
 
   button {
    @apply bg-transparent py-2.5 leading-none px-3 mb-0 tracking-wide font-medium cursor-pointer text-center text-sm box-border flex justify-center items-center rounded border border-solid border-transparent text-system-dark mr-1 last:mr-0 transition-none dark:text-gray-400 hover:bg-dark-25 hover:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-white focus:shadow-none;
-    .fct_menu_down_arrow {
-      @apply relative top-[1px] pl-1;
-      svg {
-        @apply w-3 h-3;
-      }
-    }
   }
 
   &.active_admin_menu {
-    a {
+    > a,
+    > button {
       @apply bg-dark-25 text-dark-500 dark:bg-dark-600 dark:text-white;
-    }
-  }
-  &.has-child {
-    a {
-        @apply bg-transparent hover:bg-dark-25 hover:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-white;
     }
   }
   &:hover {
@@ -37,7 +33,7 @@
   }
   .fct_menu_child {
     box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
-    @apply z-10 absolute left-0 w-[150px] bg-white dark:bg-dark-700 p-2 rounded opacity-0 invisible transition-all duration-300 ease-in-out;
+    @apply z-10 absolute left-0 w-[150px] bg-white dark:bg-dark-500 p-2 rounded opacity-0 invisible transition-all duration-300 ease-in-out;
     &_item {
       @apply mb-0;
       a {
@@ -47,18 +43,19 @@
   }
   &.has-child {
     &:hover {
-      > a {
-        .fct_menu_down_arrow {
-          @apply rotate-180;
+        > a,
+        > button {
+            @apply bg-dark-25 text-dark-500;
+        }
+      .fct_menu_down_arrow {
+        svg {
+            @apply rotate-180;
         }
       }
     }
-    > a {
-      @apply inline-flex items-center gap-1;
-      .fct_menu_down_arrow {
-        transition: .3s;
-        @apply w-3 h-2.5 block;
-      }
+    > a,
+    > button {
+      @apply inline-flex gap-1;
     }
   }
 }
@@ -90,7 +87,31 @@
     img {
       @apply w-full h-full;
     }
+    svg {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
   }
+  .logo-light {
+    @apply block dark:hidden;
+  }
+  .logo-dark {
+    @apply hidden dark:block;
+  }
+}
+
+// Theme icon visibility driven by data-fct-theme set by the inline head script.
+// All three icons are pre-rendered in PHP; only the selected one is visible.
+.fct-theme-icon {
+  display: none;
+}
+html[data-fct-theme="light"] .fct-theme-icon--light,
+html[data-fct-theme="dark"] .fct-theme-icon--dark,
+html[data-fct-theme="system"] .fct-theme-icon--system,
+html:not([data-fct-theme]) .fct-theme-icon--system {
+  display: flex;
+  align-items: center;
 }
 
 .fct_admin_menu_actions {
@@ -114,10 +135,20 @@
   fill: #2C2C2C;
 }
 
-.dark .logo-dark-fill {
+.fluent_theme_dark .logo-dark-fill {
   fill: white;
 }
 
+.fluent_theme_dark {
+    .fct_menu_item.has-child {
+        &:hover {
+            > a,
+            > button {
+                @apply bg-dark-600 text-white;
+            }
+        }
+    }
+}
 // Screen Meta
 #ehe-admin-cb,
 #wf-extended-protection-notice,
@@ -129,7 +160,7 @@
 /* product header */
 .fct-admin-product {
   &-header {
-    @apply flex items-center justify-between max-w-[1260px] 3xl:max-w-[1600px] mx-auto mt-0 mb-7.5;
+    @apply flex items-center justify-between max-w-[1350px] 3xl:max-w-[1600px] mx-auto mt-0 mb-7.5;
   }
 
   &-info {
@@ -152,7 +183,7 @@
     li {
       @apply p-0 mb-0 relative before:hidden;
       a {
-        @apply block relative text-xs font-medium text-system-mid hover:text-system-dark focus:shadow-none dark:text-gray-300 pb-0.5;
+        @apply block relative text-xs font-medium text-system-mid hover:text-system-dark focus:shadow-none dark:text-gray-300 pb-0.5 dark:hover:text-gray-50;
         &:after {
           @apply absolute bottom-[-2px] right-0 w-full h-[1.5px] bg-primary-500 rounded-xs duration-200 transition-all opacity-0 dark:bg-gray-50;
           content: "";
@@ -199,34 +230,10 @@
 
 .fct-theme-button-container {
   .theme-selected-button {
-    @apply flex cursor-pointer items-center justify-center w-9 h-9;
+    @apply flex cursor-pointer items-center justify-center w-9 h-9 bg-transparent border-0 outline-none p-0;
   }
-
-  .theme-icon {
-    @apply flex-shrink-0 w-9 h-9 flex items-center cursor-pointer justify-center text-system-mid rounded-md dark:text-gray-300;
-    .icon {
-      @apply justify-center;
-    }
-
-    &.active {
-      @apply bg-white dark:bg-dark-400;
-    }
-  }
-
   svg {
-    @apply w-4.5 h-4.5;
-  }
-
-  &.active {
-    &:before {
-      @apply opacity-100;
-    }
-  }
-
-  &::before {
-    content: '';
-    transition: opacity 0.3s ease-in-out;
-    @apply w-full h-full rounded-tr-md rounded-br-md absolute top-0 left-0 bg-gray-50 dark:bg-dark-500 opacity-0 z-[-1];
+    @apply w-4.5 h-4.5 dark:text-gray-300;
   }
 }
 
@@ -262,7 +269,7 @@
   }
 }
 
-.dark {
+.fluent_theme_dark {
   #wpbody-content {
     #fct_admin_menu_holder {
       .fct_admin_menu_wrap {
@@ -398,4 +405,3 @@
     }
   }
 }
-

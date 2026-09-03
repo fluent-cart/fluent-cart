@@ -3,7 +3,7 @@
 namespace FluentCart\App\Models;
 
 use FluentCart\Framework\Database\Orm\Relations\MorphTo;
-use FluentCart\Framework\Database\Orm\Relations\hasOne;
+use FluentCart\Framework\Database\Orm\Relations\HasOne;
 use FluentCart\App\Models\Concerns\CanSearch;
 
 class Activity extends Model

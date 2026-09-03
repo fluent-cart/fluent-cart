@@ -88,7 +88,7 @@ onMounted(() => {
           </el-option>
         </el-select>
 
-        <validation-error
+        <ValidationError
             v-if="validationErrors.hasOwnProperty('user_id')"
             :validation-errors="validationErrors"
             field-key="user_id"

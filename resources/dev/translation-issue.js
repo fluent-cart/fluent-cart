@@ -97,7 +97,6 @@ function scanFiles(directory, options = {}) {
 }
 
 // Run the scanner with custom exclusions
-console.log('Scanning for untranslated strings...');
 const customExclusions = {
     exclude: {
         dirs: ['Bits/Components/Table', 'utils/model/form'],
@@ -109,10 +108,7 @@ scanFiles(scanDir, customExclusions);
 
 // Report issues
 if (issues.length === 0) {
-    console.log('No untranslated strings found.');
 } else {
-    console.log(`Found ${issues.length} potential untranslated strings:`);
     issues.forEach((issue, index) => {
-        console.log(`${index + 1}) ${issue.file}:${issue.line} - "${issue.string}"`);
     });
 }

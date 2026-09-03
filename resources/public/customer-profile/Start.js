@@ -15,7 +15,7 @@ import {createRouter, createWebHistory} from "vue-router";
 import Rest from "@/utils/http/Rest";
 import ElementPlus, {ElMessageBox, ElNotification, ElLoadingDirective} from 'element-plus';
 import {useElementPlusComponents} from "./mixin/useElementPlusComponents";
-import Translate from "./translator/Translator";
+import translate from "./translator/Translator";
 import {translateNumber} from "./translator/Translator";
 import {formatDate} from "@/Bits/common";
 
@@ -26,7 +26,7 @@ const routes = [
         component: Dashboard,
         meta: {
             active_menu: 'dashboard',
-            title: 'dashboard'
+            title: translate('Dashboard')
         },
     },
     {
@@ -35,7 +35,7 @@ const routes = [
         component: PurchaseHistory,
         meta: {
             active_menu: 'purchase-history',
-            title: 'Purchase History'
+            title: translate('Purchase History')
         },
     },
     {
@@ -49,7 +49,7 @@ const routes = [
                 props: true,
                 meta: {
                     active_menu: 'purchase-history',
-                    title: 'View Order'
+                    title: translate('View Order')
                 }
             }
         ]
@@ -60,7 +60,7 @@ const routes = [
         component: Subscriptions,
         meta: {
             active_menu: 'subscriptions',
-            title: 'Subscriptions'
+            title: translate('Subscriptions')
         },
     },
     {
@@ -70,7 +70,7 @@ const routes = [
         props: true,
         meta: {
             active_menu: 'subscriptions',
-            title: 'View Subscription'
+            title: translate('View Subscription')
         }
     },
     {
@@ -79,7 +79,7 @@ const routes = [
         component: Downloads,
         meta: {
             active_menu: 'downloads',
-            title: 'Downloads'
+            title: translate('Downloads')
         },
     },
     {
@@ -88,7 +88,7 @@ const routes = [
         component: Licenses,
         meta: {
             active_menu: 'licenses',
-            title: 'Licenses'
+            title: translate('Licenses')
         },
     },
     {
@@ -98,7 +98,7 @@ const routes = [
         props: true,
         meta: {
             active_menu: 'licenses',
-            title: 'Manage License'
+            title: translate('Manage License')
         }
     },
     {
@@ -107,7 +107,7 @@ const routes = [
         component: UserProfile,
         meta: {
             active_menu: 'profile',
-            title: 'Profile'
+            title: translate('Profile')
         }
     }
 ];
@@ -161,12 +161,16 @@ if (containers && containers.length > 0) {
             $post: Rest.post,
             $put: Rest.put,
             $del: Rest.delete,
-            formatNumber(amount, withCurrency = true, hideEmpty = false) {
+            formatNumber(amount, withCurrency = true, hideEmpty = false, currencyName = null) {
                 if (!amount && hideEmpty) {
                     return '';
                 }
                 const shopConfig = window.fluentcart_customer_profile_vars.shop;
-                const currency = shopConfig.currency_sign || '';
+                const currencySigns = window.fluentcart_customer_profile_vars.currency_signs || {};
+                const currencyKey = currencyName ? String(currencyName).toUpperCase() : '';
+                const currency = (currencyKey && currencySigns[currencyKey])
+                    ? currencySigns[currencyKey]
+                    : (shopConfig.currency_sign || '');
                 const currencyPosition = shopConfig.currency_position;
 
                 let locale = window.fluentcart_customer_profile_vars.wp_locale.replace('_', '-');
@@ -180,20 +184,10 @@ if (containers && containers.length > 0) {
                 }
 
 
-                if (!amount) {
-                    amount = '0.00';
-                } else {
-                    amount = (amount / 100).toFixed(2); // Convert cents to dollars
-                }
-
-                if (!withCurrency) {
-                    return amount;
-                }
-
                 let formatted = new Intl.NumberFormat(locale, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
-                }).format(amount);
+                }).format(amount ? amount / 100 : 0);
 
                 formatted = translateNumber(formatted);
 
@@ -203,7 +197,7 @@ if (containers && containers.length > 0) {
 
                 return currencyPosition === 'before' ? `${currency}${formatted}` : `${formatted}${currency}`;
             },
-            $t: Translate,
+            $t: translate,
             handleError(response) {
                 let msg = '';
                 if (typeof response === 'string') {
@@ -218,7 +212,7 @@ if (containers && containers.length > 0) {
                 }
                 this.$notify({
                     type: 'error',
-                    title: 'Error',
+                    title: translate('Error'),
                     offset: 30,
                     message: msg,
                     dangerouslyUseHTMLString: true,
@@ -240,7 +234,7 @@ if (containers && containers.length > 0) {
 
                 this.$notify({
                     type: 'success',
-                    title: 'Success',
+                    title: translate('Success'),
                     offset: 30,
                     message: msg,
                     dangerouslyUseHTMLString: true,
@@ -262,7 +256,6 @@ if (containers && containers.length > 0) {
                                 navigator.clipboard.writeText(textToCopy).then(() => {
                                     // ref.handleSuccess('Copied to clipboard');
                                 }).catch(err => {
-                                    console.error('Failed to copy text: ', err);
                                     // Fallback to legacy method
                                     fallbackCopyTextToClipboard(textToCopy);
                                 });
@@ -284,7 +277,6 @@ if (containers && containers.length > 0) {
                             document.execCommand('copy');
                             // ref.handleSuccess('Copied to clipboard');
                         } catch (err) {
-                            console.error('Fallback: Could not copy text: ', err);
                         }
                         document.body.removeChild(inputElem);
                     }
@@ -367,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return true // Successfully navigated
                 }
             } catch (error) {
-                console.error('Navigation error:', error);
             }
         });
     });

@@ -3,12 +3,12 @@
       <!-- PayPal Payment Method -->
       <template v-if="transaction.payment_method === 'paypal'">
         <div class="flex gap-2 items-center">
-          <img :src="`${assetUrl}images/payment-methods/paypal-icon.svg`" :alt="$t('PayPal logo')">
+          <img :src="`${assetUrl}images/payment-methods/paypal-icon.svg`" :alt="$t('PayPal logo')" class="w-[22px]">
           <span class="text-gray-700 text-sm" :aria-label="$t('Transaction ID:') + transaction.vendor_charge_id || ''">{{ transaction.vendor_charge_id || '' }}</span>
         </div>
       </template>
 
-      <template v-else-if="parseInt(transaction.card_last_4)">
+      <template v-else-if="transaction.card_last_4">
         <div class="flex gap-2 items-center" role="img" :aria-label="$t('Credit card payment method')">
           <img :src="`${assetUrl}images/credit-card/card.svg`" :alt="$t('Credit Card logo')">
           <span v-if="transaction.card_brand" class="text">{{ transaction.card_brand }}</span>

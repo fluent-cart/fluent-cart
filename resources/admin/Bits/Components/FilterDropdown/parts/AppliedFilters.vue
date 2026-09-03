@@ -137,7 +137,7 @@ const shouldRenderFilter = (key) => {
   }
 
   // skip specific filters on customer report
-  if (router.name === "reports_customer") {
+  if (router.name === "reports_customer" || router.name === "reports_sources") {
     return false;
   }
 
@@ -167,6 +167,5 @@ const selectedFilters = computed(() => {
 });
 
 watch(filter.data.dateRange, (newValue) => {
-  console.log("dateRange changed:", newValue);
 });
 </script>

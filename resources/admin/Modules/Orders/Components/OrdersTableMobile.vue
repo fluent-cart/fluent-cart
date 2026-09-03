@@ -160,7 +160,7 @@ const getOrderTypeText = (type) => {
                           {{ item.post_title }}
                         </router-link>
                         
-                        <span class="variation-title"><b>{{ item.quantity }} </b> x {{ item.title }}</span>
+                        <span class="variation-title"><b>{{ item.quantity }} </b> x {{ item.variation_display_title || item.title }}</span>
                       </p>
 
                       <p v-if="getFilteredItems(row.order_items).length === 0">

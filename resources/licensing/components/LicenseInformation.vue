@@ -183,7 +183,7 @@
       </div><!-- fct-license-info-mobile-header -->
 
       <div class="fct-license-info-mobile-body">
-        <div class="fct-license-product">
+        <div class="fct-license-product" v-if="product != null">
           <router-link
               class="link"
               :to="{

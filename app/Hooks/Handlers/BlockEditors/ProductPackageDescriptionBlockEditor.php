@@ -4,7 +4,7 @@ namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\Templating\AssetLoader;
-use FluentCart\App\Services\Renderer\ProductCardRender;
+use FluentCart\App\Services\Renderer\PackageDescriptionRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
 
@@ -111,7 +111,7 @@ class ProductPackageDescriptionBlockEditor extends BlockEditor
         ]);
 
         ob_start();
-        (new ProductCardRender($product))->renderPackageDescription(
+        (new PackageDescriptionRenderer($product))->renderPackageDescription(
             $wrapper_attributes,
             $showName,
             $showDimensions,

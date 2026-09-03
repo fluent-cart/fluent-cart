@@ -15,6 +15,7 @@ const currentUrl = ref('');
 onMounted(() => {
   jQuery('.notice:not(.fluent-cart), .error:not(.fluent-cart), #ehp-admin-cb').remove();
   currentUrl.value = getCurrentUrl()
+  teleportReady.value = !!document.getElementById('theme-button-container');
 
   // Scroll effect on header
   const header = document.querySelector('.fct_admin_menu_wrap');
@@ -37,14 +38,8 @@ const route = useRoute()
 
 watch(
     () => route.fullPath,
-    async () => {
+    () => {
       currentUrl.value = getCurrentUrl()
-      teleportReady.value = false;
-      await nextTick(() => {
-        setTimeout(() => {
-          teleportReady.value = true;
-        }, 100);
-      })
     }
 );
 
@@ -61,7 +56,7 @@ const shouldShowAdminNotice = computed(() => {
       <router-view></router-view>
     </div>
 
-    <teleport to="#theme-button-container">
+    <teleport to="#theme-button-container" v-if="teleportReady">
       <ThemeToggle/>
     </teleport>
   </div>

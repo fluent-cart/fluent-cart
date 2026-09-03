@@ -1,4 +1,3 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php return array(
     'root' => array(
         'name' => '__root__',
@@ -20,28 +19,19 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'pelago/emogrifier' => array(
-            'pretty_version' => 'v7.2.0',
-            'version' => '7.2.0.0',
-            'reference' => '727bdf7255b51798307f17dec52ff8a91f1c7de3',
+        'tijsverkoyen/css-to-inline-styles' => array(
+            'pretty_version' => 'v2.4.0',
+            'version' => '2.4.0.0',
+            'reference' => 'f0292ccf0ec75843d65027214426b6b163b48b41',
             'type' => 'library',
-            'install_path' => __DIR__ . '/../pelago/emogrifier',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'sabberworm/php-css-parser' => array(
-            'pretty_version' => 'v8.6.0',
-            'version' => '8.6.0.0',
-            'reference' => 'd2fb94a9641be84d79c7548c6d39bbebba6e9a70',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../sabberworm/php-css-parser',
+            'install_path' => __DIR__ . '/../tijsverkoyen/css-to-inline-styles',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'symfony/css-selector' => array(
-            'pretty_version' => 'v7.1.1',
-            'version' => '7.1.1.0',
-            'reference' => '1c7cee86c6f812896af54434f8ce29c8d94f9ff4',
+            'pretty_version' => 'v5.4.45',
+            'version' => '5.4.45.0',
+            'reference' => '4f7f3c35fba88146b56d0025d20ace3f3901f097',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/css-selector',
             'aliases' => array(),

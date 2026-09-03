@@ -17,15 +17,31 @@
 
             <div v-if="license" :aria-labelledby="licenseDetailsTitleId">
 
-                <div v-if="license.renewal_url && license.status === 'expired'" class="fct-renew-box mb-4">
-                    <el-alert type="error" :closable="false" role="alert" aria-live="assertive">
+                <!--
+                    The server decides whether this box appears: renewal_url is empty
+                    unless the underlying subscription can be reactivated, and the link
+                    it holds is the subscription's own reactivate URL.
+
+                    Status must not re-gate that decision, only word it. Canceling a
+                    subscription does not revoke the license the customer already paid
+                    for, so the common case here is a live license with months left and
+                    no subscription behind it — for which the expiry sentence would be
+                    false and "renew the license" would name the wrong action.
+                -->
+                <div v-if="license.renewal_url" class="fct-renew-box mb-4">
+                    <el-alert :type="license.status === 'expired' ? 'error' : 'warning'" :closable="false" role="alert" aria-live="assertive">
                         <div class="text-center p-4">
-                            <p class="p-0 m-0 mb-3">
+                            <p v-if="license.status === 'expired'" class="p-0 m-0 mb-3">
                                 <!-- translators: %s is the expiration date -->
                                 {{ $t('Your license has been expired at %s. Please renew the license for getting updates and support.', dateTimeI18(license.expiration_date)) }}
                             </p>
-                            <a :href="license.renewal_url" class="el-button el-button--primary" :aria-label="$t('Renew License')">
-                                {{ $t('Renew License') }}
+                            <p v-else class="p-0 m-0 mb-3">
+                                <!-- translators: %1$s is the date the license stays active until -->
+                                {{ $t('Your license is active until %1$s. Reactivate the subscription to keep getting updates and support after that date.', dateTimeI18(license.expiration_date)) }}
+                            </p>
+                            <a :href="license.renewal_url" class="el-button el-button--primary"
+                               :aria-label="license.status === 'expired' ? $t('Renew License') : $t('Reactivate Subscription Plan')">
+                                {{ license.status === 'expired' ? $t('Renew License') : $t('Reactivate Subscription Plan') }}
                             </a>
                         </div>
                     </el-alert>
@@ -139,7 +155,7 @@
 </template>
 
 <script type="text/babel">
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "./parts/Badge.vue";
 import LicenseKey from "./parts/LicenseKey.vue";
 import ActivatedSites from "./parts/ActivatedSites.vue";
 import UpgradePlan from "./subcriptions/UpdatePaymentInfos/UpgradePlan.vue";
@@ -153,6 +169,12 @@ export default {
         LicenseKey,
         ActivatedSites
     },
+    props: {
+        license_key: {
+            type: String,
+            required: true
+        }
+    },
     data() {
         return {
             licenseDetailsTitleId: 'license-details-title',
@@ -161,11 +183,8 @@ export default {
             sectionParts: {}
         }
     },
-    props: {
-        license_key: {
-            type: String,
-            required: true
-        }
+    mounted() {
+        this.fetchLicense();
     },
     methods: {
         dateTimeI18,
@@ -185,9 +204,6 @@ export default {
                     this.loading = false;
                 });
         }
-    },
-    mounted() {
-        this.fetchLicense();
     }
 }
 </script>

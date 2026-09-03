@@ -37,25 +37,6 @@ class LogTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Title'),
-                value: 'title'
-            },
-            {
-                label: translate('Created At'),
-                value: 'created_at'
-            },
-
-
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by id, title, content or module.")
     }

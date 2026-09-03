@@ -3,6 +3,7 @@
 namespace FluentCart\App\Modules\ReportingModule;
 
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\Framework\Support\Arr;
 

@@ -42,15 +42,6 @@ export default {
             }
         }
     },
-    methods: {
-      translate,
-        handleRemoveItem(index) {
-            this.group.splice(index, 1);
-            if (!this.group.length) {
-                this.$emit('removeGroup');
-            }
-        }
-    },
     mounted() {
         if (!this.group?.length) {
             this.group.push({
@@ -58,6 +49,15 @@ export default {
                 operator: '',
                 value: ''
             });
+        }
+    },
+    methods: {
+      translate,
+        handleRemoveItem(index) {
+            this.group.splice(index, 1);
+            if (!this.group.length) {
+                this.$emit('removeGroup');
+            }
         }
     }
 }

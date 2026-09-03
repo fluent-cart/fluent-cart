@@ -4,14 +4,12 @@ namespace FluentCart\App\Hooks\Handlers\ShortCodes;
 
 use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\StoreSettings;
-use FluentCart\App\App;
 use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\DirectCheckoutShortcode;
 use FluentCart\App\Modules\Templating\AssetLoader;
 
 class SingleProductShortCode extends ShortCode
@@ -64,14 +62,23 @@ class SingleProductShortCode extends ShortCode
 
     public function viewData(): ?array
     {
-        $product = ShopResource::find($this->shortCodeAttributes['productId']);
+        $productId = Arr::get($this->shortCodeAttributes, 'productid')
+            ?: Arr::get($this->shortCodeAttributes, 'productId')
+            ?: Arr::get($this->shortCodeAttributes, 'product_id')
+            ?: Arr::get($this->shortCodeAttributes, 'id');
+
+        if (!$productId) {
+            return null;
+        }
+
+        $product = ShopResource::find($productId);
         if (empty($product)) {
             return null;
-        } else {
-            return [
-                'product' => $product
-            ];
         }
+
+        return [
+            'product' => $product
+        ];
     }
 
     public function localizeData(): array
@@ -92,24 +99,23 @@ class SingleProductShortCode extends ShortCode
 
     public function render(?array $viewData = null)
     {
-        AssetLoader::markFrontendAssetsRequired();
+        AssetLoader::loadSingleProductAssets();
         if (empty($viewData['product'])) {
-            return 'Product not found';
-        } else {
-
-            wp_reset_postdata();
-
-            $storeSettings = new StoreSettings();
-            $product = Product::query()->find($viewData['product']['ID']);
-            ob_start();
-            (new ProductRenderer($product, [
-                'view_type'   => $storeSettings->get('variation_view', 'both'),
-                'column_type' => $storeSettings->get('variation_columns', 'masonry')
-            ]))
-                ->render();
-
-            return ob_get_clean();
+            echo esc_html__('Product not found', 'fluent-cart');
+            return;
         }
 
+        // Single-product shortcode renders the full purchase UI, incl. Pro's
+        // advanced-variation selector — fire the hook so Pro enqueues its assets.
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
+
+        wp_reset_postdata();
+
+        $storeSettings = new StoreSettings();
+        $product = Product::query()->find($viewData['product']['ID']);
+        (new ProductRenderer($product, [
+            'view_type'   => $storeSettings->get('variation_view', 'both'),
+            'column_type' => $storeSettings->get('variation_columns', 'masonry')
+        ]))->render();
     }
 }

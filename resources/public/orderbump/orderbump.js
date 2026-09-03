@@ -74,6 +74,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         // revert the checkbox state
                         button.checked = !isChecked;
                         window.fluent_cart_checkout_ui_service?.enableCheckoutButton?.();
+
+                        if (typeof Toastify !== 'undefined') {
+                            new Toastify({
+                                text: error.message,
+                                className: "warning",
+                                duration: 3000
+                            }).showToast();
+                        }
                     });
             });
         });

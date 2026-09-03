@@ -33,13 +33,11 @@ async function updateServerConfigPort() {
     const freePort = serverConfig.allowedPorts.find(isPortFree);
 
     if (freePort && serverConfig.port !== freePort) {
-        console.log(`🔧 Current port ${serverConfig.port} is in use. Switching to ${freePort}`);
         serverConfig.port = freePort;
         fs.writeFileSync(configPath, JSON.stringify(serverConfig, null, 2));
         return {port: freePort, updated: true, config: serverConfig, isFree: true};
     }
 
-    console.warn('⚠️ No available ports found in allowedPorts.');
     return {port: serverConfig.port, updated: false, config: serverConfig, isFree: false};
 }
 

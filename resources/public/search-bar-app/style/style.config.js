@@ -5,7 +5,7 @@ import borderRadius from "../../../styles/tailwind/extends/borderRadius";
 import fontSize from "../../../styles/tailwind/extends/fontSize";
 
 module.exports = {
-    darkMode: 'class',
+    darkMode: ['selector', '.fluent_theme_dark'],
     content: [
         './app/FC/Template/DefaultTemplate/Views/search-bar-app/wrapper.php',
     ],
@@ -25,4 +25,3 @@ module.exports = {
 
     },
 }
-

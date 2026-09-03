@@ -20,7 +20,7 @@
                                        translate(
                                    '#%1$s - Paid %2$s',
                                            item.id,
-                                           CurrencyFormatter.formatNumber(item.refundable, true)
+                                           formatNumber(item.refundable, true)
                                        )"
                                        :value="item.id">
                             </el-option>
@@ -34,7 +34,7 @@
                             <el-option v-for="item in order.order_items"
                                        :key="item.id"
                                        :value="item.id"
-                                       :label="item.post_title + ' - ' + item.title + '  ' + CurrencyFormatter.formatNumber(item.line_total - item.refund_total)"
+                                       :label="item.post_title + ' - ' + (item.variation_display_title || item.title) + '  ' + formatNumber(item.line_total - item.refund_total)"
                                        class="refund-item"
                                        :disabled="Number(item.line_total) - Number(item.refund_total) <= 0"
                             >
@@ -42,19 +42,19 @@
                                 <div class="refund-item-info">
                                     <p>
                                         {{ item.post_title }}
-                                        <span>-{{ item.title }}</span>
+                                        <span>-{{ item.variation_display_title || item.title }}</span>
                                     </p>
                                     <div class="right">
                                       <span class="price">
                                          {{
-                                          /* translators: %s - refundable amount */
-                                          translate('Refundable: %s', CurrencyFormatter.formatNumber(item.line_total - item.refund_total))
+                                          /* translators: %1$s - refundable amount */
+                                          translate('Refundable: %1$s', formatNumber(item.line_total - item.refund_total))
                                         }}
                                       </span>
                                       <span class="price light">
                                         {{
-                                          /* translators: %s - item price */
-                                          translate('Item price: %s', CurrencyFormatter.formatNumber(item.line_total))
+                                          /* translators: %1$s - item price */
+                                          translate('Item price: %1$s', formatNumber(item.line_total))
                                         }}
                                       </span>
                                     </div>
@@ -68,13 +68,13 @@
                             <el-input type="number" :min="1" :max="maxRefundAmount" v-model.number="refund.amount"
                                       @input="checkMaxRefundAmount">
                                 <template #prefix="">
-                                    <span v-html="CurrencyFormatter.currencySign"></span>
+                                    {{ orderCurrencySign }}
                                 </template>
                             </el-input>
                             <div class="form-note">
                                 <p>{{ $t('Max refund amount for this transaction:') }}
                                     <span style="color: #F04438; font-weight: 500;">
-                                      {{ CurrencyFormatter.formatNumber(maxRefundAmount * 100) }}
+                                      {{ formatNumber(maxRefundAmount * 100) }}
                                     </span>
                                 </p>
                             </div>
@@ -168,7 +168,7 @@
                        :disabled="refund.amount <= 0">
                 {{refundProcessing ? translate('Processing') : translate('Refund')}}
               <span
-                v-if="refund.amount"></span>{{ CurrencyFormatter.formatNumber(refund.amount * 100) }}
+                v-if="refund.amount"></span>{{ formatNumber(refund.amount * 100) }}
             </el-button>
         </div>
       </div>
@@ -176,10 +176,10 @@
 </template>
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {formatNumber} from "@/Bits/productService";
 import VariationSelector from "@/Bits/Components/VariationSelector.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import Arr from "@/utils/support/Arr";
 import Badge from "@/Bits/Components/Badge.vue";
 
@@ -215,6 +215,11 @@ export default {
     computed: {
         CurrencyFormatter() {
             return CurrencyFormatter
+        },
+        orderCurrencySign() {
+            const signs = AppConfig.get('currency_signs', {});
+            const defaultSign = AppConfig.get('shop.currency_sign', '$');
+            return (this.order && this.order.currency && signs[this.order.currency]) ? signs[this.order.currency] : defaultSign;
         },
         isAnyProductManageStock() {
             for (const item of this.order.order_items) {
@@ -266,9 +271,19 @@ export default {
         }
       }
     },
+    mounted() {
+        this.refund.availableAmount = parseInt(this?.order?.total_paid) - parseInt(this?.order?.total_refund);
+
+        this.transactions = this.order?.transactions;
+        if (this.transactions.length) {
+            this.updateRefundable();
+        }
+    },
     methods: {
         translate,
-        formatNumber,
+        formatNumber(amount, withCurrency = true, hideEmpty = false) {
+            return this.formatNumberForOrder(amount, this.order, withCurrency, hideEmpty);
+        },
         updateMaxRefund() {
             const id = this.refund.transaction_id;
             let transaction = this.refundableTransactions.find(item => item.id === id);
@@ -289,15 +304,12 @@ export default {
             this.maxRefundAmount = this.refund.amount;
         },
         updateRefundable() {
-            // Only include transactions with status 'paid'
+            // Only include transactions with status 'paid'. `refundable` comes from the
+            // API (OrderTransaction::getMaxRefundableAmount()) — do not recompute it
+            // client-side, it can be filtered lower than item.total - refunded_total
+            // (e.g. merchant-of-record gateways capping to the actual captured amount).
             this.refundableTransactions = this.transactions
-                .filter(item => item.status === 'succeeded')
-                .map(item => {
-                    return {
-                        ...item,
-                        refundable: item.total - (parseInt(item.meta?.refunded_total) || 0),
-                    };
-                });
+                .filter(item => item.status === 'succeeded');
 
             if (this.refundableTransactions.length !== 0) {
                 this.refund.transaction_id = this.refundableTransactions[0].id;
@@ -330,8 +342,17 @@ export default {
 
             this.refund.refunded_items = refundedItems;
 
+            // This modal works in DOLLARS throughout — refundable is divided by
+            // 100 on load, and every max/available comparison and display below
+            // assumes that. The endpoint takes CENTS, so convert only here, at
+            // the submit boundary, leaving the rest of the component untouched.
+            const refundInfo = {
+                ...this.refund,
+                amount: Math.round(parseFloat(this.refund.amount) * 100)
+            };
+
             this.$post("orders/" + this.order_id + '/refund', {
-                refund_info: this.refund,
+                refund_info: refundInfo,
                 refunded_items: refundedItems
             }).then(res => {
                 // this.handleSuccess(res.message);
@@ -342,14 +363,6 @@ export default {
                 this.updateRefundable();
                 this.refundProcessing = false;
             })
-        }
-    },
-    mounted() {
-        this.refund.availableAmount = parseInt(this?.order?.total_paid) - parseInt(this?.order?.total_refund);
-
-        this.transactions = this.order?.transactions;
-        if (this.transactions.length) {
-            this.updateRefundable();
         }
     }
 }

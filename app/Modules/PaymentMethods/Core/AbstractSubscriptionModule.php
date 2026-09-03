@@ -92,4 +92,23 @@ abstract class AbstractSubscriptionModule
             esc_html__('Re-sync subscription from remote is not implemented for this payment method.', 'fluent-cart')
         );
     }
+
+    /**
+     * Read-only lookup of a candidate vendor subscription id, used by the admin
+     * "Edit Vendor IDs" verify action before the id is saved. Writes nothing.
+     * Only reached when the gateway declares the verify_vendor_ids feature.
+     *
+     * $args carries both candidate ids because some gateways nest the
+     * subscription under its customer.
+     *
+     * @param array $args vendor_subscription_id, vendor_customer_id
+     * @return array|\WP_Error normalized id/status/amount/currency/customer_id/next_billing_date
+     */
+    public function verifyVendorSubscription(array $args, $mode = 'current')
+    {
+        return new \WP_Error(
+            'not_implemented',
+            esc_html__('Vendor subscription lookup is not implemented for this payment method.', 'fluent-cart')
+        );
+    }
 }

@@ -31,7 +31,6 @@ const fetchData = () => {
         calculateGrowths();
       })
       .catch((error) => {
-        console.error(error, "error");
       })
       .finally(() => {
         loading.value = false;
@@ -134,7 +133,7 @@ onMounted(() => {
         <Card.Container>
           <Card.Body>
             <div class="mb-3" v-html="CurrencyFormatter.generateVolumeSummary(data.gross_revenue, true)"></div>
-            <GrossVolumeChart title="Gross Volume Breakdown"
+            <GrossVolumeChart :title="translate('Gross Volume Breakdown')"
                               :data="data.gross_revenue"
                               dataKey="current"
                               is-date
@@ -164,7 +163,7 @@ onMounted(() => {
               <template #title>
                 <h3 class="fct-card-header-title is-small">{{ translate('Net Revenue') }}</h3>
 
-                <Summary title="Net Revenue"
+                <Summary :title="translate('Net Revenue')"
                          :current="data.net_summary.total"
                          :previous="data.net_summary.total_prev"
                          :fluctuation="data.net_summary.yoy_growth"
@@ -183,7 +182,7 @@ onMounted(() => {
               <template #title>
                 <h3 class="fct-card-header-title is-small">{{ translate('Net Revenue Quarterly') }}</h3>
 
-                <Summary title="Net Revenue Quarterly"
+                <Summary :title="translate('Net Revenue Quarterly')"
                          :current="growths.net_revenue_quarterly.current"
                          :previous="growths.net_revenue_quarterly.prev"
                          :fluctuation="growths.net_revenue_quarterly.value"

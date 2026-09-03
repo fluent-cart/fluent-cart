@@ -5,7 +5,6 @@ import fontSize from "../../../../styles/tailwind/extends/fontSize";
 import borderRadius from "../../../../styles/tailwind/extends/borderRadius";
 
 module.exports = {
-    darkMode: 'class',
     //important: '.fluent-cart-product-block-editor',
     content: [
         './resources/admin/BlockEditor/Components/**/*.*',
@@ -46,4 +45,3 @@ module.exports = {
         fontSize: fontSize,
     },
 }
-

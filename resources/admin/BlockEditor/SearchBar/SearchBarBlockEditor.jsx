@@ -42,6 +42,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         link_with_shop_app: {
             type: 'boolean',
             default: false,
+        },
+        show_thumbnail: {
+            type: 'boolean',
+            default: true,
         }
     },
 

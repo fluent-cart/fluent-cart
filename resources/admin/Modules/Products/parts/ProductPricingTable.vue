@@ -1,7 +1,9 @@
 <script setup>
 import {onMounted, onUnmounted, computed, ref, nextTick} from "vue";
+import {formatNumber} from "@/Bits/productService";
 import ProductPricingActions from "./ProductPricingActions.vue";
-import ProductPricingForm from "./ProductPricingForm.vue";
+import ProductPricingForm from "./VariantForm/ProductPricingForm.vue";
+import VariantPricingAddButton from "./VariantPricingAddButton.vue";
 import BulkMediaPicker from "@/Bits/Components/Attachment/BulkMediaPicker.vue";
 import { VueDraggableNext } from 'vue-draggable-next';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -16,6 +18,10 @@ import PriceInput from "@/Bits/Components/Inputs/PriceInput.vue";
 const props = defineProps({
   product: Object,
   productEditModel: Object,
+  readonly: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const desktopDrawerWidth = 1040;
@@ -126,13 +132,17 @@ const getVariantDisplayTitle = (variant, index) => {
   return variant?.variation_title || `${translate('Variation')} ${index + 1}`;
 };
 
+// item_price is CENTS. Interpolating it rendered "$ 1999" in the variant nav
+// beside a PriceInput reading "19.99" for the same variant. formatNumber()
+// takes cents and also honours the shop's currency position, which the manual
+// sign + space did not. Matches how the advanced table builds the same meta.
 const formatVariantPrice = (variant) => {
   const price = variant?.item_price ?? '';
   if (price === '' || price === null || price === undefined) {
     return translate('No price set');
   }
 
-  return `${window.appVars?.shop?.currency_sign || '$'} ${price}`;
+  return formatNumber(price, true);
 };
 
 const resolveEditorIndex = (index) => {
@@ -416,25 +426,38 @@ const selectVariation = (item) => {
             v-bind="dragOptions"
             :list="product.variants"
             item-key="id"
+            :disabled="readonly"
             @end="(evt) => {
-              productEditModel.updateVariantSerialIndexes(product.variants);
-              // return productEditModel.setHasChange(true)
+              if (!readonly) productEditModel.updateVariantSerialIndexes(product.variants);
             }"
             tag="tbody"
             handle=".fct-drag-handle"
         >
           <tr v-for="(variant, index) in product.variants" :key="variant.id">
             <td>
-              <span class="fct-drag-handle drag-icon" v-if="product.variants.length > 1">
+              <span class="fct-drag-handle drag-icon" v-if="product.variants.length > 1 && !readonly">
                 <DynamicIcon name="ReorderDotsVertical"/>
               </span>
             </td>
             <td>
               <BulkMediaPicker
+                v-if="!readonly"
                 v-model="variant.media"
                 :compact="true"
                 :max-thumbs="1"
                 @change="value => productEditModel.onUploadPricingMedia('media', index, value)"
+              />
+              <img
+                v-else-if="variant.media && variant.media[0]"
+                :src="variant.media[0].url"
+                :alt="variant.variation_title"
+                class="fct-variant-thumb-readonly"
+              />
+              <img
+                v-else
+                :src="appVars.asset_url + 'images/empty-image.svg'"
+                alt=""
+                class="fct-variant-thumb-readonly"
               />
             </td>
             <td>
@@ -442,7 +465,7 @@ const selectVariation = (item) => {
                 <el-input
                     :class="productEditModel.hasValidationError(`variants.${index}.variation_title`) ? 'is-error' : ''"
                     :id="`variants.${index}.variation_title`"
-                    :placeholder="$t('e.g. Small, Medium, Large')" type="text" v-model="variant.variation_title" @input="value => {productEditModel.onChangePricing('variation_title', index,value)}" :disabled="product?.detail?.variation_type === 'simple'"
+                    :placeholder="$t('e.g. Small, Medium, Large')" type="text" v-model="variant.variation_title" @input="value => {productEditModel.onChangePricing('variation_title', index,value)}" :disabled="product?.detail?.variation_type === 'simple' || readonly"
                     @focus="productEditModel.clearValidationError(`variants.${index}.variation_title`)">
                 </el-input>
 
@@ -459,15 +482,16 @@ const selectVariation = (item) => {
                     :error-class="productEditModel.hasValidationError(`variants.${index}.item_price`) ? 'is-error' : ''"
                     :id="`variants.${index}.item_price`"
                     :model-value="variant.item_price"
-                    :disabled="variant.expanded"
+                    :disabled="variant.expanded || readonly"
                     @update:model-value="value => {
+                        if (readonly) return;
                         variant.item_price = value;
                         productEditModel.onChangePricing('item_price', index, value);
                         productEditModel.clearValidationError(`variants.${index}.item_price`);
                     }"
                 />
 
-                <span v-if="variant.other_info?.payment_type === 'subscription'" class="fct-variant-badge">
+                <span v-if="variant.other_info?.payment_type === 'subscription'" class="fct-variant-badge fct-variant-badge--light">
                   {{variant.other_info.repeat_interval}}
                 </span>
               </div>
@@ -479,8 +503,9 @@ const selectVariation = (item) => {
                     :error-class="productEditModel.hasValidationError(`variants.${index}.compare_price`) ? 'is-error' : ''"
                     :id="`variants.${index}.compare_price`"
                     :model-value="variant.compare_price"
-                    :disabled="variant.expanded"
+                    :disabled="variant.expanded || readonly"
                     @update:model-value="value => {
+                        if (readonly) return;
                         variant.compare_price = value;
                         productEditModel.onChangePricing('compare_price', index, value);
                         productEditModel.clearValidationError(`variants.${index}.compare_price`);
@@ -491,6 +516,7 @@ const selectVariation = (item) => {
             <td class="is-right">
               <div class="fct-product-pricing-table-item">
                 <ProductPricingActions
+                  v-if="!readonly"
                   :modeType="'action'"
                   :index="index"
                   :variant="variant"
@@ -512,30 +538,42 @@ const selectVariation = (item) => {
         v-bind="dragOptions"
         :list="product.variants"
         item-key="id"
+        :disabled="readonly"
         @end="(evt) => {
-          //console.log('Drag event:', evt)
-          productEditModel.updateVariantSerialIndexes(product.variants);
-          // return productEditModel.setHasChange(true)
+          if (!readonly) productEditModel.updateVariantSerialIndexes(product.variants);
         }"
         handle=".fct-drag-handle"
       >
-        <div 
-          v-for="(variant, index) in product.variants" 
-          :key="variant.id" 
+        <div
+          v-for="(variant, index) in product.variants"
+          :key="variant.id"
           class="fct-product-pricing-table-mobile-row"
         >
 
-        <span class="fct-drag-handle drag-icon" v-if="product.variants.length > 1">
+        <span class="fct-drag-handle drag-icon" v-if="product.variants.length > 1 && !readonly">
           <DynamicIcon name="ReorderDotsVertical"/>
         </span>
         <div class="fct-product-pricing-table-mobile-item-inner">
           <div class="fct-product-pricing-table-item">
           <div class="media">
             <BulkMediaPicker
+              v-if="!readonly"
               v-model="variant.media"
               :compact="true"
               :max-thumbs="1"
               @change="value => productEditModel.onUploadPricingMedia('media', index, value)"
+            />
+            <img
+              v-else-if="variant.media && variant.media[0]"
+              :src="variant.media[0].url"
+              :alt="variant.variation_title"
+              class="fct-variant-thumb-readonly"
+            />
+            <img
+              v-else
+              :src="appVars.asset_url + 'images/empty-image.svg'"
+              alt=""
+              class="fct-variant-thumb-readonly"
             />
           </div>
 
@@ -550,11 +588,11 @@ const selectVariation = (item) => {
               <li>
                 <div class="compare-price" v-if="variant.compare_price">
                   <span>{{ appVars.shop.currency_sign }}</span>
-                  {{variant.compare_price}}
+                  {{ formatNumber(variant.compare_price, false) }}
                 </div>
                 <div class="price">
                   <span>{{ appVars.shop.currency_sign }}</span>
-                  {{variant.item_price}}
+                  {{ formatNumber(variant.item_price, false) }}
                 </div>
               </li>
 
@@ -567,7 +605,7 @@ const selectVariation = (item) => {
 
 
 
-        <div class="fct-product-pricing-table-item-action">
+        <div class="fct-product-pricing-table-item-action" v-if="!readonly">
           <ProductPricingActions
               :modeType="'action'"
               :index="index"
@@ -586,6 +624,7 @@ const selectVariation = (item) => {
     <!-- mobile view -->
 
     <ProductPricingActions
+      v-if="!readonly"
       :modeType="'add'"
       :product="product"
       :productEditModel="productEditModel"
@@ -614,6 +653,7 @@ const selectVariation = (item) => {
             :items="variationNavItems"
             :active-key="activeVariationKey"
             :is-dirty="isCurrentVariationDirty"
+            :drawer-mode="drawerMode"
             :product="product"
             :product-edit-model="productEditModel"
             :can-copy-direct-checkout="canCopyDirectCheckout"
@@ -621,6 +661,14 @@ const selectVariation = (item) => {
             @select="selectVariation"
             @command="handleVariantNavCommand"
             @save="handleSaveDirtyDraft"
+          />
+
+          <!-- Add more button -->
+          <VariantPricingAddButton
+            :product="product"
+            :drawer-mode="drawerMode"
+            :is-variation-dirty="isCurrentVariationDirty"
+            @open-editor="openSharedDrawer"
           />
         </aside>
 
@@ -643,9 +691,9 @@ const selectVariation = (item) => {
                     :fieldKey="'variants'"
                     :product="product"
                     :productEditModel="productEditModel"
-                    @createOrUpdateVariant="handleVariantSaved"
-                    @closeModal="requestCloseSharedDrawer"
-                    @dirtyStateChange="handleDirtyStateChange"
+                    @create-or-update-variant="handleVariantSaved"
+                    @close-modal="requestCloseSharedDrawer"
+                    @dirty-state-change="handleDirtyStateChange"
                 />
             </div>
         </div>

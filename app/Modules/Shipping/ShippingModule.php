@@ -38,7 +38,8 @@ class ShippingModule
         $ignores = [
             'apply_coupons',
             'discounts_recalculated',
-            'remove_coupon'
+            'remove_coupon',
+            'payment_method_fee_recalculate',
         ];
 
         if (in_array($scope, $ignores)) {
@@ -89,6 +90,14 @@ class ShippingModule
         $shippingCountry = Arr::get($fillData, 'checkout_data.form_data.shipping_country', null);
         $shippingState = Arr::get($fillData, 'checkout_data.form_data.shipping_state', null);
 
+        // Checkout renderer resolves shipping methods with a billing fallback when no
+        // shipping address is set (ship-to-different unchecked). Resolve the same way
+        // here, otherwise this chain zeroes the method/charges the renderer just offered.
+        if (!$shippingCountry) {
+            $shippingCountry = Arr::get($fillData, 'checkout_data.form_data.billing_country', null);
+            $shippingState = Arr::get($fillData, 'checkout_data.form_data.billing_state', null);
+        }
+
         $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState);
 
         if (!$availableShippingMethods || is_wp_error($availableShippingMethods)) {
@@ -100,6 +109,7 @@ class ShippingModule
                 $cartItem['shipping_charge'] = 0;
                 $cartItem['itemwise_shipping_charge'] = 0;
             }
+            unset($cartItem);
 
             Arr::set($fillData, 'cart_data', $cartData);
 

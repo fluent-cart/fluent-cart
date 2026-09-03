@@ -8,7 +8,7 @@
             <div v-for="(group, index) in bumpConditions.groups" :key="'fct_group_' + index"
                  class="fct_bump_condition_group_wrap">
               <div class="fct_bump_condition_group">
-                <ConditionGroup @removeGroup="handleRemoveGroup(index)" v-model="bumpConditions.groups[index]"/>
+                <ConditionGroup @remove-group="handleRemoveGroup(index)" v-model="bumpConditions.groups[index]"/>
               </div>
               <div v-if="index !== bumpConditions.groups.length - 1"  class="fct_bump_condition_group_or_separator">
                 <span>{{ translate('OR') }}</span>
@@ -44,6 +44,12 @@ export default {
             })
         }
     },
+    emits: ['update:modelValue'],
+    data() {
+        return {
+            bumpConditions: this.modelValue
+        }
+    },
     watch: {
         bumpConditions: {
             deep: true,
@@ -52,10 +58,12 @@ export default {
             }
         }
     },
-    emits: ['update:modelValue'],
-    data() {
-        return {
-            bumpConditions: this.modelValue
+    mounted() {
+        if (!this.bumpConditions || !this.bumpConditions?.groups) {
+            this.bumpConditions = {
+                is_enabled: 'no',
+                groups: []
+            };
         }
     },
     methods: {
@@ -77,14 +85,6 @@ export default {
             if (!this.bumpConditions.groups.length) {
                 this.bumpConditions.is_enabled = 'no';
             }
-        }
-    },
-    mounted() {
-        if (!this.bumpConditions || !this.bumpConditions?.groups) {
-            this.bumpConditions = {
-                is_enabled: 'no',
-                groups: []
-            };
         }
     }
 }

@@ -6,7 +6,7 @@ class CustomerTable extends Table {
 
 
     getTabs() {
-        return null;
+        return {};
     }
 
     getToggleableColumns() {
@@ -26,35 +26,6 @@ class CustomerTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Customer ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Name'),
-                value: 'first_name'
-            },
-            {
-                label: translate('Purchases'),
-                value: 'purchase_count'
-            },
-            {
-                label: translate('Lifetime Value (LTV)'),
-                value: 'ltv'
-            },
-            {
-                label: translate('Last Purchase Date'),
-                value: 'last_purchase_date'
-            },
-            {
-                label: translate('Customer Since'),
-                value: 'created_at'
-            }
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by, #ID, First Name, Last Name and Email")
     }
@@ -70,10 +41,6 @@ class CustomerTable extends Table {
     getTableName() {
         return 'customers';
     }
-
-    useFullWidthSearch() {
-        return true;
-    }
 }
 
 
@@ -83,4 +50,3 @@ class CustomerTable extends Table {
 export default function useCustomerTable(data) {
     return CustomerTable.init(data);
 }
-

@@ -41,6 +41,9 @@ html, body {
   background-color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  * {
+    box-sizing: border-box;
+  }
   .fct-nice-select {
     padding-left: 10px;
   }
@@ -107,8 +110,13 @@ html, body {
 
   .fct_checkout_input_group {
     input {
-      border-radius: 0;
-      background-color: #fff;
+      // Self-contained border so the connected address box renders regardless
+      // of the host theme. On the normal checkout page this border comes from
+      // the `.fct_checkout` base rule (checkout.scss), which is absent under
+      // the modal `.fct-modal-checkout-form-wrapper` — leaving the field open
+      // to theme resets (e.g. Divi's global `input[type=text]` style). The
+      // corner/divider tweaks in checkout.scss then layer on top of this.
+      @apply appearance-none w-full min-h-10 m-0 rounded-none bg-white text-sm leading-none px-4 py-2.5 outline-none ring-0 shadow-none text-[var(--fct-modal-checkout-primary-text-color)] placeholder:text-sm placeholder:text-[theme('colors.gray.400')] border-[0.5px] border-x-[1px] border-solid border-[var(--fct-modal-checkout-border-color)] focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:border-[var(--fct-modal-checkout-active-border-color)] focus:text-[var(--fct-modal-checkout-primary-text-color)] focus:outline-none focus:shadow-none box-border;
     }
   }
   .fct_checkout_agree_terms {
@@ -165,8 +173,23 @@ html, body {
   .fct_summary_items_list {
     margin-top: 0;
   }
-  .fct_allow_create_account_wrapper {
+  .fct_coupon {
+    .fct_coupon_toggle a {
+        @apply bg-gray-100;
+    }
+    &.is_coupon_active {
+         @apply bg-gray-100;
+    }
+  }
+  .fct_tax_summary_box {
+    @apply bg-gray-100;
+  }
+  .fct_allow_create_account_wrapper,
+  .fct_b2b_toggle_wrapper {
     margin-top: 20px;
+  }
+  .fct_b2b_business_section {
+    @apply mt-2;
   }
 }
 
@@ -227,8 +250,6 @@ html, body {
 
   .fct-modal-cs-line-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     font-weight: 600;
     font-size: 14px;
     line-height: 1.5;
@@ -256,6 +277,25 @@ html, body {
   }
   .fct-modal-cs-line-price {
     color: var(--fct-modal-checkout-primary-text-color);
+    margin-left: auto;
+  }
+
+  .fct-modal-cs-price-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    height: max-content;
+  }
+
+  .fct-modal-cs-line-price--original {
+    text-decoration: line-through;
+    opacity: 0.6;
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .fct-modal-cs-line-price--discounted {
   }
 
   .fct-modal-cs-license {
@@ -575,6 +615,7 @@ html, body {
       color: var(--fct-modal-checkout-primary-text-color);
       outline: none;
       box-shadow: none;
+      box-sizing: border-box;
       &:focus {
         background-color: #fff;
         border-color: var(--fct-modal-checkout-active-border-color);
@@ -671,4 +712,99 @@ html, body {
     .fct-modal-checkout-details {
         border-bottom-left-radius: 0;
     }
+}
+
+/*=== Per-item tax breakdown (badge + tooltip) — mirrors checkout.scss ===*/
+.fct-modal-checkout-summary {
+  .fct_item_tax_badges {
+    @apply flex flex-col gap-1.5 mt-1.5;
+  }
+
+  .fct_item_tax_badge_row {
+    @apply flex items-center gap-x-2 justify-between;
+  }
+
+  .fct_item_tax_badge {
+    @apply inline-flex items-center gap-1 rounded-[4px] px-[7px] py-[2px] text-[11px] font-medium leading-[1.4];
+
+    &.is-inclusive {
+      background: #EAF3DE;
+      color: #3B6D11;
+    }
+
+    &.is-exclusive {
+      background: #FAEEDA;
+      color: #854F0B;
+    }
+  }
+
+  .fct_item_tax_badge_amount {
+    @apply text-[11px] font-medium leading-[1.4] flex-shrink-0;
+
+    &.is-inclusive {
+      color: #3B6D11;
+    }
+
+    &.is-exclusive {
+      color: #854F0B;
+    }
+  }
+
+  .fct_item_tax_hint {
+    @apply relative mt-[-1px] ml-2;
+    height: max-content;
+    flex: 0 0 auto;
+  }
+
+  .fct_item_tax_hint_button {
+    @apply rounded-full border border-solid text-[9px] leading-none font-semibold inline-flex items-center justify-center p-0 cursor-help shadow-none;
+    width: 14px;
+    min-width: 14px;
+    max-width: 14px;
+    height: 14px;
+    min-height: 14px;
+    max-height: 14px;
+    flex: 0 0 14px;
+    background-color: #ffffff;
+    color: var(--fct-modal-checkout-secondary-text-color);
+    border-color: var(--fct-modal-checkout-border-color);
+    appearance: none;
+
+    &:focus-visible {
+      outline: 2px solid var(--fct-modal-checkout-primary-text-color);
+      outline-offset: 2px;
+    }
+  }
+
+  .fct_item_tax_tooltip {
+    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid bg-white p-3 text-left text-xs leading-[1.6];
+    color: var(--fct-modal-checkout-primary-text-color);
+    border-color: var(--fct-modal-checkout-border-color);
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  }
+
+  .fct_item_tax_hint:hover .fct_item_tax_tooltip,
+  .fct_item_tax_hint:focus-within .fct_item_tax_tooltip {
+    @apply block;
+  }
+
+  .fct_item_tax_tooltip_heading {
+    @apply block font-medium mb-1;
+  }
+
+  .fct_item_tax_tooltip_line {
+    @apply block;
+
+    &.is-total {
+      @apply mt-1 font-medium;
+    }
+  }
+
+  .fct_unit_price_rounding_tooltip {
+    left: 0;
+    right: auto;
+    min-width: 220px;
+    width: 220px;
+  }
 }

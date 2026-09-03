@@ -27,19 +27,6 @@ class ShippingClassTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Class Name'),
-                value: 'name'
-            },
-            {
-                label: translate('Cost'),
-                value: 'cost'
-            }
-        ]
-    }
-
     getSearchHint() {
         return translate("Search by class name")
     }

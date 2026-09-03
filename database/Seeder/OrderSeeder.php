@@ -29,6 +29,9 @@ class OrderSeeder
         $orderCount = Order::query()->count();
         $orderItems = [];
         $orderTransactions = [];
+        // Accumulated across the whole batch, like the two above: the insert
+        // happens once after the loop.
+        $appliedCouponData = [];
         $coupons = Coupon::query()->where('status', 'active')->get()->toArray();
 
         if (defined('WP_CLI') && WP_CLI) {
@@ -36,11 +39,20 @@ class OrderSeeder
         }
 
         $storeSettings = new StoreSettings();
+
+        // How far back seeded orders may be dated. Reports filter on
+        // o.created_at, so `--days=60` puts the whole batch inside a report's
+        // date window. Defaults to the historic 450-day spread.
+        $maxAgeDays = isset($assoc_args['days']) ? absint($assoc_args['days']) : 0;
+        if (!$maxAgeDays) {
+            $maxAgeDays = 450;
+        }
+
         for ($i = 0; $i < $count; $i++) {
             $totalPrice = 0;
             $discountTotal = 0;
             $tempOrderItems = [];
-            $createdDate = $faker->dateTimeBetween('-450 days', 'now')->format('Y-m-d H:i:s');
+            $createdDate = $faker->dateTimeBetween('-' . $maxAgeDays . ' days', 'now')->format('Y-m-d H:i:s');
             $createdDateGmt = DateTime::anyTimeToGmt($createdDate);
 
             $fulfilmentType = $faker->randomElement(['physical', 'digital']);
@@ -234,12 +246,14 @@ class OrderSeeder
                 'created_at'     => $createdDateGmt,
             ];
 
-            $appliedCouponData = [];
             if (!empty($appliedCoupon) && $discountTotal > 0) {
+                // fct_applied_coupons has no customer_id column (see
+                // AppliedCouponsMigrator) — including it made every seed run die
+                // with "Unknown column 'customer_id' in 'field list'" before the
+                // order operations were ever seeded.
                 $appliedCouponData[] = [
                     'order_id'    => $order->id,
                     'coupon_id'   => $appliedCoupon['id'],
-                    'customer_id' => $customerId,
                     'code'        => $appliedCoupon['code'],
                     'amount'      => $discountTotal,
                     'created_at'  => $createdDateGmt,
@@ -268,7 +282,9 @@ class OrderSeeder
 
         OrderTransaction::query()->insert($orderTransactions);
         OrderItem::query()->insert($orderItems);
-        AppliedCoupon::query()->insert($appliedCouponData);
+        if ($appliedCouponData) {
+            AppliedCoupon::query()->insert($appliedCouponData);
+        }
 
         (new CustomerHelper)->calculateCustomerStats();
 

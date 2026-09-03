@@ -1,7 +1,7 @@
 <script setup>
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import * as Card from '@/Bits/Components/Card/Card.js';
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import {useRoute} from 'vue-router'
 import translateNumber from "@/utils/translator/Translator";
@@ -31,6 +31,13 @@ const handleTabChange = (newTab) => {
   activeTab.value = newTab;
 }
 
+watch(() => props.product.post_title, (newTitle) => {
+    const headerName = document.querySelector('.fct-admin-product-header .product-name');
+    if (headerName) {
+        headerName.textContent = (newTitle && newTitle.trim()) ? newTitle : translate('Product Name');
+    }
+});
+
 onMounted(() => {
   isDomReady.value = true
 
@@ -44,8 +51,13 @@ onMounted(() => {
     activeTab.value = props.product.detail.other_info.active_editor;
   }
 
-
 })
+
+watch(() => props.productEditModel.data.discardKey, () => {
+  if (wpEditor.value) {
+    wpEditor.value.resetContent(props.product.post_content);
+  }
+});
 
 
 </script>
@@ -54,7 +66,11 @@ onMounted(() => {
   <div class="fct-product-info-wrap">
     <Card.Container>
       <Card.Body>
-        <el-form label-position="top" require-asterisk-position="right">
+        <el-form
+            label-position="top"
+            require-asterisk-position="right"
+            @submit.prevent
+        >
           <div class="fct-admin-input-wrapper">
             <el-form-item :label="translate('Title')" required>
               <el-input :class="productEditModel.hasValidationError('post_title') ? 'is-error' : ''"
@@ -73,6 +89,7 @@ onMounted(() => {
           <div class="fct-admin-input-wrapper">
             <el-form-item :label="translate('Short description')">
               <el-input
+                  class="fct-short-desc-input"
                   @input="value => {productEditModel.onChangeInputField('post_excerpt',value)}"
                   v-model="product.post_excerpt"
                   :rows="2"
@@ -82,7 +99,7 @@ onMounted(() => {
 
               <div>
                 <div class="form-note">
-                  <p class="mt-[7px]">
+                  <p class="fct-excerpt-word-counter mt-[7px]">
                     {{
                       /* translators: %1$s - current word count, %2$s - max word count */
                       translate('%1$s Words of %2$s', translateNumber(productEditModel.data.excerptWordCount), translateNumber(productEditModel.maxExcerptWordCount))
@@ -145,7 +162,11 @@ onMounted(() => {
       </Card.Header>
 
       <Card.Body>
-        <el-form label-position="top" require-asterisk-position="right">
+        <el-form
+            label-position="top"
+            require-asterisk-position="right"
+            @submit.prevent
+        >
 
           <div class="fct-custom-long-desc-wrap fct-admin-input-wrapper">
             <el-form-item>
@@ -154,8 +175,8 @@ onMounted(() => {
                 <!-- Tab Content -->
                 <div class="relative rounded overflow-hidden">
                   <!-- WP Editor Tab -->
-                  <div v-show="activeTab === 'wp-editor'" class="editor-tab-content">
-                    <wp-editor
+                  <div v-show="activeTab === 'wp-editor'" class="editor-tab-content fct-wp-editor-tab-content">
+                    <WpEditor
                         ref="wpEditor"
                         :modelValue="product.post_content"
                         @update="value => {
@@ -165,7 +186,7 @@ onMounted(() => {
                   </div>
 
                   <!-- Gutenberg Editor Tab -->
-                  <div v-show="activeTab === 'gutenberg'" class="editor-tab-content">
+                  <div v-show="activeTab === 'gutenberg'" class="editor-tab-content fct-gutenberg-tab-content">
                     <GutenbergEditor :post_id="product.ID" :product="product" :reload="reload" :productEditModel="productEditModel"/>
                   </div>
                 </div>

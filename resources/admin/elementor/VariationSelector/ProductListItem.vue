@@ -35,7 +35,7 @@ const emit = defineEmits(['onVariationSelectionUpdated']);
         :model="model"
         :variant="product.variants[0]"
         :showCollapseButton="product.variants.length > 1"
-        @updateSelectedVariations="(variant, checked) => {
+        @update-selected-variations="(variant, checked) => {
           emit('onVariationSelectionUpdated', variant, checked)
         }"
     />

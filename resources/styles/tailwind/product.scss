@@ -293,7 +293,7 @@
     .content-collapsible-btn {
       @apply mr-1 w-6.5 h-7.5 inline-flex items-center cursor-pointer flex-shrink-0;
       .icon {
-        @apply text-system-dark dark:text-gray-100;
+        @apply w-4 h-4 text-system-dark dark:text-gray-100;
         transition: 0.3s ease-in-out;
       }
 
@@ -339,7 +339,7 @@
         .fct-collapsible-content-wrapper {
           .content-title {
             .title {
-              @apply font-normal text-system-mid;
+              @apply font-normal text-system-mid dark:text-gray-300;
             }
           }
         }
@@ -370,6 +370,11 @@
       @apply overflow-hidden;
       .title {
         @apply text-system-dark text-sm font-medium truncate dark:text-gray-50;
+
+        &--wrap {
+          @apply whitespace-normal;
+          overflow-wrap: anywhere;
+        }
       }
       .text {
         @apply text-xs text-system-mid font-normal dark:text-gray-300;
@@ -490,7 +495,7 @@
   }
 
   &-main {
-    @apply w-[900px] 3xl:w-[1230px];
+    @apply w-[930px] 3xl:w-[1230px];
     @media (max-width: 1359px) {
       @apply w-full;
     }
@@ -520,7 +525,7 @@
   }
 
   &-aside {
-    @apply w-[330px];
+    @apply w-[360px];
     @media (max-width: 1359px) {
       @apply w-full;
       .el-form {
@@ -551,6 +556,11 @@
       @apply hidden 1xl:block;
     }
   }
+}
+.folded {
+    .fct-product-main {
+        @apply w-[960px];
+    }
 }
 .fct-single-order-loader-wrap {
   .single-page-body {
@@ -601,6 +611,16 @@
   }
 }
 .fct-product-inventory-inner-wrap {
+  /* Products with many variant combinations would render an unbounded
+     table that pushes the rest of the editor off-screen. Cap the wrapper
+     so the rows scroll inside the card, and pin the column header so it
+     stays visible while scrolling. */
+  @apply max-h-[420px] overflow-y-auto;
+
+  .el-table__header-wrapper {
+    @apply sticky top-0 z-[2];
+  }
+
   .el-table {
     tbody {
       tr {
@@ -608,6 +628,35 @@
           overflow: inherit;
         }
       }
+    }
+  }
+
+  /* Title column truncates long variation names ("Green / L / Sleeping")
+     in the disabled el-input. Native input clipping just cuts the last
+     character mid-glyph; ellipsis makes it obvious the title overflows
+     and the hover tooltip carries the full value. */
+  .el-table__row .cell .el-input.is-disabled .el-input__inner {
+    @apply text-ellipsis overflow-hidden whitespace-nowrap;
+  }
+
+  /* Subscription rows float a small "Monthly" / "Yearly" badge over the
+     input's top-right corner. Reserve room so the input text doesn't
+     run under the badge and look chopped off. */
+  .fct-inventory-title-cell--has-badge {
+    .el-input__wrapper {
+      @apply pr-[58px];
+    }
+    .fct-variant-badge {
+        @apply absolute -top-4 right-1.5 opacity-0 transition;
+    }
+  }
+  .el-table__row {
+    &:hover {
+        .fct-inventory-title-cell--has-badge {
+            .fct-variant-badge {
+                @apply opacity-100;
+            }
+        }
     }
   }
 }
@@ -685,15 +734,25 @@
   }
 
   .fct-variant-badge {
+    @apply absolute -top-2 right-1.5;
+  }
+}
+
+// Advanced variation grouped table doesn't carry .fct-table-draggable
+// (groups own their own layout), so mirror the badge + cell positioning
+// here so the subscription interval pill renders the same as on simple
+// variations rather than the default blue pill.
+.fct-grouped-variant-table {
+  .fct-product-pricing-table-item {
+    @apply relative;
+  }
+
+  .fct-repeat-interval-badge {
     @apply absolute -top-2 right-1.5 bg-white border border-solid border-gray-outline text-primary-500 rounded-xs dark:bg-primary-700 dark:text-gray-50 dark:border-primary-500
   }
 
-  tr {
-    &:hover {
-      .fct-variant-badge {
-        @apply visible opacity-100;
-      }
-    }
+  tr:hover .fct-repeat-interval-badge {
+    @apply visible opacity-100;
   }
 }
 
@@ -731,7 +790,7 @@ input[type="number"] {
   @apply py-1 text-sm text-system-dark dark:text-gray-50;
 }
 
-.dark {
+.fluent_theme_dark {
   .fct-custom-gutenberg-editor-wrap {
     .iframe-loader {
       background: rgb(28 39 50 / 80%);
@@ -927,4 +986,55 @@ input[type="number"] {
 /* Results Section */
 .results-section {
   @apply mt-5;
+}
+
+.fct-product-download-form-box {
+    @apply rounded p-3 bg-gray-25 relative dark:bg-dark-500;
+    .el-form-item {
+        @apply mb-2.5;
+    }
+    p {
+        @apply m-0;
+    }
+}
+
+.fct-simple-product-actions {
+    @apply flex flex-col items-start gap-2 mt-6 pt-5 border-0 border-t border-solid border-gray-100 dark:border-dark-400;
+}
+
+// generate sku
+.fct-sku-input-wrap {
+    @apply flex items-center gap-1 border border-solid border-gray-outline rounded-sm dark:border-dark-400;
+    .el-input__wrapper {
+        @apply border-0 rounded-none bg-transparent;
+    }
+    .fct-sku-edit-actions {
+        @apply flex items-center flex-shrink-0;
+    }
+    .el-button {
+        @apply flex-shrink-0 w-[28px] h-[32px] ml-0 border-0 rounded-none bg-transparent text-system-mid dark:text-gray-50;
+        svg {
+            @apply w-4.5 h-4.5;
+        }
+    }
+    .el-button--primary {
+        @apply text-success-500 border border-solid border-y-0 border-l-0 border-gray-outline dark:border-dark-400 dark:text-success-500;
+        span {
+            @apply text-success-500 dark:text-success-500;
+        }
+    }
+    .fct-sku-suggest-btn {
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+    .el-button.is-loading::before {
+        @apply dark:bg-transparent;
+    }
+    .el-button.is-loading.el-button--primary::before {
+        @apply bg-transparent;
+    }
+    &:hover .fct-sku-suggest-btn,
+    &:focus-within .fct-sku-suggest-btn {
+        opacity: 1;
+    }
 }

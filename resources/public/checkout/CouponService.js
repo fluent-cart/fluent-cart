@@ -134,7 +134,22 @@ export default class CouponService {
 						setTimeout(() => input.focus(), 0);
 					}
 				}
-				container.style.display = (container.style.display === 'none' || !container.style.display) ? 'block' : 'none';
+				// Two sources of hiding must be cleared to show:
+				// 1. The `hidden` HTML attr — theme CSS has [hidden]{display:none!important} beating inline style
+				// 2. The .fct_coupon_field class has display:none via @apply hidden — beaten by inline style
+				const isHidden = container.hasAttribute('hidden') || container.style.display === 'none' || !container.style.display;
+				if (isHidden) {
+					container.removeAttribute('hidden');
+					container.style.display = 'block';
+				} else {
+					container.setAttribute('hidden', '');
+					container.style.removeProperty('display');
+				}
+
+				const parentParent = toggleEl.parentElement.parentElement;
+				if (parentParent) {
+					parentParent.classList.toggle('is_coupon_active', isHidden);
+				}
 			}
 		});
 
@@ -278,7 +293,6 @@ export default class CouponService {
             })
             .catch((error) => {
                 this.addCoupon(couponCode);
-                console.error("Failed to cancel coupon:", error.message);
             });
     }
 }

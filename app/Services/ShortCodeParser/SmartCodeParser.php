@@ -95,6 +95,16 @@ class SmartCodeParser
 
         }
 
+        // Parser returned null = accessor not recognised. Give the fallback
+        // filter a chance so dynamic blocks can register handlers for codes
+        // their parser doesn't know about (e.g. PDF item table).
+        if ($parsedValue === null) {
+            $fallback = apply_filters($this->hookPrefix . 'smartcode_fallback', $code, $data);
+            if ($fallback !== $code) {
+                $parsedValue = $fallback;
+            }
+        }
+
         return $this->transform($parsedValue, $code, $data);
     }
 

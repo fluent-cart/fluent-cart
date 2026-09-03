@@ -75,9 +75,12 @@ class InventoryTable extends Table {
     }
 
     with() {
+        // The v2 screen key: the pro AdvancedInventoryFilter resolves it to
+        // the capped variant list + SQL stock totals this UI expects. The
+        // legacy 'admin_inventory_list' key still exists server-side for
+        // frontends older than the Load More flow.
         return [
-            'detail',
-            'variants'
+            'admin_inventory_list_v2'
         ];
     }
 }

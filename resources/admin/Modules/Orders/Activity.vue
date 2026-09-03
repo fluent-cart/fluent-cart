@@ -36,10 +36,10 @@
 
           <div class="fct-delete-activity-content">
             <div class="title">
-              #{{this.activity.id}} {{ this.activity.title }}
+              #{{activity.id}} {{ activity.title }}
               <span>&nbsp;by&nbsp;{{ activity.created_by }}</span>
             </div>
-            <div class="text">{{ this.activity.content }}</div>
+            <div class="text">{{ activity.content }}</div>
           </div>
 
           <div class="dialog-footer is-border">
@@ -57,17 +57,17 @@
     import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 
     export default {
+      components: {ConvertedTime, DynamicIcon, IconButton, Badge},
+      props: [
+          'activities',
+          'showManageActivity'
+      ],
       data() {
         return {
           showModal: false,
           activity: {}
         }
       },
-      components: {ConvertedTime, DynamicIcon, IconButton, Badge},
-      props: [
-          'activities',
-          'showManageActivity'
-      ],
       methods: {
         deleteModal(activity) {
           this.showModal = true;

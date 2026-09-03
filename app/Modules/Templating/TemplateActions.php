@@ -23,6 +23,8 @@ class TemplateActions
         add_action('fluent_cart/template/main_content', [$this, 'renderMainContent']);
         add_action('fluent_cart/template/product_archive', [$this, 'renderProductArchive']);
         add_action('fluent_cart/product/render_product_header', [$this, 'renderProductHeader']);
+        add_action('fluent_cart/product/after_product_content', [$this, 'renderProductReviews']);
+        add_action('wp_head', [$this, 'renderReviewJsonLd']);
 
         // Universal hook for after_product_content — fires on both classic and block themes
         // Block themes render <!-- wp:post-content --> which runs the_content filter
@@ -95,6 +97,22 @@ class TemplateActions
                 return __('Product not found', 'fluent-cart');
             }
 
+            // On the product page this shortcode is the block theme's
+            // equivalent of what filterSingleProductContent appends for
+            // classic themes, so it answers to the same setting and filter.
+            // Placed anywhere else it is an explicit choice and still renders.
+            if (is_singular(FluentProducts::CPT_NAME)) {
+                $showRelevant = (new StoreSettings())->get('show_relevant_product_in_single_page') == 'yes';
+                $showRelevant = apply_filters(
+                    'fluent_cart/single_product_page/show_relevant_products',
+                    $showRelevant,
+                    $productId
+                );
+
+                if (!$showRelevant) {
+                    return '';
+                }
+            }
 
             $products = ShopResource::getSimilarProducts($productId, false);
             if (empty($products)) {
@@ -105,7 +123,8 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container'
+                'fct-similar-product-list-container',
+                ['rating_context' => 'relevant']
             ))->render();
 
             $content = ob_get_clean();
@@ -281,7 +300,8 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container'
+                'fct-similar-product-list-container',
+                ['rating_context' => 'relevant']
             ))->render();
 
             $relevantProducts = ob_get_clean();
@@ -330,6 +350,56 @@ class TemplateActions
 
         // Remove extra whitespace between tags to clean up the output
         return preg_replace('/>\s+</', '><', $cleaned);
+    }
+
+    private function isReviewModuleAvailable()
+    {
+        return \FluentCart\Api\ModuleSettings::isActive('reviews')
+            && class_exists(\FluentCart\App\Services\ProductReviewService::class);
+    }
+
+    public function renderProductReviews($postId)
+    {
+        if (!$postId || !$this->isReviewModuleAvailable()) {
+            return;
+        }
+
+        $renderer = new \FluentCart\App\Services\Renderer\ProductReviewRenderer($postId);
+        $renderer->render();
+        $renderer->renderForm();
+    }
+
+    public function renderReviewJsonLd()
+    {
+        if (!is_singular(\FluentCart\App\CPT\FluentProducts::CPT_NAME)) {
+            return;
+        }
+
+        $postId = get_the_ID();
+        if (!$postId || !$this->isReviewModuleAvailable()) {
+            return;
+        }
+
+        $summary = \FluentCart\App\Services\ProductReviewService::getProductRatingSummary($postId);
+        if ($summary['total'] < 1) {
+            return;
+        }
+
+        $product = get_post($postId);
+        $jsonLd = [
+            '@context'        => 'https://schema.org',
+            '@type'           => 'Product',
+            'name'            => $product->post_title,
+            'aggregateRating' => [
+                '@type'       => 'AggregateRating',
+                'ratingValue' => $summary['average'],
+                'reviewCount' => $summary['total'],
+                'bestRating'  => 5,
+                'worstRating' => 1,
+            ],
+        ];
+
+        echo '<script type="application/ld+json">' . wp_json_encode($jsonLd) . '</script>' . "\n";
     }
 
 }

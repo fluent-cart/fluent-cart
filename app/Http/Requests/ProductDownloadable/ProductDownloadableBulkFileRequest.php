@@ -20,7 +20,7 @@ class ProductDownloadableBulkFileRequest extends RequestGuard
             'downloadable_files.*.driver'                   => 'required|sanitizeText|maxLength:60',
             'downloadable_files.*.file_name'                => 'required|sanitizeText|maxLength:185',
             'downloadable_files.*.file_path'                => 'required|sanitizeText|maxLength:185',
-            'downloadable_files.*.file_url'                 => 'required|sanitizeText|maxLength:200',
+            'downloadable_files.*.file_url'                 => 'nullable|sanitizeText|maxLength:200',
             'downloadable_files.*.settings.download_limit'  => 'nullable|numeric',
             'downloadable_files.*.settings.download_expiry' => 'nullable|numeric',
         ];
@@ -38,7 +38,6 @@ class ProductDownloadableBulkFileRequest extends RequestGuard
             'downloadable_files.*.driver.required'    => esc_html__('Driver is required.', 'fluent-cart'),
             'downloadable_files.*.file_name.required' => esc_html__('File Name is required.', 'fluent-cart'),
             'downloadable_files.*.file_path.required' => esc_html__('File Path is required.', 'fluent-cart'),
-            'downloadable_files.*.file_url.required'  => esc_html__('File URL is required.', 'fluent-cart'),
         ];
     }
 

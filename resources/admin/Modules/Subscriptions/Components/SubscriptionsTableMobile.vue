@@ -22,7 +22,7 @@
 
         <div @click="$router.push({ name: 'view_subscription', params: { subscription_id: row.id } })">
           <div class="fct-table-product-col">
-            <div class="product-name">{{ row.item_name }}</div>
+            <div class="product-name">{{ row.display_item_name }}</div>
           </div>
 
           <div class="fct-table-billing-col">
@@ -90,7 +90,7 @@
           >
             <div class="title">{{ translate('Collection') }}</div>
             <div class="value">
-               {{ row.collection_method }}
+               {{ collectionMethodLabel(row.collection_method) }}
             </div>
           </div>
         </div>
@@ -118,7 +118,15 @@ import translate from "@/utils/translator/Translator";
 
 export default {
   name: 'SubscriptionsTableMobile',
-  emits: ['fetch'],
+  components: {
+    ConvertedTime,
+    RouteCell,
+    Badge,
+    DynamicIcon,
+    ArrowDown,
+    Empty,
+    CustomerInfoPopover,
+  },
   props: {
     subscriptions: {
       type: Array,
@@ -132,15 +140,7 @@ export default {
       }
     }
   },
-  components: {
-    ConvertedTime,
-    RouteCell,
-    Badge,
-    DynamicIcon,
-    ArrowDown,
-    Empty,
-    CustomerInfoPopover,
-  },
+  emits: ['fetch'],
   computed: {
     Str() {
       return Str
@@ -148,6 +148,14 @@ export default {
   },
   methods: {
     translate,
+    collectionMethodLabel(method) {
+      const labels = {
+        manual: translate('Manual'),
+        automatic: translate('Automatic'),
+        system: translate('Auto-charge'),
+      };
+      return labels[method] || method;
+    },
     subscriptionStatus(subscription) {
       // overridden_status is only for customer view, admin should see the actual status
       // if (subscription?.overridden_status) {

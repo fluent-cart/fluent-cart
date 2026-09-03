@@ -103,7 +103,6 @@ const deleteSingleOrder = (index = 0) => {
     deleteSingleOrder(index + 1);
 
   }).catch(errors => {
-    console.log(`Error deleting order ${invoiceNo} (ID: ${orderId}):`, errors);
 
     // Mark as failed
     if (orderIndex !== -1) {

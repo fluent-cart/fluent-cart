@@ -18,17 +18,17 @@ class SubscriptionActivated extends EventDispatcher
     ];
 
     /**
-     * @var $subscription Subscription
+     * @var Subscription $subscription
      */
     public Subscription $subscription;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
     public ?Customer $customer;
 
     /**
-     * @var $order Order|null
+     * @var Order|null $order
      */
     public ?Order $order;
 

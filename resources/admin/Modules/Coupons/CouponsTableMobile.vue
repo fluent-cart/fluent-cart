@@ -205,7 +205,6 @@ const handleCommand = (command) => {
                 props.table.fetch();
               })
               .catch((error) => {
-                console.log(error, 'err')
                 Notify.error(error);
               })
               .finally(() => {

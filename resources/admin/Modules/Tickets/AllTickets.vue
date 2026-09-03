@@ -62,9 +62,9 @@ onMounted(() => {
     <Card.Header :title="$t('All Tickets')" border_bottom></Card.Header>
     <Card.Body class="px-0 pb-0">
       <TableFilterWrapper>
-        <template v-slot:btn>
+        <template #btn>
           <div class="fct-btn-group">
-            <AddTicketModal @onTicketCreated="fetchTickets"/>
+            <AddTicketModal @on-ticket-created="fetchTickets"/>
           </div>
         </template>
       </TableFilterWrapper>
@@ -134,7 +134,7 @@ onMounted(() => {
         </el-table>
       </div>
 
-      <pagination
+      <Pagination
           v-if="tickets.length > 0"
           :hide_on_single="false"
           :pagination="paginate"

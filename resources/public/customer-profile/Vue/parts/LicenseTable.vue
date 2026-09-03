@@ -1,10 +1,10 @@
 <script setup>
 import translate, {dateTimeI18} from "../../translator/Translator";
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "./Badge.vue";
 import LicenseKey from "./LicenseKey.vue";
 import {useRouter} from "vue-router";
 import AppConfig from "@/utils/Config/AppConfig";
-import Str from "@/utils/support/Str";
+import getStatusText from "../../utils/statusLabels";
 
 const props = defineProps({
     licenses: {
@@ -35,72 +35,6 @@ const upgradeBasePath = () => {
 
 const router = useRouter();
 
-const getStatusText = (status) => {
-  switch (status) {
-    case 'completed':
-      return translate('Completed');
-    case 'paid':
-      return translate('Paid');
-    case 'active':
-      return translate('Active');
-    case 'publish':
-      return translate('Published');
-    case 'draft':
-      return translate('Draft');
-    case 'shipped':
-      return translate('Shipped');
-    case 'success':
-      return translate('Success');
-    case 'licensed':
-      return translate('Licensed');
-    case 'succeeded':
-      return translate('Succeeded');
-    case 'failed':
-      return translate('Failed');
-    case 'error':
-      return translate('Error');
-    case 'canceled':
-      return translate('Canceled');
-    case 'expired':
-      return translate('Expired');
-    case 'partially_paid':
-      return translate('Partially Paid');
-    case 'intended':
-      return translate('Intended');
-    case 'scheduled':
-      return translate('Scheduled');
-    case 'on-hold':
-      return translate('On Hold');
-    case 'pending':
-      return translate('Pending');
-    case 'unpaid':
-      return translate('Unpaid');
-    case 'warning':
-      return translate('Warning');
-    case 'processing':
-      return translate('Processing');
-    case 'future':
-      return translate('Future');
-    case 'inactive':
-      return translate('Inactive');
-    case 'dispute':
-      return translate('Dispute');
-    case 'disabled':
-      return translate('Disabled');
-    case 'beta':
-      return translate('Beta');
-    case 'subscription':
-      return translate('Subscription');
-    case 'renewal':
-      return translate('Renewal');
-    case 'payment':
-      return translate('Payment');
-    case 'unshipped':
-      return translate('Unshipped');
-    default:
-      return Str.headline(status);
-  }
-}
 </script>
 
 <template>

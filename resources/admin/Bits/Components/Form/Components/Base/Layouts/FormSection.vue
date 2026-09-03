@@ -33,11 +33,11 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="form-section">
+  <div class="form-section" :id="field.id || ''">
     <Card.Container>
       <Card.Header :title="field.title" border_bottom v-if="field.show_title !== false"/>
       <Card.Body>
-        <form-grid
+        <FormGrid
             :form="form"
             :field="field"
             :statePath="statePath"

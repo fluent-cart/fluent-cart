@@ -14,6 +14,7 @@ const props = defineProps({
     fieldKey: String,
     modeType: String,
     productEditModel: Object,
+    isGroupMode: { type: Boolean, default: false },
 });
 
 const showPackageDialog = ref(false);
@@ -113,16 +114,32 @@ const onPackageCreated = (packageData) => {
         <template #label>{{ translate('Shipping') }}</template>
         <template #action>
             <div class="fct-shared-variant-item-box__switch">
-                <span class="fct-shared-variant-item-box__hint">
-                    {{ translate('Physical Product') }}
-                </span>
-                <el-switch
-                    v-model="variant.fulfillment_type"
-                    active-value="physical"
-                    inactive-value="digital"
-                    @change="value => {productEditModel.updatePricingValue('fulfillment_type', value, fieldKey, variant, modeType)}"
-                    size="small"
-                />
+                <template v-if="!isGroupMode">
+                    <span class="fct-shared-variant-item-box__hint">
+                        {{ translate('Physical Product') }}
+                    </span>
+                    <el-switch
+                        v-model="variant.fulfillment_type"
+                        active-value="physical"
+                        inactive-value="digital"
+                        @change="value => {productEditModel.updatePricingValue('fulfillment_type', value, fieldKey, variant, modeType)}"
+                        size="small"
+                    />
+                </template>
+                <div v-else class="fct-inline-select-wrap">
+                    <label>{{ translate('Fulfillment Type') }}:</label>
+                    <el-select
+                        size="small"
+                        v-model="variant.fulfillment_type"
+                        popper-class="fct-group-select-popper"
+                        class="fct-inline-select"
+                        placement="bottom"
+                    >
+                        <el-option value="__unchanged__" :label="translate('Unchanged')" />
+                        <el-option value="physical" :label="translate('Physical')" />
+                        <el-option value="digital" :label="translate('Digital')" />
+                    </el-select>
+                </div>
             </div>
         </template>
 

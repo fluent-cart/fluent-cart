@@ -1,0 +1,18 @@
+.fct-review-form-block-editor {
+    // Canvas preview mirrors the frontend output: the block renders the
+    // Write a Review trigger (the form itself lives in the drawer), so the
+    // preview is the same button, styled like the public fct-review-cta-btn.
+    .fct-review-form-block-editor-cta {
+        // Mirrors the frontend .fct-review-cta-btn: white outlined pill,
+        // full width with centered content the way the button spans the
+        // summary card column.
+        @apply flex w-full box-border justify-center items-center gap-1.5 px-4 py-2;
+        @apply text-sm font-medium text-gray-600 bg-white;
+        @apply border border-solid border-gray-300 rounded-md;
+
+        svg {
+            @apply w-4 h-4;
+        }
+    }
+
+}

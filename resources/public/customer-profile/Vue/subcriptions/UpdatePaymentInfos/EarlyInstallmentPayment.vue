@@ -34,11 +34,11 @@
                     </div>
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-system-mid">{{ $t('Per installment') }}</span>
-                        <span class="text-sm">{{ formatNumber(subscription.recurring_amount) }}</span>
+                        <span class="text-sm">{{ formatNumber(subscription.recurring_amount, true, false, subscription.currency) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-2" style="border-top: 1px solid var(--fct-border-color, #e4e7ed);">
                         <span class="text-sm font-semibold">{{ $t('Total to pay now') }}</span>
-                        <span class="text-base font-semibold">{{ formatNumber(totalAmount) }}</span>
+                        <span class="text-base font-semibold">{{ formatNumber(totalAmount, true, false, subscription.currency) }}</span>
                     </div>
                 </div>
             </div>

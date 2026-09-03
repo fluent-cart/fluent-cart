@@ -111,8 +111,8 @@ export default {
     Delete,
     MoreFilled
   },
-  emits: ['reload'],
   props: ['selectedCustomers'],
+  emits: ['reload'],
   data() {
     return {
       // doing_bulk_actions: false,
@@ -143,6 +143,9 @@ export default {
       ];
     }
   },
+  mounted() {
+
+  },
   methods: {
     handleBulkAction() {
       // Access the selected value here
@@ -172,15 +175,15 @@ export default {
       });
 
       if (!customerIds.length) {
-        this.handleError('No customers found');
+        this.handleError(this.$t('No customers found'));
         return false;
       }
 
-      this.$confirm('Are you sure you want to delete these ' + customerIds.length + ' customers. This action is not recoverable',
-          'Confirm Delete!',
+      this.$confirm(this.$t('Are you sure you want to delete these %1$s customers. This action is not recoverable', customerIds.length),
+          this.$t('Confirm Delete!'),
           {
             confirmButtonText: this.$t('Yes, Delete!'),
-            cancelButtonText: 'Cancel',
+            cancelButtonText: this.$t('Cancel'),
             type: 'error'
           }
       )
@@ -288,9 +291,6 @@ export default {
       this.selected_action = '';
       this.$emit('reload');
     }
-  },
-  mounted() {
-
   }
 }
 </script>

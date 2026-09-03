@@ -23,7 +23,7 @@ const props = defineProps({
                 table.handleSortChange()
               }" class="fct-radios-blocks"
                       v-model="table.data.sorting.sortBy">
-        <el-radio v-for="column in table.getSortableColumns()" :key="column.value" :value="column.value"
+        <el-radio v-for="column in table.getSortOptions()" :key="column.value" :value="column.value"
                   :label="column.label">
         </el-radio>
       </el-radio-group>

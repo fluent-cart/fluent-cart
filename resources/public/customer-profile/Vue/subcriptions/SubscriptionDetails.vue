@@ -109,7 +109,7 @@
                         **** {{ subscription.billingInfo.details?.last_4 }}
                     </span>
 
-                    <updatePaymentInfos 
+                    <UpdatePaymentInfos 
                         :subscription="subscription" 
                         @fetch="fetchSubscription" 
                         :updateMethod="true"
@@ -135,7 +135,7 @@
 
 <script setup>
 import translate from "../../translator/Translator";
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "../parts/Badge.vue";
 import UpgradePlan from "./UpdatePaymentInfos/UpgradePlan.vue";
 import {computed, getCurrentInstance, ref} from "vue";
 import Rest from "@/utils/http/Rest";

@@ -30,7 +30,7 @@ $orderRef = !empty($order->invoice_no) ? $order->invoice_no : '#' . $order->id;
         <?php
         printf(
             /* translators: %s is the order reference */
-            esc_html__('This is a friendly reminder that payment for order %s is due.', 'fluent-cart'),
+            esc_html__('Today is the due date for invoice %s. Please complete your payment to keep your subscription active.', 'fluent-cart'),
             '<b>' . esc_html($orderRef) . '</b>'
         );
         ?>
@@ -61,7 +61,7 @@ $orderRef = !empty($order->invoice_no) ? $order->invoice_no : '#' . $order->id;
 
 <?php
 \FluentCart\App\App::make('view')->render('emails.parts.call_to_action_box', [
-    'content'     => __('Please complete your payment to keep your order active.', 'fluent-cart'),
+    'content'     => __('Your subscription renewal is due today. Complete your payment to avoid any interruption.', 'fluent-cart'),
     'link'        => $paymentLink,
     'button_text' => __('Pay Now', 'fluent-cart'),
 ]);

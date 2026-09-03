@@ -7,6 +7,7 @@ use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\Account;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Stripe;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\StripeSettingsBase;
+use FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\Webhook;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
@@ -66,7 +67,7 @@ class ConnectConfig
                 'hash'        => $stripeSettings->get($mode . '_connect_hash'),
                 'state'       => Arr::get($data, 'state', ''),
                 'mode'        => Arr::get($data, 'mode', '') === 'live' ? 'live' : 'test',
-                'set_webhook' => home_url('?fluent-cart=fct_payment_listener_ipn&method=stripe'),
+                'set_webhook' => Webhook::getURL(),
                 'code'        => Arr::get($data, 'code', '')
             ];
 
@@ -74,7 +75,6 @@ class ConnectConfig
                 'method'      => 'POST',
                 'timeout'     => 45,
                 'redirection' => 5,
-                'sslverify'   => false,
                 'blocking'    => true,
                 'body'        => $paypload,
                 'cookies'     => []
@@ -123,7 +123,7 @@ class ConnectConfig
                     'mode'        => 'test',
                     '_wpnonce'    => $testNonce
                 ], home_url()),
-                'image_url'     => Vite::getAssetUrl('images/payment-methods/stripe-icon.png'),
+                'image_url'     => Vite::getAssetUrl('images/payment-methods/stripe-icon.svg')
             ],
             'test_account'   => self::getAccountInfo($settings, 'test'),
             'live_account'   => self::getAccountInfo($settings, 'live'),
@@ -138,7 +138,6 @@ class ConnectConfig
             'timeout'     => 45,
             'redirection' => 5,
             'httpversion' => '1.0',
-            'sslverify'   => false,
             'blocking'    => true,
             'headers'     => array(),
             'body'        => $data,

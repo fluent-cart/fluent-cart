@@ -54,7 +54,6 @@
                                 <span class="fct-inventory-selected-item-title">
                                     {{ item.variation_title }}
                                 </span>
-                                <span class="fct-inventory-selected-item-price" v-html="item.formatted_total"></span>
                             </div>
 
                             <div class="fct-inventory-selected-item-stock-action">
@@ -83,7 +82,7 @@
             <div class="fct-inventory-adjustment-reason">
                 <ReasonDropdown
                     v-model="bulkAdjustmentReason"
-                    @update:customReason="customBulkReasonText = $event"
+                    @update:custom-reason="customBulkReasonText = $event"
                 />
             </div>
 

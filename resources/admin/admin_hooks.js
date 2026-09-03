@@ -1,3 +1,4 @@
+(function () {
 // import * as VueInstance from 'vue';
 // import translate from "@/utils/translator/Translator";
 // const instance = VueInstance.getCurrentInstance();
@@ -12,3 +13,4 @@ window.fluent_cart_admin = {
     // $t: translate,
     // translate: translate
 };
+})();

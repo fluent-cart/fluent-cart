@@ -6,6 +6,7 @@ import LabelHint from "@/Bits/Components/LabelHint.vue";
 import translate from "@/utils/translator/Translator";
 import Str from "../../../utils/support/Str";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
+import {getVariantLabel, getProductGroupOrder} from "@/utils/variantLabel";
 
 const props = defineProps({
   product: Object,
@@ -16,6 +17,46 @@ const protocol = ref('');
 const hostname = ref('');
 const fullUrl = ref('');
 const showStatusDropdown = ref(false);
+
+// Compose the Default Variant dropdown labels in the merchant's
+// configured attribute order ("Material / Color" if Material was the
+// first option card, not whatever fixed order the variation_title was
+// stamped with at variant creation). Mirrors the Downloadable Assets
+// "Choose variant" dropdown so both surfaces read the same way.
+const getDefaultVariantLabel = (variant) => {
+  return getVariantLabel(variant, getProductGroupOrder(props.product)) || variant.variation_title;
+};
+
+// Drop stale default_variation_id references. When an attribute group
+// is deleted on an advanced-variation product, the cascade removes the
+// variants that pointed at it — but the product detail's
+// default_variation_id column still holds the now-orphan variant id.
+// Without this normalisation, the el-select below renders the raw
+// numeric id (e.g. "6220") in the trigger because v-model can't find a
+// matching <el-option>. Watch both the id and the variants list so a
+// reload, a fresh save response, or any other variants mutation
+// reconciles the field.
+watch(
+  () => [props.product?.detail?.default_variation_id, props.product?.variants],
+  ([defaultId, variants]) => {
+    if (!defaultId || !props.product?.detail) return;
+    const variantList = Array.isArray(variants) ? variants : [];
+    const stillExists = variantList.some(v => String(v.id) === String(defaultId));
+    if (!stillExists) {
+      // Controlled prop mutation — same pattern TermForm.vue uses for
+      // its term object, with the parent owning the product graph and
+      // child components normalising stale references in place.
+      // eslint-disable-next-line vue/no-mutating-props
+      props.product.detail.default_variation_id = '';
+      // Stage the cleared value so the next save persists the fix
+      // alongside whatever the merchant edits.
+      if (props.productEditModel && typeof props.productEditModel.onChangeInputField === 'function') {
+        props.productEditModel.onChangeInputField('default_variation_id', '');
+      }
+    }
+  },
+  { immediate: true, deep: false }
+);
 
 const handleProductStatusDropdown = function () {
   // Toggle dropdown on button click
@@ -62,14 +103,24 @@ const getStatusTooltip = () => {
 const defaultOtherInfo = {
     use_pricing_table: 'no',
     group_pricing_by: 'payment_type',
-    sold_individually: 'no'
+    sold_individually: 'no',
+    reviews_enabled: 'yes'
 };
 
 watch(
     () => props.product.detail,
     (newDetail) => {
-        if (newDetail && (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0)) {
-            props.product.detail.other_info = { ...defaultOtherInfo };
+        if (newDetail) {
+            if (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0) {
+                props.product.detail.other_info = { ...defaultOtherInfo };
+            } else {
+                // Fill in missing keys from defaults (e.g. reviews_enabled for existing products)
+                for (const [key, value] of Object.entries(defaultOtherInfo)) {
+                    if (!(key in newDetail.other_info)) {
+                        newDetail.other_info[key] = value;
+                    }
+                }
+            }
         }
     },
     { immediate: true }
@@ -181,7 +232,7 @@ onMounted(() => {
             </div>
           </li>
 
-          <li class="fct-admin-summary-item" v-if="product.detail?.variation_type === 'simple_variations'">
+          <li class="fct-admin-summary-item" v-if="product.detail?.variation_type === 'simple_variations' || product.detail?.variation_type === 'advanced_variations'">
             <span class="fct-admin-summary-item-title">
               <LabelHint
                 :title="translate('Default Variant')"
@@ -200,7 +251,7 @@ onMounted(() => {
                 <el-option
                     v-for="(variant) in product.variants"
                     :key="variant.id"
-                    :label="variant.variation_title"
+                    :label="getDefaultVariantLabel(variant)"
                     :value="variant.id.toString()"
                 >
                 </el-option>
@@ -208,10 +259,10 @@ onMounted(() => {
             </div>
           </li>
           
-          <li class="fct-admin-summary-item" v-if="product.detail?.variation_type === 'simple_variations'">
+          <li class="fct-admin-summary-item" v-if="product.detail && product.detail.variation_type === 'simple_variations'">
             <span class="fct-admin-summary-item-title">
               <LabelHint
-                :title="translate('Group By')"
+                :title="translate('Pricing Table Layout')"
                 :content="translate('Organize product variations by repeat interval (Monthly, Yearly) or payment term (One time, Subscription).')"
               />
             </span>
@@ -221,7 +272,7 @@ onMounted(() => {
                 class="el-select--x-small"
                 clearable
                 v-model="product.detail.other_info.group_pricing_by" 
-                :placeholder="translate('Group by')" 
+                :placeholder="translate('Pricing Table Layout')"
                 @change="value => {productEditModel.onChangeInputField('group_pricing_by',value)}"
               >
                     <el-option :label="translate('Payment Term')" value="payment_type"/>
@@ -231,9 +282,16 @@ onMounted(() => {
             </div>
           </li>
         </ul>
-          <div class="mt-4 pt-4" v-if="product.detail">
+          <div class="mt-4 pt-4 space-y-2" v-if="product.detail">
               <el-checkbox @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
                   {{ translate('Limit purchases to 1 item per order') }}
+              </el-checkbox>
+              <!-- One-way :model-value, not v-model: onChangeInputField() already writes
+                   product.detail.other_info.reviews_enabled itself, so binding v-model here
+                   would mutate the prop redundantly. The sibling above still uses v-model
+                   (pre-existing, baselined) and can be converted the same way. -->
+              <el-checkbox @change="value => {productEditModel.onChangeInputField('reviews_enabled',value)}" :model-value="product.detail.other_info.reviews_enabled" true-value="yes" false-value="no">
+                  {{ translate('Enable reviews for this product') }}
               </el-checkbox>
           </div>
       </Card.Body>

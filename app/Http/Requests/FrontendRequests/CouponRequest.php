@@ -29,12 +29,19 @@ class CouponRequest extends RequestGuard
             "order_items.*.item_cost"  => 'numeric',
             "order_items.*.item_total"  => 'numeric',
             "order_items.*.tax_amount"   => 'numeric',
+            // nullable: the admin UI serializes variation line items with subtotal null
+            // (cartService.js computes unit_price*quantity - cost, and productService.js
+            // never sets `cost` on variation rows, so NaN JSON-encodes as null). The bare
+            // numeric rule 422'd every coupon apply on such orders. CouponServiceAdmin
+            // falls back to unit_price*quantity for non-numeric subtotals, keeping the
+            // min/max purchase-amount enforcement this field was whitelisted for.
+            "order_items.*.subtotal"  => 'nullable|numeric',
             "order_items.*.discount_total"   => 'numeric',
             "order_items.*.total"  => 'numeric',
             "order_items.*.line_total"  => 'numeric',
             "order_items.*.cart_index"  => 'nullable|numeric',
             "order_items.*.rate"  => 'nullable|numeric',
-            "order_items.*.line_meta"  => 'nullable|sanitizeTextArea',
+            "order_items.*.line_meta"  => 'nullable',
             "order_items.*.other_info" => 'nullable|array',
             'applied_coupons' => 'nullable|array',
 
@@ -75,13 +82,23 @@ class CouponRequest extends RequestGuard
             "order_items.*.item_cost"  => 'floatval',
             "order_items.*.item_total"  => 'floatval',
             "order_items.*.tax_amount"   => 'floatval',
+            // floatval(null) would coerce to 0.0 and silently zero the items total the
+            // min/max purchase gates sum — keep null as null so the service layer can
+            // recompute it from unit_price * quantity instead.
+            "order_items.*.subtotal"  => function ($value) {
+                return is_numeric($value) ? floatval($value) : null;
+            },
             "order_items.*.discount_total"   => 'floatval',
             "order_items.*.total"  => 'floatval',
             "order_items.*.line_total"  => 'floatval',
             "order_items.*.cart_index"  => 'intval',
             "order_items.*.rate"  => 'floatval',
-            "order_items.*.line_meta"  => 'sanitize_text_field',
-            "order_items.*.other_info" => 'sanitize_text_field',
+            "order_items.*.line_meta"  => function ($value) {
+                return is_array($value) ? $value : sanitize_text_field((string) $value);
+            },
+            "order_items.*.other_info" => function ($value) {
+                return is_array($value) ? $value : sanitize_text_field((string) $value);
+            },
             'applied_coupons.*' => 'intval',
 
             'customer_email' => function ($value) {

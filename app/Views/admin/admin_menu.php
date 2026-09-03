@@ -1,12 +1,15 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php
 
+use FluentCart\App\App;
 use FluentCart\App\Services\Permission\PermissionManager;
-use FluentCart\App\Vite;
 
-$darkLogo = Vite::getAssetUrl('images/logo/logo-full.svg');
-$lightLogo = Vite::getAssetUrl('images/logo/logo-full-dark.svg');
-
+// Inline SVGs render immediately with the HTML — no network request, no load blink.
+$logoDir      = App::isDevMode()
+    ? FLUENTCART_PLUGIN_PATH . 'resources/images/logo/'
+    : FLUENTCART_PLUGIN_PATH . 'assets/images/logo/';
+$lightLogoSvg = file_get_contents($logoDir . 'logo-full-dark.svg');
+$darkLogoSvg  = file_get_contents($logoDir . 'logo-full.svg');
 
 ?>
 <div class="fct_admin_menu_wrap fct_global_menu_wrap">
@@ -15,10 +18,8 @@ $lightLogo = Vite::getAssetUrl('images/logo/logo-full-dark.svg');
             <a aria-label="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"
                title="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"
                href="<?php echo esc_url(admin_url('admin.php?page=fluent-cart#/')); ?>">
-                <img class="block dark:hidden" src="<?php echo esc_url($lightLogo); ?>"
-                     alt="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"/>
-                <img class="hidden dark:block" src="<?php echo esc_url($darkLogo); ?>"
-                     alt="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"/>
+                <span class="logo-light"><?php echo $lightLogoSvg; ?></span>
+                <span class="logo-dark"><?php echo $darkLogoSvg; ?></span>
             </a>
         </div><!-- .fct_admin_logo_wrap -->
 
@@ -85,9 +86,47 @@ $lightLogo = Vite::getAssetUrl('images/logo/logo-full-dark.svg');
         </div>
 
         <div class="fct_admin_menu_actions">
-            <div id="fct_admin_menu_search"></div>
+            <!-- Pre-rendered so the search button is visible from first paint.
+                 Click delegates to window.fluentCart.openSearch() once Vue mounts. -->
+            <div id="fct_admin_menu_search">
+                <div class="fct-global-search-input-wrap">
+                    <button type="button" class="fct-setting-search-button" aria-label="<?php echo esc_attr__('Search', 'fluent-cart'); ?>"
+                            onclick="window.fluentCart?.openSearch?.()">
+                        <span class="fct-setting-search-icon">
+                            <div class="icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+                                    <path d="M14.5833 14.5833L18.3333 18.3333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16.6667 9.16666C16.6667 5.02452 13.3089 1.66666 9.16675 1.66666C5.02461 1.66666 1.66675 5.02452 1.66675 9.16666C1.66675 13.3088 5.02461 16.6667 9.16675 16.6667C13.3089 16.6667 16.6667 13.3088 16.6667 9.16666Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </span>
+                        <span class="fct-global-search-button-keys">
+                            <kbd class="fct-global-search-button-key">/</kbd>
+                        </span>
+                    </button>
+                </div>
+            </div>
             <div class="fct_admin_menu_button_wrap">
-                <div id="theme-button-container"></div>
+                <!-- Pre-rendered so the correct icon is visible from first paint.
+                     data-fct-theme on <html> (set by the inline head script) drives
+                     which icon span is visible via CSS. Vue teleport or vanilla JS
+                     attach handlers after load without rebuilding the button. -->
+                <div id="theme-button-container">
+                    <div class="fct-theme-button-container">
+                        <button class="theme-selected-button" type="button" aria-haspopup="true"
+                                aria-label="<?php echo esc_attr__('Toggle color theme', 'fluent-cart'); ?>">
+                            <span class="fct-theme-icon fct-theme-icon--light">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path d="M10 14.5C8.80653 14.5 7.66193 14.0259 6.81802 13.182C5.97411 12.3381 5.5 11.1935 5.5 10C5.5 8.80653 5.97411 7.66193 6.81802 6.81802C7.66193 5.97411 8.80653 5.5 10 5.5C11.1935 5.5 12.3381 5.97411 13.182 6.81802C14.0259 7.66193 14.5 8.80653 14.5 10C14.5 11.1935 14.0259 12.3381 13.182 13.182C12.3381 14.0259 11.1935 14.5 10 14.5ZM10 13C10.7956 13 11.5587 12.6839 12.1213 12.1213C12.6839 11.5587 13 10.7956 13 10C13 9.20435 12.6839 8.44129 12.1213 7.87868C11.5587 7.31607 10.7956 7 10 7C9.20435 7 8.44129 7.31607 7.87868 7.87868C7.31607 8.44129 7 9.20435 7 10C7 10.7956 7.31607 11.5587 7.87868 12.1213C8.44129 12.6839 9.20435 13 10 13ZM9.25 1.75H10.75V4H9.25V1.75ZM9.25 16H10.75V18.25H9.25V16ZM3.63625 4.69675L4.69675 3.63625L6.2875 5.227L5.227 6.2875L3.63625 4.6975V4.69675ZM13.7125 14.773L14.773 13.7125L16.3638 15.3032L15.3032 16.3638L13.7125 14.773ZM15.3032 3.6355L16.3638 4.69675L14.773 6.2875L13.7125 5.227L15.3032 3.63625V3.6355ZM5.227 13.7125L6.2875 14.773L4.69675 16.3638L3.63625 15.3032L5.227 13.7125ZM18.25 9.25V10.75H16V9.25H18.25ZM4 9.25V10.75H1.75V9.25H4Z" fill="currentColor"/></svg>
+                            </span>
+                            <span class="fct-theme-icon fct-theme-icon--dark">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path d="M8.5 6.25C8.49985 7.29298 8.81035 8.31237 9.39192 9.17816C9.97348 10.0439 10.7997 10.7169 11.7653 11.1112C12.7309 11.5055 13.7921 11.6032 14.8134 11.3919C15.8348 11.1807 16.7701 10.67 17.5 9.925V10C17.5 14.1423 14.1423 17.5 10 17.5C5.85775 17.5 2.5 14.1423 2.5 10C2.5 5.85775 5.85775 2.5 10 2.5H10.075C9.57553 2.98834 9.17886 3.57172 8.90836 4.21576C8.63786 4.8598 8.49902 5.55146 8.5 6.25ZM4 10C3.99945 11.3387 4.44665 12.6392 5.27042 13.6945C6.09419 14.7497 7.24723 15.4992 8.54606 15.8236C9.84489 16.148 11.2149 16.0287 12.4381 15.4847C13.6614 14.9407 14.6675 14.0033 15.2965 12.8215C14.1771 13.0852 13.0088 13.0586 11.9026 12.744C10.7964 12.4295 9.78888 11.8376 8.97566 11.0243C8.16244 10.2111 7.57048 9.20361 7.25596 8.09738C6.94144 6.99116 6.91477 5.82292 7.1785 4.7035C6.21818 5.2151 5.41509 5.97825 4.85519 6.91123C4.2953 7.84422 3.99968 8.91191 4 10Z" fill="currentColor"/></svg>
+                            </span>
+                            <span class="fct-theme-icon fct-theme-icon--system">
+                                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.875 4.375V6.25H4.375V7.5H6.875V9.375H8.125V4.375H6.875ZM9.375 7.5H15.625V6.25H9.375V7.5ZM13.125 10.625V12.5H15.625V13.75H13.125V15.625H11.875V10.625H13.125ZM10.625 13.75H4.375V12.5H10.625V13.75Z" fill="currentColor"/></svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
                 <?php if (PermissionManager::hasPermission(["store/settings", 'store/sensitive'])): ?>
                     <div class="fct_admin_settings_btn_wrap">
                         <a class="fct_admin_settings_btn"

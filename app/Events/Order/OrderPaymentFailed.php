@@ -17,31 +17,31 @@ class OrderPaymentFailed extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
     public ?Customer $customer;
 
     /**
-     * @var $transaction OrderTransaction|null
+     * @var OrderTransaction|null $transaction
      */
 
     /**
-     * @var $oldStatus string|null
+     * @var string|null $oldStatus
      */
     public ?string $oldStatus;
 
     /**
-     * @var $newStatus string|null
+     * @var string|null $newStatus
      */
     public ?string $newStatus;
 
     /**
-     * @var $reason string|null
+     * @var string|null $reason
      */
     public ?string $reason;
 

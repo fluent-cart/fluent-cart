@@ -3,18 +3,18 @@
         <h2 id="stripe-payment-heading" class="sr-only">{{ translate('Stripe Payment Method') }}</h2>
 
         <div class="stripe-card-form" v-loading="loading">
-            <div class="form-group">
+            <div class="fct-form-group">
                 <label>{{ translate('Card Number') }}</label>
                 <div id="card-number" class="stripe-element" aria-describedby="card-errors"></div>
             </div>
 
             <!-- Expiry and CVC (Side by Side) -->
-            <div class="form-row col-2">
-                <div class="form-group">
+            <div class="fct-form-row fct-col-2">
+                <div class="fct-form-group">
                     <label for="card-expiry">{{ translate('MM/YY') }}</label>
                     <div id="card-expiry" class="stripe-element" aria-describedby="card-errors"></div>
                 </div>
-                <div class="form-group">
+                <div class="fct-form-group">
                     <label for="card-cvc">{{ translate('CVC') }}</label>
                     <div id="card-cvc" class="stripe-element" aria-describedby="card-errors"></div>
                 </div>
@@ -23,15 +23,9 @@
             <div id="card-errors" class="sr-only" role="alert" aria-live="assertive"></div>
         </div>
 
-        <!-- Rate limit notice -->
-        <div v-if="showRateLimitNote && remainingAttempts >= 0" class="rate-limit-notice" :class="{ 'rate-limit-notice-warning': remainingAttempts === 0 }" role="note">
-            <p class="rate-limit-text" v-if="remainingAttempts > 0">
-                {{ translate('You can update your card') }} 
-                <strong>{{ remainingAttempts }}</strong> 
-                {{ translate('more time') }}{{ remainingAttempts !== 1 ? 's' : '' }} 
-                {{ translate('today') }}.
-            </p>
-            <p class="rate-limit-text" v-else>
+        <!-- Rate limit notice: only shown once the daily limit is actually hit -->
+        <div v-if="showRateLimitNote" class="rate-limit-notice rate-limit-notice-warning" role="note">
+            <p class="rate-limit-text">
                 {{ translate('You have reached your 24 hours limit for updating card. Please try again tomorrow.') }}
             </p>
         </div>
@@ -177,6 +171,19 @@ export default {
             return this.subscription.billing_addresses || [{}];
         },
     },
+    mounted() {
+        this.$nextTick(() => {
+            this.loadAndMountStripeElements()
+        });
+        this.invalidCard = true;
+        this.currentPaymentMethod = this.subscription?.current_payment_method;
+        const primary = this.getBillingAddresses?.find(addr => addr.is_primary);
+        if (primary) {
+            this.selectedAddress = primary.id;
+        }
+        // Fetch remaining attempts if applicable
+        this.fetchRemainingAttempts();
+    },
     methods: {
         translate,
         handleElementChange(event) {
@@ -235,6 +242,8 @@ export default {
                 this.updatePaymentMethodInStripe(paymentMethod, 'verify');
             } else if (paymentMethod && this.currentPaymentMethod != 'stripe') {
                 this.switchPaymentMethod(paymentMethod, 'verify');
+            } else {
+                this.updating = false;
             }
         },
         async switchPaymentMethod(pm, verification_status = 'verify', customer_id = '') {
@@ -315,19 +324,29 @@ export default {
                     }
                 });
 
+                // Stripe.js resolves (never throws) on card decline/validation errors —
+                // they arrive here as `error`, not via the catch block below. Card fields
+                // are left intact (no resetData()) so the customer can correct/retry
+                // without retyping everything, and the message is set last so
+                // handleError/the inline alert both see the actionable text.
+                if (error) {
+                    this.successMessage = '';
+                    this.errorMessage = error?.message || translate('Error in creating payment method');
+                    this.handleError(this.errorMessage);
+                    return null;
+                }
+
                 return paymentMethod;
             } catch (err) {
+                this.successMessage = '';
                 this.errorMessage = err?.message || translate('Error in creating payment method');
-                this.resetData();
                 this.handleError(this.errorMessage);
-
             }
         },
         async updatePaymentMethodInStripe(pm, verification_status = 'verify') {
             this.updating = true;
             this.errorMessage = '';
             try {
-              console.log('update...payment method', this.updateMethod, this.subscription);
                 const response = await this.$post(`customer-profile/subscriptions/${this.subscription.uuid}/update-payment-method`, {
                     data: {
                         newPaymentMethod: pm,
@@ -398,31 +417,18 @@ export default {
             if (this.currentPaymentMethod === 'stripe') {
                 try {
                     const response = await this.$get(`customer-profile/subscriptions/${this.subscription.uuid}/setup-intent-attempts`);
-                    // Response structure: { remaining: 3 } (direct key from sendSuccess)
+                    // Response structure: { remaining: 3 } (direct key from sendSuccess).
+                    // Only surface the block message once the limit is actually hit —
+                    // a running countdown gives card-testing fraud free reconnaissance.
                     if (response?.remaining !== undefined && response?.remaining !== null) {
                         this.remainingAttempts = response.remaining;
-                        this.showRateLimitNote = true;
+                        this.showRateLimitNote = response.remaining <= 0;
                     }
                 } catch (error) {
                     // Silently fail if we can't fetch rate limit info
-                    console.error('Failed to fetch rate limit info', error);
                 }
             }
         }
-    },
-    mounted() {
-        this.$nextTick(() => {
-            this.loadAndMountStripeElements()
-        });
-        console.log('update...payment method mounted', this.updateMethod);
-        this.invalidCard = true;
-        this.currentPaymentMethod = this.subscription?.current_payment_method;
-        const primary = this.getBillingAddresses?.find(addr => addr.is_primary);
-        if (primary) {
-            this.selectedAddress = primary.id;
-        }
-        // Fetch remaining attempts if applicable
-        this.fetchRemainingAttempts();
     }
 };
 </script>
@@ -435,6 +441,9 @@ export default {
     justify-content: flex-end;
     gap: 10px;
     margin-top: 10px;
+}
+.dialog-footer .el-button {
+    margin-left: 0;
 }
 
 .stripe-card-form {

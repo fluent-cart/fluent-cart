@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import Badge from "@/Bits/Components/Badge.vue";
+import Badge from "../../parts/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "../../../translator/Translator";
 import AddressModal from './AddressModal.vue'
@@ -79,6 +79,7 @@ import {ElMessageBox} from "element-plus";
 
 export default {
   name: "AddressSection",
+  components: {DynamicIcon, Badge, AddressModal},
   props: {
     profileDetails: Object,
     addressType: String, // 'billing' or 'shipping'
@@ -92,12 +93,12 @@ export default {
       isEditAddress: false,
       newAddressData: {
         label: '', name: '', email: '', phone: '',
+        company_name: '', vat_number: '', legal_registration_id: '',
         address_1: '', address_2: '', city: '', state: '',
         postcode: '', country: ''
       },
     }
   },
-  components: {DynamicIcon, Badge, AddressModal},
   computed: {
     addresses() {
       return this.profileDetails[`${this.addressType}_address`] || [];

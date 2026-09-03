@@ -1,0 +1,14 @@
+{
+  "id": "evt_phase29_stripe_cancel_before_create_1",
+  "object": "event",
+  "type": "customer.subscription.deleted",
+  "livemode": false,
+  "data": {
+    "object": {
+      "id": "sub_phase29_not_local",
+      "object": "subscription",
+      "status": "canceled",
+      "metadata": {}
+    }
+  }
+}

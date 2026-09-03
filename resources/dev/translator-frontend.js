@@ -13,13 +13,13 @@ const excludeFiles = [];
 let translationRegex = /(?:\$t|window\.fluentcart\.\$t)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|(?:\$t|window\.fluentcart\.\$t)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|(?:\$t|window\.fluentcart\.\$t)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|(?:translate|this\.translate)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|(?:translate|this\.translate)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|(?:translate|this\.translate)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}/g;
 
 // Check if --debug flag is passed
-const includeSource = typeof process.env.npm_config_debug !== 'undefined';
+const includeSource = TranslationHelper.hasFlag('debug');
 
-const isCustomer = typeof process.env.npm_config_customer !== 'undefined';
+const isCustomer = TranslationHelper.hasFlag('customer');
 
-const isCheckout = typeof process.env.npm_config_checkout !== 'undefined';
+const isCheckout = TranslationHelper.hasFlag('checkout');
 
-const isPayment = typeof process.env.npm_config_payment !== 'undefined';
+const isPayment = TranslationHelper.hasFlag('payment');
 
 if (isCustomer && false) {
     resourcesDir = path.join('resources/public/customer-profile');
@@ -47,6 +47,8 @@ let commentsArray = {};
 
 
 // Run the script
-const {translations, comments} = TranslationHelper.extractTranslations(resourcesDir, translationRegex, excludeDirs, excludeFiles);
+// No contextRegex: _x() is exposed only by the admin translator. The plural
+// pattern still applies — pluralizeTranslate is shared by every translator.
+const {translations, comments} = TranslationHelper.extractTranslations(resourcesDir, translationRegex, excludeDirs, excludeFiles, null, TranslationHelper.makePluralRegex());
 commentsArray = comments;
 TranslationHelper.updatePhpTranslations(translations, {}, phpFile, includeSource, comments);

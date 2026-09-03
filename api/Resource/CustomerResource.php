@@ -13,6 +13,23 @@ use FluentCart\Framework\Support\Arr;
 
 class CustomerResource extends BaseResourceApi
 {
+    /**
+     * Per-request memo for getCurrentCustomer(). In production every HTTP
+     * request runs in a fresh PHP process, so this lives exactly one
+     * request. Long-running processes that simulate multiple requests
+     * (test suites, CLI) must clear it between simulated requests via
+     * resetCurrentCustomerRuntimeCache() — as a function-static it was
+     * unreachable and leaked the first request's customer into every
+     * subsequent one.
+     *
+     * @var object|null
+     */
+    private static $currentCustomerRuntimeCache = null;
+
+    public static function resetCurrentCustomerRuntimeCache(): void
+    {
+        static::$currentCustomerRuntimeCache = null;
+    }
 
     public static function getQuery(): Builder
     {
@@ -287,17 +304,17 @@ class CustomerResource extends BaseResourceApi
 
                 return static::makeErrorResponse([
                     ['code' => 400, 'message' => __('Customer update failed.', 'fluent-cart')]
-                ]);
+                ], 400);
             }
 
             return static::makeErrorResponse([
                 ['code' => 400, 'message' => __('Customer does not have any changes to update.', 'fluent-cart')]
-            ]);
+            ], 400);
         }
 
         return static::makeErrorResponse([
             ['code' => 404, 'message' => __('Customer not found, please reload the page and try again!', 'fluent-cart')]
-        ]);
+        ], 404);
     }
 
     /**
@@ -384,10 +401,8 @@ class CustomerResource extends BaseResourceApi
 
     public static function getCurrentCustomer(bool $createIfNotExists = false): ?object
     {
-        static $cachedCustomer = null;
-
-        if ($cachedCustomer !== null) {
-            return $cachedCustomer;
+        if (static::$currentCustomerRuntimeCache !== null) {
+            return static::$currentCustomerRuntimeCache;
         }
 
         if (!is_user_logged_in()) {
@@ -412,7 +427,7 @@ class CustomerResource extends BaseResourceApi
                 $existingCustomer->save();
             }
 
-            $cachedCustomer = $existingCustomer;
+            static::$currentCustomerRuntimeCache = $existingCustomer;
             return $existingCustomer;
         }
 
@@ -436,12 +451,12 @@ class CustomerResource extends BaseResourceApi
         ]);
 
         // get customer by id
-        $cachedCustomer = static::getQuery()
+        static::$currentCustomerRuntimeCache = static::getQuery()
             ->where('id', $customer->id)
             ->with(['billing_address', 'shipping_address'])
             ->first();
 
-        return $cachedCustomer;
+        return static::$currentCustomerRuntimeCache;
 
     }
 

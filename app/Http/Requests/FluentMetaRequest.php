@@ -20,6 +20,8 @@ class FluentMetaRequest extends RequestGuard
             'store_setup' => [
                 'store_name'    => 'required|sanitizeText|maxLength:200',
                 'store_country' => 'required|sanitizeText|maxLength:200',
+                'seller_vat_id' => 'nullable|sanitizeText|maxLength:50',
+                'seller_tax_id' => 'nullable|sanitizeText|maxLength:50',
             ]
         ];
 
@@ -60,6 +62,10 @@ class FluentMetaRequest extends RequestGuard
             'type'                                 => 'sanitize_text_field',
             'default'                              => 'sanitize_text_field',
             'store_name'                           => 'sanitize_text_field',
+            'company_name'                         => 'sanitize_text_field',
+            'legal_registration_id'               => 'sanitize_text_field',
+            'seller_vat_id'                        => 'sanitize_text_field',
+            'seller_tax_id'                        => 'sanitize_text_field',
             'store_logo'                           => function ($value) {
                 if (!is_array($value)) {
                     return '';
@@ -109,8 +115,27 @@ class FluentMetaRequest extends RequestGuard
             'template_settings_checkout_page_mode' => 'sanitize_text_field',
             'show_relevant_product_in_single_page' => 'sanitize_text_field',
             'show_relevant_product_in_modal'       => 'sanitize_text_field',
+            'show_rating_in_shop'                  => 'sanitize_text_field',
+            'show_rating_in_relevant'              => 'sanitize_text_field',
             'enable_early_payment_for_installment' => 'sanitize_text_field',
+            'subscription_management_mode'         => function ($value) {
+                $value = sanitize_text_field($value);
+                $allowed = ['gateway_managed', 'store_managed'];
+                return in_array($value, $allowed, true) ? $value : 'gateway_managed';
+            },
+            'subscription_system_charge'           => function ($value) {
+                $value = sanitize_text_field($value);
+                return in_array($value, ['yes', 'no'], true) ? $value : 'no';
+            },
+            'subscription_manual_fallback'         => function ($value) {
+                $value = sanitize_text_field($value);
+                return in_array($value, ['yes', 'no'], true) ? $value : 'no';
+            },
             'order_mode'                           => 'sanitize_text_field',
+            'subscription_mode_guard'              => function ($value) {
+                $value = sanitize_text_field($value);
+                return in_array($value, ['yes', 'no'], true) ? $value : 'yes';
+            },
             'variation_view'                       => 'sanitize_text_field',
             'variation_columns'                    => 'sanitize_text_field',
             'modules_settings'                     => 'sanitize_text_field',

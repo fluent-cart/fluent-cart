@@ -26,12 +26,23 @@ class IntegrationHelper
 
         $settingsFields = apply_filters('fluent_cart/integration/get_integration_settings_fields_' . $args['provider'], [], $args);
 
+        // An unregistered provider leaves the settings-fields filter unanswered.
+        // Without this guard the foreach below iterated null (warning, silently
+        // skipped) and every submitted key passed through unvalidated — callers
+        // then persisted integration feeds keyed by arbitrary provider names.
+        if (empty($settingsFields)) {
+            return new \WP_Error(
+                'integration_validation_error',
+                __('Unknown integration provider.', 'fluent-cart')
+            );
+        }
+
         $fields = Arr::get($settingsFields, 'fields');
 
         $validKeys = ['enabled', 'conditional_variation_ids'];
 
         $errors = [];
-        foreach ($fields as $field) {
+        foreach ((array) $fields as $field) {
             $key = (string)Arr::get($field, 'key');
             if (!$key) {
                 continue;

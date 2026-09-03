@@ -16,6 +16,7 @@
             @apply flex gap-3 items-center;
         }
         &-status-wrap{
+            @apply flex items-center gap-2;
             .badge{
                 @apply py-[5px] px-2;
             }

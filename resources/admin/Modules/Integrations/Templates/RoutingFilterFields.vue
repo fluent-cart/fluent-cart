@@ -98,7 +98,7 @@
               </el-select>
               <el-input
                 v-else
-                placeholder="Enter a value"
+                :placeholder="$t('Enter a value')"
                 v-model="routing.value"
               ></el-input>
             </td>
@@ -192,6 +192,11 @@ export default {
       comingSoon: false,
     };
   },
+  mounted() {
+    if (!this.routings || !this.routings.length) {
+      this.routings.push({ ...this.defaultRules });
+    }
+  },
   methods: {
     add(index) {
       this.routings.splice(index + 1, 0, { ...this.defaultRules });
@@ -199,11 +204,6 @@ export default {
     remove(index) {
       this.routings.splice(index, 1);
     },
-  },
-  mounted() {
-    if (!this.routings || !this.routings.length) {
-      this.routings.push({ ...this.defaultRules });
-    }
   },
 };
 </script>

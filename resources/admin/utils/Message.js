@@ -31,7 +31,7 @@ class Message {
     }
 
 
-    showFeaturesCTA(featureName, featureDescription, features, vueInstance){
+    showFeaturesCTA(featureName, featureDescription, features, vueInstance, placement = 'upgrade_page'){
 
         let appContext = null;
         if(vueInstance){
@@ -44,6 +44,7 @@ class Message {
                     featureName,
                     featureDescription,
                     features,
+                    placement,
                 }),
             customClass: 'fluent-cart-pro-cta',
             showCancelButton: false,

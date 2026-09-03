@@ -1,0 +1,15 @@
+{
+  "status": 404,
+  "message": "Not Found",
+  "body": {
+    "name": "RESOURCE_NOT_FOUND",
+    "message": "The specified resource does not exist.",
+    "debug_id": "phase22-not-found",
+    "details": [
+      {
+        "issue": "INVALID_RESOURCE_ID",
+        "description": "The requested provider resource was not found."
+      }
+    ]
+  }
+}

@@ -17,7 +17,6 @@ const loadComponent = async (name) => {
   if (components[componentPath]) {
     dynamicComponent.value = ((await components[componentPath]()).default);
   } else {
-    console.error(`Form Component ${componentPath} not found`);
   }
 };
 

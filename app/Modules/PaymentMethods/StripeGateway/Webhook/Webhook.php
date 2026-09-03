@@ -8,8 +8,10 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
+use FluentCart\App\Modules\PaymentMethods\StripeGateway\Confirmations;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\StripeHelper;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
+use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Support\Arr;
 
 class Webhook
@@ -18,7 +20,7 @@ class Webhook
 
     public static function getURL(): string
     {
-        return site_url() . self::WEBHOOK_ENDPOINT;
+        return trailingslashit(site_url()) . self::WEBHOOK_ENDPOINT;
     }
 
     public static function getEvents(): array
@@ -31,50 +33,80 @@ class Webhook
             'invoice.paid',
             'customer.subscription.deleted',
             'customer.subscription.updated',
-            'invoice.payment_failed'
+            'invoice.payment_failed',
+            'setup_intent.succeeded'
         ];
     }
 
-    public static function webhookInstruction(): string
+    public static function webhookInstruction(): array
     {
-        $webhook_url = static::getURL();
-        return sprintf(
-            '<div>
-                <p><b>%1$s</b><code class="copyable-content">%2$s</code></p>
-                <p>%3$s</p>
-                <br>
-                <h4>%4$s</h4>
-                <br>
-                <p>%5$s</p>
-                <p class="fct_hide_on_test">%6$s <a href="https://dashboard.stripe.com/webhooks/create?events=checkout.session.completed%%2Ccharge.refunded%%2Ccharge.refund.updated%%2Ccharge.succeeded%%2Cinvoice.paid%%2Ccustomer.subscription.deleted%%2Ccustomer.subscription.updated%%2Cinvoice.payment_failed%%2Ccharge.captured%%2Ccharge.dispute.closed%%2Ccharge.dispute.created%%2Cinvoice_payment.paid%%2Cpayment_intent.succeeded" target="_blank">%7$s</a></p>
-                <p class="fct_hide_on_live">%6$s <a href="https://dashboard.stripe.com/test/webhooks/create?events=checkout.session.completed%%2Ccharge.refunded%%2Ccharge.refund.updated%%2Ccharge.succeeded%%2Cinvoice.paid%%2Ccustomer.subscription.deleted%%2Ccustomer.subscription.updated%%2Cinvoice.payment_failed%%2Ccharge.captured%%2Ccharge.dispute.closed%%2Ccharge.dispute.created%%2Cinvoice_payment.paid%%2Cpayment_intent.succeeded" target="_blank">%7$s</a></p>
-                <p>%8$s <code class="copyable-content">%2$s</code></p>
-                <b>%9$s</b>
-                checkout.session.completed, <br/>
-                charge.refunded, <br/>
-                charge.refund.updated, <br/>
-                charge.succeeded, <br/>
-                invoice.paid, <br/>
-                invoice.payment_failed, <br/>
-                customer.subscription.deleted, <br/>
-                customer.subscription.updated, <br/>
-                <br/>
-            </div>',
-            __('Webhook URL: ', 'fluent-cart'),                    // %1$s
-            $webhook_url,                                          // %2$s (reused)
-            __('You should configure your Stripe webhooks to get all updates of your payments remotely.', 'fluent-cart'), // %3$s
-            __('How to configure?', 'fluent-cart'),                // %4$s
-            __('In your Stripe account:', 'fluent-cart'),          // %5$s
-            __('Go to Developers > Webhooks >', 'fluent-cart'),    // %6$s
-            __('Add endpoint', 'fluent-cart'),                     // %7$s
-            __('Enter The Webhook URL:', 'fluent-cart'),           // %8$s
-            __('Select these events:', 'fluent-cart')              // %9$s
+        $events = 'checkout.session.completed%2Ccharge.refunded%2Ccharge.refund.updated%2Ccharge.succeeded%2Cinvoice.paid%2Ccustomer.subscription.deleted%2Ccustomer.subscription.updated%2Cinvoice.payment_failed%2Ccharge.captured%2Ccharge.dispute.closed%2Ccharge.dispute.created%2Cinvoice_payment.paid%2Cpayment_intent.succeeded%2Csetup_intent.succeeded';
+        
+        $svg    = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z"></path></svg>';
+
+        /* translators: %1$s: "Add endpoint" link with icon */
+        $step = fn($class, $url) => \sprintf(
+            '<p class="%s">%s</p>',
+            $class,
+            \sprintf(
+                __('Click %1$s and paste the webhook URL above', 'fluent-cart'),
+                \sprintf('<a href="%s" target="_blank">%s %s</a>', $url, __('Add endpoint', 'fluent-cart'), $svg)
+            )
         );
+
+        return [
+            'title'       => __('Webhook URL', 'fluent-cart'),
+            'webhook_url' => static::getURL(),
+            'description' => __('You should configure your Stripe webhooks to get all updates of your payments remotely.', 'fluent-cart'),
+            'steps'       => [
+                'title' => __('How to configure?', 'fluent-cart'),
+                'list'  => [
+                    'live' => [
+                        __('In your Stripe Dashboard, go to Developers → Webhooks', 'fluent-cart'),
+                        $step('fct_hide_on_test', \sprintf('https://dashboard.stripe.com/webhooks/create?events=%s', $events)),
+                    ],
+                    'test' => [
+                        __('In your Stripe Dashboard, go to Developers → Webhooks', 'fluent-cart'),
+                        $step('fct_hide_on_live', \sprintf('https://dashboard.stripe.com/test/webhooks/create?events=%s', $events)),
+                    ],
+                ],
+            ],
+            'events' => [
+                'title' => __('Select these events', 'fluent-cart'),
+                'list'  => [
+                    'checkout.session.completed',
+                    'charge.refunded',
+                    'charge.refund.updated',
+                    'charge.succeeded',
+                    'invoice.paid',
+                    'invoice.payment_failed',
+                    'customer.subscription.deleted',
+                    'customer.subscription.updated',
+                    'setup_intent.succeeded',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Why the last processAndInsertOrderByEvent() call resolved no order. The
+     * caller answers the webhook with it, so "we have no resolver for this type"
+     * is distinguishable from "resolved fine, but nothing local matches".
+     *
+     * @var string
+     */
+    protected $unresolvedReason = '';
+
+    public function getUnresolvedReason()
+    {
+        return $this->unresolvedReason;
     }
 
     public function processAndInsertOrderByEvent($event)
     {
         $eventType = $event->type;
+
+        $this->unresolvedReason = '';
 
         $metaDataEvents = [
             'invoice.paid', // Reviewed for subscription cycle
@@ -85,13 +117,30 @@ class Webhook
             'checkout.session.completed',
             'customer.subscription.deleted',
             'customer.subscription.updated',
+            'setup_intent.succeeded', // recovers zero-payable system-subscription vaulting if the AJAX confirm is lost
         ];
 
         if (!in_array($eventType, $metaDataEvents)) {
+            $this->unresolvedReason = __('Event type has no order resolver.', 'fluent-cart');
             return false;
         }
 
         $vendorDataObject = $event->data->object;
+
+        if ($eventType === 'setup_intent.succeeded') {
+            $setupIntentId = Arr::get((array)$vendorDataObject, 'id');
+            if ($setupIntentId) {
+                $result = (new Confirmations())->confirmSetupIntent($setupIntentId);
+                if (!is_wp_error($result)) {
+                    wp_send_json([
+                        'message' => 'Setup intent confirmed successfully.',
+                    ], 200);
+                }
+            }
+
+            $this->unresolvedReason = __('Setup intent could not be confirmed.', 'fluent-cart');
+            return false;
+        }
 
         if ($eventType == 'invoice.paid') {
             //check if subscription billing_cycle invoice paid or failed
@@ -107,6 +156,7 @@ class Webhook
                     }
                 }
 
+                $this->unresolvedReason = __('Subscription renewal invoice resolved to no order.', 'fluent-cart');
                 return false;
             }
         }
@@ -143,6 +193,8 @@ class Webhook
                 $order = Order::where('id', $subscription->parent_order_id)->first();
                 if ($order) {
                     $order->current_subscription = $subscription;
+                } else {
+                    $this->unresolvedReason = __('Subscription matched but its parent order is missing.', 'fluent-cart');
                 }
                 return $order;
             }
@@ -156,22 +208,37 @@ class Webhook
             if ($orderTransaction) {
                 return $orderTransaction->order;
             }
+
+            $this->unresolvedReason = __('No local transaction matches the disputed charge.', 'fluent-cart');
             return null;
         }
 
         // Handle checkout.session.completed for hosted checkout
         if ($eventType === 'checkout.session.completed') {
             $sessionId = $vendorDataObject->id;
-            return StripeHelper::validateBySession($sessionId);
+            $sessionOrder = StripeHelper::validateBySession($sessionId);
+
+            if (!$sessionOrder) {
+                $this->unresolvedReason = __('Checkout session does not match a local order.', 'fluent-cart');
+            }
+
+            return $sessionOrder;
         }
 
         $metaData = (array)$vendorDataObject->metadata;
         $orderHash = Arr::get($metaData, 'fct_ref_id', false);
 
         if ($orderHash) {
-            return Order::query()->where('uuid', $orderHash)->first();
+            $referencedOrder = Order::query()->where('uuid', $orderHash)->first();
+
+            if (!$referencedOrder) {
+                $this->unresolvedReason = __('Event references an order that does not exist here.', 'fluent-cart');
+            }
+
+            return $referencedOrder;
         }
 
+        $this->unresolvedReason = __('Event carries no reference to a local order.', 'fluent-cart');
         return null;
     }
 
@@ -223,6 +290,7 @@ class Webhook
             $alreadyRecorded = OrderTransaction::query()
                 ->where('subscription_id', $subscription->id)
                 ->where('vendor_charge_id', $paymentIntentId)
+                ->where('status', '!=', Status::TRANSACTION_FAILED)
                 ->exists();
 
             if ($alreadyRecorded) {
@@ -250,6 +318,14 @@ class Webhook
             $transactionData['card_last_4'] = Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.last4', '');
             $transactionData['card_brand'] = (string)Arr::get($paymentIntent, 'latest_charge.payment_method_details.card.brand', '');
             $transactionData['payment_method_type'] = (string)Arr::get($paymentIntent, 'latest_charge.payment_method_details.type', '');
+
+            // The charge's own `created` is the settlement moment; without it the
+            // model hook would stamp the webhook-processing time, which drifts on
+            // delayed deliveries.
+            $chargeCreatedAt = (int)Arr::get($paymentIntent, 'latest_charge.created', 0);
+            if ($chargeCreatedAt) {
+                $transactionData['meta'] = array_merge($transactionData['meta'] ?? [], ['settled_at' => DateTime::anyTimeToGmt($chargeCreatedAt)->format('Y-m-d H:i:s')]);
+            }
         } else {
             $activePaymentMethod = $subscription->getMeta('active_payment_method', []);
             if (!$activePaymentMethod || !is_array($activePaymentMethod)) {

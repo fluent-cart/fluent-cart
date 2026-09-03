@@ -7,7 +7,7 @@ use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\Framework\Database\Orm\Relations\BelongsTo;
 use FluentCart\Framework\Database\Orm\Relations\HasMany;
-use FluentCart\Framework\Database\Orm\Relations\hasOne;
+use FluentCart\Framework\Database\Orm\Relations\HasOne;
 use FluentCart\App\Models\WpModels\PostMeta;
 use FluentCart\Framework\Support\Arr;
 
@@ -157,6 +157,7 @@ class ProductDetail extends Model
 
     public function getStockAvailability($variationId = null)
     {
+       
         if (!$this->manage_stock) {
             $availability = [
                 'manage_stock'       => false,
@@ -164,7 +165,7 @@ class ProductDetail extends Model
                 'class'              => 'in-stock',
                 'available_quantity' => null
             ];
-        } else if ($this->stock_availability) {
+        } else if ($this->stock_availability === 'in-stock') {
             $availability = [
                 'manage_stock'       => true,
                 'availability'       => __('In Stock', 'fluent-cart'),

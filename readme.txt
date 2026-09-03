@@ -2,9 +2,9 @@
 Contributors: wpmanageninja, techjewel
 Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.25
+Stable tag: 1.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -80,10 +80,10 @@ FluentCart supports a variety of sales models, all in the same store. Offer one-
 
 === Analytics, Marketing & Growth ===
 * Reports Overview – Track order volume, Revenue by Quarter, Revenue by Country
-* Sales Reporting – Track order volume, most sold products and variants, Customer LTV and more
+* Sales Reporting – Track order volume, most sold products and variants, Customer LTV, and more
 * Order Analytics – Average order value, order items, order heatmap, orders by country, and more
-* Revenue Analytics – Net revenue sorted by Time, Country and Payment Gateway
-* Refund Analytics – Total refunds, Avg. Refund value, Refund Rate, Filter by Country, Payment method and Intervals
+* Revenue Analytics – Net revenue sorted by Time, Country, and Payment Gateway
+* Refund Analytics – Total refunds, Avg. Refund value, Refund Rate, Filter by Country, Payment method, and Intervals
 * Product Data – Top performing products, Product Performance over time
 * Subscriptions Report – Top performing products, Product Performance over time
 * Product Data – Top performing products, Product Performance over time
@@ -312,6 +312,344 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.6.3 (Aug 22, 2026) =
+- Improves File storage security by making sure downloadable file paths always resolve inside your uploads folder.
+- Fixes Advanced Variations table showing prices in the wrong format, where a $1.00 variant appeared as 100.
+- Fixes Prices entered in the Advanced Variations table, the group quick-set field, and the bulk Set Price field saving at the wrong amount.
+
+= 1.6.2 (Aug 20, 2026) =
+- Adds Data Export for orders, customers, subscriptions, and licenses in CSV or JSON.
+- Adds WooCommerce Migration support for products, orders, customers, coupons, tax rates, and subscription management in FluentCart migrator
+- Adds Export permissions by user role.
+- Adds Transaction settlement time from payment providers.
+- Adds Advanced filtering to the Order Sources report.
+- Adds Ad click identifiers to the order UTM card.
+- Adds Signed release fields to product license settings.
+- Adds An opt-in tool to edit vendor IDs from the subscription page.
+- Adds Inline inventory management controls to the variant pricing drawer.
+- Adds Developer controls to hide product regions by surface.
+- Adds An option to prevent S3 file overwrites.
+- Adds Developer-extensible admin table sorting, including Expiry Date sorting for coupons.
+- Adds: Filter hook to allow third party custom data on paddle checkout
+- Improves Inventory screen performance with paged variants and Load More.
+- Improves Export dialog labels and filter status indicators.
+- Improves Product price support for comma decimal separators in the editor and CSV imports.
+- Improves License renewal with early renewal and customer-profile reactivation.
+- Improves Traffic attribution with last-touch tracking on every order.
+- Improves Payment success URL filtering across all gateways.
+- Improves Mollie checkout methods using the correct cart amount and currency.
+- Improves Stripe notifications for mixed test and live events.
+- Improves Admin translations through WordPress translation support.
+- Improves Report chart tooltips.
+- Improves The Add-ons screen for the renamed FluentCart Divi Modules.
+- Fixes Stripe subscription checkout getting stuck after failed card or 3D Secure payments.
+- Fixes Stripe card changes not syncing and duplicate saved-card records.
+- Fixes PayPal capture fallback failures with empty requests.
+- Fixes Duplicate order-paid emails and integration runs.
+- Fixes Admin order-paid emails being sent before integrations complete.
+- Fixes Subscription reactivation links failing after login.
+- Fixes Licensed downloads being accessible for unrelated products.
+- Fixes Lifetime license detection and license settings save errors.
+- Fixes Order Sources "Equals" filtering by order hash and payer email.
+- Fixes Mollie payments remaining unconfirmed with custom success URLs.
+- Fixes Dashboard and admin screens displaying order currency instead of store currency.
+- Fixes The Add-on gateway Active badge in Payment Settings.
+- Fixes The Dashboard page-setup warning link for add-on pages.
+- Fixes Advanced Variation variants missing from admin product pickers.
+- Fixes Profit calculations and stock adjustments for unsaved variants.
+- Fixes Nested-folder downloads on Cloudflare R2 and S3-compatible storage.
+- Fixes "Includes" filters for customer email and UTM fields.
+- Fixes Report product filtering and fluctuation badge display.
+- Fixes Order bumps appearing on checkouts that cannot accept additional items.
+- Fixes Checkout being blocked when attribution fails to load.
+- Fixes Mobile settings panel heights, export dialog overflow, and report card scrollbars.
+- Fixes:  Required billing address made optional (Mollie)
+
+= Unreleased =
+- Removes The broken `GET /fluent-cart/v2/reports/sales-growth` REST endpoint, the `SalesReport` reporting module class behind it, and the unused `SaleGrowth.vue` admin chart component. The endpoint had never returned data (its data source was never populated) and has answered a fatal error since the September 2025 reports refactor removed its service method; the dashboard's sales-growth chart uses `GET /fluent-cart/v2/reports/sales-growth-chart`, which is unaffected.
+- Removes The unused legacy CSV export path and its `openspout/openspout` dependency. The `fluent_cart_admin_ajax` routes `export_orders` and `export_repeat_customers`, the `FluentCart\App\Hooks\Handlers\ExportHandler` class, and `Helper::loadSpoutLib()` are gone. They were already non-functional (the loader required a bundled library that no longer ships) and had no UI reaching them. Use the Export dialog on the Orders, Customers, and Subscriptions screens instead.
+- Removes The deprecated `fluentcart/payment/success_url` filter (deprecated since 1.3.16, removal announced for 1.4.3). Use `fluent_cart/payment/success_url` instead — it now fires for every gateway's post-payment redirect with the transaction and order in context.
+- Removes The public method `Subscription::getReactivationNonceAction()`, along with the `_wpnonce` parameter on subscription reactivation links. The nonce was minted in email and webhook contexts where there is no current user, so it stopped verifying as soon as the recipient logged in to use the link. Reactivation is authorized by the subscription-ownership check instead. Links already sent to customers keep working, and existing ones that had expired begin working again.
+
+= 1.6.1 (Aug 11, 2026) =
+- Adds Add-on: FluentCart Divi Modules — 18 native Divi 5 Visual Builder modules for products, cart, and checkout, plus 8 ready-made layouts
+- Adds Saved Payment Methods for cards and PayPal accounts.
+- Adds Customer Payment Methods management.
+- Adds Failed subscription renewal email notifications for customers and admins.
+- Adds Product insertion progress to onboarding.
+- Improves The customer Profile page with add-on extension support.
+- Improves Bulk product editing with billing interval validation.
+- Improves Checkout with an option to pre-select the Save Payment Method checkbox.
+- Improves The subscription admin view with transaction details and upgrade eligibility.
+- Improves Subscription search with partial customer email matching.
+- Improves Coupon lists with accurate usage counts.
+- Improves Advanced Inventory loading performance.
+- Improves Stripe webhook logs with unmatched event details.
+- Improves Admin-created orders to prevent incorrect integration attribution.
+- Fixes Duplicate charges when using saved payment methods.
+- Fixes Saved cards removing previously saved PayPal accounts.
+- Fixes Saved cards not being stored in Stripe Hosted Checkout.
+- Fixes Refunds on saved PayPal orders being sent to the wrong provider.
+- Fixes Removed saved PayPal accounts remaining chargeable.
+- Fixes Unstyled Payment Methods pages in the customer portal.
+- Fixes False payment method update failures after successful updates.
+- Fixes Licensed download links with secure signed URLs.
+- Fixes Store-managed Mollie renewals remaining unpaid.
+- Fixes Stripe renewal retries not being recorded correctly.
+- Fixes Reactivation of past-due or expiring subscriptions.
+- Fixes Subscription cancellation reasons and concurrent settings updates.
+- Fixes Public product listings exposing cost prices and stock counts.
+- Fixes Product and order endpoints accepting unsafe relation and scope parameters.
+- Fixes Unsafe input handling in retention reports.
+- Fixes Storefront coupon stacking to preserve the first applied coupon.
+- Fixes Maximum discount limits not applying at checkout.
+- Fixes Coupon restrictions not being enforced on admin orders.
+- Fixes Invalid coupon schedules and limits causing server errors.
+- Fixes Coupons not applying correctly to admin orders with variations.
+- Fixes Custom line items not being saved on existing orders.
+- Fixes Physical custom line items not entering shipping workflows.
+- Fixes Manual orders using incorrect subscription types.
+- Fixes Transaction endpoints returning unrelated transactions.
+- Fixes Incomplete refund details causing errors.
+- Fixes Payment links using the current catalog price instead of the order price.
+- Fixes Shop price range sliders rounding cents incorrectly.
+- Fixes Parent category filtering returning unrelated categories.
+- Fixes Variant search not matching variation titles.
+- Fixes Shipping zone edits clearing assigned shipping classes.
+- Fixes S3 credentials being cleared when saving settings.
+- Fixes Settings changes not applying with persistent caching.
+- Fixes Shipping totals on newly created orders.
+- Removes The non-functional bulk capture payments action.
+
+= 1.6.0 (Jul 29, 2026) =
+- Adds Subscription engine with store-managed subscription support.
+- Adds Store-managed renewal orders with payment links for all supported gateways.
+- Adds Optional automatic renewal charging with saved payment methods on supported gateways (stripe, paypal).
+- Adds Full subscription lifecycle management, including pause, resume, skip, schedule, amount, status, and billing date controls.
+- Adds Subscription emails for renewals, reminders, upcoming charges, payment failures, and past-due notices.
+- Adds Bricks Products controls for empty categories, tags, and category visibility.
+- Improves Onboarding with clearer step descriptions and a prominent "Generate All Pages" action.
+- Improves Elementor blocks availability for FluentCart Free as an add-on.
+- Improves Storefront styling across checkout, customer profile, shop, and product pages.
+- Improves Admin tables with better column layouts and loading states.
+- Improves The subscription admin page with richer payment history and renewal details.
+- Fixes Advanced Variation galleries syncing correctly on single product pages.
+- Fixes The content editor dialog toolbar and multisite editing issues.
+- Fixes Email preview and background email rendering.
+- Fixes Onboarding redirecting to the dashboard after completion.
+- Fixes File storage connection errors displaying proper error messages.
+- Fixes Reports page layout on iPad.
+- Fixes Product variant lists opening without filters.
+- Fixes Completed subscriptions showing stale next billing dates.
+- Fixes Bricks Products category filter controls updating dynamically.
+- Fixes Paddle price/product reuse to sync product/variation custom_data instead of creating duplicate catalog entries.
+
+= 1.5.5 (Jul 17, 2026) =
+- Improves PayPal payment and subscription confirmation flow against unverified payment states.
+
+= 1.5.4 (Jul 17, 2026) =
+- Adds Bricks Blocks dedicated add-on with 15 new blocks.
+- Adds Cross-site campaign attribution with UTM tracking across connected sites.
+- Adds A "Getting Started" onboarding flow for Bricks and Elementor.
+- Adds Advanced AI search across orders, customers, products, and subscriptions.
+- Fixes PayPal first payments activating the correct subscription.
+- Fixes Duplicate PayPal subscription activations from simultaneous payment notifications.
+- Fixes PayPal refunds syncing correctly with FluentCart.
+- Fixes Paddle subscription status synchronization across additional billing scenarios. (Pro)
+- Fixes Bricks Products Grid responsive column layouts.
+- Fixes Custom Product Stock labels in Bricks rendering on the storefront.
+- Fixes Add to Cart shortcode honoring custom button text.
+- Fixes Rejected URL coupons not displaying an error message.
+- Fixes Revenue and order reports failing with missing grouping options.
+- Fixes Dashboard activity counts matching the activity list.
+- Fixes A rare crash when loading product variations.
+- Fixes Nested layouts rendering correctly in receipt PDFs. (Pro)
+- Improves Security through ongoing audits and hardening across Core and Pro.
+- Improves Confirmation before switching to Advanced Variations.
+- Improves Shipping method visibility for admins and customers.
+- Improves Customer dashboard with date and loading refinements.
+- Improves Translation readiness across the plugin.
+- Improves Storefront support for the price suffix filter hook.
+- Improves Installment billing by enforcing a minimum of two installments.
+
+= 1.5.3 (Jul 9, 2026) =
+- Adds Configurable Tax Display Styles with customizable tax labels.
+- Adds MCP AI support for profitability, subscription forecasts, and payment ledger access.
+- Adds Advanced AI report filters, pagination, coupon usage, and margin insights.
+- Adds Support for report add-ons in the Reports sidebar.
+- Adds Inline tax class creation for Tax and EU VAT settings.
+- Adds An option to hide product SKUs.
+- Improves duplicate order protection during checkout.
+- Improves AI refund and subscription cancellation safety with confirmation.
+- Improves EU B2B reverse charge declarations on generated documents.
+- Improves Authorize.Net subscription reliability and retry handling.
+- Improves Bricks element labels.
+- Improves storefront, checkout, and cart drawer styling.
+- Improves expiration filters to include past-due subscriptions.
+- Improves translation coverage across the admin and storefront.
+- Improves integration support with partial product price updates.
+- Improves security through ongoing audits and hardening.
+- Fixes Shipping calculation for Stripe subscriptions with physical products.
+- Fixes Shipping tax calculation based on the selected shipping method.
+- Fixes Per-item shipping allocation accuracy.
+- Fixes Reverse-charge tax breakdowns across all order views.
+- Fixes Installment counts after checkout discounts.
+- Fixes Authorize.Net and Mollie installment billing cycles.
+- Fixes PayPal amount formatting.
+- Fixes PayPal installment cancellation detection.
+- Fixes Carts remaining locked after completed checkouts.
+- Fixes Product creation dates being overwritten during edits.
+- Fixes Stock badge labels for default variations.
+- Fixes Bricks Products Collection loading state.
+- Fixes Price range labels on Bricks product pages.
+- Fixes Database upgrades after plugin updates.
+- Fixes Licensed add-on downloads, including Page History.
+- Fixes Capability checks for the current customer session.
+
+= 1.5.2 (Jun 30, 2026) =
+- Adds SSLCommerz payment gateway support
+- Adds Product template type support for Bricks Builder
+- Adds Inline variant selector in Advanced Variations group-edit summary bar
+- Adds Per-variant checkboxes to scope bulk updates to selected variants only
+- Adds Card update redirect flow for customer portal (Paddle and redirect-only gateways)
+- Adds Dynamic extra settings fields extension point for Email Notifications
+- Adds Filter fluent_cart/transaction/max_refundable_amount for gateway-level refund cap
+- Fixes Variation attribute label leaking into Authorize.Net and Mollie gateway names
+- Fixes Duplicated variation titles in cart and checkout display
+- Fixes Dark mode colors for alerts, inputs, icon buttons, and popover links
+- Fixes Aategory block select border issue
+- Fixes Stripe duplicate charges issue
+- Improves Admin order builder to show labeled variation attributes
+- Improves Tax breakdown with per-rate VAT lines across checkout, emails, PDF, and order views
+- Improves EU VAT validation to work independently of reverse charge for domestic B2B
+- Improves Subscription and order item names to show resolved variation attribute labels
+- Improves Paddle multi currency handle
+- Improves Labeled variation attributes consistently across Cart, Checkout, Customer dashboard, Emails, Invoices, PDF receipt, and admin order
+
+= 1.5.1 (Jun 24, 2026) =
+- Improves Advanced variations UI/UX
+- Improves Inventory managements UI/UX
+- Fixes Schedule plugin audit issues recommended by WP Plugin Team
+
+= 1.5.0 (Jun 23, 2026) =
+- Adds Advanced Variations with automatic combination generation, reusable attributes, swatches, smart variation selection, and bulk editing tools.
+- Adds Attribute Manager with reusable option sets, inline term creation, drag-and-drop sorting, and cross-tab synchronization.
+- Adds 8 built-in attribute sets including Color, Size, Material, Storage, Memory, Weight, Style, and Pattern.
+- Adds staged-save workflow with persistent save bar, discard support, and improved editing experience for complex products.
+- Adds guest-accessible payment links via the new {{order.payment_link}} smart code.
+- Adds fluent_cart/product_card/enqueue_assets hook for extending storefront product components.
+- Improves variation management performance, navigation, pricing tables, mobile responsiveness, admin layouts, and internationalization support.
+- Improves inventory integrations with enhanced stock change event handling.
+- Fixes variation editing, bulk update workflows, bundle synchronization, subscription stock switching, product search links, and PDF receipt tax display.
+- Includes ongoing security hardening and stability improvements across FluentCart Core and Pro.
+
+= 1.4.2 (Jun 18, 2026) =
+Adds EU/German withdrawal (Widerrufsbutton) compliance with public withdrawal page and two-step confirmation flow
+Adds Full order details, invoice numbers, and line items support for Authorize.net transactions
+Adds Paddle cross-currency handling support
+Fixes Customer profile page issues when avatar requests are blocked by cookie banners
+Fixes Paddle currency detection during cross-currency validation
+Fixes Paddle and Authorize.net setup instructions and documentation
+Fixes Currency formatting consistency in the withdrawal admin table
+Fixes Security issues with ongoing audits and platform hardening
+
+= 1.4.1 (Jun 12, 2026) =
+- Adds MCP support for AI agents.
+- Adds Real-time cart sync across browser tabs.
+- Fixes Duplicate database upgrade runs after plugin updates.
+
+= 1.4.0 (Jun 11, 2026) =
+- Adds EU B2B reverse charge support across all order surfaces
+- Adds Per-item tax rate breakdowns on checkout, admin, emails, PDFs, and receipts
+- Adds Mixed-cart tax handling for inclusive and exclusive tax products
+- Adds Per-variation tax inclusion overrides
+- Adds Tax class selector for shipping overrides
+- Adds City and postcode-based tax overrides
+- Adds Country-specific EU VAT collection mode
+- Adds Built-in tax rates for Africa, Americas, Asia, Europe, and Oceania
+- Adds Tax enable/disable controls per country
+- Adds Automatic tax calculation for admin-created orders
+- Adds Tax setup step to the onboarding wizard
+- Adds Separate price suffix labels for inclusive and exclusive taxes
+- Adds Seller Tax ID in store settings
+- Adds Reverse Charge (RC) badge on the Taxes admin page
+- Adds `fluentcart_eu_vat_number_validate` filter for custom VAT validation
+- Adds `fluent_cart/tax_collecting` filter for runtime tax control
+- Adds `reset_tax` WP-CLI command
+- Adds Store Digest emails with daily, weekly, and monthly schedules
+- Adds Per-item coupon discounts in line meta with strikethrough display
+- Adds B2B badges on admin and customer order pages
+- Adds B2B purchase and reverse charge filters in orders table
+- Adds Unit price rounding tooltip for 1-cent mismatches
+- Adds Hash-based deep linking for settings sections
+- Adds Configurable product list columns
+- Adds `fluent_cart/show_admin_top_bar` filter
+- Adds Bricks BuySection support with query-based product selection
+- Adds Bricks product selection controls for Gallery, Content, Short Description, Stock, and Price Range elements
+- Adds Bricks iframe embed support in Product Content element
+- Adds Pricing Table product-per-row layout and configurable badges
+- Adds Live settings propagation without page reloads
+- Adds Automatic selection of the only available shipping method at checkout
+- Adds Permission-based global search result visibility
+- Fixes Tax calculations and display issues across reverse charge, mixed carts, shipping labels, tax breakdowns, rate badges, tooltips, and coupon calculations
+- Fixes Subscription currency display in billing columns
+- Fixes Zero-value renewal orders appearing after subscription reactivation
+- Fixes Subscription expiry race conditions, orphaned metadata, and invalid next billing dates
+- Fixes Canceled subscriptions incorrectly retaining grace periods
+- Fixes Missing subscription links on renewal orders and parent order fallback handling
+- Fixes Payment retries being incorrectly blocked
+- Fixes Stripe refund retrieval when refund data is not included in charge objects
+- Fixes Paddle renewal migrations, double submissions, cancellation overlays, receipt validation, and end-of-period cancellation emails (Pro)
+- Fixes Mollie mixed-cart tax calculations before payment processing (Pro)
+- Fixes Checkout address priority, state validation, B2B field preservation, and country detection
+- Fixes Coupon strikethrough display in modal checkout
+- Fixes Coupon null reference errors when no coupons are applied
+- Fixes Order currency display using store currency instead of order currency
+- Fixes Fulfillment type inheritance from product variations in admin orders
+- Fixes Shipping method title display on admin order details
+- Fixes PDF rendering for billing names, fee summaries, and seller identity information (Pro)
+- Fixes SVG logo path warnings after ZIP installation
+- Fixes Webhook failures caused by 301 redirects on subdirectory installs
+- Fixes Turnstile fallback handling when auto-verification fails
+- Fixes NULL value rounding issues in subscription reports
+
+= 1.3.27 (May 8, 2026) =
+- Adds List/Grid view switcher and advanced product filtering for Bricks
+- Adds Copy Variation ID action for simple product pricing panel
+- Adds Licensing Sites, Site pages, and advanced site filtering
+- Adds SubscriptionReactivated event
+- Fixes Order bump free-shipping checkbox issue
+- Fixes Missing shortcode variables in PDF receipt emails
+- Fixes Long file names overflowing receipt page download buttons
+- Fixes Cart allowing mixed or multiple subscriptions
+- Fixes Offline subscriptions with 100% recurring coupons issue when Subscription Activated
+- Fixes Subscription reactivation after refunds
+- Fixes PayPal IPN subscription handling
+- Fixes Redundant admin table search requests
+- Fixes Amount formatting and customer profile display in Site Detail view (Pro)
+- Fixes PHP warnings from deleted/invalid store pages
+- Fixes Admin menu active state style bleeding
+- Fixes Bricks Builder dynamic tag name mismatch
+- Fixes Authorize.net subscription issue
+- Improves Animation experience for table filters
+- Improves Bricks Builder pagination rendering and performance
+- Improves Product Pricing edit UX
+
+= 1.3.26 (May 5, 2026) =
+- Adds Square Payment gateway
+- Adds Private products support in discounts, coupons, and order bumps
+- Adds Subscription setup fee to receipts and emails
+- Fixes Order/invoice dates showing the previous day in profiles
+- Fixes Coupon expiration timezone mismatch
+- Fixes Duplicate success toast on product update
+- Fixes Email preview created_at DateTime issue
+- Fixes Safari chevron icon visibility issue
+- Fixes Menu button and dropdown styling issues
+- Fixes LearnDash course expiry resolution for users
+- Improves button feedback with visual indicators only
+- Fixes Skip subscription field validation when subscription is disabled
+- Fixes Auto-expand Additional display prices section when subscription is enabled
 
 = 1.3.25 (Apr 30, 2026) =
 - Fixes Sites with www and non-www counted as separate activations

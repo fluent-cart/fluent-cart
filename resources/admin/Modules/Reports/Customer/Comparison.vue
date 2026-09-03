@@ -50,6 +50,11 @@ import translate from "@/utils/translator/Translator";
 
 export default {
   name: "Comparison",
+  components: {
+    CardContainer,
+    CardHeader,
+    CardBody,
+  },
   props: {
     currentMetrics: {
       type: Array,
@@ -67,11 +72,6 @@ export default {
       type: Boolean,
       required: true
     }
-  },
-  components: {
-    CardContainer,
-    CardHeader,
-    CardBody,
   },
   data() {
     return {}

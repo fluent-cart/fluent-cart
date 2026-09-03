@@ -26,7 +26,7 @@
                     <template #default="scope">
                       <div class="plan-price">
                         <div class="plan-price">
-                          {{ formatNumber(scope.row.original_price, scope.row.currency) }}
+                          {{ formatNumber(scope.row.original_price, true, false, scope.row.currency) }}
                         </div>
                       </div>
                     </template>
@@ -71,13 +71,11 @@
 
 <script type="text/babel">
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import translate from "../../../translator/Translator";
 
 export default {
     name: 'UpgradePlan',
     components: {
-        CopyToClipboard,
         DynamicIcon
     },
     props: {

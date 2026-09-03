@@ -3,6 +3,8 @@
     <SettingsHeader :heading="translate('Addon Settings')" :show-save-button="false"/>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
         <el-skeleton :loading="formLoading" animated>
           <template #template>
@@ -32,7 +34,7 @@
               v-if="hasSettings"
               :form="form"
               :showSubmitButton="true"
-              @onSubmitButtonClick="saveSettings"
+              @on-submit-button-click="saveSettings"
               :submitButtonText="translate('Save Settings')"
               :loading="saving"
               @on-change="(value) => {}"
@@ -50,12 +52,13 @@
         <!-- Plugin Addons Section -->
         <Card.Container v-if="hasPluginAddons" class="mt-6">
           <Card.Header :title="translate('Plugin Addons')" border_bottom/>
-          <Card.Body>
+          <Card.Body class="py-0">
             <div class="payment-method-list fct-content-card-list">
               <div
                   v-for="(addon, addonKey) in pluginAddons"
                   :key="addonKey"
                   class="fct-content-card-list-item"
+                  :id="addon.plugin_slug === hashId ? hashId : null"
               >
 
                 <div class="flex items-start gap-3">
@@ -68,7 +71,7 @@
                           :alt="addon.title"
                           class="hidden dark:block"
                       />
-                      <span class="block font-semibold text-system-dark dark:text-system-light">{{ addon.title }}</span>
+                      <span class="block font-semibold text-system-dark dark:text-gray-50">{{ addon.title }}</span>
                       <Badge
                           v-if="addon.is_active"
                           status="active"
@@ -138,9 +141,11 @@
 
 import {
   computed,
+  nextTick,
   onMounted,
   ref,
 } from "vue";
+import Url from "@/utils/support/Url";
 import {useSaveShortcut} from '@/mixin/saveButtonShortcutMixin.js';
 import VueForm from "@/Bits/Components/Form/VueForm.vue";
 import {useSettingsModel} from "@/Models/SettingsModel";
@@ -154,6 +159,7 @@ import SettingsHeader from "./Parts/SettingsHeader.vue";
 import ClipBoard from "@/utils/Clipboard";
 import {Setting} from '@element-plus/icons-vue';
 import AppConfig from "@/utils/Config/AppConfig";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const settingsModel = useSettingsModel();
 const {form} = settingsModel.data;
@@ -177,6 +183,7 @@ const pluginAddons = ref({});
 const pluginAddonsLoading = ref(false);
 const installingAddon = ref('');
 const activatingAddon = ref('');
+const hashId = ref('');
 
 const hasPluginAddons = computed(() => {
   return Object.keys(pluginAddons.value).length > 0;
@@ -243,6 +250,11 @@ const getPluginAddons = () => {
   Rest.get('settings/modules/plugin-addons', {})
       .then((response) => {
         pluginAddons.value = response.addons || {};
+
+        // The target card renders only after this async response, so scroll once it exists.
+        if (hashId.value) {
+          nextTick(() => Url.scrollToHashSection(hashId.value));
+        }
       })
       .catch((errors) => {
         Notify.error(errors);
@@ -313,6 +325,12 @@ const activateAddon = (addon, addonKey) => {
 };
 
 onMounted(() => {
+  const fullHash = window.location.hash || '';
+  const lastHashIndex = fullHash.lastIndexOf('#');
+  if (lastHashIndex > 0) {
+    hashId.value = fullHash.substring(lastHashIndex + 1);
+  }
+
   getSettings();
   getPluginAddons();
 });
@@ -399,7 +417,7 @@ saveShortcut.onSave(saveSettings);
   flex-wrap: wrap;
 }
 
-:deep(.dark) {
+:deep(.fluent_theme_dark) {
   .fct-plugin-addon-card {
     background: var(--el-bg-color-overlay);
     border-color: var(--el-border-color);

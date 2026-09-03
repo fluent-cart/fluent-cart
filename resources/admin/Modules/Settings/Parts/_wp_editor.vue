@@ -1,7 +1,7 @@
 <template>
   <div class="wp_vue_editor_wrapper relative">
     <div class="fct-editor-action-buttons">
-      <MediaButton :multiple="true" @onMediaSelected="onMediaSelected"/>
+      <MediaButton :multiple="true" @on-media-selected="onMediaSelected"/>
       <Popover v-if="editorShortcodes.length" :class="{'popover-wrapper-plaintext': !hasWpEditor}"
                :data="editorShortcodes" @command="handleCommand" btnType="info" plain>
         {{ $t('Add ShortCodes')}}
@@ -17,9 +17,10 @@ import colors from '../../../../styles/tailwind/extends/color'
 import Popover from './input-popover-dropdown.vue'
 import {onMounted, ref} from "vue";
 import MediaButton from "@/Bits/Components/Buttons/MediaButton.vue";
+import Theme from "@/utils/Theme";
 
 defineOptions({
-  name: 'wp_editor'
+  name: 'WpEditor'
 })
 
 const props = defineProps({
@@ -110,7 +111,7 @@ const applyEditorTheme = () => {
   }
   const target_copy = Object.assign({}, tinyEditor.value);
   let iframe = jQuery(target_copy.container).find('iframe')
-  const isDarkModeEnabled = jQuery('body').hasClass('dark');
+  const isDarkModeEnabled = jQuery('body').hasClass(Theme.DARK_CLASS);
   const body = jQuery(iframe).contents().find('body');
   body.css({
     'background-color': isDarkModeEnabled ? colors.dark["800"] : '#fff',

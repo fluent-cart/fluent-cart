@@ -13,7 +13,7 @@ class OrderBulkAction extends EventDispatcher
     ];
 
     /**
-     * @var $customerIds array
+     * @var array $customerIds
      */
     public $customerIds;
 

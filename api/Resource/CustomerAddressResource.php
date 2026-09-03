@@ -4,6 +4,7 @@ namespace FluentCart\Api\Resource;
 
 use FluentCart\App\App;
 use FluentCart\App\Models\CustomerAddresses;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 
@@ -123,6 +124,15 @@ class CustomerAddressResource extends BaseResourceApi
         // Assign the customer ID to the data array
         $data['customer_id'] = $id;
 
+        // Request::getSafe() null-fills sanitize-map keys the client omitted;
+        // label is nullable at validation but NOT NULL DEFAULT '' at the column.
+        if (!isset($data['label'])) {
+            $data['label'] = '';
+        }
+
+        $data = static::normalizeBusinessFields($data);
+        $data = static::mergeAddressMetaFields($data);
+
         // Create a new address record with the given data
         $isCreated = static::getQuery()->create($data);
 
@@ -206,6 +216,9 @@ class CustomerAddressResource extends BaseResourceApi
             ]);
         }
 
+        $data = static::normalizeBusinessFields($data);
+        $data = static::mergeAddressMetaFields($data, $address);
+
         $address->update($data);
         $address->refresh();
 
@@ -238,6 +251,56 @@ class CustomerAddressResource extends BaseResourceApi
         ]);
     }
 
+    public static function normalizeBusinessFields(array $data): array
+    {
+        $type = Arr::get($data, 'type', 'billing');
+
+        if ($type !== 'billing') {
+            unset($data['company_name'], $data['vat_number'], $data['legal_registration_id']);
+            return $data;
+        }
+
+        if (!CheckoutFieldsSchema::isCompanyNameEnabled()) {
+            unset($data['company_name']);
+        }
+
+        if (!CheckoutFieldsSchema::isVatNumberEnabled()) {
+            unset($data['vat_number']);
+        }
+
+        if (!CheckoutFieldsSchema::isLegalRegistrationIdEnabled()) {
+            unset($data['legal_registration_id']);
+        }
+
+        return $data;
+    }
+
+    private static function mergeAddressMetaFields(array $data, ?CustomerAddresses $address = null): array
+    {
+        $meta = $address ? $address->meta : Arr::get($data, 'meta', []);
+        $meta = is_array($meta) ? $meta : [];
+
+        $metaKeys = ['company_name', 'vat_number', 'legal_registration_id'];
+        foreach ($metaKeys as $metaKey) {
+            if (!array_key_exists($metaKey, $data)) {
+                continue;
+            }
+
+            $value = Arr::get($data, $metaKey);
+
+            if ($value === '' || $value === null) {
+                unset($meta['other_data'][$metaKey]);
+            } else {
+                Arr::set($meta, 'other_data.' . $metaKey, $value);
+            }
+        }
+
+        $data['meta'] = $meta;
+        unset($data['company_name'], $data['vat_number'], $data['legal_registration_id']);
+
+        return $data;
+    }
+
     /**
      * Delete an address based on the given ID and parameters.
      *
@@ -251,7 +314,7 @@ class CustomerAddressResource extends BaseResourceApi
         if (!$id) {
             return static::makeErrorResponse([
                 ['code' => 403, 'message' => __('Please use a valid address ID!', 'fluent-cart')]
-            ]);
+            ], 403);
         }
 
         // Retrieve the customer address using the ID
@@ -262,7 +325,7 @@ class CustomerAddressResource extends BaseResourceApi
             if ($customerAddress->is_primary) {
                 return static::makeErrorResponse([
                     ['code' => 403, 'message' => __('Primary address cannot be deleted!', 'fluent-cart')]
-                ]);
+                ], 403);
             }
             // Get the count of addresses for this customer
             $addressCount = static::getQuery()->where('customer_id', $customerAddress->customer_id)->count();
@@ -271,7 +334,7 @@ class CustomerAddressResource extends BaseResourceApi
             if ($addressCount <= 1) {
                 return static::makeErrorResponse([
                     ['code' => 403, 'message' => __('At least one address must remain. Address deletion failed!', 'fluent-cart')]
-                ]);
+                ], 403);
             }
 
             // If the address is not primary and there are multiple addresses, proceed with deletion
@@ -282,12 +345,12 @@ class CustomerAddressResource extends BaseResourceApi
             // Return an error if the address is not found in the database
             return static::makeErrorResponse([
                 ['code' => 400, 'message' => __('Address deletion failed!', 'fluent-cart')]
-            ]);
+            ], 400);
         }
 
         return static::makeErrorResponse([
             ['code' => 404, 'message' => __('Address not found in database, failed to remove.', 'fluent-cart')]
-        ]);
+        ], 404);
     }
 
     /**

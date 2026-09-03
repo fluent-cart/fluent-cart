@@ -30,9 +30,17 @@ class WebRoutes
     public static function register()
     {
 
+        // Late on init, deliberately. These routes do not merely register — they
+        // TAKE OVER the request, render a full page and die(). At the default
+        // priority this callback is queued at plugin-include time, so it runs
+        // before anything that registers on init from `fluentcart_loaded` (every
+        // add-on, including FluentCart Pro). A route that renders and dies before
+        // those listeners exist silently drops whatever they would have rendered
+        // — which is why the saved-payment-method picker and the save-my-card
+        // consent box appeared on the checkout page but never in modal checkout.
         add_action('init', function () {
             self::registerRoutes();
-        });
+        }, 99);
     }
 
     public static function renderModalCheckout() {
@@ -144,7 +152,33 @@ class WebRoutes
             if ($coupons) {
                 $coupons = explode(',', $coupons);
                 $coupons = array_map('sanitize_text_field', $coupons);
-                $cart->applyCoupon($coupons);
+                $couponResult = $cart->applyCoupon($coupons);
+                
+
+                $couponErrors = [];
+                if (is_wp_error($couponResult)) {
+                    $couponErrors[] = esc_html($couponResult->get_error_message());
+                } elseif (is_array($couponResult)) {
+                    $perCouponResults = Arr::get($couponResult, 'coupon_results', []);
+                    foreach ($coupons as $code) {
+                        foreach ($perCouponResults as $resultCode => $result) {
+                            if (strcasecmp((string) $resultCode, (string) $code) === 0) {
+                                $errorMessage = Arr::get($result, 'error', '');
+                                if ($errorMessage !== '') {
+                                    $couponErrors[] = esc_html($errorMessage);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if ($couponErrors) {
+                    $checkoutData = is_array($cart->checkout_data) ? $cart->checkout_data : [];
+                    $checkoutData['__checkout_error_notices'] = $couponErrors;
+                    $cart->checkout_data = $checkoutData;
+                    $cart->save();
+                }
             }
 
             $target_path = (new StoreSettings())->getCheckoutPage();
@@ -216,7 +250,7 @@ class WebRoutes
                 (new PayPalPartnerRenderer($request->mode))->render(
                     $request->all()
                 );
-                break;
+                return true;
             case 'download-by-id':
             case 'download-file':
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in view template
@@ -334,6 +368,10 @@ class WebRoutes
 
     private static function handlePrintRoute($method): bool
     {
+        if (!is_user_logged_in() || !current_user_can('manage_options')) {
+            return false;
+        }
+
         $order = App::request()->get('order');
         if (!empty($order)) {
             PrintService::$method($order);

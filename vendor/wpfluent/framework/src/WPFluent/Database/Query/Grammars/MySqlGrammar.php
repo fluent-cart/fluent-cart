@@ -98,6 +98,49 @@ class MySqlGrammar extends Grammar
     }
 
     /**
+     * Compile a full-text relevance score expression.
+     *
+     * A flat list of columns yields a single composite "MATCH(a, b) AGAINST"
+     * expression; an associative column => weight array yields a weighted
+     * per-column sum.
+     *
+     * @param  array  $columns
+     * @param  array  $options
+     * @param  string  $value
+     * @return array
+     */
+    public function compileRelevance($columns, array $options, $value)
+    {
+        $mode = ($options['mode'] ?? null) === 'boolean'
+            ? ' in boolean mode'
+            : ' in natural language mode';
+
+        $expanded = ($options['expanded'] ?? false) && ($options['mode'] ?? null) !== 'boolean'
+            ? ' with query expansion'
+            : '';
+
+        $against = "{$mode}{$expanded}";
+
+        // Associative (column => weight) => weighted per-column sum.
+        if (array_keys($columns) !== range(0, count($columns) - 1)) {
+            $parts = [];
+            $bindings = [];
+
+            foreach ($columns as $column => $weight) {
+                $parts[] = '(match ('.$this->wrap($column).') against (?'.$against.') * '.(float) $weight.')';
+                $bindings[] = $value;
+            }
+
+            return [implode(' + ', $parts), $bindings];
+        }
+
+        // Flat list => single composite match.
+        $sql = 'match ('.$this->columnize($columns).') against (?'.$against.')';
+
+        return [$sql, [$value]];
+    }
+
+    /**
      * Compile the index hints for the query.
      *
      * @param  \FluentCart\Framework\Database\Query\Builder  $query

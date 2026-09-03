@@ -24,7 +24,7 @@
                 class="fct-inventory-product-info cursor-pointer"
                 @click="navigateToProduct(row.ID)"
             >
-                <img
+                <img 
                     v-if="row.thumbnail !== null"
                     :src="row.thumbnail"
                     :alt="row.post_title"
@@ -144,6 +144,25 @@
             </IconButton>
         </td>
     </tr>
+
+    <!-- Load more variants (only when the capped list has more on the server) -->
+    <tr v-if="hasMoreVariants" v-show="isRowExpanded" class="fct-inventory-child-row fct-inventory-load-more-row">
+        <td></td>
+        <td :colspan="loadMoreColspan">
+            <button
+                class="fct-inventory-load-more-btn"
+                :disabled="loadingMore"
+                @click="loadMoreVariants"
+            >
+                <DynamicIcon name="Reload" :class="{ 'fct-spin': loadingMore }"/>
+                <template v-if="loadingMore">{{ translate('Loading...') }}</template>
+                <template v-else>
+                    {{ translate('Load More') }}
+                    <span class="fct-inventory-load-more-count">({{ loadedVariantsCount }}/{{ totalVariantsCount }})</span>
+                </template>
+            </button>
+        </td>
+    </tr>
 </template>
 
 <script setup>
@@ -152,6 +171,9 @@ import { useRouter } from 'vue-router';
 import InventoryStockAdjuster from './InventoryStockAdjuster.vue';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
 import IconButton from '@/Bits/Components/Buttons/IconButton.vue';
+import translate from '@/utils/translator/Translator';
+import Rest from '@/utils/http/Rest';
+import Notify from '@/utils/Notify';
 
 useRouter();
 
@@ -187,7 +209,7 @@ const props = defineProps({
     }
 });
 
-defineEmits(['stock-save', 'open-history']);
+const emit = defineEmits(['stock-save', 'open-history', 'variants-loaded']);
 
 const localExpanded = ref(true);
 
@@ -209,22 +231,112 @@ const isExpanded = () => {
     return isRowExpanded.value;
 };
 
-// Calculate sum of all variants' stock values
-const sumTotalStock = computed(() => {
-    return props.row.variants?.reduce((sum, child) => sum + (child.total_stock || 0), 0) || 0;
+// Parent-row stock totals. The variant list is capped server-side, so the
+// SQL aggregates in row.stock_totals are the truth; summing loaded rows
+// remains only as a fallback for a stale pro backend that doesn't send them.
+// Staleness after an inline adjustment is handled at the source: the
+// update-stock endpoint returns fresh product aggregates and Inventory.vue
+// writes them onto row.stock_totals, which also picks up concurrent edits
+// by other admins — no client-side drift accounting.
+const stockTotal = (key) => {
+    const aggregate = props.row.stock_totals?.[key];
+    if (aggregate !== null && aggregate !== undefined) {
+        return aggregate;
+    }
+    return props.row.variants?.reduce((sum, child) => sum + (child[key] || 0), 0) || 0;
+};
+
+const sumTotalStock = computed(() => stockTotal('total_stock'));
+const sumAvailable = computed(() => stockTotal('available'));
+const sumOnHold = computed(() => stockTotal('on_hold'));
+const sumCommitted = computed(() => stockTotal('committed'));
+
+// =============================
+// LOAD MORE VARIANTS
+// =============================
+const VARIANTS_PER_PAGE = 10;
+const loadingMore = ref(false);
+
+const loadedVariantsCount = computed(() => props.row.variants?.length || 0);
+
+const totalVariantsCount = computed(() => {
+    return props.row.variants_total ?? loadedVariantsCount.value;
 });
 
-const sumAvailable = computed(() => {
-    return props.row.variants?.reduce((sum, child) => sum + (child.available || 0), 0) || 0;
+const hasMoreVariants = computed(() => loadedVariantsCount.value < totalVariantsCount.value);
+
+// Product cell + Total Stock cell + actions cell are fixed (the selection
+// cell is the row's own first <td>); the toggleable count is derived from
+// the table's OWN column definition filtered by visibility — data.columns
+// alone is hydrated from localStorage and can carry stale names that no
+// longer render a cell, which would overshoot the span.
+const loadMoreColspan = computed(() => {
+    const toggleable = props.inventoryTable?.getToggleableColumns?.() || [];
+    const visible = toggleable.filter((column) => props.inventoryTable?.isColumnVisible(column.value)).length;
+    return 3 + visible;
 });
 
-const sumOnHold = computed(() => {
-    return props.row.variants?.reduce((sum, child) => sum + (child.on_hold || 0), 0) || 0;
-});
+const loadMoreVariants = () => {
+    if (loadingMore.value) {
+        return;
+    }
+    loadingMore.value = true;
 
-const sumCommitted = computed(() => {
-    return props.row.variants?.reduce((sum, child) => sum + (child.committed || 0), 0) || 0;
-});
+    // Keyset continuation: ask for rows strictly AFTER the last one we hold
+    // (both sides order by id ASC). Offset pages shift when a variant is
+    // deleted concurrently — rows can fall between pages and a count-derived
+    // page number can refetch the same page forever; after_id can do neither.
+    // `page` rides along as the documented offset fallback: a backend with
+    // keyset support prefers after_id and ignores page; one without it pages
+    // by offset and the id-dedupe below absorbs the overlap — either contract
+    // generation makes forward progress.
+    const loaded = props.row.variants || [];
+    const lastLoadedId = loaded.length ? loaded[loaded.length - 1].id : 0;
+
+    Rest.get('inventory/variants', {
+        post_id: props.row.ID,
+        after_id: lastLoadedId,
+        page: Math.floor(loaded.length / VARIANTS_PER_PAGE) + 1,
+        per_page: VARIANTS_PER_PAGE
+    })
+        .then((response) => {
+            const fetched = response?.variants?.data || [];
+            const loadedIds = new Set((props.row.variants || []).map((variant) => variant.id));
+
+            // `row` is shared reactive table state owned by the inventory
+            // table store; appending in place AFTER server confirmation is the
+            // established pattern (see ProductStatus.vue, SingleFileForm.vue).
+            fetched.forEach((variant) => {
+                if (!loadedIds.has(variant.id)) {
+                    // eslint-disable-next-line vue/no-mutating-props
+                    props.row.variants.push(variant);
+                }
+            });
+
+            // The response total is the server's truth either way: it retires
+            // the button when the list is genuinely complete (a stale count
+            // after concurrent deletions) and — unlike snapping the count to
+            // what we loaded — it can never hide variants that still exist.
+            if (response?.variants?.total !== undefined) {
+                // eslint-disable-next-line vue/no-mutating-props
+                props.row.variants_total = response.variants.total;
+            }
+
+            // The header select-all state is computed over loaded items —
+            // let the table reconcile it against the appended rows.
+            emit('variants-loaded');
+        })
+        .catch((errors) => {
+            if (errors.status_code == '422') {
+                Notify.validationErrors(errors);
+            } else {
+                Notify.error(errors.data?.message || translate('Failed to load more variants'));
+            }
+        })
+        .finally(() => {
+            loadingMore.value = false;
+        });
+};
 
 const isAllChildrenSelected = () => {
     const variants = props.row.variants || [];

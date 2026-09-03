@@ -8,6 +8,7 @@ import Card from "@/Bits/Components/Card/Card.vue";
 import CardBody from "@/Bits/Components/Card/CardBody.vue";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
 import AppConfig from "@/utils/Config/AppConfig";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const router = useRouter();
 const loading = ref(true);
@@ -37,7 +38,7 @@ const fetchTemplates = () => {
             addonInfo.value = response.addon_info || null;
         })
         .catch((error) => {
-            Notify.error(error.data?.message || 'Failed to load templates');
+            Notify.error(error.data?.message || translate('Failed to load templates'));
         })
         .finally(() => {
             loading.value = false;
@@ -112,7 +113,7 @@ const createTemplate = () => {
             }
         })
         .catch((error) => {
-            Notify.error(error.data?.message || 'Failed to create template');
+            Notify.error(error.data?.message || translate('Failed to create template'));
         })
         .finally(() => {
             creating.value = false;
@@ -127,7 +128,7 @@ const deleteTemplate = (key) => {
             fetchTemplates();
         })
         .catch((error) => {
-            Notify.error(error.data?.message || 'Failed to delete template');
+            Notify.error(error.data?.message || translate('Failed to delete template'));
         })
         .finally(() => {
             deleting.value = '';
@@ -150,6 +151,8 @@ onMounted(() => {
         </SettingsHeader>
 
         <div class="setting-wrap-inner">
+            <AdminNotice/>
+            
             <template v-if="loading">
                 <Card>
                     <CardBody>

@@ -4,7 +4,7 @@ namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
-use FluentCart\App\Services\Reminders\InvoiceReminderService;
+use FluentCart\App\Services\Reminders\RenewalReminderService;
 use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\App\Services\Reminders\SubscriptionReminderService;
 use FluentCart\Framework\Support\Arr;
@@ -17,6 +17,7 @@ class ReminderHandler
 
         add_action(SubscriptionReminderService::RENEWAL_ASYNC_HOOK, [$this, 'sendSubscriptionRenewalReminder'], 10, 3);
         add_action(SubscriptionReminderService::TRIAL_ASYNC_HOOK, [$this, 'sendSubscriptionTrialReminder'], 10, 3);
+        add_action(RenewalReminderService::ASYNC_HOOK, [$this, 'sendRenewalReminder'], 10, 3);
 
         add_filter('fluent_cart/store_settings/values', [$this, 'addDefaultStoreSettings'], 10, 2);
         add_filter('fluent_cart/store_settings/fields', [$this, 'addStoreSettingFields'], 10, 2);
@@ -27,6 +28,12 @@ class ReminderHandler
 
         add_action('fluent_cart/payments/subscription_canceled', [$this, 'clearSubscriptionReminderState'], 10, 1);
         add_action('fluent_cart/payments/subscription_expired', [$this, 'clearSubscriptionReminderState'], 10, 1);
+
+        // Also listen on the native events so reminder state clears on the paths the
+        // raw status bus misses (cancel button, model cancel, cron expiry). clearState
+        // is idempotent, so the edit path clearing twice is harmless.
+        add_action('fluent_cart/subscription_canceled', [$this, 'clearSubscriptionReminderState'], 10, 1);
+        add_action('fluent_cart/subscription_expired_validity', [$this, 'clearSubscriptionReminderState'], 10, 1);
     }
 
     public function scan(): void
@@ -42,6 +49,11 @@ class ReminderHandler
     public function sendSubscriptionTrialReminder($subscriptionId, $stage, $cycleKey): void
     {
         (new SubscriptionReminderService())->sendTrial($subscriptionId, $stage, $cycleKey);
+    }
+
+    public function sendRenewalReminder($orderId, $stage, $cycleKey): void
+    {
+        (new RenewalReminderService())->send($orderId, $stage, $cycleKey);
     }
 
     public function addDefaultStoreSettings($defaults): array
@@ -65,6 +77,9 @@ class ReminderHandler
             'quarterly_renewal_reminder_days'         => '14',
             'half_yearly_renewal_reminders_enabled'   => 'no',
             'half_yearly_renewal_reminder_days'       => '21',
+            // Invoice reminders for manual subscriptions
+            'renewal_reminders_enabled'               => 'no',
+            'renewal_reminder_overdue_days'           => '1,3,7',
         ]);
     }
 
@@ -125,7 +140,7 @@ class ReminderHandler
                 'email_notice' => [
                     'conditions' => $enabledCondition,
                     'type'       => 'html',
-                    'value'      => '<div class="fc_reminder_email_notice" style="background: #f0f6ff; border: 1px solid #d0e2ff; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #1e3a5f;">'
+                    'value'      => '<div class="fct-alert">'
                         . sprintf(
                             /* translators: %s is the opening and closing anchor tag */
                             __('Reminder emails must also be enabled in %1$sEmail Notification Settings%2$s under "Scheduler / Reminder Actions" to be delivered.', 'fluent-cart'),
@@ -270,6 +285,61 @@ class ReminderHandler
                         ],
                     ],
                 ],
+
+                // ── Invoice Reminders Group ──
+                'invoice_hr' => [
+                    'conditions' => $enabledCondition,
+                    'type'       => 'html',
+                    'value'      => '<hr class="settings-divider">'
+                ],
+                'invoice_group_label' => [
+                    'conditions'   => $enabledCondition,
+                    'type'         => 'html',
+                    'wrapperClass' => 'mb-4',
+                    'value'        => '<span class="setting-label" style="font-size: 15px;">' . __('Invoice Reminders', 'fluent-cart') . '</span>
+                        <div class="form-note">' . __('Send overdue reminders for unpaid renewal orders on manual subscriptions.', 'fluent-cart') . '</div>'
+                ],
+                'invoice_inner_hr' => [
+                    'conditions' => $enabledCondition,
+                    'type'       => 'html',
+                    'value'      => '<hr class="settings-divider">'
+                ],
+                'invoice_grid' => [
+                    'conditions'      => $enabledCondition,
+                    'type'            => 'grid',
+                    'columns'         => [
+                        'default' => 1,
+                        'md'      => 3
+                    ],
+                    'disable_nesting' => true,
+                    'schema'          => [
+                        'invoice_label'      => [
+                            'type'  => 'html',
+                            'value' => '<span class="setting-label">' . __('Overdue Invoice Reminders', 'fluent-cart') . '</span>
+                                <div class="form-note">' . __('Remind customers about unpaid invoices after the due date.', 'fluent-cart') . '</div>'
+                        ],
+                        'invoice_input_grid' => [
+                            'type'            => 'grid',
+                            'columns'         => ['default' => 1, 'md' => 1],
+                            'disable_nesting' => true,
+                            'class'           => 'col-span-2',
+                            'schema'          => [
+                                'renewal_reminders_enabled'     => [
+                                    'label' => __('Enable', 'fluent-cart'),
+                                    'type'  => 'checkbox',
+                                    'value' => 'yes',
+                                ],
+                                'renewal_reminder_overdue_days' => [
+                                    'label'      => false,
+                                    'type'       => 'input',
+                                    'value'      => '1,3,7',
+                                    'note'       => __('Days after due date to send overdue reminders. Comma-separated (e.g. 1,3,7). Default: 1,3,7', 'fluent-cart'),
+                                    'conditions' => [['key' => 'renewal_reminders_enabled', 'operator' => '==', 'value' => 'yes']],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ];
 
@@ -301,6 +371,10 @@ class ReminderHandler
         $sanitizers['half_yearly_renewal_reminders_enabled'] = 'sanitize_text_field';
         $sanitizers['half_yearly_renewal_reminder_days'] = 'intval';
 
+        // Invoice reminder sanitizers
+        $sanitizers['renewal_reminders_enabled'] = 'sanitize_text_field';
+        $sanitizers['renewal_reminder_overdue_days'] = 'sanitize_text_field';
+
         return $sanitizers;
     }
 
@@ -312,7 +386,7 @@ class ReminderHandler
                 return;
             }
 
-            (new InvoiceReminderService())->clearState($order);
+            (new RenewalReminderService())->clearState($order);
         } catch (\Throwable $e) {
             fluent_cart_error_log('Reminder state clear error', $e->getMessage());
         }

@@ -10,6 +10,27 @@
   @apply block;
 }
 
+@media (max-width: 1024px) {
+     .fct-compact-form {
+        .city{
+            .fct-material-input{
+                .el-input__wrapper,
+                .el-select__wrapper {
+                    @apply rounded-bl-none border-b-[0.5px] border-r-[1px] !important;
+                }
+            }
+        }
+        .postcode{
+            .fct-material-input{
+                .el-input__wrapper,
+                .el-select__wrapper {
+                    @apply rounded-bl border-b-[1px] border-l-[1px] !important;
+                }
+            }
+        }
+    }
+}
+
 @media (max-width: 575px) {
   .order-content-only-mobile,
   .subscription-only-mobile,

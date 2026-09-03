@@ -7,6 +7,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Model;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
@@ -14,6 +15,8 @@ use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\Framework\Support\Arr;
 
 class OrderService
@@ -26,6 +29,12 @@ class OrderService
      */
     public static function groupSanitizedData($order_data = []): array
     {
+        // fct_billing_tax_id is the checkout field name for the VAT number; normalise it to
+        // billing_vat_number so extractAddressData maps it into billing_address.vat_number
+        if (isset($order_data['fct_billing_tax_id'])) {
+            $order_data['billing_vat_number'] = $order_data['fct_billing_tax_id'];
+            unset($order_data['fct_billing_tax_id']);
+        }
 
         $billingAddress = static::extractAddressData($order_data, 'billing_');
         $shippingAddress = static::extractAddressData($order_data, 'shipping_');
@@ -380,10 +389,10 @@ class OrderService
             if ((int)Arr::get($orderItem, 'other_info.trial_days', 0) > 0) {
                 return (int)Arr::get($orderItem, 'other_info.signup_fee', 0);
             }
-            return intval(($orderItem['unit_price'] * $orderItem['quantity'])) + (int)Arr::get($orderItem, 'other_info.signup_fee', 0);
+            return (int) Arr::get($orderItem, 'subtotal', intval($orderItem['unit_price'] * $orderItem['quantity'])) + (int)Arr::get($orderItem, 'other_info.signup_fee', 0);
         }
 
-        return intval(($orderItem['unit_price'] * $orderItem['quantity']));
+        return (int) Arr::get($orderItem, 'subtotal', intval($orderItem['unit_price'] * $orderItem['quantity']));
     }
 
     /**
@@ -613,8 +622,29 @@ class OrderService
             'can_upgrade'            => $subscription->canUpgrade(),
             'can_switch_payment_method' => $subscription->canSwitchPaymentMethod(),
             'can_update_payment_method' => $subscription->canUpdatePaymentMethod(),
-            'item_name'              => $subscription->item_name
+            'collection_method'      => $subscription->collection_method,
+            'is_auto_charged'        => $subscription->isSystem(),
+            'item_name'              => $subscription->display_item_name
         ];
+    }
+
+    /**
+     * A system renewal order still inside its auto-charge retry window has no
+     * Pay Now — the charge is coming automatically. Other renewals unaffected.
+     */
+    protected static function renewalPayNowAllowed(Order $order): bool
+    {
+        if (!$order->parent_id) {
+            return true;
+        }
+
+        $subscription = Subscription::query()->where('parent_order_id', $order->parent_id)->first();
+
+        if (!$subscription || !$subscription->isSystem()) {
+            return true;
+        }
+
+        return SystemChargeService::isExhausted($subscription, $order);
     }
 
     public static function transformTransaction(OrderTransaction $transaction)
@@ -639,12 +669,26 @@ class OrderService
             $data['receipt_view_url'] = $transaction->order->getReceiptViewUrl();
         }
 
+        if ($transaction->order
+            && $transaction->order->type === Status::ORDER_TYPE_RENEWAL
+            && $transaction->status === Status::TRANSACTION_PENDING
+            && self::renewalPayNowAllowed($transaction->order)
+        ) {
+            $data['custom_checkout_url'] = add_query_arg([
+                'fluent-cart' => 'custom_checkout',
+                'order_hash'  => $transaction->order->uuid,
+            ], home_url('/'));
+        }
+
         return $data;
     }
 
     public static function canGenerateReceiptPdf(): bool
     {
-        return App::isProActive() && defined('FLUENT_PDF');
+        return (bool) apply_filters(
+            'fluent_cart/pdf/can_generate_receipt',
+            App::isProActive() && defined('FLUENT_PDF')
+        );
     }
 
 }

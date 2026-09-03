@@ -43,6 +43,8 @@ class SchedulingSettingsRequest extends RequestGuard
             'quarterly_renewal_reminder_days'      => 'nullable',
             'half_yearly_renewal_reminders_enabled' => 'nullable|sanitizeText',
             'half_yearly_renewal_reminder_days'    => 'nullable',
+            'renewal_reminders_enabled'            => 'nullable|sanitizeText',
+            'renewal_reminder_overdue_days'        => 'nullable|sanitizeText',
         ];
 
         // Only validate days fields when their corresponding toggle is enabled
@@ -98,6 +100,8 @@ class SchedulingSettingsRequest extends RequestGuard
             'quarterly_renewal_reminder_days'      => 'intval',
             'half_yearly_renewal_reminders_enabled' => 'sanitize_text_field',
             'half_yearly_renewal_reminder_days'    => 'intval',
+            'renewal_reminders_enabled'            => 'sanitize_text_field',
+            'renewal_reminder_overdue_days'        => 'sanitize_text_field',
         ];
     }
 }

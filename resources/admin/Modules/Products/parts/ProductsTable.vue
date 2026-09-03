@@ -13,6 +13,7 @@ import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import {formatNumber} from "@/Bits/productService";
 import CustomColumnRenderer from "@/Bits/Components/CustomColumnRenderer.vue";
 import {ref} from "vue";
+import StarRating from "@/Bits/Components/StarRating.vue";
 
 const props = defineProps({
   productTable: {
@@ -37,7 +38,6 @@ const handleProductCommand = (command) => {
     ).then(() => {
       emit('delete', command.product.ID);
     }).catch((errors) => {
-      console.log(errors, ' handle product delete errors');
     });
   } else if (command.action === 'duplicate') {
     emit('duplicate', command.product);
@@ -61,19 +61,20 @@ const getProductTypeText = (type) => {
     case 'bundle':
       return translate('Bundle');
     default:
-      Str.headline(type)
+      return Str.headline(type);
   }
 }
 
 const getVariationTypeText = (type) => {
-
   switch (type) {
     case 'simple':
       return translate('Simple');
     case 'simple_variations':
       return translate('Simple Variations');
+    case 'advanced_variations':
+      return translate('Advanced Variations');
     default:
-      Str.headline(type)
+      return type ? Str.headline(type) : '';
   }
 }
 
@@ -259,7 +260,7 @@ defineExpose({
       </template>
     </el-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('post_date')" :label="translate('Date')" width="120">
+    <el-table-column v-if="productTable.isColumnVisible('post_date')" :label="translate('Date')" width="100">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
                    :to="{ name: 'product_edit', params: { product_id: scope.row.ID } }">
@@ -267,6 +268,20 @@ defineExpose({
         </RouteCell>
       </template>
 
+    </el-table-column>
+
+    <el-table-column v-if="productTable.isColumnVisible('reviews')" :label="translate('Reviews')"
+                     width="130">
+      <template #default="scope">
+        <router-link
+            class="hover:no-underline flex items-center gap-1.5"
+            :to="{ name: 'reviews', query: { post_id: scope.row.ID } }"
+            :aria-label="translate('View reviews for %s', scope.row.post_title)"
+        >
+          <StarRating :rating="scope.row.avg_rating || 0" size="small"/>
+          <span class="text-xs text-gray-500">({{ translateNumber(scope.row.reviews_count || 0) }})</span>
+        </router-link>
+      </template>
     </el-table-column>
 
     <el-table-column v-for="column of productTable.getCustomColumns()" :label="column.label">
@@ -294,7 +309,7 @@ defineExpose({
 
     </el-table-column>
 
-    <el-table-column :label="translate('Actions')" width="80" align="right">
+    <el-table-column :label="translate('Actions')" width="90" align="right">
       <template #default="scope">
         <span class="fct-product-id hidden" title="Product ID">ID: {{ scope.row.ID }}</span>
         <el-dropdown

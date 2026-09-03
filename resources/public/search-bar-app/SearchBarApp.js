@@ -9,8 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
         #searchClear;
         #resultContainer;
         #termId;
-        #urlMode = 'new-tab';
+        #urlMode = '';
         #linkWithShopApp = false;
+        #showThumbnail = true;
 
         constructor(searchBarApp) {
             this.#searchBarApp = searchBarApp;
@@ -18,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.#searchBar = this.#searchBarApp.querySelector('[data-fluent-cart-search-bar]');
             this.#searchClear = this.#searchBarApp.querySelector('[data-fluent-cart-search-clear]');
             this.#resultContainer = this.#searchBarApp.querySelector('[data-fluent-cart-search-bar-lists-wrapper]');
-            this.#urlMode = this.#searchBarApp.dataset.urlMode || 'new-tab';
+            this.#urlMode = this.#searchBarApp.dataset.urlMode || '';
+            this.#showThumbnail = JSON.parse(this.#searchBarApp.dataset.showThumbnail ?? 'true');
 
             this.init();
 
@@ -101,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 post_title: searchParam,
                 url_mode: this.#urlMode,
                 termId: termId || '',
+                show_thumbnail: this.#showThumbnail,
             };
 
             if (Object.keys(params).length > 0) {
@@ -115,6 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.#clearFilterResult();
                 return;
             } else {
+                this.#resultContainer.innerHTML = '<li class="fct-search-loading" aria-live="polite" aria-label="Loading"></li>';
+                this.#resultContainer.parentElement.style.display = 'block';
                 fetch(fullUrl)
                     .then(response => response.json())
                     .then(data => {
@@ -133,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     })
-                    .catch(error => {
-                        console.error('Error fetching data:', error);
+                    .catch(() => {
+                        this.#resultContainer.innerHTML = '<li class="is-empty">Unable to load results. Please try again.</li>';
                     });
             }
         }

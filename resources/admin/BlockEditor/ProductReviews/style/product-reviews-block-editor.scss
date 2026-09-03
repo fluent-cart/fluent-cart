@@ -1,0 +1,201 @@
+@config "./product-reviews-block-editor.config.js";
+@tailwind utilities;
+
+// The child review blocks (Rating Summary / Write a Review / Review List)
+// reuse this stylesheet's skeleton and real-data preview pieces, so the
+// scope covers every review block editor wrapper — a child dropped
+// standalone must not render as bare text.
+.fct-product-reviews-block-editor,
+.fct-review-summary-block-editor,
+.fct-review-list-block-editor,
+.fct-review-form-block-editor {
+    // The canvas shows the same neutral skeleton in both query modes,
+    // mirroring the frontend's two-column layout (summary aside on the
+    // left, review list on the right). Styled to match the shared
+    // placeholder-card language (gray-100 blocks on a gray-outline card).
+    .fct-reviews-block-skeleton {
+        @apply flex flex-col gap-4 p-4;
+        @apply rounded border border-solid border-gray-outline bg-white;
+    }
+
+    .fct-reviews-block-skeleton-columns {
+        @apply grid gap-6 items-start;
+        // Matches the frontend .fct-reviews-layout proportions.
+        grid-template-columns: 320px 1fr;
+
+        // Summary toggled off — the list takes the full width.
+        &.is-single {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .fct-reviews-block-skeleton-aside {
+        @apply flex flex-col gap-3;
+    }
+
+    .fct-reviews-block-skeleton-list {
+        @apply flex flex-col gap-4 min-w-0;
+    }
+
+    .fct-reviews-block-skeleton-score {
+        @apply w-16 h-10 rounded-md bg-gray-100;
+    }
+
+    .fct-reviews-block-skeleton-bar-row {
+        @apply flex items-center gap-2;
+    }
+
+    .fct-reviews-block-skeleton-bar-label {
+        @apply h-3 w-6 rounded bg-gray-100 shrink-0;
+    }
+
+    .fct-reviews-block-skeleton-bar-track {
+        @apply h-2 w-full rounded-full bg-gray-100;
+    }
+
+    .fct-reviews-block-skeleton-chips {
+        @apply flex items-center gap-2 pb-3 border-0 border-b border-solid border-gray-outline;
+    }
+
+    .fct-reviews-block-skeleton-chip {
+        @apply h-6 w-10 rounded-full bg-gray-100 shrink-0;
+    }
+
+    .fct-reviews-block-skeleton-review {
+        @apply flex items-start gap-3;
+    }
+
+    .fct-reviews-block-skeleton-avatar {
+        @apply w-8 h-8 rounded-full bg-gray-100 shrink-0;
+    }
+
+    .fct-reviews-block-skeleton-lines {
+        @apply flex flex-col gap-2 w-full;
+    }
+
+    .fct-reviews-block-skeleton-line {
+        @apply h-3 w-1/2 rounded bg-gray-100;
+
+        &.is-wide {
+            @apply w-3/4;
+        }
+
+        &.is-short {
+            @apply w-1/3;
+        }
+    }
+
+    .fct-reviews-block-skeleton-caption {
+        @apply text-center text-gray-500 text-sm;
+    }
+
+    // Real summary data shown for a picked custom product — only the
+    // review items stay skeleton. Mirrors the frontend .fct-reviews-summary
+    // card: centered column with average, stars, total, bars, CTA.
+    .fct-reviews-block-real-summary {
+        @apply flex flex-col items-center gap-4 p-5;
+        @apply rounded-lg border border-solid border-gray-outline bg-white;
+    }
+
+    .fct-reviews-block-real-average {
+        @apply flex flex-col items-center;
+    }
+
+    .fct-reviews-block-real-average-number {
+        @apply font-bold text-system-dark leading-none;
+        // Matches the frontend 48px average; the design fontSize scale
+        // tops out at 28px, so this stays a raw value.
+        font-size: 48px;
+    }
+
+    .fct-reviews-block-real-average-max {
+        @apply text-sm text-gray-500 mt-1;
+    }
+
+    .fct-reviews-block-real-stars {
+        @apply flex gap-0.5 text-base leading-none;
+    }
+
+    .fct-reviews-block-real-total {
+        @apply text-xs text-gray-500;
+    }
+
+    .fct-reviews-block-real-bars {
+        @apply flex flex-col gap-2 w-full;
+    }
+
+    .fct-reviews-block-real-bar-row {
+        @apply flex items-center gap-2;
+    }
+
+    .fct-reviews-block-real-bar-label {
+        @apply text-xs text-gray-500 w-6 shrink-0 whitespace-nowrap;
+    }
+
+    .fct-reviews-block-real-bar-fill {
+        @apply h-full rounded-full;
+    }
+
+    .fct-reviews-block-real-bar-count {
+        @apply text-xs text-gray-500 w-4 text-right shrink-0;
+    }
+
+    .fct-reviews-block-real-count {
+        @apply text-base font-semibold text-system-dark;
+    }
+
+    .fct-reviews-block-real-controls {
+        @apply flex items-center justify-between gap-2 flex-wrap;
+        @apply pb-3 border-0 border-b border-solid border-gray-outline;
+    }
+
+    .fct-reviews-block-real-chips {
+        @apply flex items-center gap-2 flex-wrap;
+    }
+
+    .fct-reviews-block-real-sort {
+        @apply inline-flex items-center h-7 px-3 rounded-md text-xs;
+        @apply border border-solid border-gray-outline text-gray-500 bg-white whitespace-nowrap;
+    }
+
+    .fct-reviews-block-real-chip {
+        @apply inline-flex items-center h-6 px-3 rounded-full text-xs;
+        @apply border border-solid border-gray-outline text-gray-500 bg-white;
+
+        &.is-active {
+            @apply bg-dark-500 border-dark-500 text-white;
+        }
+    }
+}
+
+// Reviews Per Page slider — the global inspector styles size range
+// controls for two-column rows (138px, w-auto in flex-col), which
+// collapses the track when the control sits on its own row. Full width
+// restores the normal label-left / slider+input layout.
+.fct-inspector-control-wrap--review-list {
+    .fct-inspector-control-row.flex-col .components-range-control {
+        @apply w-full;
+
+        .components-base-control__label {
+            @apply text-left;
+        }
+    }
+}
+
+// Rating Summary with Review — the editor wrapper mirrors the frontend:
+// the group is the card box, and every layer of the child preview's own
+// card chrome (the skeleton wrapper and the real-summary card) flattens
+// inside it.
+.fct-review-summary-group-editor {
+    @apply flex flex-col gap-4 p-5;
+    @apply rounded-lg border border-solid border-gray-outline bg-white;
+
+    .fct-reviews-block-skeleton,
+    .fct-reviews-block-real-summary {
+        @apply p-0 border-0 bg-transparent rounded-none;
+    }
+
+    .fct-review-form-block-editor {
+        @apply mt-3;
+    }
+}

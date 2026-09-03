@@ -155,7 +155,8 @@ const churnSummary = computed(() => {
             average_value: `${avgChurnRate}%`,
             month_name: monthName,
             sub_title: translate("Average in period"),
-            description: translate(`You lost ${churnRate}% (${formatNumber(churnedCount)}) of your ${prevMonthName} subscriptions (${formatNumber(startCount)}).`),
+            /* translators: %1$s: churn rate percentage; %2$s: churned count; %3$s: month name; %4$s: starting count */
+            description: translate('You lost %1$s (%2$s) of your %3$s subscriptions (%4$s).', `${churnRate}%`, formatNumber(churnedCount), prevMonthName, formatNumber(startCount)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
         },
         {
@@ -164,7 +165,8 @@ const churnSummary = computed(() => {
             average_value: `${avgMrrChurnRate}%`,
             month_name: monthName,
             sub_title: translate("Average in period"),
-            description: translate(`You lost ${mrrChurnRate}% (${CurrencyFormatter.scaled(churnedMrr)}) of your ${prevMonthName} subscription MRR (${CurrencyFormatter.scaled(startMrr)}).`),
+            /* translators: %1$s: churn rate percentage; %2$s: churned MRR amount; %3$s: month name; %4$s: starting MRR amount */
+            description: translate('You lost %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${mrrChurnRate}%`, CurrencyFormatter.scaled(churnedMrr), prevMonthName, CurrencyFormatter.scaled(startMrr)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
         }
     ];

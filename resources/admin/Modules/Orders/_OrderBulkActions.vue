@@ -120,8 +120,8 @@ export default {
   components: {
     DynamicIcon,
   },
-  emits: ['reload', 'addItem', 'addProduct', 'enableItemEditing', 'disableItemEditing', 'handlePaymentActions'],
   props: ['order', 'trigger_action', 'isEditingItem', 'mode', 'triggerMode', 'shouldShowRefund', 'warningMessage'],
+  emits: ['reload', 'addItem', 'addProduct', 'enableItemEditing', 'disableItemEditing', 'handlePaymentActions'],
   data() {
     return {
       selected_action: '',
@@ -129,7 +129,6 @@ export default {
       status_data: {
         order_status: this.order.status,
         shipping_status: this.order.shipping_status,
-        payment_status: this.order.payment_status,
       },
       doing_actions: false,
       manage_stock: true,

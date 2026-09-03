@@ -7,6 +7,8 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import Alert from "../../../../public/customer-profile/Vue/parts/Alert.vue";
 
 const loading = ref(true);
 const saving = ref(false);
@@ -17,10 +19,6 @@ const storeSettingsUrl = ref('');
 const form = ref({
     zugferd_enabled: '0',
     zugferd_profile: 'en16931',
-    seller_vat_id: '',
-    seller_tax_id: '',
-    seller_legal_name: '',
-    seller_legal_registration_id: '',
     seller_legal_registration_scheme: '',
     seller_contact_name: '',
     seller_contact_email: '',
@@ -116,10 +114,12 @@ onMounted(() => {
         <SettingsHeader
             :heading="translate('E-Invoice Settings')"
             :loading="saving"
-            @onSave="saveSettings"
+            @on-save="saveSettings"
         />
 
         <div class="setting-wrap-inner">
+            <AdminNotice/>
+            
             <template v-if="loading">
                 <Card.Container>
                     <Card.Body>
@@ -174,62 +174,22 @@ onMounted(() => {
                         </template>
                     </Card.Header>
                     <Card.Body>
-                        <el-form-item :label="translate('ZUGFeRD Profile')" label-position="top">
-                            <el-select v-model="form.zugferd_profile">
-                                <el-option
-                                    v-for="opt in zugferdProfileOptions"
-                                    :key="opt.value"
-                                    :label="opt.label"
-                                    :value="opt.value"
-                                />
-                            </el-select>
-                            <div class="form-note">
-                                <p>{{ translate('Select the e-invoice formatter used when generating the embedded XML.') }}</p>
-                            </div>
-                        </el-form-item>
-
-                        <h4 class="mb-4">{{ translate('Seller Tax Details') }}</h4>
-
                         <el-row :gutter="15">
                             <el-col :lg="12">
-                                <el-form-item :label="translate('Seller VAT ID')" label-position="top" :required="form.zugferd_enabled === '1'">
-                                    <el-input v-model="form.seller_vat_id"/>
-                                    <ValidationError :validation-errors="validationErrors.seller_vat_id || {}" field-key="seller_vat_id"/>
+                                <el-form-item :label="translate('ZUGFeRD Profile')" label-position="top">
+                                    <el-select v-model="form.zugferd_profile">
+                                        <el-option
+                                            v-for="opt in zugferdProfileOptions"
+                                            :key="opt.value"
+                                            :label="opt.label"
+                                            :value="opt.value"
+                                        />
+                                    </el-select>
                                     <div class="form-note">
-                                        <p>{{ translate('VAT identification number (e.g. DE123456789)') }}</p>
+                                        <p>{{ translate('Select the e-invoice formatter used when generating the embedded XML.') }}</p>
                                     </div>
                                 </el-form-item>
                             </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Seller Tax ID')" label-position="top">
-                                    <el-input v-model="form.seller_tax_id"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('National tax identification number') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Legal Name')" label-position="top">
-                                    <el-input v-model="form.seller_legal_name"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('Registered legal name of the seller') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Legal Registration ID')" label-position="top" :required="form.zugferd_enabled === '1'">
-                                    <el-input v-model="form.seller_legal_registration_id"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('Company registration number (e.g. HRB 12345)') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <el-row :gutter="15">
                             <el-col :lg="12">
                                 <el-form-item :label="translate('Legal Registration Scheme')" label-position="top">
                                     <el-select v-model="form.seller_legal_registration_scheme" :placeholder="translate('Select scheme')" clearable filterable>
@@ -240,15 +200,24 @@ onMounted(() => {
                                             :value="opt.value"
                                         />
                                     </el-select>
-                                    <ValidationError :validation-errors="validationErrors.seller_legal_registration_scheme || {}" field-key="seller_legal_registration_scheme"/>
+
                                     <div class="form-note">
                                         <p>{{ translate('ISO 6523 ICD code for the legal registration identifier') }}</p>
                                     </div>
+
+                                    <ValidationError :validation-errors="validationErrors.seller_legal_registration_scheme || {}" field-key="seller_legal_registration_scheme"/>
+
                                 </el-form-item>
                             </el-col>
                         </el-row>
 
-                        <el-divider/>
+                        <Alert type="info" :closable="false" show-icon class="mb-4">
+                            <template #default>
+                                {{ translate('Company Name, VAT ID, Tax ID, and Legal Registration ID are managed in') }}
+
+                                <a v-if="storeSettingsUrl" :href="storeSettingsUrl" target="_blank" class="">{{ translate('Store Settings → Business Details') }}</a>
+                            </template>
+                        </Alert>
 
                         <h4 class="mb-4">{{ translate('Seller Contact') }}</h4>
 
@@ -321,7 +290,7 @@ onMounted(() => {
 
                 <div class="setting-save-action">
                     <el-button type="primary" @click="saveSettings()" :loading="saving">
-                        {{ saving ? translate('Saving Settings') : translate('Save Settings') }}
+                        {{ translate('Save Settings') }}
                     </el-button>
                 </div>
             </template>

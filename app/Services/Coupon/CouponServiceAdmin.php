@@ -6,6 +6,7 @@ use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Services\Coupon\Concerns\CanCalculateLineTotal;
 use FluentCart\App\Services\Coupon\Concerns\CanValidateCoupon;
+use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
 use WP_Error;
 
@@ -33,15 +34,18 @@ class CouponServiceAdmin
     protected array $calculatedLineItems = [];
     protected bool $usingCart = true;
     protected ?Collection $couponErrors = null;
+    protected string $customerEmail = '';
 
 
     /**
      * @param array $lineItems
      * @param ?Collection $previouslyAppliedCoupons
-     * @param bool $usingCart
+     * @param array $applicableCouponCodes
+     * @param string $customerEmail
      */
-    public function __construct(array $lineItems = [], ?Collection $previouslyAppliedCoupons = null, $applicableCouponCodes = [])
+    public function __construct(array $lineItems = [], ?Collection $previouslyAppliedCoupons = null, $applicableCouponCodes = [], $customerEmail = '')
     {
+        $this->customerEmail = (string) $customerEmail;
         $this->appliedCoupons = $previouslyAppliedCoupons;
         $this->couponErrors = new Collection();
 
@@ -56,6 +60,18 @@ class CouponServiceAdmin
 
     private function init()
     {
+        // The admin UI submits subtotal as null for variation line items (the request
+        // guard deliberately preserves that null instead of floatval-ing it to 0), and
+        // the min/max purchase-amount gates in CanValidateCoupon sum these subtotals
+        // via OrderService::getItemsAmountTotal. An empty subtotal must therefore fall
+        // back to the item's real unit_price * quantity — the same contract
+        // OrderService::calculateItemTotal applies when the key is absent.
+        foreach ($this->lineItems as $index => $lineItem) {
+            if (!is_numeric(Arr::get($lineItem, 'subtotal'))) {
+                $this->lineItems[$index]['subtotal'] = intval(Arr::get($lineItem, 'unit_price', 0)) * max(1, intval(Arr::get($lineItem, 'quantity', 1)));
+            }
+        }
+
         $this->calculatedLineItems = $this->lineItems;
         $this->productIds = (new Collection($this->lineItems))
             ->pluck('post_id')
@@ -162,6 +178,13 @@ class CouponServiceAdmin
     protected function apply(array $couponCodes = []): ?WP_Error
     {
         $this->initializeCoupons($couponCodes);
+
+        foreach ($couponCodes as $couponCode) {
+            if (!$this->applicableCoupons->has($couponCode)) {
+                $this->couponErrors->put($couponCode, $this->makeError(__('Coupon Not Found', 'fluent-cart'), 404));
+            }
+        }
+
         $this->calculateLineItems();
         return null;
     }

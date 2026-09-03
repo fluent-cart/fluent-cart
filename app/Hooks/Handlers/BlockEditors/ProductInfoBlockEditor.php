@@ -78,6 +78,8 @@ class ProductInfoBlockEditor extends BlockEditor
             return '';
         }
 
+        do_action('fluent_cart/advanced_variation/enqueue_assets');
+
         $innerBlocksContent = '';
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
             $innerBlocksContent .= '<div class="product-info-block-wrapper">';

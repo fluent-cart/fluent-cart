@@ -35,23 +35,6 @@ class OrderBumpTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Order Bump ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Title'),
-                value: 'title'
-            },
-            {
-                label: translate('Created at'),
-                value: 'created_at'
-            }
-        ]
-    }
-
     getSearchHint() {
         return translate("Search title or description.")
     }

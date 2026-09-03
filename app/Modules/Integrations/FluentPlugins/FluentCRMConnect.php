@@ -259,7 +259,7 @@ class FluentCRMConnect extends BaseIntegrationManager
         }
 
         if ($removeTagIds) {
-            $contact->detachTags($tagIds);
+            $contact->detachTags($removeTagIds);
         }
 
         if ($listIds) {

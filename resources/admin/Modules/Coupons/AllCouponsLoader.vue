@@ -22,11 +22,11 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
       :data="nextPageCount"
       class="w-full compact-table responsive full-compact"
   >
-    <el-table-column :width="100" :label="translate('ID')">
+    <el-table-column :width="103" :label="translate('ID')">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[70px]" />
+            <el-skeleton-item variant="p" class="w-[70px]" />
           </template>
         </el-skeleton>
       </div>
@@ -35,40 +35,40 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
     <el-table-column
         v-if="couponTable.isColumnVisible('title')"
         :label="translate('Title')"
-        :width="250"
+        :width="227"
     >
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[180px]" />
+            <el-skeleton-item variant="p" class="w-[180px]" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
 
-    <el-table-column :label="translate('Code')" :width="200">
+    <el-table-column :label="translate('Code')" :width="206">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[130px]" />
+            <el-skeleton-item variant="p" class="w-[130px]" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
-    <el-table-column :label="translate('Amount')" :width="120">
+    <el-table-column :label="translate('Amount')" :width="124">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[100px]" />
+            <el-skeleton-item variant="p" class="w-[100px]" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
-    <el-table-column :label="translate('Usage')" :width="150">
+    <el-table-column :label="translate('Usage')" :width="155">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[100px]" />
+            <el-skeleton-item variant="p" class="w-[100px]" />
           </template>
         </el-skeleton>
       </div>
@@ -76,30 +76,30 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
     <el-table-column
         v-if="couponTable.isColumnVisible('stackable')"
         :label="translate('Stackable')"
-        :width="120"
+        :width="124"
     >
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[80px]" />
+            <el-skeleton-item variant="p" class="w-[80px]" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
-    <el-table-column :label="translate('Status')" :width="120">
+    <el-table-column :label="translate('Status')" :width="124">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[90px]" />
+            <el-skeleton-item variant="p" class="w-[90px]" />
           </template>
         </el-skeleton>
       </div>
     </el-table-column>
-    <el-table-column :label="translate('Expiry Date')" :width="120">
+    <el-table-column :label="translate('Expiry Date')" :width="124">
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[90px]" />
+            <el-skeleton-item variant="p" class="w-[90px]" />
           </template>
         </el-skeleton>
       </div>
@@ -107,13 +107,13 @@ const nextPageCount = Array.from({length: props.nextPageCount}, (_, i) => i + 1)
     <el-table-column
         v-if="couponTable.isColumnVisible('actions')"
         :label="translate('Actions')"
-        :width="100"
+        :width="103"
         align="right"
     >
       <div class="table-cell">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item varient="p" class="w-[70px]" />
+            <el-skeleton-item variant="p" class="w-[70px]" />
           </template>
         </el-skeleton>
       </div>

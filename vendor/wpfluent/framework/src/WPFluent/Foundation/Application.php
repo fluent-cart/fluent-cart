@@ -21,10 +21,29 @@ use FluentCart\Framework\Foundation\ComponentBinder;
 use FluentCart\Framework\Foundation\Concerns\FoundationTrait;
 
 /**
- * @property \FluentCart\Framework\Foundation\Config $config
- * @property \FluentCart\Framework\Http\Router\Router $router
- * @property \FluentCart\Framework\Http\Request\Request $request
- * @property \FluentCart\Framework\Http\Response\Response $response
+ * Application — service container with magic property access via __get.
+ *
+ * Properties below are bound in {@see ComponentBinder::bindComponents()} and
+ * {@see Application::init()}/{@see Application::setAppLevelNamespace()}. Each
+ * `@property` declaration teaches PHPStan about a runtime container binding so
+ * `$app->view->render(...)` and similar access can be type-checked.
+ *
+ * @property \FluentCart\Framework\Foundation\Config        $config
+ * @property \FluentCart\Framework\View\View                $view
+ * @property \FluentCart\Framework\Cache\Cache              $cache
+ * @property \FluentCart\Framework\Http\Router              $router
+ * @property \FluentCart\Framework\Http\Request\Request     $request
+ * @property \FluentCart\Framework\Http\Response\Response   $response
+ * @property \FluentCart\Framework\Validator\Validator      $validator
+ * @property \FluentCart\Framework\Events\Dispatcher        $events
+ * @property \FluentCart\Framework\Encryption\Encrypter     $encrypter
+ * @property \FluentCart\Framework\Encryption\Encrypter     $crypt
+ * @property \FluentCart\Framework\Database\DatabaseManager $db
+ * @property \FluentCart\Framework\Http\URL                 $url
+ * @property \FluentCart\Framework\Support\Mail             $mail
+ * @property \FluentCart\Framework\Support\Pipeline         $pipeline
+ * @property string                             $__pluginfile__
+ * @property string                             $__namespace__
  */
 class Application extends Container
 {
@@ -186,6 +205,7 @@ class Application extends Container
         $this->bindAppInstance();
         $this->bindPathsAndUrls();
         $this->loadConfigIfExists();
+        $this->registerMiddleware();
         $this->registerTextdomain();
         $this->bindCoreComponents();
         $this->requireCommonFiles($this);
@@ -252,15 +272,45 @@ class Application extends Container
      */
     protected function loadConfigIfExists()
     {
-        $data = [];
+        $files = [];
 
         if (is_dir($this['path.config'])) {
             foreach (glob($this['path.config'] . '*.php') as $file) {
-                $data[basename($file, '.php')] = require($file);
+                // middleware.php lives under app/Http/ now; it ships closures
+                // that don't belong in Config storage.
+                if (basename($file) === 'middleware.php') {
+                    continue;
+                }
+                $files[basename($file, '.php')] = $file;
             }
         }
 
-        $this->instance('config', new Config($data));
+        $this->instance('config', new Config([], $files));
+    }
+
+    /**
+     * Register the HTTP middleware stack as a lazy container binding.
+     *
+     * Resolves from `app/Http/middleware.php` (canonical). Falls back to
+     * `config/middleware.php` so un-migrated plugins keep working.
+     *
+     * @return void
+     */
+    protected function registerMiddleware()
+    {
+        $this->singleton('http.middleware', function ($app) {
+            $new = $app['path.http'] . 'middleware.php';
+            if (is_file($new)) {
+                return require $new;
+            }
+
+            $legacy = $app['path.config'] . 'middleware.php';
+            if (is_file($legacy)) {
+                return require $legacy;
+            }
+
+            return [];
+        });
     }
 
     /**

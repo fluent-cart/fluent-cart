@@ -22,7 +22,6 @@ class TaxClass extends Model
 
 	protected $fillable = [
 		'title',
-        'description',
         'meta',
 		'slug'
 	];
@@ -30,11 +29,14 @@ class TaxClass extends Model
     protected static function booted()
     {
         static::creating(function ($model) {
-            $model->slug = static::generateUniqueSlug($model->title);
+            if (!$model->slug) {
+                $model->slug = static::generateUniqueSlug($model->title);
+            }
         });
 
         static::updating(function ($model) {
-            if ($model->isDirty('title')) {
+            $protectedSlugs = ['standard', 'reduced', 'zero'];
+            if ($model->isDirty('title') && !in_array($model->getOriginal('slug'), $protectedSlugs, true)) {
                 $model->slug = static::generateUniqueSlug($model->title, $model->id);
             }
         });

@@ -20,6 +20,7 @@ use FluentCart\Framework\Database\Orm\Relations\HasManyThrough;
 use FluentCart\Framework\Database\Orm\Relations\HasOne;
 use FluentCart\Framework\Database\Orm\Relations\MorphMany;
 use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCartPro\App\Modules\Licensing\Models\License;
 
 /**
@@ -42,7 +43,7 @@ class Order extends Model
         parent::boot();
         static::creating(function ($model) {
             if (empty($model->uuid)) {
-                $model->uuid = md5(time() . wp_generate_uuid4());
+                $model->uuid = static::generateOrderUuid();
             }
 
             if (!isset($model->config)) {
@@ -56,12 +57,73 @@ class Order extends Model
         });
 
         static::created(function ($model) {
+            // Every order carries a companion operations row. ReceiptHandler reads
+            // sales_recorded off it to decide whether a receipt is being seen for the
+            // first time, and that gates fluent_cart/after_receipt_first_time — an order
+            // without the row silently never fires its purchase event.
+            //
+            // Created here rather than at each call site because orders also come from
+            // renewals, subscription child orders, the admin and WP-CLI, none of which
+            // pass through the checkout or dispatch fluent_cart/order_created.
+            OrderOperation::query()->firstOrCreate(['order_id' => $model->id]);
+
             if ($model->invoice_no) {
                 do_action('fluent_cart/order/invoice_number_added', [
                     'order' => $model
                 ]);
             }
         });
+    }
+
+    /**
+     * Generate a short, human-usable order handle: 12 uppercase alphanumeric
+     * characters (e.g. A7K2P9X4M1Q8), stored in the `uuid` column and shown as
+     * "#A7K2P9X4M1Q8" on the UI. Existing orders keep their legacy md5 uuids.
+     *
+     * Uniqueness is best-effort at the application level: a chunk of
+     * candidates is generated and filtered against the table with a single
+     * whereIn query (no per-candidate round-trips). There is intentionally no
+     * DB unique constraint on `fct_orders.uuid`, so this check is NOT atomic —
+     * two concurrent inserts could theoretically race on the same candidate.
+     * Given the 36^12 (~4.7x10^18) space, a real collision is astronomically
+     * unlikely, but not cryptographically guaranteed. If a hard guarantee is
+     * ever required, add a unique index on the column and retry creation on a
+     * duplicate-key error.
+     *
+     * @return string
+     */
+    public static function generateOrderUuid()
+    {
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $maxIndex = strlen($chars) - 1;
+        $chunkSize = 20;
+
+        do {
+            // Generate a chunk of candidates, then resolve collisions with a
+            // single query (whereIn) instead of one query per candidate. The
+            // code is used as the array key so the chunk is self-deduplicated.
+            $candidates = [];
+            for ($i = 0; $i < $chunkSize; $i++) {
+                $code = '';
+                for ($j = 0; $j < 12; $j++) {
+                    $code .= $chars[wp_rand(0, $maxIndex)];
+                }
+                $candidates[$code] = true;
+            }
+
+            $taken = static::whereIn('uuid', array_keys($candidates))
+                ->get(['uuid'])
+                ->pluck('uuid')
+                ->toArray();
+
+            foreach ($taken as $existing) {
+                unset($candidates[$existing]);
+            }
+            // Loops again only if every candidate in the chunk collided, which
+            // is astronomically unlikely for a 36^12 (~4.7x10^18) space.
+        } while (empty($candidates));
+
+        return array_key_first($candidates);
     }
 
     protected $fillable = [
@@ -120,6 +182,7 @@ class Order extends Model
         'shipping_total'        => 'double',
         'fee_total'             => 'double',
         'tax_total'             => 'double',
+        'tax_behavior'          => 'integer',
         'total_amount'          => 'double',
         'customer_id'           => 'integer',
     ];
@@ -465,9 +528,332 @@ class Order extends Model
             ->delete();
     }
 
+    public function getBusinessInfo(): array
+    {
+        $businessInfo = $this->getMeta('business_info', []);
+
+        return is_array($businessInfo) ? $businessInfo : [];
+    }
+
+    public function getPrimaryOrderTaxRate()
+    {
+        return $this->orderTaxRates ? $this->orderTaxRates->first() : null;
+    }
+
+    public function getReversedTaxTotal()
+    {
+        $this->loadMissing(['orderTaxRates']);
+        $primaryRate = $this->getPrimaryOrderTaxRate();
+        if (!$primaryRate) {
+            return 0;
+        }
+        return (int) Arr::get(
+            is_array($primaryRate->meta) ? $primaryRate->meta : [],
+            'reverse_charge_original_tax_total',
+            0
+        );
+    }
+
+    public function isB2BOrder(): bool
+    {
+        return !empty($this->getBusinessInfo());
+    }
+
+    public function getIsB2BOrderAttribute(): bool
+    {
+        return $this->isB2BOrder();
+    }
+
+    public function isReverseChargeTaxOrder(): bool
+    {
+        $orderTaxRate = $this->getPrimaryOrderTaxRate();
+        $reverseChargeApplied = Arr::get($orderTaxRate->meta ?? [], 'reverse_charge_applied', null);
+
+        if ($reverseChargeApplied !== null) {
+            return (bool) $reverseChargeApplied;
+        }
+
+        return $this->hasValidatedCustomerTaxNumber() && ((int) $this->tax_total + (int) $this->shipping_tax) === 0;
+    }
+
+    public function getOrderRcMode(): string
+    {
+        $this->loadMissing(['orderTaxRates']);
+        $primaryRate = $this->getPrimaryOrderTaxRate();
+        $stored = Arr::get((array) ($primaryRate ? $primaryRate->meta : []), 'reverse_charge_price_mode', null);
+        if ($stored !== null) {
+            return (string) $stored;
+        }
+        return (string) Arr::get(
+            get_option('fluent_cart_tax_configuration_settings', []),
+            'eu_vat_settings.reverse_charge_price_mode',
+            'fixed'
+        );
+    }
+
+    public function getDisplayTaxLines(): array
+    {
+        $displayTaxLines = [];
+        $isReverseCharge = $this->isReverseChargeTaxOrder();
+
+        foreach ($this->orderTaxRates ?: [] as $orderTaxRate) {
+            $meta = $this->normalizeOrderTaxRateMeta((array) $orderTaxRate->meta, (int) $orderTaxRate->tax_rate_id);
+
+            $ratePercent   = (float) Arr::get($meta, 'rate_percent', 0);
+            $rateTaxAmount = (int) $orderTaxRate->order_tax;
+            $taxableAmount = (int) Arr::get($meta, 'taxable_amount', 0);
+            $isCompound    = (bool) Arr::get($meta, 'is_compound', false);
+            $isMixedInclusive = (bool) Arr::get($meta, 'is_mixed_inclusive', false);
+            $lineInclusive = Arr::get($meta, 'inclusive', null);
+            $label         = trim((string) Arr::get($meta, 'label', ''));
+
+            if ($isReverseCharge) {
+                if ($ratePercent <= 0) {
+                    continue;
+                }
+            } elseif ($rateTaxAmount <= 0) {
+                continue;
+            }
+
+            $displayLabel = $label ?: __('Tax', 'fluent-cart');
+
+            if ($ratePercent > 0) {
+                $displayLabel .= ' (' . Helper::formatTaxRatePercent($ratePercent) . '%)';
+            }
+
+            if ($isCompound) {
+                $displayLabel .= ' (' . __('Compound', 'fluent-cart') . ')';
+            }
+
+            // Capture clean label (name + percent, no base suffix) for the shared folded-row builder.
+            $rateLabelClean = $displayLabel;
+
+            if ($taxableAmount > 0 && !$isMixedInclusive) {
+                if ($lineInclusive === null) {
+                    $displayBase = $this->tax_behavior == 2
+                        ? max(0, $taxableAmount - $rateTaxAmount)
+                        : $taxableAmount;
+                } else {
+                    $displayBase = $lineInclusive
+                        ? max(0, $taxableAmount - $rateTaxAmount)
+                        : $taxableAmount;
+                }
+
+                $displayLabel .= ' ' . sprintf(
+                    __('on %s', 'fluent-cart'),
+                    html_entity_decode(Helper::toDecimal($displayBase), ENT_QUOTES, 'UTF-8')
+                );
+            }
+
+            $displayTaxLines[] = [
+                'label'          => $displayLabel,
+                'rate_label'     => $rateLabelClean,
+                'order_tax'      => $rateTaxAmount,
+                'total_tax'      => (int) $orderTaxRate->total_tax,
+                'rate_id'        => (int) $orderTaxRate->tax_rate_id,
+                'rate_percent'   => $ratePercent,
+                'taxable_amount' => isset($displayBase) ? (int) $displayBase : $taxableAmount,
+                'inclusive'      => $lineInclusive === null ? ((int) $this->tax_behavior === 2) : (bool) $lineInclusive,
+            ];
+            unset($displayBase);
+        }
+
+        return $displayTaxLines;
+    }
+
+    public function getDisplayTaxLinesAttribute(): array
+    {
+        return $this->getDisplayTaxLines();
+    }
+
+    public function getDisplayShippingTaxLines(): array
+    {
+        $displayLines = [];
+        foreach ($this->orderTaxRates ?: [] as $orderTaxRate) {
+            $shippingTax = (int) $orderTaxRate->shipping_tax;
+            if ($shippingTax <= 0) {
+                continue;
+            }
+            $meta        = $this->normalizeOrderTaxRateMeta((array) $orderTaxRate->meta, (int) $orderTaxRate->tax_rate_id);
+            $ratePercent = (float) Arr::get($meta, 'rate_percent', 0);
+            $label       = trim((string) Arr::get($meta, 'label', ''));
+            $rateName    = $label ?: __('Tax', 'fluent-cart');
+            if ($ratePercent > 0) {
+                $formattedRatePercent = Helper::formatTaxRatePercent($ratePercent);
+                /* translators: %1$s: tax rate name e.g. "VAT", %2$s: rate percentage e.g. "19" */
+                $displayLabel = sprintf(__('%1$s (%2$s%%) on shipping', 'fluent-cart'), $rateName, $formattedRatePercent);
+            } else {
+                /* translators: %1$s: tax rate name e.g. "VAT" */
+                $displayLabel = sprintf(__('%1$s on shipping', 'fluent-cart'), $rateName);
+            }
+            $displayLines[] = [
+                'label'        => $displayLabel,
+                'shipping_tax' => $shippingTax,
+                'rate_id'      => (int) $orderTaxRate->tax_rate_id,
+                'rate_percent' => $ratePercent,
+            ];
+        }
+        return $displayLines;
+    }
+
+    public function getDisplayShippingTaxLinesAttribute(): array
+    {
+        return $this->getDisplayShippingTaxLines();
+    }
+
+    protected function normalizeOrderTaxRateMeta(array $meta, int $taxRateId): array
+    {
+        if (
+            array_key_exists('label', $meta) ||
+            array_key_exists('rate_percent', $meta) ||
+            array_key_exists('taxable_amount', $meta) ||
+            array_key_exists('is_compound', $meta)
+        ) {
+            return $meta;
+        }
+
+        $legacyRates = (array) Arr::get($meta, 'rates', []);
+        if (!$legacyRates) {
+            return $meta;
+        }
+
+        $legacyRateMeta = [];
+
+        foreach ($legacyRates as $legacyRate) {
+            if ((int) Arr::get($legacyRate, 'rate_id', 0) === $taxRateId) {
+                $legacyRateMeta = (array) $legacyRate;
+                break;
+            }
+        }
+
+        if (!$legacyRateMeta) {
+            $legacyRateMeta = (array) reset($legacyRates);
+        }
+
+        if (!$legacyRateMeta) {
+            return $meta;
+        }
+
+        return array_merge($meta, [
+            'label'          => Arr::get($legacyRateMeta, 'label', ''),
+            'rate_percent'   => (float) Arr::get($legacyRateMeta, 'rate_percent', Arr::get($legacyRateMeta, 'rate', 0)),
+            'taxable_amount' => (int) Arr::get($legacyRateMeta, 'taxable_amount', 0),
+            'is_compound'    => (bool) Arr::get($legacyRateMeta, 'is_compound', false),
+            'inclusive'      => Arr::get($legacyRateMeta, 'inclusive', null),
+            'is_mixed_inclusive' => (bool) Arr::get($legacyRateMeta, 'is_mixed_inclusive', false),
+        ]);
+    }
+
+    public function getCustomerTaxNumber(): string
+    {
+        $businessInfoTaxNumber = (string) Arr::get($this->getBusinessInfo(), 'tax_number', '');
+        if (!empty($businessInfoTaxNumber)) {
+            return $businessInfoTaxNumber;
+        }
+
+        $legacyTaxNumber = (string) $this->getMeta('vat_tax_id', '');
+        if (!empty($legacyTaxNumber)) {
+            return $legacyTaxNumber;
+        }
+
+        $topLevelLegacyTaxId = (string) $this->getMeta('tax_id', '');
+        if (!empty($topLevelLegacyTaxId)) {
+            return $topLevelLegacyTaxId;
+        }
+
+        $orderTaxRate = $this->getPrimaryOrderTaxRate();
+
+        return (string) Arr::get($orderTaxRate->meta ?? [], 'vat_reverse.vat_number', '');
+    }
+
+    public function getTaxSummaryAttribute(): array
+    {
+        return TaxSummaryHelper::computeTaxSummary($this);
+    }
+
+    public function getBusinessInfoAttribute(): array
+    {
+        $businessInfo = $this->getBusinessInfo();
+
+        // Only meaningful for a MoR reverse-charge order (no orderTaxRate row) — omit
+        // for every normal order instead of appending a redundant duplicate of total_paid.
+        $morVatRemoved = $this->getMoRVatRemovedAmount();
+        if ($morVatRemoved > 0) {
+            $businessInfo['net_total_paid'] = $this->netAmount((int) $this->total_paid);
+        }
+
+        return $businessInfo;
+    }
+
+    public function getIsReverseChargeTaxOrderAttribute(): bool
+    {
+        return $this->isReverseChargeTaxOrder();
+    }
+
+    public function getCustomerTaxNumberAttribute(): string
+    {
+        return $this->getCustomerTaxNumber();
+    }
+
+    public function hasValidatedCustomerTaxNumber(): bool
+    {
+        $businessInfo = $this->getBusinessInfo();
+        if (!empty($businessInfo['tax_number'])) {
+            return (bool) Arr::get($businessInfo, 'tax_number_validated', false);
+        }
+
+        $orderTaxRate = $this->getPrimaryOrderTaxRate();
+
+        return (bool) Arr::get($orderTaxRate->meta ?? [], 'vat_reverse.valid', false);
+    }
+
+    public function getCustomerTaxName(): string
+    {
+        $businessInfoTaxName = (string) Arr::get($this->getBusinessInfo(), 'tax_number_name', '');
+        if (!empty($businessInfoTaxName)) {
+            return $businessInfoTaxName;
+        }
+
+        $orderTaxRate = $this->getPrimaryOrderTaxRate();
+
+        return (string) Arr::get($orderTaxRate->meta ?? [], 'vat_reverse.name', '');
+    }
+
     public function getTotalPaidAmount()
     {
         return $this->transactions()->where('status', Status::TRANSACTION_SUCCEEDED)->sum('total');
+    }
+
+    /**
+     * Amount of VAT removed by a merchant-of-record gateway (e.g. Paddle) for a
+     * reverse-charge order that never ran the tax module (no `fct_order_tax_rate` row).
+     * Display-only — `total_amount`/`total_paid`/`txn.total` stay gross for such orders
+     * (cover invariant: the "fully paid" equality that drives due-amount checks, digital
+     * auto-complete, and dunning reminders depends on it), so this is never subtracted
+     * into the ledger, only into `getDisplayTotalPaid()` for the admin UI. Zero for
+     * core-handled reverse charge (tax-rate row present) — those are already net at
+     * creation time.
+     */
+    public function getMoRVatRemovedAmount(): int
+    {
+        if ($this->getPrimaryOrderTaxRate()) {
+            return 0;
+        }
+
+        return (int) Arr::get($this->getBusinessInfo(), 'mor_vat_removed', 0);
+    }
+
+    /**
+     * Nets a raw gross ledger figure (total_paid, a live paid-total sum, a refund amount)
+     * by the MoR VAT removal — see getMoRVatRemovedAmount(). Single formula for every
+     * "what did we actually collect/need to refund" comparison, so callers never
+     * reimplement the subtraction themselves. Never use for due-amount, digital
+     * auto-complete, or reminder logic; those must keep comparing the gross ledger
+     * columns (total_amount vs total_paid) so the "fully paid" equality still holds.
+     */
+    public function netAmount(int $amount): int
+    {
+        return max(0, $amount - $this->getMoRVatRemovedAmount());
     }
 
     public function getTotalRefundAmount()
@@ -482,7 +868,11 @@ class Order extends Model
 
         $this->total_refund = $totalRefunded;
 
-        if (floatval($totalRefunded) >= floatval($totalPaid)) {
+        // Net out MoR VAT removal so a full refund of the actually captured amount
+        // resolves to "fully refunded" — see netAmount().
+        $netTotalPaid = $this->netAmount($totalPaid);
+
+        if (floatval($totalRefunded) >= floatval($netTotalPaid)) {
             $this->payment_status = Status::PAYMENT_REFUNDED;
         } elseif ($totalPaid > $totalRefunded) {
             $this->payment_status = Status::PAYMENT_PARTIALLY_REFUNDED;
@@ -498,6 +888,10 @@ class Order extends Model
         $paymentStatus = $type == 'full' ? Status::PAYMENT_REFUNDED : Status::PAYMENT_PARTIALLY_REFUNDED;
         $this->total_refund += $refundedAmount;
         $this->payment_status = $paymentStatus;
+
+        if ($paymentStatus === Status::PAYMENT_REFUNDED && !$this->refunded_at) {
+            $this->refunded_at = DateTime::gmtNow();
+        }
 
         $this->save();
 

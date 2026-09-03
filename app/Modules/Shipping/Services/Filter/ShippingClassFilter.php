@@ -34,6 +34,29 @@ class ShippingClassFilter extends BaseFilter
         return 'shipping_classes';
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'name' => ['label' => __('Class Name', 'fluent-cart'), 'column' => 'name'],
+            'cost' => ['label' => __('Cost', 'fluent-cart'), 'column' => 'cost'],
+        ];
+    }
+
+    /**
+     * Intentionally empty, and verified so: ShippingClassTable.js sends no
+     * `with` at all, so there is nothing to allow. Add an entry only when a
+     * caller actually needs it — do not pre-open relations.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [];
+    }
+
     public function applyActiveViewFilter(?string $activeView = null): void
     {
         // No tabs for shipping classes at this time

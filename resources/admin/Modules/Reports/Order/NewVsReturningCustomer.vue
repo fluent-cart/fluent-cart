@@ -81,13 +81,6 @@ const formatPercentage = (value) => {
 };
 </script>
 
-<style scoped>
-.el-table th,
-.el-table td {
-  text-align: center;
-}
-</style>
-
 <template>
   <Card.Container class="overflow-hidden" id="chartContainer">
     <Card.Header title_size="small">
@@ -215,3 +208,10 @@ const formatPercentage = (value) => {
     </Card.Body>
   </Card.Container>
 </template>
+
+<style scoped>
+.el-table th,
+.el-table td {
+  text-align: center;
+}
+</style>

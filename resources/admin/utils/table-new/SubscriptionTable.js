@@ -46,31 +46,6 @@ class SubscriptionTable extends Table {
         ];
     }
 
-    getSortableColumns() {
-        return [
-            {
-                label: translate('Subscription ID'),
-                value: 'id'
-            },
-            {
-                label: translate('Next Billing Date'),
-                value: 'next_billing_date'
-            },
-            {
-                label: translate('Bills Count'),
-                value: 'bill_count'
-            },
-            {
-                label: translate('Created At'),
-                value: 'created_at'
-            },
-            {
-                label: translate('Status'),
-                value: 'status'
-            },
-        ];
-    }
-
     getSearchHint() {
         return translate("by id, order id, status, payment method, customer name, or product.")
     }
@@ -87,9 +62,11 @@ class SubscriptionTable extends Table {
         return 'subscriptions';
     }
 
+    // A SCREEN key, not a relation name — SubscriptionFilter::allowedWiths()
+    // owns the relation and its customers/view check.
     with() {
         return [
-            'customer'
+            'admin_subscription_list'
         ];
     }
 }

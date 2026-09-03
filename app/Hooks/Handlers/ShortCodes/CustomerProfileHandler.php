@@ -7,9 +7,11 @@ use FluentCart\Api\PaymentMethods;
 use FluentCart\Api\Resource\CustomerResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
+use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Vite;
@@ -59,13 +61,19 @@ class CustomerProfileHandler extends ShortCode
     {
         if (!is_user_logged_in()) {
              ob_start();
-            $redirectUrl = (new StoreSettings())->getCustomerProfilePage();
+            $redirectUrl = $this->resolveLoginRedirectUrl(
+                (new StoreSettings())->getCustomerProfilePage()
+            );
+
             if (defined('FLUENT_AUTH_VERSION') && (new \FluentAuth\App\Hooks\Handlers\CustomAuthHandler())->isEnabled()) {
                 ?>
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #CBD5E0; border-radius: 8px;" class="fct_auth_wrap">
                 <h4><?php echo esc_html__('Please log in to access your customer portal.', 'fluent-cart'); ?></h4>
                 <?php
-                echo do_shortcode('[fluent_auth redirect_to="' . $redirectUrl . '"]');
+                // The URL travels inside a double-quoted shortcode attribute, where a
+                // bracket or quote would truncate the shortcode. Carry them encoded.
+                $attributeUrl = str_replace(['[', ']', '"'], ['%5B', '%5D', '%22'], $redirectUrl);
+                echo do_shortcode('[fluent_auth redirect_to="' . $attributeUrl . '"]');
                 echo '</div>';
             } else {
                 ?>
@@ -84,6 +92,32 @@ class CustomerProfileHandler extends ShortCode
         }
 
         $this->renderCustomerAppContainer();
+    }
+
+    /**
+     * Resolve where a logged-out visitor should land once they have logged in.
+     *
+     * `redirect_to` is attacker-supplied, so it is only honoured when
+     * wp_validate_redirect() accepts it. That compares the parsed host against the
+     * site host. A string-prefix comparison must not be used here: a hostile host
+     * can be built by suffixing the site host, or by placing the site host in the
+     * userinfo position ahead of an `@`, and both keep the site URL as a prefix
+     * while resolving somewhere else entirely.
+     *
+     * @param string $fallbackUrl Where to send the visitor when no usable target was supplied.
+     * @return string
+     */
+    public function resolveLoginRedirectUrl($fallbackUrl)
+    {
+        if (empty($_GET['redirect_to']) || !is_string($_GET['redirect_to'])) {
+            return $fallbackUrl;
+        }
+
+        $intendedRedirectUrl = sanitize_url(wp_unslash($_GET['redirect_to']));
+
+        $validatedUrl = wp_validate_redirect($intendedRedirectUrl, '');
+
+        return $validatedUrl ? $validatedUrl : $fallbackUrl;
     }
 
     public function renderCustomerAppContainer()
@@ -350,6 +384,9 @@ class CustomerProfileHandler extends ShortCode
                 'app_slug' => $pageSlug,
                 'app_url' => TemplateService::getCustomerProfileUrl(),
                 'shop'              => $shopLocalizationData,
+                'currency_signs'    => array_map(function ($sign) {
+                    return html_entity_decode($sign, ENT_QUOTES, 'UTF-8');
+                }, CurrenciesHelper::getCurrencySigns()),
                 'trans'             => TransStrings::getCustomerProfileString(),
                 'download_url_base' => site_url('fluent-cart/download-file/?fluent_cart_download=true'),
                 'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
@@ -365,13 +402,17 @@ class CustomerProfileHandler extends ShortCode
                     'email'      => $currentCustomer ? $currentCustomer->email : '',
                     'first_name' =>  $currentCustomer ? $currentCustomer->first_name : '',
                     'last_name'  =>  $currentCustomer ? $currentCustomer->last_name : '',
-                    'photo'        =>  $currentCustomer ? $currentCustomer->photo : ''
-
                 ],
                 'logout_url'        => wp_logout_url(home_url()),
                 'datei18'           => TransStrings::dateTimeStrings(),
                 'el_strings'        => TransStrings::elStrings(),
-                'wp_locale'         => get_locale()
+                'wp_locale'         => get_locale(),
+                'is_company_name_enabled' => CheckoutFieldsSchema::isCompanyNameEnabled(),
+                'is_company_name_required' => CheckoutFieldsSchema::isCompanyNameRequired(),
+                'is_vat_number_enabled' => CheckoutFieldsSchema::isVatNumberEnabled(),
+                'is_vat_number_required' => CheckoutFieldsSchema::isVatNumberRequired(),
+                'is_legal_registration_id_enabled' => CheckoutFieldsSchema::isLegalRegistrationIdEnabled(),
+                'is_legal_registration_id_required' => CheckoutFieldsSchema::isLegalRegistrationIdRequired()
             ],
             'fluentCartRestVars'               => [
                 'rest' => Helper::getRestInfo(),

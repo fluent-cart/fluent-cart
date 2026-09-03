@@ -3,6 +3,8 @@
       <SettingsHeader :heading="translate('Storage Providers')" :show-save-button="false" />
 
       <div class="setting-wrap-inner">
+        <AdminNotice/>
+
         <CardContainer>
           <CardBody>
             <el-skeleton :loading="loading" animated :rows="6" />
@@ -61,16 +63,23 @@
                     />
                   </div>
 
+                  <div v-else-if="isProLocked(storage)" class="fct-content-card-list-action" @click.stop @keydown.stop>
+                    <el-button
+                      type="primary"
+                      class="el-button--x-small"
+                      tag="a"
+                      :href="storage.upgrade_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <DynamicIcon name="Crown"/>
+                      {{ translate('Upgrade to Pro') }}
+                    </el-button>
+                  </div>
+
                   <div v-else-if="canManage(storage)" class="fct-content-card-list-action" @click.stop @keydown.stop>
                     <el-button class="el-button--x-small" @click="handleDriverAction(storage)">
-                      <img
-                        v-if="storage.requires_pro"
-                        :src="appVars?.asset_url + 'images/crown.svg'"
-                        :alt="translate('Pro feature')"
-                        class="pro-feature-icon"
-                      />
                       {{ translate('Manage') }}
-                      
                     </el-button>
                   </div>
                 </div>
@@ -87,21 +96,28 @@
   import {Container as CardContainer, Body as CardBody} from '@/Bits/Components/Card/Card.js';
   import translate from "@/utils/translator/Translator";
   import SettingsHeader from "./Parts/SettingsHeader.vue";
+  import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+  import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
   export default {
     name: 'StorageSettings',
-    props: ['settings'],
     components: {
       Badge,
       CardBody,
       CardContainer,
-      SettingsHeader
+      SettingsHeader,
+      AdminNotice,
+      DynamicIcon
     },
+    props: ['settings'],
     data() {
       return {
         loading: false,
         availableDrivers: [],
       };
+    },
+    mounted() {
+      this.getStorageDrivers();
     },
     methods: {
       translate,
@@ -112,6 +128,10 @@
         return darkLogo || null;
       },
       getRowLabel(storage) {
+        if (this.isProLocked(storage)) {
+          /* translators: %1$s: storage provider title */
+          return this.translate('Upgrade to Pro to use storage provider: %1$s', storage.title);
+        }
         return `${this.translate('Manage storage provider')}: ${storage.title}`;
       },
       getToggleLabel(storage) {
@@ -122,6 +142,9 @@
       },
       canManage(storage) {
         return !!storage.route || !!storage.upgrade_url;
+      },
+      isProLocked(storage) {
+        return !storage.route && !!storage.upgrade_url;
       },
       handleDriverAction(storage) {
         if (storage.upgrade_url && !storage.route) {
@@ -179,9 +202,6 @@
               this.loading = false;
             });
       }
-    },
-    mounted() {
-      this.getStorageDrivers();
     }
   };
   </script>

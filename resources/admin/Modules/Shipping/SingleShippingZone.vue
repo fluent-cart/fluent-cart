@@ -25,6 +25,8 @@
 
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <div class="fct-single-shipping-zone-page">
         <div v-if="loading">
           <SingleShippingZoneLoader/>
@@ -107,7 +109,7 @@
               v-if="isEdit"
               :zone_id="props.zone_id"
               :methods="zoneShippingMethods"
-              @fetchShippingMethods="fetchZoneData"
+              @fetch-shipping-methods="fetchZoneData"
               :country="zoneForm.region"
           />
         </div>
@@ -132,7 +134,7 @@ import ShippingMethods from "@/Modules/Shipping/ShippingMethods.vue";
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 import Animation from "@/Bits/Components/Animation.vue";
-
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 // Props
 const props = defineProps({
@@ -235,7 +237,6 @@ const fetchCountries = () => {
         }));
       })
       .catch(error => {
-        console.error('Error fetching countries:', error);
         rawContinents.value = [{
           code: 'ALL',
           name: '',
@@ -274,7 +275,6 @@ const fetchZoneData = () => {
         }
       })
       .catch(error => {
-        console.error('Error fetching zone data:', error);
         notFound.value = {
           show: true,
           message: translate('Shipping zone not found'),
@@ -367,7 +367,6 @@ const saveZone = () => {
           } else {
             Notify.error(error?.data?.message || error?.message || translate('Failed to save shipping zone'));
           }
-          console.error('Error saving shipping zone:', error);
         })
         .finally(() => {
           saving.value = false;

@@ -38,20 +38,23 @@ export default class AddressService {
     }
 
     async initCustomBillingSelect() {
-
-
         let countrySelector = this.formWrapper.querySelector('#billing_country');
-        // return if countrySelector is empty
         if (!countrySelector) {
-            // return;
+            return;
         }
 
         let selectedCountryValue = '';
-        if (countrySelector) {
+        const billingAddressInput = this.formWrapper.querySelector('#billing_address_id');
+        const billingAddressCountry = billingAddressInput?.dataset?.country || '';
+
+        if (countrySelector.value) {
             selectedCountryValue = countrySelector.value;
+        } else if (billingAddressCountry) {
+            selectedCountryValue = billingAddressCountry;
         }
 
         let response = null;
+        const shouldPersistDetectedCountry = !selectedCountryValue;
 
         if (!countrySelector || (!this.#timezone && !selectedCountryValue)) {
             selectedCountryValue = window.fluentcart_checkout_info.store_country;
@@ -61,7 +64,7 @@ export default class AddressService {
             response = await LocalizationService.getCountryInfo(selectedCountryValue);
         } else {
             response = await LocalizationService.getCountryInfoByTimeZone(this.#timezone);
-            if(response?.country_code) {
+            if (shouldPersistDetectedCountry && response?.country_code) {
                 this.saveCustomerData('billing_country', response?.country_code);
             }
         }
@@ -70,7 +73,7 @@ export default class AddressService {
             countrySelector.value = response?.country_code;
         }
 
-        if (response.cached) {
+        if (response.cached && shouldPersistDetectedCountry) {
             this.saveCustomerData('billing_country', response?.country_code);
         }
 
@@ -187,21 +190,28 @@ export default class AddressService {
     }
 
     initCustomShippingSelect(shippingData) {
-
         const shippingStateSelector = this.formWrapper.querySelector('#shipping_state');
         const shippingCountrySelector = this.formWrapper.querySelector('#shipping_country');
+        const shippingAddressInput = this.formWrapper.querySelector('#shipping_address_id');
+        const shippingAddressCountry = shippingAddressInput?.dataset?.country || '';
+        const shippingAddressState = shippingAddressInput?.dataset?.state || '';
 
         if (!shippingStateSelector || !shippingCountrySelector) {
-            // return;
+            return;
         }
 
         let shippingDefaultCountry = '';
-        if (shippingCountrySelector) {
+        if (shippingCountrySelector?.value) {
             shippingDefaultCountry = shippingCountrySelector.value;
+        } else if (shippingAddressCountry) {
+            shippingDefaultCountry = shippingAddressCountry;
         }
+
         let shippingDefaultState = '';
-        if (shippingStateSelector) {
+        if (shippingStateSelector?.value) {
             shippingDefaultState = shippingStateSelector.value;
+        } else if (shippingAddressState) {
+            shippingDefaultState = shippingAddressState;
         }
 
         if (shippingStateSelector) {

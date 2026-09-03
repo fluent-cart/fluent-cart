@@ -16,7 +16,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_subsc
                 component: AllSubscriptions,
                 meta: {
                     active_menu: 'subscriptions',
-                    title: 'Subscriptions'
+                    title: translate('Subscriptions')
                 },
             },
             {

@@ -5,7 +5,6 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
@@ -30,7 +29,7 @@ class SwitchCustomerMethod
     public function switchPayMethod($data, $subscriptionId)
     {
         if (!$this->validateRequest($data, $subscriptionId)) {
-            throw new \Exception('Invalid request');
+            throw new \Exception(__('Invalid request', 'fluent-cart'));
         }
 
         $subscriptionModel = Subscription::query()->where('id', $subscriptionId)->first();
@@ -206,7 +205,6 @@ class SwitchCustomerMethod
     private function updateSubscription($subscriptionId, $newSub, $plan, $customerId)
     {
         $subscriptionModel = Subscription::query()->where('id', $subscriptionId)->first();
-        $config = $subscriptionModel->config ?: [];
 
         $subscriptionModel->update([
             'vendor_subscription_id' => Arr::get($newSub, 'id'),
@@ -214,10 +212,9 @@ class SwitchCustomerMethod
             'current_payment_method' => 'stripe',
             'vendor_customer_id'     => $customerId,
             'status'                 => StripeHelper::transformSubscriptionStatus($newSub),
-            'config'                 => array_merge($config, [
-                'is_trial_days_simulated' => 'yes'
-            ])
         ]);
+
+        $subscriptionModel->mergeConfig(['is_trial_days_simulated' => 'yes']);
     }
 
     private function updateBillingInfo($subscriptionId, $pm)
@@ -270,10 +267,7 @@ class SwitchCustomerMethod
 
         $billTimes = Arr::get($subscription, 'bill_times');
 
-        $billCount = OrderTransaction::query()->where('subscription_id', $subscription->id)
-            ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
-            ->where('status', Status::TRANSACTION_SUCCEEDED)
-            ->count();
+        $billCount = $subscription->calculateBillCount();
 
         if ($billTimes && $billCount) {
             $billTimes = $billTimes - $billCount;

@@ -7,9 +7,6 @@ use FluentCart\App\Models\Product;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-use FluentCart\Database\Migrations\AttributeGroupsMigrator;
-use FluentCart\Database\Migrations\AttributeObjectRelationsMigrator;
-use FluentCart\Database\Migrations\AttributeTermsMigrator;
 use FluentCart\Database\Migrations\CartMigrator;
 use FluentCart\Database\Migrations\CustomersMigrator;
 use FluentCart\Database\Migrations\MetaMigrator;
@@ -48,14 +45,15 @@ use FluentCartPro\App\Modules\Licensing\Models\LicenseSite;
 use FluentCart\Database\Migrations\ShippingZonesMigrator;
 use FluentCart\Database\Migrations\ShippingMethodsMigrator;
 use FluentCart\Database\Migrations\RetentionSnapshotsMigrator;
+use FluentCart\Database\Migrations\AttributeGroupsMigrator;
+use FluentCart\Database\Migrations\AttributeObjectRelationsMigrator;
+use FluentCart\Database\Migrations\AttributeTermsMigrator;
+use FluentCart\Database\Seeder\AttributeSeeder;
 
 class DBMigrator
 {
     private static array $migrators = [
         MetaMigrator::class,
-        AttributeGroupsMigrator::class,
-        AttributeObjectRelationsMigrator::class,
-        AttributeTermsMigrator::class,
         CartMigrator::class,
         CouponsMigrator::class,
         CustomerAddressesMigrator::class,
@@ -63,11 +61,11 @@ class DBMigrator
         CustomersMigrator::class,
         OrderAddressesMigrator::class,
         OrderDownloadPermissionsMigrator::class,
-        OrderMetaMigrator::class,
         OrderOperationsMigrator::class,
         OrdersItemsMigrator::class,
         OrdersMigrator::class,
         OrderTaxRateMigrator::class,
+        OrderMetaMigrator::class,
         OrderTransactionsMigrator::class,
         ProductDetailsMigrator::class,
         ProductDownloadsMigrator::class,
@@ -86,7 +84,13 @@ class DBMigrator
         ShippingMethodsMigrator::class,
         ShippingClassesMigrator::class,
         ScheduledActionsMigrator::class,
-        RetentionSnapshotsMigrator::class
+        RetentionSnapshotsMigrator::class,
+        // Order matters: AttributeTermsMigrator::migrated() INNER JOINs
+        // fct_atts_relations to repoint orphaned term references, so the
+        // relations table must exist before terms runs its post-migration hook.
+        AttributeGroupsMigrator::class,
+        AttributeObjectRelationsMigrator::class,
+        AttributeTermsMigrator::class
     ];
 
     public static function migrateUp($network_wide = false)
@@ -126,11 +130,12 @@ class DBMigrator
         foreach (self::$migrators as $migrator) {
             $migrator::migrate();
         }
+
+        do_action('fluent_cart/after_migrate');
     }
 
     public static function maybeMigrateDBChanges()
     {
-
         /*
          * TODO We will remove this after final release
          */
@@ -138,7 +143,43 @@ class DBMigrator
 
         if (!$currentDBVersion || version_compare($currentDBVersion, FLUENTCART_DB_VERSION, '<')) {
 
+            // Right after a plugin update, multiple requests (admin page +
+            // heartbeat/ajax) hit init before the version option is written and
+            // would all run the schema changes in parallel, producing
+            // duplicate-index / duplicate-entry errors. Only the request that
+            // wins the advisory lock proceeds; the others skip — the winner
+            // updates the version option for everyone.
+            if (!self::acquireMigrationLock()) {
+                return;
+            }
+
             update_option('_fluent_cart_db_version', FLUENTCART_DB_VERSION, 'no');
+
+            if (!$currentDBVersion) {
+                // Brand-new store: default tax display to the simplified single line.
+                // Existing stores fall through to the read-time default 'itemized'.
+                $taxSettings = get_option('fluent_cart_tax_configuration_settings', []);
+                if (!isset($taxSettings['checkout_tax_breakdown_display'])) {
+                    $taxSettings['checkout_tax_breakdown_display'] = 'simplified';
+                    update_option('fluent_cart_tax_configuration_settings', $taxSettings, true);
+                }
+            }
+
+            // 2026-04-25
+            TaxRatesMigrator::upgradeShippingOverridePrecision();
+
+            // 2026-07-01
+            OrderTaxRateMigrator::allowVirtualTaxRateIds();
+
+            // 2026-05-27
+            TaxRatesMigrator::fixPostcodeRangeSeparator();
+            OrdersMigrator::addFeeTotalColumn();
+
+            // 2026-07-24
+            OrdersMigrator::addUuidIndex();
+
+            // 2026-08-20
+            ProductMetaMigrator::addObjectMetaIndex();
 
             // let's check the orders table sequence number
             global $wpdb;
@@ -441,8 +482,177 @@ class DBMigrator
             // without deactivation/reactivation still apply new columns
             \FluentCart\Database\Migrations\ShippingZonesMigrator::migrated();
             \FluentCart\Database\Migrations\ShippingClassesMigrator::migrated();
+            \FluentCart\Database\Migrations\SubscriptionsMigrator::migrated();
 
+            // 2026-08-06
+            // fct_order_transactions subscription_id index — also run here so
+            // in-place plugin updates deliver it; migrate() only covers the
+            // activation path.
+            \FluentCart\Database\Migrations\OrderTransactionsMigrator::migrated();
+
+
+            // 2026-05-06
+            // Backfill, dedup, then add unique index — must run in this order
+            // so the constraint can be applied without "Duplicate entry" errors.
+            TaxClassesMigrator::backfillNullSlugs();
+            TaxClassesMigrator::deduplicateSlugs();
+            TaxClassesMigrator::addSlugUniqueIndex();
+
+            // Ensure Standard tax class exists for all installs
+            TaxClassesMigrator::seedDefaultTaxClass();
+
+            // 2026-05-15
+            // Move EU VAT country registrations from wp_options blob to fct_meta rows.
+            \FluentCart\Database\Migrations\EuVatRegistrationMigrator::migrate();
+
+            // 2026-06-10
+            // One-time migration: move legacy price_suffix into the correct split field
+            // based on the store's tax_inclusion setting at the time of migration.
+            if (!get_option('_fluent_cart_price_suffix_migrated')) {
+                $taxSettings = get_option('fluent_cart_tax_configuration_settings', []);
+                $legacySuffix = isset($taxSettings['price_suffix']) ? $taxSettings['price_suffix'] : '';
+                $hasIncluded  = isset($taxSettings['price_suffix_included']) && $taxSettings['price_suffix_included'] !== '';
+                $hasExcluded  = isset($taxSettings['price_suffix_excluded']) && $taxSettings['price_suffix_excluded'] !== '';
+
+                if ($legacySuffix !== '' && !$hasIncluded && !$hasExcluded) {
+                    $taxInclusion = isset($taxSettings['tax_inclusion']) ? $taxSettings['tax_inclusion'] : 'excluded';
+                    if ($taxInclusion === 'excluded') {
+                        $taxSettings['price_suffix_excluded'] = $legacySuffix;
+                    } else {
+                        $taxSettings['price_suffix_included'] = $legacySuffix;
+                    }
+                    update_option('fluent_cart_tax_configuration_settings', $taxSettings, true);
+                }
+                update_option('_fluent_cart_price_suffix_migrated', '1', 'no');
+            }
+
+            // 2026-07-08
+            // One-time migration: rename the legacy tax-display value 'both'
+            // (and the removed 'label'/'tooltip') to 'itemized'. Value-guarded —
+            // once migrated the stored value is 'itemized' so this no-ops; no
+            // separate flag option is written (nothing left behind when this
+            // block is removed later). Safe to remove after ~2027-07.
+            $fctTaxSettings = get_option('fluent_cart_tax_configuration_settings', []);
+            if (isset($fctTaxSettings['checkout_tax_breakdown_display'])
+                && in_array($fctTaxSettings['checkout_tax_breakdown_display'], ['both', 'label', 'tooltip'], true)) {
+                $fctTaxSettings['checkout_tax_breakdown_display'] = 'itemized';
+                update_option('fluent_cart_tax_configuration_settings', $fctTaxSettings, true);
+            }
+
+            // 2026-05-18
+            // One-time migration: copy seller identity fields from the Pro seller_details fct_meta
+            // entry into fluent_cart_store_settings. Guarded by a sentinel so it runs exactly once.
+            if (!get_option('_fluent_cart_seller_details_migrated')) {
+                $sellerDetails = fluent_cart_get_option('seller_details', []);
+                if (is_array($sellerDetails) && !empty($sellerDetails)) {
+                    $storeSettingsOption = get_option('fluent_cart_store_settings', []);
+                    if (!is_array($storeSettingsOption)) {
+                        $storeSettingsOption = [];
+                    }
+                    $fieldMap = [
+                        'seller_vat_id'                => 'seller_vat_id',
+                        'seller_tax_id'                => 'seller_tax_id',
+                        'seller_legal_name'            => 'company_name',
+                        'seller_legal_registration_id' => 'legal_registration_id',
+                    ];
+                    $changed = false;
+                    foreach ($fieldMap as $fromKey => $toKey) {
+                        if (!empty($sellerDetails[$fromKey]) && empty($storeSettingsOption[$toKey])) {
+                            $storeSettingsOption[$toKey] = sanitize_text_field($sellerDetails[$fromKey]);
+                            $changed = true;
+                        }
+                    }
+                    if ($changed) {
+                        update_option('fluent_cart_store_settings', $storeSettingsOption, true);
+                    }
+                }
+                update_option('_fluent_cart_seller_details_migrated', '1', 'no');
+            }
+
+            // 2026-06-03
+            // Fix: convert zero-date datetime columns to NULL (Issue #1911).
+            // Zero-dates arise on MySQL servers without STRICT_TRANS_TABLES when an
+            // empty string is written to a DATETIME column.
+            $table_name = $wpdb->prefix . 'fct_subscriptions';
+            foreach (['next_billing_date', 'canceled_at', 'expire_at'] as $col) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $wpdb->query($wpdb->prepare(
+                    "UPDATE %i SET `{$col}` = NULL WHERE `{$col}` IN ('0000-00-00 00:00:00', '0000-00-00')",
+                    $table_name
+                ));
+            }
+
+            // 2026-06-17
+            // Advanced Variation - Create the attribute
+            // schema (and seed the system-template groups) on in-place plugin
+            // updates too — migrate() only runs on activation, but existing
+            // installs reach this version-gated path without reactivating. Each
+            // migrator is idempotent (dbDelta) and the seeder early-returns when
+            // any group already exists, so re-runs never duplicate data. Order
+            // matters: relations table must exist before AttributeTermsMigrator's
+            // post-migration JOIN cleanup.
+            AttributeGroupsMigrator::migrate();
+            AttributeObjectRelationsMigrator::migrate();
+            AttributeTermsMigrator::migrate();
+            AttributeSeeder::seed();
+
+            self::releaseMigrationLock();
         }
+    }
+
+    /**
+     * Try to acquire the cross-request migration lock.
+     *
+     * Uses a MySQL advisory lock (GET_LOCK with zero wait) so only one request
+     * runs the schema upgrade at a time. If the connection dies mid-migration,
+     * MySQL releases the lock automatically when the connection closes.
+     *
+     * @return bool True when this request may run the migration.
+     */
+    private static function acquireMigrationLock()
+    {
+        global $wpdb;
+
+        if (Schema::isSqlite()) {
+            // GET_LOCK is MySQL-only; SQLite has no concurrent writers.
+            return true;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $acquired = $wpdb->get_var($wpdb->prepare(
+            "SELECT GET_LOCK(%s, 0)",
+            self::getMigrationLockName()
+        ));
+
+        // NULL means the server could not create the lock — fail open so a
+        // locking hiccup can never block schema upgrades entirely.
+        return $acquired === null || (string)$acquired === '1';
+    }
+
+    private static function releaseMigrationLock()
+    {
+        global $wpdb;
+
+        if (Schema::isSqlite()) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query($wpdb->prepare(
+            "SELECT RELEASE_LOCK(%s)",
+            self::getMigrationLockName()
+        ));
+    }
+
+    private static function getMigrationLockName()
+    {
+        global $wpdb;
+
+        // GET_LOCK names are server-wide; scope to this site's DB and prefix
+        // so two WordPress installs on one MySQL server can't block each other.
+        $dbName = defined('DB_NAME') ? DB_NAME : '';
+
+        return 'fct_db_migration_' . md5($dbName . '|' . $wpdb->prefix);
     }
 
     public static function migrateDown($network_wide = false)

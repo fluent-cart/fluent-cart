@@ -68,9 +68,10 @@
             </template>
           </el-table-column>
 
-          <el-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="100">
+          <el-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="80">
             <template #default="scope">
               <el-button
+                  v-if="scope.row.module_id && scope.row.module_name.toLowerCase() === 'order'"
                   tag="router-link"
                   class="el-button--x-small"
                   :to="{
@@ -78,13 +79,24 @@
                     params: { order_id: scope.row.module_id }
                   }"
               >
-                {{ translate('View Order') }}
+                {{ translate('View') }}
+              </el-button>
+              <el-button
+                  v-if="scope.row.module_id && scope.row.module_name.toLowerCase() === 'subscription'"
+                  tag="router-link"
+                  class="el-button--x-small"
+                  :to="{
+                    name: 'view_subscription',
+                    params: { subscription_id: scope.row.module_id }
+                  }"
+              >
+                {{ translate('View') }}
               </el-button>
             </template>
           </el-table-column>
 
           <template #empty>
-            <Empty icon="Empty/ListView" :text="translate('We could\'t find any logs matching your filter.')"/>
+            <Empty icon="Empty/ListView" :has-dark="true" :text="translate('We could\'t find any logs matching your filter.')"/>
           </template>
 
         </el-table>
@@ -92,7 +104,7 @@
 
       <template #mobile>
         <LogsTableLoaderMobile v-if="logTable.isLoading()"/>
-        <LogsTableMobile v-if="!logTable.isLoading()" :table="logTable" @changeStatus="changeStatus"/>
+        <LogsTableMobile v-if="!logTable.isLoading()" :table="logTable" @change-status="changeStatus"/>
       </template>
     </TableWrapper>
   </div>

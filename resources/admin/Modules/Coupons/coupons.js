@@ -23,7 +23,7 @@ window.fluent_cart_admin.hooks.addFilter(
       props: true,
       meta: {
         active_menu: "coupons",
-        title: "Coupons",
+        title: translate("Coupons"),
       },
     };
     return routes;

@@ -562,6 +562,7 @@ class InnerBlocks
             <?php
             $renderer = new CheckoutRenderer($cart);
             $renderer->renderNameFields();
+            $renderer->renderB2BToggle();
             $renderer->renderCreateAccountField();
             ?>
         </div>
@@ -709,22 +710,11 @@ class InnerBlocks
 
     public function renderCheckoutEuVat($attributes, $content, $block)
     {
-        $cart = $this->getCart();
-        if (empty(Arr::get($cart, 'cart_data', []))) {
-            return '';
-        }
-
-        ob_start();
-        do_action('fluent_cart/before_payment_methods', ['cart' => $cart]);
-        $output = ob_get_clean();
-
-        if (empty(trim($output))) {
-            return '';
-        }
-
-        $atts = get_block_wrapper_attributes();
-
-        return sprintf('<div %s>%s</div>', $atts, $output);
+        // Deprecated: VAT is now rendered inside the B2B section by renderCheckoutNameFields.
+        // Returning empty prevents a second, unwrapped VAT field from appearing outside
+        // the [data-fluent-cart-b2b-section] toggle on checkouts that still have this
+        // block in their saved template.
+        return '';
     }
 
     public function renderCheckoutAgreeTermsField($attributes, $content, $block)
@@ -926,9 +916,10 @@ class InnerBlocks
         if (empty(Arr::get($cart, 'cart_data', []))) {
             return '';
         }
-        $atts = get_block_wrapper_attributes();
         ob_start();
-        (new CartSummaryRender($cart))->showManualDiscount($atts);
+        (new CartSummaryRender($cart))->showUpgradeDiscount();
+        (new CartSummaryRender($cart))->showProrateCredit();
+        (new CartSummaryRender($cart))->showManualDiscount();
         return ob_get_clean();
     }
 
@@ -981,6 +972,15 @@ class InnerBlocks
         if (empty(Arr::get($cart, 'cart_data', []))) {
             return '';
         }
+
+        // A cart bound to an existing payment (custom payment link, renewal invoice, early
+        // installment) or already carrying an upgrade cannot take new items — the
+        // apply_order_bump handler refuses it, so rendering the bump would only offer a
+        // control that fails. Same predicate on both sides so they cannot drift.
+        if (!$cart->acceptsAdditionalItems()) {
+            return '';
+        }
+
         $atts = get_block_wrapper_attributes();
         $title = Arr::get($attributes, 'section_title');
         ob_start();

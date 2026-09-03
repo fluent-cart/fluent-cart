@@ -64,6 +64,7 @@ function prepareProductList($raw, $orderId) {
                 for (const key in $elm.detail.variants) {
                     variant = $elm.detail.variants[key];
                     item.title = variant.variation_title;
+                    item.variation_display_title = variant.variation_display_title || variant.variation_title;
                     let shouldAdd = $elm.detail.default_variation_id == variant.id;
                     if(!shouldAdd && $elm.detail.variation_type === 'simple') {
                         shouldAdd = true; // for simple variations we always add the first variant
@@ -80,7 +81,7 @@ function prepareProductList($raw, $orderId) {
                         item.bundle_items = variant.bundle_children;
                     }
 
-                    if ($elm.detail.variants && $elm.detail.variation_type === 'simple_variations') {
+                    if ($elm.detail.variants && ($elm.detail.variation_type === 'simple_variations' || $elm.detail.variation_type === 'advanced_variations')) {
                         let createVariant = {};
                         variant = $elm.detail.variants[key];
 
@@ -95,6 +96,7 @@ function prepareProductList($raw, $orderId) {
                         createVariant.quantity = 1;
                         createVariant.post_title = $elm.post_title;
                         createVariant.title = variant.variation_title;
+                        createVariant.variation_display_title = variant.variation_display_title || variant.variation_title;
                         createVariant.fulfillment_type = $elm.detail.fulfillment_type;
                         // createVariant.manage_stock = $elm.detail.manage_stock;
                         // createVariant.stockStatus = $elm.detail.manage_stock == 1 ? variant.stock_status : 'in-stock';
@@ -186,7 +188,7 @@ const formatCentsWithoutCurrencySign = (amount, hideEmpty = false) => {
         return '';
     }
 
-    return amount ? (amount / 100).toFixed(2) : '0.00';
+    return amount ? String(parseFloat((amount / 100).toFixed(2))) : '0';
 }
 
 
@@ -210,6 +212,14 @@ const getMargin = (pricing) => {
 }
 
 
+/**
+ * Profit for a variant, formatted as currency.
+ *
+ * `item_price` and `item_cost` are in CENTS, and CurrencyFormatter.formatNumber()
+ * also takes cents — so the difference is passed straight through. It used to be
+ * multiplied by 100 here, back when formatPricing() handed this function dollars.
+ * See dev-docs/PRICING-AND-TAX.md section 6.
+ */
 const getProfit = (pricing) => {
 
     if (!pricing.item_price || !pricing.item_cost) {
@@ -223,8 +233,7 @@ const getProfit = (pricing) => {
         return '--';
     }
 
-    const calculatePrice = price - cost;
-    return CurrencyFormatter.formatNumber(calculatePrice * 100, true);
+    return CurrencyFormatter.formatNumber(price - cost, true);
 }
 
 const formatCapitalized = (input) => {

@@ -60,13 +60,104 @@
                                     </div>
                                 </div>
                                 <div class="right-content !w-auto">
-                                    <el-dropdown v-if="isCancelable" trigger="click" :hide-on-click="false" popper-class="fct-dropdown" role="menu" aria-haspopup="true" aria-expanded="false">
+                                    <el-dropdown v-if="hasSubscriptionActions" trigger="click" :hide-on-click="false" popper-class="fct-dropdown" role="menu" aria-haspopup="true" aria-expanded="false">
                                         <IconButton tag="button" size="x-small" class="simple-icon-btn" :aria-label="$t('Subscription options')">
                                             <DynamicIcon name="More" class="w-[5px]" aria-hidden="true"/>
                                         </IconButton>
                                         <template #dropdown>
                                             <el-dropdown-menu role="menu">
-                                                <el-dropdown-item role="menuitem">
+                                                <!-- Pause Subscription -->
+                                                <el-dropdown-item v-if="subscription.can_pause" role="menuitem">
+                                                    <el-popover
+                                                        popper-class="fluent-cart-customer-profile-app"
+                                                        trigger="click"
+                                                        placement="bottom"
+                                                        :width="260"
+                                                        ref="pausePopoverRef"
+                                                        role="dialog"
+                                                        aria-modal="true"
+                                                        aria-labelledby="pause-popover-title"
+                                                    >
+                                                        <h3 id="pause-popover-title" class="sr-only">
+                                                            {{ $t('Pause Subscription') }}
+                                                        </h3>
+                                                        <div>
+                                                            {{ $t('Pause your subscription? You can resume it anytime.') }}
+                                                        </div>
+                                                        <div class="flex justify-end gap-2">
+                                                            <el-button
+                                                                class="el-button--x-small"
+                                                                text
+                                                                @click="$refs.pausePopoverRef.hide()"
+                                                                :aria-label="$t('Cancel')"
+                                                            >
+                                                                {{ $t('Cancel') }}
+                                                            </el-button>
+                                                            <el-button
+                                                                class="el-button--x-small"
+                                                                type="primary"
+                                                                :loading="pausing"
+                                                                @click="pauseSubscription"
+                                                                :aria-label="$t('Pause') "
+                                                            >
+                                                                {{ $t('Pause') }}
+                                                            </el-button>
+                                                        </div>
+                                                        <template #reference>
+                                                            <span :aria-label="$t('Pause Subscription')">
+                                                                {{ $t('Pause Subscription') }}
+                                                            </span>
+                                                        </template>
+                                                    </el-popover>
+                                                </el-dropdown-item>
+
+                                                <!-- Resume Subscription -->
+                                                <el-dropdown-item v-if="subscription.can_resume" role="menuitem">
+                                                    <el-popover
+                                                        popper-class="fluent-cart-customer-profile-app"
+                                                        trigger="click"
+                                                        placement="bottom"
+                                                        :width="260"
+                                                        ref="resumePopoverRef"
+                                                        role="dialog"
+                                                        aria-modal="true"
+                                                        aria-labelledby="resume-popover-title"
+                                                    >
+                                                        <h3 id="resume-popover-title" class="sr-only">
+                                                            {{ $t('Resume Subscription') }}
+                                                        </h3>
+                                                        <div>
+                                                            {{ $t('Resume your subscription to continue service.') }}
+                                                        </div>
+                                                        <div class="flex justify-end gap-2">
+                                                            <el-button
+                                                                class="el-button--x-small"
+                                                                text
+                                                                @click="$refs.resumePopoverRef.hide()"
+                                                                :aria-label="$t('Cancel')"
+                                                            >
+                                                                {{ $t('Cancel') }}
+                                                            </el-button>
+                                                            <el-button
+                                                                class="el-button--x-small"
+                                                                type="primary"
+                                                                :loading="resuming"
+                                                                @click="resumeSubscription"
+                                                                :aria-label="$t('Resume')"
+                                                            >
+                                                                {{ $t('Resume') }}
+                                                            </el-button>
+                                                        </div>
+                                                        <template #reference>
+                                                            <span :aria-label="$t('Resume Subscription')">
+                                                                {{ $t('Resume Subscription') }}
+                                                            </span>
+                                                        </template>
+                                                    </el-popover>
+                                                </el-dropdown-item>
+
+                                                <!-- Cancel Subscription -->
+                                                <el-dropdown-item v-if="isCancelable" role="menuitem">
                                                     <el-popover
                                                         popper-class="fluent-cart-customer-profile-app"
                                                         trigger="click"
@@ -89,16 +180,16 @@
                                                         </div>
 
                                                         <div class="flex justify-end gap-2">
-                                                            <el-button 
-                                                                class="el-button--x-small" 
+                                                            <el-button
+                                                                class="el-button--x-small"
                                                                 text
                                                                 @click="$refs.popoverRef.hide()"
                                                                 :aria-label="$t('Cancel')"
                                                             >
                                                                 {{ $t('Cancel') }}
                                                             </el-button>
-                                                            <el-button 
-                                                                class="el-button--x-small" 
+                                                            <el-button
+                                                                class="el-button--x-small"
                                                                 type="primary"
                                                                 :loading="cancelling"
                                                                 @click="cancelSubscription"
@@ -149,9 +240,9 @@
                                 <div class="left-content">
                                     <div class="title">{{ $t('Payment Method') }}</div>
                                     <span class="text" :aria-label="$t('Payment Method')">
-                                        
-                                     <span 
-                                        v-if="subscription.billing_info.details?.last_4" 
+
+                                     <span
+                                        v-if="subscription.billing_info.details?.last_4"
                                         :aria-label="$t('Credit Card ending in') + ' ' + subscription.billing_info.details?.last_4"
                                     >
                                         **** {{ subscription.billing_info.details?.last_4 }}
@@ -159,6 +250,21 @@
 
                                      <span v-else>{{ subscription.current_payment_method }}</span>
                                 </span>
+                                    <span
+                                        v-if="subscription.is_auto_charged"
+                                        class="text"
+                                        role="status"
+                                    >
+                                        {{ $t('Charged automatically on each renewal date.') }}
+                                    </span>
+                                    <span
+                                        v-if="subscription.auto_charge_error"
+                                        class="text text-red-600"
+                                        role="alert"
+                                    >
+                                        <!-- translators: %1$s is the reason the payment provider gave for declining the card -->
+                                        {{ $t("We couldn't charge this payment method: %1$s Please update it or pay the open renewal below.", subscription.auto_charge_error) }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -179,17 +285,35 @@
                                 v-if="subscription.can_update_payment_method"
                                 :subscription="subscription" :buttonText="$t('Update Payment Method')"
                                 @fetch="fetchSubscription" :updateMethod="true"/>
-                                
-                            <router-link 
-                                class="underline-link-button" 
+
+                            <router-link
+                                class="underline-link-button"
                                 :to="{ name: 'view_order', params: { order_id: subscription.order.uuid } }"
                                 :aria-label="$t('View Order')"
                             >
                                 {{ $t('View Order') }}
                             </router-link>
+
+                            <!-- Server-driven actions: addons append {key, label, url, variant}
+                                 entries via the fluent_cart/customer_portal/subscription_data
+                                 PHP filter; labels arrive already translated. -->
+                            <template v-for="action in (subscription.custom_actions || [])" :key="action.key">
+                                <a
+                                    v-if="action.url"
+                                    class="underline-link-button"
+                                    :href="action.url"
+                                    :aria-label="action.label"
+                                >
+                                    {{ action.label }}
+                                </a>
+                                <span v-else class="text">{{ action.label }}</span>
+                            </template>
                         </div>
                     </footer>
                 </article>
+
+                <!-- Section parts injected by addons via fluent_cart/customer/subscription_details_section_parts -->
+                <div v-if="sectionParts.end_of_subscription" v-html="sectionParts.end_of_subscription" class="mb-3"></div>
 
                 <article v-if="subscription.licenses && subscription.licenses.length" class="fct-single-order-box" role="region" aria-labelledby="licenses-title">
                     <header class="fct-single-order-header">
@@ -200,7 +324,7 @@
                     <LicenseTable :is_simple="true" :licenses="subscription.licenses" :showTableHeader="false"/>
                 </article>
 
-                <article class="fct-single-order-box" role="region" aria-labelledby="transactions-title">
+                <article v-if="visibleTransactions.length" class="fct-single-order-box" role="region" aria-labelledby="transactions-title">
                     <header class="fct-single-order-header">
                         <h2 id="transactions-title" class="title">
                             {{ $t('Related Transactions') }}
@@ -208,7 +332,7 @@
                     </header>
 
                     <div class="fct-customer-dashboard-table">
-                      <TransactionsTable :transactions="subscription.transactions" :show-table-header="true"/>
+                      <TransactionsTable :transactions="visibleTransactions" :show-table-header="true"/>
                     </div>
 
                 </article>
@@ -231,15 +355,12 @@ import EarlyInstallmentPayment from "./UpdatePaymentInfos/EarlyInstallmentPaymen
 import LicenseTable from "../parts/LicenseTable.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import TransactionsTable from "../parts/TransactionTable.vue";
-import translate, {pluralizeTranslate} from "../../translator/Translator";
+import {pluralizeTranslate} from "../../translator/Translator";
 import {dateTimeI18} from "../../translator/Translator";
-import Str from "@/utils/support/Str";
+import statusLabel from "../../utils/statusLabels";
 
 export default {
     name: "SingleSubscription",
-    props: {
-        subscription_uuid: String
-    },
     components: {
         TransactionsTable,
         IconButton,
@@ -250,11 +371,17 @@ export default {
         Badge,
         LicenseTable
     },
+    props: {
+        subscription_uuid: String
+    },
     data() {
         return {
             subscription: null,
             loading: true,
-            cancelling: false
+            cancelling: false,
+            pausing: false,
+            resuming: false,
+            sectionParts: {}
         };
     },
   computed: {
@@ -265,10 +392,21 @@ export default {
       const subscription = this.subscription;
       return subscription && subscription.can_early_pay && subscription.remaining_installments > 0;
     },
+    hasSubscriptionActions() {
+      return this.isCancelable || this.subscription?.can_pause || this.subscription?.can_resume;
+    },
     ArrowRight () {
       return ArrowRight;
-    }
+    },
+    visibleTransactions() {
+      return (this.subscription?.transactions || []).filter(
+        t => !(t.order_type === 'renewal' && Number(t.total) === 0)
+      );
+    },
   },
+    mounted() {
+        this.fetchSubscription();
+    },
     methods: {
         dateTimeI18,
         fetchSubscription() {
@@ -276,6 +414,9 @@ export default {
             this.$get(`customer-profile/subscriptions/${this.subscription_uuid}`)
                 .then((response) => {
                     this.subscription = response.subscription;
+                    if (response.section_parts) {
+                        this.sectionParts = response.section_parts;
+                    }
                 })
                 .catch((error) => {
                     this.handleError(error);
@@ -300,47 +441,47 @@ export default {
                 })
                 .finally(() => {
                     this.cancelling = false;
+                    this.$refs.popoverRef?.hide();
                     this.fetchSubscription();
                 });
         },
+
+        pauseSubscription() {
+            this.pausing = true;
+            this.$post(`customer-profile/subscriptions/${this.subscription.uuid}/pause`)
+                .then((response) => {
+                    this.$notify.success(response.message);
+                })
+                .catch((error) => {
+                    this.handleError(error);
+                })
+                .finally(() => {
+                    this.pausing = false;
+                    this.$refs.pausePopoverRef?.hide();
+                    this.fetchSubscription();
+                });
+        },
+
+        resumeSubscription() {
+            this.resuming = true;
+            this.$post(`customer-profile/subscriptions/${this.subscription.uuid}/resume`)
+                .then((response) => {
+                    this.$notify.success(response.message);
+                })
+                .catch((error) => {
+                    this.handleError(error);
+                })
+                .finally(() => {
+                    this.resuming = false;
+                    this.$refs.resumePopoverRef?.hide();
+                    this.fetchSubscription();
+                });
+        },
+
         subscriptionStatus() {
           return this.subscription?.overridden_status ? this.subscription?.overridden_status : this.subscription?.status;
         },
-        getStatusText(status) {
-          const map = {
-            completed: translate('Completed'),
-            paid: translate('Paid'),
-            active: translate('Active'),
-            publish: translate('Published'),
-            draft: translate('Draft'),
-            shipped: translate('Shipped'),
-            success: translate('Success'),
-            licensed: translate('Licensed'),
-            succeeded: translate('Succeeded'),
-            failed: translate('Failed'),
-            error: translate('Error'),
-            canceled: translate('Canceled'),
-            expired: translate('Expired'),
-            partially_paid: translate('Partially Paid'),
-            intended: translate('Intended'),
-            scheduled: translate('Scheduled'),
-            'on-hold': translate('On Hold'),
-            pending: translate('Pending'),
-            unpaid: translate('Unpaid'),
-            warning: translate('Warning'),
-            processing: translate('Processing'),
-            future: translate('Future'),
-            inactive: translate('Inactive'),
-            dispute: translate('Dispute'),
-            disabled: translate('Disabled'),
-            beta: translate('Beta'),
-            trialing: translate('Trialing'),
-          };
-          return map[status] ?? Str.headline(status);
-        }
-    },
-    mounted() {
-        this.fetchSubscription();
+        getStatusText: statusLabel
     }
 };
 </script>

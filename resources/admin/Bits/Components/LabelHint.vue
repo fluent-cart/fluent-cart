@@ -23,6 +23,9 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 export default {
   name: 'LabelHint',
+  components: {
+    DynamicIcon
+  },
   props: {
     title: String,
     content: {
@@ -38,9 +41,6 @@ export default {
       type: Number,
       default: 0
     }
-  },
-  components: {
-    DynamicIcon
   }
 }
 </script>

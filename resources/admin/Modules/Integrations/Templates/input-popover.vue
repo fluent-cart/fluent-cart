@@ -15,7 +15,7 @@
 <script>
 import Popover from '../../Settings/Parts/input-popover-dropdown.vue'
 export default {
-    name: 'inputPopover',
+    name: 'InputPopover',
     components: {
         Popover
     },

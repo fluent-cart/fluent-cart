@@ -90,17 +90,17 @@
 </template>
 
 <script>
-import Badge from '@/Bits/Components/Badge.vue';
+import Badge from './Badge.vue';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
 import IconButton from '@/Bits/Components/Buttons/IconButton.vue';
 
 export default {
-    props: ['license_key'],
     components: {
         Badge,
         DynamicIcon,
         IconButton
     },
+    props: ['license_key'],
     data() {
         return {
             loading: false,

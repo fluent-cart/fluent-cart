@@ -55,6 +55,114 @@ class TaxFilter extends BaseFilter
         return 'taxes';
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function sortableColumns(): array
+    {
+        return [
+            'id' => ['label' => __('ID', 'fluent-cart'), 'column' => 'id'],
+        ];
+    }
+
+    /**
+     * `GET /taxes` mounts under `AdminPolicy` with no per-route permission, so
+     * a caller here is already a super admin and no entry on this map needs a
+     * further bar of its own.
+     *
+     * SCREEN key — `admin_tax_report` loads exactly what the report prints, and
+     * that is why it keeps the narrow `order` select: the report shows a
+     * currency, and a whole order row per line is both wasteful and more than
+     * the screen asked for.
+     *
+     * PUBLIC keys — `tax_rate` and `order` are the two relation names a
+     * consumer can reasonably ask a tax-report endpoint for. They give the
+     * plain, unnarrowed relation; the screen key's select is a property of that
+     * screen, not of the endpoint's published shape.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedWiths(): array
+    {
+        return [
+            'admin_tax_report' => [$this, 'adminTaxReport'],
+
+            'tax_rate' => [$this, 'publicTaxRate'],
+            'order'    => [$this, 'publicOrder'],
+        ];
+    }
+
+    /**
+     * `GET /taxes`, sent by TaxesTable.js — the rate the row was charged at and
+     * the order's currency.
+     *
+     * No select on `tax_rate`: the report prints the rate's country, state,
+     * postcode and name, and the advanced filter matches on the same row. The
+     * `order` select lives INSIDE the relation closure — applied to `$query` it
+     * would narrow the tax-rate query itself, which is a different table.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function adminTaxReport($query)
+    {
+        return $query->with([
+            'tax_rate',
+            'order' => function ($orderQuery) {
+                $orderQuery->select(['id', 'currency']);
+            },
+        ]);
+    }
+
+    /**
+     * `with[]=tax_rate` — a public entry point. Covered by the route's own
+     * AdminPolicy, which admits nobody below a super admin.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function publicTaxRate($query)
+    {
+        return $query->with(['tax_rate']);
+    }
+
+    /**
+     * `with[]=order` — a public entry point, covered by the same AdminPolicy.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function publicOrder($query)
+    {
+        return $query->with(['order']);
+    }
+
+    /**
+     * Sent by TaxesTable.js so the tax report only counts rows whose order was
+     * actually paid.
+     *
+     * @return array<string, callable>
+     */
+    protected function allowedScopes(): array
+    {
+        return [
+            'validOrder' => [$this, 'validOrderScope'],
+        ];
+    }
+
+    /**
+     * Declared `($query)` on purpose: the array form of a `scopes` entry would
+     * otherwise hand this callback raw client arguments, and OrderTaxRate's
+     * `scopeValidOrder()` takes none.
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @return \FluentCart\Framework\Database\Orm\Builder
+     */
+    protected function validOrderScope($query)
+    {
+        return $query->scopes(['validOrder']);
+    }
+
     public function applyActiveViewFilter(?string $activeView = null): void
     {
         $activeView = $activeView ?? $this->activeView;

@@ -1,3 +1,4 @@
+import translate from '@/utils/translator/Translator';
 import AllCustomers from './Modules/Customers/AllCustomers.vue';
 import AllOrders from './Modules/Orders/AllOrders.vue';
 import InvoicePacking from "./Modules/Settings/InvoicePacking.vue";
@@ -27,6 +28,7 @@ import Licensing from "@/Modules/Settings/Licensing.vue";
 import ProductRoute from './Modules/Products/ProductRoute.vue';
 import AllProducts from './Modules/Products/AllProducts.vue';
 import EditProduct from "./Modules/Products/EditProduct.vue";
+import AttrGroups from "./Modules/Attributes/AttrGroups.vue";
 import UpgradePaths from "@/Modules/Products/UpgradePaths/UpgradePaths.vue";
 import ProductIntegrations from '@/Modules/Products/Integrations/Integrations.vue';
 import SingleIntegration from '@/Modules/Products/Integrations/SingleIntegration.vue';
@@ -54,22 +56,26 @@ import ProductReport from './Modules/Reports/Product/ProductReport.vue';
 import OverviewReport from './Modules/Reports/Overview/Overview.vue';
 import AddonSettings from "./Modules/Settings/AddonSettings.vue";
 import MailingSettings from "@/Modules/Settings/EmailNotification/MailingSettings.vue";
+import StoreDigestSettings from "@/Modules/Settings/EmailNotification/StoreDigestSettings.vue";
 import TaxSettingsRoute from "@/Modules/Settings/TaxSettingsRoute.vue";
 import TaxConfigurations from "@/Modules/Tax/TaxConfigurations.vue";
 import TaxRates from "@/Modules/Tax/TaxRates.vue";
 import TaxRatesCountrySingle from "@/Modules/Tax/TaxRatesCountrySingle.vue";
 import Taxes from '@/Modules/Tax/Taxes.vue';
 import EUVatSettings from "@/Modules/Tax/EUVatSettings.vue";
-import EUVatSettingsOld from "@/Modules/Tax/EUVatSettingsOld.vue";
 
 import AllCoupons from "@/Modules/Coupons/AllCoupons.vue";
 import AddOrEditCoupon from "@/Modules/Coupons/AddOrEditCoupon.vue";
 
+import ReviewsRoute from "@/Modules/Reviews/ReviewsRoute.vue";
+import AllReviews from "@/Modules/Reviews/AllReviews.vue";
+import SingleReview from "@/Modules/Reviews/SingleReview.vue";
+
+import ReviewSettings from "@/Modules/Settings/ReviewSettings.vue";
 import CheckoutFields from "@/Modules/Settings/CheckoutFields.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
 import BulkEdit from "@/Modules/Products/BulkEdit/BulkEdit.vue";
-
 
 const PaymentChildRoutes = AppConfig.get('payment_routes');
 
@@ -92,7 +98,7 @@ export var routes = {
         component: Dashboard,
         meta: {
             active_menu: 'dashboard',
-            title: 'Dashboard',
+            title: translate('Dashboard'),
         }
     },
     orders: {
@@ -100,7 +106,7 @@ export var routes = {
         component: OrdersRoute,
         meta: {
             active_menu: 'orders',
-            title: 'Orders'
+            title: translate('Orders')
         },
         children: [
             {
@@ -109,7 +115,7 @@ export var routes = {
                 component: AllOrders,
                 meta: {
                     active_menu: 'orders',
-                    title: 'Orders',
+                    title: translate('Orders'),
                     permission: "orders/view"
                 },
             },
@@ -120,7 +126,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'orders',
-                    title: 'View Order',
+                    title: translate('View Order'),
                     permission: ["orders/view", "orders/manage"],
                 }
             },
@@ -131,7 +137,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'orders',
-                    title: 'Create Order',
+                    title: translate('Create Order'),
                     permission: "orders/create"
                 }
             }
@@ -143,7 +149,7 @@ export var routes = {
         component: AllProducts,
         meta: {
             active_menu: 'products',
-            title: 'Products',
+            title: translate('Products'),
             permission: "products/view"
         },
     },
@@ -154,7 +160,7 @@ export var routes = {
         name: 'product_route',
         meta: {
             active_menu: 'products',
-            title: 'Products',
+            title: translate('Products'),
             permission: ["products/view", "products/edit", "integrations/manage"]
         },
         props: true,
@@ -166,7 +172,7 @@ export var routes = {
                 component: EditProduct,
                 meta: {
                     active_menu: 'products',
-                    title: 'Product Edit',
+                    title: translate('Product Edit'),
                     permission: "products/edit"
                 }
             },
@@ -177,7 +183,7 @@ export var routes = {
                 component: ProductIntegrations,
                 meta: {
                     active_menu: 'products',
-                    title: 'Integrations',
+                    title: translate('Integrations'),
                     permission: "integrations/manage"
                 }
             },
@@ -187,7 +193,7 @@ export var routes = {
                 component: FeedEditor,
                 meta: {
                     active_menu: 'products',
-                    title: 'Edit Integration',
+                    title: translate('Edit Integration'),
                     permission: "integrations/manage"
                 },
             },
@@ -198,7 +204,7 @@ export var routes = {
                 component: SingleIntegration,
                 meta: {
                     active_menu: 'products',
-                    title: 'Integrations',
+                    title: translate('Integrations'),
                     permission: "integrations/manage"
                 }
             },
@@ -209,7 +215,7 @@ export var routes = {
                 component: UpgradePaths,
                 meta: {
                     active_menu: 'products',
-                    title: 'Upgrade Paths',
+                    title: translate('Upgrade Paths'),
                     permission: "integrations/manage"
                 }
             },
@@ -220,7 +226,7 @@ export var routes = {
                 component: ProductIntegrations,
                 meta: {
                     active_menu: 'integrations',
-                    title: 'Product Integrations',
+                    title: translate('Product Integrations'),
                     permission: "integrations/manage"
                 }
             }
@@ -233,7 +239,7 @@ export var routes = {
         component: BulkInsert,
         meta: {
             active_menu: 'products',
-            title: 'Product Bulk Insert',
+            title: translate('Product Bulk Insert'),
             permission: "products/create"
         },
     },
@@ -244,8 +250,19 @@ export var routes = {
         component: BulkEdit,
         meta: {
             active_menu: 'products',
-            title: 'Product Bulk Edit',
+            title: translate('Product Bulk Edit'),
             permission: "products/edit"
+        },
+    },
+
+    product_attributes: {
+        name: 'product_attributes',
+        path: '/products/attributes',
+        component: AttrGroups,
+        meta: {
+            active_menu: 'products',
+            title: translate('Attributes'),
+            permission: "products/view"
         },
     },
 
@@ -255,7 +272,7 @@ export var routes = {
         component: AdvancedInventory,
         meta: {
             active_menu: 'products',
-            title: 'Inventory',
+            title: translate('Inventory'),
             permission: "products/view"
         },
     },
@@ -274,7 +291,7 @@ export var routes = {
                 component: AllCustomers,
                 meta: {
                     active_menu: 'customers',
-                    title: 'Customers',
+                    title: translate('Customers'),
                     permission: "customers/view"
                 },
             },
@@ -285,7 +302,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'customers',
-                    title: 'View Customer',
+                    title: translate('View Customer'),
                     permission: "customers/view"
                 }
             }
@@ -306,7 +323,7 @@ export var routes = {
                 path: "overview", // Empty path makes this the default child route
                 component: OverviewReport,
                 meta: {
-                    title: "Overview",
+                    title: translate("Overview"),
                     permission: "reports/view"
                 },
             },
@@ -315,7 +332,7 @@ export var routes = {
                 path: "sales",
                 component: DefaultReport,
                 meta: {
-                    title: "Sales",
+                    title: translate("Sales"),
                     permission: "reports/view"
                 },
             },
@@ -324,7 +341,7 @@ export var routes = {
                 path: "orders",
                 component: OrderReport,
                 meta: {
-                    title: "Orders",
+                    title: translate("Orders"),
                     permission: "reports/view"
                 },
             },
@@ -333,7 +350,7 @@ export var routes = {
                 path: "revenue",
                 component: RevenueReport,
                 meta: {
-                    title: "Revenue",
+                    title: translate("Revenue"),
                     permission: "reports/view"
                 },
             },
@@ -342,7 +359,7 @@ export var routes = {
                 path: "refunds",
                 component: RefundReport,
                 meta: {
-                    title: "Refunds",
+                    title: translate("Refunds"),
                     permission: "reports/view"
                 },
             },
@@ -351,7 +368,7 @@ export var routes = {
                 path: "subscriptions",
                 component: SubscriptionReport,
                 meta: {
-                    title: "Subscriptions",
+                    title: translate("Subscriptions"),
                     permission: "reports/view"
                 }
             },
@@ -360,7 +377,7 @@ export var routes = {
                 path: "subscriptions/subscriptions-retention",
                 component: RetentionReport,
                 meta: {
-                    title: "Retention",
+                    title: translate("Retention"),
                     permission: "reports/view"
                 }
             },
@@ -369,7 +386,7 @@ export var routes = {
                 path: "subscriptions/subscriptions-cohorts",
                 component: () => import('./Modules/Reports/Subscription/Cohort.vue'),
                 meta: {
-                    title: "Cohorts",
+                    title: translate("Cohorts"),
                     permission: "reports/view"
                 }
             },
@@ -378,7 +395,7 @@ export var routes = {
                 path: "subscriptions/future-renewals",
                 component: FutureRenewalsReport,
                 meta: {
-                    title: "Future Renewals",
+                    title: translate("Future Renewals"),
                     permission: "reports/view"
                 }
             },
@@ -387,7 +404,7 @@ export var routes = {
                 path: "products",
                 component: ProductReport,
                 meta: {
-                    title: "Product",
+                    title: translate("Product"),
                     permission: "reports/view"
                 },
             },
@@ -396,7 +413,7 @@ export var routes = {
                 path: "customer",
                 component: CustomerReport,
                 meta: {
-                    title: "Customer",
+                    title: translate("Customer"),
                     permission: "reports/view"
                 },
             },
@@ -405,7 +422,7 @@ export var routes = {
                 path: "sources",
                 component: SourcesReport,
                 meta: {
-                    title: "Sources",
+                    title: translate("Sources"),
                     permission: "reports/view"
                 },
             },
@@ -419,7 +436,7 @@ export var routes = {
         component: SettingsView,
         meta: {
             active_menu: 'settings',
-            title: 'Settings',
+            title: translate('Settings'),
             permission: ["store/settings", 'store/sensitive']
         },
         children: [
@@ -429,7 +446,7 @@ export var routes = {
                 component: StoreSettingsRoute,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Settings',
+                    title: translate('Settings'),
                     permission: "store/settings"
                 },
                 children: [
@@ -438,7 +455,7 @@ export var routes = {
                         path: '', // Full path: /settings/:settingName/store
                         component: StoreSettings,
                         meta: {
-                            title: 'Store Setup',
+                            title: translate('Store Setup'),
                         }
                     },
                     {
@@ -446,7 +463,7 @@ export var routes = {
                         path: 'pages_setup', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
                         meta: {
-                            title: 'Pages Setup',
+                            title: translate('Pages Setup'),
                         }
                     },
                     {
@@ -454,7 +471,7 @@ export var routes = {
                         path: 'single_product_setup', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
                         meta: {
-                            title: 'Product Page',
+                            title: translate('Product Page'),
                         }
                     },
                     {
@@ -462,15 +479,15 @@ export var routes = {
                         path: 'cart_and_checkout', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
                         meta: {
-                            title: 'Cart & Checkout',
+                            title: translate('Cart & Checkout'),
                         }
                     },
                     {
                         name: 'subscriptions_setup',
-                        path: 'subscriptions',
+                        path: 'subscriptions_setup', // Full path: /settings/:settingName/pages
                         component: StoreSettings,
                         meta: {
-                            title: 'Subscriptions',
+                            title: translate('Subscriptions'),
                         }
                     },
                     {
@@ -478,8 +495,19 @@ export var routes = {
                         path: 'checkout_fields', // Full path: /settings/:settingName/pages
                         component: CheckoutFields,
                         meta: {}
-                    }
+                    },
                 ]
+            },
+            ...AppConfig.get('addon_settings_routes', []).map(r => ({ component: StoreSettings, ...r })),
+            {
+                name: 'product_reviews',
+                path: 'product-reviews',
+                component: ReviewSettings,
+                meta: {
+                    active_menu: 'settings',
+                    title: translate('Product Reviews'),
+                    permission: "reviews/manage"
+                },
             },
             {
                 name: 'email_notifications',
@@ -487,7 +515,7 @@ export var routes = {
                 component: EmailNotificationSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Notifications',
+                    title: translate('Notifications'),
                     permission: "store/sensitive"
                 },
             },
@@ -497,7 +525,7 @@ export var routes = {
                 component: MailingSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Mailing Settings',
+                    title: translate('Mailing Settings'),
                     permission: "store/sensitive"
                 },
             },
@@ -507,7 +535,17 @@ export var routes = {
                 component: StoreSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Reminders',
+                    title: translate('Reminders'),
+                    permission: "store/sensitive"
+                }
+            },
+            {
+                name: 'email_digest_settings',
+                path: 'email_digest_settings',
+                component: StoreDigestSettings,
+                meta: {
+                    active_menu: 'settings',
+                    title: translate('Store Digest'),
                     permission: "store/sensitive"
                 }
             },
@@ -517,7 +555,7 @@ export var routes = {
                 component: EditEmailNotification,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Edit Notification',
+                    title: translate('Edit Notification'),
                     permission: "store/sensitive"
                 },
                 props: true,
@@ -528,7 +566,7 @@ export var routes = {
                 component: AddEmailNotification,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Add Notification',
+                    title: translate('Add Notification'),
                     permission: "store/sensitive"
                 },
             },
@@ -538,7 +576,7 @@ export var routes = {
                 component: Licensing,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Licensing',
+                    title: translate('Licensing'),
                     permission: "store/sensitive"
                 },
             },
@@ -548,7 +586,7 @@ export var routes = {
                 component: PaymentSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Payment Settings',
+                    title: translate('Payment Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -560,7 +598,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Payment Settings',
+                    title: translate('Payment Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -570,7 +608,7 @@ export var routes = {
                 component: InvoicePacking,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Invoice & Packing',
+                    title: translate('Invoice & Packing'),
                     permission: "is_super_admin"
                 },
             },
@@ -580,7 +618,7 @@ export var routes = {
                 component: PdfTemplateRoute,
                 meta: {
                     active_menu: 'settings',
-                    title: 'PDF Templates',
+                    title: translate('PDF Templates'),
                     permission: "is_super_admin"
                 },
                 children: [
@@ -590,7 +628,7 @@ export var routes = {
                         component: PdfTemplateIndex,
                         meta: {
                             active_menu: 'settings',
-                            title: 'PDF Templates',
+                            title: translate('PDF Templates'),
                             permission: "is_super_admin"
                         },
                     },
@@ -600,7 +638,7 @@ export var routes = {
                         component: PdfTemplateSettings,
                         meta: {
                             active_menu: 'settings',
-                            title: 'PDF Template Settings',
+                            title: translate('PDF Template Settings'),
                             permission: "is_super_admin"
                         },
                     },
@@ -611,7 +649,7 @@ export var routes = {
                         props: true,
                         meta: {
                             active_menu: 'settings',
-                            title: 'Edit PDF Template',
+                            title: translate('Edit PDF Template'),
                             permission: "is_super_admin"
                         },
                     },
@@ -624,7 +662,7 @@ export var routes = {
                 component: RoleSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Role Settings',
+                    title: translate('Role Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -634,7 +672,7 @@ export var routes = {
                 component: AddonSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Features & addon',
+                    title: translate('Features & addon'),
                     permission: "is_super_admin"
                 },
             },
@@ -644,7 +682,7 @@ export var routes = {
                 component: AllCoupons,
                 meta: {
                     active_menu: 'coupons',
-                    title: 'Coupons Settings',
+                    title: translate('Coupons Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -654,7 +692,7 @@ export var routes = {
                 component: StorageSettings,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Storage Providers',
+                    title: translate('Storage Providers'),
                     permission: "is_super_admin"
                 },
             },
@@ -665,7 +703,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'settings',
-                    title: 'S3',
+                    title: translate('S3'),
                     permission: "is_super_admin"
                 },
             },
@@ -675,7 +713,7 @@ export var routes = {
                 component: PaymentDesign,
                 meta: {
                     active_menu: 'settings',
-                    title: "Gateway",
+                    title: translate("Gateway"),
                     permission: "is_super_admin"
                 },
                 props: true,
@@ -688,7 +726,7 @@ export var routes = {
                 props: true,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Storage Settings',
+                    title: translate('Storage Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -698,7 +736,7 @@ export var routes = {
                 component: TaxSettingsRoute,
                 meta: {
                     active_menu: 'settings',
-                    title: 'Tax Settings',
+                    title: translate('Tax Settings'),
                     permission: "store/settings"
                 },
                 children: [
@@ -718,12 +756,6 @@ export var routes = {
                         name: 'eu',
                         path: 'eu',
                         component: EUVatSettings,
-                        meta: {}
-                    },
-                    {
-                        name: 'euo',
-                        path: 'euo',
-                        component: EUVatSettingsOld,
                         meta: {}
                     },
                     {
@@ -751,7 +783,7 @@ export var routes = {
         component: Integrations,
         meta: {
             active_menu: 'integrations',
-            title: 'Integrations',
+            title: translate('Integrations'),
             permission: 'integrations/view'
         }
     },
@@ -762,7 +794,7 @@ export var routes = {
         component: FeedEditor,
         meta: {
             active_menu: 'integrations',
-            title: 'Global Integrations',
+            title: translate('Global Integrations'),
             permission: "integrations/view"
         }
     },
@@ -773,7 +805,7 @@ export var routes = {
         component: IntegrationEditor,
         meta: {
             active_menu: 'integrations',
-            title: 'Integrations',
+            title: translate('Integrations'),
             permission: 'integrations/manage'
         }
     },
@@ -783,9 +815,50 @@ export var routes = {
         component: AllCoupons,
         meta: {
             active_menu: 'coupons',
-            title: 'Coupons',
+            title: translate('Coupons'),
             permission: "coupons/view"
         }
+    },
+
+    reviews: {
+        path: '/reviews',
+        component: ReviewsRoute,
+        meta: {
+            active_menu: 'reviews',
+            title: translate('Reviews'),
+            permission: 'reviews/manage'
+        },
+        beforeEnter: (to, from, next) => {
+            const reviewsModule = AppConfig.get('modules_settings.reviews');
+            if (!reviewsModule || reviewsModule.active !== 'yes') {
+                next({ name: 'dashboard' });
+                return;
+            }
+            next();
+        },
+        children: [
+            {
+                name: 'reviews',
+                path: '',
+                component: AllReviews,
+                meta: {
+                    active_menu: 'reviews',
+                    title: translate('Reviews'),
+                    permission: 'reviews/manage'
+                },
+            },
+            {
+                name: 'view_review',
+                path: ':review_id(\\d+)/view',
+                component: SingleReview,
+                props: true,
+                meta: {
+                    active_menu: 'reviews',
+                    title: translate('View Review'),
+                    permission: 'reviews/manage'
+                }
+            }
+        ]
     },
 
     logs: {
@@ -794,7 +867,7 @@ export var routes = {
         component: Logs,
         meta: {
             active_menu: 'logs',
-            title: 'Logs',
+            title: translate('Logs'),
             permission: "is_super_admin"
         }
     },
@@ -804,7 +877,7 @@ export var routes = {
         component: Taxes,
         meta: {
             active_menu: 'taxes',
-            title: 'taxes',
+            title: translate('Taxes'),
             permission: "is_super_admin"
         }
     },
@@ -816,7 +889,7 @@ export var routes = {
         props: true,
         meta: {
             active_menu: 'coupons',
-            title: 'Coupons',
+            title: translate('Coupons'),
             permission: 'coupons/manage'
         }
     },
@@ -826,7 +899,7 @@ export var routes = {
         name: "onboarding",
         meta: {
             active_menu: "dashboard",
-            title: "Onboarding",
+            title: translate("Onboarding"),
             permission: "is_super_admin"
         },
     },

@@ -17,8 +17,8 @@
                 <?php
                 App::make('view')->render('emails.components.header');
                 ?>
-                <h1 style="font-size: 24px;font-weight: 600;margin-bottom: 8px;">Package Delivered Successfully!</h1>
-                <p style="opacity: 0.9;font-size: 16px;margin: 0;">Your order has arrived at its destination</p>
+                <h1 style="font-size: 24px;font-weight: 600;margin-bottom: 8px;"><?php esc_html_e('Package Delivered Successfully!', 'fluent-cart'); ?></h1>
+                <p style="opacity: 0.9;font-size: 16px;margin: 0;"><?php esc_html_e('Your order has arrived at its destination', 'fluent-cart'); ?></p>
             </div>
 
             <div style="background-color: #fff; border-radius: 8px; ">
@@ -72,20 +72,20 @@
                         <tr style="width: 100%;">
                             <td style="text-align: right;padding-right: 4px;">
                                 <a href="https://fluentcart.com" style="padding: 10px 20px;display:inline-block;text-decoration: none;border-radius: 8px;font-weight: 600;font-size: 14px;text-align: center;background: linear-gradient(135deg, #3b82f6, #2563eb);color: white;">
-                                    Leave a Review
+                                    <?php esc_html_e('Leave a Review', 'fluent-cart'); ?>
                                 </a>
                             </td>
                             <td style="padding-left: 4px;">
                                 <a href="{{order.customer_order_link}}" style="padding: 8px 20px;display:inline-block;text-decoration: none;border-radius: 8px;font-weight: 600;font-size: 14px;text-align: center;background: white;color: #374151;border: 2px solid #d1d5db;">
-                                    View Receipt
+                                    <?php esc_html_e('View Receipt', 'fluent-cart'); ?>
                                 </a>
                             </td>
                         </tr>
                     </table>
 
                     <div style="background: linear-gradient(135deg, #fef3c7, #fef9e7);border-radius: 8px;padding: 20px;margin: 25px 0 0;text-align: center;border: 1px solid #fbbf24;">
-                        <h3 style="color: #b45309;margin: 0 0 8px;font-size: 16px;font-weight: 600;">Thank You for Your Business!</h3>
-                        <p style="margin: 0;color: #92400e;font-size: 14px;">We hope you love your purchase. Your satisfaction is our top priority.</p>
+                        <h3 style="color: #b45309;margin: 0 0 8px;font-size: 16px;font-weight: 600;"><?php esc_html_e('Thank You for Your Business!', 'fluent-cart'); ?></h3>
+                        <p style="margin: 0;color: #92400e;font-size: 14px;"><?php esc_html_e('We hope you love your purchase. Your satisfaction is our top priority.', 'fluent-cart'); ?></p>
                     </div>
                 </div>
             </div>

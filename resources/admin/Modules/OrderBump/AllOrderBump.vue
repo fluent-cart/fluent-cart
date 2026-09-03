@@ -21,7 +21,7 @@ const orderBumpTable = OrderBumpTable();
 
         <div class="fct-order-bumps-wrap">
             <TableWrapper :table="orderBumpTable" :has-mobile-slot="true">
-                <order-bumps-table-loader v-if="orderBumpTable.isLoading()"/>
+                <OrderBumpsTableLoader v-if="orderBumpTable.isLoading()"/>
                 <div v-else>
                     <OrderBumpsTable :orderBumpTable="orderBumpTable"/>
                 </div>

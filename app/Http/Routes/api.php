@@ -7,15 +7,18 @@
 
 use FluentCart\App\Http\Controllers\AddonsController;
 use FluentCart\App\Http\Controllers\AddressInfoController;
-use FluentCart\App\Http\Controllers\AppControllers\AppController;
 use FluentCart\App\Http\Controllers\AttributesController;
+use FluentCart\App\Http\Controllers\AppControllers\AppController;
 use FluentCart\App\Http\Controllers\CheckoutFieldsController;
 use FluentCart\App\Http\Controllers\CustomerController;
 use FluentCart\App\Http\Controllers\DashboardController;
+use FluentCart\App\Http\Controllers\DataBackfillController;
 use FluentCart\App\Http\Controllers\EmailNotificationController;
 use FluentCart\App\Http\Controllers\FileUploadController;
 use FluentCart\App\Http\Controllers\IntegrationController;
+use FluentCart\App\Http\Controllers\RenewalController;
 use FluentCart\App\Http\Controllers\LabelController;
+use FluentCart\App\Http\Controllers\McpSettingsController;
 use FluentCart\App\Http\Controllers\ModuleSettingsController;
 use FluentCart\App\Http\Controllers\NotesController;
 use FluentCart\App\Http\Controllers\OnboardingController;
@@ -27,12 +30,12 @@ use FluentCart\App\Http\Controllers\ProductVariationController;
 use FluentCart\App\Http\Controllers\StorageController;
 use FluentCart\App\Http\Controllers\SettingsController;
 use FluentCart\App\Http\Controllers\CouponsController;
-use FluentCart\App\Http\Controllers\TaxClassController;
 use FluentCart\App\Http\Controllers\TaxConfigurationController;
 use FluentCart\App\Http\Controllers\TaxRateController;
 use FluentCart\App\Http\Controllers\TemplateController;
 use FluentCart\App\Http\Controllers\VariantController;
 use FluentCart\App\Http\Controllers\WidgetsController;
+use FluentCart\App\Http\Controllers\ProductReviewController;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\ConnectConfig;
 use FluentCart\Framework\Http\Router;
 use \FluentCart\App\Http\Controllers\PaymentMethodController;
@@ -48,6 +51,10 @@ $router->get('widgets', [WidgetsController::class, '__invoke'])->withPolicy('Ord
 
 $router->prefix('dashboard')->withPolicy('AdminPolicy')->group(function (Router $router) {
     $router->get('/', [DashboardController::class, 'getOnboardingData']);
+});
+
+$router->prefix('data-backfills')->withPolicy('AdminPolicy')->group(function (Router $router) {
+    $router->post('/run', [DataBackfillController::class, 'run']);
 });
 
 $router->prefix('dashboard')->withPolicy('DashboardPolicy')->group(function (Router $router) {
@@ -166,6 +173,9 @@ $router->prefix('products')->withPolicy('ProductPolicy')->group(function (Router
     $router->post('/{postId}/tax-class/remove', [ProductController::class, 'removeTaxClass'])->meta([
         'permissions' => 'products/edit'
     ]);
+    $router->post('/{postId}/tax-exempt', [ProductController::class, 'toggleTaxExempt'])->meta([
+        'permissions' => 'products/edit'
+    ]);
 
     $router->post('/{postId}/shipping-class', [ProductController::class, 'updateShippingClass'])->meta([
         'permissions' => 'products/edit'
@@ -233,7 +243,23 @@ $router->prefix('products')->withPolicy('ProductPolicy')->group(function (Router
         'permissions' => 'products/create'
     ]);
 
+    // Advanced Variation — bulk price/stock/status edit for variant combinations.
+    // Registered BEFORE the /variants/{variantId} routes so the first-match
+    // router doesn't capture 'bulk-update' as a {variantId}.
+    $router->post('/variants/bulk-update', [ProductVariationController::class, 'bulkUpdate'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+
+    // Group bulk update — PATCH semantics: only non-null fields are written.
+    // Registered BEFORE /variants/{variantId} to avoid the param capturing 'group-bulk-update'.
+    $router->post('/variants/group-bulk-update', [ProductVariationController::class, 'groupBulkUpdate'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+
     $router->post('/variants/{variantId}', [ProductVariationController::class, 'update'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+    $router->post('/variants/{variantId}/tax-exempt', [ProductVariationController::class, 'updateTaxSettings'])->meta([
         'permissions' => 'products/edit'
     ]);
 
@@ -256,6 +282,52 @@ $router->prefix('variants')->withPolicy('ProductPolicy')->group(function (Router
         'permissions' => 'products/view'
     ]);
 });
+
+// Advanced Variation — attribute library (groups + terms)
+$router->prefix('options')->withPolicy('ProductPolicy')->group(function (Router $router) {
+    // Library endpoint — single payload powering the Advanced Variation library
+    // picker (full group list with terms + the frequently-used IDs for chips).
+    // Registered BEFORE 'attr/groups' to ensure the more-specific path wins.
+    $router->get('attr/groups/library', [AttributesController::class, 'getLibrary'])->meta([
+        'permissions' => 'products/view'
+    ]);
+    $router->get('attr/groups', [AttributesController::class, 'getGroups'])->meta([
+        'permissions' => 'products/view'
+    ]);
+    // Plural 'attr/groups/reorder' doesn't collide with the singular
+    // 'attr/group/{group_id}' routes below; kept here next to its list sibling.
+    $router->post('attr/groups/reorder', [AttributesController::class, 'reorderGroups'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+    $router->post('attr/group/', [AttributesController::class, 'createGroup'])->meta([
+        'permissions' => 'products/create'
+    ]);
+    $router->get('attr/group/{group_id}', [AttributesController::class, 'getGroup'])->meta([
+        'permissions' => 'products/view'
+    ]);
+    $router->put('attr/group/{group_id}', [AttributesController::class, 'updateGroup'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+    $router->delete('attr/group/{group_id}', [AttributesController::class, 'deleteGroup'])->meta([
+        'permissions' => 'products/delete'
+    ]);
+    $router->get('attr/group/{group_id}/terms', [AttributesController::class, 'getTerms'])->meta([
+        'permissions' => 'products/view'
+    ]);
+    $router->post('attr/group/{group_id}/terms', [AttributesController::class, 'createTerms'])->meta([
+        'permissions' => 'products/create'
+    ]);
+    $router->post('attr/group/{group_id}/term/{term_id}', [AttributesController::class, 'updateTerm'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+    $router->delete('attr/group/{group_id}/term/{term_id}', [AttributesController::class, 'deleteTerm'])->meta([
+        'permissions' => 'products/delete'
+    ]);
+    $router->post('attr/group/{group_id}/terms/reorder', [AttributesController::class, 'reorderTerms'])->meta([
+        'permissions' => 'products/edit'
+    ]);
+});
+
 //Integration route declaration
 $router->prefix('integration')->withPolicy('IntegrationPolicy')->group(function (Router $router) {
 
@@ -407,6 +479,20 @@ $router->prefix('settings/')
             'permissions' => 'is_super_admin'
         ]);
 
+        // MCP (Features & addon → MCP card): status, on/off toggle, connection snippet.
+        $router->get('mcp', [McpSettingsController::class, 'status'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('mcp/toggle', [McpSettingsController::class, 'toggle'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->post('mcp/install-adapter', [McpSettingsController::class, 'installAdapter'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+        $router->get('mcp/config-snippets', [McpSettingsController::class, 'getConfigSnippets'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
+
 
         $router->post('confirmation', [SettingsController::class, 'saveConfirmation'])->meta([
             'permissions' => 'is_super_admin'
@@ -455,6 +541,13 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
 
     $router->post('/calculate-shipping', [OrderController::class, 'updateShipping'])->meta([
         'permissions' => ['orders/create', 'orders/manage']
+    ]);
+
+    // Public utility: pure tax calculation, no DB writes. No longer called by the admin Vue
+    // (tax is now auto-applied server-side on save). Available for third-party integrations.
+    $router->post('/calculate-tax', [OrderController::class, 'calculateTax'])->meta([
+        'permissions'      => ['orders/create', 'orders/manage'],
+        'permissions_type' => 'any',
     ]);
 
     $router->post('/', [OrderController::class, 'store'])->meta([
@@ -519,15 +612,21 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
         'permissions' => 'orders/manage'
     ]);
 
-    $router->get('/{id}/transactions/{transaction_id}', [OrderController::class, 'getDetails'])->meta([
-        'permissions' => 'orders/view'
-    ]);
+    $router->get('/{id}/transactions/{transaction_id}', [OrderController::class, 'getTransactionDetails'])
+        ->int('id', 'transaction_id')
+        ->meta([
+            'permissions' => 'orders/view'
+        ]);
 
     $router->put('/{order}/address/{id}', [OrderController::class, 'updateOrderAddress'])->meta([
         'permissions' => 'orders/manage'
     ]);
 
     $router->put('/{order}/transactions/{transaction}/status', [OrderController::class, 'updateTransactionStatus'])->meta([
+        'permissions' => 'orders/manage'
+    ]);
+
+    $router->post('/{order}/transactions/{transaction}/sync', [OrderController::class, 'syncPendingTransaction'])->meta([
         'permissions' => 'orders/manage'
     ]);
 
@@ -545,6 +644,23 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
 
 });
 
+$router->prefix('renewals')->withPolicy('OrderPolicy')->group(function (Router $router) {
+    $router->get('/', [RenewalController::class, 'index'])->meta([
+        'permissions' => 'orders/view'
+    ]);
+
+    $router->get('/{id}', [RenewalController::class, 'show'])->int('id')->meta([
+        'permissions' => 'orders/view'
+    ]);
+
+    $router->post('/{order}/void', [RenewalController::class, 'void'])->meta([
+        'permissions' => 'orders/manage'
+    ]);
+
+    $router->post('/{order}/resend', [RenewalController::class, 'resend'])->meta([
+        'permissions' => 'orders/manage'
+    ]);
+});
 
 $router->prefix('labels')->withPolicy('LabelPolicy')->group(function (Router $router) {
     $router->get('/', [LabelController::class, 'index'])->meta([
@@ -634,54 +750,13 @@ $router->prefix('customers')->withPolicy('CustomerPolicy')->group(function (Rout
 });
 
 
-$router->prefix('options')->withPolicy('ProductPolicy')->group(function (Router $router) {
-    $router->get('attr/groups', [AttributesController::class, 'getGroups'])->meta([
-        'permissions' => 'products/view'
-    ]);
-
-    $router->post('attr/group/', [AttributesController::class, 'createGroup'])->meta([
-        'permissions' => 'products/create'
-    ]);
-
-    $router->get('attr/group/{group_id}', [AttributesController::class, 'getGroup'])->meta([
-        'permissions' => 'products/view'
-    ]);
-
-    $router->put('attr/group/{group_id}', [AttributesController::class, 'updateGroup'])->meta([
-        'permissions' => 'products/edit'
-    ]);
-
-    $router->delete('attr/group/{group_id}', [AttributesController::class, 'deleteGroup'])->meta([
-        'permissions' => 'products/delete'
-    ]);
-
-    $router->get('attr/group/{group_id}/terms', [AttributesController::class, 'getTerms'])->meta([
-        'permissions' => 'products/view'
-    ]);
-
-    $router->post('attr/group/{group_id}/term', [AttributesController::class, 'createTerm'])->meta([
-        'permissions' => 'products/create'
-    ]);
-
-    $router->post('attr/group/{group_id}/term/{term_id}', [AttributesController::class, 'updateTerm'])->meta([
-        'permissions' => 'products/edit'
-    ]);
-
-    $router->delete('attr/group/{group_id}/term/{term_id}', [AttributesController::class, 'deleteTerm'])->meta([
-        'permissions' => 'products/delete'
-    ]);
-
-    $router->post('attr/group/{group_id}/term/{term_id}/serial', [AttributesController::class, 'changeTermSerial'])->meta([
-        'permissions' => 'products/edit'
-    ]);
-});
-
 
 $router->prefix('onboarding')->withPolicy('AdminPolicy')->group(function (Router $router) {
     $router->get('/', [OnboardingController::class, 'index']);
     $router->post('/', [OnboardingController::class, 'saveSettings']);
     $router->post('/create-pages', [OnboardingController::class, 'createPages']);
     $router->post('/create-page', [OnboardingController::class, 'createPage']);
+    $router->post('/save-tax', [OnboardingController::class, 'saveTaxSettings']);
 });
 $router->prefix('email-notification')->withPolicy('StoreSensitivePolicy')->group(function (Router $router) {
     $router->get('/', [EmailNotificationController::class, 'index']);
@@ -690,6 +765,9 @@ $router->prefix('email-notification')->withPolicy('StoreSensitivePolicy')->group
     $router->post('/save-settings', [EmailNotificationController::class, 'saveSettings']);
     $router->get('/reminders', [EmailNotificationController::class, 'getSchedulingSettings']);
     $router->post('/reminders', [EmailNotificationController::class, 'saveSchedulingSettings']);
+    $router->get('/digest-settings', [EmailNotificationController::class, 'getDigestSettings']);
+    $router->post('/digest-settings', [EmailNotificationController::class, 'saveDigestSettings']);
+    $router->post('/digest-settings/send-test', [EmailNotificationController::class, 'sendDigestTest']);
     $router->post('/enable-notification/{name}', [EmailNotificationController::class, 'enableNotification']);
     $router->post('/send-manual-reminder', [EmailNotificationController::class, 'sendManualReminder']);
     $router->post('/preview-default-template', [EmailNotificationController::class, 'previewDefaultTemplate']);
@@ -810,41 +888,125 @@ $router->prefix('products')->withPolicy('ProductPolicy')->group(function (Router
 
 
 // Tax Routes
-$router->prefix('tax')->withPolicy('StoreSensitivePolicy')->group(function (Router $router) {
-    // TaxClasses routes
-    $router->get('classes', [TaxClassController::class, 'index']);
-    $router->post('classes', [TaxClassController::class, 'store']);
-    $router->put('classes/{id}', [TaxClassController::class, 'update'])->int('id');
-    $router->delete('classes/{id}', [TaxClassController::class, 'delete'])->int('id');
+$router->prefix('tax')->withPolicy('StoreSettingsPolicy')->group(function (Router $router) {
+    // TaxClass routes
+    $router->get('classes', [TaxRateController::class, 'getClasses'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('classes', [TaxRateController::class, 'createClass'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->delete('classes/{id}', [TaxRateController::class, 'deleteClass'])->int('id')->meta([
+        'permissions' => 'store/sensitive'
+    ]);
 
     // TaxRates routes
-    $router->get('rates', [TaxRateController::class, 'index']);
-    $router->get('rates/country/rates/{country_code}', [TaxRateController::class, 'show']);
-    $router->post('rates/country/override', [TaxRateController::class, 'saveShippingOverride']);
-    $router->delete('rates/country/override/{id}', [TaxRateController::class, 'deleteShippingOverride'])->int('id');
-    $router->put('country/rate/{id}', [TaxRateController::class, 'update'])->int('id');
-    $router->post('country/rate', [TaxRateController::class, 'store']);
-    $router->delete('country/rate/{id}', [TaxRateController::class, 'delete'])->int('id');
-    $router->delete('country/{country_code}', [TaxRateController::class, 'deleteCountry']);
-    $router->get('country-tax-id/{country_code}', [TaxRateController::class, 'getCountryTaxId']);
-    $router->post('country-tax-id/{country_code}', [TaxRateController::class, 'saveCountryTaxId']);
+    $router->get('rates', [TaxRateController::class, 'index'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->get('rates/country/rates/{country_code}', [TaxRateController::class, 'show'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('rates/country/override', [TaxRateController::class, 'saveShippingOverride'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->delete('rates/country/override/{id}', [TaxRateController::class, 'deleteShippingOverride'])->int('id')->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->put('country/rate/{id}', [TaxRateController::class, 'update'])->int('id')->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->post('country/rate', [TaxRateController::class, 'store'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->delete('country/rate/{id}', [TaxRateController::class, 'delete'])->int('id')->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->post('country-status/{country_code}', [TaxRateController::class, 'updateCountryStatus'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->get('country-tax-id/{country_code}', [TaxRateController::class, 'getCountryTaxId'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('country-tax-id/{country_code}', [TaxRateController::class, 'saveCountryTaxId'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+
+    // Product category tax overrides
+    $router->get('product-overrides/{country_code}', [TaxRateController::class, 'getProductOverrides'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('product-overrides', [TaxRateController::class, 'saveProductOverride'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->delete('product-overrides/{id}', [TaxRateController::class, 'deleteProductOverride'])->int('id')->meta([
+        'permissions' => 'store/sensitive'
+    ]);
 
 //    $router->post('rates/country', [TaxRateController::class, 'addCountry']);
 
     // TaxConfiguration routes
-    $router->get('configuration/rates', [TaxConfigurationController::class, 'getTaxRates']);
-    $router->post('configuration/countries', [TaxConfigurationController::class, 'saveConfiguredCountries']);
-    $router->get('configuration/settings', [TaxConfigurationController::class, 'getSettings']);
-    $router->post('configuration/settings', [TaxConfigurationController::class, 'saveSettings']);
-    $router->post('configuration/settings/eu-vat', [TaxEUController::class, 'saveEuVatSettings']);
-    $router->get('configuration/settings/eu-vat/rates', [TaxEUController::class, 'getEuTaxRates']);
-    $router->post('configuration/settings/eu-vat/oss/override', [TaxEUController::class, 'saveOssTaxOverride']);
-    $router->post('configuration/settings/eu-vat/oss/shipping-override', [TaxEUController::class, 'saveOssShippingOverride']);
-    $router->delete('configuration/settings/eu-vat/oss/override', [TaxEUController::class, 'deleteOssTaxOverride'])->int('id');
-    $router->delete('configuration/settings/eu-vat/oss/shipping-override', [TaxEUController::class, 'deleteOssShippingOverride'])->int('id');
+    $router->get('configuration/rates', [TaxConfigurationController::class, 'getTaxRates'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('configuration/countries', [TaxConfigurationController::class, 'saveConfiguredCountries'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->get('configuration/settings', [TaxConfigurationController::class, 'getSettings'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('configuration/settings', [TaxConfigurationController::class, 'saveSettings'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->post('configuration/settings/eu-vat', [TaxEUController::class, 'saveEuVatSettings'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->post('configuration/settings/eu-vat/reset-rates', [TaxEUController::class, 'resetEuRatesToDefaults'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
+    $router->get('configuration/settings/eu-vat/product-overrides', [TaxEUController::class, 'getEuProductOverrides'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->get('configuration/settings/eu-vat/oss-rates', [TaxEUController::class, 'getOssCountryRates'])->meta([
+        'permissions' => 'store/settings'
+    ]);
+    $router->post('configuration/settings/eu-vat/oss-rates', [TaxEUController::class, 'saveOssCountryRates'])->meta([
+        'permissions' => 'store/sensitive'
+    ]);
 });
 
 $router->prefix('checkout-fields')->withPolicy('StoreSensitivePolicy')->group(function (Router $router) {
     $router->get('get-fields', [CheckoutFieldsController::class, 'getFields']);
     $router->post('save-fields', [CheckoutFieldsController::class, 'saveFields']);
+});
+
+// Product Reviews routes
+$router->prefix('reviews')->withPolicy('ReviewPolicy')->group(function (Router $router) {
+    $router->get('/', [ProductReviewController::class, 'index'])->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->get('/stats', [ProductReviewController::class, 'stats'])->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->get('/{id}', [ProductReviewController::class, 'find'])->int('id')->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->put('/{id}', [ProductReviewController::class, 'update'])->int('id')->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->delete('/{id}', [ProductReviewController::class, 'delete'])->int('id')->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->post('/bulk-action', [ProductReviewController::class, 'bulkAction'])->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->post('/{id}/reply', [ProductReviewController::class, 'reply'])->int('id')->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->delete('/{reviewId}/replies/{replyId}', [ProductReviewController::class, 'deleteReply'])->int('reviewId')->int('replyId')->meta([
+        'permissions' => 'reviews/manage'
+    ]);
+    $router->post('/bulk-reply', [ProductReviewController::class, 'bulkReply'])->meta([
+        'permissions' => 'reviews/manage'
+    ]);
 });

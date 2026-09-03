@@ -224,6 +224,9 @@ export default {
             );
         },
     },
+    mounted() {
+        this.getFeeds();
+    },
     methods: {
         getFeeds() {
             this.loading = true;
@@ -311,9 +314,6 @@ export default {
             });
         },
         isEmpty,
-    },
-    mounted() {
-        this.getFeeds();
     },
 };
 </script>

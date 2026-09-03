@@ -87,7 +87,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const fetchProduct = () => {
             apiFetch({
                 path: addQueryArgs(fetchUrl, {
-                    with: ['variants']
+                    // Screen key, not a relation name — ProductController::allowedWiths()
+                    // owns what it resolves to (detail + variants).
+                    with: ['block_product_detail']
                 }),
                 headers: {
                     'X-WP-Nonce': rest.nonce
@@ -178,8 +180,8 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     <div className="fct-product-item-price">
                         {
                         selectedProduct?.variants?.[0]
-                            ? `$${(selectedProduct.variants[0].item_price / 100).toFixed(2)}`
-                            : '$0.00'
+                            ? `$${parseFloat((selectedProduct.variants[0].item_price / 100).toFixed(2))}`
+                            : '$0'
                         }
                     </div>
 

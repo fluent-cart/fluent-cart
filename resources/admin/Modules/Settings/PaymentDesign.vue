@@ -1,7 +1,7 @@
 <template>
   <div class="setting-wrap">
     <SettingsHeader
-        @onSave="savePaymentDesign"
+        @on-save="savePaymentDesign"
         :loading="saving"
         :save-button-text="$t('Update')"
         :loading-text="$t('Updating')"
@@ -41,19 +41,19 @@
             </el-form-item>
             <el-form-item label-position="top">
               <LabelHint :title="$t('Checkout Instructions')" :content="$t('Checkout Instructions will be displayed on the checkout page gateway section.')"/>
-              <wp-editor
+              <WpEditor
                   v-model="checkout_instructions"
                   @update="(val) => { checkout_instructions = val; }"
-              ></wp-editor>
+              ></WpEditor>
             </el-form-item>
             <!-- gap 10px -->
             <div class="h-10"></div>
             <el-form-item label-position="top">
               <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Thank you page Instruction will be displayed on the thank you page receipt section.')"/>
-              <wp-editor
+              <WpEditor
                   v-model="thank_you_page_instructions"
                   @update="(val) => { thank_you_page_instructions = val; }"
-              ></wp-editor>
+              ></WpEditor>
             </el-form-item>
           </el-form>
         </Card.Body>
@@ -61,7 +61,7 @@
 
       <div class="setting-save-action">
         <el-button type="primary" :loading="saving" @click="savePaymentDesign">
-          {{ saving ? $t('Saving') : $t('Update') }}
+          {{ $t('Update') }}
         </el-button>
       </div>
     </div>
@@ -99,6 +99,10 @@ export default {
       methodTitle: '',
       routeLabel: '',
     }
+  },
+  mounted() {
+    this.initRouteData();
+    this.getSettings();
   },
   methods: {
     goBack() {
@@ -173,10 +177,6 @@ export default {
         this.$route.meta.title = dynamicTitle;
       }
     }
-  },
-  mounted() {
-    this.initRouteData();
-    this.getSettings();
   }
 }
 </script>

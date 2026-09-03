@@ -17,6 +17,7 @@ use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Renderer\AddressSelectRenderer;
 use FluentCart\App\Services\Renderer\CartDrawerRenderer;
@@ -60,6 +61,12 @@ class WebCheckoutHandler
     public function globalCheckoutRouteHandler()
     {
         nocache_headers();
+
+        $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_WP_NONCE'])) : '';
+        if (!wp_verify_nonce($nonce, 'fluentcart') && !wp_verify_nonce($nonce, 'wp_rest')) {
+            wp_send_json(['message' => __('Invalid nonce', 'fluent-cart')], 403);
+            return;
+        }
 
         $startedAt = microtime(true);
 
@@ -191,6 +198,32 @@ class WebCheckoutHandler
             return $result;
         }
 
+        $cartCouponCodes = is_array($cart->coupons) ? $cart->coupons : [];
+        $couponWasApplied = false;
+        foreach ($cartCouponCodes as $existingCode) {
+            if (strcasecmp((string) $existingCode, (string) $couponCode) === 0) {
+                $couponWasApplied = true;
+                break;
+            }
+        }
+
+        if (!$couponWasApplied) {
+            $perCouponResults = is_array($result) ? Arr::get($result, 'coupon_results', []) : [];
+            $errorMessage = '';
+            foreach ($perCouponResults as $resultCode => $couponResult) {
+                if (strcasecmp((string) $resultCode, (string) $couponCode) === 0) {
+                    $errorMessage = Arr::get($couponResult, 'error', '');
+                    if ($errorMessage !== '') {
+                        break;
+                    }
+                }
+            }
+            if ($errorMessage === '') {
+                $errorMessage = __('No matching coupon found for this code.', 'fluent-cart');
+            }
+            return new \WP_Error('coupon_not_applied', $errorMessage);
+        }
+
         ob_start();
         (new CartSummaryRender($cart))->render($withWrapper = false);
         $summary = ob_get_clean();
@@ -225,6 +258,12 @@ class WebCheckoutHandler
         $fragments[] = [
             'selector' => '[data-fct-modal-checkout-summary-group]',
             'content'  => $modalCheckoutRender->getFragment('summary_group'),
+            'type'     => 'replace'
+        ];
+
+        $fragments[] = [
+            'selector' => '[data-fct-modal-checkout-summary]',
+            'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
             'type'     => 'replace'
         ];
 
@@ -287,6 +326,12 @@ class WebCheckoutHandler
         $fragments[] = [
             'selector' => '[data-fct-modal-checkout-summary-group]',
             'content'  => $modalCheckoutRender->getFragment('summary_group'),
+            'type'     => 'replace'
+        ];
+
+        $fragments[] = [
+            'selector' => '[data-fct-modal-checkout-summary]',
+            'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
             'type'     => 'replace'
         ];
 
@@ -365,6 +410,12 @@ class WebCheckoutHandler
             'cart' => $cart
         ]);
 
+        // Prorate credit and upgrade discount (plan upgrade) are post-tax adjustments on
+        // the payable total.
+        $totalPrice = max(0, $totalPrice
+            - (int) Arr::get($cart->checkout_data, 'prorate_credit.amount', 0)
+            - (int) Arr::get($cart->checkout_data, 'upgrade_discount.amount', 0));
+
         $fragments = [];
 
         $cartRender = (new CheckoutRenderer($cart));
@@ -428,6 +479,7 @@ class WebCheckoutHandler
         $oldTaxTotal = Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
         $oldShippingCharge = Arr::get($cart->checkout_data, 'shipping_data.shipping_charge', 0);
 
+        $previousFormData = Arr::get($cart->checkout_data, 'form_data', []);
         $checkoutData = Arr::wrap($cart->checkout_data);
         Arr::set($checkoutData, 'form_data.' . $type . '_address_id', $addressId);
         Arr::set($checkoutData, 'form_data.' . $type . '_country', $country);
@@ -438,6 +490,12 @@ class WebCheckoutHandler
             Arr::set($checkoutData, 'form_data.shipping_country', $country);
             Arr::set($checkoutData, 'form_data.shipping_state', $state);
         }
+
+        $checkoutData = (new TaxModule())->maybeInvalidateVatValidationForCountryChange($checkoutData, [
+            'ship_to_different' => Arr::get($previousFormData, 'ship_to_different', 'no'),
+            'billing_country'   => Arr::get($previousFormData, 'billing_country', ''),
+            'shipping_country'  => Arr::get($previousFormData, 'shipping_country', ''),
+        ]);
 
         $cart->checkout_data = $checkoutData;
 
@@ -560,6 +618,8 @@ class WebCheckoutHandler
 
         $selectedId = Arr::get($cart->checkout_data, 'shipping_data.shipping_method_id', '');
 
+        $selectedId = CartHelper::resolveAutoSelectShippingMethod($cart, $availableShippingMethods ?: [], $selectedId);
+
         if (!$availableShippingMethods || is_wp_error($availableShippingMethods)) {
             (new ShippingMethodsRender($availableShippingMethods, $selectedId))->render();
         } else {
@@ -582,6 +642,7 @@ class WebCheckoutHandler
                 ]
             ],
             'country_code' => $data['country_code'],
+            'shipping_method_id' => $selectedId ?: null,
         ];
     }
 
@@ -701,8 +762,8 @@ class WebCheckoutHandler
         }
 
         $allData = App::request()->all();
-        $dataKey = (string) Arr::get($allData, 'data_key');
-        $dataValue = (string) Arr::get($allData, 'data_value');
+        $dataKey = sanitize_text_field((string) Arr::get($allData, 'data_key'));
+        $dataValue = sanitize_text_field((string) Arr::get($allData, 'data_value'));
 
         if ($dataKey) {
             $allData[$dataKey] = $dataValue;
@@ -726,7 +787,9 @@ class WebCheckoutHandler
             'shipping_method_id' => 'shipping_data.shipping_method_id',
             '_fct_pay_method' => 'form_data._fct_pay_method',
             'billing_company_name' => 'form_data.billing_company_name',
-            'fct_billing_tax_id' => 'tax_data.vat_number'
+            'billing_legal_registration_id' => 'form_data.billing_legal_registration_id',
+            'is_business'          => 'form_data.is_business',
+            'fct_billing_tax_id'        => 'tax_data.vat_number',
         ];
 
         $addressFieldKeys = [
@@ -767,6 +830,14 @@ class WebCheckoutHandler
             }
         }
 
+        // Force-check the explicit data_key field — bulk POST may have already stored it as a side-effect.
+        if ($dataKey && isset($validKeys[$dataKey]) && !isset($normalizeData[$dataKey])) {
+            $storedValue = (string) Arr::get($prevCheckoutData, $validKeys[$dataKey], '');
+            if ($storedValue !== $dataValue) {
+                $normalizeData[$dataKey] = $dataValue;
+            }
+        }
+
         if (!$normalizeData) {
             return [
                 'message' => __('No changes detected', 'fluent-cart')
@@ -784,6 +855,7 @@ class WebCheckoutHandler
             Arr::set($checkoutData, $validKeys[$normalizeKey], $normalizeValue);
         }
 
+        $oldTaxTotal = (int) Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
         $fillData = [
             'checkout_data' => $checkoutData,
             'cart_data' => $cart->cart_data,
@@ -816,6 +888,8 @@ class WebCheckoutHandler
         }
 
         $cart->fill($fillData);
+        $newTaxTotal = (int) Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
+        $taxAmountChanged = $oldTaxTotal !== $newTaxTotal;
         $cart->clearFeeCache();
 
         $cart = CartHelper::getCart();
@@ -845,28 +919,34 @@ class WebCheckoutHandler
                 'type' => 'replace'
             ];
 
+            if ($taxAmountChanged || !empty($hookChanges['shipping'])) {
+                // also update the payment methods
+                if ($enableModalCheckout === 'yes') {
+                    $fragments[] = [
+                        'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                        'content' => $modalCheckoutRender->getFragment('payment_methods'),
+                        'type' => 'replace'
+                    ];
+                } else {
+                    $fragments[] = [
+                        'selector' => '[data-fluent-cart-checkout-payment-methods]',
+                        'content' => $cartRender->getFragment('payment_methods'),
+                        'type' => 'replace'
+                    ];
+                }
 
-            // also update the payment methods
-            if ($enableModalCheckout === 'yes') {
                 $fragments[] = [
-                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
-                    'content' => $modalCheckoutRender->getFragment('payment_methods'),
-                    'type' => 'replace'
+                    'selector' => '[data-fct-modal-checkout-summary-group]',
+                    'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                    'type'     => 'replace'
                 ];
-            } else {
+
                 $fragments[] = [
-                    'selector' => '[data-fluent-cart-checkout-payment-methods]',
-                    'content' => $cartRender->getFragment('payment_methods'),
-                    'type' => 'replace'
+                    'selector' => '[data-fct-modal-checkout-summary]',
+                    'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
+                    'type'     => 'replace'
                 ];
             }
-
-
-            $fragments[] = [
-                'selector' => '[data-fct-modal-checkout-summary-group]',
-                'content'  => $modalCheckoutRender->getFragment('summary_group'),
-                'type'     => 'replace'
-            ];
         }
 
         // Re-render cart summary on payment method change (fees may depend on payment method)
@@ -889,6 +969,12 @@ class WebCheckoutHandler
                 $fragments[] = [
                     'selector' => '[data-fct-modal-checkout-summary-group]',
                     'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                    'type'     => 'replace'
+                ];
+
+                $fragments[] = [
+                    'selector' => '[data-fct-modal-checkout-summary]',
+                    'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
                     'type'     => 'replace'
                 ];
             }
@@ -943,216 +1029,6 @@ class WebCheckoutHandler
         ];
     }
 
-    public function handleSaveCustomerDataAjax()
-    {
-
-        $key = sanitize_text_field(App::request()->get('data_key'));
-        $value = sanitize_text_field(App::request()->get('data_value'));
-
-        $cart = CartHelper::getCart();
-        if (!$cart) {
-            return new \WP_Error('no_cart', __('No active cart found', 'fluent-cart'));
-        }
-
-        $addressFieldKeys = [
-            'full_name',
-            'country',
-            'address_1',
-            'address_2',
-            'state',
-            'city',
-            'postcode'
-        ];
-
-        $validKeys = [
-            'ship_to_different' => 'form_data.ship_to_different',
-            'billing_email' => 'form_data.billing_email',
-            'billing_address_id' => 'form_data.billing_address_id',
-            'shipping_address_id' => 'form_data.shipping_address_id',
-            'billing_company' => 'form_data.billing_company',
-            'order_notes' => 'form_data.order_notes',
-            'shipping_method_id' => 'shipping_data.shipping_method_id',
-            '_fct_pay_method' => 'form_data._fct_pay_method',
-        ];
-
-        foreach ($addressFieldKeys as $addressFieldKey) {
-            $validKeys['billing_' . $addressFieldKey] = 'form_data.billing_' . $addressFieldKey;
-            $validKeys['shipping_' . $addressFieldKey] = 'form_data.shipping_' . $addressFieldKey;
-        }
-
-        if (!isset($validKeys[$key])) {
-            return new \WP_Error('invalid_key', __('Invalid data key', 'fluent-cart'));
-        }
-
-        $checkoutData = Arr::wrap($cart->checkout_data);
-
-        $prevValue = Arr::get($checkoutData, $validKeys[$key], '');
-        if ($prevValue === $value) {
-            return [
-                'message' => __('Updated', 'fluent-cart')
-            ];
-        }
-
-        $oldCheckoutData = $checkoutData;
-        Arr::set($checkoutData, $validKeys[$key], $value);
-
-        $fillData = apply_filters('fluent_cart/checkout/before_patch_checkout_data', [
-            'checkout_data' => $checkoutData,
-            'cart_data' => $cart->cart_data,
-            'hook_changes' => [
-                'shipping' => false,
-                'tax' => false
-            ]
-        ], [
-            'cart' => $cart,
-            'key' => $key,
-            'value' => $value,
-            'prev_value' => $prevValue,
-            'old_checkout_data' => $oldCheckoutData
-        ]);
-
-        $changes = Arr::get($fillData, 'hook_changes', []);
-        unset($fillData['hook_changes']);
-
-
-        $cart->fill($fillData);
-        $cart->save();
-        $fragments = [];
-
-
-        if (Arr::get($changes, 'shipping', false)) {
-            $fragments[] = [
-                'selector' => '[data-fluent-cart-checkout-page-shipping-methods-wrapper]',
-                'content' => (new CheckoutRenderer($cart))->getFragment('shipping_methods'),
-                'type' => 'replace'
-            ];
-        }
-        //(new CartSummaryRender($cart))->render(false);
-
-        ob_start();
-        (new CartSummaryRender($cart))->render(false);
-        $render = ob_get_clean();
-        if (array_filter($changes)) {
-            $fragments[] = [
-                'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
-                //'content'  => (new CheckoutRender($cart))->getFragment('cart_summary_fragment'),
-                'content' => $render,
-                'type' => 'replace'
-            ];
-        }
-
-        return [
-            'fragments' => $fragments,
-            'message' => __('Data saved successfully', 'fluent-cart'),
-            'tax_total_Changes' => Arr::get($changes, 'tax', false),
-            'shipping_charge_changes' => Arr::get($changes, 'shipping', false),
-            'notify' => false,
-            'cart' => $cart
-        ];
-
-        // Shipping Module
-
-        add_action('fluent_cart/checkout/customer_data_saved', function ($data) {
-            // Recalculate tax if needed
-
-            do_action('fluent_cart/checkout/tax_data_changed', $data);
-
-        });
-
-        do_action('fluent_cart/checkout/customer_data_saved', [
-            'cart' => $cart,
-            'key' => $key,
-            'value' => $value,
-            'old_value' => $prevValue,
-            'old_data' => $oldCheckoutData
-        ]);
-
-        $didTaxChanges = did_action('fluent_cart/checkout/tax_data_changed');
-        $didShippingChanges = did_action('fluent_cart/checkout/shipping_data_changed');
-
-
-        if ($cart) {
-            $checkoutRender = new CheckoutRenderer($cart);
-            $shippingChanged = false;
-            // we have to decide for which keys we will update shipping option
-            $fragments = [];
-            if ($cart->requireShipping()) {
-                $watchingKeys = ['ship_to_different', 'billing_address', 'billing_country', 'billing_state'];
-                if (Arr::get($cart->checkout_data, 'form_data.ship_to_different', null) === 'yes') {
-                    $watchingKeys = ['ship_to_different', 'shipping_address', 'shipping_country', 'shipping_state'];
-                }
-
-                if (in_array($key, $watchingKeys)) {
-                    $fragments[] = [
-                        'selector' => '[data-fluent-cart-checkout-page-shipping-methods-wrapper]',
-                        'content' => $checkoutRender->getFragment('shipping_methods'),
-                        'type' => 'replace'
-                    ];
-                }
-
-                $shippingChanged = true;
-            }
-
-            $oldTaxTotal = Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
-            $oldShippingCharge = Arr::get($cart->checkout_data, 'shipping_data.shipping_charge', 0);
-
-            $countryCode = Arr::get($cart->checkout_data, 'form_data.shipping_country');
-
-            if (!$countryCode) {
-                $countryCode = Arr::get($cart->checkout_data, 'form_data.billing_country');
-            }
-
-            if (Arr::get($cart->checkout_data, 'form_data.ship_to_different', 'no') === 'no') {
-                $countryCode = Arr::get($cart->checkout_data, 'form_data.billing_country');
-            }
-
-            $data = [
-                'country_code' => $countryCode,
-                'timezone' => ''
-            ];
-
-            $list = $this->getShippingMethodsListView($data);
-
-            if ($list === false) {
-                $cart->checkout_data = array_merge($cart->checkout_data, [
-                    'shipping_data' => [
-                        'shipping_method_id' => null,
-                        'shipping_charge' => 0
-                    ]
-                ]);
-                $cart->save();
-            }
-
-            do_action('fluent_cart/checkout/form_data_changed', [
-                'cart' => $cart
-            ]);
-
-            $fragments[] = [
-                'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
-                'content' => $checkoutRender->getFragment('cart_summary_fragment'),
-                'type' => 'replace'
-            ];
-
-            $newTaxTotal = Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
-            $newShippingCharge = Arr::get($cart->checkout_data, 'shipping_data.shipping_charge', 0);
-
-            $checkoutData = [
-                'fragments' => $fragments,
-                'message' => __('Data saved successfully', 'fluent-cart'),
-                'tax_total_Changes' => $oldTaxTotal != $newTaxTotal,
-                'shipping_charge_changes' => $oldShippingCharge != $newShippingCharge,
-                'notify' => false
-            ];
-
-            return apply_filters('fluent_cart/checkout/checkout_data_changed', $checkoutData, ['cart' => $cart]);
-        }
-
-        return [
-            'message' => __('Failed to save data', 'fluent-cart'),
-            'notify' => false
-        ];
-    }
-
     public function handleOrderBumpRequest()
     {
         $requestData = App::request()->all();
@@ -1163,7 +1039,7 @@ class WebCheckoutHandler
         }
 
         $checkoutData = $cart->checkout_data;
-        if (!empty($checkoutData['upgrade_data']) || !empty($checkoutData['is_locked'])) {
+        if (!$cart->acceptsAdditionalItems()) {
             return new \WP_Error('invalid_request', __('This cart is locked or already has an upgrade applied.', 'fluent-cart'));
         }
 
@@ -1260,8 +1136,10 @@ class WebCheckoutHandler
                 } else {
                     $sanitizedData[$dataKey] = sanitize_email($dataValue ?? '');
                 }
-            } else if (in_array($dataKey, ['billing_company_name', 'shipping_company_name'])) {
+            } else if (in_array($dataKey, ['billing_company_name', 'shipping_company_name', 'billing_legal_registration_id'])) {
                 $sanitizedData[$dataKey] = sanitize_text_field($dataValue);
+            } else if ($dataKey === 'is_business') {
+                $sanitizedData[$dataKey] = $dataValue === 'yes' ? 'yes' : 'no';
             } else if ($dataKey === 'billing_state' && !empty($dataValue)) {
                 $billingCountry = Arr::get($allData, 'billing_country');
 

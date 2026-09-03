@@ -58,8 +58,11 @@ class EmailNotifications
          * Order Refunded -> fluent_cart/order_fully_refunded (customer + admin)
          * Order Shipping Status Changed => fluent_cart/shipping_status_changed (customer + admin)
          * Reminder Events:
-         * - fluent_cart/invoice_reminder_due (@todo uncomment when invoice feature is deployed)
-         * - fluent_cart/invoice_reminder_overdue (used for payment reminders)
+         * - fluent_cart/renewal_reminder_due
+         * - fluent_cart/renewal_reminder_overdue (manual/on-demand payment reminder)
+         * - fluent_cart/renewal_overdue_first (scheduled, first overdue stage)
+         * - fluent_cart/renewal_overdue_followup (scheduled, intermediate overdue stages)
+         * - fluent_cart/renewal_overdue_final (scheduled, last overdue stage)
          * - fluent_cart/subscription_renewal_reminder
          * - fluent_cart/subscription_trial_end_reminder
          */
@@ -139,6 +142,41 @@ class EmailNotifications
                     'attach_pdf_template' => '',
                 ]
             ],
+            'subscription_renewal_failed_customer' => [
+                'event'            => 'subscription_renewal_failed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify customer when an automatic renewal charge fails', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when their saved payment method could not be charged for a subscription renewal.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.renewal_failed.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Automatic Payment Failed for Renewal #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_renewal_failed_admin'    => [
+                'event'            => 'subscription_renewal_failed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify admin when an automatic renewal charge fails', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin when a saved payment method could not be charged for a subscription renewal.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.renewal_failed.admin',
+                'pre_header'       => __('An automatic subscription renewal charge failed. Review the order in the FluentCart Dashboard.', 'fluent-cart'),
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Automatic Charge Failed for Renewal #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
             'subscription_canceled_customer' => [
                 'event'            => 'subscription_canceled',
                 'group'            => 'subscription',
@@ -170,6 +208,23 @@ class EmailNotifications
                 'settings'         => [
                     'active'          => 'yes',
                     'subject'         => __('Subscription Canceled - {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_period_skipped_customer' => [
+                'event'            => 'subscription_period_skipped',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify customer when a billing period is skipped', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when an admin skips their next billing period. The internal reason and actor are never included. Off by default.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.period_skipped.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Your next payment has been skipped on {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
                 ]
@@ -285,40 +340,130 @@ class EmailNotifications
                     'attach_pdf_template' => '',
                 ]
             ],
-            // @todo uncomment when invoice feature is deployed
-            // 'invoice_reminder_due_customer' => [
-            //     'event'            => 'invoice_reminder_due',
-            //     'title'            => __('Invoice due reminder to customer', 'fluent-cart'),
-            //     'description'      => __('This email will be sent before/at invoice due date when payment is pending.', 'fluent-cart'),
-            //     'recipient'        => 'customer',
-            //     'smartcode_groups' => [],
-            //     'template_path'    => 'order.reminder.due.customer',
-            //     'is_async'         => false,
-            //     'settings'         => [
-            //         'active'          => 'yes',
-            //         'subject'         => __('Payment Reminder #{{order.invoice_no}}', 'fluent-cart'),
-            //         'is_default_body' => 'yes',
-            //         'email_body'      => '',
-            //     ]
-            // ],
-            // 'invoice_reminder_due_admin'    => [
-            //     'event'            => 'invoice_reminder_due',
-            //     'title'            => __('Invoice due reminder copy to admin', 'fluent-cart'),
-            //     'description'      => __('This email will be sent to admin when a due reminder is sent to customer.', 'fluent-cart'),
-            //     'recipient'        => 'admin',
-            //     'smartcode_groups' => [],
-            //     'template_path'    => 'order.reminder.due.admin',
-            //     'pre_header'       => 'An invoice due reminder was sent to a customer. Review the order details in this email or visit FluentCart Dashboard.',
-            //     'is_async'         => false,
-            //     'settings'         => [
-            //         'active'          => 'no',
-            //         'subject'         => __('Invoice Reminder Sent #{{order.invoice_no}}', 'fluent-cart'),
-            //         'is_default_body' => 'yes',
-            //         'email_body'      => '',
-            //     ]
-            // ],
-            'invoice_reminder_overdue_customer' => [
-                'event'            => 'invoice_reminder_overdue',
+            'renewal_created_admin'         => [
+                'event'            => 'renewal_created',
+                'group'            => 'manual_subscription',
+                'group_label'      => __('Store-Managed Renewals', 'fluent-cart'),
+                'title'            => __('Notify admin when a renewal order is created', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin when a renewal order is generated for a store-managed subscription.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'renewal.created.admin',
+                'pre_header'       => 'A new renewal order has been created for a store-managed subscription. Review it in the FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('New Renewal Order Created on {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_created_customer'      => [
+                'event'            => 'renewal_created',
+                'group'            => 'manual_subscription',
+                'group_label'      => __('Store-Managed Renewals', 'fluent-cart'),
+                'title'            => __('Send the renewal order to the customer when a renewal order is created', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when a renewal order is generated for a store-managed subscription.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'renewal.created.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Your Subscription Renewal #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'system_upcoming_charge_customer' => [
+                'event'            => 'system_upcoming_charge',
+                'group'            => 'system_subscription',
+                'group_label'      => __('Store-Managed Renewals · Auto-Charge', 'fluent-cart'),
+                'title'            => __('Notify customer before an automatic renewal charge', 'fluent-cart'),
+                'description'      => __('This email tells the customer the amount and date of the upcoming automatic charge to their saved payment method, when the renewal order is created ahead of the due date.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.upcoming_charge.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Upcoming automatic payment for your subscription', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'system_charge_failed_customer' => [
+                'event'            => 'system_charge_failed',
+                'group'            => 'system_subscription',
+                'group_label'      => __('Store-Managed Renewals · Auto-Charge', 'fluent-cart'),
+                'title'            => __('Notify customer when an automatic renewal charge fails', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when the saved payment method could not be charged for a renewal order. It includes the failure reason and a Pay Now link.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.charge_failed.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Automatic Payment Failed for Renewal #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'system_charge_failed_admin'    => [
+                'event'            => 'system_charge_failed',
+                'group'            => 'system_subscription',
+                'group_label'      => __('Store-Managed Renewals · Auto-Charge', 'fluent-cart'),
+                'title'            => __('Notify admin when an automatic renewal charge fails', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin when a saved payment method could not be charged for a renewal order.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.charge_failed.admin',
+                'pre_header'       => 'An automatic subscription renewal charge failed. Review the renewal order in the FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Automatic Charge Failed for Renewal #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+                    'renewal_reminder_due_admin'    => [
+                'event'            => 'renewal_reminder_due',
+                'group'            => 'manual_subscription',
+                'group_label'      => __('Store-Managed Renewals', 'fluent-cart'),
+                'title'            => __('Renewal due reminder copy to admin', 'fluent-cart'),
+                'description'      => __('This email will be sent to admin when a due reminder is sent to customer.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.due.admin',
+                'pre_header'       => 'A renewal due reminder was sent to a customer. Review the order details in this email or visit FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Renewal Reminder Sent #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_reminder_due_customer' => [
+                'event'            => 'renewal_reminder_due',
+                'group'            => 'manual_subscription',
+                'group_label'      => __('Store-Managed Renewals', 'fluent-cart'),
+                'title'            => __('Renewal due reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent before/at renewal due date when payment is pending.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.due.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Payment Reminder #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_reminder_overdue_customer' => [
+                'event'            => 'renewal_reminder_overdue',
                 'group'            => 'scheduler',
                 'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
                 'title'            => __('Payment reminder to customer', 'fluent-cart'),
@@ -335,19 +480,37 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
-            'subscription_renewal_reminder_customer' => [
-                'event'            => 'subscription_renewal_reminder',
-                'group'            => 'scheduler',
-                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
-                'title'            => __('Upcoming renewal reminder to customer', 'fluent-cart'),
-                'description'      => __('This email will be sent before subscription auto-renewal date.', 'fluent-cart'),
+            'subscription_past_due_admin' => [
+                'event'            => 'subscription_past_due',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify admin when a subscription is past due', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin when a subscription is marked as past due.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.past_due.admin',
+                'pre_header'       => 'A subscription payment is past due. Review the subscription details in this email or visit FluentCart Dashboard.',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Subscription Past Due #{{order.invoice_no}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_past_due_customer' => [
+                'event'            => 'subscription_past_due',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify customer when subscription is past due', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer when their subscription is marked as past due.', 'fluent-cart'),
                 'recipient'        => 'customer',
                 'smartcode_groups' => [],
-                'template_path'    => 'subscription.reminder.customer',
+                'template_path'    => 'subscription.past_due.customer',
                 'is_async'         => false,
                 'settings'         => [
                     'active'          => 'yes',
-                    'subject'         => __('Upcoming Renewal Reminder from {{settings.store_name}}', 'fluent-cart'),
+                    'subject'         => __('Your Subscription is Past Due on {{settings.store_name}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
                 ]
@@ -370,6 +533,92 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
+            'subscription_renewal_reminder_customer' => [
+                'event'            => 'subscription_renewal_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Upcoming renewal reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent before subscription auto-renewal date.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.reminder.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Upcoming Renewal Reminder from {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_overdue_first_customer' => [
+                'event'            => 'renewal_overdue_first',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('First overdue renewal reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent at the first overdue reminder day after a renewal due date while the payment is still pending.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.renewal_overdue.first.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Payment Reminder for Renewal #{{order.order_ref}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_overdue_followup_customer' => [
+                'event'            => 'renewal_overdue_followup',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Follow-up overdue renewal reminder to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent at the intermediate overdue reminder days while the renewal payment remains pending.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.renewal_overdue.followup.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Payment Overdue for Renewal #{{order.order_ref}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'renewal_overdue_final_customer' => [
+                'event'            => 'renewal_overdue_final',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Final overdue renewal notice to customer', 'fluent-cart'),
+                'description'      => __('This email will be sent at the last configured overdue reminder day while the renewal payment is still pending.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.reminder.renewal_overdue.final.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Final Notice: Payment Overdue for Renewal #{{order.order_ref}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+             'subscription_trial_end_reminder_admin' => [
+                'event'            => 'subscription_trial_end_reminder',
+                'group'            => 'scheduler',
+                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
+                'title'            => __('Trial ending soon reminder copy to admin', 'fluent-cart'),
+                'description'      => __('This email will be sent to admin when a trial ending reminder is sent to a customer.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.trial_end.admin',
+                'pre_header'       => __('A trial ending soon reminder was sent to a customer. Review subscription details from FluentCart Dashboard.', 'fluent-cart'),
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Trial Ending Soon - {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
             'subscription_trial_end_reminder_customer' => [
                 'event'            => 'subscription_trial_end_reminder',
                 'group'            => 'scheduler',
@@ -387,20 +636,20 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
-            'subscription_trial_end_reminder_admin' => [
-                'event'            => 'subscription_trial_end_reminder',
-                'group'            => 'scheduler',
-                'group_label'      => __('Scheduler / Reminder Actions', 'fluent-cart'),
-                'title'            => __('Trial ending soon reminder copy to admin', 'fluent-cart'),
-                'description'      => __('This email will be sent to admin when a trial ending reminder is sent to a customer.', 'fluent-cart'),
+            'review_submitted_admin' => [
+                'event'            => 'review_created',
+                'group'            => 'review',
+                'group_label'      => __('Review Actions', 'fluent-cart'),
+                'title'            => __('Send mail to admin when a new review is submitted', 'fluent-cart'),
+                'description'      => __('Email admin when a customer submits a new review.', 'fluent-cart'),
                 'recipient'        => 'admin',
                 'smartcode_groups' => [],
-                'template_path'    => 'subscription.trial_end.admin',
-                'pre_header'       => __('A trial ending soon reminder was sent to a customer. Review subscription details from FluentCart Dashboard.', 'fluent-cart'),
+                'template_path'    => 'review.submitted.admin',
                 'is_async'         => false,
+                'pre_header'       => __('A new product review has been submitted.', 'fluent-cart'),
                 'settings'         => [
-                    'active'          => 'no',
-                    'subject'         => __('Trial Ending Soon - {{order.customer.full_name}}', 'fluent-cart'),
+                    'active'          => 'yes',
+                    'subject'         => __('New Review Submitted', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
                 ]
@@ -428,22 +677,21 @@ class EmailNotifications
             $settings = Arr::get($notification, 'settings');
 
             // Skip active check for on-demand notifications (offline payments, payment reminders)
-            if (in_array($notification['event'], ['order_placed_offline', 'invoice_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
+            if (in_array($notification['event'], ['order_placed_offline', 'renewal_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
                 // Continue with normal flow
             } else {
                 continue;
             }
             $recipient = Arr::get($notification, 'recipient');
 
-            if (!in_array($recipient, ['admin', 'customer', 'user', 'subscriber'])) {
+            // A notification that declares its own `to` carries its recipient
+            // with it, so the whitelist — which only describes the recipients
+            // core knows how to resolve — does not apply to it.
+            if (!Arr::get($notification, 'to') && !in_array($recipient, ['admin', 'customer', 'user', 'subscriber'])) {
                 continue;
             }
 
-            if ($recipient === 'admin') {
-                $toEmail = Arr::get($mailingSettings, 'admin_email', '');
-            } else {
-                $toEmail = self::EMAIL_RECIPIENT_MAP[$recipient];
-            }
+            $toEmail = static::resolveRecipientTemplate($notification, $mailingSettings);
 
             if (empty($toEmail)) {
                 continue;
@@ -460,13 +708,8 @@ class EmailNotifications
         $settings = Arr::get($notification, 'settings');
         $mailingSettings = static::getSettings();
 
-
         $recipient = Arr::get($notification, 'recipient');
-        if ($recipient === 'admin') {
-            $toEmail = Arr::get($mailingSettings, 'admin_email', '');
-        } else {
-            $toEmail = self::EMAIL_RECIPIENT_MAP[$recipient];
-        }
+        $toEmail = static::resolveRecipientTemplate($notification, $mailingSettings);
 
 
         $isDefaultEmailBody = Arr::get($settings, 'is_default_body', 'yes') === 'yes' || empty(Arr::get($settings, 'email_body'));
@@ -483,7 +726,54 @@ class EmailNotifications
             'subject'    => Arr::get($settings, 'subject'),
             'is_custom'  => !$isDefaultEmailBody,
             'settings'   => $settings,
+            // Carried through so send-time consumers can tell one notification
+            // from another, and admin-bound mail from customer-bound — see the
+            // admin recipient filter in parseEmailContent().
+            'name'       => Arr::get($notification, 'name', ''),
+            'event'      => Arr::get($notification, 'event', ''),
+            'recipient'  => $recipient,
         ];
+    }
+
+    /**
+     * Resolve the recipient template for a notification.
+     *
+     * A notification may declare its own `to` — a smartcode template, or a
+     * literal address — which wins outright. Add-ons need this: they register
+     * notifications that are not order-bound, and the built-in customer
+     * recipient resolves to {{order.customer.email}}, which has nothing to read
+     * from without an order.
+     *
+     * Falling back to the recipient map keeps every core notification, and any
+     * add-on that does not declare `to`, on exactly the path it used before.
+     *
+     * The returned value is a template — parseEmailContent() runs it through
+     * the shortcode parser before use. A declared `to` is returned as given:
+     * wp_mail() accepts an array of recipients as well as a comma-separated
+     * string, so an array is passed through rather than flattened.
+     *
+     * @param array $notification
+     * @param array|null $mailingSettings resolved settings, passed in to avoid a repeat lookup in loops
+     * @return string|array
+     */
+    public static function resolveRecipientTemplate($notification, $mailingSettings = null)
+    {
+        $declaredTo = Arr::get($notification, 'to', '');
+        if (!empty($declaredTo)) {
+            return $declaredTo;
+        }
+
+        if ($mailingSettings === null) {
+            $mailingSettings = static::getSettings();
+        }
+
+        $recipient = Arr::get($notification, 'recipient');
+
+        if ($recipient === 'admin') {
+            return (string)Arr::get($mailingSettings, 'admin_email', '');
+        }
+
+        return (string)Arr::get(self::EMAIL_RECIPIENT_MAP, $recipient, '');
     }
 
     public static function getNotification($name)
@@ -509,7 +799,7 @@ class EmailNotifications
             'subject',
             'email_body',
             'is_default_body',
-            'attach_pdf_template'
+            'attach_pdf_template',
         ];
         $allConfig = static::getSettings();
         $config = static::getNotificationConfig($name);

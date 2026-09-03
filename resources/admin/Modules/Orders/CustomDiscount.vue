@@ -26,10 +26,24 @@
       {{ discount.reason ? discount.reason : "__" }}
     </td>
     <td>
-      <span>- {{ formatNumber(order.manual_discount_total) }}</span>
+      <span>- {{ formatNumberForOrder(order.manual_discount_total, order) }}</span>
     </td>
   </tr>
 
+  <!-- Breakdown rows only when the discount is a mix; when the prorate credit IS the
+       whole discount the parent row is labeled "Prorate Credit" directly instead. -->
+  <template v-if="order.config && order.config.prorate_credit > 0 && order.manual_discount_total - order.config.prorate_credit > 0">
+    <tr style="font-size:12px;color:rgb(107,114,128);">
+      <td style="padding-left:16px;">{{ translate('Upgrade Discount') }}</td>
+      <td></td>
+      <td>{{ formatNumberForOrder(order.manual_discount_total - order.config.prorate_credit, order) }}</td>
+    </tr>
+    <tr style="font-size:12px;color:rgb(107,114,128);">
+      <td style="padding-left:16px;">{{ translate('Prorate Credit') }}</td>
+      <td></td>
+      <td>{{ formatNumberForOrder(order.config.prorate_credit, order) }}</td>
+    </tr>
+  </template>
 
   <el-dialog
       :append-to-body="true"
@@ -40,11 +54,11 @@
         "
   >
     <div v-if="discountModalIsOpen">
-      <discount-modal
+      <DiscountModal
           :discount="discount"
           :totalAmount="order.subtotal"
-          @whenDiscountEditIsDone="applyDiscount"
-          @emitCancelDiscountModal="discountModalIsOpen = false"
+          @when-discount-edit-is-done="applyDiscount"
+          @emit-cancel-discount-modal="discountModalIsOpen = false"
       />
     </div>
   </el-dialog>
@@ -96,11 +110,17 @@ export default {
       discount: this.discountAttributes,
     };
   },
+  mounted() {
+  },
   methods: {
     translate,
+    isOnlyProrateCredit() {
+      const prorateCredit = this.order.config ? this.order.config.prorate_credit || 0 : 0;
+      return prorateCredit > 0 && this.order.manual_discount_total - prorateCredit <= 0;
+    },
     getDiscountButtonLabel() {
       if (!this.shouldEnableEditing && this.order.order_items.length > 0) {
-        return translate("Discount");
+        return this.isOnlyProrateCredit() ? translate("Prorate Credit") : translate("Discount");
       } else if (this.order.manual_discount_total !== 0) {
         return translate("Edit Discount");
       } else {
@@ -124,8 +144,6 @@ export default {
       this.discountModalIsOpen = showModal;
       this.$emit('update:custom-discount', this.discount);
     },
-  },
-  mounted() {
   },
 };
 </script>

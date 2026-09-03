@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
+use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\Report\Concerns\Subscription\FutureRenewals;
 
 class SubscriptionReportService extends ReportService
@@ -12,19 +13,24 @@ class SubscriptionReportService extends ReportService
 
     public function getRetentionChart($params = [])
     {
+        $customDays   = max(0, (int) Arr::get($params, 'customDays', 0));
+        $variationIds = Arr::get($params, 'variationIds', []);
+        $startDate    = Arr::get($params, 'startDate');
+        $endDate      = Arr::get($params, 'endDate');
+
         $baseQuery = App::db()->query()
             ->from('fct_subscriptions as s')
-            ->whereBetween('s.created_at', [$params['startDate'], $params['endDate']])
-            ->when($params['variationIds'], fn ($q) => $q->whereIn('s.variation_id', $params['variationIds']));
+            ->whereBetween('s.created_at', [$startDate, $endDate])
+            ->when($variationIds, fn ($q) => $q->whereIn('s.variation_id', $variationIds));
 
-        if ($params['customDays']) {
-            $query = $baseQuery->selectRaw("COUNT(*) AS day_{$params['customDays']}")
+        if ($customDays) {
+            $query = $baseQuery->selectRaw("COUNT(*) AS day_{$customDays}")
                 ->whereRaw('
                     DATEDIFF(
                         COALESCE(s.canceled_at, NOW()),
                         s.created_at
                     ) <= ?
-                ', $params['customDays']);
+                ', [$customDays]);
         } else {
             $baseQuery->selectRaw('DATEDIFF(COALESCE(s.canceled_at, NOW()), s.created_at) AS lifespan');
 
@@ -271,11 +277,11 @@ class SubscriptionReportService extends ReportService
                 ->first();
 
             $newSubscriptions = (int) $stats->new_subscriptions;
-            $newSubscriptionsMrr = round($stats->new_subscriptions_mrr, 2);
+            $newSubscriptionsMrr = round((float) $stats->new_subscriptions_mrr, 2);
             $activeSubscriptions = (int) $stats->active_subscriptions;
             $startSubscriptions = (int) $stats->start_subscriptions;
-            $mrr = round($stats->mrr, 2);
-            $startMrr = round($stats->start_mrr, 2);
+            $mrr = round((float) $stats->mrr, 2);
+            $startMrr = round((float) $stats->start_mrr, 2);
 
             // Retention Rate = ((End Count - New Count) / Start Count) * 100
             $retentionRate = 0;
@@ -301,14 +307,14 @@ class SubscriptionReportService extends ReportService
                 'new_subscriptions'         => $newSubscriptions,
                 'new_subscriptions_mrr'     => $newSubscriptionsMrr,
                 'churned_subscriptions'     => (int) $stats->churned_subscriptions,
-                'churned_subscriptions_mrr' => round($stats->churned_subscriptions_mrr, 2),
+                'churned_subscriptions_mrr' => round((float) $stats->churned_subscriptions_mrr, 2),
                 'active_subscriptions'      => (string) $activeSubscriptions,
                 'active_paid_subscriptions' => (string) $stats->active_paid_subscriptions,
                 'active_free_subscriptions' => (string) $stats->active_free_subscriptions,
                 'mrr'                       => number_format($mrr, 2, '.', ''),
                 'retention_rate'            => round($retentionRate, 2),
                 'retention_rate_money'      => round($retentionRateMoney, 2),
-                'period_gross'              => round($stats->period_gross, 2),
+                'period_gross'              => round((float) $stats->period_gross, 2),
                 'period_subscriptions'      => $newSubscriptions,
             ];
         }

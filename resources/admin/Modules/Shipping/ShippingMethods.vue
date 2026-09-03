@@ -345,20 +345,20 @@ const fetchStateZones = () => {
             <el-table-column :label="translate('Actions')" width="100">
               <template #default="scope">
                 <div class="flex items-center gap-1">
-                  <icon-button size="small" class="cursor-pointer" hover="primary" bg="transparent"
+                  <IconButton size="small" class="cursor-pointer" hover="primary" bg="transparent"
                                :aria-label="translate('Edit')"
                                @click="editShippingMethod(scope.row)">
                     <DynamicIcon name="Edit"/>
-                  </icon-button>
+                  </IconButton>
                   <el-popconfirm
                       :title="translate('Are you sure to delete this shipping method?')"
                       @confirm="deleteShippingMethod(scope.row.id)"
                   >
                     <template #reference>
-                      <icon-button size="small" class="cursor-pointer" hover="danger" bg="transparent"
+                      <IconButton size="small" class="cursor-pointer" hover="danger" bg="transparent"
                                    :aria-label="translate('Delete')">
                         <DynamicIcon name="Delete"/>
-                      </icon-button>
+                      </IconButton>
                     </template>
                   </el-popconfirm>
                 </div>

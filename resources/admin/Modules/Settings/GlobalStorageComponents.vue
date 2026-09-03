@@ -17,6 +17,8 @@
     </div>
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <Card.Container v-if="fetching">
         <Card.Body>
           <el-skeleton :loading="fetching" animated :rows="5"/>
@@ -60,6 +62,7 @@ import {useFormModel} from "@/utils/model/form/FormModel";
 import VueForm from "@/Bits/Components/Form/VueForm.vue";
 import VueTemplateLoader from "@/Bits/Components/DynamicTemplates/VueTemplateLoader.vue";
 import {ArrowRight} from "@element-plus/icons-vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 // Reactive data
 const settings = ref({})

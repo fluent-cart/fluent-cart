@@ -585,55 +585,106 @@ class FluentCRMDeepIntegration
 
     public function getStatsHtml($customer)
     {
+        $viewUrl = URL::getDashboardUrl('customers/' . $customer->id . '/view');
+        $naLabel = __('N/A', 'fluent-cart');
+
+        // Compact, consistent labels (no trailing colons) so they read well as
+        // stat-card captions on the FluentCRM contact profile.
         $stats = [
             [
-                'title' => __('Lifetime Value', 'fluent-cart'),
-                'value' => '<a href="' . URL::getDashboardUrl('customers/' . $customer->id . '/view') . '" target="_blank" class="fc_view_more">' . \FluentCart\App\Helpers\Helper::toDecimal($customer->ltv) . '</a>'
+                'label' => __('Lifetime Value', 'fluent-cart'),
+                // toDecimal() returns the amount prefixed with an HTML-entity
+                // currency sign (e.g. &#36;), so it is rendered raw here; the
+                // value is a controlled currency string, never user input.
+                'value' => '<a href="' . esc_url($viewUrl) . '" target="_blank" rel="noopener" class="fc_view_more">' . \FluentCart\App\Helpers\Helper::toDecimal($customer->ltv) . '</a>'
             ],
             [
-                'title' => __('Purchases', 'fluent-cart'),
-                'value' => $customer->purchase_count
+                'label' => __('Purchases', 'fluent-cart'),
+                'value' => esc_html($customer->purchase_count)
             ],
             [
-                'title' => __('First Purchased: ', 'fluent-cart'),
-                'value' => $customer->first_purchase_date ? gmdate('F j, Y', strtotime($customer->first_purchase_date)) : 'N/A'
+                'label' => __('First Order', 'fluent-cart'),
+                'value' => $customer->first_purchase_date ? esc_html(gmdate('M j, Y', strtotime($customer->first_purchase_date))) : esc_html($naLabel)
             ],
             [
-                'title' => __('Last Purchased: ', 'fluent-cart'),
-                'value' => $customer->last_purchase_date ? gmdate('F j, Y', strtotime($customer->last_purchase_date)) : 'N/A'
+                'label' => __('Last Order', 'fluent-cart'),
+                'value' => $customer->last_purchase_date ? esc_html(gmdate('M j, Y', strtotime($customer->last_purchase_date))) : esc_html($naLabel)
             ],
         ];
 
-        $html = '<ul class="fc_full_listed fcrm_fluentcart_customer_commerce_info">';
+        // FluentCRM styles this markup via .fcrm_fluentcart_customer_commerce_info
+        $html = '<div class="fcrm_fluentcart_customer_commerce_info">';
+
+        $html .= '<ul class="fcrm_fc_stat_grid">';
         foreach ($stats as $stat) {
-            $html .= '<li><span class="fc_list_sub">' . $stat['title'] . '</span> <span class="fc_list_value">' . $stat['value'] . '</span></li>';
+            $html .= '<li class="fcrm_fc_stat">'
+                . '<span class="fcrm_fc_stat_label">' . $stat['label'] . '</span>'
+                . '<span class="fcrm_fc_stat_value">' . $stat['value'] . '</span>'
+                . '</li>';
         }
+        $html .= '</ul>';
 
         $orderedItems = $customer->success_order_items()->orderBy('id', 'DESC')->get();
 
+        // Group identical products and count repeat purchases
         $formattedItems = [];
-
         foreach ($orderedItems as $orderedItem) {
             $count = isset($formattedItems[$orderedItem->object_id]) ? $formattedItems[$orderedItem->object_id]['count'] + 1 : 1;
             $formattedItems[$orderedItem->object_id] = [
                 'title'      => $orderedItem->title,
                 'post_title' => $orderedItem->post_title,
                 'count'      => $count,
-                'created_at' => $orderedItem->created_at
+                // Items are iterated newest-first, so the last write for a
+                // product keeps its oldest row: the customer's first order for
+                // it. Both the shown date and the link point at that order.
+                'created_at' => $orderedItem->created_at,
+                'order_id'   => $orderedItem->order_id
             ];
         }
 
-        foreach ($formattedItems as $formattedItem) {
-            $countHtml = '';
+        if ($formattedItems) {
+            $html .= '<div class="fcrm_fc_products">';
+            $html .= '<div class="fcrm_fc_products_title">' . esc_html__('Recent purchases', 'fluent-cart') . '</div>';
+            $html .= '<ul class="fcrm_fc_product_list">';
 
-            if ($formattedItem['count'] > 1) {
-                $countHtml = ' <span style="background: #673AB7;color: #fffef1;font-size: 10px;padding: 3px 5px;border-radius: 50%;display: inline-block;line-height: 100%;">' . $formattedItem['count'] . '</span> ';
+            foreach ($formattedItems as $formattedItem) {
+                $qtyHtml = '';
+                if ($formattedItem['count'] > 1) {
+                    $qtyHtml = '<span class="fcrm_fc_product_qty">' . esc_html($formattedItem['count']) . '</span>';
+                }
+
+                // Only show the variant when it differs from the product name,
+                // so single-variant products don't read as "Name - Name"
+                $variantHtml = '';
+                if ($formattedItem['title'] && $formattedItem['title'] !== $formattedItem['post_title']) {
+                    $variantHtml = '<span class="fcrm_fc_product_variant">' . esc_html($formattedItem['title']) . '</span>';
+                }
+
+                // Link the date straight to the (first) order for this product
+                $dateText = esc_html(gmdate('M j, Y', strtotime($formattedItem['created_at'])));
+                if (!empty($formattedItem['order_id'])) {
+                    $orderUrl = URL::getDashboardUrl('orders/' . $formattedItem['order_id'] . '/view');
+                    $dateHtml = '<a class="fcrm_fc_product_date" href="' . esc_url($orderUrl) . '" target="_blank" rel="noopener">' . $dateText . '</a>';
+                } else {
+                    $dateHtml = '<span class="fcrm_fc_product_date">' . $dateText . '</span>';
+                }
+
+                $html .= '<li class="fcrm_fc_product">'
+                    . '<span class="fcrm_fc_product_main">'
+                    . '<span class="fcrm_fc_product_name">' . esc_html($formattedItem['post_title']) . '</span>'
+                    . $variantHtml
+                    . '</span>'
+                    . '<span class="fcrm_fc_product_meta">'
+                    . $qtyHtml
+                    . $dateHtml
+                    . '</span>'
+                    . '</li>';
             }
 
-            $html .= '<li>' . $countHtml . $formattedItem['post_title'] . ' - <span style="font-style: italic;">' . $formattedItem['title'] . '</span> (' . gmdate('F j, Y', strtotime($formattedItem['created_at'])) . ')</li>';
+            $html .= '</ul></div>';
         }
 
-        $html .= '</ul>';
+        $html .= '</div>';
 
         return $html;
     }

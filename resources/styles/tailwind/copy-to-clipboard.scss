@@ -63,6 +63,31 @@
   }
 }
 
+/*====== icon_with_text — tooltip anchored below the trigger ======*/
+/* This mode shows buttonText as a visible label and is often placed inside a
+   dropdown menu (e.g. the variant kebab "Copy Variation ID" item). Flip the
+   hover tooltip BELOW the trigger so it can't overlap the menu item above it. */
+.fct-copy-basic-wrap {
+  .fct-copy-basic .copy-tooltip {
+    top: 100%;
+    bottom: auto;
+    &::after {
+      top: -6px;
+      bottom: auto;
+      border-top-width: 0;
+      border-bottom-width: 6px;
+      @apply border-b-dark-500;
+    }
+    &.active::after {
+      @apply border-b-success-500;
+    }
+  }
+  .fct-copy-basic:hover .copy-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+}
+
 .fct-copy-wrap-inline{
   .fct-copy-basic{
     @apply inline-flex items-center;

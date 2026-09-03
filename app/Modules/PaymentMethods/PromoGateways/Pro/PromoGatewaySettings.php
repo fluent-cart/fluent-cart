@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\PromoGateways\Pro;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\BaseGatewaySettings;
 use FluentCart\Framework\Support\Arr;
 
@@ -9,8 +10,6 @@ class PromoGatewaySettings extends BaseGatewaySettings
 {
     protected $gatewaySlug;
     protected $customStyles = [];
-
-    private $upgradeUrl = 'https://fluentcart.com/discount-deal';
 
     public function __construct($gatewaySlug)
     {
@@ -158,7 +157,9 @@ class PromoGatewaySettings extends BaseGatewaySettings
         }
         
         // Otherwise show upgrade button
-        return '<a href="' . esc_url($this->upgradeUrl) . '" target="_blank" style="display: inline-block; background: ' . $styles['button_bg'] . '; color: ' . $styles['button_text'] . '; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">'
+        $upgradeUrl = Helper::getUpgradeUrl('feature_lock_gateway_' . $this->gatewaySlug);
+
+        return '<a href="' . esc_url($upgradeUrl) . '" target="_blank" style="display: inline-block; background: ' . $styles['button_bg'] . '; color: ' . $styles['button_text'] . '; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">'
             . __('Upgrade to FluentCart Pro', 'fluent-cart') . ' →'
             . '</a>';
     }

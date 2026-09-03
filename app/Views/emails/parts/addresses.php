@@ -36,12 +36,11 @@ if(!$billingAddress && !$shippingAddress) {
                         </p>
 
                         <?php
-                            $orderTaxRates = $order->orderTaxRates->first();
                             $companyName = Arr::get($order->billing_address->meta ?? [], 'other_data.company_name', '');
                             $phone = Arr::get($order->billing_address->meta ?? [], 'other_data.phone', '');
 
                             if ($companyName == '') {
-                                $companyName = Arr::get($orderTaxRates->meta ?? [], 'vat_reverse.name', '');
+                                $companyName = $order->getCustomerTaxName();
                             }
                             
                             // show phone number
@@ -62,15 +61,38 @@ if(!$billingAddress && !$shippingAddress) {
                             }
 
                             // show order tax rates
-                            if ($orderTaxRates) :
-                                $vatNumber = Arr::get($orderTaxRates->meta ?? [], 'vat_reverse.vat_number', '');
-                                if ($vatNumber !== '') :
-                                ?>
-                                    <p style="font-size:12px;margin:0px;margin-top:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
-                                        <?php echo esc_html__('EU VAT', 'fluent-cart') . ': ' . esc_html($vatNumber); ?>
-                                    </p>
-                                <?php
-                                endif;
+                            $vatNumber = $order->getCustomerTaxNumber();
+                            if ($vatNumber !== '') :
+                            ?>
+                                <p style="font-size:12px;margin:0px;margin-top:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
+                                    <?php
+                                    $vatLabel = __('VAT/Tax ID', 'fluent-cart');
+                                    echo esc_html($vatLabel) . ': ' . esc_html($vatNumber);
+                                    ?>
+                                </p>
+                            <?php
+                            endif;
+
+                            $legalRegId = Arr::get($order->billing_address->meta ?? [], 'other_data.legal_registration_id', '');
+                            if ($legalRegId === '') {
+                                $legalRegId = Arr::get($order->getBusinessInfo(), 'legal_registration_id', '');
+                            }
+                            if ($legalRegId !== ''):
+                            ?>
+                                <p style="font-size:12px;margin:0px;margin-top:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
+                                    <?php echo esc_html__('Reg. ID', 'fluent-cart') . ': ' . esc_html($legalRegId); ?>
+                                </p>
+                            <?php
+                            endif;
+
+                            $reverseChargeDeclaration = Arr::get($order->getBusinessInfo(), 'reverse_charge_declaration', '');
+                            if ($reverseChargeDeclaration !== ''):
+                            ?>
+                                <p style="font-size:12px;margin:0px;margin-top:8px;line-height:24px;">
+                                    <strong><?php echo esc_html__('Reverse Charge Declaration', 'fluent-cart'); ?>:</strong>
+                                    <?php echo esc_html($reverseChargeDeclaration); ?>
+                                </p>
+                            <?php
                             endif;
                         ?>
                     </td>

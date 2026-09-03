@@ -2,34 +2,45 @@
 
 namespace FluentCart\App\Http\Requests;
 
+use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Http\Rules\RequiredWhenRule;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
 class ProductUpdateRequest extends RequestGuard
 {
     /**
-     * Prepare and normalize the incoming data before validation.
+     * Drop the subscription fields from any variant saved as one-time, so a
+     * product switched back to a single payment does not keep billing settings
+     * the merchant can no longer see.
      *
-     * This method ensures that each variant in the request payload has the necessary structure
-     * expected for processing, particularly focusing on the `other_info` attribute.
+     * This does NOT fill missing keys. The block below it — which rebuilt
+     * `other_info` and `fulfillment_type` from defaults, as ProductRequest still
+     * does on create — stays commented out deliberately: on an update the payload
+     * is a partial row, so rebuilding the column from defaults would overwrite a
+     * stored subscription's interval and setup fee on an unrelated edit. Callers
+     * therefore have to send a complete variant row; the editor builds one in
+     * Models/Product/productUpdatePayload.js by merging each change record with
+     * the variation it came from.
      *
-     * If `other_info` is missing from a variant (common during data migration scenarios),
-     * this method sets default values to prevent validation or processing errors.
-     *
-     * It also ensures that:
-     * - `fulfillment_type` is consistently applied across all variants, defaulting to 'physical'.
-     * - `payment_type` is set (defaulting to 'onetime') and injected into `other_info`.
-     * - `other_info` is populated with a consistent structure containing default billing and setup fee options.
-     *
-     * @return array The normalized request data ready for validation.
+     * @return array The request data, with dead subscription fields removed.
      */
     public function beforeValidation()
     {
-
-
         $data = $this->all();
+
+        $subscriptionFields = ['trial_days', 'times', 'repeat_interval', 'billing_summary', 'manage_setup_fee', 'signup_fee', 'signup_fee_name', 'setup_fee_per_item'];
+        foreach (Arr::get($data, 'variants', []) as $index => $variant) {
+            if (Arr::get($variant, 'other_info.payment_type') === 'onetime') {
+                foreach ($subscriptionFields as $field) {
+                    unset($data['variants'][$index]['other_info'][$field]);
+                }
+            }
+        }
+
         return $data;
 //
 //        $fulfilmentType = Arr::get(
@@ -126,6 +137,28 @@ class ProductUpdateRequest extends RequestGuard
 
     }
 
+    function validateTaxClassSlug($attribute, $value): ?string
+    {
+        static $checked = [];
+
+        if (empty($value)) {
+            return null;
+        }
+
+        $value = sanitize_text_field($value);
+
+        if (isset($checked[$value])) {
+            return $checked[$value];
+        }
+
+        if (empty(\FluentCart\App\Models\TaxClass::query()->where('slug', $value)->first())) {
+            $checked[$value] = __("Invalid Tax Class.", 'fluent-cart');
+            return $checked[$value];
+        }
+
+        return null;
+    }
+
     public function validatePostDate($attribute, $value): ?string
     {
         if ($this->get('post_status') !== 'future') {
@@ -154,8 +187,35 @@ class ProductUpdateRequest extends RequestGuard
      */
     public function rules(): array
     {
+        $data = $this->all();
+        $hasDetail   = isset($data['detail']) && is_array($data['detail']);
+        $hasVariants = isset($data['variants']) && is_array($data['variants']);
 
-        $variationType = Arr::get($this->all(), 'detail.variation_type', 'simple');
+        if (!$hasDetail && !$hasVariants) {
+            $rules = [];
+            if (isset($data['post_title'])) {
+                $rules['post_title'] = 'sanitizeText|maxLength:200';
+            }
+            if (isset($data['post_excerpt'])) {
+                $rules['post_excerpt'] = ['nullable', 'string'];
+            }
+            if (isset($data['post_status'])) {
+                $rules['post_status'] = ['string', function ($attribute, $value) {
+                    if (!in_array($value, ['publish', 'draft', 'future', 'private'], true)) {
+                        return __('Invalid post status provided.', 'fluent-cart');
+                    }
+                    return null;
+                }];
+            }
+            if (isset($data['post_status']) && $data['post_status'] === 'future') {
+                $rules['post_date'] = function ($attribute, $value) {
+                    return $this->validatePostDate($attribute, $value);
+                };
+            }
+            return $rules;
+        }
+
+        $variationType = Arr::get($data, 'detail.variation_type', 'simple');
         $rules = [
             'post_title'                          => 'required|sanitizeText|maxLength:200',
             'post_excerpt'                        => [
@@ -196,7 +256,9 @@ class ProductUpdateRequest extends RequestGuard
             'detail.other_info.tax_class'         => ['nullable', function ($attribute, $value) {
                 return $this->validateTaxClassId($attribute, $value);
             }],
+            'detail.other_info.tax_exempt'        => 'nullable|sanitizeText|in:yes,no',
             'detail.other_info.active_editor'     => 'nullable|sanitizeText',
+            'detail.other_info.reviews_enabled'   => 'nullable|sanitizeText|in:yes,no',
             'product_terms'                       => 'nullable|array',
             'product_terms.*'                     => 'nullable|array',
             'product_terms.*.*'                   => 'nullable|numeric',
@@ -215,24 +277,57 @@ class ProductUpdateRequest extends RequestGuard
                 'nullable',
                 'numeric',
                 function ($attribute, $value) {
+                    // Zero or empty means no compare-at price, which the storefront
+                    // also treats as "none" — nothing to compare.
+                    if ($value === null || $value === '' || (float) $value <= 0) {
+                        return null;
+                    }
+
                     $index = explode('.', $attribute)[1];
                     $itemPrice = $this->get("variants.$index.item_price");
-                    if (empty($itemPrice)) {
-                        $itemPrice = 0;
+
+                    // The editor posts only what changed, so a compare-price-only edit
+                    // carries no item_price. Falling back to 0 made the comparison
+                    // vacuous and the rule passed for any value; read the stored price
+                    // for that variation instead, which is what the row is really
+                    // being compared against.
+                    if ($itemPrice === null || $itemPrice === '') {
+                        $variantId = $this->get("variants.$index.id");
+
+                        $itemPrice = $variantId
+                            ? ProductVariation::query()->where('id', $variantId)->value('item_price')
+                            : 0;
                     }
-                    if ($value !== null && $value < $itemPrice) {
+
+                    if ((float) $value < (float) $itemPrice) {
                         return sprintf(__("Compare price must be greater than or equal to item price.", 'fluent-cart'));
                     }
+
                     return null;
                 },
             ],
             'variants.*.manage_cost'              => 'nullable|sanitizeText|maxLength:10',
+            // Variant tax classes are stored as slugs, not numeric IDs like the
+            // older product-detail tax field.
+            'variants.*.other_info.tax_class'     => ['nullable', function ($attribute, $value) {
+                return $this->validateTaxClassSlug($attribute, $value);
+            }],
+            'variants.*.other_info.tax_exempt'    => 'nullable|sanitizeText|in:yes,no',
 //            'variants.*.shipping_class'           => ['nullable', 'numeric', function ($attribute, $value) {
 //                return $this->validateShippingClassId($attribute, $value);
 //            }],
 //            'variants.*.item_cost'                => 'required_if:variants.*.manage_cost,true',
             'variants.*.serial_index'             => 'nullable|numeric',
 //            'variants.*.downloadable' => 'nullable|sanitizeText|maxLength:10',
+            // Outside the variation_type gate below: the other_info rules there only
+            // register for 'simple', but a simple_variations save posts variants too.
+            'variants.*.other_info.times'         => [
+                function ($attribute, $value) {
+                    $index = explode('.', $attribute)[1];
+
+                    return Helper::installmentTimesError($this->get("variants.$index.other_info"));
+                },
+            ],
         ];
 
         if ($variationType === 'simple') {
@@ -241,13 +336,68 @@ class ProductUpdateRequest extends RequestGuard
                 'variants.*.other_info'                  => 'required|array',
                 'variants.*.other_info.description'      => 'nullable|sanitizeTextArea|maxLength:255',
                 'variants.*.other_info.payment_type'     => 'required|sanitizeText|in:onetime,subscription',
-                'variants.*.other_info.times'            => 'nullable|sanitizeText|maxLength:50',
-                'variants.*.other_info.trial_days'       => 'nullable|sanitizeText|maxLength:365',
-                'variants.*.other_info.repeat_interval'  => 'required_if:variants.*.other_info.payment_type,subscription|sanitizeText|maxLength:100',
+                'variants.*.other_info.times'            => [
+                    function ($attribute, $value) {
+                        $index = explode('.', $attribute)[1];
+                        if ($this->get("variants.$index.other_info.payment_type") !== 'subscription') {
+                            return null;
+                        }
+                        if (!empty($value) && !is_numeric($value)) {
+                            return __('Times must be a number.', 'fluent-cart');
+                        }
+                        return Helper::installmentTimesError($this->get("variants.$index.other_info"));
+                    },
+                ],
+                'variants.*.other_info.trial_days'       => [
+                    function ($attribute, $value) {
+                        $index = explode('.', $attribute)[1];
+                        if ($this->get("variants.$index.other_info.payment_type") !== 'subscription') {
+                            return null;
+                        }
+                        if (!empty($value) && !is_numeric($value)) {
+                            return __('Trial days must be a number.', 'fluent-cart');
+                        }
+                        if (!empty($value) && $value > 365) {
+                            return __('Trial period cannot exceed 365 days.', 'fluent-cart');
+                        }
+                        return null;
+                    },
+                ],
+                'variants.*.other_info.repeat_interval'  => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.payment_type',
+                        'subscription',
+                        esc_html__('Interval is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
                 'variants.*.other_info.billing_summary'  => 'nullable|sanitizeTextArea|maxLength:255',
-                'variants.*.other_info.manage_setup_fee' => 'required_if:variants.*.other_info.payment_type,subscription|sanitizeText|maxLength:100',
-                'variants.*.other_info.signup_fee'       => 'required_if:variants.*.other_info.manage_setup_fee,yes',
-                'variants.*.other_info.signup_fee_name'  => 'required_if:variants.*.other_info.manage_setup_fee,yes|sanitizeText|maxLength:100',
+                'variants.*.other_info.manage_setup_fee' => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.payment_type',
+                        'subscription',
+                        esc_html__('Setup Fee option is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
+                'variants.*.other_info.signup_fee'       => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.manage_setup_fee',
+                        'yes',
+                        esc_html__('Setup Fee Amount is required.', 'fluent-cart')
+                    ),
+                ],
+                'variants.*.other_info.signup_fee_name'  => [
+                    RequiredWhenRule::make(
+                        'variants.*.other_info.manage_setup_fee',
+                        'yes',
+                        esc_html__('Setup Fee Name is required.', 'fluent-cart')
+                    ),
+                    'sanitizeText',
+                    'maxLength:100',
+                ],
             ];
             $rules = array_merge($rules, $variantsOtherInfoRules);
 
@@ -308,9 +458,6 @@ class ProductUpdateRequest extends RequestGuard
                 'variants.*.other_info.description.max'             => esc_html__('Description may not be greater than 255 characters.', 'fluent-cart'),
                 'variants.*.other_info.payment_type.required'       => esc_html__('Payment Type is required.', 'fluent-cart'),
                 'variants.*.other_info.times.required_if'           => esc_html__('Times is required.', 'fluent-cart'),
-                'variants.*.other_info.repeat_interval.required_if' => esc_html__('Interval is required.', 'fluent-cart'),
-                'variants.*.other_info.signup_fee.required_if'      => esc_html__('Setup Fee Amount is required.', 'fluent-cart'),
-                'variants.*.other_info.signup_fee_name.required_if' => esc_html__('Setup Fee Name is required.', 'fluent-cart'),
             ];
 
             $messages = array_merge($messages, $otherInfoMessages);
@@ -373,7 +520,9 @@ class ProductUpdateRequest extends RequestGuard
                 'detail.other_info.use_pricing_table' => 'sanitize_text_field',
                 'detail.other_info.shipping_class'    => 'intval',
                 'detail.other_info.tax_class'         => 'intval',
+                'detail.other_info.tax_exempt'        => 'sanitize_text_field',
                 'detail.other_info.active_editor'     => 'sanitize_text_field',
+                'detail.other_info.reviews_enabled'   => 'sanitize_text_field',
             ];
 
             foreach ($detailFieldMap as $field => $sanitizer) {
@@ -423,7 +572,12 @@ class ProductUpdateRequest extends RequestGuard
                     "variants.$index.downloadable"     => 'sanitize_text_field',
                     "variants.$index.fulfillment_type"  => 'sanitize_text_field',
                     "variants.$index.sku"  => function ($value) {
-                        return empty($value) ? null : sanitize_text_field($value);
+                        // empty() treats the string "0" as empty too, which would silently
+                        // convert a legitimate sku of "0" to NULL — sku is a textual
+                        // identifier (VARCHAR), not a numeric flag. Match the explicit
+                        // '' / null check ProductResource::update() already uses for the
+                        // same reason when it clears a sku.
+                        return ($value === '' || $value === null) ? null : sanitize_text_field($value);
                     },
                 ];
 
@@ -459,6 +613,8 @@ class ProductUpdateRequest extends RequestGuard
                             "variants.$index.other_info.signup_fee"       => 'floatval',
                             "variants.$index.other_info.signup_fee_name"  => 'sanitize_text_field',
                             "variants.$index.other_info.installment"      => 'sanitize_text_field',
+                            "variants.$index.other_info.tax_class"        => 'sanitize_text_field',
+                            "variants.$index.other_info.tax_exempt"       => 'sanitize_text_field',
                         ];
 
                         foreach ($otherInfoFieldMap as $field => $sanitizer) {

@@ -109,7 +109,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
             apiFetch({
                 path: addQueryArgs(rest.url + '/products/' + productId, {
-                    with: ['detail', 'variants']
+                    // Screen key, not a relation name — ProductController::allowedWiths()
+                    // owns what it resolves to (detail + variants).
+                    with: ['block_product_detail']
                 }),
                 headers: {
                     'X-WP-Nonce': rest.nonce

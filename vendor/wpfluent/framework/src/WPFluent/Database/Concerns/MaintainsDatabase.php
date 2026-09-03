@@ -35,19 +35,28 @@ trait MaintainsDatabase
 	 */
 	public static function analyze($table)
 	{
-		if (static::hasTable($table)) {
-			$result = static::db()->get_row(
-	            'ANALYZE TABLE ' . static::table($table)
-	        );
-
-	        if ($result->Msg_text === 'OK') {
-	        	$result->status = true;
-	        } else {
-	        	$result->status = false;
-	        }
-
-	        return $result;
+		if (!static::hasTable($table)) {
+			return;
 		}
+
+		if (static::isSqlite()) {
+			$result = new \stdClass();
+			$result->status = true;
+			$result->Msg_text = 'OK';
+			return $result;
+		}
+
+		$result = static::db()->get_row(
+            'ANALYZE TABLE ' . static::table($table)
+        );
+
+        if ($result->Msg_text === 'OK') {
+        	$result->status = true;
+        } else {
+        	$result->status = false;
+        }
+
+        return $result;
 	}
 
 	/**
@@ -57,12 +66,19 @@ trait MaintainsDatabase
 	 * @return \stdClass
 	 */
 	public static function repair($table)
-	{   
+	{
 	    if (!static::hasTable($table)) {
 	        return;
 	    }
 
-	    if ($engine = static::getEngine($table) === 'InnoDB') {
+	    if (static::isSqlite()) {
+	        $result = new \stdClass();
+	        $result->status = true;
+	        $result->Msg_text = 'OK';
+	        return $result;
+	    }
+
+	    if (($engine = static::getEngine($table)) === 'InnoDB') {
             $result = static::repairInnoDB(static::table($table));
         } elseif ($engine === 'MyISAM') {
             $result = static::repairMyISAM(static::table($table));
@@ -71,7 +87,7 @@ trait MaintainsDatabase
             $result->status = false;
             $result->Msg_text = 'Unsupported table engine for repair';
         }
-    	
+
     	return $result;
 	}
 
@@ -139,6 +155,13 @@ trait MaintainsDatabase
 	{
 		if (!static::hasTable($table)) {
 			return;
+		}
+
+		if (static::isSqlite()) {
+			$result = new \stdClass();
+			$result->status = true;
+			$result->Msg_text = 'OK';
+			return $result;
 		}
 
 		$result = static::db()->get_row(

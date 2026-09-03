@@ -2,9 +2,11 @@
 
 namespace FluentCart\App\Http\Controllers;
 
+use FluentCart\Api\ModuleSettings;
 use FluentCart\Api\Resource\ProductDetailResource;
 use FluentCart\Api\Resource\ProductResource;
 use FluentCart\Api\Resource\ProductVariationResource;
+use FluentCart\App\Events\StockChanged;
 use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\Taxonomy;
 use FluentCart\App\CPT\FluentProducts;
@@ -24,9 +26,11 @@ use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Models\TaxClass;
 use FluentCart\App\Modules\ReportingModule\ProductReport;
 use FluentCart\App\Services\Async\DummyProductService;
+use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Services\BulkProductInsertService;
 use FluentCart\App\Services\BulkProductUpdateService;
 use FluentCart\App\Services\Filter\ProductFilter;
+use FluentCart\App\Services\Permission\PermissionManager;
 use FluentCart\App\Services\PlanUpgradeService;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Http\Request\Request;
@@ -43,9 +47,31 @@ class ProductController extends Controller
         //$request->set('with', ['detail', 'variants:post_id,available,manage_stock,stock_status,variation_title,other_info']);
         $products = ProductFilter::fromRequest($request)->paginate();
 
+        // Attach the resolved variation_display_title to each variation (batched,
+        // no N+1) so the admin order product picker matches the order item display.
+        AttributeHelper::attachVariationDisplayTitles($products->getCollection());
+
+        $collection = $products->getCollection();
+
         $products->setCollection(
-            $products->getCollection()->transform(function ($product) {
-                return $product->setAppends(['view_url', 'edit_url']);
+            $collection->transform(function ($product) {
+                $product->setAppends(['view_url', 'edit_url']);
+
+                // Source rating from canonical detail.other_info (maintained by recalculateProductRatings).
+                // Use array_key_exists to avoid overwriting valid data with fallback-to-zero.
+                if ($product->detail) {
+                    $otherInfo = $product->detail->other_info ?? [];
+
+                    if (array_key_exists('average_rating', $otherInfo)) {
+                        $product->avg_rating = (float) $otherInfo['average_rating'];
+                    }
+
+                    if (array_key_exists('review_count', $otherInfo)) {
+                        $product->reviews_count = (int) $otherInfo['review_count'];
+                    }
+                }
+
+                return $product;
             })
         );
 
@@ -58,8 +84,10 @@ class ProductController extends Controller
 
     public function find(Request $request, Product $product): array
     {
-        if ($request->get('with')) {
-            $product->load($request->get('with'));
+        $with = $this->resolveEagerLoads($request->get('with', []));
+
+        if ($with) {
+            $product->load($with);
         }
         $data = [
             'product' => $product,
@@ -72,12 +100,176 @@ class ProductController extends Controller
         return $data;
     }
 
+    /**
+     * What the `with` parameter on `GET products/{id}` may eager-load.
+     *
+     * ## The entry form
+     *
+     * Every entry is a LITERAL request key mapped to a CALLABLE. The key is never
+     * decomposed, prefix-matched or suffix-stripped, so what the client sends is
+     * either a key in this map or it is dropped. That is what keeps the dotted
+     * `orderItems.order.customer`, the column-select
+     * `orderItems.order.customer:id,email` and the nested array
+     * `with[orderItems][]=order.customer` out — none of them is a key.
+     *
+     * The callback owns the whole path AND its own permission bar, and returns the
+     * relation paths to eager-load, or an empty array when it refuses.
+     *
+     * ## Two tiers of key
+     *
+     * A SCREEN key names a calling screen and loads exactly what that screen
+     * renders. A PUBLIC key is a plain relation name an external consumer of a
+     * product endpoint can reasonably ask for.
+     *
+     * ## What stays off the map
+     *
+     * `Product::orderItems()` is a real relation keyed on `post_id`, so before the
+     * request value was constrained an actor holding nothing but products/view
+     * could walk `?with[]=orderItems.order.customer` from a catalogue product to
+     * order and customer data — a probe pulled 104 KB of it off one product. It
+     * must stay unreachable, along with `downloadable_files` (protected file
+     * paths), `licensesMeta`, `postmeta` and `wpTerms`.
+     *
+     * `product_menu` is NOT on this map and does not belong on it: it is a
+     * controller sentinel, not a relation. find() reads it straight off the raw
+     * request and answers it with AdminHelper::getProductMenu(); it never reaches
+     * load(), so it is unaffected by anything here.
+     *
+     * No entry declares a select. `Product::$appends` carries `thumbnail`, which
+     * resolves through `detail->featured_media` — itself a ProductDetail append
+     * backed by the `galleryImage` relation — and `ProductVariation::$appends`
+     * lazy-loads `media` keyed on the variant `id`. A select would have to go
+     * INSIDE the relation closure in any case; on the main query it would narrow
+     * the product row itself.
+     *
+     * @return array<string, callable>
+     */
+    private function allowedWiths(): array
+    {
+        return [
+            'block_product_detail' => [$this, 'blockProductDetail'],
+
+            // The public entry points. These are the two relations an external
+            // consumer can reasonably ask a product endpoint for: the catalogue
+            // detail row and the variation rows. Both are catalogue data already
+            // covered by the route's own products/view, and neither chains toward
+            // orders, customers or protected downloads, so they carry no risk the
+            // route does not already carry.
+            //
+            // The screen key above exists because the block editors want both in
+            // one request; these two give either one on its own to a consumer
+            // that is not that screen.
+            'detail'               => [$this, 'publicDetail'],
+            'variants'             => [$this, 'publicVariants'],
+        ];
+    }
+
+    /**
+     * The Gutenberg block editors' single-product fetch. Fourteen block editors
+     * under `resources/admin/BlockEditor/` hit this endpoint —  BuySection,
+     * Excerpt, MediaCarousel, PriceRange, ProductCard, ProductDescription,
+     * ProductGallery, ProductImage, ProductInfo, ProductSku, ProductTitle,
+     * RelatedProduct, SaleBadge and Stock — and between them they render the
+     * detail row (price range, stock availability, gallery) and the variation
+     * rows (SKU, per-variant price, buy section), so the key loads both.
+     *
+     * `products/view` is the route's own bar, restated here so the entry still
+     * refuses if this map is ever reached from somewhere the route did not guard.
+     *
+     * @return array relation paths
+     */
+    private function blockProductDetail(): array
+    {
+        if (!PermissionManager::hasPermission('products/view')) {
+            return [];
+        }
+
+        return ['detail', 'variants'];
+    }
+
+    /**
+     * The catalogue detail row on its own — price range, stock availability,
+     * variation type, featured media.
+     *
+     * @return array relation paths
+     */
+    private function publicDetail(): array
+    {
+        if (!PermissionManager::hasPermission('products/view')) {
+            return [];
+        }
+
+        return ['detail'];
+    }
+
+    /**
+     * The variation rows on their own — SKU, per-variant price, stock.
+     *
+     * @return array relation paths
+     */
+    private function publicVariants(): array
+    {
+        if (!PermissionManager::hasPermission('products/view')) {
+            return [];
+        }
+
+        return ['variants'];
+    }
+
+    /**
+     * Reduce a client-supplied `with` payload to the relation paths this endpoint
+     * is allowed to eager-load.
+     *
+     * Anything that is not a literal key of allowedWiths() is dropped SILENTLY —
+     * an unknown relation otherwise reaches Builder::getRelation() and becomes a
+     * RelationNotFoundException, i.e. a 500, where a stale block build should
+     * simply render without its data.
+     *
+     * Only STRING request entries are considered, which is what drops the nested
+     * array shape `with[orderItems][]=order.customer`: its value is an array and
+     * its key is never read.
+     *
+     * Kept local to this controller rather than folded into
+     * `Services/Filter/BaseFilter::allowedWiths()`: that map adopts a Builder
+     * returned by each callback, while this endpoint eager-loads onto a
+     * route-model-bound instance, and the two maps share no entry.
+     *
+     * @param mixed $with raw request value
+     * @return array relation names safe to pass to Product::load()
+     */
+    private function resolveEagerLoads($with): array
+    {
+        $map = $this->allowedWiths();
+
+        $resolved = [];
+
+        foreach (Arr::wrap($with) as $requestKey) {
+            if (!is_string($requestKey) || !array_key_exists($requestKey, $map)) {
+                continue;
+            }
+
+            $entry = $map[$requestKey];
+
+            if (!is_callable($entry)) {
+                continue;
+            }
+
+            foreach ((array) $entry() as $relation) {
+                if (is_string($relation) && $relation !== '') {
+                    $resolved[$relation] = true;
+                }
+            }
+        }
+
+        return array_keys($resolved);
+    }
+
     public function getRelatedProducts(Request $request, $productId): WP_REST_Response
     {
         $productId = absint($productId);
 
         if (!$productId) {
-            return $this->sendError('Invalid product ID');
+            return $this->sendError(__('Invalid product ID', 'fluent-cart'));
         }
 
         $relatedBy = [];
@@ -140,30 +332,41 @@ class ProductController extends Controller
         $isDigital = Arr::get($detail, 'fulfillment_type') === 'digital';
 
         $createdProductDetail = ProductDetail::query()->create($detail);
-        $variation = ProductVariation::query()->create([
-            'post_id'          => $createdPostId,
-            'serial_index'     => 1,
-            'variation_title'  => $postData['post_title'],
-            //'stock_status'     => $isDigital ? 'in-stock' : 'out-of-stock',
-            'stock_status'     => 'in-stock',
-            'payment_type'     => 'onetime',
-            'total_stock'      => 1,
-            'available'        => 1,
-            'fulfillment_type' => $detail['fulfillment_type'],
-            'other_info'       => [
-                'description'        => '',
-                'payment_type'       => 'onetime',
-                'times'              => '',
-                'repeat_interval'    => '',
-                'trial_days'         => '',
-                'billing_summary'    => '',
-                'manage_setup_fee'   => 'no',
-                'signup_fee_name'    => '',
-                'signup_fee'         => '',
-                'setup_fee_per_item' => 'no',
-                'is_bundle_product'  => Arr::get($detail, 'other_info.is_bundle_product', 'no'),
-            ]
-        ]);
+
+        // Only Simple products get a default starter variant. Simple Variations
+        // and Advanced Variations are created with no variant and build their own
+        // on the edit page — Simple Variations via the pricing table's "Add
+        // Pricing" empty state, Advanced Variations via attribute combinations
+        // (a starter variant there would be an orphan the attribute UI never expects).
+        $variation = null;
+        if (Arr::get($detail, 'variation_type') === Helper::PRODUCT_TYPE_SIMPLE) {
+            $variation = ProductVariation::query()->create([
+                'post_id'          => $createdPostId,
+                'serial_index'     => 1,
+                'variation_title'  => $postData['post_title'],
+                //'stock_status'     => $isDigital ? 'in-stock' : 'out-of-stock',
+                'stock_status'     => 'in-stock',
+                'payment_type'     => 'onetime',
+                'total_stock'      => 1,
+                'available'        => 1,
+                'fulfillment_type' => $detail['fulfillment_type'],
+                'other_info'       => [
+                    'description'        => '',
+                    'payment_type'       => 'onetime',
+                    'tax_class'          => 'standard',
+                    'tax_exempt'         => 'no',
+                    'times'              => '',
+                    'repeat_interval'    => '',
+                    'trial_days'         => '',
+                    'billing_summary'    => '',
+                    'manage_setup_fee'   => 'no',
+                    'signup_fee_name'    => '',
+                    'signup_fee'         => '',
+                    'setup_fee_per_item' => 'no',
+                    'is_bundle_product'  => Arr::get($detail, 'other_info.is_bundle_product', 'no'),
+                ]
+            ]);
+        }
 
         if ($createdProductDetail) {
             return $this->sendSuccess([
@@ -273,7 +476,7 @@ class ProductController extends Controller
                 if ((int)$e->getCode() === 404) {
                     return $this->sendError([
                         'message' => __('Product not found', 'fluent-cart')
-                    ]);
+                    ], 404);
                 }
                 return $this->sendError([
                     'message' => __('Failed to duplicate product: ', 'fluent-cart') . $e->getMessage()
@@ -307,6 +510,13 @@ class ProductController extends Controller
     {
         $data = $request->getSafe($request->sanitize());
 
+        $isPartialUpdate = !(isset($data['detail']) && is_array($data['detail'])) &&
+                           !(isset($data['variants']) && is_array($data['variants']));
+
+        if ($isPartialUpdate) {
+            return $this->applyPartialPostUpdate($data, $postId);
+        }
+
         if (
             Arr::get($data, 'detail.variation_type') === 'simple' &&
             (empty(Arr::get($data, 'variants')) || empty(Arr::get($data, 'variants.0')))
@@ -325,7 +535,6 @@ class ProductController extends Controller
 
         $isUpdated = ProductResource::update($data, $postId);
 
-
         if (is_wp_error($isUpdated)) {
             return $isUpdated;
         }
@@ -336,6 +545,23 @@ class ProductController extends Controller
         ]);
 
         return $this->response->sendSuccess($isUpdated);
+    }
+
+    private function applyPartialPostUpdate(array $data, $postId)
+    {
+        $result = ProductResource::partialUpdate($data, $postId);
+
+        if (is_wp_error($result)) {
+            $statusCode = $result->get_error_code() === 'not_found' ? 404 : 422;
+            return $this->sendError(['message' => $result->get_error_message()], $statusCode);
+        }
+
+        do_action('fluent_cart/product_updated', [
+            'data'    => $data,
+            'product' => $result['data'],
+        ]);
+
+        return $this->response->sendSuccess($result);
     }
 
     public function updateLongDescEditorMode(Request $request, $postId)
@@ -402,7 +628,7 @@ class ProductController extends Controller
         ]);
 
         return $this->sendSuccess([
-            'message' => __('Tax Class updated successfully', 'fluent-cart')
+            'message' => __('Tax profile updated successfully', 'fluent-cart')
         ]);
     }
 
@@ -420,7 +646,59 @@ class ProductController extends Controller
             'other_info' => $otherInfo
         ]);
         return $this->sendSuccess([
-            'message' => __('Tax Class removed successfully', 'fluent-cart')
+            'message' => __('Tax profile removed successfully', 'fluent-cart')
+        ]);
+    }
+
+    public function toggleTaxExempt(Request $request, $postId)
+    {
+        $productDetail = ProductDetail::query()->where('post_id', $postId)->first();
+        if (empty($productDetail)) {
+            return $this->sendError([
+                'message' => __('Product not found', 'fluent-cart')
+            ]);
+        }
+
+        $otherInfo = $productDetail->other_info ?: [];
+        $taxExempt = sanitize_text_field($request->get('tax_exempt', 'no'));
+        $existingTaxClass = Arr::get($otherInfo, 'tax_class');
+        // Product-level tax settings live on product detail, so convert the UI
+        // slug back to the stored tax-class ID before persisting the change.
+        $taxClassSlug = sanitize_text_field($request->get('tax_class', ''));
+        $otherInfo['tax_exempt'] = $taxExempt === 'yes' ? 'yes' : 'no';
+
+        if (!$taxClassSlug) {
+            $defaultClass = TaxClass::query()->where('slug', 'standard')->first();
+            $resolvedTaxClassId = $existingTaxClass ?: ($defaultClass ? $defaultClass->id : null);
+            if ($resolvedTaxClassId) {
+                $resolvedTaxClass = TaxClass::query()->find($resolvedTaxClassId);
+                $taxClassSlug = $resolvedTaxClass ? $resolvedTaxClass->slug : 'standard';
+            } else {
+                $taxClassSlug = 'standard';
+            }
+        } else {
+            $taxClass = TaxClass::query()->where('slug', $taxClassSlug)->first();
+            if (!$taxClass) {
+                return $this->sendError([
+                    'message' => __('Invalid tax class', 'fluent-cart')
+                ], 422);
+            }
+            $resolvedTaxClassId = $taxClass->id;
+        }
+
+        $otherInfo['tax_class'] = $resolvedTaxClassId;
+
+        $productDetail->update([
+            'other_info' => $otherInfo
+        ]);
+
+        return $this->sendSuccess([
+            'message'        => $taxExempt === 'yes'
+                ? __('Product is now tax exempt', 'fluent-cart')
+                : __('Tax will be charged on this product', 'fluent-cart'),
+            'tax_exempt'     => $otherInfo['tax_exempt'],
+            'tax_class'      => $otherInfo['tax_class'],
+            'tax_class_slug' => $taxClassSlug ?: 'standard'
         ]);
     }
 
@@ -479,10 +757,13 @@ class ProductController extends Controller
      */
     public function get(Request $request, $productId)
     {
+        // attrMap joins fct_atts_relations, populated by the Advanced Variation feature.
+        $variantRelations = ['media', 'attrMap'];
+
         $product = Product::with([
             'detail',
-            'variants' => function ($query) {
-                $query->with(['media'])
+            'variants' => function ($query) use ($variantRelations) {
+                $query->with($variantRelations)
                     ->orderBy('serial_index', 'ASC');
             }
         ])->with('downloadable_files')->find($productId);
@@ -533,9 +814,15 @@ class ProductController extends Controller
             $featuredImageId = get_post_thumbnail_id($product->ID);
             $productData = $product->toArray();
             $productData['featured_image_id'] = $featuredImageId;
-            //get featured image id
+
+            $payload = apply_filters('fluent_cart/product/get_response_data', [
+                'product'    => $productData,
+                'product_id' => (int) $productId,
+                'request'    => $request,
+            ]);
+
             return $this->sendSuccess([
-                'product'      => $productData,
+                'product'      => Arr::get($payload, 'product', $productData),
                 'product_menu' => $productMenu ?? "",
                 'taxonomies'   => $taxonomies,
             ]);
@@ -732,15 +1019,16 @@ class ProductController extends Controller
 
     public function updateVariantOption(Request $request, $postId)
     {
-
-
         $data = $request->all();
-        //        ProductValidator::validate($data, [
-//            'variation_type' => 'required',
-//            'product_id' => 'required',
-//            'options.*.id' => 'required',
-//            'options.*.variants' => 'required',
-//        ]);
+
+        // Cap user-supplied option groups before they reach the sync pipeline. The
+        // client UI enforces a 200-combination ceiling, but a forged POST can carry
+        // arbitrarily many entries. Trim at the controller so the filter chain and
+        // downstream Pro listeners never see unbounded input.
+        if (isset($data['options']) && is_array($data['options'])) {
+            $data['options'] = array_slice($data['options'], 0, 200);
+        }
+
         $isSynced = ProductResource::syncVariantOption($postId, $data);
 
         if (is_wp_error($isSynced)) {
@@ -770,17 +1058,22 @@ class ProductController extends Controller
         $termNames = explode(',', $name);
         $ids = Taxonomy::addTaxonomyTerms($taxonomy, $termNames, $args);
 
-        if (count($ids)) {
-            $this->response->json([
+        // response->json() delegates to wp_send_json(), which prints and exits —
+        // bypassing the REST server (and killing in-process dispatch). send()
+        // returns the identical JSON body and status through WP_REST_Response.
+        // addTaxonomyTerms returns false (not an array) for a taxonomy outside
+        // the registered catalog, e.g. the unshipped product-tags — that must
+        // fall into the 423 branch, not raise a count-on-bool warning.
+        if (is_array($ids) && count($ids)) {
+            return $this->response->send([
                 'term_ids' => $ids,
                 'names'    => $termNames
             ]);
-        } else {
-            $this->response->json([
-                'message' => __('Unable To Create Term/s', 'fluent-cart'),
-            ], 423);
         }
 
+        return $this->response->sendError([
+            'message' => __('Unable To Create Term/s', 'fluent-cart'),
+        ], 423);
     }
 
     public function getProductTermsList(): array
@@ -892,37 +1185,45 @@ class ProductController extends Controller
         }
         $ids = Arr::get($data, 'ids', []);
         $productVariations = [];
-        $query = [];
-        if (!empty($name) || count($ids) > 0) {
-            $query = [
-                "ID"          =>
-                    [
-                        "column"   => "ID",
-                        "operator" => "in",
-                        "value"    => Arr::get($data, 'ids', [])
-                    ]
-                ,
-                "post_title"  =>
-                    [
-                        "column"   => "post_title",
-                        "operator" => "like",
-                        "value"    => '%' . Arr::get($data, 'name') . '%'
-                    ],
-                "post_status" =>
-                    [
-                        "column"   => "post_status",
-                        "operator" => "=",
-                        "value"    => 'publish'
-                    ]
-            ];
-        }
 
         $products = Product::query()
-            ->with('variants')
-            ->when(count($query), function (Builder $q) use ($query) {
-                return $q->search($query, function (Builder $query) {
-                    return $query;
-                }, true);
+            ->with(['variants' => function ($variantQuery) use ($name) {
+                if (!empty($name)) {
+                    // Emit only variants the term actually hit: the variant's own
+                    // title, or every variant of a product whose title matched.
+                    // Without this, a product matched through one variant leaked
+                    // all its non-matching siblings into the picker.
+                    $variantQuery->where(function ($vq) use ($name) {
+                        $vq->where('variation_title', 'like', '%' . $name . '%')
+                            ->orWhereHas('product', function ($pq) use ($name) {
+                                $pq->where('post_title', 'like', '%' . $name . '%');
+                            });
+                    });
+                }
+                // The relation query is shared across all matched parents, so this
+                // caps total child rows serialized per request for this
+                // remote-search picker.
+                $variantQuery->orderBy('id')->limit(100);
+            }])
+            ->when(!empty($name) || count($ids) > 0, function (Builder $q) use ($name, $ids) {
+                $q->where('post_status', 'publish');
+
+                if (count($ids) > 0) {
+                    $q->whereIn('ID', $ids);
+                }
+
+                if (!empty($name)) {
+                    // The endpoint's name is searchVariantByName: a term must match
+                    // the product title OR any of its variants' variation_title.
+                    // The previous search-helper query matched post_title only, so
+                    // typing a variant's own title returned nothing.
+                    $q->where(function (Builder $titleQuery) use ($name) {
+                        $titleQuery->where('post_title', 'like', '%' . $name . '%')
+                            ->orWhereHas('variants', function ($variantQuery) use ($name) {
+                                $variantQuery->where('variation_title', 'like', '%' . $name . '%');
+                            });
+                    });
+                }
             })
             ->when(empty($name), function (Builder $q) {
                 return $q->limit(10);
@@ -959,7 +1260,7 @@ class ProductController extends Controller
         $includeIds = Arr::get($data, 'include_ids', []);
 
         $productsQuery = Product::query()
-            ->where('post_status', 'publish');
+            ->whereIn('post_status', ['publish', 'private']);
 
         $productsQuery->with(['detail', 'variants' => function ($query) use ($subscription_status) {
             if ($subscription_status === 'not_subscribable') {
@@ -1030,7 +1331,7 @@ class ProductController extends Controller
             $leftVariants = ProductVariation::query()
                 ->whereIn('id', $leftVariationIds)
                 ->with(['product' => function ($query) {
-                    $query->where('post_status', 'publish');
+                    $query->whereIn('post_status', ['publish', 'private']);
                 }, 'product.detail'])
                 ->get();
 
@@ -1121,6 +1422,7 @@ class ProductController extends Controller
     public function fetchVariationsByIds(Request $request): array
     {
         $ids = $request->getSafe(['productIds.*' => 'intval']);
+        $ids = Arr::get($ids, 'productIds', []);
         $ids = is_array($ids) ? $ids : [];
         if (empty($ids)) {
             return ['products' => []];
@@ -1257,14 +1559,23 @@ class ProductController extends Controller
 
     public function updateInventory(Request $request, $postId, $variantId)
     {
+        if (!ModuleSettings::isActive('stock_management')) {
+            return $this->response->sendError([
+                'message' => __('Stock Management module is disabled. Enable it from Settings to manage inventory.', 'fluent-cart')
+            ], 422);
+        }
 
         $variant = ProductVariation::query()->find($variantId);
 
         if (!$variant) {
             return $this->response->sendError([
                 'message' => __('Variant not found', 'fluent-cart')
-            ]);
+            ], 404);
         }
+
+        // Capture old stock state before update
+        $oldAvailable = intval($variant->available);
+        $oldStockStatus = $variant->stock_status;
 
         $detail = ProductDetail::query()->where('post_id', $postId)->first();
 
@@ -1280,12 +1591,15 @@ class ProductController extends Controller
                 'stock_status' => $variation->stock_status
             ];
         }
+        $newAvailable = intval($request->get('available'));
+        $newStockStatus = $newAvailable > 0 ? 'in-stock' : 'out-of-stock';
+
         $updateData[] = [
             'id'          => $variantId,
             'total_stock' => sanitize_text_field($request->get('total_stock')),
-            'available'   => sanitize_text_field($request->get('available')),
+            'available'   => $newAvailable,
             'manage_stock' => 1,
-            'stock_status' => $request->get('available') > 0 ? 'in-stock' : 'out-of-stock'
+            'stock_status' => $newStockStatus
         ];
         // update variations
         $isUpdated = ProductVariation::query()->batchUpdate($updateData);
@@ -1297,12 +1611,15 @@ class ProductController extends Controller
             $detail->manage_stock = 1;
             $detail->save();
         }
-
-
         if (is_wp_error($isUpdated)) {
             return $this->response->sendError([
                 'message' => __('Inventory update failed', 'fluent-cart')
             ]);
+        }
+
+        // Stock persisted — fire StockChanged only if it actually changed.
+        if ($oldAvailable !== $newAvailable || $oldStockStatus !== $newStockStatus) {
+            (new StockChanged([$postId]))->dispatch();
         }
 
         return $this->response->sendSuccess([
@@ -1313,6 +1630,15 @@ class ProductController extends Controller
     public function updateManageStock(Request $request, $postId)
     {
         $manageStock = sanitize_text_field($request->get('manage_stock'));
+
+        // Turning inventory ON requires the Stock Management module to be active.
+        // Turning it OFF stays allowed so a store that disables the module can
+        // still clean up products that were left with manage_stock = 1.
+        if ($manageStock == 1 && !ModuleSettings::isActive('stock_management')) {
+            return $this->response->sendError([
+                'message' => __('Stock Management module is disabled. Enable it from Settings to manage inventory.', 'fluent-cart')
+            ], 422);
+        }
 
         $detail = ProductDetail::query()->where('post_id', $postId)->first();
 

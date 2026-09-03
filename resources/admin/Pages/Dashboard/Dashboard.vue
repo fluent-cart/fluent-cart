@@ -1,10 +1,5 @@
 <template>
   <div class="fluent_dashboard fluent-cart-admin-pages fct-layout-width">
-    <!-- <div class="my-6">
-      <OrderStatBar />
-    </div> -->
-
-
     <Alert
         class="mb-5"
         v-if="showPageNotification"
@@ -22,62 +17,63 @@
 
     </Alert>
 
-    <el-row :gutter="20">
-      <el-col :lg="16">
-        <CurrentUserInfo/>
+    <div class="fluent_cart_dashboard_inner">
+        <div class="fluent_cart_dashboard_main">
+            <CurrentUserInfo/>
 
-        <UserCan permission="dashboard_stats/view">
-          <div class="flex items-center justify-start gap-1 mb-2 text-xs text-system-mid dark:text-system-light">
-            <DynamicIcon name="InformationFill" class="w-4 h-4 text-system-light" />
+            <UserCan permission="dashboard_stats/view">
+            <div class="flex items-center justify-start gap-1 mb-2 text-xs text-system-mid dark:text-system-light">
+                <DynamicIcon name="InformationFill" class="w-4 h-4 text-system-light" />
 
-            {{
-              /* translators: %s - number of days */
-              translate('Last %s Days', translateNumber(30))
-            }}
-          </div>
-          <StatsWidget/>
-        </UserCan>
+                {{
+                /* translators: %s - number of days */
+                translate('Last %s Days', translateNumber(30))
+                }}
+            </div>
+            <StatsWidget/>
+            </UserCan>
 
-        <UserCan permission="reports/view">
-          <SalesGrowthChart
-              :chartData="dashBoardReport.data.salesGrowthChart"
-              :loading="dashBoardReport.isBusy.salesGrowthChart"
-          />
-        </UserCan>
+            <UserCan permission="reports/view">
+            <SalesGrowthChart
+                :chartData="dashBoardReport.data.salesGrowthChart"
+                :loading="dashBoardReport.isBusy.salesGrowthChart"
+            />
+            </UserCan>
 
-        <el-row :gutter="24">
-          <UserCan permission="reports/view">
-            <el-col :lg="12">
-              <RecentOrders/>
-            </el-col>
-          </UserCan>
+            <el-row :gutter="24">
+            <UserCan permission="reports/view">
+                <el-col :lg="12">
+                <RecentOrders/>
+                </el-col>
+            </UserCan>
 
-          <UserCan permission="reports/view">
-            <el-col :lg="12" class="mt-6 xl:mt-0">
-              <TopSoldProducts
-                  :data="dashBoardReport.topSoldProducts"
-                  :loading="dashBoardReport.isBusy.topSoldProducts"
-              />
-            </el-col>
-          </UserCan>
-
-
-          <UserCan permission="reports/view">
-            <el-col class="mt-6">
-              <HeatMap :data="dashBoardReport.data.countryHeatMap"/>
-            </el-col>
-          </UserCan>
+            <UserCan permission="reports/view">
+                <el-col :lg="12" class="mt-6 xl:mt-0">
+                <TopSoldProducts
+                    :data="dashBoardReport.topSoldProducts"
+                    :loading="dashBoardReport.isBusy.topSoldProducts"
+                />
+                </el-col>
+            </UserCan>
 
 
-        </el-row>
+            <UserCan permission="reports/view">
+                <el-col class="mt-6">
+                <HeatMap :data="dashBoardReport.data.countryHeatMap"/>
+                </el-col>
+            </UserCan>
 
-      </el-col>
-      <el-col :lg="8">
-        <div class="fc_dashboard_sidebar">
-          <SideBar/>
+
+            </el-row>
+
         </div>
-      </el-col>
-    </el-row>
+
+        <div class="fluent_cart_dashboard_aside">
+            <SideBar/>
+        </div>
+    </div>
+
+
     <!--       <RecentActivity/> -->
 
     <el-dialog
@@ -133,9 +129,15 @@ const isCongratsPopoverOpen = ref(false);
 const dummyProductInfo = ref([]);
 
 const showPageNotification = ref(false);
+const pageSetupUrl = ref(
+  AppConfig.get('admin_url') + 'settings/store-settings/pages_setup'
+);
 
-const togglePageNotification = (state) => {
+const togglePageNotification = (state, url = '') => {
   showPageNotification.value = state;
+  if (url) {
+    pageSetupUrl.value = url;
+  }
 }
 
 provide("dashboardTogglePageNotification", togglePageNotification)
@@ -207,7 +209,7 @@ const getCongratsPopover = () => {
 };
 
 const getSetupPageUrl = () => {
-  return AppConfig.get('admin_url') + 'settings/store-settings/pages_setup';
+  return pageSetupUrl.value;
 }
 
 onMounted(() => {

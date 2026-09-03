@@ -19,22 +19,22 @@ class SubscriptionRenewed extends EventDispatcher
 
 
     /**
-     * @var $subscription Subscription
+     * @var Subscription $subscription
      */
     public Subscription $subscription;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
     public ?Customer $customer;
 
     /**
-     * @var $newOrder Order|null
+     * @var Order|null $newOrder
      */
     public ?Order $newOrder;
 
     /**
-     * @var $oldOrder Order|null
+     * @var Order|null $oldOrder
      */
     public ?Order $oldOrder;
 

@@ -233,8 +233,26 @@ class S3 extends BaseStorageDriver
         }
 
         $mergeKeys = array_diff($this->hiddenSettingKeys(), ['create_new_bucket', 'new_bucket_name', 'new_bucket_region']);
+        $credentialKeys = ['access_key', 'secret_key'];
+        $storedAuthMethod = Arr::get($settings, 'auth_method');
+
         foreach ($mergeKeys as $key) {
-            if (!array_key_exists($key, $data) && isset($settings[$key])) {
+            $isCredential = in_array($key, $credentialKeys, true);
+
+            // In define mode getSettings() resolves credentials from the wp-config
+            // constants, so merging one here would copy it into the database and
+            // break revocation. Never fall back to a value we do not own.
+            if ($isCredential && $storedAuthMethod === 'define') {
+                continue;
+            }
+
+            // Credentials are stripped from the settings response, so an empty
+            // submitted value means "unchanged" and must fall back to storage.
+            $isMissing = $isCredential
+                ? empty($data[$key])
+                : !array_key_exists($key, $data);
+
+            if ($isMissing && isset($settings[$key])) {
                 $data[$key] = $settings[$key];
             }
         }
@@ -286,7 +304,10 @@ class S3 extends BaseStorageDriver
             }
         }
 
-        if (!empty($data['bucket'])) {
+        // A credentials-only step must not run a bucket check: on failure the
+        // branch below persists the stored settings and discards the credentials
+        // the user just entered. Mirrors the guards further down.
+        if (!empty($data['bucket']) && !Arr::get($data, 'verify_only_credentials')) {
             $bucketValidation = S3InputValidator::validateBucket($data['bucket']);
             if (is_wp_error($bucketValidation)) {
                 return $bucketValidation;

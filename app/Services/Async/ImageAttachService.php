@@ -16,7 +16,7 @@ class ImageAttachService
         $this->requireFiles();
     }
 
-    public static function attachImageToProduct(array $product, array $images)
+    public static function attachImageToProduct(array $product, array $images, bool $cdnMode = false)
     {
 
         if (empty($images)) {
@@ -27,7 +27,7 @@ class ImageAttachService
         $instance = new ImageAttachService();
 
         foreach ($images as $image) {
-            $value = $instance->addImageFromUrl($image, $product['post_title']);
+            $value = $instance->addImageFromUrl($image, $product['post_title'], $cdnMode);
             if (!empty($value)) {
                 $gallery[] = $value;
             }
@@ -39,13 +39,13 @@ class ImageAttachService
 
     }
 
-    public static function attachImageToVariant($variantId, array $images)
+    public static function attachImageToVariant($variantId, array $images, bool $cdnMode = false)
     {
         $variant = ProductVariation::query()->find($variantId);
         if (empty($variant)) {
             return;
         }
-        
+
         if (empty($images)) {
             return;
         }
@@ -54,7 +54,7 @@ class ImageAttachService
 
         $metaValue = [];
         foreach ($images as $image) {
-            $value = $instance->addImageFromUrl($image, $variant['variation_title']);
+            $value = $instance->addImageFromUrl($image, $variant['variation_title'], $cdnMode);
             if (!empty($value)) {
                 $metaValue[] = $value;
             }
@@ -75,8 +75,16 @@ class ImageAttachService
 
     }
 
-    protected function addImageFromUrl($url, $title): array
+    protected function addImageFromUrl($url, $title, bool $cdnMode = false): array
     {
+        if ($cdnMode) {
+            return [
+                'id'    => null,
+                'title' => $title ?: basename($url),
+                'url'   => $url,
+            ];
+        }
+
         $uploadUrl = wp_upload_dir()['baseurl'];
         $uploadUrl = Str::of($uploadUrl)->replace('http://', '')->replace('https://', '')->toString();
         $tmpUrl = Str::of($url)->replace('http://', '')->replace('https://', '')->toString();

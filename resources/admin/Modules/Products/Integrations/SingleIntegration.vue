@@ -12,7 +12,7 @@
                 <el-form label-position="top" :model="formData.values" class="integration-form">
                     <el-form-item :label="$t('Integration Name')" required>
                         <el-input v-model="formData.values.name"
-                                  placeholder="Enter a name for this integration"></el-input>
+                                  :placeholder="$t('Enter a name for this integration')"></el-input>
                     </el-form-item>
 
                     <el-form-item :label="$t('Integration Type')" v-if="!integration_id">
@@ -67,13 +67,13 @@ import {
 
 export default {
     name: 'SingleIntegration',
-    props: ['product', 'product_id', 'integration_id', 'integration_type'],
     components: {
         CardFooter,
         CardBody,
         CardHeader,
         CardContainer
     },
+    props: ['product', 'product_id', 'integration_id', 'integration_type'],
     data() {
         return {
             integration_id: this.integration_id,
@@ -96,6 +96,9 @@ export default {
                 }
             }
         }
+    },
+    mounted() {
+        this.fetchIntegrationData();
     },
     methods: {
         saveIntegration() {
@@ -136,7 +139,6 @@ export default {
                     });
                 })
                 .catch(error => {
-                    console.log(error);
                     this.saving = false;
                     this.$notify({
                         type: "error",
@@ -211,9 +213,6 @@ export default {
             }
             return true;
         }
-    },
-    mounted() {
-        this.fetchIntegrationData();
     }
 }
 </script>

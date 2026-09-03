@@ -2265,4 +2265,17 @@ return array(
         'ZM-09' => __('Lusaka', 'fluent-cart'),
         'ZM-10' => __('Muchinga', 'fluent-cart'),
     ),
+    'XI' => array(
+        'ANN' => __( 'Antrim and Newtownabbey', 'fluent-cart' ),
+        'AND' => __( 'Ards and North Down', 'fluent-cart' ),
+        'ABC' => __( 'Armagh City, Banbridge and Craigavon', 'fluent-cart' ),
+        'BFS' => __( 'Belfast', 'fluent-cart' ),
+        'CCG' => __( 'Causeway Coast and Glens', 'fluent-cart' ),
+        'DRS' => __( 'Derry City and Strabane', 'fluent-cart' ),
+        'FMO' => __( 'Fermanagh and Omagh', 'fluent-cart' ),
+        'LLC' => __( 'Lisburn and Castlereagh', 'fluent-cart' ),
+        'MEA' => __( 'Mid and East Antrim', 'fluent-cart' ),
+        'MUL' => __( 'Mid Ulster', 'fluent-cart' ),
+        'NMD' => __( 'Newry, Mourne and Down', 'fluent-cart' ),
+    ),
 );

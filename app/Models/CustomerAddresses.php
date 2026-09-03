@@ -22,7 +22,7 @@ class CustomerAddresses extends Model
 
     protected $table = 'fct_customer_addresses';
 
-    protected $appends = ['formatted_address', 'company_name'];
+    protected $appends = ['formatted_address', 'company_name', 'vat_number', 'legal_registration_id'];
 
 
     /**
@@ -46,15 +46,14 @@ class CustomerAddresses extends Model
         'phone',
         'email',
         'meta',
-        'company_name',
     ];
 
 
     public function setMetaAttribute($value)
     {
         if ($value) {
-            $decoded = \json_encode($value, true);
-            if (!($decoded)) {
+            $decoded = \json_encode($value);
+            if (!$decoded) {
                 $decoded = '[]';
             }
         } else {
@@ -75,17 +74,13 @@ class CustomerAddresses extends Model
 
     public function setCompanyNameAttribute($value)
     {
-        if (!$value) {
-            return;
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        if ($value) {
+            Arr::set($meta, 'other_data.company_name', $value);
+        } else {
+            unset($meta['other_data']['company_name']);
         }
-
-        $meta = $this->meta;
-
-        if (!is_array($meta)) {
-            $meta = [];
-        }
-
-        Arr::set($meta, 'other_data.company_name', $value);
 
         $this->attributes['meta'] = json_encode($meta);
     }
@@ -93,6 +88,42 @@ class CustomerAddresses extends Model
     public function getCompanyNameAttribute()
     {
         return Arr::get($this->meta, 'other_data.company_name', '');
+    }
+
+    public function setLegalRegistrationIdAttribute($value)
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        if ($value) {
+            Arr::set($meta, 'other_data.legal_registration_id', $value);
+        } else {
+            unset($meta['other_data']['legal_registration_id']);
+        }
+
+        $this->attributes['meta'] = json_encode($meta);
+    }
+
+    public function getLegalRegistrationIdAttribute()
+    {
+        return Arr::get($this->meta, 'other_data.legal_registration_id', '');
+    }
+
+    public function setVatNumberAttribute($value)
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        if ($value) {
+            Arr::set($meta, 'other_data.vat_number', $value);
+        } else {
+            unset($meta['other_data']['vat_number']);
+        }
+
+        $this->attributes['meta'] = json_encode($meta);
+    }
+
+    public function getVatNumberAttribute()
+    {
+        return Arr::get($this->meta, 'other_data.vat_number', '');
     }
 
     public function scopeOfActive($query)
@@ -125,6 +156,8 @@ class CustomerAddresses extends Model
             'last_name' => $this->last_name,
             'full_name' => $this->full_name,
             'company_name' => $this->company_name,
+            'vat_number' => $this->vat_number,
+            'legal_registration_id' => $this->legal_registration_id,
             'label' => $this->label,
             'phone' => $this->phone
         ];
@@ -159,6 +192,8 @@ class CustomerAddresses extends Model
             '' . $prefix . 'postcode' => $this->postcode,
             '' . $prefix . 'country' => $this->country,
             '' . $prefix . 'company_name' => $this->company_name,
+            '' . $prefix . 'vat_number' => $this->vat_number,
+            '' . $prefix . 'legal_registration_id' => $this->legal_registration_id,
         ];
 
         // if ($prefix === 'billing_') {

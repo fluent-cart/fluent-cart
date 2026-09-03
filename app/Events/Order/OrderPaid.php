@@ -17,17 +17,17 @@ class OrderPaid extends EventDispatcher
     ];
 
     /**
-     * @var $order Order
+     * @var Order $order
      */
     public Order $order;
 
     /**
-     * @var $customer Customer|null
+     * @var Customer|null $customer
      */
     public ?Customer $customer;
 
     /**
-     * @var $transaction OrderTransaction|null
+     * @var OrderTransaction|null $transaction
      */
     public ?OrderTransaction $transaction;
 

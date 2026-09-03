@@ -19,6 +19,7 @@ import {
   getEmphasisColor,
   getXAxisConfig,
 } from '../Utils/decorator';
+import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
 // Define props
 const props = defineProps({
@@ -103,11 +104,7 @@ const createSeries = (name, type, yAxisIndex, data, color) => {
 };
 
 const selectedGroupKey = ref("default");
-const groupKeys = [
-  { label: "Default", value: "default" },
-  { label: "Monthly", value: "monthly" },
-  { label: "Yearly", value: "yearly" },
-];
+const { groupKeys } = useGroupKeyOptions(props.reportFilter, selectedGroupKey);
 
 const emit = defineEmits(["filter-data"]);
 

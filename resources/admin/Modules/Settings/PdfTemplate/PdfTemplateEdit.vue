@@ -7,6 +7,7 @@ import translate from "@/utils/translator/Translator";
 import NewEditorFrame from "@/Bits/Components/BlockEditorFrame.vue";
 import SettingsHeader from "../Parts/SettingsHeader.vue";
 import {ArrowRight, MoreFilled} from "@element-plus/icons-vue";
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const props = defineProps({
     template: {
@@ -56,7 +57,7 @@ const fetchTemplate = () => {
             }
         })
         .catch((error) => {
-            Notify.error(error.data?.message || 'Failed to load template');
+            Notify.error(error.data?.message || translate('Failed to load template'));
         })
         .finally(() => {
             loading.value = false;
@@ -84,7 +85,7 @@ const saveTemplate = async ({ showSuccess = true } = {}) => {
 
         return true;
     } catch (error) {
-        Notify.error(error.data?.message || 'Failed to save template');
+        Notify.error(error.data?.message || translate('Failed to save template'));
         return false;
     } finally {
         saving.value = false;
@@ -110,7 +111,7 @@ const downloadTestPdf = () => {
             Notify.success(translate('PDF downloaded'));
         })
         .catch((error) => {
-            Notify.error(error.data?.message || error.message || 'Failed to generate PDF');
+            Notify.error(error.data?.message || error.message || translate('Failed to generate PDF'));
         })
         .finally(() => {
             downloading.value = false;
@@ -136,7 +137,7 @@ const openPreviewPdf = async () => {
             URL.revokeObjectURL(url);
         }, 10000);
     } catch (error) {
-        Notify.error(error.data?.message || error.message || 'Failed to generate PDF');
+        Notify.error(error.data?.message || error.message || translate('Failed to generate PDF'));
     } finally {
         previewing.value = false;
     }
@@ -166,7 +167,7 @@ const deleteTemplate = () => {
             router.push({ path: '/settings/pdf-template' });
         })
         .catch((error) => {
-            Notify.error(error.data?.message || 'Failed to delete template');
+            Notify.error(error.data?.message || translate('Failed to delete template'));
         });
 };
 
@@ -203,12 +204,12 @@ onMounted(() => {
             :loading="saving"
             :loading-text="translate('Saving')"
             :save-button-text="translate('Save Template')"
-            @onSave="saveTemplate"
+            @on-save="saveTemplate"
         >
             <template #heading>
                 <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
                     <el-breadcrumb-item :to="{ path: '/settings/pdf-template' }">
-                        {{ $t("PDF Templates") }}
+                        {{ translate("PDF Templates") }}
                     </el-breadcrumb-item>
                     <el-breadcrumb-item>
                         <span class="capitalize">{{ templateData?.title || translate('Edit Template') }}</span>
@@ -217,7 +218,7 @@ onMounted(() => {
             </template>
 
             <template #action>
-                <el-dropdown trigger="click" style="margin-left: 12px; display: inline-flex; align-items: center;">
+                <el-dropdown trigger="click" style="margin-left: 12px; display: inline-flex; align-items: center;" popper-class="fct-dropdown">
                     <el-button size="small" text style="height: auto; padding: 4px;">
                         <el-icon style="transform: rotate(90deg); font-size: 16px;"><MoreFilled /></el-icon>
                     </el-button>
@@ -239,6 +240,8 @@ onMounted(() => {
         </SettingsHeader>
 
         <div class="setting-wrap-inner">
+            <AdminNotice/>
+
             <el-skeleton
                 :loading="loading"
                 class="bg-white rounded p-6 dark:bg-dark-700"
@@ -257,7 +260,7 @@ onMounted(() => {
                         :editorParams="{ block_type: 'pdf_template', campaign_title: templateData.title, bid: props.template }"
                         :frameHeight="'calc(100vh - 200px)'"
                         :documentTitle="templateData.title || translate('Receipt Template')"
-                        @previewRequest="onPreviewRequest"
+                        @preview-request="onPreviewRequest"
                         v-model="pdfContent"
                     />
                 </div>
@@ -269,14 +272,14 @@ onMounted(() => {
                         :disabled="saving"
                         :loading="saving"
                     >
-                        {{ saving ? translate('Saving') : translate("Save Template") }}
+                        {{ translate("Save Template") }}
                     </el-button>
                     <el-button
                         @click="downloadTestPdf"
                         :disabled="downloading"
                         :loading="downloading"
                     >
-                        {{ downloading ? translate('Generating...') : translate("Test Download") }}
+                        {{ translate("Test Download") }}
                     </el-button>
                 </div>
             </template>

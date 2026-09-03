@@ -40,6 +40,14 @@ class ModalCheckoutRenderer
 
     private $customer;
 
+    /**
+     * Memoised result of the before_payment_methods placement filter. Null until
+     * resolved; see beforePaymentMethodsPlacement() for why it is asked only once.
+     *
+     * @var string|null
+     */
+    private $paymentMethodsHookPlacement = null;
+
     public function __construct(Cart $cart, $config = [])
     {
         $this->cart = $cart;
@@ -67,7 +75,8 @@ class ModalCheckoutRenderer
     {
         $maps = [
                 'payment_methods' => 'renderPaymentMethods',
-                'summary_group' => 'renderSummaryGroup'
+                'summary_group' => 'renderSummaryGroup',
+                'checkout_summary' => 'renderCheckoutSummary'
         ];
 
         if(isset($maps[$fragmentName])) {
@@ -111,6 +120,26 @@ class ModalCheckoutRenderer
 
     public function renderForm()
     {
+        // Without a billing country in checkout_data, the tax recalc below
+        // produces no per-item tax. Pre-fill from the current customer's
+        // primary billing address (if any) so the per-item tax badge can
+        // render on the very first modal open instead of only after the
+        // customer interacts with the address form.
+        $this->maybePopulateFormDataFromCustomer();
+
+        // Trigger the recalc only when the cart hasn't been taxed yet. Once
+        // line_meta.tax_config is on the item, the badge already renders from
+        // existing data — another recalc here would just duplicate work
+        // (Tax + Shipping each call $cart->save() on this action).
+        // Payload shape matches Cart::addItem() so every handler receives the
+        // data it expects.
+        if (empty(Arr::get($this->cart->cart_data, '0.line_meta.tax_config'))) {
+            do_action('fluent_cart/cart/cart_data_items_updated', [
+                'cart'       => $this->cart,
+                'scope'      => 'modal_open',
+                'scope_data' => null,
+            ]);
+        }
         ?>
             <div class="fct-modal-checkout-form-wrapper" data-fluent-cart-checkout-page>
                 <form
@@ -131,11 +160,79 @@ class ModalCheckoutRenderer
     }
 
 
-    public function renderCheckoutDetails() 
+    private function maybePopulateFormDataFromCustomer()
+    {
+        if (!$this->customer) {
+            return;
+        }
+
+        $checkoutData = is_array($this->cart->checkout_data) ? $this->cart->checkout_data : [];
+        $formData     = Arr::get($checkoutData, 'form_data', []);
+
+        // Never clobber an answer the customer has actively chosen; only
+        // pre-fill when the cart has no billing country yet.
+        if (!empty(Arr::get($formData, 'billing_country'))) {
+            return;
+        }
+
+        $primaryBilling = $this->customer->primary_billing_address;
+        if (!$primaryBilling) {
+            return;
+        }
+
+        foreach ($primaryBilling->getFormattedDataForCheckout('billing_') as $key => $value) {
+            if (!isset($formData[$key]) || $formData[$key] === '' || $formData[$key] === null) {
+                $formData[$key] = $value;
+            }
+        }
+
+        $checkoutData['form_data'] = $formData;
+        $this->cart->checkout_data = $checkoutData;
+        // No explicit save — the recalc action that follows persists this
+        // together with the newly computed tax data, avoiding a double write.
+    }
+
+    /**
+     * Where `fluent_cart/before_payment_methods` fires in the modal.
+     *
+     * 'payment' (default) wraps the payment-method list, matching CheckoutRenderer.
+     * 'details' restores the pre-fix position in the address/shipping pane, for a
+     * store whose add-on positioned itself around that spot.
+     *
+     * Resolved ONCE per renderer and memoised. The two call sites are mutually
+     * exclusive, so the hook must fire exactly once — but that only holds if both
+     * sites agree, and a filter is free to be stateful or context-sensitive. Asking
+     * it twice would let it answer differently and either fire the hook twice or
+     * swallow it entirely. Ask once, remember the answer.
+     *
+     * @return string 'payment'|'details'
+     */
+    private function beforePaymentMethodsPlacement(): string
+    {
+        if ($this->paymentMethodsHookPlacement !== null) {
+            return $this->paymentMethodsHookPlacement;
+        }
+
+        $placement = apply_filters('fluent_cart/modal_checkout/before_payment_methods_placement', 'payment', [
+            'cart' => $this->cart,
+        ]);
+
+        // Anything unrecognised falls back to the correct placement rather than
+        // silently dropping the hook.
+        $this->paymentMethodsHookPlacement = $placement === 'details' ? 'details' : 'payment';
+
+        return $this->paymentMethodsHookPlacement;
+    }
+
+    public function renderCheckoutDetails()
     {
         ?>
             <div class="fct-modal-checkout-details">
-                <?php $this->renderCheckoutSummary();?>
+                <!-- Stable swap target: tax recalculation re-renders the item card
+                     here via the checkout_summary fragment. -->
+                <div data-fct-modal-checkout-summary>
+                    <?php $this->renderCheckoutSummary(); ?>
+                </div>
 
                 <?php $this->checkoutRenderer->renderAddressFields(); ?>
 
@@ -143,7 +240,25 @@ class ModalCheckoutRenderer
                     <?php $this->checkoutRenderer->renderShippingOptions(); ?>
                 </div>
 
-                <?php do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart]); ?>
+                <?php
+                    /**
+                     * The position `fluent_cart/before_payment_methods` used to
+                     * occupy in the modal. Given its own name so an add-on that
+                     * genuinely wants this pane — under shipping, above the terms
+                     * — has a stable place to render, instead of relying on a hook
+                     * whose name promises it sits before the payment methods.
+                     *
+                     * @param array $data ['cart' => Cart]
+                     */
+                    do_action('fluent_cart/modal_checkout/after_shipping_methods', ['cart' => $this->cart]);
+
+                    // Opt-in restoration of the old placement, for a store whose
+                    // add-on positioned itself around the previous spot. Mutually
+                    // exclusive with the call site in renderCheckoutBilling().
+                    if ($this->beforePaymentMethodsPlacement() === 'details') {
+                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart]);
+                    }
+                ?>
 
                 <?php $this->checkoutRenderer->agreeTerms(); ?>
 
@@ -158,8 +273,21 @@ class ModalCheckoutRenderer
     {
         $title = Arr::get($this->cart->cart_data, '0.title', '');
         $postTitle = Arr::get($this->cart->cart_data, '0.post_title', '');
-        $subTotal = Helper::toDecimal(Arr::get($this->cart->cart_data, '0.subtotal', 0));
+        $subTotal          = Helper::toDecimal(Arr::get($this->cart->cart_data, '0.subtotal', 0));
+        $couponDiscount    = (int) Arr::get($this->cart->cart_data, '0.coupon_discount', 0);
+        $subtotalRaw       = (int) Arr::get($this->cart->cart_data, '0.subtotal', 0);
+        $lineTotalRaw      = (int) Arr::get($this->cart->cart_data, '0.line_total', 0);
+        $hasCouponDiscount = $couponDiscount > 0 && $lineTotalRaw < $subtotalRaw;
         $media = Arr::get($this->cart->cart_data, '0.featured_media', '');
+
+        // Mirror CartItemRenderer's event payload so the shared line-item hooks
+        // (e.g. the per-item tax breakdown) also fire in modal checkout.
+        $lineItemEventInfo = [
+            'item'    => Arr::get($this->cart->cart_data, '0', []),
+            'cart'    => $this->cart,
+            'product' => null,
+            'variant' => null,
+        ];
 
         ?>
             <div class="fct-modal-checkout-summary">
@@ -178,10 +306,24 @@ class ModalCheckoutRenderer
                             </h3>
                         </div>
 
-                        <span class="fct-modal-cs-line-price">
-                            <?php echo $subTotal;?>
-                        </span>
+                        <?php if ($hasCouponDiscount) : ?>
+                            <div class="fct-modal-cs-price-wrapper">
+                                <span class="fct-modal-cs-line-price fct-modal-cs-line-price--original" aria-label="<?php esc_attr_e('Original price', 'fluent-cart'); ?>">
+                                    <?php echo esc_html(Helper::toDecimal($subtotalRaw)); ?>
+                                </span>
+                                <span class="fct-modal-cs-line-price fct-modal-cs-line-price--discounted" aria-label="<?php esc_attr_e('Discounted price', 'fluent-cart'); ?>">
+                                    <?php echo esc_html(Helper::toDecimal($lineTotalRaw)); ?>
+                                </span>
+                            </div>
+                        <?php else : ?>
+                            <span class="fct-modal-cs-line-price">
+                                <?php echo esc_html($subTotal); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php do_action('fluent_cart/cart/line_item/after_total', $lineItemEventInfo); ?>
                     </div>
+
+                    <?php do_action('fluent_cart/cart/line_item/footer_start', $lineItemEventInfo); ?>
 
                     <?php $this->renderPaymentTypeInfo(); ?>
 
@@ -212,7 +354,6 @@ class ModalCheckoutRenderer
         $paymentType = Arr::get($otherInfo, 'payment_type', '');
         $itemPrice = Arr::get($this->cart->cart_data, '0.unit_price', 0);
 
-
         if ($paymentType === 'subscription') {
             $subscriptionInfo = Helper::generateSubscriptionInfo($otherInfo, $itemPrice);
             $setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo);
@@ -240,7 +381,29 @@ class ModalCheckoutRenderer
                     <?php endif; ?>
                 </div>
             <?php
+            return;
         }
+
+        $quantity = (int) Arr::get($this->cart->cart_data, '0.quantity', 1);
+        if ($quantity < 2) {
+            return;
+        }
+
+        $lineItemEventInfo = [
+            'item'    => Arr::get($this->cart->cart_data, '0', []),
+            'cart'    => $this->cart,
+            'product' => null,
+            'variant' => null,
+        ];
+        ?>
+        <div class="fct-modal-cs-payment-info">
+            <?php
+            /* translators: %1$s: formatted unit price */
+            printf(esc_html__('%1$s each', 'fluent-cart'), esc_html(Helper::toDecimal($itemPrice)));
+            ?>
+            <?php do_action('fluent_cart/cart/line_item/unit_price_hint', $lineItemEventInfo); ?>
+        </div>
+        <?php
     }
 
     public function renderPromoCode() {
@@ -460,9 +623,32 @@ class ModalCheckoutRenderer
                     </h4>
                 </header>
 
+                <?php
+                    /**
+                     * Fired here, wrapping the payment methods, exactly as
+                     * CheckoutRenderer does. It used to fire from
+                     * renderCheckoutDetails() — the address/shipping pane — which
+                     * is a different part of the modal entirely, so anything
+                     * hooked to it (the saved-payment-method picker, Turnstile)
+                     * rendered detached from the methods it belongs to. A hook
+                     * named "before payment methods" has to fire before the
+                     * payment methods.
+                     */
+                    if ($this->beforePaymentMethodsPlacement() === 'payment') {
+                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart]);
+                    }
+                ?>
+
                 <div class="fct_checkout_payment_methods" data-fluent-cart-checkout-payment-methods>
                     <?php $this->renderPaymentMethods(); ?>
                 </div>
+
+                <?php
+                    // The modal never fired this at all, so add-ons rendering
+                    // below the methods (the save-my-card consent box) were
+                    // simply absent from quick checkout.
+                    do_action('fluent_cart/after_payment_methods', ['cart' => $this->cart]);
+                ?>
 
                 <div class="fct-modal-checkout-btn-wrap">
                     <?php (new CheckoutRenderer($this->cart))->renderCheckoutButton(); ?>
@@ -484,6 +670,7 @@ class ModalCheckoutRenderer
 
         $selectedPaymentMethod = Arr::get($this->cart->checkout_data, 'form_data._fct_pay_method', '');
         $activePaymentMethods = PaymentMethods::getActiveMethodInstance($this->cart);
+        $hadActiveMethods = !empty($activePaymentMethods);
 
         $activePaymentMethods = apply_filters('fluent_cart/checkout_active_payment_methods', $activePaymentMethods, [
                 'cart' => $this->cart
@@ -498,7 +685,9 @@ class ModalCheckoutRenderer
         }
 
         if (!$selectedPaymentMethod && !empty($activePaymentMethods)) {
-            $selectedPaymentMethod = $activePaymentMethods[0] ? $activePaymentMethods[0]->getMeta('route') : '';
+            // reset() not [0] — array_filter above preserves keys, so key 0 may be gone.
+            $firstMethod = reset($activePaymentMethods);
+            $selectedPaymentMethod = $firstMethod ? $firstMethod->getMeta('route') : '';
         }
 
         $checkoutMethodStyle = $this->storeSettings->get('checkout_method_style', 'logo');
@@ -520,7 +709,11 @@ class ModalCheckoutRenderer
                     } ?>
                 <?php else: ?>
                     <?php
-                        $emptyText = esc_html__('No Payment method is activated for this site yet.', 'fluent-cart');
+                        if ($hadActiveMethods) {
+                            $emptyText = esc_html__('None of the available payment methods can process this order. Please contact the store.', 'fluent-cart');
+                        } else {
+                            $emptyText = esc_html__('No Payment method is activated for this site yet.', 'fluent-cart');
+                        }
                         if (current_user_can('manage_options')) {
                             $emptyText .= '<a href="' . esc_url(URL::getDashboardUrl('settings/payments')) . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
                         }
@@ -609,7 +802,7 @@ class ModalCheckoutRenderer
             'method_title' => $methodTitle,
             'method_style' => $methodStyle,
         ];
-        $paymentMethodClass = apply_filters_deprecated('fluent_cart_payment_method_list_class', ['', $pmContext], '1.3.16', 'fluent_cart/payment_method_list_class', 'Use fluent_cart/payment_method_list_class instead of fluent_cart_payment_method_list_class.');
+        $paymentMethodClass = '';
         $paymentMethodClass = apply_filters('fluent_cart/payment_method_list_class', $paymentMethodClass, $pmContext);
 
         ?>

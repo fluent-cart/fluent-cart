@@ -30,6 +30,10 @@ export default {
       loading: false
     }
   },
+  mounted() {
+    this.fetchSettings();
+    this.app_ready = true;
+  },
   methods: {
     fetchSettings() {
       this.loading = true;
@@ -44,7 +48,6 @@ export default {
             });
           })
           .catch(error => {
-            console.log(error);
           })
       //   .always(() => {
       //       this.loading = false;
@@ -64,10 +67,6 @@ export default {
         });
       }
     }
-  },
-  mounted() {
-    this.fetchSettings();
-    this.app_ready = true;
   }
 }
 </script>

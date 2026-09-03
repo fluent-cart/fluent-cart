@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-      :title="isEditing ? `Edit ${currentUserName}'s Role` : 'Add Role'"
+      :title="title"
       v-model="modelValue"
       @closed="closeModal"
       :append-to-body="true"
@@ -8,7 +8,7 @@
 
     <div class="role-form">
       <el-form label-position="top">
-        <el-form-item :label="$t('Select User')" v-if="!isEditing">
+        <el-form-item :label="translate('Select User')" v-if="!isEditing">
           <el-select
               v-model="selectedUser"
               :remote="true"
@@ -16,7 +16,7 @@
               :loading="loadingUsers"
               filterable
               clearable
-              :placeholder="$t('Type to search user')"
+              :placeholder="translate('Type to search user')"
               class="w-full"
               @change="() => { delete validationErrors['user_id'] }"
           >
@@ -33,21 +33,21 @@
             </el-option>
           </el-select>
 
-          <validation-error
+          <ValidationError
               v-if="validationErrors.hasOwnProperty('user_id')"
               :validation-errors="validationErrors"
               field-key="user_id"
           />
         </el-form-item>
 
-        <el-form-item :label="$t('Select Role')">
+        <el-form-item :label="translate('Select Role')">
           <el-select
               @change="(currentUserName)=>{
                 delete validationErrors['role_key']
               }"
               id="role_key"
               v-model="selectedRole"
-              :placeholder="$t('Select a role')"
+              :placeholder="translate('Select a role')"
               class="w-full"
               popper-class="fct-select-role-dropdown"
           >
@@ -66,7 +66,7 @@
             </el-option>
           </el-select>
 
-          <validation-error
+          <ValidationError
               v-if="validationErrors.hasOwnProperty('role_key')"
               :validation-errors="validationErrors"
               field-key="role_key"
@@ -78,7 +78,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="closeModal">
-          {{ $t('Cancel') }}
+          {{ translate('Cancel') }}
         </el-button>
         <el-button
             type="primary"
@@ -86,7 +86,7 @@
             :loading="submitting"
             :disabled="submitting"
         >
-          {{ isEditing ? $t('Update Role') : $t('Attach Role') }}
+          {{ isEditing ? translate('Update Role') : translate('Attach Role') }}
         </el-button>
       </span>
     </template>
@@ -94,10 +94,11 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue';
+import {onMounted, ref, watch, computed} from 'vue';
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
+import translate from "@/utils/translator/Translator";
 
 const modelValue = ref(false);
 const props = defineProps({});
@@ -135,7 +136,6 @@ const getUserRoles = () => {
           Notify.error(error.message);
           return;
         }
-        console.log(error);
       })
       .finally(() => {
 
@@ -176,6 +176,12 @@ const closeModal = () => {
 
 
 const currentUserName = ref('');
+
+/* translators: %1$s: user name */
+const title = computed(() => isEditing.value
+    ? translate('Edit %1$s\'s Role', currentUserName.value)
+    : translate('Add Role')
+);
 
 const openModal = (user, role, name, editing = false) => {
   selectedUser.value = user;

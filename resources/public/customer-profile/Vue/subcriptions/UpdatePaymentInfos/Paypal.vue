@@ -36,6 +36,21 @@ export default {
       return this.subscription.billing_addresses;
     },
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.loadPaypal();
+    });
+    const primary = this.getBillingAddresses?.find(addr => addr.is_primary);
+    if (primary) {
+      this.selectedAddress = primary.id;
+    }
+    if (this.updateMethod) {
+      this.reason = 'update_payment_method'; // changing paypal account
+    }
+
+    // Note: right now it is not needed, because we are not allowing to update payment method in paypal from the frontend
+    // this.updatePaymentUrl = `https://www.sandbox.paypal.com/myaccount/autopay/connect/${this.subscription.vendor_subscription_id}/funding`;
+  },
   methods: {
     translate,
     closeUpdatePaymentModal() {
@@ -169,27 +184,11 @@ export default {
 
         await buttons.render(container);
       } catch (err) {
-        console.error('PayPal Buttons failed to render:', err);
       } finally {
         this.loading = false;
       }
 
     }
-  },
-  mounted() {
-    this.$nextTick(() => {
-      this.loadPaypal();
-    });
-    const primary = this.getBillingAddresses?.find(addr => addr.is_primary);
-    if (primary) {
-      this.selectedAddress = primary.id;
-    }
-    if (this.updateMethod) {
-      this.reason = 'update_payment_method'; // changing paypal account
-    }
-
-    // Note: right now it is not needed, because we are not allowing to update payment method in paypal from the frontend
-    // this.updatePaymentUrl = `https://www.sandbox.paypal.com/myaccount/autopay/connect/${this.subscription.vendor_subscription_id}/funding`;
   },
 }
 </script>

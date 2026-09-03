@@ -3,11 +3,13 @@
     <SettingsHeader
         :heading="currentRouteTitle"
         :loading="saving"
-        @onSave="saveSettings"
+        @on-save="saveSettings"
     />
 
 
     <div class="setting-wrap-inner">
+      <AdminNotice/>
+
       <template v-if="!hasFormFieldsError">
         <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
           <el-skeleton :loading="formLoading" animated>
@@ -53,7 +55,7 @@
                 :form="form"
                 :showSubmitButton="true"
 
-                @onSubmitButtonClick="saveSettings"
+                @on-submit-button-click="saveSettings"
                 :submitButtonText="translate('Save')"
                 :loading="saving"
                 @on-change="(value) => {}"
@@ -90,7 +92,9 @@ import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import CardBody from "@/Bits/Components/Card/CardBody.vue";
 import Card from "@/Bits/Components/Card/Card.vue";
 import SettingsHeader from "./Parts/SettingsHeader.vue";
-
+import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import AppConfig from "@/utils/Config/AppConfig";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 
 const settingsModel = useSettingsModel();
 const {form} = settingsModel.data;
@@ -138,9 +142,34 @@ const saveSettings = () => {
         );
 
         if (currentRouteName.value === 'store_setup') {
-          setTimeout(() => {
-            window.location.reload();
-          }, 300)
+          const shopKeys = ['currency', 'currency_position', 'currency_separator',
+            'decimal_separator', 'decimal_points', 'order_mode',
+            'store_name', 'store_logo', 'weight_unit', 'dimension_unit'];
+          const shopPatch = {};
+          shopKeys.forEach(function(k) {
+            if (form.values[k] !== undefined) {
+              shopPatch[k] = form.values[k];
+            }
+          });
+          if (shopPatch.currency) {
+            const signs = AppConfig.get('currency_signs', {});
+            if (signs[shopPatch.currency] !== undefined) {
+              shopPatch.currency_sign = signs[shopPatch.currency];
+            }
+          }
+          if (shopPatch.decimal_points !== undefined) {
+            shopPatch.is_zero_decimal = parseInt(shopPatch.decimal_points, 10) === 0;
+          }
+          const prevShop = AppConfig.get('shop', {});
+          const chartFields = ['currency', 'currency_position', 'decimal_separator', 'decimal_points'];
+          const currencyChanged = chartFields.some(function(k) {
+            return shopPatch[k] !== undefined && shopPatch[k] !== prevShop[k];
+          });
+          AppConfig.mergeConfig({ shop: Object.assign({}, prevShop, shopPatch) });
+          CurrencyFormatter.setLocale();
+          if (currencyChanged) {
+            window.dispatchEvent(new CustomEvent('fluentCartCurrencyChange'));
+          }
         }
         //getSettings();
       })

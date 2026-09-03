@@ -13,7 +13,11 @@
           <el-table :data="activatedSites" class="w-full">
             <el-table-column :label="$t('Site URL')" width="360">
               <template #default="scope">
-                <span>{{ scope.row.site_url }}</span>
+                <router-link v-if="scope.row.site_id" class="link"
+                    :to="{ name: 'view_site', params: { site_id: scope.row.site_id } }">
+                  {{ scope.row.site_url }}
+                </router-link>
+                <span v-else>{{ scope.row.site_url }}</span>
                 <Badge v-if="scope.row.is_local && scope.row.is_local != '0'" status="warning" size="small" :hide-icon="true" :text="$t('local')" style="margin-left: 10px;"/>
               </template>
             </el-table-column>
@@ -27,6 +31,16 @@
             <el-table-column :label="$t('Activated at')" width="140">
               <template #default="scope">
                 <span>{{ formatDate(scope.row.created_at) }}</span>
+              </template>
+            </el-table-column>
+
+            <el-table-column :label="$t('Last Update')" width="150">
+              <template #default="scope">
+                <div v-if="scope.row.last_update_version || scope.row.last_update_date" class="fct-license-site-last-update">
+                  <span v-if="scope.row.last_update_version" class="version">{{ scope.row.last_update_version }}</span>
+                  <span v-if="scope.row.last_update_date" class="date">{{ formatDate(scope.row.last_update_date) }}</span>
+                </div>
+                <span v-else>&mdash;</span>
               </template>
             </el-table-column>
 

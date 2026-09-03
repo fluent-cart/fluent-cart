@@ -5,7 +5,6 @@ import fontSize from "../../../../styles/tailwind/extends/fontSize";
 import borderRadius from "../../../../styles/tailwind/extends/borderRadius";
 
 module.exports = {
-    darkMode: 'class',
     content: [
         './resources/admin/BlockEditor/RelatedProduct/**/*.*',
     ],
