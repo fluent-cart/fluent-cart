@@ -805,11 +805,4 @@ class Product extends Model
     {
         return $this->hasMany(ProductMeta::class, 'object_id')->where('object_type', 'product_integration');
     }
-
-    public function reviews(): \FluentCart\Framework\Database\Orm\Relations\HasMany
-    {
-        return $this->hasMany(ProductReview::class, 'comment_post_ID', 'ID')
-            ->where('comment_parent', 0)
-            ->where('comment_approved', '1');
-    }
 }

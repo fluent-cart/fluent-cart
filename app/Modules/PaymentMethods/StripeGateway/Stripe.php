@@ -636,6 +636,21 @@ class Stripe extends AbstractPaymentGateway
                 'tooltip' => __('Choose between Embedded and Hosted checkout modes. Embedded mode is recommended for most use cases. For Bank transfers, use Hosted mode. (checkout.session.completed webhook event will be triggered only for hosted mode)', 'fluent-cart'),
                 'description' => __("Embedded checkout is recommended for most use cases. For Bank transfers , or if any payment methods are not showing up on embedded checkout, try Hosted checkout. ('checkout.session.completed' webhook event will be triggered only for hosted checkout)", 'fluent-cart')
             ),
+            'submit_type'         => array(
+                'value'       => 'auto',
+                'label'       => __('Submit Button Label', 'fluent-cart'),
+                'type'        => 'select',
+                'filterable'  => false,
+                'options'     => [
+                    ['value' => 'auto', 'label' => __('Automatic (Pay / Subscribe)', 'fluent-cart')],
+                    ['value' => 'pay', 'label' => __('Pay', 'fluent-cart')],
+                    ['value' => 'book', 'label' => __('Book', 'fluent-cart')],
+                    ['value' => 'donate', 'label' => __('Donate', 'fluent-cart')],
+                    ['value' => 'subscribe', 'label' => __('Subscribe', 'fluent-cart')],
+                ],
+                'tooltip'     => __('Stripe customises the submit button and surrounding copy from this. Applies to Stripe Hosted Checkout only.', 'fluent-cart'),
+                'description' => __('Applies to Stripe Hosted Checkout only, and is ignored when a card is being saved without a charge. Automatic gives one-time orders the "Buy" button and subscriptions the "Subscribe" button.', 'fluent-cart')
+            ),
             'webhook_desc'        => array(
                 'value' => Webhook::webhookInstruction(),
                 'label' => __('Webhook URL', 'fluent-cart'),

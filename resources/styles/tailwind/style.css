@@ -28,7 +28,6 @@
 @import "product.scss";
 @import "card.scss";
 @import "order.scss";
-@import "review.scss";
 @import "step.scss";
 @import "icon.scss";
 @import "chart.scss";
@@ -81,6 +80,7 @@
 @import "inventory.scss";
 @import "pdf.scss";
 @import "shared-variant-modal.scss";
+@import "fluent-player-video.scss";
 @import "export.scss";
 @import "advanced-variation.scss";
 @import "attributes.scss";

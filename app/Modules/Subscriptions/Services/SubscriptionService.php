@@ -167,7 +167,7 @@ class SubscriptionService
 
         $transactionData = wp_parse_args($transactionData, $transactionDefaults);
 
-        $createdAt = Arr::get($transactionData, 'created_at', DateTime::now()->format('Y-m-d H:i:s'));
+        $createdAt = self::normalizeGatewayTime(Arr::get($transactionData, 'created_at'));
 
         // Let's create the order item first
         $variation = $subscriptionModel->variation;
@@ -182,7 +182,7 @@ class SubscriptionService
         if (!$taxTotal && $subscriptionModel->recurring_tax_total) {
             $taxTotal = $subscriptionModel->recurring_tax_total;
         }
-        
+
         // A subscription item may be inclusive even when the parent order is mixed (behavior=3).
         // Check the per-item line_meta to determine the actual inclusion for this item.
         $isItemInclusive = $parentOrder->tax_behavior === 2
@@ -248,103 +248,103 @@ class SubscriptionService
             'tax_total' => $taxTotal,
             'total_amount' => $transactionData['total'],
             'total_paid' => $transactionData['status'] === Status::TRANSACTION_SUCCEEDED ? $transactionData['total'] : 0,
-            'completed_at' => DateTime::now()->format('Y-m-d H:i:s'),
+            'completed_at' => $createdAt,
             'created_at' => $createdAt,
             'config' => []
         ];
 
         try {
-        $childOrder = Order::query()->create($childOrderData);
+            $childOrder = Order::query()->create($childOrderData);
 
-        if (!$childOrder) {
-            throw new \RuntimeException(__('Failed to create child order for the subscription renewal.', 'fluent-cart'));
-        }
+            if (!$childOrder) {
+                throw new \RuntimeException(__('Failed to create child order for the subscription renewal.', 'fluent-cart'));
+            }
 
-        $billingAddress = $parentOrder->billing_address;
-        $shippingAddress = $parentOrder->shipping_address;
+            $billingAddress = $parentOrder->billing_address;
+            $shippingAddress = $parentOrder->shipping_address;
 
-        $customer = $parentOrder->customer;
+            $customer = $parentOrder->customer;
 
-        $fullName = '';
-        $email = '';
-        $firstName = '';
-        $lastName = '';
-        if ($customer) {
-            $fullName = $customer->first_name . ' ' . $customer->last_name;
-            $email = $customer->email;
-            $firstName = $customer->first_name;
-            $lastName = $customer->last_name;
-        }
+            $fullName = '';
+            $email = '';
+            $firstName = '';
+            $lastName = '';
+            if ($customer) {
+                $fullName = $customer->first_name . ' ' . $customer->last_name;
+                $email = $customer->email;
+                $firstName = $customer->first_name;
+                $lastName = $customer->last_name;
+            }
 
-        $billingAddressData = $billingAddress ? [
-            'type' => 'billing',
-            'full_name' => $fullName,
-            'address_1' => $billingAddress->address_1,
-            'address_2' => $billingAddress->address_2,
-            'city' => $billingAddress->city,
-            'state' => $billingAddress->state,
-            'postcode' => $billingAddress->postcode,
-            'country' => $billingAddress->country,
-            'email' => $email,
-            'first_name' => $firstName,
-            'last_name' => $lastName
-        ] : [];
+            $billingAddressData = $billingAddress ? [
+                'type' => 'billing',
+                'full_name' => $fullName,
+                'address_1' => $billingAddress->address_1,
+                'address_2' => $billingAddress->address_2,
+                'city' => $billingAddress->city,
+                'state' => $billingAddress->state,
+                'postcode' => $billingAddress->postcode,
+                'country' => $billingAddress->country,
+                'email' => $email,
+                'first_name' => $firstName,
+                'last_name' => $lastName
+            ] : [];
 
-        $shippingAddressData = $shippingAddress ? [
-            'type' => 'shipping',
-            'full_name' => $fullName,
-            'address_1' => $shippingAddress->address_1,
-            'address_2' => $shippingAddress->address_2,
-            'city' => $shippingAddress->city,
-            'state' => $shippingAddress->state,
-            'postcode' => $shippingAddress->postcode,
-            'country' => $shippingAddress->country,
-            'email' => $email,
-            'first_name' => $firstName,
-            'last_name' => $lastName
-        ] : [];
+            $shippingAddressData = $shippingAddress ? [
+                'type' => 'shipping',
+                'full_name' => $fullName,
+                'address_1' => $shippingAddress->address_1,
+                'address_2' => $shippingAddress->address_2,
+                'city' => $shippingAddress->city,
+                'state' => $shippingAddress->state,
+                'postcode' => $shippingAddress->postcode,
+                'country' => $shippingAddress->country,
+                'email' => $email,
+                'first_name' => $firstName,
+                'last_name' => $lastName
+            ] : [];
 
-        \FluentCart\App\Helpers\AddressHelper::insertOrderAddresses(
-            $childOrder->id,
-            $billingAddressData,
-            $shippingAddressData
-        );
+            \FluentCart\App\Helpers\AddressHelper::insertOrderAddresses(
+                $childOrder->id,
+                $billingAddressData,
+                $shippingAddressData
+            );
 
-        \FluentCart\App\Helpers\AddressHelper::copyOrderAddressMeta($childOrder->id, 'billing', $billingAddress);
-        \FluentCart\App\Helpers\AddressHelper::copyOrderAddressMeta($childOrder->id, 'shipping', $shippingAddress);
+            \FluentCart\App\Helpers\AddressHelper::copyOrderAddressMeta($childOrder->id, 'billing', $billingAddress);
+            \FluentCart\App\Helpers\AddressHelper::copyOrderAddressMeta($childOrder->id, 'shipping', $shippingAddress);
 
-        // Copy tax ID meta from parent order if exists
-        $parentTaxId = $parentOrder->getMeta('tax_id', '');
-        if ($parentTaxId) {
-            $childOrder->updateMeta('tax_id', $parentTaxId);
-        }
+            // Copy tax ID meta from parent order if exists
+            $parentTaxId = $parentOrder->getMeta('tax_id', '');
+            if ($parentTaxId) {
+                $childOrder->updateMeta('tax_id', $parentTaxId);
+            }
 
-        // Copy order tax rates from parent order
-        $parentTaxRates = $parentOrder->orderTaxRates;
-        foreach ($parentTaxRates as $taxRate) {
-            OrderTaxRate::query()->create([
-                'order_id'    => $childOrder->id,
-                'tax_rate_id' => $taxRate->tax_rate_id,
-                'shipping_tax' => $taxRate->shipping_tax,
-                'order_tax'   => $taxRate->order_tax,
-                'total_tax'   => $taxRate->total_tax,
-                'meta'        => $taxRate->meta,
-            ]);
-        }
+            // Copy order tax rates from parent order
+            $parentTaxRates = $parentOrder->orderTaxRates;
+            foreach ($parentTaxRates as $taxRate) {
+                OrderTaxRate::query()->create([
+                    'order_id'    => $childOrder->id,
+                    'tax_rate_id' => $taxRate->tax_rate_id,
+                    'shipping_tax' => $taxRate->shipping_tax,
+                    'order_tax'   => $taxRate->order_tax,
+                    'total_tax'   => $taxRate->total_tax,
+                    'meta'        => $taxRate->meta,
+                ]);
+            }
 
-        //  Create Order Item
-        $orderItem['order_id'] = $childOrder->id;
-        $orderItem['created_at'] = $createdAt;
-        OrderItem::query()->create($orderItem);
+            //  Create Order Item
+            $orderItem['order_id'] = $childOrder->id;
+            $orderItem['created_at'] = $createdAt;
+            OrderItem::query()->create($orderItem);
 
-        // let's create the transaction
-        $transactionData['order_id'] = $childOrder->id;
+            // let's create the transaction
+            $transactionData['order_id'] = $childOrder->id;
 
-        $createdTransaction = OrderTransaction::query()->create($transactionData);
+            $createdTransaction = OrderTransaction::query()->create($transactionData);
 
-        $subscriptionModel = self::syncSubscriptionStates($subscriptionModel, $subscriptionUpdateArgs);
+            $subscriptionModel = self::syncSubscriptionStates($subscriptionModel, $subscriptionUpdateArgs);
 
-        $wpdb->query('COMMIT');
+            $wpdb->query('COMMIT');
         } catch (\Throwable $e) {
             $wpdb->query('ROLLBACK');
             if ($lockName) {
@@ -524,6 +524,8 @@ class SubscriptionService
     {
         $renewalOrder = $transaction->order;
 
+        $settledAt = Arr::get((array) $transaction->meta, 'settled_at');
+
         // payment_status and total_paid are deliberately NOT set here — every caller has
         // already marked the transaction succeeded, and syncOrderStatuses() below derives
         // both from the transactions and claims the pending → paid transition atomically.
@@ -536,7 +538,7 @@ class SubscriptionService
             'status' => $renewalOrder->fulfillment_type === 'physical' ? Status::ORDER_PROCESSING : Status::ORDER_COMPLETED,
             'type' => Status::ORDER_TYPE_RENEWAL,
             'payment_method' => $transaction->payment_method,
-            'completed_at' => DateTime::now()->format('Y-m-d H:i:s')
+            'completed_at' => self::normalizeGatewayTime($settledAt)
         ];
 
         $renewalOrder->fill($orderUpdateData);
@@ -573,6 +575,27 @@ class SubscriptionService
         }
 
         return $subscriptionModel;
+    }
+
+    /**
+     * A gateway-supplied charge time (meta.settled_at / created_at) normalized to a
+     * GMT datetime string, falling back to now when absent or unparseable — a
+     * malformed timestamp must never fatal a webhook.
+     *
+     * @param mixed $time
+     * @return string
+     */
+    private static function normalizeGatewayTime($time)
+    {
+        if ($time) {
+            try {
+                return DateTime::anyTimeToGmt($time)->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                // fall through to now
+            }
+        }
+
+        return DateTime::now()->format('Y-m-d H:i:s');
     }
 
     /**
@@ -991,7 +1014,7 @@ class SubscriptionService
                     'current_interval' => $subscription->billing_interval,
                     'new_interval' => $value
                 ]);
-                
+
                 if (!in_array($value, $validIntervals)) {
                     return new \WP_Error(
                         'invalid_interval',

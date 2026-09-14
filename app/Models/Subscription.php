@@ -1044,9 +1044,9 @@ class Subscription extends Model
             return true;
         }
 
-        // Past-due keeps access while the unpaid invoice is inside its dunning
-        // grace window; the expiry crons flip it to expired past that.
-        if ($this->status === Status::SUBSCRIPTION_PAST_DUE) {
+        // Past-due/expiring/failing keep access while the unpaid invoice is inside its
+        // dunning grace window; checkAndExpireSubscriptions() flips them to expired past that.
+        if (in_array($this->status, [Status::SUBSCRIPTION_PAST_DUE, Status::SUBSCRIPTION_EXPIRING, Status::SUBSCRIPTION_FAILING])) {
             $dueTimestamp = $this->next_billing_date ? strtotime($this->next_billing_date) : 0;
             $graceDays = SubscriptionHelper::getGracePeriodDaysForInterval((string) $this->billing_interval);
 
@@ -1364,9 +1364,57 @@ class Subscription extends Model
         return $query;
     }
 
+    /**
+     * Whether a lapsed/canceled subscription still has unexpired paid time to
+     * credit back on reactivation. Deliberately NOT hasAccessValidity() — that
+     * method answers "can the customer access content right now" and its status
+     * list is free to evolve for that purpose alone. This is its own copy so a
+     * future access-only change (e.g. a new status added for content gating)
+     * can't silently change how much reactivation trial credit gets granted.
+     *
+     * @return bool
+     */
+    public function hasReactivationTrialCredit(): bool
+    {
+        $validStatuses = [
+            Status::SUBSCRIPTION_ACTIVE,
+            Status::SUBSCRIPTION_TRIALING,
+            Status::SUBSCRIPTION_COMPLETED
+        ];
+
+        if (in_array($this->status, $validStatuses)) {
+            return true;
+        }
+
+        // No grace-period math here on purpose: past_due/expiring/failing fall through
+        // to the plain next_billing_date > now check below. If that date is still
+        // future, credit is granted same as any other status; if it's past, this
+        // returns false the same way the grace window would eventually clamp to via
+        // getReactivationTrialDays()'s <=1 floor — without a redundant grace-days
+        // lookup either way.
+
+        $invalidStatuses = [
+            Status::SUBSCRIPTION_EXPIRED,
+            Status::SUBSCRIPTION_INTENDED,
+            Status::SUBSCRIPTION_PENDING
+        ];
+
+        if (in_array($this->status, $invalidStatuses)) {
+            return false;
+        }
+
+        $nextBillingDate = $this->next_billing_date;
+
+        if (!$nextBillingDate) {
+            $nextBillingDate = $this->guessNextBillingDate();
+        }
+
+        return strtotime($nextBillingDate) > time();
+    }
+
     public function getReactivationTrialDays()
     {
-        if (!$this->hasAccessValidity()) {
+        if (!$this->hasReactivationTrialCredit()) {
             return 0;
         }
 
@@ -1454,7 +1502,7 @@ class Subscription extends Model
      * Processes all candidates in batches to avoid memory issues.
      * The query example works as follows:
      * SELECT * FROM subscriptions WHERE
-            status IN ('active', 'trialing', 'canceled', 'expiring', 'past_due')
+            status IN ('active', 'trialing', 'canceled', 'expiring', 'failing', 'past_due')
             AND next_billing_date IS NOT NULL
             AND id > 0                          -- last processed ID for batch cursor
             AND next_billing_date < DATE_SUB(
@@ -1513,6 +1561,7 @@ class Subscription extends Model
                     Status::SUBSCRIPTION_TRIALING,
                     Status::SUBSCRIPTION_CANCELED,
                     Status::SUBSCRIPTION_EXPIRING,
+                    Status::SUBSCRIPTION_FAILING,
                     Status::SUBSCRIPTION_PAST_DUE
                 ])
                 ->whereNotIn('collection_method', ['manual', 'system'])
@@ -1525,6 +1574,7 @@ class Subscription extends Model
                             Status::SUBSCRIPTION_ACTIVE,
                             Status::SUBSCRIPTION_TRIALING,
                             Status::SUBSCRIPTION_EXPIRING,
+                            Status::SUBSCRIPTION_FAILING,
                             Status::SUBSCRIPTION_PAST_DUE,
                         ])->where(function ($dateQuery) use ($cutoffDates, $knownIntervals, $defaultCutoff) {
                             $index = 0;

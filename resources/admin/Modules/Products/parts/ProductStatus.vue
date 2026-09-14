@@ -103,24 +103,14 @@ const getStatusTooltip = () => {
 const defaultOtherInfo = {
     use_pricing_table: 'no',
     group_pricing_by: 'payment_type',
-    sold_individually: 'no',
-    reviews_enabled: 'yes'
+    sold_individually: 'no'
 };
 
 watch(
     () => props.product.detail,
     (newDetail) => {
-        if (newDetail) {
-            if (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0) {
-                props.product.detail.other_info = { ...defaultOtherInfo };
-            } else {
-                // Fill in missing keys from defaults (e.g. reviews_enabled for existing products)
-                for (const [key, value] of Object.entries(defaultOtherInfo)) {
-                    if (!(key in newDetail.other_info)) {
-                        newDetail.other_info[key] = value;
-                    }
-                }
-            }
+        if (newDetail && (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0)) {
+            props.product.detail.other_info = { ...defaultOtherInfo };
         }
     },
     { immediate: true }
@@ -282,16 +272,9 @@ onMounted(() => {
             </div>
           </li>
         </ul>
-          <div class="mt-4 pt-4 space-y-2" v-if="product.detail">
+          <div class="mt-4 pt-4" v-if="product.detail">
               <el-checkbox @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
                   {{ translate('Limit purchases to 1 item per order') }}
-              </el-checkbox>
-              <!-- One-way :model-value, not v-model: onChangeInputField() already writes
-                   product.detail.other_info.reviews_enabled itself, so binding v-model here
-                   would mutate the prop redundantly. The sibling above still uses v-model
-                   (pre-existing, baselined) and can be converted the same way. -->
-              <el-checkbox @change="value => {productEditModel.onChangeInputField('reviews_enabled',value)}" :model-value="product.detail.other_info.reviews_enabled" true-value="yes" false-value="no">
-                  {{ translate('Enable reviews for this product') }}
               </el-checkbox>
           </div>
       </Card.Body>

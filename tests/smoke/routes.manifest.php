@@ -66,19 +66,19 @@ $variation = function ($declarationId, $label, array $params, $consumerFile, $co
 
 $api = 'app/Http/Routes/api.php';
 
-$id = $declare($api, 47, 'widgets');
+$id = $declare($api, 46, 'widgets');
 $variation($id, 'single-order widget payload', [
     'filter' => 'fluent_cart_single_order_page',
     'data'   => ['order_id' => '{order_id}'],
 ], 'resources/admin/Bits/Components/DynamicTemplates/DynamicTemplates.vue', 65, ['needs' => 'order']);
 
-$declare($api, 53, 'dashboard', [
+$declare($api, 52, 'dashboard', [
     'skip' => 'DashboardController::getOnboardingData() calls GlobalPaymentHandler::getAll(); Phase 1 is forbidden from invoking any payment gateway registry.',
 ]);
-$declare($api, 61, 'dashboard/stats');
+$declare($api, 60, 'dashboard/stats');
 
-$declare($api, 67, 'products/variants');
-$productsId = $declare($api, 74, 'products', [
+$declare($api, 66, 'products/variants');
+$productsId = $declare($api, 73, 'products', [
     'params' => [
         'per_page'   => 10,
         'page'       => 1,
@@ -157,12 +157,12 @@ $variation($productsId, 'Elementor variation selector search and scopes', [
     'scopes'      => [],
 ], 'resources/admin/elementor/VariationSelector/SelectorModel.js', 56);
 
-$declare($api, 78, 'products/get-bundle-info/{productId}', ['needs' => 'product']);
-$declare($api, 86, 'products/fetch-term');
-$declare($api, 89, 'products/searchProductByName', [
+$declare($api, 77, 'products/get-bundle-info/{productId}', ['needs' => 'product']);
+$declare($api, 85, 'products/fetch-term');
+$declare($api, 88, 'products/searchProductByName', [
     'params' => ['name' => '__fc_smoke__', 'url_mode' => 'product', 'termId' => 0],
 ]);
-$suggestSkuId = $declare($api, 93, 'products/suggest-sku', [
+$suggestSkuId = $declare($api, 92, 'products/suggest-sku', [
     'params' => ['title' => 'Smoke Product', 'variant_title' => '', 'exclude_id' => 0],
 ]);
 $variation($suggestSkuId, 'variant title and excluded ID', [
@@ -170,14 +170,14 @@ $variation($suggestSkuId, 'variant title and excluded ID', [
     'variant_title' => 'Annual',
     'exclude_id'    => '{variation_id}',
 ], 'resources/admin/Modules/Products/parts/SkuInput.vue', 54, ['needs' => 'variation']);
-$searchVariantId = $declare($api, 97, 'products/searchVariantByName', [
+$searchVariantId = $declare($api, 96, 'products/searchVariantByName', [
     'params' => ['name' => '__fc_smoke__', 'ids' => []],
 ]);
 $variation($searchVariantId, 'report filter selected variation IDs', [
     'name' => '',
     'ids'  => ['{variation_id}'],
 ], 'resources/admin/Modules/Reports/Components/GlobalReportFilter.vue', 175, ['needs' => 'variation']);
-$variantOptionsId = $declare($api, 101, 'products/search-product-variant-options', [
+$variantOptionsId = $declare($api, 100, 'products/search-product-variant-options', [
     'params' => ['search' => '', 'include_ids' => [], 'scopes' => []],
 ]);
 $variation($variantOptionsId, 'bundle editor excludes bundle products', [
@@ -185,16 +185,16 @@ $variation($variantOptionsId, 'bundle editor excludes bundle products', [
     'include_ids' => ['{variation_id}'],
     'scopes'      => ['nonBundle'],
 ], 'resources/admin/Modules/Products/parts/ProductBundleSelector.vue', 97, ['needs' => 'variation']);
-$declare($api, 105, 'products/findSubscriptionVariants', ['params' => ['name' => '__fc_smoke__']]);
-$declare($api, 109, 'products/fetchProductsByIds', [
+$declare($api, 104, 'products/findSubscriptionVariants', ['params' => ['name' => '__fc_smoke__']]);
+$declare($api, 108, 'products/fetchProductsByIds', [
     'needs'  => 'variation',
     'params' => ['productIds' => '{productIds}'],
 ]);
-$declare($api, 112, 'products/fetchVariationsByIds', [
+$declare($api, 111, 'products/fetchVariationsByIds', [
     'needs'  => 'variation',
     'params' => ['productIds' => '{variationIds}'],
 ]);
-$bulkId = $declare($api, 124, 'products/bulk-edit-data', [
+$bulkId = $declare($api, 123, 'products/bulk-edit-data', [
     'params' => ['per_page' => 10, 'page' => 1],
 ]);
 $variation($bulkId, 'constrained product and variation IDs', [
@@ -213,22 +213,22 @@ $variation($bulkId, 'search a replacement product', [
     'search'   => '{product_id}',
     'per_page' => 1,
 ], 'resources/admin/Models/BulkEditModel.js', 511, ['needs' => 'product']);
-$declare($api, 130, 'products/get-max-excerpt-word-count');
-$declare($api, 133, 'products/{product}', ['needs' => 'product']);
-$declare($api, 136, 'products/{productId}/related-products', ['needs' => 'product']);
-$pricingId = $declare($api, 139, 'products/{productId}/pricing', ['needs' => 'product']);
+$declare($api, 129, 'products/get-max-excerpt-word-count');
+$declare($api, 132, 'products/{product}', ['needs' => 'product']);
+$declare($api, 135, 'products/{productId}/related-products', ['needs' => 'product']);
+$pricingId = $declare($api, 138, 'products/{productId}/pricing', ['needs' => 'product']);
 $variation($pricingId, 'product editor menu relation', [
     'with' => ['product_menu'],
 ], 'resources/admin/Modules/Products/ProductRoute.vue', 53, ['needs' => 'product']);
-$declare($api, 146, 'products/{id}/upgrade-paths', ['needs' => 'product']);
-$declare($api, 159, 'products/variation/{variantId}/upgrade-paths', [
+$declare($api, 145, 'products/{id}/upgrade-paths', ['needs' => 'product']);
+$declare($api, 158, 'products/variation/{variantId}/upgrade-paths', [
     'skip' => 'The admin consumer supplies live order context and this controller enters PlanUpgradeService payment-path eligibility; Phase 1 never touches a payment path.',
 ]);
-$declare($api, 206, 'products/getDownloadableUrl/{downloadableId}', ['needs' => 'product_download']);
-$declare($api, 210, 'products/{productId}/pricing-widgets', ['needs' => 'product']);
-$declare($api, 281, 'variants');
-$declare($api, 291, 'options/attr/groups/library');
-$attributeGroupsId = $declare($api, 294, 'options/attr/groups', [
+$declare($api, 205, 'products/getDownloadableUrl/{downloadableId}', ['needs' => 'product_download']);
+$declare($api, 209, 'products/{productId}/pricing-widgets', ['needs' => 'product']);
+$declare($api, 280, 'variants');
+$declare($api, 290, 'options/attr/groups/library');
+$attributeGroupsId = $declare($api, 293, 'options/attr/groups', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -267,8 +267,8 @@ $variation($attributeGroupsId, 'attribute editor pagination and search', [
     'page'     => 2,
     'search'   => '__fc_smoke__',
 ], 'resources/admin/Modules/Attributes/AttrGroups.vue', 136);
-$declare($api, 305, 'options/attr/group/{group_id}', ['needs' => 'attribute_group']);
-$attributeTermsId = $declare($api, 314, 'options/attr/group/{group_id}/terms', [
+$declare($api, 304, 'options/attr/group/{group_id}', ['needs' => 'attribute_group']);
+$attributeTermsId = $declare($api, 313, 'options/attr/group/{group_id}/terms', [
     'needs'  => 'attribute_group',
     'params' => ['per_page' => 10, 'page' => 1],
 ]);
@@ -290,19 +290,19 @@ $variation($attributeTermsId, 'attribute editor second page', [
     'page'     => 2,
 ], 'resources/admin/Modules/Attributes/GroupTermsPanel.vue', 83, ['needs' => 'attribute_group']);
 
-$declare($api, 334, 'integration/addons');
-$declare($api, 338, 'integration/global-settings', [
+$declare($api, 333, 'integration/addons');
+$declare($api, 337, 'integration/global-settings', [
     'skip' => 'The settings_key is extension-defined and its GET filters may validate remote credentials; no safe core key exists to invoke in Phase 1.',
 ]);
-$declare($api, 346, 'integration/global-feeds');
-$declare($api, 359, 'integration/global-feeds/settings', [
+$declare($api, 345, 'integration/global-feeds');
+$declare($api, 358, 'integration/global-feeds/settings', [
     'needs'  => 'product_integration',
     'params' => ['integration_id' => 0, 'integration_name' => '{integration_name}'],
 ]);
-$declare($api, 368, 'integration/feed/lists', [
+$declare($api, 367, 'integration/feed/lists', [
     'skip' => 'The route dispatches an extension-specific merge-field filter that may query a remote integration API; Phase 1 cannot safely choose an arbitrary provider.',
 ]);
-$declare($api, 373, 'integration/feed/dynamic_options', [
+$declare($api, 372, 'integration/feed/dynamic_options', [
     'params' => [
         'option_key'     => 'post_type',
         'sub_option_key' => 'post',
@@ -311,20 +311,20 @@ $declare($api, 373, 'integration/feed/dynamic_options', [
     ],
 ]);
 
-$declare($api, 396, 'settings/payment-methods/paypal/webhook/check', [
+$declare($api, 395, 'settings/payment-methods/paypal/webhook/check', [
     'skip' => 'PaymentMethodController::checkPayPalWebhook() calls Webhook::maybeSetWebhook(), which can contact PayPal and register a live webhook.',
 ]);
-$declare($api, 405, 'settings/payment-methods', [
+$declare($api, 404, 'settings/payment-methods', [
     'skip' => 'PaymentMethodController::getSettings() resolves a configured payment gateway; payment gateways are forbidden in every Phase 1 mode.',
 ]);
-$declare($api, 411, 'settings/payment-methods/all', [
+$declare($api, 410, 'settings/payment-methods/all', [
     'skip' => 'PaymentMethodController::index() enumerates registered payment gateways; payment gateways are forbidden in every Phase 1 mode.',
 ]);
-$declare($api, 419, 'settings/payment-methods/connect/info', [
+$declare($api, 418, 'settings/payment-methods/connect/info', [
     'skip' => 'PaymentMethodController::connectInfo() instantiates a gateway and may initiate an account connection; payment gateways are forbidden.',
 ]);
-$declare($api, 440, 'settings/permissions');
-$storeSettingsId = $declare($api, 450, 'settings/store');
+$declare($api, 439, 'settings/permissions');
+$storeSettingsId = $declare($api, 449, 'settings/store');
 foreach ([
     ['store_setup', 450],
     ['pages_setup', 458],
@@ -339,21 +339,21 @@ foreach ([
         'settings_route_line' => $settingsRoute[1],
     ]);
 }
-$declare($api, 463, 'settings/modules/plugin-addons');
-$declare($api, 475, 'settings/modules');
-$declare($api, 483, 'settings/mcp');
-$mcpId = $declare($api, 492, 'settings/mcp/config-snippets', ['params' => ['local_dev' => 'no']]);
+$declare($api, 462, 'settings/modules/plugin-addons');
+$declare($api, 474, 'settings/modules');
+$declare($api, 482, 'settings/mcp');
+$mcpId = $declare($api, 491, 'settings/mcp/config-snippets', ['params' => ['local_dev' => 'no']]);
 $variation($mcpId, 'local development snippet', [
     'local_dev' => 'yes',
 ], 'resources/admin/Bits/Components/Form/Components/McpSettings.vue', 153);
-$declare($api, 501, 'settings/confirmation/shortcode');
-$declare($api, 506, 'settings/storage-drivers');
-$declare($api, 512, 'settings/storage-drivers/active-drivers');
-$declare($api, 515, 'settings/storage-drivers/{driver}', [
+$declare($api, 500, 'settings/confirmation/shortcode');
+$declare($api, 505, 'settings/storage-drivers');
+$declare($api, 511, 'settings/storage-drivers/active-drivers');
+$declare($api, 514, 'settings/storage-drivers/{driver}', [
     'route' => 'settings/storage-drivers/local',
 ]);
 
-$ordersId = $declare($api, 538, 'orders', [
+$ordersId = $declare($api, 537, 'orders', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -405,13 +405,13 @@ $variation($ordersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$orderDetailsId = $declare($api, 569, 'orders/{order_id}', ['needs' => 'order']);
+$orderDetailsId = $declare($api, 568, 'orders/{order_id}', ['needs' => 'order']);
 $variation($orderDetailsId, 'single order widgets relation', [
     'with' => ['widgets'],
 ], 'resources/admin/Modules/Orders/SingleOrder.vue', 1619, ['needs' => 'order']);
-$declare($api, 607, 'orders/{order}/transactions', ['needs' => 'order']);
-$declare($api, 615, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
-$shippingMethodsId = $declare($api, 637, 'orders/shipping_methods', [
+$declare($api, 606, 'orders/{order}/transactions', ['needs' => 'order']);
+$declare($api, 614, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
+$shippingMethodsId = $declare($api, 636, 'orders/shipping_methods', [
     'params' => ['country_code' => 'US', 'order_items' => []],
 ]);
 $variation($shippingMethodsId, 'country and state selection', [
@@ -428,16 +428,16 @@ $variation($shippingMethodsId, 'create-order item-aware shipping quote', [
         'discount_total' => 0,
     ]],
 ], 'resources/admin/Modules/Orders/CreateOrder.vue', 715, ['needs' => 'variation']);
-$renewalsId = $declare($api, 648, 'renewals', ['params' => ['page' => 1]]);
+$renewalsId = $declare($api, 647, 'renewals', ['params' => ['page' => 1]]);
 $variation($renewalsId, 'payment, parent, and customer filters', [
     'payment_status' => 'pending',
     'parent_id'      => '{order_id}',
     'customer_id'    => 0,
 ], 'app/Http/Controllers/RenewalController.php', 27, ['needs' => 'order']);
-$declare($api, 652, 'renewals/{id}', ['needs' => 'renewal']);
-$declare($api, 666, 'labels');
+$declare($api, 651, 'renewals/{id}', ['needs' => 'renewal']);
+$declare($api, 665, 'labels');
 
-$customersId = $declare($api, 678, 'customers', [
+$customersId = $declare($api, 677, 'customers', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -479,14 +479,14 @@ $variation($customersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 686, 'customers/get-stats/{customer}', ['needs' => 'customer']);
-$declare($api, 690, 'customers/attachable-user');
-$customerDetailsId = $declare($api, 702, 'customers/{customerId}', ['needs' => 'customer']);
+$declare($api, 685, 'customers/get-stats/{customer}', ['needs' => 'customer']);
+$declare($api, 689, 'customers/attachable-user');
+$customerDetailsId = $declare($api, 701, 'customers/{customerId}', ['needs' => 'customer']);
 $variation($customerDetailsId, 'single customer relations', [
     'with' => ['shipping_address', 'billing_address', 'labels', 'subscriptions'],
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 274, ['needs' => 'customer']);
-$declare($api, 706, 'customers/{customerId}/order', ['needs' => 'customer']);
-$customerOrdersId = $declare($api, 722, 'customers/{customerId}/orders', ['needs' => 'customer']);
+$declare($api, 705, 'customers/{customerId}/order', ['needs' => 'customer']);
+$customerOrdersId = $declare($api, 721, 'customers/{customerId}/orders', ['needs' => 'customer']);
 $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'per_page'  => 10,
     'page'      => 1,
@@ -495,7 +495,7 @@ $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'order_by'  => 'id',
     'order_type'=> 'DESC',
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 307, ['needs' => 'customer']);
-$customerAddressId = $declare($api, 726, 'customers/{customerId}/address', ['needs' => 'customer']);
+$customerAddressId = $declare($api, 725, 'customers/{customerId}/address', ['needs' => 'customer']);
 $variation($customerAddressId, 'billing address type', [
     'type' => 'billing',
 ], 'resources/admin/Modules/Customers/Modals/AddOrEditAddressModal.vue', 296, ['needs' => 'customer']);
@@ -503,16 +503,16 @@ $variation($customerAddressId, 'shipping address type', [
     'type' => 'shipping',
 ], 'resources/admin/Modules/Customers/Modals/ManageOrderAddressModal.vue', 199, ['needs' => 'customer']);
 
-$declare($api, 755, 'onboarding');
-$declare($api, 762, 'email-notification');
-$declare($api, 763, 'email-notification/get-short-codes');
-$declare($api, 764, 'email-notification/get-settings');
-$declare($api, 766, 'email-notification/reminders');
-$declare($api, 768, 'email-notification/digest-settings');
-$declare($api, 774, 'email-notification/{notification}', ['needs' => 'notification']);
-$declare($api, 780, 'templates/print-templates');
-$declare($api, 786, 'coupons/listCoupons');
-$couponsId = $declare($api, 790, 'coupons', [
+$declare($api, 754, 'onboarding');
+$declare($api, 761, 'email-notification');
+$declare($api, 762, 'email-notification/get-short-codes');
+$declare($api, 763, 'email-notification/get-settings');
+$declare($api, 765, 'email-notification/reminders');
+$declare($api, 767, 'email-notification/digest-settings');
+$declare($api, 773, 'email-notification/{notification}', ['needs' => 'notification']);
+$declare($api, 779, 'templates/print-templates');
+$declare($api, 785, 'coupons/listCoupons');
+$couponsId = $declare($api, 789, 'coupons', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -552,9 +552,9 @@ $variation($couponsId, 'table code search and expiry ordering', [
     'search'      => '__fc_smoke__',
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 793, 'coupons/getSettings');
-$declare($api, 796, 'coupons/{id}', ['needs' => 'coupon']);
-$filesId = $declare($api, 830, 'files', [
+$declare($api, 792, 'coupons/getSettings');
+$declare($api, 795, 'coupons/{id}', ['needs' => 'coupon']);
+$filesId = $declare($api, 829, 'files', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}', 'search' => ''],
 ]);
@@ -564,14 +564,14 @@ $variation($filesId, 'storage file search', [
 ], 'resources/admin/Bits/Components/DownloadableFileSelector/StorageDriverModel.js', 110, [
     'needs' => 'local_storage',
 ]);
-$declare($api, 832, 'files/bucket-list', [
+$declare($api, 831, 'files/bucket-list', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}'],
 ]);
-$declare($api, 843, 'app/init');
-$declare($api, 844, 'app/attachments', ['ok' => [200, 423]]);
+$declare($api, 842, 'app/init');
+$declare($api, 843, 'app/attachments', ['ok' => [200, 423]]);
 
-$activityId = $declare($api, 849, 'activity', [
+$activityId = $declare($api, 848, 'activity', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -606,7 +606,7 @@ $variation($activityId, 'table content search and date ordering', [
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$taxesId = $declare($api, 855, 'taxes', [
+$taxesId = $declare($api, 854, 'taxes', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -647,20 +647,20 @@ $variation($taxesId, 'table country ordering and advanced filter', [
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$declare($api, 860, 'address-info/countries');
-$countryInfoId = $declare($api, 861, 'address-info/get-country-info', [
+$declare($api, 859, 'address-info/countries');
+$countryInfoId = $declare($api, 860, 'address-info/get-country-info', [
     'params' => ['country_code' => 'US'],
 ]);
 $variation($countryInfoId, 'store/customer address country selection', [
     'country_code' => 'GB',
 ], 'resources/admin/Bits/Components/Address/AddressComponent.vue', 55);
-$declare($api, 867, 'products/{product_id}/integrations/{integration_name}/settings', [
+$declare($api, 866, 'products/{product_id}/integrations/{integration_name}/settings', [
     'needs' => 'product_integration',
 ]);
-$declare($api, 883, 'products/{productId}/integrations', ['needs' => 'product']);
-$declare($api, 893, 'tax/classes');
-$declare($api, 904, 'tax/rates');
-$taxCountryRatesId = $declare($api, 907, 'tax/rates/country/rates/{country_code}', [
+$declare($api, 882, 'products/{productId}/integrations', ['needs' => 'product']);
+$declare($api, 892, 'tax/classes');
+$declare($api, 903, 'tax/rates');
+$taxCountryRatesId = $declare($api, 906, 'tax/rates/country/rates/{country_code}', [
     'route' => 'tax/rates/country/rates/US',
 ]);
 $variation($taxCountryRatesId, 'tax class rate selection', [
@@ -668,17 +668,17 @@ $variation($taxCountryRatesId, 'tax class rate selection', [
 ], 'resources/admin/Modules/Tax/Components/EUVatTaxOverrideModal.vue', 137, [
     'route' => 'tax/rates/country/rates/US',
 ]);
-$declare($api, 928, 'tax/country-tax-id/{country_code}', [
+$declare($api, 927, 'tax/country-tax-id/{country_code}', [
     'route' => 'tax/country-tax-id/US',
 ]);
-$declare($api, 936, 'tax/product-overrides/{country_code}', [
+$declare($api, 935, 'tax/product-overrides/{country_code}', [
     'route' => 'tax/product-overrides/US',
 ]);
-$declare($api, 949, 'tax/configuration/rates');
-$declare($api, 955, 'tax/configuration/settings');
-$declare($api, 967, 'tax/configuration/settings/eu-vat/product-overrides');
-$declare($api, 970, 'tax/configuration/settings/eu-vat/oss-rates');
-$declare($api, 979, 'checkout-fields/get-fields');
+$declare($api, 948, 'tax/configuration/rates');
+$declare($api, 954, 'tax/configuration/settings');
+$declare($api, 966, 'tax/configuration/settings/eu-vat/product-overrides');
+$declare($api, 969, 'tax/configuration/settings/eu-vat/oss-rates');
+$declare($api, 978, 'checkout-fields/get-fields');
 
 $reports = 'app/Http/Routes/reports.php';
 $reportParams = [
@@ -897,14 +897,8 @@ $declare($advance, 25, 'forms/search_options', [
     'params' => ['search_by' => '__fc_smoke__', 'search_for' => 'store_country'],
 ]);
 
-$declare($api, 985, 'reviews', [
-    'params' => ['per_page' => 10, 'page' => 1],
-]);
-$declare($api, 988, 'reviews/stats');
-$declare($api, 991, 'reviews/{id}', ['needs' => 'review']);
-
 $frontend = 'app/Http/Routes/frontend_routes.php';
-$publicProductsId = $declare($frontend, 21, 'public/products', [
+$publicProductsId = $declare($frontend, 20, 'public/products', [
     'auth'   => 'anonymous',
     'params' => [
         'with'              => ['licensesMeta', 'detail', 'variants', 'categories'],
@@ -930,7 +924,7 @@ $variation($publicProductsId, 'shortcode include/exclude/type/sale filters', [
     'hide_excerpt'     => 1,
     'allow_out_of_stock'=> true,
 ], 'resources/public/product-page/Paginator/Paginator.js', 228, ['needs' => 'product', 'auth' => 'anonymous']);
-$publicViewsId = $declare($frontend, 22, 'public/product-views', [
+$publicViewsId = $declare($frontend, 21, 'public/product-views', [
     'auth'   => 'anonymous',
     'params' => [
         'current_page'      => 1,
@@ -968,21 +962,21 @@ $variation($publicViewsId, 'transient/template-provider product rendering', [
 ]);
 // Dispatchable since ShopController::searchProduct() switched from
 // Response::json() (wp_send_json hard-die) to a proper WP_REST_Response.
-$declare($frontend, 23, 'public/product-search', [
+$declare($frontend, 22, 'public/product-search', [
     'auth'   => 'anonymous',
     'params' => ['post_title' => ''],
 ]);
 
-$declare($frontend, 38, 'checkout/get-order-info', [
+$declare($frontend, 37, 'checkout/get-order-info', [
     'auth' => 'anonymous',
     'skip' => 'CheckoutController::getOrderInfo() resolves the requested payment gateway and calls its order-info handler; all gateway invocation is forbidden.',
 ]);
-$declare($frontend, 39, 'checkout/get-checkout-summary-view', [
+$declare($frontend, 38, 'checkout/get-checkout-summary-view', [
     'auth'   => 'anonymous',
     'needs'  => 'cart',
     'params' => ['fct_cart_hash' => '{fct_cart_hash}', 'shipping_method_id' => 0],
 ]);
-$availableShippingId = $declare($frontend, 40, 'checkout/get-available-shipping-methods', [
+$availableShippingId = $declare($frontend, 39, 'checkout/get-available-shipping-methods', [
     'auth'   => 'anonymous',
     'params' => ['country_code' => 'US', 'state' => 'CA'],
 ]);
@@ -990,14 +984,14 @@ $variation($availableShippingId, 'timezone country inference', [
     'timezone' => 'America/New_York',
     'state'    => 'NY',
 ], 'app/Modules/Shipping/Http/Controllers/Frontend/ShippingFrontendController.php', 17, ['auth' => 'anonymous']);
-$shippingListId = $declare($frontend, 41, 'checkout/get-shipping-methods-list-view', [
+$shippingListId = $declare($frontend, 40, 'checkout/get-shipping-methods-list-view', [
     'auth'   => 'anonymous',
     'params' => ['country_code' => 'US', 'state' => 'CA'],
 ]);
 $variation($shippingListId, 'timezone-rendered method list', [
     'timezone' => 'Europe/London',
 ], 'app/Modules/Shipping/Http/Controllers/Frontend/ShippingFrontendController.php', 99, ['auth' => 'anonymous']);
-$checkoutCountryId = $declare($frontend, 42, 'checkout/get-country-info', [
+$checkoutCountryId = $declare($frontend, 41, 'checkout/get-country-info', [
     'auth'   => 'anonymous',
     'params' => ['country_code' => 'US'],
 ]);
@@ -1010,16 +1004,16 @@ $variation($checkoutCountryId, 'timezone country information', [
 // customers group at identical paths and were never dispatchable (the admin
 // registration wins per path+method). Customer self-service reads live under
 // customer-profile below.
-$declare($frontend, 59, 'customers/{customerAddressId}/update-address-select', [
+$declare($frontend, 58, 'customers/{customerAddressId}/update-address-select', [
     'auth' => 'customer',
     'skip' => 'Despite GET, CustomerController::updateAddressSelect() writes checkout_data and saves the cart at app/Http/Controllers/FrontendControllers/CustomerController.php:107-125.',
 ]);
 
-$declare($frontend, 64, 'customer-profile', [
+$declare($frontend, 63, 'customer-profile', [
     'auth'  => 'customer',
     'needs' => 'customer_context',
 ]);
-$downloadsId = $declare($frontend, 65, 'customer-profile/downloads', [
+$downloadsId = $declare($frontend, 64, 'customer-profile/downloads', [
     'auth'   => 'customer',
     'needs'  => 'customer_context',
     'params' => ['per_page' => 10, 'page' => 1],
@@ -1031,14 +1025,14 @@ $variation($downloadsId, 'download pagination', [
     'auth'  => 'customer',
     'needs' => 'customer_context',
 ]);
-$declare($frontend, 67, 'customer-profile/profile', [
+$declare($frontend, 66, 'customer-profile/profile', [
     'auth'  => 'customer',
     'needs' => 'customer_context',
 ]);
 // The add-on section extension point. `filter` is required and allowlisted
 // against CustomerProfileController::PORTAL_SECTION_FILTERS; an unlisted value
 // is a 422 rather than an arbitrary hook name built from caller input.
-$profileSectionsId = $declare($frontend, 68, 'customer-profile/sections', [
+$profileSectionsId = $declare($frontend, 67, 'customer-profile/sections', [
     'auth'   => 'customer',
     'needs'  => 'customer_context',
     'params' => ['filter' => 'profile_sections'],
@@ -1059,7 +1053,7 @@ $variation(
     34,
     ['auth' => 'customer', 'needs' => 'customer_context', 'ok' => [422]]
 );
-$profileOrdersId = $declare($frontend, 79, 'customer-profile/orders', [
+$profileOrdersId = $declare($frontend, 78, 'customer-profile/orders', [
     'auth'   => 'customer',
     'needs'  => 'customer_context',
     'params' => ['per_page' => 10, 'page' => 1, 'search' => ''],
@@ -1072,44 +1066,30 @@ $variation($profileOrdersId, 'purchase-history search and pagination', [
     'auth'  => 'customer',
     'needs' => 'customer_context',
 ]);
-$declare($frontend, 80, 'customer-profile/orders/{order_uuid}', [
+$declare($frontend, 79, 'customer-profile/orders/{order_uuid}', [
     'auth'  => 'customer',
     'needs' => 'customer_order',
 ]);
-$declare($frontend, 81, 'customer-profile/orders/{order_uuid}/upgrade-paths', [
+$declare($frontend, 80, 'customer-profile/orders/{order_uuid}/upgrade-paths', [
     'auth'   => 'customer',
     'needs'  => 'customer_upgrade',
     'params' => ['variation_id' => '{variation_id}'],
 ]);
-$declare($frontend, 84, 'customer-profile/orders/{transaction_uuid}/billing-address', [
+$declare($frontend, 83, 'customer-profile/orders/{transaction_uuid}/billing-address', [
     'auth'  => 'customer',
     'needs' => 'customer_transaction',
 ]);
-$declare($frontend, 89, 'customer-profile/subscriptions', [
+$declare($frontend, 88, 'customer-profile/subscriptions', [
     'auth' => 'customer',
     'skip' => 'The list transforms each subscription through OrderService::transformSubscription(), which calls Subscription gateway capability methods at app/Services/OrderService.php:623-624.',
 ]);
-$declare($frontend, 90, 'customer-profile/subscriptions/{subscription_uuid}', [
+$declare($frontend, 89, 'customer-profile/subscriptions/{subscription_uuid}', [
     'auth' => 'customer',
     'skip' => 'The detail calls canUpdatePaymentMethod(), canSwitchPaymentMethod(), switchablePaymentMethods(), canPause(), and canResume(), each resolving a payment gateway.',
 ]);
-$declare($frontend, 91, 'customer-profile/subscriptions/{subscription_uuid}/setup-intent-attempts', [
+$declare($frontend, 90, 'customer-profile/subscriptions/{subscription_uuid}/setup-intent-attempts', [
     'auth' => 'customer',
     'skip' => 'The controller constructs Stripe SubscriptionsManager and checks a vendor-customer rate limit; this is a payment-gateway path and may reach Stripe.',
-]);
-
-$declare($frontend, 106, 'public/reviews/{postId}', [
-    'auth'  => 'anonymous',
-    'needs' => 'product',
-    'params' => ['page' => 1],
-]);
-$declare($frontend, 107, 'public/reviews/{postId}/summary', [
-    'auth'  => 'anonymous',
-    'needs' => 'product',
-]);
-$declare($frontend, 110, 'public/reviews/{postId}/{reviewId}/replies', [
-    'auth'  => 'anonymous',
-    'needs' => 'review',
 ]);
 
 $web = 'app/Http/Routes/WebRoutes.php';

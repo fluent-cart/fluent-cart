@@ -1,6 +1,8 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
 
+import {useRoute} from 'vue-router'
+
 class ProductTable extends Table {
 
     setupInitialData() {
@@ -48,10 +50,6 @@ class ProductTable extends Table {
             {
                 label: translate('Date'),
                 value: 'post_date'
-            },
-            {
-                label: translate('Reviews'),
-                value: 'reviews'
             }
         ];
     }

@@ -30,10 +30,11 @@ class S3FileDeleter
         $this->timeStamp = gmdate('Ymd\THis\Z');
         $this->date = substr($this->timeStamp, 0, 8);
         $hasDot = strpos($this->bucket, '.') !== false;
+        $encodedFilePath = $this->encodeS3ObjectKey($this->s3FilePath);
         if ($hasDot) {
-            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$this->s3FilePath}";
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}";
         } else {
-            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}";
         }
         $this->signature = $this->generateSignature();
     }
@@ -84,11 +85,28 @@ class S3FileDeleter
 
     private function createCanonicalUrl(): string
     {
-        $s3FilePath = '/' . ltrim($this->s3FilePath, '/');
+        $s3FilePath = '/' . $this->encodeS3ObjectKey($this->s3FilePath);
         $hasDot = strpos($this->bucket, '.') !== false;
         $canonicalUri = $hasDot ? '/' . $this->bucket . $s3FilePath : $s3FilePath;
 
         return "{$this->httpMethod}\n{$canonicalUri}\n\nhost:{$this->getHost()}\nx-amz-content-sha256:{$this->getContentHash()}\nx-amz-date:{$this->timeStamp}\n\nhost;x-amz-content-sha256;x-amz-date\n{$this->getContentHash()}";
+    }
+
+    /**
+     * Percent-encodes each "/"-separated segment of an S3 object key using
+     * AWS's UriEncode rules (rawurlencode leaves "/" alone). This keeps the
+     * canonical signing path and the actual request URL identical to what
+     * S3 receives on the wire, so multi-byte UTF-8 characters, spaces, and
+     * reserved characters ("+", "#", "?", literal "%") all round-trip to
+     * the exact key that was requested instead of a different object.
+     *
+     * Deliberately does not ltrim() leading slashes: "foo", "/foo", and
+     * "//foo" are three distinct S3 keys, and stripping the slash made a
+     * delete/upload targeting "/foo" silently operate on "foo" instead.
+     */
+    private function encodeS3ObjectKey(string $path): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', $path)));
     }
 
     private function getHost(): string

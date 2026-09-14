@@ -14,6 +14,72 @@ use FluentCart\Framework\Support\Arr;
 class PayPalHelper
 {
     /**
+     * Currencies PayPal rejects a decimal amount for.
+     *
+     * "This currency does not support decimals. If you pass a decimal amount,
+     * an error occurs." — developer.paypal.com/api/rest/reference/currency-codes
+     *
+     * This is PayPal's own list, not ISO 4217 and not the store-wide
+     * CurrenciesHelper::zeroDecimalCurrencies() set — internal storage stays
+     * x100 for every currency, only what PayPal accepts differs.
+     */
+    const ZERO_DECIMAL_CURRENCIES = ['HUF', 'JPY', 'TWD'];
+
+    public static function currencyDecimals($currency): int
+    {
+        return in_array(strtoupper((string) $currency), self::ZERO_DECIMAL_CURRENCIES, true) ? 0 : 2;
+    }
+
+    /**
+     * Cents to a decimal amount, rounded to the precision PayPal accepts for
+     * the currency. Amount arithmetic (breakdown sums, discount/adjustment
+     * reconciliation) must run on these rounded values so the breakdown still
+     * adds up to the total once every part is formatted.
+     */
+    public static function toDecimalAmount($amountInCents, $currency)
+    {
+        if (!is_numeric($amountInCents)) {
+            return 0;
+        }
+
+        return round(floatval($amountInCents) / 100, self::currencyDecimals($currency));
+    }
+
+    /**
+     * Format an already-converted decimal amount for the API payload.
+     */
+    public static function formatDecimalAmount($amount, $currency): string
+    {
+        return number_format(floatval($amount), self::currencyDecimals($currency), '.', '');
+    }
+
+    public static function formatAmount($amountInCents, $currency): string
+    {
+        return self::formatDecimalAmount(self::toDecimalAmount($amountInCents, $currency), $currency);
+    }
+
+    /**
+     * The cents PayPal will actually move for a stored amount.
+     *
+     * Storage stays x100 for every currency, so a zero-decimal amount can carry
+     * a residue PayPal cannot charge: JPY 100050 goes on the wire as "1001" and
+     * comes back through Helper::toCent() as 100100. Every equality check
+     * against a PayPal-reported amount compares to this, never to the raw
+     * stored total, or a correct payment reads as tampering. Identity for
+     * 2-decimal currencies.
+     *
+     * Routed through formatAmount() and Helper::toCent() rather than
+     * recomputing the arithmetic, so this is the same serialize-then-read-back
+     * path the payload and the gateway's reply actually travel. Recomputing it
+     * diverges from that path above ~1e15 cents, where number_format() still
+     * moves a value round() has stopped changing.
+     */
+    public static function wireCents($amountInCents, $currency): int
+    {
+        return Helper::toCent(self::formatAmount($amountInCents, $currency));
+    }
+
+    /**
      * Get or create a Stripe pricing plan for a product variation.
      *
      * @param array $data {
@@ -112,7 +178,7 @@ class PayPalHelper
         $refundData = [
             'custom_id' => $transaction->uuid,
             'amount'    => array(
-                'value'         => number_format(Helper::toDecimalWithoutComma($amount), 2, '.', ''),
+                'value'         => self::formatAmount($amount, $transaction->currency),
                 'currency_code' => $transaction->currency
             ),
 
@@ -204,9 +270,13 @@ class PayPalHelper
         $data['product_id'] = $data['paypal_product_id'];
         $data['recurring_total'] = $data['recurring_amount'];
 
-        // Convert amounts from cents to dollars with 2 decimal places
-        $recurring_amount = number_format($data['recurring_total'] / 100, 2, '.', '');
-        $initial_amount = $data['signup_fee'] > 0 ? number_format($data['signup_fee'] / 100, 2, '.', '') : 0;
+        // Convert amounts from cents to the currency's decimal precision
+        $recurringCents = (int) $data['recurring_total'];
+        $signupFeeCents = (int) $data['signup_fee'];
+
+        $recurringAmount = self::toDecimalAmount($recurringCents, $data['currency']);
+        $initialAmount = $signupFeeCents > 0 ? self::toDecimalAmount($signupFeeCents, $data['currency']) : 0;
+        $hasSignupFee = $signupFeeCents > 0;
 
         // Map billing interval to PayPal API interval unit
         $interval_map = [
@@ -270,7 +340,7 @@ class PayPalHelper
             'total_cycles'   => $data['bill_times'],
             'pricing_scheme' => [
                 'fixed_price' => [
-                    'value'         => $recurring_amount,
+                    'value'         => self::formatDecimalAmount($recurringAmount, $data['currency']),
                     'currency_code' => $data['currency']
                 ]
             ]
@@ -288,7 +358,7 @@ class PayPalHelper
                 'sequence'       => 1,
                 'pricing_scheme' => [
                     'fixed_price' => [
-                        'value'         => '0.00',
+                        'value'         => self::formatDecimalAmount(0, $data['currency']),
                         'currency_code' => $data['currency']
                     ]
                 ],
@@ -297,9 +367,9 @@ class PayPalHelper
             $normalCycle['sequence'] = 2; // If there's a trial, the regular cycle sequence should be 2
         }
 
-        if ($initial_amount) {
+        if ($hasSignupFee) {
             if ($trialCycle) {
-                $trialCycle['pricing_scheme']['fixed_price']['value'] = $initial_amount;
+                $trialCycle['pricing_scheme']['fixed_price']['value'] = self::formatDecimalAmount($initialAmount, $data['currency']);
             } else {
                 $trialCycle = [
                     'tenure_type'    => 'TRIAL',
@@ -310,7 +380,14 @@ class PayPalHelper
                     'sequence'       => 1,
                     'pricing_scheme' => [
                         'fixed_price' => [
-                            'value'         => number_format($initial_amount + $recurring_amount, 2, '.', ''),
+                            // Sum the cents, then round once. Rounding the fee and the
+                            // recurring price separately overcharges by up to one minor
+                            // unit on a zero-decimal currency, and drops a fee that is
+                            // smaller than one.
+                            'value'         => self::formatDecimalAmount(
+                                self::toDecimalAmount($recurringCents + $signupFeeCents, $data['currency']),
+                                $data['currency']
+                            ),
                             'currency_code' => $data['currency']
                         ]
                     ],

@@ -54,6 +54,7 @@
     &:hover {
       opacity: 0.9;
     }
+    anchor-name: --product-image;
   }
 
   .fct-product-card-title {
@@ -105,39 +106,6 @@
   p:not(.fct-product-card-excerpt) {
     @apply m-0;
   }
-  .fct-product-card-rating {
-    @apply px-3 flex items-center gap-1;
-    .fct-product-card-stars {
-      @apply flex items-center leading-none;
-      .fct-star {
-        font-size: 14px;
-        color: #d1d5db;
-        line-height: 1;
-      }
-      .fct-star-filled {
-        color: #f59e0b;
-      }
-      .fct-star-half {
-        position: relative;
-        display: inline-block;
-        line-height: 1;
-      }
-      .fct-star-half-empty {
-        color: #d1d5db;
-      }
-      .fct-star-half-fill {
-        position: absolute;
-        left: 0;
-        top: 0;
-        overflow: hidden;
-        width: 50%;
-        color: #f59e0b;
-      }
-    }
-    .fct-product-card-review-count {
-      @apply text-xs text-gray-400;
-    }
-  }
   .fct-product-card-excerpt,
   p.dynamic {
     @apply px-3 mb-2 text-sm hidden;
@@ -145,7 +113,9 @@
 
 
 }
-
+.fct-product-image-wrap {
+    @apply relative;
+}
 .fct-product-view-button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
   box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);

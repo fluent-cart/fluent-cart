@@ -9,6 +9,7 @@ use FluentCart\App\Http\Requests\ProductDownloadable\ProductDownloadableFileRequ
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductDownload;
+use FluentCart\App\Services\FileSystem\StorageBucketResolver;
 use FluentCart\App\Services\FileSystem\StoragePath;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Http\Request\Request;
@@ -101,9 +102,18 @@ class ProductDownloadablesController extends Controller
             $fileName = explode('__fluent-cart__', $fileName)[0];
             $file['file_name'] = $fileName;
 
-            $file['settings'] = json_encode(
-                Arr::get($file, 'settings', [])
-            );
+            // settings.bucket decides which cloud bucket the download is later signed
+            // against, so it is resolved from the driver's own settings rather than
+            // taken from the request — otherwise any editable product could point at
+            // a sibling bucket the store credentials happen to read.
+            $settings = $this->withResolvedBucket(Arr::get($file, 'settings', []), $file['driver']);
+            if (is_wp_error($settings)) {
+                return $this->sendError([
+                    'message' => $settings->get_error_message()
+                ], 422);
+            }
+
+            $file['settings'] = json_encode($settings);
 
             unset($file['id']);
             unset($file['bucket']);
@@ -125,6 +135,29 @@ class ProductDownloadablesController extends Controller
                 'message' => __('Failed to attach downloadable files', 'fluent-cart')
             ]);
         }
+    }
+
+    /**
+     * Replace the caller-supplied settings.bucket with the bucket the selected
+     * driver is actually configured to use.
+     *
+     * @param mixed $settings the submitted settings blob
+     * @param string $driver the submitted driver slug
+     * @return array|\WP_Error WP_Error when the driver is unknown, disabled, or
+     *                         bucket-backed with no configured bucket
+     */
+    private function withResolvedBucket($settings, $driver)
+    {
+        $settings = is_array($settings) ? $settings : [];
+
+        $bucket = StorageBucketResolver::resolve($driver);
+        if (is_wp_error($bucket)) {
+            return $bucket;
+        }
+
+        $settings['bucket'] = $bucket;
+
+        return $settings;
     }
 
     public function getDownloadableUrl($downloadableId)
@@ -177,6 +210,15 @@ class ProductDownloadablesController extends Controller
             $productVariationId = [];
         }
 
+        // Same server-side bucket resolution as the sync path — editing a file must
+        // not be a second way to substitute an unconfigured bucket.
+        $settings = $this->withResolvedBucket(Arr::get($data, 'settings', []), Arr::get($data, 'driver'));
+        if (is_wp_error($settings)) {
+            return $this->sendError([
+                'message' => $settings->get_error_message()
+            ], 422);
+        }
+
         $productDownload->product_variation_id = $productVariationId;
         $productDownload->title = Arr::get($data, 'title');
         $productDownload->type = Arr::get($data, 'type');
@@ -184,7 +226,7 @@ class ProductDownloadablesController extends Controller
         $productDownload->file_name = $fileName;
         $productDownload->file_path = $filePath;
         $productDownload->file_url = $fileUrl;
-        $productDownload->settings = Arr::get($data, 'settings');
+        $productDownload->settings = $settings;
         $productDownload->serial = Arr::get($data, 'serial');
 
         if ($productDownload->save()) {

@@ -5,9 +5,16 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\BaseGatewaySettings;
+use FluentCart\Framework\Support\Arr;
 
 class StripeSettingsBase extends BaseGatewaySettings
 {
+
+    /**
+     * Checkout Session submit_type values Stripe accepts. 'auto' is our stored
+     * spelling for "send nothing" — Stripe then picks pay/subscribe from the mode.
+     */
+    const SUBMIT_TYPES = ['auto', 'pay', 'book', 'donate', 'subscribe'];
 
     public $settings;
 
@@ -60,6 +67,7 @@ class StripeSettingsBase extends BaseGatewaySettings
             // Others
             'payment_mode'         => 'live',
             'checkout_mode'        => 'onsite',
+            'submit_type'          => 'auto',
             'live_is_encrypted'    => 'no',
             'test_is_encrypted'    => 'no',
             'secure'               => 'yes'
@@ -86,6 +94,12 @@ class StripeSettingsBase extends BaseGatewaySettings
         $defaults = static::getDefaults();
         $settings = wp_parse_args($settings, $defaults);
 
+        // Goes straight onto the wire as a Checkout Session parameter, and the
+        // controller hands this method the request body unfiltered.
+        if (!in_array(Arr::get($settings, 'submit_type'), self::SUBMIT_TYPES, true)) {
+            $settings['submit_type'] = 'auto';
+        }
+
         if (defined('FCT_STRIPE_LIVE_PUBLIC_KEY')) {
             $settings['live_publishable_key'] = '';
         }
@@ -105,6 +119,25 @@ class StripeSettingsBase extends BaseGatewaySettings
         fluent_cart_update_option($this->methodHandler, $settings);
 
         return $settings;
+    }
+
+    /**
+     * The Checkout Session submit_type to send, or null to let Stripe decide.
+     *
+     * Re-validated on read: `fluent_cart/stripe_settings` can rewrite the stored
+     * value, and an unknown one is a 400 from Stripe on a live checkout.
+     *
+     * @return string|null
+     */
+    public function getSubmitType()
+    {
+        $submitType = Arr::get($this->settings, 'submit_type', 'auto');
+
+        if ($submitType === 'auto' || !in_array($submitType, self::SUBMIT_TYPES, true)) {
+            return null;
+        }
+
+        return $submitType;
     }
 
     public function getMode()

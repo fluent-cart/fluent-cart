@@ -114,7 +114,6 @@ return function ($needs) use ($resolveCustomerContext) {
                 'product'    => $row->ID,
                 'productId'  => $row->ID,
                 'product_id' => $row->ID,
-                'postId'     => $row->ID,
             ] : null;
 
         case 'variation':
@@ -271,21 +270,6 @@ return function ($needs) use ($resolveCustomerContext) {
                 'transaction_uuid' => $row->uuid,
                 'user_id'          => $context['user_id'],
             ];
-
-        case 'review':
-            $row = \FluentCart\App\Models\ProductReview::query()
-                ->topLevel()
-                ->approved()
-                ->whereHas('product', function ($query) {
-                    $query->where('post_status', 'publish');
-                })
-                ->first();
-            return $row ? [
-                'id'       => $row->comment_ID,
-                'reviewId' => $row->comment_ID,
-                'postId'   => $row->comment_post_ID,
-                'post_id'  => $row->comment_post_ID,
-            ] : null;
 
         case 'customer_address':
             $context = $resolveCustomerContext();

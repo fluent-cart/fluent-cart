@@ -13,18 +13,18 @@ return [
         [
             'surface'        => 'Product create',
             'source_file'    => 'app/Http/Controllers/ProductController.php',
-            'method_line'    => 305,
+            'method_line'    => 287,
             'method_needle'  => 'function create(ProductCreateRequest $request)',
-            'sanitize_line'  => 308,
+            'sanitize_line'  => 290,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
         [
             'surface'        => 'Product update',
             'source_file'    => 'app/Http/Controllers/ProductController.php',
-            'method_line'    => 509,
+            'method_line'    => 491,
             'method_needle'  => 'function update(ProductUpdateRequest $request',
-            'sanitize_line'  => 511,
+            'sanitize_line'  => 493,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -259,12 +259,12 @@ return [
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 303,
+            'source_line' => 288,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 306,
+            'source_line' => 291,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [

@@ -85,6 +85,17 @@ abstract class AbstractSubscriptionModule
         // cancel the subscription on the vendor side, implement on the child class
     }
 
+    /**
+     * Pull the subscription's remote state and repair the local rows to match.
+     *
+     * Implementations may declare extra OPTIONAL parameters for pre-fetched
+     * vendor payloads (e.g. PayPal accepts the already-fetched subscription and
+     * transaction list so a webhook costs one remote pull). Callers typed
+     * against this base class must pass only the subscription model.
+     *
+     * @param Subscription $subscriptionModel
+     * @return Subscription|\WP_Error
+     */
     public function reSyncSubscriptionFromRemote(Subscription $subscriptionModel)
     {
         return new \WP_Error(

@@ -144,10 +144,12 @@ class S3Driver extends BaseDriver
 
         $hasDot = strpos($this->bucket, '.') !== false;
 
-        // Canonical request components
+        // Canonical request components. Deliberately does not ltrim() leading
+        // slashes: "foo", "/foo", and "//foo" are distinct S3 keys, and
+        // stripping the slash would redirect the customer to the wrong object.
         $encodedFilePath = '/' . implode('/', array_map(
             'rawurlencode',
-            explode('/', ltrim($filePath, '/'))
+            explode('/', $filePath)
         ));
 
         // For dotted buckets, use path-style: include bucket in canonical URI
@@ -168,7 +170,7 @@ class S3Driver extends BaseDriver
         ];
 
         if (!empty($fileName)) {
-            $canonicalQueryString['response-content-disposition'] = 'attachment; filename="' . $fileName . '"';
+            $canonicalQueryString['response-content-disposition'] = $this->buildContentDispositionValue($fileName);
         }
 
         // Sort query parameters
@@ -202,6 +204,75 @@ class S3Driver extends BaseDriver
 
         return $url;
     }
+
+    /**
+     * Builds an RFC 6266/RFC 5987-compliant Content-Disposition value.
+     * HTTP header values must be ISO-8859-1, so a raw Unicode filename (e.g.
+     * Bengali) in a plain filename="..." parameter makes S3 reject the
+     * request with "Header value cannot be represented using ISO-8859-1."
+     * This supplies both an ASCII-safe filename="..." fallback for clients
+     * that don't understand filename*, and a filename*=UTF-8''... parameter
+     * carrying the exact intended Unicode name that modern browsers use.
+     *
+     * The returned raw value is assigned into $canonicalQueryString as-is;
+     * the existing per-parameter rawurlencode() loop further down encodes
+     * it exactly once for the query string, so this method must not
+     * pre-encode the value itself (only the filename* attr-value, which is
+     * a distinct RFC 5987 encoding layer, not query-string encoding).
+     */
+    private function buildContentDispositionValue(string $fileName): string
+    {
+        // Strip control/CR-LF characters so neither the raw header value nor
+        // the filename* payload can inject extra header content.
+        $sanitized = preg_replace('/[\x00-\x1F\x7F]/', '', $fileName);
+        if ($sanitized === null) {
+            $sanitized = $fileName;
+        }
+
+        $asciiFileName = $this->buildAsciiFallbackFileName($sanitized);
+        // RFC 6266 quoted-string: backslash-escape backslashes and quotes.
+        $asciiFileName = addcslashes($asciiFileName, '\\"');
+
+        $encodedFileName = rawurlencode($sanitized);
+
+        return 'attachment; filename="' . $asciiFileName . '"; filename*=UTF-8\'\'' . $encodedFileName;
+    }
+
+    private function buildAsciiFallbackFileName(string $fileName): string
+    {
+        $extension = preg_replace('/[^\x20-\x7E]/', '', pathinfo($fileName, PATHINFO_EXTENSION));
+
+        // Empty or dot-only names ("", ".", "..", "...") carry no meaningful
+        // identity to preserve; keep the generic fallback for them.
+        if (preg_match('/^\.*$/', $fileName)) {
+            return $extension !== '' ? "download.{$extension}" : 'download';
+        }
+
+        // Already fully ASCII: preserve it exactly, including leading dots,
+        // underscores, hyphens, and extension punctuation (e.g. ".env",
+        // "_report_.txt", "report.a-b") - nothing here needs to change for
+        // a client that ignores filename*.
+        if (preg_replace('/[^\x20-\x7E]/', '', $fileName) === $fileName) {
+            return $fileName;
+        }
+
+        // Otherwise the basename has non-ASCII content to strip. Anything
+        // dropped here (Bengali, Japanese, Arabic, emoji…) is fully
+        // preserved via filename*; legacy clients ignoring filename* never
+        // see this fallback. Trim the separator characters (dots, dashes,
+        // underscores, spaces) that content leaves dangling at the edges
+        // once it's gone.
+        $basename = pathinfo($fileName, PATHINFO_FILENAME);
+        $basename = preg_replace('/[^\x20-\x7E]/', '', $basename);
+        $basename = trim($basename, " \t\n\r\0\x0B-_.");
+
+        if ($basename === '') {
+            return $extension !== '' ? "download.{$extension}" : 'download';
+        }
+
+        return $extension !== '' ? "{$basename}.{$extension}" : $basename;
+    }
+
     protected function retrieveFileForDownload(string $downloadableFilePath, $bucket = null)
     {
         $this->bucket = $bucket;

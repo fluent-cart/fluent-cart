@@ -156,10 +156,19 @@ class TaxModule
         add_action('fluent_cart/checkout/prepare_other_data', [$this, 'prepareOtherData'], 10, 1);
 
         add_action('fluent_cart/product/after_price', function ($data) {
-            if (Arr::get($data, 'scope') === 'price_range') {
+            $variant = Arr::get($data, 'variant', null);
+
+            // scope 'price_range' covers two cases: a single confirmed price
+            // for a simple product (variant is set — resolve its suffix
+            // normally) and the non-simple price summary (min/max, or a
+            // single value when every variant is priced the same — variant
+            // is always null there, deliberately skipped since no single
+            // tax_inclusion applies to a multi-variant summary; see
+            // PR #1767/#2271).
+            if (Arr::get($data, 'scope') === 'price_range' && !$variant) {
                 return;
             }
-            $variant          = Arr::get($data, 'variant', null);
+
             $priceSuffix      = $this->resolvePriceSuffix($variant);
             $variantInclusion = $variant ? Arr::get($variant->other_info ?: [], 'tax_inclusion', '') : '';
             $taxInclusion     = $variantInclusion ?: Arr::get($this->taxSettings, 'tax_inclusion', '');

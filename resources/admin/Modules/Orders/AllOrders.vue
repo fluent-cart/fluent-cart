@@ -272,7 +272,7 @@ onUnmounted(() => {
   <div class="fct-all-orders-page fct-layout-width">
     <PageHeading :title="translate('Orders')">
       <template #action>
-        <UserCan :permission="['reports/view', 'orders/manage', 'orders/export']">
+        <UserCan :permission="['reports/view', 'orders/manage', 'orders/export', 'orders/delete']">
           <el-dropdown trigger="click" popper-class="fct-dropdown" @command="handleShowOrderStats"
                        placement="bottom-end">
             <el-button>
@@ -303,7 +303,7 @@ onUnmounted(() => {
                     {{ translate('Hide Bulk Actions') }}
                   </el-dropdown-item>
                 </UserCan>
-                <UserCan permission="orders/manage">
+                <UserCan permission="orders/delete">
                   <el-dropdown-item
                       command="delete_test_orders"
                       :disabled="isDeletingTestOrders"

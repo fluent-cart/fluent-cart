@@ -890,7 +890,7 @@ class ProductEditModel extends ProductBaseModel {
             'use_pricing_table',
             'active_editor',
             'sold_individually',
-            'reviews_enabled'
+            'fluent_player_video'
         ].includes(name)) {
 
             // No ensureVariationIndex() here: these are product-detail settings and

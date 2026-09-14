@@ -196,12 +196,21 @@ export default class ImageGallery {
         const defaultUrl = productThumbnail.dataset.defaultImageUrl;
         if (!defaultUrl) return;
 
+        // The gallery's default view can be a video (a video-only product, or a
+        // video the store put in front of every image): restore it, not the image.
+        const defaultVideo = this.#getVideoRegion()?.dataset.fctVideoDefault;
+        if (defaultVideo) {
+            this.#showInlineVideo(defaultVideo, { play: false });
+        } else {
+            this.#hideInlineVideo();
+        }
         productThumbnail.setAttribute('src', defaultUrl);
 
         this.#thumbnailControls.forEach(ctrl => {
-            ctrl.classList.remove('active');
-            ctrl.setAttribute('aria-pressed', 'false');
-            ctrl.setAttribute('tabindex', '-1');
+            const isDefaultVideo = defaultVideo && ctrl.dataset.fctVideoMediaId === String(defaultVideo);
+            ctrl.classList.toggle('active', !!isDefaultVideo);
+            ctrl.setAttribute('aria-pressed', isDefaultVideo ? 'true' : 'false');
+            ctrl.setAttribute('tabindex', isDefaultVideo ? '0' : '-1');
         });
     }
 
@@ -307,6 +316,7 @@ export default class ImageGallery {
             // Fallback for non-adv products: direct src swap
             const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
             if (productThumbnail) {
+                this.#hideInlineVideo();
                 productThumbnail.setAttribute('src', event.detail.url);
             }
         }, { signal });
@@ -537,7 +547,8 @@ export default class ImageGallery {
         if (allImagesJson) {
             try {
                 const allImages = JSON.parse(allImagesJson);
-                if (allImages.length > this.#thumbnailControls.length) {
+                const imageControlCount = this.findInContainer('[data-fluent-cart-thumb-control-button]:not([data-fct-video-media-id])').length;
+                if (allImages.length > imageControlCount) {
                     allImages.forEach((img) => {
                         const variationId = (img.variation_id != null && img.variation_id !== '') ? String(img.variation_id) : '0';
                         if (!lightBoxImages.hasOwnProperty(variationId)) {
@@ -655,9 +666,11 @@ export default class ImageGallery {
         control.setAttribute('aria-pressed', 'true');
         control.setAttribute('tabindex', '0');
 
-        // Update current variation ID based on clicked thumbnail
+        // Update current variation ID based on clicked thumbnail. Video thumbs
+        // belong to no variation (data-variation-id="0"), so they leave the
+        // lightbox album's variation untouched.
         const variationId = control.dataset.variationId;
-        if (variationId !== undefined) {
+        if (variationId !== undefined && control.dataset.fctVideoMediaId === undefined) {
             this.#currentlySelectedVariationId = variationId;
         }
 
@@ -668,12 +681,83 @@ export default class ImageGallery {
         const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');
         if (!productThumbnail) return;
 
+        if (control.dataset.fctVideoMediaId !== undefined) {
+            this.#showInlineVideo(control.dataset.fctVideoMediaId);
+            return;
+        }
+
+        this.#hideInlineVideo();
+
         let thumbnailUrl = control.dataset.url;
         if (thumbnailUrl === undefined) {
             thumbnailUrl = productThumbnail.dataset.defaultImageUrl;
         }
 
         productThumbnail.setAttribute('src', thumbnailUrl);
+    }
+
+    #getVideoRegion() {
+        return this.findOneInContainer('[data-fct-product-gallery-video]')?.closest('.fct-product-gallery-thumb') || null;
+    }
+
+    #pausePlayer(container) {
+        const player = container.querySelector('media-player');
+        if (player && typeof player.pause === 'function') {
+            try {
+                player.pause();
+            } catch (e) {}
+        }
+    }
+
+    #showInlineVideo(mediaId, { play = true } = {}) {
+        const region = this.#getVideoRegion();
+        const containers = region ? [...region.querySelectorAll('[data-fct-product-gallery-video]')] : [];
+        const target = containers.find(container => container.dataset.fctVideoMediaId === String(mediaId));
+        if (!target) {
+            this.#hideInlineVideo();
+            return;
+        }
+
+        containers.forEach((container) => {
+            const matches = container === target;
+            container.classList.toggle('is-active', matches);
+            if (!matches) {
+                this.#pausePlayer(container);
+            }
+        });
+        region.classList.add('is-video-active');
+        if (play) {
+            this.#startPlayer(target);
+        }
+    }
+
+    // The thumb promises "Play video": a click is a user gesture, so playback
+    // may start; a rejected play() just leaves the poster with its own button.
+    #startPlayer(container) {
+        const player = container.querySelector('media-player');
+        if (!player) return;
+        if (player.hasAttribute('data-fp-load-deferred') && typeof player.startLoading === 'function') {
+            player.startLoading();
+        }
+        if (typeof player.play === 'function') {
+            try {
+                const result = player.play();
+                if (result && typeof result.catch === 'function') {
+                    result.catch(() => {});
+                }
+            } catch (e) {}
+        }
+    }
+
+    #hideInlineVideo() {
+        const region = this.#getVideoRegion();
+        if (!region || !region.classList.contains('is-video-active')) return;
+        region.classList.remove('is-video-active');
+
+        region.querySelectorAll('[data-fct-product-gallery-video]').forEach((container) => {
+            container.classList.remove('is-active');
+            this.#pausePlayer(container);
+        });
     }
 
     #initScrollableThumbs() {
@@ -713,8 +797,9 @@ export default class ImageGallery {
             const allImages = this.#getAllImagesForLightbox();
             if (!allImages || allImages.length === 0) return;
 
-            // Start from the image after the last visible thumbnail (exclude hidden ones from by-variants mode)
-            const visibleCount = this.findInContainer('[data-fluent-cart-thumb-control-button]:not(.is-hidden)').length;
+            // Start from the image after the last visible thumbnail (hidden by-variants
+            // thumbs and video thumbs are not part of the lightbox album)
+            const visibleCount = this.findInContainer('[data-fluent-cart-thumb-control-button]:not(.is-hidden):not([data-fct-video-media-id])').length;
             const startIndex = Math.min(visibleCount, allImages.length - 1);
 
             this.#lightBox.setAlbum(allImages);

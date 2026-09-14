@@ -60,9 +60,34 @@ class ProductsCollection extends Custom_Render_Element
             'tab'   => 'content',
         ];
 
+        $this->control_groups['defaultFilter'] = [
+            'title' => esc_html__('Default Filter', 'fluent-cart'),
+            'tab'   => 'content',
+        ];
+
         $this->control_groups['widgets'] = [
             'title' => esc_html__('Widgets', 'fluent-cart'),
             'tab'   => 'widgets',
+        ];
+
+        $this->control_groups['sale_badge'] = [
+            'title' => esc_html__('Sale Badge', 'fluent-cart'),
+            'tab'   => 'content',
+        ];
+
+        $this->control_groups['sale_badge_style'] = [
+            'title' => esc_html__('Sale Badge', 'fluent-cart'),
+            'tab'   => 'style',
+        ];
+
+        $this->control_groups['sold_out_badge'] = [
+            'title' => esc_html__('Sold Out Badge', 'fluent-cart'),
+            'tab'   => 'content',
+        ];
+
+        $this->control_groups['sold_out_badge_style'] = [
+            'title' => esc_html__('Sold Out Badge', 'fluent-cart'),
+            'tab'   => 'style',
         ];
     }
 
@@ -355,6 +380,58 @@ class ProductsCollection extends Custom_Render_Element
             ],
         ];
 
+        // DEFAULT FILTER
+        $this->controls['defaultFilterEnabled'] = [
+            'tab'         => 'content',
+            'group'       => 'defaultFilter',
+            'label'       => esc_html__('Enable Default Filter', 'fluent-cart'),
+            'type'        => 'checkbox',
+            'inline'      => true,
+            'description' => esc_html__('Presets applied to the product query by default, independent of the visitor-facing filter above. Ignored when Is main query is enabled.', 'fluent-cart'),
+        ];
+
+        $this->controls['defaultFilterAllowOutOfStock'] = [
+            'tab'      => 'content',
+            'group'    => 'defaultFilter',
+            'label'    => esc_html__('Allow Out Of Stock', 'fluent-cart'),
+            'type'     => 'checkbox',
+            'inline'   => true,
+            'required' => ['defaultFilterEnabled', '=', true],
+        ];
+
+        $this->controls['defaultFilterWildcard'] = [
+            'tab'         => 'content',
+            'group'       => 'defaultFilter',
+            'label'       => esc_html__('Search', 'fluent-cart'),
+            'type'        => 'text',
+            'placeholder' => esc_html__('Preset search term', 'fluent-cart'),
+            'required'    => ['defaultFilterEnabled', '=', true],
+        ];
+
+        foreach ($taxonomies as $taxonomy) {
+            $controlKey = sanitize_key(str_replace('-', '_', $taxonomy));
+            $label = esc_html(Str::headline($taxonomy));
+
+            // Bricks' built-in terms AJAX endpoint (bounded to 100 results per
+            // request, server-side searchable) — avoids eagerly loading and
+            // flattening every term of every taxonomy on control registration.
+            $this->controls['defaultFilterTaxonomy_' . $controlKey] = [
+                'tab'         => 'content',
+                'group'       => 'defaultFilter',
+                'label'       => $label,
+                'type'        => 'select',
+                'multiple'    => true,
+                'searchable'  => true,
+                'optionsAjax' => [
+                    'action'    => 'bricks_get_terms_options',
+                    'postTypes' => ['fluent-products'],
+                    'taxonomy'  => [$taxonomy],
+                ],
+                'placeholder' => esc_html__('Select terms', 'fluent-cart'),
+                'required'    => ['defaultFilterEnabled', '=', true],
+            ];
+        }
+
         // FIELDS
         $fields = $this->get_post_fields();
 
@@ -399,6 +476,204 @@ class ProductsCollection extends Custom_Render_Element
             'type'        => 'checkbox',
             'inline'      => true,
             'description' => esc_html__('Only added if none of your product fields contains any links.', 'fluent-cart'),
+        ];
+
+        // SALE BADGE
+        $this->controls['showSaleBadge'] = [
+            'tab'      => 'content',
+            'group'    => 'sale_badge',
+            'type'     => 'checkbox',
+            'label'    => esc_html__('Show Sale Badge', 'fluent-cart'),
+            'rerender' => true,
+        ];
+
+        $this->controls['saleBadgeText'] = [
+            'tab'         => 'content',
+            'group'       => 'sale_badge',
+            'type'        => 'text',
+            'label'       => esc_html__('Badge Text', 'fluent-cart'),
+            'placeholder' => esc_html__('Sale!', 'fluent-cart'),
+            'default'     => esc_html__('Sale!', 'fluent-cart'),
+            'required'    => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgeShowPercentage'] = [
+            'tab'      => 'content',
+            'group'    => 'sale_badge',
+            'type'     => 'checkbox',
+            'label'    => esc_html__('Show discount percentage instead', 'fluent-cart'),
+            'rerender' => true,
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgePercentageText'] = [
+            'tab'         => 'content',
+            'group'       => 'sale_badge',
+            'type'        => 'text',
+            'label'       => esc_html__('Percentage Text', 'fluent-cart'),
+            'description' => esc_html__('Use {percent} as a placeholder for the discount amount, e.g. -{percent}%', 'fluent-cart'),
+            'placeholder' => '-{percent}%',
+            'default'     => '-{percent}%',
+            'required'    => [['showSaleBadge', '=', true], ['saleBadgeShowPercentage', '=', true]],
+        ];
+
+        $this->controls['saleBadgePriceSource'] = [
+            'tab'      => 'content',
+            'group'    => 'sale_badge',
+            'type'     => 'select',
+            'label'    => esc_html__('Price Source', 'fluent-cart'),
+            'options'  => [
+                'default_variant' => esc_html__('Default Variant', 'fluent-cart'),
+                'best_discount'   => esc_html__('Best Discount (All Variants)', 'fluent-cart'),
+            ],
+            'default'  => 'default_variant',
+            'inline'   => true,
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgeShape'] = [
+            'tab'      => 'content',
+            'group'    => 'sale_badge',
+            'type'     => 'select',
+            'label'    => esc_html__('Badge Shape', 'fluent-cart'),
+            'options'  => [
+                'badge'  => esc_html__('Badge', 'fluent-cart'),
+                'ribbon' => esc_html__('Ribbon', 'fluent-cart'),
+            ],
+            'default'  => 'badge',
+            'inline'   => true,
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgePosition'] = [
+            'tab'      => 'content',
+            'group'    => 'sale_badge',
+            'type'     => 'select',
+            'label'    => esc_html__('Position', 'fluent-cart'),
+            'options'  => [
+                'top-left'     => esc_html__('Top Left', 'fluent-cart'),
+                'top-right'    => esc_html__('Top Right', 'fluent-cart'),
+                'bottom-left'  => esc_html__('Bottom Left', 'fluent-cart'),
+                'bottom-right' => esc_html__('Bottom Right', 'fluent-cart'),
+            ],
+            'default'  => 'top-left',
+            'inline'   => true,
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgeTypography'] = [
+            'tab'      => 'style',
+            'group'    => 'sale_badge_style',
+            'type'     => 'typography',
+            'label'    => esc_html__('Typography', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'font', 'selector' => '.fct-sale-badge'],
+            ],
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgeBackgroundColor'] = [
+            'tab'      => 'style',
+            'group'    => 'sale_badge_style',
+            'type'     => 'color',
+            'label'    => esc_html__('Background Color', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'background-color', 'selector' => '.fct-sale-badge'],
+            ],
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        $this->controls['saleBadgeTextColor'] = [
+            'tab'      => 'style',
+            'group'    => 'sale_badge_style',
+            'type'     => 'color',
+            'label'    => esc_html__('Text Color', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'color', 'selector' => '.fct-sale-badge'],
+            ],
+            'required' => ['showSaleBadge', '=', true],
+        ];
+
+        // SOLD OUT BADGE
+        $this->controls['showSoldOutBadge'] = [
+            'tab'      => 'content',
+            'group'    => 'sold_out_badge',
+            'type'     => 'checkbox',
+            'label'    => esc_html__('Show Sold Out Badge', 'fluent-cart'),
+            'rerender' => true,
+        ];
+
+        $this->controls['soldOutBadgeText'] = [
+            'tab'         => 'content',
+            'group'       => 'sold_out_badge',
+            'type'        => 'text',
+            'label'       => esc_html__('Badge Text', 'fluent-cart'),
+            'placeholder' => esc_html__('Out of Stock', 'fluent-cart'),
+            'default'     => esc_html__('Out of Stock', 'fluent-cart'),
+            'required'    => ['showSoldOutBadge', '=', true],
+        ];
+
+        $this->controls['soldOutBadgeShape'] = [
+            'tab'      => 'content',
+            'group'    => 'sold_out_badge',
+            'type'     => 'select',
+            'label'    => esc_html__('Badge Shape', 'fluent-cart'),
+            'options'  => [
+                'badge'  => esc_html__('Badge', 'fluent-cart'),
+                'ribbon' => esc_html__('Ribbon', 'fluent-cart'),
+            ],
+            'default'  => 'badge',
+            'inline'   => true,
+            'required' => ['showSoldOutBadge', '=', true],
+        ];
+
+        $this->controls['soldOutBadgePosition'] = [
+            'tab'      => 'content',
+            'group'    => 'sold_out_badge',
+            'type'     => 'select',
+            'label'    => esc_html__('Position', 'fluent-cart'),
+            'options'  => [
+                'top-left'     => esc_html__('Top Left', 'fluent-cart'),
+                'top-right'    => esc_html__('Top Right', 'fluent-cart'),
+                'bottom-left'  => esc_html__('Bottom Left', 'fluent-cart'),
+                'bottom-right' => esc_html__('Bottom Right', 'fluent-cart'),
+            ],
+            'default'  => 'top-left',
+            'inline'   => true,
+            'required' => ['showSoldOutBadge', '=', true],
+        ];
+
+        $this->controls['soldOutBadgeTypography'] = [
+            'tab'      => 'style',
+            'group'    => 'sold_out_badge_style',
+            'type'     => 'typography',
+            'label'    => esc_html__('Typography', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'font', 'selector' => '.fct-sold-out-badge'],
+            ],
+            'required' => ['showSoldOutBadge', '=', true],
+        ];
+
+        $this->controls['soldOutBadgeBackgroundColor'] = [
+            'tab'      => 'style',
+            'group'    => 'sold_out_badge_style',
+            'type'     => 'color',
+            'label'    => esc_html__('Background Color', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'background-color', 'selector' => '.fct-sold-out-badge'],
+            ],
+            'required' => ['showSoldOutBadge', '=', true],
+        ];
+
+        $this->controls['soldOutBadgeTextColor'] = [
+            'tab'      => 'style',
+            'group'    => 'sold_out_badge_style',
+            'type'     => 'color',
+            'label'    => esc_html__('Text Color', 'fluent-cart'),
+            'css'      => [
+                ['property' => 'color', 'selector' => '.fct-sold-out-badge'],
+            ],
+            'required' => ['showSoldOutBadge', '=', true],
         ];
     }
 
@@ -635,6 +910,43 @@ class ProductsCollection extends Custom_Render_Element
                     'product-categories' => $categories,
                 ];
             }
+
+            if (!empty($settings['defaultFilterEnabled'])) {
+                if (!empty($settings['defaultFilterAllowOutOfStock'])) {
+                    $args['allow_out_of_stock'] = true;
+                }
+
+                $wildcard = trim((string) Arr::get($settings, 'defaultFilterWildcard', ''));
+                if ($wildcard !== '') {
+                    $args['search'] = sanitize_text_field($wildcard);
+                }
+
+                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                $taxQuery = Arr::get($args, 'tax_query', []);
+                foreach (Taxonomy::getTaxonomies() as $taxonomy) {
+                    $controlKey = sanitize_key(str_replace('-', '_', $taxonomy));
+                    $selectedTerms = (array) Arr::get($settings, 'defaultFilterTaxonomy_' . $controlKey, []);
+                    if (empty($selectedTerms)) {
+                        continue;
+                    }
+
+                    // bricks_get_terms_options values are shaped "{taxonomy}::{term_id}",
+                    // not plain term IDs — strip the prefix before use.
+                    $termIds = array_values(array_filter(array_map(function ($value) {
+                        $parts = explode('::', (string) $value);
+                        return sanitize_key(end($parts));
+                    }, $selectedTerms)));
+
+                    if (!empty($termIds)) {
+                        $existing = Arr::get($taxQuery, $taxonomy, []);
+                        $taxQuery[$taxonomy] = array_values(array_unique(array_merge((array) $existing, $termIds)));
+                    }
+                }
+                if (!empty($taxQuery)) {
+                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                    $args['tax_query'] = $taxQuery;
+                }
+            }
         }
 
         return $args;
@@ -824,7 +1136,15 @@ class ProductsCollection extends Custom_Render_Element
             }
         }
 
-        $allowOutOfStock = Arr::get($settings, 'allowOutOfStock', false);
+        $wildcard = Arr::get($defaultFilters, 'search', '');
+        if ($wildcard !== '') {
+            $filters['wildcard'] = $wildcard;
+        }
+
+        $allowOutOfStock = !empty($settings['allowOutOfStock']) || (
+            !empty($settings['defaultFilterEnabled']) &&
+            !empty($settings['defaultFilterAllowOutOfStock'])
+        );
         if ($allowOutOfStock) {
             $filters['allow_out_of_stock'] = true;
         }

@@ -196,23 +196,6 @@ const inputs = [
     "resources/public/single-product/single-product.scss",
     'resources/public/single-product/xzoom/xzoom.js',
     'resources/public/single-product/xzoom/xzoom.css',
-    // Reviews
-    "resources/public/single-product/Reviews.js",
-    "resources/public/single-product/ReviewForm.js",
-    "resources/public/single-product/reviews.scss",
-    // Product Reviews Block
-    "resources/admin/BlockEditor/ProductReviews/ProductReviewsBlockEditor.jsx",
-    "resources/admin/BlockEditor/ProductReviews/style/product-reviews-block-editor.scss",
-    // Product Rating Block
-    "resources/admin/BlockEditor/ProductRating/ProductRatingBlockEditor.jsx",
-    "resources/admin/BlockEditor/ProductRating/style/product-rating-block-editor.scss",
-    // Product Review Form Block
-    "resources/admin/BlockEditor/ProductReviewForm/ProductReviewFormBlockEditor.jsx",
-    // Review child blocks (Rating Summary / Review List)
-    "resources/admin/BlockEditor/ProductReviewSummary/ProductReviewSummaryBlockEditor.jsx",
-    "resources/admin/BlockEditor/ProductReviewList/ProductReviewListBlockEditor.jsx",
-    "resources/admin/BlockEditor/ProductReviewSummaryGroup/ProductReviewSummaryGroupBlockEditor.jsx",
-    "resources/admin/BlockEditor/ProductReviewForm/style/product-review-form-block-editor.scss",
     // Similar product
     "resources/public/single-product/similar-product.scss",
     // Advanced Variation — storefront selector (styles + interactive JS)
@@ -233,11 +216,11 @@ const inputs = [
     "resources/withdrawal/withdrawal.js",
     // Addon Assets
     "resources/addon-assets/addon-assets.js",
-    // Reviews PRO
-    "resources/reviews-pro/reviews-pro.js",
     // Subscriptions
     "resources/admin/Modules/Subscriptions/subscription.js",
     "resources/admin/Modules/Shipping/shipping.js",
+    // FluentPlayer gallery tab
+    "resources/admin/Modules/Products/FluentPlayer/fluent-player-gallery.js",
     // Pricing Table
     "resources/public/pricing-table/PricingTable.js",
     "resources/public/pricing-table/pricing-table.scss",

@@ -67,11 +67,6 @@ import EUVatSettings from "@/Modules/Tax/EUVatSettings.vue";
 import AllCoupons from "@/Modules/Coupons/AllCoupons.vue";
 import AddOrEditCoupon from "@/Modules/Coupons/AddOrEditCoupon.vue";
 
-import ReviewsRoute from "@/Modules/Reviews/ReviewsRoute.vue";
-import AllReviews from "@/Modules/Reviews/AllReviews.vue";
-import SingleReview from "@/Modules/Reviews/SingleReview.vue";
-
-import ReviewSettings from "@/Modules/Settings/ReviewSettings.vue";
 import CheckoutFields from "@/Modules/Settings/CheckoutFields.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
@@ -500,16 +495,6 @@ export var routes = {
             },
             ...AppConfig.get('addon_settings_routes', []).map(r => ({ component: StoreSettings, ...r })),
             {
-                name: 'product_reviews',
-                path: 'product-reviews',
-                component: ReviewSettings,
-                meta: {
-                    active_menu: 'settings',
-                    title: translate('Product Reviews'),
-                    permission: "reviews/manage"
-                },
-            },
-            {
                 name: 'email_notifications',
                 path: 'email_notifications',  // Fixed: removed the leading '/'
                 component: EmailNotificationSettings,
@@ -818,47 +803,6 @@ export var routes = {
             title: translate('Coupons'),
             permission: "coupons/view"
         }
-    },
-
-    reviews: {
-        path: '/reviews',
-        component: ReviewsRoute,
-        meta: {
-            active_menu: 'reviews',
-            title: translate('Reviews'),
-            permission: 'reviews/manage'
-        },
-        beforeEnter: (to, from, next) => {
-            const reviewsModule = AppConfig.get('modules_settings.reviews');
-            if (!reviewsModule || reviewsModule.active !== 'yes') {
-                next({ name: 'dashboard' });
-                return;
-            }
-            next();
-        },
-        children: [
-            {
-                name: 'reviews',
-                path: '',
-                component: AllReviews,
-                meta: {
-                    active_menu: 'reviews',
-                    title: translate('Reviews'),
-                    permission: 'reviews/manage'
-                },
-            },
-            {
-                name: 'view_review',
-                path: ':review_id(\\d+)/view',
-                component: SingleReview,
-                props: true,
-                meta: {
-                    active_menu: 'reviews',
-                    title: translate('View Review'),
-                    permission: 'reviews/manage'
-                }
-            }
-        ]
     },
 
     logs: {

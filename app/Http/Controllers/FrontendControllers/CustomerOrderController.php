@@ -19,15 +19,12 @@ use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductDownload;
-use FluentCart\App\Models\ProductDetail;
-use FluentCart\App\Models\ProductReview;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\FileSystem\FileManager;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\OrderService;
-use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -242,71 +239,6 @@ class CustomerOrderController extends BaseFrontendController
             $variationIds[] = $item->object_id;
             $productIds[] = $item->post_id;
         }
-
-        // Flag reviewable product items for the dashboard's Write a Review
-        // button: reviews enabled for the product, the configured permission
-        // mode allows this customer, and they have no existing review. Every
-        // predicate mirrors the canSubmitReview() write path (canonical
-        // duplicate set via Status::getReviewDuplicateStatuses(), buyer
-        // eligibility via the same any-status order condition as
-        // hasOrderedProduct(), batched) so the projection can never show a
-        // button whose submission gets rejected.
-        $reviewableMap = [];
-        $reviewProductIds = array_values(array_unique(array_filter($productIds)));
-        $reviewUserId = get_current_user_id();
-        if ($reviewUserId && $reviewProductIds) {
-            $reviewSettings = ProductReviewService::getReviewSettings();
-            if ($reviewSettings['reviews_enabled'] === 'yes') {
-                $disabledIds = [];
-                $details = ProductDetail::query()->whereIn('post_id', $reviewProductIds)->get();
-                foreach ($details as $detail) {
-                    $otherInfo = $detail->other_info;
-                    if (isset($otherInfo['reviews_enabled']) && $otherInfo['reviews_enabled'] === 'no') {
-                        $disabledIds[] = (int) $detail->post_id;
-                    }
-                }
-
-                $reviewedIds = [];
-                $existingReviews = ProductReview::query()
-                    ->where('user_id', $reviewUserId)
-                    ->whereIn('comment_post_ID', $reviewProductIds)
-                    ->whereIn('comment_approved', Status::getReviewDuplicateStatuses())
-                    ->get();
-                foreach ($existingReviews as $existingReview) {
-                    $reviewedIds[] = (int) $existingReview->post_id;
-                }
-
-                $permissionMode = $reviewSettings['review_permission_mode'] ?? Status::REVIEW_PERMISSION_VERIFIED_BUYERS;
-                $verifiedIds = [];
-                if ($permissionMode === Status::REVIEW_PERMISSION_VERIFIED_BUYERS) {
-                    $verifiedItems = OrderItem::query()
-                        ->whereIn('post_id', $reviewProductIds)
-                        ->whereHas('order', function ($q) use ($customer) {
-                            $q->where('customer_id', $customer->id);
-                        })
-                        ->get();
-                    foreach ($verifiedItems as $verifiedItem) {
-                        $verifiedIds[(int) $verifiedItem->post_id] = true;
-                    }
-                }
-
-                foreach ($reviewProductIds as $reviewProductId) {
-                    $reviewProductId = (int) $reviewProductId;
-                    $modeEligible = $permissionMode !== Status::REVIEW_PERMISSION_VERIFIED_BUYERS
-                        || !empty($verifiedIds[$reviewProductId]);
-                    $reviewableMap[$reviewProductId] = $modeEligible
-                        && !in_array($reviewProductId, $disabledIds, true)
-                        && !in_array($reviewProductId, $reviewedIds, true);
-                }
-            }
-        }
-
-        foreach ($orderItems as &$formattedItem) {
-            if (Arr::get($formattedItem, 'payment_type') !== 'fee' && !empty($formattedItem['product_id'])) {
-                $formattedItem['can_review'] = !empty($reviewableMap[(int) $formattedItem['product_id']]);
-            }
-        }
-        unset($formattedItem);
 
         $upgradableVariationIds = [];
         $isUpgradeEligibleOrder = in_array($order->payment_status, [

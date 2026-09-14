@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.3
+Stable tag: 1.6.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,60 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.6.4 (Sep 11, 2026) =
+- Adds FluentPlayer videos to product galleries with inline playback
+- Adds Upgrade option for eligible one-time purchases in the customer dashboard
+- Adds Test-mode protection to prevent billing, reconciliation, or emails for live subscriptions on staging sites
+- Adds Sale and Sold Out badges to Bricks Products Collection with styling controls
+- Adds Default filters and preset search controls to Bricks Products Collection
+- Adds Stripe hosted Checkout button labels and itemised product, shipping, and tax lines
+- Adds Cart block with Cart Items, Cart Total, and Checkout Button blocks
+- Adds Three-stage overdue renewal reminder emails
+- Adds Daily report chart grouping
+- Adds Consent-based marketing attribution storage for GDPR and TDDDG compliance
+- Adds Developer filters for checkout order data and outgoing emails
+- Improves Storefront product listing performance
+- Improves Thank-you page messaging based on payment status
+- Improves Subscription billing dates, license validity, and grace-period access
+- Improves Paddle reverse-charge B2B transactions, VAT details, receipts, and emails (Pro)
+- Improves Coupon Per User Limit guidance
+- Improves Product price accessibility for screen readers
+- Improves Cart button styling and keyboard focus states
+- Improves Products admin navigation with an All Products link
+- Improves Product variation-to-Simple conversion handling
+- Improves Translations across Bricks, gateways, checkout, licensing, and Pro admin
+- Improves Dark mode and WordPress 7.1 media modal compatibility
+- Fixes PayPal zero-decimal currency checkout, subscriptions, renewals, and refunds
+- Fixes Stripe zero-decimal currency subscription resync totals
+- Fixes Mollie one-off payment methods for store-managed subscriptions (Pro)
+- Fixes PayPal renewal bill counts and failed renewal email delivery
+- Fixes Duplicate charges from simultaneous admin mark-as-paid requests
+- Fixes Subscription payment-state race conditions during renewals
+- Fixes Transaction success updates leaving orders in invalid payment states
+- Fixes Paddle reverse-charge refunds and tax-exclusive pricing (Pro)
+- Fixes Refund dates missing from exports
+- Fixes Card last-4 digits losing leading zeros
+- Fixes Payment method names missing from non-cash gateway orders
+- Fixes Renewal reminder emails mixing details between orders
+- Fixes Payment-link re-pay totals with manual item discounts
+- Fixes Cart status requests being rejected on some sites
+- Fixes Bundle products dropping child items from cart and checkout
+- Fixes Checkout errors from deleted order-bump products
+- Fixes Empty checkout instructions caused by blank formatting
+- Fixes Checkout block support for FluentCRM opt-in, Turnstile, and saved cards
+- Fixes Tax price suffixes missing across product displays and widgets
+- Fixes Show Relevant settings in block themes and quick view
+- Fixes Long description preview not refreshing in the builder
+- Fixes Variant SKU clearing and zero-value SKU handling
+- Fixes Stripe 3D Secure loading overlay timing
+- Fixes Bulk order delete permission checks
+- Fixes Download link signing for unconfigured storage buckets
+- Fixes Unverified PayPal notifications reaching extensions before verification
+- Fixes Bricks filters, search presets, excluded products, and badge positioning
+- Fixes Shop filter nested categories and parent checkbox selection
+- Fixes Upgrade proration credits for quarterly and half-yearly plans
+- Fixes Variation inventory controls showing when Stock Management is disabled
 
 = 1.6.3 (Aug 22, 2026) =
 - Improves File storage security by making sure downloadable file paths always resolve inside your uploads folder.

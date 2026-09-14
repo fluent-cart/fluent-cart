@@ -4,7 +4,6 @@ namespace FluentCart\App\Services\FileSystem\Drivers\S3;
 
 use Exception;
 use FluentCart\App\Modules\StorageDrivers\S3\S3;
-use FluentCart\Framework\Support\Str;
 use WP_Error;
 
 class S3FileUploader
@@ -49,13 +48,14 @@ class S3FileUploader
         // $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
 
         $hasDot = strpos($this->bucket, '.') !== false;
+        $encodedFilePath = $this->encodeS3ObjectKey($this->s3FilePath);
 
         if ($hasDot) {
             // Path-style URL
-            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$this->s3FilePath}";
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}";
         } else {
             // Virtual-hosted style
-            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$this->s3FilePath}";
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}";
         }
 
         // Opt-in: when enabled the upload is refused instead of replacing an
@@ -152,14 +152,29 @@ class S3FileUploader
     }
 
     /**
+     * Percent-encodes each "/"-separated segment of an S3 object key using
+     * AWS's UriEncode rules (rawurlencode leaves "/" alone). This keeps the
+     * canonical signing path and the actual request URL identical to what
+     * S3 receives on the wire, so multi-byte UTF-8 characters, spaces, and
+     * reserved characters ("+", "#", "?", literal "%") all round-trip to
+     * the exact key that was requested instead of a different object.
+     *
+     * Deliberately does not ltrim() leading slashes: "foo", "/foo", and
+     * "//foo" are three distinct S3 keys, and stripping the slash made a
+     * delete/upload targeting "/foo" silently operate on "foo" instead.
+     */
+    private function encodeS3ObjectKey(string $path): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', $path)));
+    }
+
+    /**
      * @throws Exception
      */
     private function createCanonicalUrl(): string
     {
         // Ensure file path begins with /
-        $s3FilePath = Str::startsWith($this->s3FilePath, '/')
-            ? $this->s3FilePath
-            : "/{$this->s3FilePath}";
+        $s3FilePath = '/' . $this->encodeS3ObjectKey($this->s3FilePath);
 
         $contentHash = $this->getContentHash();
 

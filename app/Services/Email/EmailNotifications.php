@@ -636,24 +636,6 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
-            'review_submitted_admin' => [
-                'event'            => 'review_created',
-                'group'            => 'review',
-                'group_label'      => __('Review Actions', 'fluent-cart'),
-                'title'            => __('Send mail to admin when a new review is submitted', 'fluent-cart'),
-                'description'      => __('Email admin when a customer submits a new review.', 'fluent-cart'),
-                'recipient'        => 'admin',
-                'smartcode_groups' => [],
-                'template_path'    => 'review.submitted.admin',
-                'is_async'         => false,
-                'pre_header'       => __('A new product review has been submitted.', 'fluent-cart'),
-                'settings'         => [
-                    'active'          => 'yes',
-                    'subject'         => __('New Review Submitted', 'fluent-cart'),
-                    'is_default_body' => 'yes',
-                    'email_body'      => '',
-                ]
-            ],
         ];
 
     }

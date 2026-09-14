@@ -729,6 +729,14 @@ html.fluent_theme_dark {
   @apply absolute inset-0 text-white flex items-center justify-center text-[13px] font-semibold;
   background: rgba(0, 0, 0, 0.45);
 }
+
+.fmp-preview-play {
+  @apply absolute inset-0 flex items-center justify-center pointer-events-none text-white;
+
+  svg {
+    @apply h-[22px] w-[22px] rounded-full bg-black/55;
+  }
+}
 /* ── Full: empty state ── */
 .fmp-add-full {
   display: inline-flex;
@@ -766,8 +774,22 @@ html.fluent_theme_dark {
   @apply w-full h-full object-cover block;
 }
 
+.fmp-grid-item.is-video {
+  @apply border-primary-200 dark:border-dark-400;
+}
+
+/* Play badge on a video tile — the same mark the storefront gallery uses. */
+.fmp-grid-play {
+  @apply absolute inset-0 flex items-center justify-center pointer-events-none text-white;
+
+  svg {
+    @apply w-8 h-8 p-1.5 rounded-full;
+    background: rgba(0, 0, 0, 0.55);
+  }
+}
+
 .fmp-featured-tag {
-  @apply absolute bottom-1 left-1;
+  @apply absolute bottom-1 left-1 max-w-[calc(100%-8px)] truncate;
 }
 
 .fmp-remove-btn {
@@ -775,8 +797,59 @@ html.fluent_theme_dark {
   background: rgba(0, 0, 0, 0.6);
 }
 
-.fmp-grid-item:hover .fmp-remove-btn {
-  @apply opacity-100;
+/* Dragging is pointer-only, so these are how the gallery is reordered from the
+   keyboard. They follow the remove button's reveal, plus focus — otherwise a
+   keyboard user would be tabbing through controls they cannot see. */
+.fmp-grid-move {
+  @apply absolute bottom-1 right-1 flex items-center gap-1 opacity-0 transition-opacity duration-100;
+}
+
+.fmp-move-btn {
+  @apply w-5.5 h-5.5 rounded-full text-white cursor-pointer flex items-center justify-center border-0 p-0;
+  background: rgba(0, 0, 0, 0.6);
+
+  svg {
+    @apply w-3.5 h-3.5;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-white;
+  }
+}
+
+.fmp-grid-item:hover,
+.fmp-grid-item:focus-within {
+  .fmp-remove-btn,
+  .fmp-grid-move {
+    @apply opacity-100;
+  }
+}
+
+.fmp-sr-only {
+  @apply sr-only;
+}
+
+/* The grid while the tabs' items are still resolving: it is shown, because the
+   images in it are real, but it cannot be rearranged until the rest arrives. */
+.fmp-grid-loading {
+  @apply m-0 mb-3 text-[13px] text-system-mid dark:text-gray-300;
+}
+
+.fmp-grid.is-locked .fmp-grid-item {
+  @apply cursor-default;
+}
+
+.fmp-remove-btn:disabled,
+.fmp-move-btn:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+
+.fmp-add-media.is-disabled {
+  @apply pointer-events-none opacity-50;
 }
 
 .fmp-empty {

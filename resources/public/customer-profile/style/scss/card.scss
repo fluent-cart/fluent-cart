@@ -88,33 +88,3 @@
         left: 12px;
     }
 }
-
-/* "Write a Review" affordance under an order item — a small outlined
-   button linking to the product page's reviews section
-   (#fct-product-reviews marker hash). */
-.fct-order-item-review-btn {
-    @apply inline-flex items-center gap-1 mt-2.5 cursor-pointer no-underline #{!important};
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
-    background: transparent;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    white-space: nowrap;
-    transition: background-color 0.15s, border-color 0.15s;
-
-    &:hover {
-        @apply bg-gray-25 dark:bg-dark-600;
-        border-color: #8e99aa;
-        color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
-    }
-
-    &:focus,
-    &:focus-visible {
-        @apply bg-gray-25 dark:bg-dark-600;
-        color: var(--fluent-cart-customer-dashboard-title-color, #1f2937);
-        outline: 2px solid #6b7280;
-        outline-offset: 2px;
-    }
-}

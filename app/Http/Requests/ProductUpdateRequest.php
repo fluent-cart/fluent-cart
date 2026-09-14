@@ -5,6 +5,7 @@ namespace FluentCart\App\Http\Requests;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingClass;
+use FluentCart\App\Modules\FluentPlayer\ProductVideoSettings;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Http\Rules\RequiredWhenRule;
 use FluentCart\Framework\Foundation\RequestGuard;
@@ -258,7 +259,7 @@ class ProductUpdateRequest extends RequestGuard
             }],
             'detail.other_info.tax_exempt'        => 'nullable|sanitizeText|in:yes,no',
             'detail.other_info.active_editor'     => 'nullable|sanitizeText',
-            'detail.other_info.reviews_enabled'   => 'nullable|sanitizeText|in:yes,no',
+            'detail.other_info.fluent_player_video' => 'nullable|array',
             'product_terms'                       => 'nullable|array',
             'product_terms.*'                     => 'nullable|array',
             'product_terms.*.*'                   => 'nullable|numeric',
@@ -522,7 +523,9 @@ class ProductUpdateRequest extends RequestGuard
                 'detail.other_info.tax_class'         => 'intval',
                 'detail.other_info.tax_exempt'        => 'sanitize_text_field',
                 'detail.other_info.active_editor'     => 'sanitize_text_field',
-                'detail.other_info.reviews_enabled'   => 'sanitize_text_field',
+                'detail.other_info.fluent_player_video' => function ($value) {
+                    return ProductVideoSettings::sanitize($value);
+                },
             ];
 
             foreach ($detailFieldMap as $field => $sanitizer) {

@@ -124,13 +124,40 @@ class AddonsController extends Controller
             'fluent-community',
             'fluent-security',
             'fluentform',
-            'fluent-support'
+            'fluent-support',
+            'fluent-player'
         ]);
 
         if (!$addon || !in_array($addon, $listedPlugins)) {
             return $this->sendError([
                 'message' => __('This addon cannot be installed at this time', 'fluent-cart')
             ]);
+        }
+
+        // integrations/manage is a FluentCart permission and does not imply the
+        // WordPress capability to put executable code on the site: a Manager is not
+        // necessarily an administrator.
+        //
+        // installPlugin() always ends by activating the plugin — freshly downloaded
+        // or already on disk — so activate_plugins is required either way, and an
+        // absent addon needs install_plugins on top for the download itself. The two
+        // are separate capabilities a custom role can hold independently.
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $isInstalled = array_key_exists($addon . '/' . $addon . '.php', get_plugins());
+
+        if (!current_user_can('activate_plugins')) {
+            return $this->sendError([
+                'message' => __('You do not have permission to activate plugins.', 'fluent-cart')
+            ], 403);
+        }
+
+        if (!$isInstalled && !current_user_can('install_plugins')) {
+            return $this->sendError([
+                'message' => __('You do not have permission to install plugins.', 'fluent-cart')
+            ], 403);
         }
 
         $result = (new BackgroundInstaller())->installPlugin($addon);

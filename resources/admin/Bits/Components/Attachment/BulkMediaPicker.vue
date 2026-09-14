@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { VueDraggableNext as draggable } from 'vue-draggable-next';
 import MediaButton from '@/Bits/Components/Buttons/MediaButton.vue';
 import translate from '@/utils/translator/Translator';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Asset from "@/utils/support/Asset";
+import { mergeGalleryItems, splitGalleryOrder, reconcileGalleryItems, insertGalleryImage, moveGalleryEntry, normalizeGalleryPosition } from '@/Modules/Products/galleryTabs';
 
 // Fallback thumbnail for media whose image is missing or fails to load, so a
 // broken url shows a placeholder instead of an endless loading spinner.
@@ -40,9 +41,28 @@ const props = defineProps({
   // label shows the count, e.g. "Apply to all (3)". Display-only — it does
   // not change which variants the save targets.
   selectedCount: { type: Number, default: 0 },
+  // An `extra-tabs` consumer still has work in flight (e.g. a video being
+  // created): Save is disabled and the dialog refuses to close until it ends,
+  // otherwise the result would land after the draft was committed and lost.
+  busy: { type: Boolean, default: false },
+  // Extra items an `extra-tabs` consumer wants in the full-mode preview grid:
+  // [{ id, url, title, kind, position }] — `kind: 'video'` adds a play badge,
+  // `position` is the number of images the item sits after (null = last).
+  extraPreviews: { type: Array, default: () => [] },
+  // The same shape, but built from the consumer's *draft*: these are shown in
+  // the dialog's Gallery grid and can be dragged and removed next to the images.
+  extraItems: { type: Array, default: () => [] },
+  // The consumer is still resolving that first set. The grid holds still until
+  // it lands: those items carry positions measured against the images as they
+  // are now, so editing first would apply them to a list they never saw, and
+  // the same edit would land them differently depending on network timing.
+  extraItemsLoading: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:modelValue', 'change']);
+// `open` / `save` let `extra-tabs` slot consumers seed and commit their own
+// drafts; `extra-reorder` / `extra-remove` report what the Gallery grid did to
+// their items.
+const emit = defineEmits(['update:modelValue', 'change', 'open', 'save', 'extra-reorder', 'extra-remove']);
 
 const showModal = ref(false);
 const modalImages = ref([]);
@@ -77,15 +97,110 @@ const mediaItems = computed(() => Array.isArray(props.modelValue) ? props.modelV
 
 const compactMedia = computed(() => mediaItems.value.filter(m => m && m.url));
 
+const PREVIEW_LIMIT = 4;
+
+const asImageEntry = (image) => ({ kind: 'image', id: image.id, url: image.url, title: image.title || '', image });
+
+// Full-mode preview: images and extra items (videos) in the order the
+// storefront gallery shows them, capped with a "+N".
+const previewItems = computed(() => mergeGalleryItems(
+  mediaItems.value.map(m => ({ id: m.id, url: m.url, title: m.title || '', kind: 'image' })),
+  (Array.isArray(props.extraPreviews) ? props.extraPreviews : [])
+    .filter(p => p && p.url)
+    .map(p => ({ id: p.id, url: p.url, title: p.title || '', kind: p.kind || 'image', position: normalizeGalleryPosition(p.position) })),
+));
+
+// The dialog's Gallery grid: images and the extra tabs' items in one draggable
+// list. It owns the order while the dialog is open — `modalImages` and the
+// consumers' positions are derived from it on every change.
+const galleryList = ref([]);
+
+const dialogExtras = computed(() => (Array.isArray(props.extraItems) ? props.extraItems : []).filter(item => item && item.url));
+
+// Read-only while that first set is on its way; Cancel and Escape stay live,
+// so the reader is never trapped by a request that does not come back.
+const galleryLocked = computed(() => props.extraItemsLoading);
+
+const buildGalleryList = (extras = dialogExtras.value) => {
+  galleryList.value = mergeGalleryItems(modalImages.value.map(asImageEntry), extras.map(item => ({ ...item })));
+};
+
+// Push the grid's order back out: the images in their new order, and each
+// extra item with the number of images now in front of it.
+const syncFromGalleryList = () => {
+  const { images, order } = splitGalleryOrder(galleryList.value);
+  modalImages.value = images.map(entry => entry.image);
+  emit('extra-reorder', order.map(item => ({ tab: item.tab, id: item.id, position: item.position })));
+};
+
+// The consumer resolves its items asynchronously, so what arrives right after
+// the dialog opens is the authoritative list for this session. Until it does,
+// the props still describe the previous session — a stale order, or another
+// product's items entirely — so the grid opens on the images alone.
+let extrasSeeded = false;
+
+// After that, an item added or dropped in an extra tab (a video created there)
+// joins or leaves the grid without disturbing the order of what is already in it.
+watch(dialogExtras, (items) => {
+  if (!showModal.value) return;
+  if (!extrasSeeded) {
+    extrasSeeded = true;
+    buildGalleryList();
+    return;
+  }
+
+  galleryList.value = reconcileGalleryItems(galleryList.value, items);
+});
+
+// Dragging is pointer-only, so every tile also carries move controls. What
+// they did is announced here, because the tile itself moving is a change a
+// screen reader has no reason to read out.
+const liveMessage = ref('');
+
+const entryLabel = (entry) => entry.title || (entry.kind === 'video' ? translate('Video') : translate('Image'));
+
+// Focus follows the item it moved, dropping to the opposite control when the
+// move lands on an end and disables the button that was just pressed.
+const focusMoveControl = (index, offset) => {
+  const scope = document.querySelector('.fct-bulk-media-picker-modal');
+  if (!scope) return;
+  const control = (direction) => scope.querySelector(`[data-fct-media-move="${direction}"][data-fct-media-move-index="${index}"]`);
+  const wanted = control(offset < 0 ? 'earlier' : 'later');
+  const target = wanted && !wanted.disabled ? wanted : control(offset < 0 ? 'later' : 'earlier');
+  if (target) target.focus();
+};
+
+const moveEntry = (index, offset) => {
+  if (galleryLocked.value) return;
+  const entry = galleryList.value[index];
+  const target = index + offset;
+  if (!entry || !moveGalleryEntry(galleryList.value, index, target)) return;
+
+  syncFromGalleryList();
+  /* translators: %1$s: media title, %2$s: its new position, %3$s: number of items in the gallery */
+  liveMessage.value = translate('%1$s moved to position %2$s of %3$s', entryLabel(entry), target + 1, galleryList.value.length);
+  nextTick(() => focusMoveControl(target, offset));
+};
+
+// The product's featured image is the first *image* in the gallery, whatever
+// else the grid holds: a video dragged to the front leads the storefront
+// gallery but never becomes the featured image.
+const featuredIndex = computed(() => galleryList.value.findIndex(entry => entry.kind === 'image'));
+
 const openModal = () => {
   modalImages.value = JSON.parse(JSON.stringify(mediaItems.value));
   activeTab.value = 'gallery';
   pasteUrl.value = '';
   applyToAll.value = props.defaultApplyToAll;
   showModal.value = true;
+  extrasSeeded = false;
+  liveMessage.value = '';
+  buildGalleryList([]);
+  emit('open');
 };
 
 const saveAndClose = () => {
+  if (props.busy || galleryLocked.value) return;
   // A no-op Save must not emit. The grouped media picker binds a derived
   // aggregate as model-value; re-emitting it unchanged would broadcast the
   // union of every variant's images back onto all of them.
@@ -94,18 +209,36 @@ const saveAndClose = () => {
     emit('update:modelValue', modalImages.value);
     emit('change', modalImages.value, { applyToAll: applyToAll.value });
   }
+  emit('save');
   showModal.value = false;
 };
 
 const cancelModal = () => {
+  if (props.busy) return;
   showModal.value = false;
 };
 
-const removeImage = (index) => {
-  modalImages.value.splice(index, 1);
+// Close icon / Escape go through el-dialog's before-close; the Cancel button through cancelModal.
+const onBeforeClose = (done) => {
+  if (props.busy) return;
+  done();
+};
+
+// Removing an image also shifts the extra items that sat behind it, so the
+// grid always reports its new order.
+const removeGalleryEntry = (index) => {
+  if (galleryLocked.value) return;
+  const entry = galleryList.value[index];
+  if (!entry) return;
+  galleryList.value.splice(index, 1);
+  if (entry.kind !== 'image') {
+    emit('extra-remove', entry);
+  }
+  syncFromGalleryList();
 };
 
 const onMediaSelected = (selected) => {
+  if (galleryLocked.value) return;
   const newImages = selected
     .filter(img => img.url) // skip ghost attachments (e.g. id=0 resolved by WP)
     .map(img => ({
@@ -117,20 +250,27 @@ const onMediaSelected = (selected) => {
   if (!props.multiple) {
     // Single mode: replace all
     modalImages.value = newImages.slice(0, 1);
+    buildGalleryList();
     return;
   }
 
   // Additive merge: append new, skip URL duplicates
   const existingUrls = new Set(modalImages.value.map(i => i.url));
+  let added = false;
   for (const img of newImages) {
     if (!existingUrls.has(img.url)) {
-      modalImages.value.push(img);
+      insertGalleryImage(galleryList.value, asImageEntry(img));
       existingUrls.add(img.url);
+      added = true;
     }
   }
+  // The grid moved: images and positions are read back off it, so what the
+  // reader sees is what a Save persists.
+  if (added) syncFromGalleryList();
 };
 
 const addFromUrl = () => {
+  if (galleryLocked.value) return;
   const url = pasteUrl.value.trim();
   if (!url) return;
   if (modalImages.value.some(i => i.url === url)) {
@@ -143,15 +283,17 @@ const addFromUrl = () => {
     // Single mode: a URL add replaces, mirroring onMediaSelected — otherwise
     // the paste-URL path lets the picker exceed one image.
     modalImages.value = [image];
+    buildGalleryList();
   } else {
-    modalImages.value.push(image);
+    insertGalleryImage(galleryList.value, asImageEntry(image));
+    syncFromGalleryList();
   }
   pasteUrl.value = '';
 };
 
 const removeUrlImage = (url) => {
-  const idx = modalImages.value.findIndex(i => i.url === url);
-  if (idx !== -1) modalImages.value.splice(idx, 1);
+  const idx = galleryList.value.findIndex(entry => entry.kind === 'image' && entry.url === url);
+  if (idx !== -1) removeGalleryEntry(idx);
 };
 </script>
 
@@ -211,10 +353,19 @@ const removeUrlImage = (url) => {
 
     <!-- Full inline: thumbnail grid preview (for product pages, etc.) -->
     <template v-else>
-      <div v-if="modelValue && modelValue.length" class="fmp-preview-grid">
-        <div class="fmp-preview-item" v-for="(img, i) in modelValue.slice(0, 4)" :key="i">
-          <img :src="img.url" :alt="img.title || ''" />
-          <span v-if="i === 3 && modelValue.length > 4" class="fmp-preview-more">+{{ modelValue.length - 4 }}</span>
+      <div v-if="previewItems.length" class="fmp-preview-grid">
+        <div
+          class="fmp-preview-item"
+          :class="{ 'is-video': item.kind === 'video' }"
+          v-for="(item, i) in previewItems.slice(0, PREVIEW_LIMIT)"
+          :key="`${item.kind}-${item.id ?? i}`"
+          :data-fct-media-kind="item.kind"
+        >
+          <img :src="item.url || defaultThumb" :alt="item.title || ''" @error="onThumbError" />
+          <span v-if="item.kind === 'video'" class="fmp-preview-play" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span v-if="i === PREVIEW_LIMIT - 1 && previewItems.length > PREVIEW_LIMIT" class="fmp-preview-more">+{{ previewItems.length - PREVIEW_LIMIT }}</span>
         </div>
       </div>
 
@@ -239,25 +390,77 @@ const removeUrlImage = (url) => {
     width="600px"
     :append-to-body="true"
     :close-on-click-modal="false"
+    :close-on-press-escape="!busy"
+    :before-close="onBeforeClose"
     @close="cancelModal"
     class="fct-bulk-media-picker-modal"
   >
     <div class="fmp-modal-body">
       <el-tabs v-model="activeTab">
         <el-tab-pane :label="$t('Gallery')" name="gallery">
+          <p v-if="galleryLocked" class="fmp-grid-loading" role="status" data-fct-gallery-loading>
+            {{ $t('Loading gallery items...') }}
+          </p>
+
           <draggable
-            v-if="modalImages.length"
-            :list="modalImages"
+            v-if="galleryList.length"
+            :list="galleryList"
             class="fmp-grid"
+            :class="{ 'is-locked': galleryLocked }"
             tag="div"
             :animation="200"
+            :disabled="galleryLocked"
+            @end="syncFromGalleryList"
           >
-            <div class="fmp-grid-item" v-for="(element, index) in modalImages" :key="element.url || index">
-              <img :src="element.url" :alt="element.title || ''" />
-              <el-tag v-if="index === 0" type="primary" size="small" class="fmp-featured-tag">
+            <div
+              class="fmp-grid-item"
+              :class="{ 'is-video': element.kind === 'video' }"
+              v-for="(element, index) in galleryList"
+              :key="`${element.kind}-${element.id ?? ''}-${element.url || index}`"
+              :data-fct-media-kind="element.kind"
+            >
+              <img :src="element.url || defaultThumb" :alt="element.title || ''" @error="onThumbError" />
+              <span v-if="element.kind === 'video'" class="fmp-grid-play" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+              <el-tag v-if="index === featuredIndex" type="primary" size="small" class="fmp-featured-tag">
                 {{ $t('Featured') }}
               </el-tag>
-              <button type="button" class="fmp-remove-btn" @click.stop="removeImage(index)" :title="$t('Remove')">
+              <el-tag v-else-if="index === 0" type="info" size="small" class="fmp-featured-tag">
+                {{ $t('Plays first') }}
+              </el-tag>
+              <div v-if="galleryList.length > 1" class="fmp-grid-move">
+                <button
+                  type="button"
+                  class="fmp-move-btn"
+                  data-fct-media-move="earlier"
+                  :data-fct-media-move-index="index"
+                  :disabled="galleryLocked || index === 0"
+                  :aria-label="translate('Move %1$s earlier', entryLabel(element))"
+                  @click.stop="moveEntry(index, -1)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button
+                  type="button"
+                  class="fmp-move-btn"
+                  data-fct-media-move="later"
+                  :data-fct-media-move-index="index"
+                  :disabled="galleryLocked || index === galleryList.length - 1"
+                  :aria-label="translate('Move %1$s later', entryLabel(element))"
+                  @click.stop="moveEntry(index, 1)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+              <button
+                type="button"
+                class="fmp-remove-btn"
+                :disabled="galleryLocked"
+                :aria-label="translate('Remove %1$s', entryLabel(element))"
+                :title="$t('Remove')"
+                @click.stop="removeGalleryEntry(index)"
+              >
                 &times;
               </button>
             </div>
@@ -266,6 +469,8 @@ const removeUrlImage = (url) => {
           <div v-else class="fmp-empty">
             <p>{{ $t('No media added yet.') }}</p>
           </div>
+
+          <span class="fmp-sr-only" role="status" aria-live="polite" data-fct-gallery-live>{{ liveMessage }}</span>
         </el-tab-pane>
 
         <el-tab-pane v-if="hasUrlTab" name="imported-urls">
@@ -291,21 +496,26 @@ const removeUrlImage = (url) => {
                 v-model="pasteUrl"
                 :placeholder="$t('Paste image URL...')"
                 size="small"
+                :disabled="galleryLocked"
                 @keyup.enter="addFromUrl"
               />
-              <el-button size="small" @click="addFromUrl" :disabled="!pasteUrl.trim()">{{ $t('Add') }}</el-button>
+              <el-button size="small" @click="addFromUrl" :disabled="galleryLocked || !pasteUrl.trim()">{{ $t('Add') }}</el-button>
             </div>
           </div>
         </el-tab-pane>
+
+        <slot name="extra-tabs" :active-tab="activeTab"></slot>
       </el-tabs>
     </div>
 
     <div class="dialog-footer">
-      <MediaButton
-          :attachments="wpAttachments"
-          :multiple="multiple"
-          @on-media-selected="onMediaSelected"
-      />
+      <div class="fmp-add-media" :class="{ 'is-disabled': galleryLocked }" :aria-disabled="galleryLocked ? 'true' : null">
+        <MediaButton
+            :attachments="wpAttachments"
+            :multiple="multiple"
+            @on-media-selected="onMediaSelected"
+        />
+      </div>
 
       <div class="fct-media-picker-footer-actions">
         <label v-if="showApplyToAll" class="fct-media-picker-apply-to-group-label" :class="{ 'is-enabled': applyToAll }">
@@ -316,8 +526,8 @@ const removeUrlImage = (url) => {
           {{ applyToAllLabel }}
         </label>
         <div class="fct-btn-group sm">
-          <el-button @click="cancelModal">{{ $t('Cancel') }}</el-button>
-          <el-button type="primary" @click="saveAndClose">{{ $t('Save') }}</el-button>
+          <el-button :disabled="busy" @click="cancelModal">{{ $t('Cancel') }}</el-button>
+          <el-button type="primary" :disabled="busy || galleryLocked" @click="saveAndClose">{{ $t('Save') }}</el-button>
         </div>
       </div>
     </div>

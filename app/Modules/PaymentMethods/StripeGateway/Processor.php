@@ -13,6 +13,12 @@ use FluentCart\Framework\Support\Arr;
 class Processor
 {
     /**
+     * Stripe Checkout caps a session at 100 line items. Kept below it with room
+     * for the tax and reconciliation lines this builder may append.
+     */
+    const MAX_HOSTED_LINE_ITEMS = 90;
+
+    /**
      * The return URL handed to Stripe for an onsite confirm.
      *
      * Onsite normally never navigates (`redirect: 'if_required'`), but an
@@ -922,22 +928,16 @@ class Processor
             return $stripeCustomer;
         }
 
-        // Use a single line item with the total amount to avoid complexity
-        // This is simpler and prevents any calculation mismatches
-        $storeName = (new \FluentCart\Api\StoreSettings())->get('store_name');
-        $lineItems = [
-            [
-                'price_data' => [
-                    'currency'     => strtolower($transactionCurrency),
-                    'product_data' => [
-                        'name'        => $storeName . ' - Order #' . $order->uuid,
-                        'description' => sprintf(__('Order total including all items, shipping (If any), and taxes (If any)', 'fluent-cart')),
-                    ],
-                    'unit_amount'  => $chargeAmount,
-                ],
-                'quantity'   => 1,
-            ]
-        ];
+        // Per-item breakdown when it reconciles exactly to the charge amount,
+        // otherwise the historical single aggregate line. buildHostedLineItems()
+        // returns null for anything it cannot prove sums to $chargeAmount — the
+        // fallback is always a correct charge, just a less itemised one.
+        $lineItems = $this->buildHostedLineItems($order, $transactionCurrency, $chargeAmount);
+        $usedBreakdown = $lineItems !== null;
+
+        if (!$usedBreakdown) {
+            $lineItems = $this->aggregateHostedLineItems($order, $transactionCurrency, $chargeAmount);
+        }
 
         $sessionData = [
             'customer'           => $stripeCustomer['id'],
@@ -962,6 +962,11 @@ class Processor
             ];
         }
 
+        $submitType = (new StripeSettingsBase())->getSubmitType();
+        if ($submitType && in_array($submitType, ['auto', 'book', 'donate', 'pay'], true)) {
+            $sessionData['submit_type'] = $submitType;
+        }
+
         $itemCount = 1;
         foreach($order->order_items as $item) {
             $sessionData['metadata']['item ' . $itemCount] = 'Name: ' . $item->title . ', ' . 'Qty: ' . $item->quantity . ', Price: ' . Helper::toDecimal($item->line_total, false, null, true, true, false);
@@ -972,27 +977,58 @@ class Processor
             $itemCount++;
         }
 
+        // Kept unfiltered so the aggregate retry below can re-derive the body from
+        // the same base rather than editing a filtered one underneath its author.
+        $baseSessionData = $sessionData;
+
         $sessionData = apply_filters('fluent_cart/payments/stripe_checkout_session_args', $sessionData, [
             'order'       => $order,
             'transaction' => $transaction
         ]);
 
-        // Same duplicate-charge defense as every other Stripe create path: a pure
-        // duplicate replays the key and gets the original session back; an edited-cart
-        // resubmit gets a fresh key instead of a same-key/changed-parameters 400.
-        $idempotencyFingerprint = [
-            'customer'   => Arr::get($sessionData, 'customer'),
-            'line_items' => Arr::get($sessionData, 'line_items'),
-            'mode'       => Arr::get($sessionData, 'mode'),
-        ];
         $idempotencySeed = $paymentInstance->getIdempotencySeed();
-        $idempotencyKey = $idempotencySeed
-            ? 'fct_stripe_cs_' . md5($idempotencySeed . '|' . wp_json_encode($idempotencyFingerprint))
-            : null;
+        $idempotencyKey = $this->hostedSessionIdempotencyKey($idempotencySeed, $sessionData);
 
         $session = (new API())->createStripeObject('checkout/sessions', $sessionData, 'current', [
             'Idempotency-Key' => $idempotencyKey
         ]);
+
+        // A breakdown adds validation surface the single aggregate line does not
+        // have (line-item cap, product naming, per-item amounts). If Stripe rejects
+        // the itemised body, fall back to the aggregate rather than failing the
+        // buyer's checkout. Only a structural rejection qualifies: a transport
+        // failure may mean the session was in fact created, and retrying that under
+        // a different key would abandon the idempotency guarantee for no reason.
+        if ($usedBreakdown && $this->isStripeValidationError($session)) {
+            fluent_cart_warning_log(
+                'Stripe checkout line-item breakdown rejected',
+                'Stripe rejected the itemised checkout session; retrying with a single aggregate line item. Reason: ' . $session->get_error_message(),
+                [
+                    'module_name' => 'order',
+                    'module_id'   => $order->id,
+                    'log_type'    => 'api'
+                ]
+            );
+
+            // Re-filter the aggregate body instead of swapping line_items inside the
+            // filtered one: a subscriber that derives anything from line_items (per
+            // line tax_rates, automatic_tax, its own totals) decided that against the
+            // itemised body, and editing underneath it leaves the two disagreeing.
+            // Rebuilt from the unfiltered base so a subscriber that appends rather
+            // than replaces does not apply twice.
+            $baseSessionData['line_items'] = $this->aggregateHostedLineItems($order, $transactionCurrency, $chargeAmount);
+
+            $sessionData = apply_filters('fluent_cart/payments/stripe_checkout_session_args', $baseSessionData, [
+                'order'       => $order,
+                'transaction' => $transaction
+            ]);
+
+            $idempotencyKey = $this->hostedSessionIdempotencyKey($idempotencySeed, $sessionData);
+
+            $session = (new API())->createStripeObject('checkout/sessions', $sessionData, 'current', [
+                'Idempotency-Key' => $idempotencyKey
+            ]);
+        }
 
         if (is_wp_error($session)) {
             return $session;
@@ -1017,6 +1053,453 @@ class Processor
         ];
     }
 
+
+    /**
+     * Itemised line_items for a hosted (mode: payment) Checkout Session.
+     *
+     * Unlike PayPal's purchase_unit — where we declare amount.value and the
+     * breakdown merely has to agree with it — Stripe DERIVES the session total
+     * from line_items. There is no total to assert and no subtractive field
+     * (order-level discounts need a Coupon object; negative unit_amount is
+     * rejected). So the sum of what we send IS what the buyer is charged, and a
+     * breakdown that is a cent off does not error, it mischarges.
+     *
+     * Everything is therefore reconciled against $chargeAmount before returning,
+     * in wire units, and null is returned for any order this cannot prove exact.
+     * The caller then sends a single aggregate line — always the correct amount.
+     *
+     * Discounts need no line of their own: order_items.line_total is already
+     * subtotal minus discount_total (CheckoutProcessor::116), so item-level
+     * discounts are baked into the per-unit price.
+     *
+     * @param \FluentCart\App\Models\Order $order
+     * @param string $currency
+     * @param int    $chargeAmount Charge total in wire units (already divided for zero-decimal).
+     * @return array|null Null when no exact breakdown is possible.
+     */
+    /**
+     * Duplicate-charge defense for a hosted payment session: a pure duplicate
+     * replays the key and gets the original session back, while an edited-cart
+     * resubmit gets a fresh key instead of a same-key/changed-parameters 400.
+     *
+     * Derived from the FILTERED body, so a subscriber that changes what is
+     * actually charged changes the key with it. Metadata is excluded — a
+     * volatile metadata filter must not roll the key on a genuine duplicate.
+     *
+     * @param string|null $seed
+     * @param array $sessionData
+     * @return string|null
+     */
+    private function hostedSessionIdempotencyKey($seed, $sessionData)
+    {
+        if (!$seed) {
+            return null;
+        }
+
+        $fingerprint = [
+            'customer'   => Arr::get($sessionData, 'customer'),
+            'line_items' => Arr::get($sessionData, 'line_items'),
+            'mode'       => Arr::get($sessionData, 'mode'),
+        ];
+
+        return 'fct_stripe_cs_' . md5($seed . '|' . wp_json_encode($fingerprint));
+    }
+
+    private function buildHostedLineItems($order, $currency, $chargeAmount)
+    {
+        $isZeroDecimal = $currency && CurrenciesHelper::isZeroDecimal($currency);
+        $stripeCurrency = strtolower($currency);
+
+        $lineItems = [];
+        $sum = 0;
+
+        // The relation is materialised on this request either way (the metadata
+        // loop below walks it), so reuse it instead of issuing a second query.
+        // Deterministic order: the idempotency fingerprint hashes line_items, so a
+        // varying sequence would roll the key on a genuine duplicate submission.
+        $orderItems = $order->order_items->sortBy('id')->values();
+
+        // Decline before building anything the cap would discard.
+        if ($orderItems->count() > self::MAX_HOSTED_LINE_ITEMS) {
+            return null;
+        }
+
+        foreach ($orderItems as $item) {
+            $quantity = (int) $item->quantity;
+            if ($quantity < 1) {
+                $quantity = 1;
+            }
+
+            $lineTotal = $this->toStripeWireAmount($item->line_total, $isZeroDecimal);
+
+            // A zero line contributes nothing to the total and Stripe has no use
+            // for a zero-priced row here; skipping keeps us under the item cap.
+            if ($lineTotal <= 0) {
+                continue;
+            }
+
+            $unitAmount = intdiv($lineTotal, $quantity);
+            if ($unitAmount <= 0) {
+                continue;
+            }
+
+            $name = $this->hostedLineItemName($item);
+            if ($name === '') {
+                return null; // Stripe requires a non-empty product name.
+            }
+
+            if (count($lineItems) >= self::MAX_HOSTED_LINE_ITEMS) {
+                return null;
+            }
+
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => $stripeCurrency,
+                    'product_data' => [
+                        'name' => $name,
+                    ],
+                    'unit_amount'  => $unitAmount,
+                ],
+                'quantity'   => $quantity,
+            ];
+
+            // intdiv floors, so any per-unit remainder is left for the
+            // reconciliation line below rather than silently inflating the charge.
+            $sum += $unitAmount * $quantity;
+        }
+
+        if (!$lineItems) {
+            return null;
+        }
+
+        $shipping = $this->toStripeWireAmount($order->shipping_total, $isZeroDecimal);
+        if ($shipping > 0) {
+            $lineItems[] = $this->hostedFlatLineItem(__('Shipping', 'fluent-cart'), $stripeCurrency, $shipping);
+            $sum += $shipping;
+        }
+
+        // Only tax the buyer pays ON TOP of item prices belongs here — inclusive
+        // tax is already inside line_total and adding it would double-charge.
+        $tax = $this->toStripeWireAmount($this->additiveTaxTotal($order), $isZeroDecimal);
+        if ($tax > 0) {
+            $lineItems[] = $this->hostedFlatLineItem(__('Tax', 'fluent-cart'), $stripeCurrency, $tax);
+            $sum += $tax;
+        }
+
+        if ($sum > $chargeAmount) {
+            return null; // Cannot subtract without a Coupon object; aggregate instead.
+        }
+
+        if ($sum < $chargeAmount) {
+            $lineItems[] = $this->hostedFlatLineItem(
+                __('Adjustment', 'fluent-cart'),
+                $stripeCurrency,
+                $chargeAmount - $sum
+            );
+            $sum = $chargeAmount;
+        }
+
+        if ($sum !== $chargeAmount || count($lineItems) > self::MAX_HOSTED_LINE_ITEMS) {
+            return null;
+        }
+
+        return $lineItems;
+    }
+
+    /**
+     * The historical single-line body: one item worth the whole charge. Always a
+     * correct amount, and the fallback for every path the breakdown declines.
+     *
+     * @param \FluentCart\App\Models\Order $order
+     * @param string $currency
+     * @param int    $chargeAmount
+     * @return array
+     */
+    private function aggregateHostedLineItems($order, $currency, $chargeAmount)
+    {
+        $storeName = (new \FluentCart\Api\StoreSettings())->get('store_name');
+
+        return [
+            [
+                'price_data' => [
+                    'currency'     => strtolower($currency),
+                    'product_data' => [
+                        'name'        => $storeName . ' - Order #' . $order->uuid,
+                        'description' => __('Order total including all items, shipping (If any), and taxes (If any)', 'fluent-cart'),
+                    ],
+                    'unit_amount'  => $chargeAmount,
+                ],
+                'quantity'   => 1,
+            ]
+        ];
+    }
+
+    /**
+     * @param string $name
+     * @param string $stripeCurrency
+     * @param int    $amount
+     * @return array
+     */
+    private function hostedFlatLineItem($name, $stripeCurrency, $amount)
+    {
+        return [
+            'price_data' => [
+                'currency'     => $stripeCurrency,
+                'product_data' => [
+                    'name' => $name,
+                ],
+                'unit_amount'  => $amount,
+            ],
+            'quantity'   => 1,
+        ];
+    }
+
+    /**
+     * @param \FluentCart\App\Models\OrderItem $item
+     * @return string
+     */
+    private function hostedLineItemName($item)
+    {
+        $name = trim($item->post_title . ' ' . $item->title);
+
+        if ($name === '') {
+            return '';
+        }
+
+        if (function_exists('mb_substr') && mb_strlen($name) > 250) {
+            return mb_substr($name, 0, 247) . '...';
+        }
+
+        if (strlen($name) > 250) {
+            return substr($name, 0, 247) . '...';
+        }
+
+        return $name;
+    }
+
+    /**
+     * Storage cents to the units Stripe is charged in. Every part of the
+     * breakdown is converted individually and the caller reconciles the SUM
+     * against the converted charge total — converting after summing would
+     * disagree with Stripe, which only ever sees the per-item figures.
+     *
+     * @param mixed $cents
+     * @param bool  $isZeroDecimal
+     * @return int
+     */
+    private function toStripeWireAmount($cents, $isZeroDecimal)
+    {
+        $cents = Helper::roundCent($cents);
+
+        return $isZeroDecimal ? intdiv($cents, 100) : $cents;
+    }
+
+    /**
+     * Tax the buyer pays on top of item prices, in storage cents.
+     *
+     * Mirrors the PayPal purchase-unit breakdown (PayPalGateway/Processor.php):
+     * behaviour 1 is fully exclusive, 3 is mixed (only the exclusive portion is
+     * additive, with shipping and fee tax additive only when the store itself is
+     * exclusive), anything else is inclusive and contributes nothing.
+     *
+     * @param \FluentCart\App\Models\Order $order
+     * @return int
+     */
+    private function additiveTaxTotal($order)
+    {
+        $taxBehavior       = (int) $order->tax_behavior;
+        $exclusiveTaxTotal = (int) $order->getMeta('exclusive_tax_total');
+        $storeTaxBehavior  = (int) $order->getMeta('store_tax_behavior');
+        $feeTax            = (int) $order->getMeta('fee_tax');
+
+        // Fallback: if meta missing (old order), use tax_behavior as store_tax_behavior
+        if (empty($storeTaxBehavior) && $taxBehavior > 0) {
+            $storeTaxBehavior = $taxBehavior;
+        }
+
+        if ($taxBehavior === 1) {
+            return Helper::roundCent($order->tax_total) + Helper::roundCent($order->shipping_tax);
+        }
+
+        if ($taxBehavior === 3) {
+            $taxTotal = $exclusiveTaxTotal;
+
+            if ($storeTaxBehavior === 1) {
+                $taxTotal += Helper::roundCent($order->shipping_tax);
+                $taxTotal += $feeTax;
+            }
+
+            return $taxTotal;
+        }
+
+        return 0;
+    }
+
+    /**
+     * True only for a structural rejection of the request body (Stripe
+     * `invalid_request_error`). A transport failure is deliberately excluded: the
+     * session may have been created, and retrying under a different idempotency
+     * key would give up the duplicate protection that key exists for.
+     *
+     * @param mixed $response
+     * @return bool
+     */
+    private function isStripeValidationError($response)
+    {
+        if (!is_wp_error($response) || $response->get_error_code() !== 'api_error') {
+            return false;
+        }
+
+        $body = $response->get_error_data();
+
+        return is_array($body) && Arr::get($body, 'error.type') === 'invalid_request_error';
+    }
+
+
+    /**
+     * The one-time part of a hosted subscription session, itemised.
+     *
+     * `$initialAmount` is a bundle of up to four unrelated things — a merchant
+     * setup fee, one-time cart items, order fees, and a synthetic first-cycle
+     * delta the plan price cannot carry — so a single line can only ever be
+     * labelled correctly for one of them. Everything the order itemises gets its
+     * own line; whatever is left over (tax, the delta) becomes one remainder line
+     * named for the case that produced it.
+     *
+     * Returns null when the breakdown cannot be reconciled to `$initialAmount`,
+     * which sends the caller to the aggregate single line.
+     *
+     * @param PaymentInstance $paymentInstance
+     * @param string $stripeCurrency
+     * @param bool   $isZeroDecimal
+     * @param int    $initialAmount Wire amount, already converted.
+     * @param int    $existingCount Lines already in the session body.
+     * @return array|null
+     */
+    private function buildHostedSubscriptionInitialLineItems(PaymentInstance $paymentInstance, $stripeCurrency, $isZeroDecimal, $initialAmount, $existingCount)
+    {
+        $order = $paymentInstance->order;
+
+        $lineItems = [];
+        $sum = 0;
+
+        // Already materialised by getExtraAddonAmount() before this runs, so reuse
+        // the relation rather than querying again. Deterministic order: the
+        // idempotency fingerprint hashes line_items.
+        $orderItems = $order->order_items->sortBy('id')->values();
+
+        // Decline before building anything the cap would discard.
+        if ($existingCount + $orderItems->count() > self::MAX_HOSTED_LINE_ITEMS) {
+            return null;
+        }
+
+        foreach ($orderItems as $item) {
+            if ($item->payment_type === 'subscription') {
+                continue; // Carried by the recurring price.
+            }
+
+            $lineTotal = $this->toStripeWireAmount($item->line_total, $isZeroDecimal);
+            if ($lineTotal <= 0) {
+                continue;
+            }
+
+            $quantity = (int)$item->quantity;
+            if ($quantity < 1) {
+                $quantity = 1;
+            }
+
+            $unitAmount = intdiv($lineTotal, $quantity);
+            if ($unitAmount <= 0) {
+                continue;
+            }
+
+            // A signup-fee row already carries the merchant's own label in
+            // `title` (other_info.signup_fee_name), a fee row the fee label.
+            $name = $this->hostedLineItemName($item);
+
+            if ($name === '') {
+                return null;
+            }
+
+            if ($existingCount + count($lineItems) >= self::MAX_HOSTED_LINE_ITEMS) {
+                return null;
+            }
+
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => $stripeCurrency,
+                    'product_data' => [
+                        'name' => $name,
+                    ],
+                    'unit_amount'  => $unitAmount,
+                ],
+                'quantity'   => $quantity,
+            ];
+
+            $sum += $unitAmount * $quantity;
+        }
+
+        if ($sum > $initialAmount) {
+            return null; // Cannot subtract without a Coupon object.
+        }
+
+        if ($sum < $initialAmount) {
+            $remainder = $initialAmount - $sum;
+
+            // No itemised part at all means the whole amount IS the first-cycle
+            // delta, and it gets the case name rather than a tax label.
+            $name = $lineItems
+                ? __('Taxes & adjustments', 'fluent-cart')
+                : $this->hostedSubscriptionInitialName($order, $paymentInstance->subscription);
+
+            if ($existingCount + count($lineItems) >= self::MAX_HOSTED_LINE_ITEMS) {
+                return null;
+            }
+
+            $lineItems[] = $this->hostedFlatLineItem($name, $stripeCurrency, $remainder);
+            $sum += $remainder;
+        }
+
+        if (!$lineItems || $sum !== $initialAmount) {
+            return null;
+        }
+
+        return $lineItems;
+    }
+
+    /**
+     * Label for a one-time amount that the order does not itemise.
+     *
+     * A configured setup fee owns the label when one exists. Otherwise the amount
+     * is a first-cycle delta computed in CheckoutProcessor::convertToSubscriptionFormat():
+     * with a simulated trial the recurring line charges nothing now, so this line
+     * is the whole first payment; without one it is only the excess over recurring.
+     *
+     * @param \FluentCart\App\Models\Order $order
+     * @param \FluentCart\App\Models\Subscription|null $subscriptionModel
+     * @return string
+     */
+    private function hostedSubscriptionInitialName($order, $subscriptionModel)
+    {
+        $signupFeeItem = $order->order_items->first(function ($item) {
+            return $item->payment_type === 'signup_fee';
+        });
+
+        if ($signupFeeItem) {
+            $name = $this->hostedLineItemName($signupFeeItem);
+
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        $simulatedTrial = $subscriptionModel
+            && Arr::get($subscriptionModel->config, 'is_trial_days_simulated', 'no') === 'yes';
+
+        return $simulatedTrial
+            ? __('First payment', 'fluent-cart')
+            : __('First payment adjustment', 'fluent-cart');
+    }
 
     private function handleHostedSubscriptionCheckout(PaymentInstance $paymentInstance, $paymentArgs = [])
     {
@@ -1083,7 +1566,8 @@ class Processor
         }
 
         $recurringTotal = (int)$subscriptionModel->recurring_total;
-        if ($transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency)) {
+        $isZeroDecimal = $transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency);
+        if ($isZeroDecimal) {
             $initialAmount = (int)($initialAmount / 100);
             $recurringTotal = (int)($recurringTotal / 100);
         }
@@ -1110,25 +1594,30 @@ class Processor
             $subscriptionData['trial_period_days'] = $stripePlan['trial_period_days'];
         }
 
+        // can add billing cycle anchor config here, if we allow billing anchor in fluent-cart subscription
+
         if ($initialAmount > 0) {
-            $addonPrice = Plan::getOneTimeAddonPrice([
-                'product_id' => $subscriptionModel->product_id,
-                'currency'   => $order->currency,
-                'amount'     => (int)$initialAmount,
-                'name'       => __('Signup fee / initial payment', 'fluent-cart'),
-                'variation_id'     => $subscriptionModel->variation_id,
-                'order_id'         => $subscriptionModel->parent_order_id,
+            $stripeCurrency = strtolower($order->currency);
 
-            ]);
+            $initialItems = $this->buildHostedSubscriptionInitialLineItems(
+                $paymentInstance,
+                $stripeCurrency,
+                $isZeroDecimal,
+                (int)$initialAmount,
+                count($lineItems)
+            );
 
-            if (is_wp_error($addonPrice)) {
-                return $addonPrice;
-            };
+            if ($initialItems === null) {
+                $initialItems = [
+                    $this->hostedFlatLineItem(
+                        $this->hostedSubscriptionInitialName($order, $subscriptionModel),
+                        $stripeCurrency,
+                        (int)$initialAmount
+                    )
+                ];
+            }
 
-            $lineItems[] = [
-                'price'    => $addonPrice['id'],
-                'quantity' => 1
-            ];
+            $lineItems = array_merge($lineItems, $initialItems);
         }
 
         $sessionData = [
@@ -1140,6 +1629,9 @@ class Processor
             'success_url'         => Processor::getHostedGatewayReturnUrl($transaction),
             'cancel_url'          => StripeHelper::getCancelUrl(),
             'subscription_data'   => $subscriptionData,
+            'saved_payment_method_options' => [
+                'payment_method_save' => 'enabled'
+            ],
             'metadata'            => [
                 'fct_ref_id'         => $order->uuid,
                 'subscription_item'  => $subscriptionModel->item_name,
@@ -1147,6 +1639,11 @@ class Processor
                 'order_reference'    => 'fct_order_id_' . $order->id,
             ],
         ];
+
+        $submitType = (new StripeSettingsBase())->getSubmitType();
+        if ($submitType && in_array($submitType, ['donate', 'subscribe', 'auto'], true)) {
+            $sessionData['submit_type'] = $submitType;
+        }
 
         $sessionData = apply_filters('fluent_cart/payments/stripe_subscription_checkout_session_args', $sessionData, [
             'order'        => $order,

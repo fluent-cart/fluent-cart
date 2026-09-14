@@ -116,7 +116,7 @@
 
 
 <script>
-import {Refresh, Lock, CircleCheck} from '@element-plus/icons-vue';
+import {Refresh} from '@element-plus/icons-vue';
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
@@ -135,9 +135,7 @@ import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 export default {
   name: 'Licensing',
   components: {
-    Lock,
     Refresh,
-    CircleCheck,
     Badge,
     DynamicIcon,
     CopyToClipboard,

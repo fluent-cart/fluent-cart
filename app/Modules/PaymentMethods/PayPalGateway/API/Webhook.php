@@ -17,6 +17,7 @@ class Webhook
         ['name' => 'BILLING.SUBSCRIPTION.SUSPENDED'],
         ['name' => 'BILLING.SUBSCRIPTION.CANCELLED'],
         ['name' => 'BILLING.SUBSCRIPTION.EXPIRED'],
+        ['name' => 'BILLING.SUBSCRIPTION.PAYMENT.FAILED'],
         ['name' => 'CUSTOMER.DISPUTE.CREATED'],
         ['name' => 'CUSTOMER.DISPUTE.UPDATED'],
         ['name' => 'CUSTOMER.DISPUTE.RESOLVED'],
@@ -50,7 +51,7 @@ class Webhook
             __('Payments and Payout:', 'fluent-cart'),
             __('- Payment capture refunded | Payment sale completed | Payment sale refunded', 'fluent-cart'),
             __('Billing Subscriptions:', 'fluent-cart'),
-            __('- Billing subscription activated | Billing subscription cancelled | Billing subscription created | Billing subscription expired | Billing subscription suspended', 'fluent-cart')
+            __('- Billing subscription activated | Billing subscription cancelled | Billing subscription created | Billing subscription expired | Billing subscription suspended | Billing subscription payment failed', 'fluent-cart')
         );
 
         return sprintf(
@@ -121,7 +122,10 @@ class Webhook
             });
 
             if (isset($matched[0])) {
-                static::parseAndUpdateSettings($matched[0], $mode);
+                $matchedWebhook = static::maybeSyncWebhookEvents($matched[0], $mode);
+                if (!is_wp_error($matchedWebhook)) {
+                    static::parseAndUpdateSettings($matchedWebhook, $mode);
+                }
             }
         }
         return $webhookData;
@@ -142,12 +146,51 @@ class Webhook
         if ($webhookId) {
             $webhookData = API::makeRequest('notifications/webhooks/' . $webhookId, 'v1', 'GET', []);
             if (!is_wp_error($webhookData) && Arr::get($webhookData, 'id') === $webhookId) {
-                static::parseAndUpdateSettings($webhookData, $mode); // update webhook events
-                return $webhookData;
+                $synced = static::maybeSyncWebhookEvents($webhookData, $mode);
+                if (is_wp_error($synced)) {
+                    return $webhookData; // sync failed, keep the last known-good local record
+                }
+                static::parseAndUpdateSettings($synced, $mode); // update webhook events
+                return $synced;
             }
         }
 
         // If there is no Webhook ID found or webhook isn't found, register a new one
         return (new Webhook())->registerWebhook($mode);
+    }
+
+    /**
+     * PayPal never adds newly introduced event types to an already-registered webhook
+     * on its own - registerWebhook() only sets event_types at creation time. Reconcile
+     * the remote subscription against our EVENTS list on every maybeSetWebhook() call
+     * so a store that connected before an event type was added still receives it.
+     */
+    public static function maybeSyncWebhookEvents($webhookData, $mode)
+    {
+        $remoteEventNames = array_column((array)Arr::get($webhookData, 'event_types', []), 'name');
+        $expectedEventNames = array_column(static::EVENTS, 'name');
+        $missing = array_diff($expectedEventNames, $remoteEventNames);
+
+        if (empty($missing)) {
+            return $webhookData;
+        }
+
+        $patched = API::makeRequest('notifications/webhooks/' . Arr::get($webhookData, 'id'), 'v1', 'PATCH', [
+            [
+                'op'    => 'replace',
+                'path'  => '/event_types',
+                'value' => static::EVENTS
+            ]
+        ], $mode);
+
+        if (is_wp_error($patched)) {
+            return $patched;
+        }
+
+        // PATCH answers 204 with no body (no id/event_types) - build the updated
+        // representation locally rather than persisting the empty response.
+        $webhookData['event_types'] = static::EVENTS;
+
+        return $webhookData;
     }
 }

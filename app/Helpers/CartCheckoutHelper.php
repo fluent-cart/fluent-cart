@@ -45,13 +45,23 @@ class CartCheckoutHelper implements ArrayableInterface
 
     public static function make($disableCoupon = false): ?CartCheckoutHelper
     {
-        static $instance = null;
-
-        if (!$instance) {
-            $instance = new self($disableCoupon);
+        if (!self::$instance) {
+            self::$instance = new self($disableCoupon);
         }
 
-        return $instance;
+        return self::$instance;
+    }
+
+    /**
+     * Drop the request-scoped instance so the next make() re-initializes from
+     * the current request's cart. Production runs one request per process and
+     * never needs this; long-lived processes (the test suites) call it before
+     * each dispatched request so a helper bound to an earlier cart cannot leak
+     * into the next checkout.
+     */
+    public static function resetInstance(): void
+    {
+        self::$instance = false;
     }
 
 

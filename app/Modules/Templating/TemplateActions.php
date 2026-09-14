@@ -23,8 +23,6 @@ class TemplateActions
         add_action('fluent_cart/template/main_content', [$this, 'renderMainContent']);
         add_action('fluent_cart/template/product_archive', [$this, 'renderProductArchive']);
         add_action('fluent_cart/product/render_product_header', [$this, 'renderProductHeader']);
-        add_action('fluent_cart/product/after_product_content', [$this, 'renderProductReviews']);
-        add_action('wp_head', [$this, 'renderReviewJsonLd']);
 
         // Universal hook for after_product_content — fires on both classic and block themes
         // Block themes render <!-- wp:post-content --> which runs the_content filter
@@ -123,8 +121,7 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container',
-                ['rating_context' => 'relevant']
+                'fct-similar-product-list-container'
             ))->render();
 
             $content = ob_get_clean();
@@ -300,8 +297,7 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container',
-                ['rating_context' => 'relevant']
+                'fct-similar-product-list-container'
             ))->render();
 
             $relevantProducts = ob_get_clean();
@@ -350,56 +346,6 @@ class TemplateActions
 
         // Remove extra whitespace between tags to clean up the output
         return preg_replace('/>\s+</', '><', $cleaned);
-    }
-
-    private function isReviewModuleAvailable()
-    {
-        return \FluentCart\Api\ModuleSettings::isActive('reviews')
-            && class_exists(\FluentCart\App\Services\ProductReviewService::class);
-    }
-
-    public function renderProductReviews($postId)
-    {
-        if (!$postId || !$this->isReviewModuleAvailable()) {
-            return;
-        }
-
-        $renderer = new \FluentCart\App\Services\Renderer\ProductReviewRenderer($postId);
-        $renderer->render();
-        $renderer->renderForm();
-    }
-
-    public function renderReviewJsonLd()
-    {
-        if (!is_singular(\FluentCart\App\CPT\FluentProducts::CPT_NAME)) {
-            return;
-        }
-
-        $postId = get_the_ID();
-        if (!$postId || !$this->isReviewModuleAvailable()) {
-            return;
-        }
-
-        $summary = \FluentCart\App\Services\ProductReviewService::getProductRatingSummary($postId);
-        if ($summary['total'] < 1) {
-            return;
-        }
-
-        $product = get_post($postId);
-        $jsonLd = [
-            '@context'        => 'https://schema.org',
-            '@type'           => 'Product',
-            'name'            => $product->post_title,
-            'aggregateRating' => [
-                '@type'       => 'AggregateRating',
-                'ratingValue' => $summary['average'],
-                'reviewCount' => $summary['total'],
-                'bestRating'  => 5,
-                'worstRating' => 1,
-            ],
-        ];
-
-        echo '<script type="application/ld+json">' . wp_json_encode($jsonLd) . '</script>' . "\n";
     }
 
 }

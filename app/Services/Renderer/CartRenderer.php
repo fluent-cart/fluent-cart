@@ -457,7 +457,7 @@ class CartRenderer
     {
         ?>
 
-        <a class="checkout-button"
+        <a class="checkout-button fct-primary-btn"
            href="<?php echo esc_attr($this->storeSettings->getCheckoutPage()); ?>"
            role="button"
            aria-label="<?php esc_attr_e('Go to checkout page', 'fluent-cart'); ?>">

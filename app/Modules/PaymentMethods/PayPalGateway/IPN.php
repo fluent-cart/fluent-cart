@@ -3,6 +3,7 @@
 namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway;
 
 use FluentCart\Api\StoreSettings;
+use FluentCart\App\Events\Subscription\SubscriptionRenewalFailed;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\OrderTransaction;
@@ -17,7 +18,23 @@ class IPN
 {
     private const TEST_VERIFYING_URL = 'https://api-m.sandbox.paypal.com/v1/notifications/verify-webhook-signature';
     private const LIVE_VERIFYING_URL = 'https://api-m.paypal.com/v1/notifications/verify-webhook-signature';
+    private const RESYNC_RETRY_HOOK = 'fluent_cart/paypal/subscription_resync_retry';
+    private const PENDING_SALES_META = 'paypal_pending_sales';
     private static $paypalSettings = null;
+
+    /** @var \WP_Error|null unacknowledged failure from the recurring-payment handler */
+    private static $recurringPaymentError = null;
+
+    /**
+     * Indirection so PHPStan reads the declared property type instead of
+     * narrowing it to the literal null assigned right before processPaypalWebhookEvents().
+     *
+     * @return \WP_Error|null
+     */
+    private static function getRecurringPaymentError()
+    {
+        return self::$recurringPaymentError;
+    }
 
     public function init()
     {
@@ -33,12 +50,14 @@ class IPN
         add_action('fluent_cart/payments/paypal/webhook_billing_subscription_expired', [$this, 'handleWebhookRecurringProfileExpired'], 10, 1);
         add_action('fluent_cart/payments/paypal/webhook_billing_subscription_suspended', [$this, 'handleWebhookRecurringProfileSuspended'], 10, 1);
         add_action('fluent_cart/payments/paypal/webhook_billing_subscription_re-activated', [$this, 'handleWebhookRecurringProfileReactivated'], 10, 1);
+        add_action('fluent_cart/payments/paypal/webhook_billing_subscription_payment_failed', [$this, 'processSubscriptionPaymentFailed'], 10, 1);
 
         // dispute
         add_action('fluent_cart/payments/paypal/webhook_customer_dispute_created', [$this, 'handleWebhookDisputeCreated'], 10, 1);
         add_action('fluent_cart/payments/paypal/webhook_customer_dispute_updated', [$this, 'handleWebhookDisputeUpdated'], 10, 1);
         add_action('fluent_cart/payments/paypal/webhook_customer_dispute_resolved', [$this, 'handleWebhookDisputeResolved'], 10, 1);
 
+        add_action(self::RESYNC_RETRY_HOOK, [$this, 'handleResyncRetry'], 10, 2);
     }
 
     public function processPaypalWebhookEvents($event): void
@@ -110,7 +129,8 @@ class IPN
              * fluent_cart/payments/paypal/webhook_billing_subscription_re-activated
              */
             do_action('fluent_cart/payments/paypal/webhook_' . $eventType, [
-                'paypal_subscription' => $resource
+                'paypal_subscription' => $resource,
+                'webhook_event_id'    => Arr::get($event, 'id', '')
             ]);
         }
 
@@ -161,14 +181,14 @@ class IPN
                                     'log_type'    => 'webhook'
                                 ]
                             );
-                        } else if ($transaction->total > 0 && $paidAmount != $transaction->total) {
+                        } else if ($transaction->total > 0 && $paidAmount != PayPalHelper::wireCents($transaction->total, $transaction->currency)) {
                             $mismatch = true;
                             fluent_cart_add_log(
                                 __('PayPal Webhook Amount Mismatch', 'fluent-cart'),
                                 sprintf(
                                     /* translators: %1$s: expected amount, %2$s: received amount, %3$s: transaction UUID */
                                     __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Subscription not confirmed.', 'fluent-cart'),
-                                    Helper::toDecimal($transaction->total),
+                                    Helper::toDecimal(PayPalHelper::wireCents($transaction->total, $transaction->currency)),
                                     Helper::toDecimal($paidAmount),
                                     $transaction->uuid
                                 ),
@@ -302,13 +322,15 @@ class IPN
             return;
         }
 
-        if ($transaction->total > 0 && $paidAmount != $transaction->total) {
+        $expectedAmount = PayPalHelper::wireCents($transaction->total, $transaction->currency);
+
+        if ($transaction->total > 0 && $paidAmount != $expectedAmount) {
             fluent_cart_add_log(
                 __('PayPal Webhook Amount Mismatch', 'fluent-cart'),
                 sprintf(
                     /* translators: %1$s: expected amount, %2$s: received amount, %3$s: transaction UUID */
                     __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Order not confirmed.', 'fluent-cart'),
-                    Helper::toDecimal($transaction->total),
+                    Helper::toDecimal($expectedAmount),
                     Helper::toDecimal($paidAmount),
                     $transaction->uuid
                 ),
@@ -463,6 +485,7 @@ class IPN
             'BILLING.SUBSCRIPTION.EXPIRED',
             'BILLING.SUBSCRIPTION.SUSPENDED',
             'BILLING.SUBSCRIPTION.RE-ACTIVATED',
+            'BILLING.SUBSCRIPTION.PAYMENT.FAILED',
             'PAYMENT.CAPTURE.COMPLETED',
             'CUSTOMER.DISPUTE.CREATED',
             'CUSTOMER.DISPUTE.UPDATED',
@@ -527,7 +550,27 @@ class IPN
             'raw'  => $post_data
         ]);
 
+        self::$recurringPaymentError = null;
+
         $this->processPaypalWebhookEvents($data);
+
+        $recurringPaymentError = self::getRecurringPaymentError();
+
+        if (is_wp_error($recurringPaymentError)) {
+            fluent_cart_add_log(
+                'PayPal renewal processing failed: ' . $recurringPaymentError->get_error_message() . ' Webhook: ' . $webhookType,
+                json_encode($recurringPaymentError->get_error_data()),
+                'error',
+                [
+                    'log_type'    => 'webhook',
+                    'module_type' => 'FluentCart\App\Modules\PaymentMethods\PayPal',
+                    'module_name' => 'PayPal',
+                ]
+            );
+
+            // Non-2xx so PayPal redelivers; the payment is not recorded yet.
+            return 500;
+        }
 
         return 200;
     }
@@ -584,6 +627,68 @@ class IPN
         (new Processor())->activateSubscription($paypalSubscription, $transaction, $subscriptionModel);
     }
 
+    public function processSubscriptionPaymentFailed($data)
+    {
+        $paypalSubscription = Arr::get($data, 'paypal_subscription', []);
+        $vendorSubscriptionId = sanitize_text_field(Arr::get($paypalSubscription, 'id'));
+
+        $subscriptionModel = $vendorSubscriptionId ? Subscription::query()->where('vendor_subscription_id', $vendorSubscriptionId)->first() : null;
+
+        if (!$subscriptionModel) {
+            $subscriptionHash = Arr::get($paypalSubscription, 'custom_id', '');
+            if ($subscriptionHash) {
+                $subscriptionModel = Subscription::query()->where('uuid', $subscriptionHash)->first();
+            }
+        }
+
+        if (!$subscriptionModel || $subscriptionModel->current_payment_method !== 'paypal') {
+            return false;
+        }
+
+        $order = $subscriptionModel->order;
+        if (!$order) {
+            return false;
+        }
+
+        $failedCount = Arr::get($paypalSubscription, 'billing_info.failed_payments_count');
+        $webhookEventId = sanitize_text_field(Arr::get($data, 'webhook_event_id', ''));
+
+        // One notification per failed attempt. The webhook event ID is the durable
+        // discriminator — unique per PayPal delivery, stable across a redelivery of
+        // that same event (mirrors the Stripe invoice-id claim in
+        // StripeGateway/Webhook/IPN.php). failed_payments_count is NOT usable for this:
+        // it resets to 0 on the next successful payment, so a later billing cycle that
+        // reaches the same failure count would reuse an old permanent claim key and
+        // silently suppress its own notification.
+        $claimDiscriminator = $webhookEventId !== '' ? $webhookEventId : ($failedCount !== null ? (string)(int)$failedCount : '');
+
+        if ($claimDiscriminator !== '') {
+            $claimKey = 'fct_sub_renewal_failed_' . $subscriptionModel->id . '_' . $claimDiscriminator;
+            if (!add_option($claimKey, '1', '', false)) {
+                return true; // already notified for this failed attempt
+            }
+        }
+
+        $error = $failedCount !== null
+            ? sprintf(
+                /* translators: %d: number of consecutive failed payments reported by PayPal */
+                __('PayPal reported a failed subscription payment (failed attempts: %d).', 'fluent-cart'),
+                (int)$failedCount
+            )
+            : __('PayPal reported a failed subscription payment.', 'fluent-cart');
+
+        try {
+            (new SubscriptionRenewalFailed($subscriptionModel, $order, $subscriptionModel->customer, $error))->dispatch();
+        } catch (\Throwable $e) {
+            if (isset($claimKey)) {
+                delete_option($claimKey);
+            }
+            throw $e;
+        }
+
+        return true;
+    }
+
     public function processRecurringPaymentReceived($data)
     {
         $charge = Arr::get($data, 'charge', []);
@@ -600,6 +705,10 @@ class IPN
 
         if (!$subscriptionModel || $subscriptionModel->current_payment_method !== 'paypal') {
             return false;
+        }
+
+        if ($vendorSubscriptionId && !$subscriptionModel->vendor_subscription_id) {
+            $subscriptionModel->update(['vendor_subscription_id' => $vendorSubscriptionId]);
         }
 
         $amount = Helper::toCent(Arr::get($charge, 'amount.total', 0));
@@ -650,18 +759,89 @@ class IPN
         $latestTransaction = $subscriptionModel->getLatestTransaction();
 
         if ($latestTransaction && !$latestTransaction->vendor_charge_id && $latestTransaction->total) {
-            if ($latestTransaction->status !== Status::TRANSACTION_SUCCEEDED) {
-                (new Processor())->confirmPaymentSuccessByCharge($latestTransaction, [
-                    'vendor_charge_id'    => $chargeId,
-                    'status'              => Status::TRANSACTION_SUCCEEDED,
-                    'total'               => $amount,
-                    'payment_method_type' => 'PayPal',
-                ]);
-            } else {
-                // activateSubscription() already marked this succeeded (billing_info.last_payment matched),
-                // but vendor_charge_id was not available at that point — fill it in now.
-                $latestTransaction->update(['vendor_charge_id' => $chargeId]);
+
+            if (!is_array($paypalSubscription)) {
+                self::$recurringPaymentError = is_wp_error($paypalSubscription)
+                    ? $paypalSubscription
+                    : new \WP_Error('paypal_subscription_fetch_failed', __('Could not fetch the PayPal subscription to confirm this payment.', 'fluent-cart'));
+                if (self::isRetryableRemoteError(self::$recurringPaymentError)) {
+                    self::scheduleResyncRetry($subscriptionModel, $chargeId);
+                }
+                return false;
             }
+
+            $paypalSubscriptions = new PayPalSubscriptions();
+
+            // One remote pull decides everything below — the sorted list answers
+            // the first-payment question and, on a mismatch, feeds the resync.
+            $remoteTransactions = $paypalSubscriptions->fetchSortedRemoteTransactions($subscriptionModel, $paypalSubscription);
+
+            if (is_wp_error($remoteTransactions)) {
+                if (self::isTerminalRenewalError($remoteTransactions, $subscriptionModel)) {
+                    return true;
+                }
+
+                self::$recurringPaymentError = $remoteTransactions;
+                if (self::isRetryableRemoteError($remoteTransactions)) {
+                    self::scheduleResyncRetry($subscriptionModel, $chargeId);
+                }
+                return false;
+            }
+
+            // The sale must be on the list AND completed there — a listed-but-pending
+            // entry binds nothing downstream (the resync loop only consumes completed
+            // sales), so it takes the same lag path as an absent one.
+            $saleInRemoteList = false;
+            foreach ($remoteTransactions as $remoteTransaction) {
+                if (Arr::get($remoteTransaction, 'id') === $chargeId
+                    && strtolower((string) Arr::get($remoteTransaction, 'status')) === 'completed'
+                ) {
+                    $saleInRemoteList = true;
+                    break;
+                }
+            }
+
+            if (!$saleInRemoteList) {
+                self::$recurringPaymentError = new \WP_Error(
+                    'paypal_transaction_list_lagging',
+                    __('The incoming sale is not yet on the PayPal transaction list.', 'fluent-cart')
+                );
+                self::scheduleResyncRetry($subscriptionModel, $chargeId);
+                return false;
+            }
+
+            $earliestSale = $paypalSubscriptions->getEarliestCompletedRemoteSale($remoteTransactions);
+
+            if ($earliestSale && Arr::get($earliestSale, 'id') === $chargeId) {
+                $paypalSubscriptions->bindSaleToTransaction(
+                    $latestTransaction,
+                    $chargeId,
+                    $amount,
+                    Arr::get($paypalSubscription, 'subscriber', []),
+                    DateTime::anyTimeToGmt(Arr::get($earliestSale, 'time'))->format('Y-m-d H:i:s')
+                );
+
+                return true;
+            }
+
+            $result = $paypalSubscriptions->reSyncSubscriptionFromRemote(
+                $subscriptionModel,
+                $paypalSubscription,
+                $remoteTransactions
+            );
+
+            if (is_wp_error($result)) {
+                if (self::isTerminalRenewalError($result, $subscriptionModel)) {
+                    return true;
+                }
+
+                self::$recurringPaymentError = $result;
+                if (self::isRetryableRemoteError($result)) {
+                    self::scheduleResyncRetry($subscriptionModel, $chargeId);
+                }
+                return false;
+            }
+
             return true;
         }
 
@@ -712,7 +892,252 @@ class IPN
             ]
         ];
 
-        return SubscriptionService::recordRenewalPayment($transactionData, $subscriptionModel, $subscriptionUpdateData);
+        // Credited before recording: recordRenewalPayment() recomputes bill_count
+        // and the installment end-of-term inside itself, so an outstanding-balance
+        // collection's extra cycles must already be on the books when it runs.
+        // Idempotent per sale id, so a failed record retried later credits once.
+        $paypalSubscriptions = new PayPalSubscriptions();
+        $credited = $paypalSubscriptions->creditOutstandingCollection($subscriptionModel, $chargeId, $amount);
+
+        // Credit undecided: record nothing. Once a transaction exists this
+        // method returns early on every redelivery, so the missed cycles would
+        // become unreachable — leaving the sale unrecorded keeps both recovery
+        // channels (PayPal redelivery, the resync ladder) able to repair it.
+        if (is_wp_error($credited)) {
+            self::$recurringPaymentError = $credited;
+            self::scheduleResyncRetry($subscriptionModel, $chargeId);
+            return false;
+        }
+
+        $result = SubscriptionService::recordRenewalPayment($transactionData, $subscriptionModel, $subscriptionUpdateData);
+
+        if (is_wp_error($result)) {
+            if ($result->get_error_code() === 'transaction_exists') {
+                return true;
+            }
+
+            if ($result->get_error_code() === 'lock_failed') {
+                // Contention is not proof of a committed payment. Keep the credit
+                // available to the lock holder, but retry until the sale is recorded.
+                if ($paypalSubscriptions->hasRecordedSale($subscriptionModel, $chargeId)) {
+                    return true;
+                }
+
+                self::$recurringPaymentError = $result;
+                self::scheduleResyncRetry($subscriptionModel, $chargeId);
+                return false;
+            }
+
+            if ($credited) {
+                $paypalSubscriptions->revokeOutstandingCollection($subscriptionModel, $chargeId);
+            }
+
+            if (self::isTerminalRenewalError($result, $subscriptionModel)) {
+                return true;
+            }
+
+            self::$recurringPaymentError = $result;
+            if (self::isRetryableRemoteError($result)) {
+                self::scheduleResyncRetry($subscriptionModel, $chargeId);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Queue a resync at +1h / +6h / +24h as a backstop to PayPal's finite redelivery
+     * window. One ladder per subscription (args are [subscription, attempt]); the
+     * sale ids it chases accumulate in PENDING_SALES_META.
+     *
+     * @param Subscription $subscriptionModel
+     * @param string|null  $saleId  the sale this attempt is chasing, if any
+     * @param int          $attempt 1-based position on the delay ladder
+     * @return void
+     */
+    private static function scheduleResyncRetry(Subscription $subscriptionModel, $saleId = null, $attempt = 1)
+    {
+        // After the guard: without Action Scheduler no worker ever prunes the set.
+        if (!function_exists('as_schedule_single_action') || !function_exists('as_next_scheduled_action')) {
+            return;
+        }
+
+        if ($saleId) {
+            $pending = self::getPendingSales($subscriptionModel);
+            if (!in_array($saleId, $pending, true)) {
+                $pending[] = $saleId;
+                $subscriptionModel->updateMeta(self::PENDING_SALES_META, $pending);
+            }
+        }
+
+        $delays = [HOUR_IN_SECONDS, 6 * HOUR_IN_SECONDS, DAY_IN_SECONDS];
+
+        if (!isset($delays[$attempt - 1])) {
+            fluent_cart_add_log(
+                __('PayPal renewal resync retries exhausted — needs manual review', 'fluent-cart'),
+                sprintf(
+                    /* translators: 1: subscription ID, 2: comma separated PayPal sale IDs */
+                    __('All scheduled resync retries failed. Subscription ID: %1$d. Unresolved PayPal sales: %2$s', 'fluent-cart'),
+                    $subscriptionModel->id,
+                    implode(', ', self::getPendingSales($subscriptionModel)) ?: __('none recorded', 'fluent-cart')
+                ),
+                'error',
+                [
+                    'module_type' => 'FluentCart\App\Models\Subscription',
+                    'module_id'   => $subscriptionModel->id,
+                    'module_name' => 'subscription',
+                    'log_type'    => 'webhook'
+                ]
+            );
+            $subscriptionModel->deleteMeta(self::PENDING_SALES_META);
+            return;
+        }
+
+        // Start at $attempt so the running attempt's own in-progress action
+        // (which as_next_scheduled_action reports as scheduled) can't block
+        // its follow-up.
+        for ($pending = $attempt; $pending <= count($delays); $pending++) {
+            if (as_next_scheduled_action(self::RESYNC_RETRY_HOOK, [$subscriptionModel->id, $pending], 'fluent-cart')) {
+                return;
+            }
+        }
+
+        as_schedule_single_action(
+            time() + $delays[$attempt - 1],
+            self::RESYNC_RETRY_HOOK,
+            [$subscriptionModel->id, $attempt],
+            'fluent-cart'
+        );
+    }
+
+    public function handleResyncRetry($subscriptionId, $attempt = 1)
+    {
+        /** @var Subscription|null $subscriptionModel */
+        $subscriptionModel = Subscription::query()->find($subscriptionId);
+
+        if (!$subscriptionModel || $subscriptionModel->current_payment_method !== 'paypal' || !$subscriptionModel->vendor_subscription_id) {
+            return;
+        }
+
+        $result = (new PayPalSubscriptions())->reSyncSubscriptionFromRemote($subscriptionModel);
+
+        if (is_wp_error($result)) {
+            if (self::isTerminalRenewalError($result, $subscriptionModel) || !self::isRetryableRemoteError($result)) {
+                $subscriptionModel->deleteMeta(self::PENDING_SALES_META);
+                return;
+            }
+
+            self::scheduleResyncRetry($subscriptionModel, null, (int) $attempt + 1);
+            return;
+        }
+
+        // A successful resync only means PayPal answered. Its transaction list
+        // lags, so the sale that armed this ladder can still be absent (or
+        // listed as non-completed, which binds nothing). Local rows are the
+        // only proof the payment landed.
+        if (self::pruneResolvedSales($subscriptionModel)) {
+            self::scheduleResyncRetry($subscriptionModel, null, (int) $attempt + 1);
+        }
+    }
+
+    /**
+     * @param Subscription $subscriptionModel
+     * @return string[]
+     */
+    private static function getPendingSales(Subscription $subscriptionModel)
+    {
+        $pending = $subscriptionModel->getMeta(self::PENDING_SALES_META, []);
+
+        return array_values(array_filter((array) $pending, 'is_string'));
+    }
+
+    /**
+     * Drop the sales that now have a local transaction, keep the rest.
+     * A recorded-then-refunded row still counts as recorded.
+     *
+     * @param Subscription $subscriptionModel
+     * @return bool true while at least one sale is still unaccounted for
+     */
+    private static function pruneResolvedSales(Subscription $subscriptionModel)
+    {
+        $pending = self::getPendingSales($subscriptionModel);
+
+        if (!$pending) {
+            return false;
+        }
+
+        $recorded = OrderTransaction::query()
+            ->where('subscription_id', $subscriptionModel->id)
+            ->whereIn('vendor_charge_id', $pending)
+            ->get(['vendor_charge_id'])
+            ->pluck('vendor_charge_id')
+            ->toArray();
+
+        $unresolved = array_values(array_diff($pending, $recorded));
+
+        if ($unresolved === $pending) {
+            return true;
+        }
+
+        // An empty array does not survive the meta cast round-trip, so drop the row.
+        if ($unresolved) {
+            $subscriptionModel->updateMeta(self::PENDING_SALES_META, $unresolved);
+        } else {
+            $subscriptionModel->deleteMeta(self::PENDING_SALES_META);
+        }
+
+        return (bool) $unresolved;
+    }
+
+    /**
+     * A retry only helps against transient remote failures. PayPal reports a
+     * missing/invalid resource in the error body's `name` field (the WP_Error
+     * code stays `general_error` for REST errors), so inspect the data.
+     *
+     * @param \WP_Error $error
+     * @return bool
+     */
+    private static function isRetryableRemoteError($error)
+    {
+        $data = $error->get_error_data();
+        $name = is_array($data) ? Arr::get($data, 'name', '') : '';
+
+        return !in_array($name, ['RESOURCE_NOT_FOUND', 'INVALID_RESOURCE_ID'], true);
+    }
+
+    /**
+     * Errors redelivery can never fix (local records gone): log loudly and ack,
+     * since a 500 would make PayPal retry for days and can disable the endpoint.
+     *
+     * @param \WP_Error    $error
+     * @param Subscription $subscriptionModel
+     * @return bool true when the error was terminal and has been logged
+     */
+    private static function isTerminalRenewalError($error, $subscriptionModel)
+    {
+        if (!in_array($error->get_error_code(), ['subscription_not_found', 'parent_order_not_found'], true)) {
+            return false;
+        }
+
+        fluent_cart_add_log(
+            __('PayPal renewal payment could not be recorded — needs manual review', 'fluent-cart'),
+            sprintf(
+                /* translators: %1$s: error message, %2$d: subscription ID */
+                __('%1$s Subscription ID: %2$d', 'fluent-cart'),
+                $error->get_error_message(),
+                $subscriptionModel->id
+            ),
+            'error',
+            [
+                'module_type' => 'FluentCart\App\Models\Subscription',
+                'module_id'   => $subscriptionModel->id,
+                'module_name' => 'subscription',
+                'log_type'    => 'webhook'
+            ]
+        );
+
+        return true;
     }
 
     public function handleSinglePaymentRefund($data)

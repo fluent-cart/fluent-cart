@@ -229,10 +229,10 @@ $permissionPublicExempt = array_filter(
 if (
     count($permissionPublicExempt)
         !== (int) $publicInventory['permission_public_exempt_total']
-    || count($permissionPublicExempt) !== 20
+    || count($permissionPublicExempt) !== 17
 ) {
     WP_CLI::error(
-        'Phase 18 permission inventory reconciliation failed: expected 20 PUBLIC-EXEMPT, got '
+        'Phase 18 permission inventory reconciliation failed: expected 17 PUBLIC-EXEMPT, got '
         . count($permissionPublicExempt)
     );
 }

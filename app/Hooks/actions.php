@@ -37,8 +37,7 @@ add_action('init', function () {
 // Turnstile Module Init
 (new \FluentCart\App\Modules\Turnstile\TurnstileInit())->register(\FluentCart\App\App::getInstance());
 
-// Reviews Module Init
-(new \FluentCart\App\Modules\Reviews\ReviewModule())->register();
+(new \FluentCart\App\Modules\FluentPlayer\FluentPlayerAdminAssets())->register();
 
 // Register Pro Gateways Promo
 (new \FluentCart\App\Hooks\Handlers\PromoGatewaysHandler())->register();
@@ -103,15 +102,6 @@ add_action('init', function () {
 if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
     \FluentCart\App\Hooks\Handlers\BlockEditors\StockBlock::register();
     \FluentCart\App\Hooks\Handlers\BlockEditors\SoldOutBadgeBlockEditor::register();
-}
-
-if (\FluentCart\Api\ModuleSettings::isActive('reviews') && class_exists(\FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::class)) {
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::register();
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductRatingBlockEditor::register();
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewFormBlockEditor::register();
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryBlockEditor::register();
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewListBlockEditor::register();
-    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryGroupBlockEditor::register();
 }
 
 (new \FluentCart\App\Hooks\Cart\CartLoader)->register();

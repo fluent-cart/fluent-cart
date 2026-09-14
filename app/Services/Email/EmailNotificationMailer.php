@@ -148,13 +148,6 @@ class EmailNotificationMailer
             $this->mailEmailsOfEvent('subscription_trial_end_reminder', $data);
         }, 999, 1);
 
-        add_action('fluent_cart/review_created', function ($data) {
-            $review = Arr::get($data, 'review');
-            if ($review && empty($review->parent_id)) {
-                $this->mailEmailsOfEvent('review_created', $data);
-            }
-        }, 999, 1);
-
     }
 
     public function registerAsyncMails()

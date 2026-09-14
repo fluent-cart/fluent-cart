@@ -699,11 +699,13 @@ class InnerBlocks
             'data-fluent-cart-checkout-payment-methods' => ''
         ]);
         ob_start(); ?>
+        <?php do_action('fluent_cart/before_payment_methods', ['cart' => $cart]); ?>
         <div <?php echo $atts; ?>>
             <?php
             (new CheckoutRenderer($cart))->renderPaymentMethods();
             ?>
         </div>
+        <?php do_action('fluent_cart/after_payment_methods', ['cart' => $cart]); ?>
         <?php
         return ob_get_clean();
     }

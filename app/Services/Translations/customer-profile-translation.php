@@ -321,8 +321,6 @@ return [
     'Warning' => __('Warning', 'fluent-cart'),
     /* translators: %1$s is the reason the payment provider gave for declining the card  */
     'We couldn\'t charge this payment method: %1$s Please update it or pay the open renewal below.' => __('We couldn\'t charge this payment method: %1$s Please update it or pay the open renewal below.', 'fluent-cart'),
-    'Write a Review' => __('Write a Review', 'fluent-cart'),
-    'Write a review for' => __('Write a review for', 'fluent-cart'),
     'Yes cancel this subscription!' => __('Yes cancel this subscription!', 'fluent-cart'),
     'Yes, Delete!' => __('Yes, Delete!', 'fluent-cart'),
     'Yes, Proceed' => __('Yes, Proceed', 'fluent-cart'),

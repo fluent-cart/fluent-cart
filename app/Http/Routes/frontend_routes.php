@@ -10,7 +10,6 @@ use FluentCart\App\Http\Controllers\FrontendControllers\CustomerController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerOrderController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerProfileController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerSubscriptionController;
-use FluentCart\App\Http\Controllers\FrontendControllers\ProductReviewFrontendController;
 use FluentCart\App\Http\Controllers\ShopController;
 use FluentCart\App\Http\Controllers\UserController;
 use FluentCart\App\Modules\Shipping\Http\Controllers\Frontend\ShippingFrontendController;
@@ -99,14 +98,3 @@ $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group
     $router->post('subscriptions/{subscription_uuid}/resume', [CustomerSubscriptionController::class, 'resumeSubscription'])->alphaNumDash('subscription_uuid');
 
 });
-
-// Public product reviews routes
-$router->prefix('public/reviews')
-    ->withPolicy('PublicPolicy')->group(function (Router $router) {
-        $router->get('/{postId}', [ProductReviewFrontendController::class, 'getReviews'])->int('postId');
-        $router->get('/{postId}/summary', [ProductReviewFrontendController::class, 'getRatingSummary'])->int('postId');
-        $router->post('/{postId}', [ProductReviewFrontendController::class, 'submitReview'])->int('postId');
-        $router->put('/{postId}/{reviewId}', [ProductReviewFrontendController::class, 'updateReview'])->int('postId')->int('reviewId');
-        $router->get('/{postId}/{reviewId}/replies', [ProductReviewFrontendController::class, 'getReplies'])->int('postId')->int('reviewId');
-        $router->post('/{postId}/{reviewId}/reply', [ProductReviewFrontendController::class, 'submitReply'])->int('postId')->int('reviewId');
-    });

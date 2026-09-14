@@ -80,20 +80,21 @@ class Processor
         $transaction = $paymentInstance->transaction;
         $order = $paymentInstance->order;
 
+        $currency = $transaction->currency;
         $itemsSubTotal = 0;
         $formattedItems = [];
 
         foreach ($order->order_items as $item) {
             $quantity = $item->quantity ?? 1;
-            $perQuantity = $this->toDecimal($item->line_total / $quantity);
+            $perQuantity = $this->toDecimal($item->line_total / $quantity, $currency);
             $title = $item->post_title . ' ' . $item->title;
 
             $formattedItems[] = [
                 'name'        => strlen($title) > 127 ? substr($title, 0, 120) . '...' : $title,
                 'description' => strlen($title) > 4000 ? substr($title, 0, 3997) . '...' : $title,
                 'unit_amount' => [
-                    'currency_code' => $transaction->currency,
-                    'value'         => number_format($perQuantity, 2, '.', ''),
+                    'currency_code' => $currency,
+                    'value'         => PayPalHelper::formatDecimalAmount($perQuantity, $currency),
                 ],
                 'quantity'    => $quantity,
             ];
@@ -101,7 +102,7 @@ class Processor
             $itemsSubTotal += $perQuantity * $quantity;
         }
 
-        $chargingAmount = $this->toDecimal($transaction->total);
+        $chargingAmount = $this->toDecimal($transaction->total, $currency);
         $pushedTotal = $itemsSubTotal;
 
 
@@ -109,12 +110,12 @@ class Processor
         $purchaseUnits = [
             'reference_id' => $transaction->uuid, // This is the order UUID
             'amount'       => [ // https://developer.paypal.com/docs/api/orders/v2/#definition-amount_breakdown
-                'currency_code' => $transaction->currency,
-                'value'         => number_format($chargingAmount, 2, '.', ''),
+                'currency_code' => $currency,
+                'value'         => PayPalHelper::formatDecimalAmount($chargingAmount, $currency),
                 'breakdown'     => [
                     'item_total' => [
-                        'currency_code' => $transaction->currency,
-                        'value'         => number_format($itemsSubTotal, 2, '.', ''),
+                        'currency_code' => $currency,
+                        'value'         => PayPalHelper::formatDecimalAmount($itemsSubTotal, $currency),
                     ]
                 ]
             ],
@@ -133,10 +134,10 @@ class Processor
         }
 
         if ($order->shipping_total > 0) {
-            $shippingAmount = $this->toDecimal($order->shipping_total);
+            $shippingAmount = $this->toDecimal($order->shipping_total, $currency);
             $purchaseUnits['amount']['breakdown']['shipping'] = [
-                'currency_code' => $transaction->currency,
-                'value'         => number_format($shippingAmount, 2, '.', ''),
+                'currency_code' => $currency,
+                'value'         => PayPalHelper::formatDecimalAmount($shippingAmount, $currency),
             ];
             $pushedTotal += $shippingAmount;
         }
@@ -156,14 +157,14 @@ class Processor
         if ($taxBehavior === 1) {
             // Pure exclusive: all tax is additive on top of item prices.
             // tax_total includes product + fee tax (both exclusive).
-            $taxTotal = $this->toDecimal($order->tax_total) + $this->toDecimal($order->shipping_tax);
+            $taxTotal = $this->toDecimal($order->tax_total, $currency) + $this->toDecimal($order->shipping_tax, $currency);
         } elseif ($taxBehavior === 3) {
             // Mixed: only exclusive product + fee tax is additive; shipping conditional.
-            $taxTotal = $this->toDecimal($exclusiveTaxTotal);
+            $taxTotal = $this->toDecimal($exclusiveTaxTotal, $currency);
             if ($storeTaxBehavior === 1) {
                 // Store is exclusive: fees and shipping are also exclusive.
-                $taxTotal += $this->toDecimal($order->shipping_tax);
-                $taxTotal += $this->toDecimal($feeTax);
+                $taxTotal += $this->toDecimal($order->shipping_tax, $currency);
+                $taxTotal += $this->toDecimal($feeTax, $currency);
             }
         } else {
             $taxTotal = 0;
@@ -171,8 +172,8 @@ class Processor
 
         if ($taxTotal > 0) {
             $purchaseUnits['amount']['breakdown']['tax_total'] = [
-                'currency_code' => $transaction->currency,
-                'value'         => number_format($taxTotal, 2, '.', ''),
+                'currency_code' => $currency,
+                'value'         => PayPalHelper::formatDecimalAmount($taxTotal, $currency),
             ];
             $pushedTotal += $taxTotal;
         }
@@ -180,16 +181,16 @@ class Processor
         if ($chargingAmount < $pushedTotal) {
             $discount = $pushedTotal - $chargingAmount;
             $purchaseUnits['amount']['breakdown']['discount'] = [
-                'currency_code' => $transaction->currency,
-                'value'         => number_format($discount, 2, '.', ''),
+                'currency_code' => $currency,
+                'value'         => PayPalHelper::formatDecimalAmount($discount, $currency),
             ];
         } else if ($chargingAmount > $pushedTotal) {
             $extraChargeNeedToBeAdded = $chargingAmount - $pushedTotal;
             $formattedItems[] = [
                 'name'        => __('Adjustment Amount', 'fluent-cart'),
                 'unit_amount' => [
-                    'currency_code' => $transaction->currency,
-                    'value'         => number_format($extraChargeNeedToBeAdded, 2, '.', ''),
+                    'currency_code' => $currency,
+                    'value'         => PayPalHelper::formatDecimalAmount($extraChargeNeedToBeAdded, $currency),
                 ],
                 'quantity'    => 1,
             ];
@@ -198,7 +199,7 @@ class Processor
 
             //now the total amount need to be adjusted with item total value
             $adjustedItemTotal = $itemsSubTotal + $extraChargeNeedToBeAdded;
-            $purchaseUnits['amount']['breakdown']['item_total']['value'] = number_format($adjustedItemTotal, 2, '.', '');
+            $purchaseUnits['amount']['breakdown']['item_total']['value'] = PayPalHelper::formatDecimalAmount($adjustedItemTotal, $currency);
         }
 
         // System (auto-charged, store-billed) subscription checkout: vault the
@@ -610,6 +611,22 @@ class Processor
 
         $transactionUpdateData['meta'] = array_merge($transaction->meta ?? [], Arr::get($transactionArgs, 'meta', []));
 
+        // A zero-decimal total is stored x100 but charged rounded, so PayPal reports back a
+        // figure up to half a unit away from the stored one. The wire comparison upstream has
+        // already proved this is the same payment. Keep the stored number: it is what the
+        // order's line items sum to, so adopting the rounded one would either strand the order
+        // partially_paid (rounded down) or fake an overpayment (rounded up). Record what
+        // actually moved in meta instead. activateSubscription() already leaves total alone.
+        $reportedTotal = (int)Arr::get($transactionUpdateData, 'total', 0);
+        if ($reportedTotal
+            && $reportedTotal !== (int)$transaction->total
+            && PayPalHelper::currencyDecimals($transaction->currency) === 0
+            && $reportedTotal === PayPalHelper::wireCents($transaction->total, $transaction->currency)
+        ) {
+            unset($transactionUpdateData['total']);
+            $transactionUpdateData['meta']['wire_total'] = $reportedTotal;
+        }
+
         $transaction->fill($transactionUpdateData);
         $transaction->save();
 
@@ -697,8 +714,10 @@ class Processor
         $currencyMatches = !$lastPaymentCurrency || !$transaction->currency
             || strtoupper($transaction->currency) === $lastPaymentCurrency;
 
+        $expectedAmount = PayPalHelper::wireCents($transaction->total, $transaction->currency);
+
         $initialPaymentVerified = $lastPaymentAmount
-            && $transaction->total == $lastPaymentAmount
+            && $expectedAmount == $lastPaymentAmount
             && $currencyMatches;
 
         if ($initialPaymentVerified || $transaction->total == 0) {
@@ -718,7 +737,7 @@ class Processor
                 sprintf(
                     /* translators: %1$s: expected amount, %2$s: expected currency, %3$s: received amount, %4$s: received currency */
                     __('Subscription initial payment mismatch. Expected: %1$s %2$s, Received: %3$s %4$s. Order not marked paid; awaiting webhook.', 'fluent-cart'),
-                    Helper::toDecimal($transaction->total),
+                    Helper::toDecimal($expectedAmount),
                     $transaction->currency,
                     Helper::toDecimal($lastPaymentAmount),
                     $lastPaymentCurrency
@@ -804,9 +823,14 @@ class Processor
     }
 
 
-    private function toDecimal($cents)
+    /**
+     * Cents to a decimal amount rounded to the precision PayPal accepts for
+     * the currency (HUF/JPY/TWD take no decimals). Rounding before the
+     * breakdown arithmetic keeps the parts summing to the total.
+     */
+    private function toDecimal($cents, $currency)
     {
-        return Helper::toDecimalWithoutComma($cents);
+        return PayPalHelper::toDecimalAmount($cents, $currency);
     }
 
     /**
@@ -926,7 +950,7 @@ class Processor
             'custom_id'    => $transaction->uuid,
             'amount'       => [
                 'currency_code' => strtoupper($transaction->currency),
-                'value'         => number_format($this->toDecimal((int) $transaction->total), 2, '.', ''),
+                'value'         => PayPalHelper::formatAmount((int) $transaction->total, $transaction->currency),
             ],
         ];
 
@@ -1038,13 +1062,15 @@ class Processor
             }
 
             $captureAmount = Helper::toCent(Arr::get($capture, 'amount.value', 0));
-            if ($captureAmount !== (int) $transaction->total) {
+            $expectedAmount = PayPalHelper::wireCents($transaction->total, $transaction->currency);
+
+            if ($captureAmount !== $expectedAmount) {
                 fluent_cart_warning_log(
                     __('PayPal Amount Mismatch On Sync', 'fluent-cart'),
                     sprintf(
                         /* translators: %1$s: expected amount, %2$s: received amount */
                         __('Capture amount mismatch detected during transaction sync. Expected: %1$s, Received: %2$s. Transaction was not confirmed.', 'fluent-cart'),
-                        Helper::toDecimal($transaction->total),
+                        Helper::toDecimal($expectedAmount),
                         Helper::toDecimal($captureAmount)
                     ),
                     [

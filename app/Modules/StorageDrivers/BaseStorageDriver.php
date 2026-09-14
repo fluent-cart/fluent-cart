@@ -116,6 +116,19 @@ abstract class BaseStorageDriver implements BaseStorageInterface
         return false;
     }
 
+    /**
+     * The bucket this driver is configured to use, resolved from server-side
+     * settings only. Bucket-backed drivers override this; it is the single
+     * source of truth for signing downloads, so a request-supplied bucket must
+     * never reach it.
+     *
+     * @return string '' when the driver has no bucket or none is configured yet
+     */
+    public function getEffectiveBucket(): string
+    {
+        return '';
+    }
+
     public function needsReconfigure(): bool
     {
         return false;

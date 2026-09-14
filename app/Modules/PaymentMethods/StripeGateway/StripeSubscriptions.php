@@ -113,13 +113,16 @@ class StripeSubscriptions extends AbstractSubscriptionModule
                 ->first();
 
             if (!$transaction) {
+                $chargeCurrency = Arr::get($invoice, 'currency');
+                $amountPaid = StripeHelper::toInternalAmount(Arr::get($invoice, 'amount_paid'), $chargeCurrency);
+
                 // check local transactions missing vendor_charge_id
                 $transaction = OrderTransaction::query()
                     ->select(['id', 'order_id'])
                     ->where('subscription_id', $subscriptionModel->id)
                     ->where('vendor_charge_id', '')
                     ->where('transaction_type', 'charge')
-                    ->where('total', (int)Arr::get($invoice, 'amount_paid'))
+                    ->where('total', $amountPaid)
                     ->first();
 
                 if ($transaction) {
@@ -127,13 +130,6 @@ class StripeSubscriptions extends AbstractSubscriptionModule
                         'vendor_charge_id' => Arr::get($invoice, 'payment_intent')
                     ]);
                     continue;
-                }
-
-                $amountPaid = Arr::get($invoice, 'amount_paid');
-                $chargeCurrency = Arr::get($invoice, 'currency');
-
-                if ($chargeCurrency && CurrenciesHelper::isZeroDecimal($chargeCurrency)) {
-                    $amountPaid = $amountPaid * 100;
                 }
 
                 $transactionData = [
@@ -189,7 +185,7 @@ class StripeSubscriptions extends AbstractSubscriptionModule
                 $transaction->update([
                     'vendor_charge_id' => Arr::get($invoice, 'payment_intent'),
                     'status'           => Status::TRANSACTION_SUCCEEDED,
-                    'total'            => (int)Arr::get($invoice, 'amount_paid')
+                    'total'            => StripeHelper::toInternalAmount(Arr::get($invoice, 'amount_paid'), Arr::get($invoice, 'currency'))
                 ]);
 
                 (new StatusHelper($transaction->order))->syncOrderStatuses($transaction);

@@ -1,6 +1,6 @@
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {onMounted, ref} from "vue";
+import {onBeforeUnmount, onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import {useRoute} from "vue-router";
 import {Loading} from '@element-plus/icons-vue';
@@ -21,6 +21,11 @@ const showIframe = ref(false);
 const previewLoading = ref(true);
 const editorIframeLoading = ref(true);
 const baseUrl = ref();
+
+// Bumped to force the preview iframe to re-fetch the rendered post.
+const previewNonce = ref(0);
+
+let closeHandled = false;
 
 const previewIframeRef = ref(null);
 const dialogIframeRef = ref(null);
@@ -66,18 +71,34 @@ const handleDialogLoad = () => {
 const openDialog = () => {
   showIframe.value = true;
   editorIframeLoading.value = true;
+  closeHandled = false;
 };
+
+// Both the header button and el-dialog's own `close` event land here, so the
+// body is guarded to run once per open/close cycle.
 const closeDialog = () => {
+  if (closeHandled) {
+    return;
+  }
+
+  closeHandled = true;
   editorIframeLoading.value = false;
   showIframe.value = false;
+
+  // The preview renders the *saved* post, so it keeps showing the old long
+  // description until it is re-fetched. The editor runs under an isolating
+  // Document-Isolation-Policy, so the parent cannot inspect it to find out
+  // whether anything was saved — refresh unconditionally instead.
+  reloadPreview();
+
   props.productEditModel.data.reloader();
 };
 
 const reloadPreview = () => {
   previewLoading.value = true;
-  if (previewIframeRef.value) {
-    previewIframeRef.value.src = previewIframeRef.value.src.toString();
-  }
+  // A changed query param guarantees a real re-fetch; re-assigning the same
+  // src can be served from cache or skipped entirely.
+  previewNonce.value += 1;
 };
 
 const reloadDialog = () => {
@@ -106,6 +127,10 @@ onMounted(() => {
   initializeBaseUrl();
   window.addEventListener('message', contentChanged);
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', contentChanged);
+});
 </script>
 
 <template>
@@ -122,7 +147,7 @@ onMounted(() => {
     <iframe
         ref="previewIframeRef"
         class="scrollbar-none preview-iframe"
-        :src="`${baseUrl}/post.php?post=${post_id}&action=edit&custom-editor=true&is-preview-mode=true`"
+        :src="`${baseUrl}/post.php?post=${post_id}&action=edit&custom-editor=true&is-preview-mode=true&fct-preview=${previewNonce}`"
         width="100%"
         height="400px"
         @load="handlePreviewLoad"

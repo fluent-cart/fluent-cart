@@ -50,8 +50,7 @@ class DownloadService
     {
         $driver = Arr::get($params, 'driver');
         $file = Arr::get($params, 'file');
-        $productDownload = ProductDownloadResource::find(Arr::get($params, 'download_id'));
-        $bucket = Arr::get($productDownload, 'settings.bucket', '');
+        $bucket = StorageBucketResolver::resolveOrNull($driver);
         (new FileManager($driver))->downloadFile($file,$file, $bucket);
     }
 
@@ -63,7 +62,7 @@ class DownloadService
         }
         $driver = Arr::get($productDownload, 'driver');
         $file = Arr::get($productDownload, 'file_path');
-        $bucket = Arr::get($productDownload, 'settings.bucket', '');
+        $bucket = StorageBucketResolver::resolveOrNull($driver);
         $downloadName = Arr::get($productDownload, 'file_name');
 
         try{
@@ -79,7 +78,7 @@ class DownloadService
         $driver = Arr::get($productDownload, 'driver');
         $file = Arr::get($productDownload, 'file_path');
         $fileName = Arr::get($productDownload, 'file_name');
-        $bucket = Arr::get($productDownload, 'settings.bucket', '');
+        $bucket = StorageBucketResolver::resolveOrNull($driver);
         return (new FileManager($driver))->getSignedDownloadUrl($file, $bucket, $productDownload);
     }
 
@@ -101,8 +100,7 @@ class DownloadService
     {
         $driver = Arr::get($params, 'driver');
         $file = Arr::get($params, 'file');
-        $productDownload = ProductDownloadResource::find(Arr::get($params, 'download_id'));
-        $bucket = Arr::get($productDownload, 'settings.bucket', '');
+        $bucket = StorageBucketResolver::resolveOrNull($driver);
         return (new FileManager($driver))->getFilePath($file, $bucket);
     }
 

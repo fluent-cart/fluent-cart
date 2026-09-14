@@ -84,6 +84,11 @@ class S3 extends BaseStorageDriver
         return true;
     }
 
+    public function getEffectiveBucket(): string
+    {
+        return S3Settings::resolveEffectiveBucket($this->getSettings());
+    }
+
     public function needsReconfigure(): bool
     {
         return S3Settings::resolveConfiguredBucket($this->getSettings()) === '';

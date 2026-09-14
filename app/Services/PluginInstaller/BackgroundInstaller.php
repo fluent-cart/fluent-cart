@@ -39,13 +39,14 @@ class BackgroundInstaller
             $installed_plugins = array_keys(\get_plugins());
             $plugin_slug = $plugin_to_install['repo-slug'];
             $plugin_file = isset($plugin_to_install['file']) ? $plugin_to_install['file'] : $plugin_slug . '.php';
+            $plugin_basename = $plugin_slug . '/' . $plugin_file;
             $installed = false;
             $activate = false;
 
             // See if the plugin is installed already.
-            if (isset($installed_plugins[$plugin_file])) {
+            if (in_array($plugin_basename, $installed_plugins, true)) {
                 $installed = true;
-                $activate = !is_plugin_active($installed_plugins[$plugin_file]);
+                $activate = !is_plugin_active($plugin_basename);
             }
 
             // Install this thing!
@@ -126,7 +127,7 @@ class BackgroundInstaller
             // Activate this thing.
             if ($activate) {
                 try {
-                    $result = activate_plugin($installed ? $installed_plugins[$plugin_file] : $plugin_slug . '/' . $plugin_file);
+                    $result = activate_plugin($plugin_basename);
 
                     if (is_wp_error($result)) {
                         throw new \Exception(esc_html($result->get_error_message()));

@@ -35,7 +35,6 @@ use FluentCart\App\Http\Controllers\TaxRateController;
 use FluentCart\App\Http\Controllers\TemplateController;
 use FluentCart\App\Http\Controllers\VariantController;
 use FluentCart\App\Http\Controllers\WidgetsController;
-use FluentCart\App\Http\Controllers\ProductReviewController;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\ConnectConfig;
 use FluentCart\Framework\Http\Router;
 use \FluentCart\App\Http\Controllers\PaymentMethodController;
@@ -555,7 +554,7 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
     ]);
 
     $router->post('/do-bulk-action', [OrderController::class, 'handleBulkActions'])->meta([
-        'permissions' => 'orders/manage'
+        'permissions' => 'orders/delete' // every accepted action deletes orders — same gate as DELETE /{order_id}
     ]);
 
     $router->post('/{order}/mark-as-paid', [OrderController::class, 'markAsPaid'])->meta([
@@ -978,35 +977,4 @@ $router->prefix('tax')->withPolicy('StoreSettingsPolicy')->group(function (Route
 $router->prefix('checkout-fields')->withPolicy('StoreSensitivePolicy')->group(function (Router $router) {
     $router->get('get-fields', [CheckoutFieldsController::class, 'getFields']);
     $router->post('save-fields', [CheckoutFieldsController::class, 'saveFields']);
-});
-
-// Product Reviews routes
-$router->prefix('reviews')->withPolicy('ReviewPolicy')->group(function (Router $router) {
-    $router->get('/', [ProductReviewController::class, 'index'])->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->get('/stats', [ProductReviewController::class, 'stats'])->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->get('/{id}', [ProductReviewController::class, 'find'])->int('id')->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->put('/{id}', [ProductReviewController::class, 'update'])->int('id')->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->delete('/{id}', [ProductReviewController::class, 'delete'])->int('id')->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->post('/bulk-action', [ProductReviewController::class, 'bulkAction'])->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->post('/{id}/reply', [ProductReviewController::class, 'reply'])->int('id')->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->delete('/{reviewId}/replies/{replyId}', [ProductReviewController::class, 'deleteReply'])->int('reviewId')->int('replyId')->meta([
-        'permissions' => 'reviews/manage'
-    ]);
-    $router->post('/bulk-reply', [ProductReviewController::class, 'bulkReply'])->meta([
-        'permissions' => 'reviews/manage'
-    ]);
 });

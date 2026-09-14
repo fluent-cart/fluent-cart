@@ -80,7 +80,10 @@ class DynamicData
                     ob_start();
                     (new ProductCardRender($productModel))->renderProductImage();
                     $content = ob_get_clean();
-                    return '<span data-fct-field="product-image">' . $content . '</span>';
+
+                    $badgesHtml = BricksHelper::renderProductBadges($productModel, BricksHelper::$imageBadgeSettings);
+
+                    return '<span data-fct-field="product-image">' . $content . $badgesHtml . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- renderProductBadges() escapes its own output
                 }
                 break;
             case 'fct_product_excerpt':

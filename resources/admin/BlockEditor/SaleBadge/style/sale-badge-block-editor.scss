@@ -28,11 +28,12 @@
         @apply px-2.5 py-1 rounded-sm text-[13px] relative;
 
         &::before {
-            @apply absolute top-1/2 -left-1.5 -translate-y-1/2 w-0 h-0;
+            @apply absolute top-1/2 -left-1.5 w-0 h-0;
             content: '';
             border-top: 8px solid transparent;
             border-bottom: 8px solid transparent;
             border-right: 6px solid currentColor;
+            transform: translateY(-50%);
         }
 
         // Mirror for right-side positions

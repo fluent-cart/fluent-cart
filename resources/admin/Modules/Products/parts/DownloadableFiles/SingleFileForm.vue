@@ -114,6 +114,7 @@ onBeforeMount(() => {
                                 file.file_url = $selected[idx].file_url;
                                 file.title = $selected[idx].title;
                                 file.type = $selected[idx].type;
+                                file.driver = $selected[idx].driver;
                                 file.settings = $selected[idx].settings;
                             }
                           }

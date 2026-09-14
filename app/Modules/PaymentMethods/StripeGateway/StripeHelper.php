@@ -128,6 +128,26 @@ class StripeHelper
     }
 
 
+    /**
+     * Convert a Stripe wire amount (invoice/charge/payment_intent) to FluentCart's
+     * internal ×100 unit. Zero-decimal currencies (JPY, KRW, ...) come off the wire
+     * unscaled, so they need the ×100 that non-zero-decimal currencies already have.
+     *
+     * @param int|float $amount
+     * @param string $currency
+     * @return int
+     */
+    public static function toInternalAmount($amount, $currency)
+    {
+        $amount = (int)$amount;
+
+        if ($currency && CurrenciesHelper::isZeroDecimal($currency)) {
+            $amount *= 100;
+        }
+
+        return $amount;
+    }
+
     public static function processRemoteRefund($transaction, $amount, $args)
     {
         $intentId = $transaction->vendor_charge_id;

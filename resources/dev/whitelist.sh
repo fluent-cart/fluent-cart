@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Shared whitelist for build and release scripts.
-# Both build.sh and release-public.sh source this file.
-# Update this list to change what goes into the zip AND the release branch.
+# Shared whitelist for the build script (build.sh sources this file).
+# Update this list to change what goes into the zip.
 
-# Base files included in both zip and release
+# Files included in the zip
 BUILD_WHITELIST=(
     "api"
     "app"
@@ -19,14 +18,4 @@ BUILD_WHITELIST=(
     "readme.txt"
     "composer.json"
     "index.php"
-)
-
-# Extra files included only in the release branch
-RELEASE_EXTRA=(
-    "resources"
-    "package.json"
-    "postcss.config.js"
-    "jsconfig.json"
-    "tailwind.config.js"
-    "vite.config.mjs"
 )

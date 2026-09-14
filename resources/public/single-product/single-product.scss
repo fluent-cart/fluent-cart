@@ -662,3 +662,39 @@ button.out-of-stock {
     }
   }
 }
+
+/*======== FluentPlayer product video =========*/
+.fct-gallery-video-thumb {
+  @apply relative;
+
+  &__badge {
+    @apply absolute inset-0 flex items-center justify-center pointer-events-none;
+
+    svg {
+      @apply w-8 h-8 p-1.5 rounded-full text-white bg-black/60;
+    }
+  }
+}
+
+.fct-product-gallery-thumb {
+  @apply relative;
+
+  .fct-product-gallery-video {
+    @apply hidden w-full h-full max-h-full overflow-hidden;
+
+    .fp-media-block,
+    .fluent-player {
+      @apply w-full;
+    }
+  }
+
+  &.is-video-active {
+    img[data-fluent-cart-single-product-page-product-thumbnail] {
+      @apply hidden;
+    }
+
+    .fct-product-gallery-video.is-active {
+      @apply flex items-center justify-center;
+    }
+  }
+}

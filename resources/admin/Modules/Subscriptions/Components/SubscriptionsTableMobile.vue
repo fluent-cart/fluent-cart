@@ -111,7 +111,6 @@ import Empty from '@/Bits/Components/Table/Empty.vue';
 import {ArrowDown} from "@element-plus/icons-vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Badge from "@/Bits/Components/Badge.vue";
-import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import CustomerInfoPopover from "@/Modules/Customers/parts/CustomerInfoPopover.vue";
 import translate from "@/utils/translator/Translator";
@@ -120,7 +119,6 @@ export default {
   name: 'SubscriptionsTableMobile',
   components: {
     ConvertedTime,
-    RouteCell,
     Badge,
     DynamicIcon,
     ArrowDown,

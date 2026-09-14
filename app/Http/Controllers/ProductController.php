@@ -51,27 +51,9 @@ class ProductController extends Controller
         // no N+1) so the admin order product picker matches the order item display.
         AttributeHelper::attachVariationDisplayTitles($products->getCollection());
 
-        $collection = $products->getCollection();
-
         $products->setCollection(
-            $collection->transform(function ($product) {
-                $product->setAppends(['view_url', 'edit_url']);
-
-                // Source rating from canonical detail.other_info (maintained by recalculateProductRatings).
-                // Use array_key_exists to avoid overwriting valid data with fallback-to-zero.
-                if ($product->detail) {
-                    $otherInfo = $product->detail->other_info ?? [];
-
-                    if (array_key_exists('average_rating', $otherInfo)) {
-                        $product->avg_rating = (float) $otherInfo['average_rating'];
-                    }
-
-                    if (array_key_exists('review_count', $otherInfo)) {
-                        $product->reviews_count = (int) $otherInfo['review_count'];
-                    }
-                }
-
-                return $product;
+            $products->getCollection()->transform(function ($product) {
+                return $product->setAppends(['view_url', 'edit_url']);
             })
         );
 

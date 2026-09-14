@@ -3,6 +3,7 @@
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook;
 
 use FluentCart\App\Events\Order\OrderRefund;
+use FluentCart\App\Events\Subscription\SubscriptionRenewalFailed;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Helpers\Status;
@@ -34,6 +35,8 @@ class IPN
         // For Subscriptions
         add_action('fluent_cart/payments/stripe/webhook_customer_subscription_updated', [$this, 'handleSubscriptionUpdated'], 10, 1);
         add_action('fluent_cart/payments/stripe/webhook_customer_subscription_deleted', [$this, 'handleSubscriptionUpdated'], 10, 1); // canceled event
+
+        add_action('fluent_cart/payments/stripe/webhook_invoice_payment_failed', [$this, 'handleInvoicePaymentFailed'], 10, 1);
     }
 
 
@@ -398,6 +401,78 @@ class IPN
         return $currentSubscription->reSyncFromRemote();
     }
 
+    public function handleInvoicePaymentFailed($data)
+    {
+        $event = Arr::get($data, 'event');
+        $order = Arr::get($data, 'order');
+        $invoice = $event->data->object;
+
+        $invoice = (new API())->getStripeObject('invoices/' . $invoice->id);
+
+        $vendorSubscriptionId = Arr::get($invoice, 'subscription', null)
+            ?: Arr::get($invoice, 'parent.subscription_details.subscription', null);
+
+        $subscription = null;
+        if ($vendorSubscriptionId) {
+            $subscription = Subscription::query()
+                ->where('vendor_subscription_id', $vendorSubscriptionId)
+                ->where('parent_order_id', $order->id)
+                ->where('current_payment_method', 'stripe')
+                ->first();
+        }
+
+        if (!$subscription) {
+            return false;
+        }
+
+        $invoiceId = Arr::get($invoice, 'id');
+
+        if (!$invoiceId || !preg_match('/^in_[a-zA-Z0-9_]+$/', $invoiceId)) {
+            return false;
+        }
+
+        $claimKey = 'fct_sub_renewal_failed_' . $subscription->id . '_' . $invoiceId;
+
+        // One notification per failed renewal cycle. invoice.payment_failed fires once
+        // per Stripe retry attempt against the same invoice, and verifyAndProcess()
+        // authenticates by re-fetching the event rather than by signature, so a
+        // resubmitted event id re-runs the handler. The invoice id is stable across
+        // retries within a cycle and distinct for the next one. The stored value must
+        // stay constant — add_option()'s pre-check is not atomic, so the claim leans on
+        // MySQL reporting zero affected rows for an unchanged ON DUPLICATE KEY UPDATE.
+        if (!add_option($claimKey, '1', '', false)) {
+            return true; // already notified for this renewal cycle
+        }
+
+        $paymentIntentId = Arr::get($invoice, 'payment_intent', null);
+        if (is_array($paymentIntentId)) {
+            $paymentIntentId = Arr::get($paymentIntentId, 'id', null);
+        }
+
+        $error = '';
+        if ($paymentIntentId && preg_match('/^[a-zA-Z0-9_-]+$/', $paymentIntentId)) {
+            $paymentIntent = (new API())->getStripeObject('payment_intents/' . $paymentIntentId, [], $order->mode);
+            if (!is_wp_error($paymentIntent)) {
+                $error = (string)Arr::get($paymentIntent, 'last_payment_error.message', '');
+            }
+        }
+
+        if (!$error) {
+            $error = __('Stripe reported a failed invoice payment attempt.', 'fluent-cart');
+        }
+
+        try {
+            (new SubscriptionRenewalFailed($subscription, $order, $order->customer, $error))->dispatch();
+        } catch (\Throwable $e) {
+            // The claim is permanent, so a half-finished dispatch would suppress this
+            // renewal forever. Release it so the redelivery reruns the dispatch.
+            delete_option($claimKey);
+            throw $e;
+        }
+
+        return true;
+    }
+
     public function verifyAndProcess()
     {
         $data = (new API())->verifyIPN();
@@ -415,6 +490,7 @@ class IPN
             'customer.subscription.deleted',
             'customer.subscription.updated',
             'setup_intent.succeeded', // recovers zero-payable system-subscription vaulting if the AJAX confirm is lost
+            'invoice.payment_failed',
         ];
 
         $eventType = $data->type;

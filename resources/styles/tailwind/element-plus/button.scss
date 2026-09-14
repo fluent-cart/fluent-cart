@@ -1,5 +1,5 @@
 .el-button{
-    @apply py-[7px] px-4 h-auto min-h-9 text-system-dark rounded gap-1.5 focus-visible:outline-none cursor-pointer transition-none border-gray-outline hover:bg-gray-50 hover:text-system-dark hover:border-gray-outline focus:shadow-none focus:outline-none dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 focus:rounded;
+    @apply py-[7px] px-4 h-auto min-h-9 text-system-dark rounded gap-1.5 focus-visible:outline-none cursor-pointer transition-none border-gray-outline hover:bg-gray-50 hover:text-system-dark hover:border-gray-outline focus:shadow-none focus:outline-none dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 focus:rounded dark:hover:border-dark-400;
     .cmd{
         @apply text-xs text-gray-400 uppercase dark:text-gray-600;
     }

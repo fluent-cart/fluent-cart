@@ -99,8 +99,6 @@ class StoreSettings implements ArrayableInterface
             'store_state'                          => '',
             'show_relevant_product_in_single_page' => 'yes',
             'show_relevant_product_in_modal'       => '',
-            'show_rating_in_shop'                  => 'yes',
-            'show_rating_in_relevant'              => 'yes',
             'order_mode'                           => 'test',
             'subscription_mode_guard'              => 'yes',
             'variation_view'                       => 'both',
@@ -1053,51 +1051,6 @@ class StoreSettings implements ArrayableInterface
 
                                 ]
                             ],
-
-                            'hr_product_slug' => [
-                                'type'  => 'html',
-                                'value' => '<hr class="settings-divider">'
-                            ],
-
-                            'product_rating_grid' => [
-                                'type'            => 'grid',
-                                'columns'         => [
-                                    'default' => 1,
-                                    'md'      => 3
-                                ],
-                                'disable_nesting' => true,
-                                'schema'          => [
-                                    'label'  => [
-                                        'type'  => 'html',
-                                        'value' => sprintf(
-                                            '<span class="setting-label">%1$s</span><div class="form-note">%2$s</div>',
-                                            __('Product Rating', 'fluent-cart'),
-                                            __('Show star ratings when reviews are enabled.', 'fluent-cart')
-                                        )
-                                    ],
-                                    'fields' => [
-                                        'type'            => 'grid',
-                                        'columns'         => [
-                                            'default' => 1,
-                                            'md'      => 1
-                                        ],
-                                        'disable_nesting' => true,
-                                        'schema'          => [
-                                            "show_rating_in_shop" => [
-                                                "label" => __('Show Rating in Shop', 'fluent-cart'),
-                                                "type"  => "checkbox",
-                                                "value" => "yes"
-                                            ],
-                                            "show_rating_in_relevant" => [
-                                                "label" => __('Show Rating in Relevant Products', 'fluent-cart'),
-                                                "type"  => "checkbox",
-                                                "value" => "yes"
-                                            ],
-                                        ]
-                                    ]
-
-                                ]
-                            ],
                         ],
                     ],
                     'cart_and_checkout'    => [
@@ -1465,15 +1418,6 @@ class StoreSettings implements ArrayableInterface
                     ],
                 ]
             ];
-        }
-
-        // Product Rating toggles only apply while the reviews module is
-        // active — hide the section (and its divider) otherwise.
-        if (!ModuleSettings::isActive('reviews')) {
-            unset(
-                $fields['setting_tabs']['schema']['single_product_setup']['schema']['hr_product_slug'],
-                $fields['setting_tabs']['schema']['single_product_setup']['schema']['product_rating_grid']
-            );
         }
 
         return apply_filters("fluent_cart/store_settings/fields", $fields, []);

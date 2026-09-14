@@ -805,7 +805,10 @@ input[type="number"] {
 .fct-custom-gutenberg-editor-wrap {
   .iframe-loader {
     background: rgba(0,0,0,0.5);
-    @apply absolute inset-0 flex flex-col items-center justify-center z-[60] backdrop-blur-sm gap-3;
+    // Sits above .iframe-controls (z-60), which shares the same box — otherwise
+    // the "Show Content Editor" button paints over the loading state and the
+    // panel just looks blank while the preview re-fetches.
+    @apply absolute inset-0 flex flex-col items-center justify-center z-[70] backdrop-blur-sm gap-3;
   }
 
   .iframe-loader span {

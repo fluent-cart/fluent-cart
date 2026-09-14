@@ -123,6 +123,15 @@ class ShopAppRenderer
             $this->defaultFilters['allow_out_of_stock'] = true;
         }
 
+        // Merge wildcard search preset into defaultFilters so it persists in AJAX re-fetches
+        $wildcard = Arr::get($defaultFilters, 'wildcard', '');
+        if ($wildcard !== '') {
+            $this->defaultFilters['wildcard'] = $wildcard;
+            if (empty($this->defaultFilters['enabled'])) {
+                $this->defaultFilters['enabled'] = true;
+            }
+        }
+
         // Merge sort_by from config filters into defaultFilters for AJAX persistence
         $configFilters = Arr::get($config, 'filters', []);
         if (is_string($configFilters)) {

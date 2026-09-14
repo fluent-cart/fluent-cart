@@ -178,7 +178,6 @@ import {ArrowRight} from "@element-plus/icons-vue";
 import {markRaw} from "vue";
 import {Container as CardContainer, Body as CardBody, Header as CardHeader} from "@/Bits/Components/Card/Card.js";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
-import Empty from "@/Bits/Components/Table/Empty.vue";
 import OrdersTable from "@/Modules/Orders/Components/OrdersTable.vue";
 import OrdersTableMobile from "@/Modules/Orders/Components/OrdersTableMobile.vue";
 import LicenseTable from "../../../licensing/components/_LicenseTable.vue";
@@ -211,7 +210,6 @@ export default {
     SubscriptionDetails,
     Labels,
     LicenseTable,
-    Empty,
     CopyToClipboard,
     CardContainer,
     CardBody,

@@ -141,17 +141,6 @@
                                                           :product="filteredOrderItem"
                                                       />
 
-                                                      <a
-                                                          v-if="filteredOrderItem.url && filteredOrderItem.can_review"
-                                                          class="fct-order-item-review-btn"
-                                                          :href="reviewUrl(filteredOrderItem)"
-                                                          target="_blank"
-                                                          rel="noopener noreferrer"
-                                                          :aria-label="$t('Write a review for') + ' ' + filteredOrderItem.post_title"
-                                                      >
-                                                          {{ $t('Write a Review') }} <span aria-hidden="true">&#9997;&#xFE0E;</span>
-                                                      </a>
-
                                                       <UpgradePlan
                                                           v-if="filteredOrderItem.has_upgrade_paths"
                                                           class="mt-2"
@@ -581,13 +570,6 @@ export default {
         formatOrderItems,
         orderBillingAddressUpdated(address) {
             this.order.billing_address_text = address;
-        },
-        reviewUrl(item) {
-            if (!item.url) {
-                return '';
-            }
-            // Anchor to the reviews section rendered on the product page
-            return item.url + '#fct-product-reviews';
         },
         getImage(item) {
             if(item.variant_image) {

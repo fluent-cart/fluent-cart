@@ -13,7 +13,6 @@ import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import {formatNumber} from "@/Bits/productService";
 import CustomColumnRenderer from "@/Bits/Components/CustomColumnRenderer.vue";
 import {ref} from "vue";
-import StarRating from "@/Bits/Components/StarRating.vue";
 
 const props = defineProps({
   productTable: {
@@ -61,7 +60,7 @@ const getProductTypeText = (type) => {
     case 'bundle':
       return translate('Bundle');
     default:
-      return Str.headline(type);
+      Str.headline(type)
   }
 }
 
@@ -268,20 +267,6 @@ defineExpose({
         </RouteCell>
       </template>
 
-    </el-table-column>
-
-    <el-table-column v-if="productTable.isColumnVisible('reviews')" :label="translate('Reviews')"
-                     width="130">
-      <template #default="scope">
-        <router-link
-            class="hover:no-underline flex items-center gap-1.5"
-            :to="{ name: 'reviews', query: { post_id: scope.row.ID } }"
-            :aria-label="translate('View reviews for %s', scope.row.post_title)"
-        >
-          <StarRating :rating="scope.row.avg_rating || 0" size="small"/>
-          <span class="text-xs text-gray-500">({{ translateNumber(scope.row.reviews_count || 0) }})</span>
-        </router-link>
-      </template>
     </el-table-column>
 
     <el-table-column v-for="column of productTable.getCustomColumns()" :label="column.label">

@@ -64,18 +64,13 @@ export default {
         case 'success':
         case 'licensed':
         case 'succeeded':
-        case 'approved':
           return 'success';
 
         case 'failed':
         case 'error':
         case 'canceled':
         case 'expired':
-        case 'trash':
           return 'danger';
-
-        case 'spam':
-          return 'warning';
 
         case 'blue':
         case 'partially_paid':

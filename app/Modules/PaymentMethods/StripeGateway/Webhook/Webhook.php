@@ -118,6 +118,7 @@ class Webhook
             'customer.subscription.deleted',
             'customer.subscription.updated',
             'setup_intent.succeeded', // recovers zero-payable system-subscription vaulting if the AJAX confirm is lost
+            'invoice.payment_failed',
         ];
 
         if (!in_array($eventType, $metaDataEvents)) {
@@ -159,6 +160,23 @@ class Webhook
                 $this->unresolvedReason = __('Subscription renewal invoice resolved to no order.', 'fluent-cart');
                 return false;
             }
+        }
+
+        if ($eventType === 'invoice.payment_failed') {
+            $isSubscriptionCycle = $vendorDataObject->billing_reason === 'subscription_cycle';
+            if ($isSubscriptionCycle) {
+                $invoice = (new API())->getStripeObject('invoices/' . $vendorDataObject->id);
+                if (!is_wp_error($invoice)) {
+                    list($subscription, $parentOrder) = $this->resolveSubscriptionAndOrder($invoice);
+
+                    if ($subscription && $parentOrder && $subscription->current_payment_method === 'stripe') {
+                        return $parentOrder;
+                    }
+                }
+            }
+
+            $this->unresolvedReason = __('Subscription renewal-failure invoice resolved to no order.', 'fluent-cart');
+            return false;
         }
 
         if ($eventType === 'charge.refunded' || $eventType === 'charge.succeeded') {
@@ -242,7 +260,14 @@ class Webhook
         return null;
     }
 
-    public function processSubscriptionRenewal($vendorInvoiceObject)
+    /**
+     * Resolve the local Subscription + parent Order for a Stripe invoice payload,
+     * shared by renewal-success (invoice.paid) and renewal-failure
+     * (invoice.payment_failed) handling.
+     *
+     * @return array{0: Subscription|null, 1: Order|null}
+     */
+    protected function resolveSubscriptionAndOrder($vendorInvoiceObject)
     {
         $subscription = null;
         $parentOrder = null;
@@ -274,6 +299,16 @@ class Webhook
                 ->orderBy('id', 'DESC')
                 ->first();
         }
+
+        return [$subscription, $parentOrder];
+    }
+
+    public function processSubscriptionRenewal($vendorInvoiceObject)
+    {
+        list($subscription, $parentOrder) = $this->resolveSubscriptionAndOrder($vendorInvoiceObject);
+
+        $vendorSubscriptionId = Arr::get($vendorInvoiceObject, 'subscription', null)
+            ?: (Arr::get($vendorInvoiceObject, 'parent.subscription_details.subscription', null) ?? null);
 
         if (!$parentOrder || !$subscription || $subscription->current_payment_method !== 'stripe') {
             fluent_cart_error_log('Stripe Webhook Error: Subscription Renewal - Order or Subscription not found.', 'Vendor Subscription ID: ' . $vendorSubscriptionId);
