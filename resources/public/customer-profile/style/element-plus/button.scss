@@ -1,6 +1,6 @@
 /*===== button =====*/
 .el-button{
-    @apply text-system-dark no-underline rounded min-h-9 h-auto px-4 text-sm font-medium border border-solid border-gray-outline inline-flex outline-none items-center gap-2 focus-visible:outline-none focus:shadow-none focus-visible:shadow-none focus:bg-primary-25 focus:border-gray-outline focus:text-system-dark hover:bg-primary-25 hover:shadow-none dark:bg-primary-500 dark:text-gray-200 dark:border-primary-500 #{!important};
+    @apply text-system-dark no-underline rounded min-h-9 h-auto px-4 text-sm font-medium border border-solid border-gray-outline inline-flex outline-none items-center gap-2 focus-visible:outline-none focus:shadow-none focus-visible:shadow-none focus:bg-primary-25 focus:border-gray-outline focus:text-system-dark hover:bg-primary-25 hover:shadow-none dark:bg-primary-500 dark:text-gray-200 dark:border-primary-500;
     .icon svg{
         @apply w-[15px] h-[15px];
     }
@@ -8,28 +8,28 @@
         @apply gap-1.5;
     }
     &--info{
-        @apply bg-gray-500 border-gray-500 text-white hover:bg-gray-600 hover:border-gray-600 focus:bg-gray-500 focus:border-gray-500 focus:text-white #{!important};
+        @apply bg-gray-500 border-gray-500 text-white hover:bg-gray-600 hover:border-gray-600 focus:bg-gray-500 focus:border-gray-500 focus:text-white;
         &[soft]{
-            @apply bg-gray-50 border-gray-50 text-system-dark hover:bg-gray-100 hover:border-gray-100 #{!important}; ;
+            @apply bg-gray-50 border-gray-50 text-system-dark hover:bg-gray-100 hover:border-gray-100; ;
         }
     }
     &--primary{
-        @apply bg-[var(--fct-customer-dashboard-btn-bg-color)] border-[var(--fct-customer-dashboard-btn-border-color)] text-[var(--fct-customer-dashboard-btn-text-color)] hover:bg-[var(--fct-customer-dashboard-btn-bg-color)] hover:border-[var(--fct-customer-dashboard-btn-border-color)] focus:bg-[var(--fct-customer-dashboard-btn-bg-color)] focus:border-[var(--fct-customer-dashboard-btn-border-color)] focus:text-[var(--fct-customer-dashboard-btn-text-color)] #{!important};
+        @apply bg-[var(--fct-customer-dashboard-btn-bg-color)] border-[var(--fct-customer-dashboard-btn-border-color)] text-[var(--fct-customer-dashboard-btn-text-color)] hover:bg-[var(--fct-customer-dashboard-btn-bg-color)] hover:border-[var(--fct-customer-dashboard-btn-border-color)] focus:bg-[var(--fct-customer-dashboard-btn-bg-color)] focus:border-[var(--fct-customer-dashboard-btn-border-color)] focus:text-[var(--fct-customer-dashboard-btn-text-color)];
     }
     &--success{
-        @apply bg-success-500 border-success-500 text-white hover:bg-success-600 hover:border-success-600 focus:bg-success-500 focus:border-success-500 focus:text-white #{!important};
+        @apply bg-success-500 border-success-500 text-white hover:bg-success-600 hover:border-success-600 focus:bg-success-500 focus:border-success-500 focus:text-white;
     }
     &--danger{
-        @apply bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600 focus:bg-red-500 focus:border-red-500 focus:text-white #{!important};
+        @apply bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600 focus:bg-red-500 focus:border-red-500 focus:text-white;
     }
     &--small{
-        @apply min-h-[32px] text-[13px] h-auto px-3 #{!important};
+        @apply min-h-[32px] text-[13px] h-auto px-3;
         .icon svg{
             @apply w-3 h-3;
         }
     }
     &--x-small{
-        @apply min-h-7 text-xs rounded-md px-2.5 py-1 h-auto #{!important};
+        @apply min-h-7 text-xs rounded-md px-2.5 py-1 h-auto;
         .icon svg{
             @apply w-3 h-3;
         }
@@ -40,24 +40,24 @@
     &.is-disabled,
     &.is-disabled:focus,
     &.is-disabled:hover{
-        @apply text-system-mid opacity-[0.5] cursor-not-allowed bg-gray-100 border-gray-100 hover:text-system-mid #{!important};
+        @apply text-system-mid opacity-[0.5] cursor-not-allowed bg-gray-100 border-gray-100 hover:text-system-mid;
     }
     &.is-text{
-        @apply font-medium bg-transparent min-h-[inherit] w-auto h-auto rounded-none border-0 py-1 px-1.5 #{!important};
+        @apply font-medium bg-transparent min-h-[inherit] w-auto h-auto rounded-none border-0 py-1 px-1.5;
         &.is-blue{
-            @apply text-blue-500 #{!important};
+            @apply text-blue-500;
         }
         &.is-underline{
-            @apply underline #{!important};
+            @apply underline;
         }
         &.is-danger{
-            @apply text-red-500 #{!important};
+            @apply text-red-500;
         }
     }
     &.is-link{
-        @apply bg-transparent border-0 text-primary-500 h-auto p-0.5 rounded-none min-h-[auto] hover:bg-transparent border-transparent #{!important};
+        @apply bg-transparent border-0 text-primary-500 h-auto p-0.5 rounded-none min-h-[auto] hover:bg-transparent border-transparent;
         &.is-text{
-            @apply text-primary-500 #{!important};
+            @apply text-primary-500;
         }
     }
 
@@ -66,19 +66,19 @@
 .el-button--info.is-link, 
 .el-button--info.is-plain, 
 .el-button--info.is-text{
-    @apply bg-gray-neutral border-gray-outline text-system-dark hover:bg-gray-50 dark:bg-primary-500 dark:border-primary-500 #{!important};
+    @apply bg-gray-neutral border-gray-outline text-system-dark hover:bg-gray-50 dark:bg-primary-500 dark:border-primary-500;
 }
 
 .el-button--warning.is-link,
 .el-button--warning.is-plain,
 .el-button--warning.is-text{
-    @apply bg-warning-25 border-warning-500 text-warning-500 hover:bg-warning-50 #{!important};
+    @apply bg-warning-25 border-warning-500 text-warning-500 hover:bg-warning-50;
 }
 
 .el-button--danger.is-link,
 .el-button--danger.is-plain,
 .el-button--danger.is-text{
-    @apply bg-red-25 border-red-500 text-red-500 hover:bg-red-50 #{!important};
+    @apply bg-red-25 border-red-500 text-red-500 hover:bg-red-50;
 }
 .el-button [class*=el-icon]+span{
     @apply ml-0;

@@ -9,6 +9,8 @@ class OrderDownloadPermissionsMigrator extends Migrator
 
     public static string $tableName = 'fct_order_download_permissions';
 
+    const CUSTOMER_RECOVERY_INDEX = 'idx_download_permissions_customer_recovery';
+
     public static function getSqlSchema(): string
     {
         $indexPrefix = static::getDbPrefix() . 'fct_odp_';
@@ -25,6 +27,21 @@ class OrderDownloadPermissionsMigrator extends Migrator
 
                  INDEX `{$indexPrefix}_order_id_idx` (`order_id` ASC),
                  INDEX `{$indexPrefix}_download_id_idx` (`download_id` ASC),
-                 INDEX `{$indexPrefix}_variation_id_idx` (`variation_id` ASC)";
+                 INDEX `{$indexPrefix}_variation_id_idx` (`variation_id` ASC),
+                 INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `id` ASC)";
+    }
+    public static function migrated()
+    {
+        static::addCustomerRecoveryIndex();
+    }
+
+    public static function addCustomerRecoveryIndex(): void
+    {
+        static::addIndexIfNotExists(self::CUSTOMER_RECOVERY_INDEX, ['customer_id', 'id']);
+    }
+
+    public static function hasCustomerRecoveryIndex(): bool
+    {
+        return static::hasIndex(self::CUSTOMER_RECOVERY_INDEX);
     }
 }

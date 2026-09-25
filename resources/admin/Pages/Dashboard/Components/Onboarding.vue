@@ -32,6 +32,8 @@ const getStepUrl = (item) => {
 
 const dashboardTogglePageNotification = inject("dashboardTogglePageNotification")
 
+const emit = defineEmits(['status']);
+
 onMounted(async () => {
   loading.value = true;
 
@@ -40,6 +42,7 @@ onMounted(async () => {
     steps.value = response.data.steps
     completed.value = response.data.completed
     shouldShowOnboardings.value = Object.keys(steps.value).length !== completed.value;
+    emit('status', {completed: !shouldShowOnboardings.value});
     loading.value = false;    
 
     let pageSetupCompleted = steps.value.page_setup?.completed || false;

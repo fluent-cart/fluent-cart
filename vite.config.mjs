@@ -7,6 +7,7 @@ import path from "path";
 import {moveManifestPlugin} from "./build/vite/plugins/moveManifestPlugin.mjs";
 import {staticCopyManifestPlugin} from "./build/vite/plugins/staticCopyManifestPlugin.mjs";
 import {manifestPhpConfigPlugin} from "./build/vite/plugins/manifestPhpConfigPlugin.mjs";
+import {minifyStaticLibPlugin} from "./build/vite/plugins/minifyStaticLibPlugin.mjs";
 import fs from "fs"; // Add this dependency for file operations
 
 const serverConfig = require('./config/vite.json');
@@ -278,6 +279,9 @@ export default defineConfig({
             rootDir: __dirname,
             manifestPath: serverConfig.manifest_path,
             staticCopyTargets,
+        }),
+        minifyStaticLibPlugin({
+            libDir: "public/lib",
         }),
         manifestPhpConfigPlugin({
             rootDir: __dirname,

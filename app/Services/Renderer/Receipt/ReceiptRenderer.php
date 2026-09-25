@@ -9,6 +9,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\DateTime\DateFormatter;
 
 class ReceiptRenderer
 {
@@ -243,10 +244,12 @@ class ReceiptRenderer
         </p>
         <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: right; margin: 0;font-size:14px;">
             <?php
-                $date = wp_date(
-                    get_option('date_format'),
+                // Through DateFormatter so the store's format and timezone settings
+                // reach this too; orderTz is only consulted on the Browser source.
+                $date = DateFormatter::format(
                     DateTime::anyTimeToGmt($order->created_at)->getTimestamp(),
-                    new \DateTimeZone($this->orderTz)
+                    false,
+                    $this->orderTz
                 );
                 echo esc_html(Helper::translateNumber($date));
             ?>
@@ -810,10 +813,12 @@ class ReceiptRenderer
                             </td>
                             <td style="padding: 10px;border:none;border-bottom: 1px solid #dee2e6;text-align: center;">
                                 <?php
-                                    $date = wp_date(
-                                        get_option('date_format'),
+                                    // Same route as the Order At header above, or
+                                    // one receipt renders two different formats.
+                                    $date = DateFormatter::format(
                                         DateTime::anyTimeToGmt($transaction->created_at)->getTimestamp(),
-                                        new \DateTimeZone($this->orderTz)
+                                        false,
+                                        $this->orderTz
                                     );
                                     echo esc_html(Helper::translateNumber($date));
                                 ?>

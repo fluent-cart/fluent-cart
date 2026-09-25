@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services;
 
 use FluentCart\Api\StoreSettings;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\Framework\Support\Arr;
 
 if (!defined('ABSPATH')) {
@@ -86,14 +87,19 @@ class WpMetaHelper
 
     public function getOtherData($key)
     {
+        // wp_date(), not current_time(): current_time() is gmdate() underneath,
+        // so it renders the store's format with English month and weekday
+        // names -- '14. October 2026' on a German store, which is the exact
+        // half-translated string DateFormatter exists to remove. wp_date()
+        // with no timestamp is the same instant in the same site timezone,
+        // only localized. The format comes from DateFormatter so these two
+        // shortcodes follow date_time_format_source like every other date.
         if ($key == 'date') {
-            $dateFormat = get_option('date_format');
-            return current_time($dateFormat);
+            return wp_date(DateFormatter::dateFormat());
         }
 
         if ($key == 'time') {
-            $dateFormat = get_option('time_format');
-            return current_time($dateFormat);
+            return wp_date(DateFormatter::timeFormat());
         }
         if ($key == 'user_ip') {
             return $this->entry->ip_address;

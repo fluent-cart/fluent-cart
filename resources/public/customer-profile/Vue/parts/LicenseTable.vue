@@ -47,12 +47,12 @@ const router = useRouter();
                 <div class="text-meta" v-if="license.expiration_date">
                   <template v-if="license?.status === 'expired'">
                     <!-- translators: %s is the expiration date -->
-                    {{ translate('Expired at: %s', dateTimeI18(license.expiration_date, 'MMM DD, YYYY')) }}
+                    {{ translate('Expired at: %s', dateTimeI18(license.expiration_date, 'date')) }}
                   </template>
 
                   <template v-else>
                     <!-- translators: %s is the expiration date -->
-                    {{ translate('Expires on: %s', dateTimeI18(license.expiration_date, 'MMM DD, YYYY')) }}
+                    {{ translate('Expires on: %s', dateTimeI18(license.expiration_date, 'date')) }}
                   </template>
                 </div>
                 <div class="text-meta" v-else>{{ translate('Never Expires') }}</div>
@@ -179,10 +179,10 @@ const router = useRouter();
                             <div class="text-meta" v-if="scope.row.expiration_date">
 
                                 <template v-if="scope.row.status === 'expired'">
-                                    {{ translate('Expired at: %s', dateTimeI18(scope.row.expiration_date, 'MMM DD, YYYY')) }}
+                                    {{ translate('Expired at: %s', dateTimeI18(scope.row.expiration_date, 'date')) }}
                                 </template>
                                 <template v-else>
-                                    {{ translate('Expires on: %s', dateTimeI18(scope.row.expiration_date, 'MMM DD, YYYY')) }}
+                                    {{ translate('Expires on: %s', dateTimeI18(scope.row.expiration_date, 'date')) }}
                                 </template>
 
 

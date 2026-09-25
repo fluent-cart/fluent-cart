@@ -212,17 +212,17 @@ return [
         [
             'surface'     => 'GET customer-profile/orders',
             'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-            'source_line' => 45,
+            'source_line' => 44,
             'needle'      => 'function getOrders(Request $request)',
             'source_checks' => [
                 [
                     'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-                    'source_line' => 62,
+                    'source_line' => 61,
                     'needle'      => "\$perPage = (int)\$request->get('per_page', 10)",
                 ],
                 [
                     'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-                    'source_line' => 82,
+                    'source_line' => 81,
                     'needle'      => '->paginate($perPage',
                 ],
             ],

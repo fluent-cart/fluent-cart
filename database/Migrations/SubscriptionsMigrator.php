@@ -9,6 +9,8 @@ class SubscriptionsMigrator extends Migrator
     public static string $tableName = "fct_subscriptions";
 
 
+    const CUSTOMER_RECOVERY_INDEX = 'idx_subscriptions_customer_recovery';
+
     public static function getSqlSchema(): string
     {
         $indexPrefix = static::getDbPrefix() . 'fct_index_';
@@ -50,11 +52,13 @@ class SubscriptionsMigrator extends Migrator
                  INDEX `{$indexPrefix}_order_subscription_idx` (`parent_order_id` ASC),
                  INDEX `{$indexPrefix}vendor_subscription_id_idx` (`vendor_subscription_id` ASC),
                  INDEX `{$indexPrefix}_expiry_scan_idx` (`status`, `next_billing_date`, `id`),
-                 INDEX `{$indexPrefix}collection_method_idx` (`collection_method`)";
+                 INDEX `{$indexPrefix}collection_method_idx` (`collection_method`),
+                 INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `id` ASC)";
     }
 
     public static function migrated()
     {
+        static::addCustomerRecoveryIndex();
         static::addUuidColumn();
         static::renameInitialAmountToSignupFee();
         static::backfillEmptyUuids();
@@ -128,5 +132,14 @@ class SubscriptionsMigrator extends Migrator
 
             (new Subscription())->batchUpdate($uuids);
         } while ($subscriptions->count() >= $chunkSize);
+    }
+    public static function addCustomerRecoveryIndex(): void
+    {
+        static::addIndexIfNotExists(self::CUSTOMER_RECOVERY_INDEX, ['customer_id', 'id']);
+    }
+
+    public static function hasCustomerRecoveryIndex(): bool
+    {
+        return static::hasIndex(self::CUSTOMER_RECOVERY_INDEX);
     }
 }

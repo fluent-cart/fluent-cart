@@ -288,6 +288,7 @@ import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {formatDate, handleError} from "@/Bits/common";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import NotFound from "@/Pages/NotFound.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import Clipboard from "@/utils/Clipboard";
@@ -364,7 +365,7 @@ export default {
         handleError,
         formatFullDate(value) {
             if (!value) return '';
-            return dayjs(value).format('MMM DD, YYYY');
+            return dayjs(value).locale(fluentDayjsLocale()).format(resolveDateFormat('date'));
         },
         formatMetaKey(key) {
             return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });

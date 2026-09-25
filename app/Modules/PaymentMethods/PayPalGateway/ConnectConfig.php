@@ -5,6 +5,7 @@ namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway;
 use FluentCart\App\App;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\PayPalPartner;
+use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\PayPalPartnerRenderer;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\Webhook;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Http\Request\Request;
@@ -20,8 +21,18 @@ class ConnectConfig
         $testAccountInfo = self::getAccountInfo($settings, 'test');
         $liveAccountInfo = self::getAccountInfo($settings, 'live');
 
-        $testConnectRedirect = admin_url('?fluent-cart=fluent_cart_payment_authenticate&payment_method=paypal&type=connect&mode=test');
-        $liveConnectRedirect = admin_url('?fluent-cart=fluent_cart_payment_authenticate&payment_method=paypal&type=connect&mode=live');
+        $testConnectRedirect = add_query_arg([
+            'fluent-cart' => 'paypal_connect',
+            'intent'      => 'connect',
+            'mode'        => 'test',
+            '_wpnonce'    => wp_create_nonce('fluent_cart_paypal_connect_test'),
+        ], home_url());
+        $liveConnectRedirect = add_query_arg([
+            'fluent-cart' => 'paypal_connect',
+            'intent'      => 'connect',
+            'mode'        => 'live',
+            '_wpnonce'    => wp_create_nonce('fluent_cart_paypal_connect_live'),
+        ], home_url());
 
         return [
             'connect_config' => [
@@ -36,16 +47,33 @@ class ConnectConfig
         ];
     }
 
+    public static function handleConnect($data): void
+    {
+        $intent = Arr::get($data, 'intent');
+        if ($intent === 'return') {
+            self::parseConnectInfos($data);
+            return;
+        }
+
+        if ($intent !== 'connect') {
+            wp_die(esc_html__('Invalid PayPal connection request.', 'fluent-cart'), '', ['response' => 400]);
+        }
+
+        $mode = self::validateConnectRequest($data, 'connect');
+        // WebRoutes terminates the request after dispatching this action.
+        (new PayPalPartnerRenderer($mode))->template($data);
+    }
+
     public static function parseConnectInfos($vendorData)
     {
+        $mode = self::validateConnectRequest($vendorData, 'return');
+
         if (!$vendorData || !Arr::get($vendorData, 'permissionsGranted')) {
             echo '<div class="fct_message fct_message_error">' . esc_html(__('Invalid PayPal Request. Please try configuring paypal payment gateway again!', 'fluent-cart')) . '</div>';
             die();
         }
 
         $settingsInstance = App::gateway('paypal')->settings;
-
-        $mode = Arr::get($vendorData, 'mode');
 
         /*
         * @todo will verify later
@@ -81,7 +109,7 @@ class ConnectConfig
         *
         */
 
-        // update all data that verified
+        // Store metadata only after authorizing the connection return.
         $data = [
             $mode . '_email_address'  => sanitize_text_field(Arr::get($vendorData, 'merchantId')),
             $mode . '_account_status' => sanitize_text_field(Arr::get($vendorData, 'accountStatus')),
@@ -89,6 +117,26 @@ class ConnectConfig
         $settingsInstance->updateNonSensitiveData($data);
 
         wp_redirect(admin_url('admin.php?page=fluent-cart#/settings/payments/paypal'));
+    }
+
+    public static function validateConnectRequest($data, string $intent): string
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('You do not have permission to configure PayPal.', 'fluent-cart'), '', ['response' => 403]);
+        }
+
+        $mode = Arr::get($data, 'mode');
+        if (!in_array($mode, ['live', 'test'], true)) {
+            wp_die(esc_html__('Invalid PayPal payment mode.', 'fluent-cart'), '', ['response' => 400]);
+        }
+
+        $nonce = Arr::get($data, '_wpnonce');
+        $action = $intent === 'return' ? 'fluent_cart_paypal_connect_return_' : 'fluent_cart_paypal_connect_';
+        if (!is_string($nonce) || !wp_verify_nonce(sanitize_text_field($nonce), $action . $mode)) {
+            wp_die(esc_html__('Security check failed. Please try connecting PayPal again.', 'fluent-cart'), '', ['response' => 403]);
+        }
+
+        return $mode;
     }
 
     public function getSellerAuthToken(Request $request)

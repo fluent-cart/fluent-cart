@@ -19,7 +19,7 @@
 
     <?php
         $dueDate = $order->getMeta('due_date');
-        $formattedDueDate = $dueDate ? date_i18n( get_option('date_format'), strtotime($dueDate) ) : '';
+        $formattedDueDate = \FluentCart\App\Services\DateTime\DateFormatter::format($dueDate, false, $order);
     ?>
 
     <p>

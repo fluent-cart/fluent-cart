@@ -6,6 +6,7 @@ const settingsRoutes = [
     { path: '/settings/store-settings/pages_setup',          title: translate('Pages Setup'),                    perm: 'store/settings' },
     { path: '/settings/store-settings/single_product_setup', title: translate('Single Product & Order Setup'),   perm: 'store/settings' },
     { path: '/settings/store-settings/cart_and_checkout',    title: translate('Cart and Checkout'),              perm: 'store/settings' },
+    { path: '/settings/compliance',                          title: translate('Compliance'),                     perm: 'store/settings' },
     { path: '/settings/store-settings/subscriptions',        title: translate('Subscriptions Setup'),            perm: 'store/settings' },
     { path: '/settings/store-settings/checkout_fields',      title: translate('Checkout Fields'),                perm: 'store/settings' },
     { path: '/settings/email_notifications',                 title: translate('Email Notifications'),            perm: 'store/sensitive' },

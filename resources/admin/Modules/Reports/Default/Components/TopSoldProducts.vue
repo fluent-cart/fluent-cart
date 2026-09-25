@@ -5,6 +5,7 @@ import reportFilter from "@/Models/Reports/ReportFilterModel";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import ReportCard from "@/Modules/Reports/Components/ReportCard.vue";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import translate from "@/utils/translator/Translator";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
@@ -25,7 +26,7 @@ const props = defineProps({
 const reportData = computed(() => props.data);
 
 const formatDate = (date) => {
-  return dayjs(date).format("MMM D, YYYY");
+  return dayjs(date).locale(fluentDayjsLocale()).format(resolveDateFormat('date'));
 };
 </script>
 

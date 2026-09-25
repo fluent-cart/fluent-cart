@@ -4,8 +4,8 @@
 @tailwind utilities;
 
 :root {
-  --fct-customer-dashboard-primary-text-color: var(--fct-primary-text-color, theme('colors.primary.500'));
-  --fct-customer-dashboard-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+  --fct-customer-dashboard-primary-text-color: theme('colors.system.dark');
+  --fct-customer-dashboard-secondary-text-color: theme('colors.system.mid');
 
   // text colors
   --fct-customer-dashboard-title-color: var(--fct-customer-dashboard-primary-text-color);
@@ -13,12 +13,12 @@
   --fct-customer-dashboard-text-color: var(--fct-customer-dashboard-secondary-text-color);
 
   // border colors
-  --fct-customer-dashboard-border-color: var(--fct-border-color, theme('colors.gray.outline'));
-  --fct-customer-dashboard-divider-color: var(--fct-divider-color, theme('colors.gray.outline'));
+  --fct-customer-dashboard-border-color: theme('colors.gray.outline');
+  --fct-customer-dashboard-divider-color: theme('colors.gray.outline');
 
 
   // button
-  --fct-customer-dashboard-btn-bg-color: var(--fct-customer-dashboard-primary-text-color);
+  --fct-customer-dashboard-btn-bg-color: theme('colors.primary.500');
   --fct-customer-dashboard-btn-border-color: var(--fct-customer-dashboard-btn-bg-color);
   --fct-customer-dashboard-btn-text-color: theme('colors.white');
 
@@ -177,3 +177,34 @@
   }
 }
 
+
+.fct-email-claim {
+  @apply box-border w-full mb-5 p-5 border border-solid rounded;
+  border-color: var(--fct-customer-dashboard-border-color);
+  color: var(--fct-customer-dashboard-title-color);
+  overflow-wrap: anywhere;
+
+  h2 {
+    @apply m-0 mb-3 text-xl leading-7;
+  }
+
+  p {
+    @apply m-0 mb-3 text-base leading-6;
+  }
+
+  form {
+    @apply mb-3;
+  }
+
+  .fct-email-claim-button {
+    @apply inline-flex justify-center max-w-full px-4 py-2 border border-solid rounded text-base leading-6 cursor-pointer whitespace-normal;
+    background: var(--fct-customer-dashboard-btn-bg-color);
+    border-color: var(--fct-customer-dashboard-btn-border-color);
+    color: var(--fct-customer-dashboard-btn-text-color);
+
+    &:focus-visible {
+      outline: 2px solid var(--fct-customer-dashboard-primary-text-color);
+      outline-offset: 3px;
+    }
+  }
+}

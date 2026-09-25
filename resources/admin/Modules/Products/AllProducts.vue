@@ -235,10 +235,11 @@ onUnmounted(() => {
                 <el-button
                     size="small"
                     :type="selectedBulkAction === 'delete' ? 'danger' : 'primary'"
+                    :disabled="!selectedBulkAction"
                     @click="handleBulkAction"
                 >
                   <DynamicIcon v-if="selectedBulkAction === 'delete'" name="Delete" class="w-4 h-4"/>
-                  <DynamicIcon v-else name="Copy" class="w-4 h-4"/>
+                  <DynamicIcon v-else-if="selectedBulkAction === 'duplicate'" name="Copy" class="w-4 h-4"/>
                   {{ translate('Confirm') }}
                 </el-button>
               </div>

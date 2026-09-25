@@ -3,10 +3,10 @@
 namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway\API;
 
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Modules\PaymentMethods\PayPalGateway\ConnectConfig;
 use FluentCart\App\Services\FrontendView;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Foundation\App;
-use FluentCart\Framework\Support\Arr;
 
 class PayPalPartnerRenderer
 {
@@ -44,10 +44,7 @@ class PayPalPartnerRenderer
 
     public function template($data)
     {
-        $mode = Arr::get($data, 'mode', false);
-        if (!$mode) {
-            return;
-        }
+        $mode = ConnectConfig::validateConnectRequest($data, 'connect');
         $paypalPartner = new PayPalPartner($mode);
 
 

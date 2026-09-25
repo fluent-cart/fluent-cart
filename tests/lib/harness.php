@@ -425,6 +425,32 @@ class FcTest
     // -----------------------------------------------------------------
 
     /**
+     * Read-only route tests model a verified caller without changing stored users.
+     * Verification and denial behavior are tested with real metadata in wp-browser.
+     * The fixture applies only to this account and is removed before returning.
+     */
+    public static function withVerifiedCustomer(callable $callback): array
+    {
+        $user = wp_get_current_user();
+        if (!$user->ID) {
+            throw new \RuntimeException('A verified-customer fixture needs an authenticated account.');
+        }
+        $metaKey = self::config('customer_verification_meta');
+        $fixture = static function ($value, $userId, $key) use ($user, $metaKey) {
+            if ((int) $userId === (int) $user->ID && $key === $metaKey) {
+                return [['email' => strtolower(trim($user->user_email)), 'verified' => true]];
+            }
+            return $value;
+        };
+        add_filter('get_user_metadata', $fixture, 10, 3);
+        try {
+            return $callback();
+        } finally {
+            remove_filter('get_user_metadata', $fixture, 10);
+        }
+    }
+
+    /**
      * Dispatch a configured REST route in-process and return a rich result array.
      *
      * @param string $method  GET|POST|PUT|DELETE

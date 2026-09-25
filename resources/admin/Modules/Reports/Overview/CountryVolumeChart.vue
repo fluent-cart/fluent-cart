@@ -30,6 +30,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 import Screenshot from "@/Bits/Components/Icons/Screenshot.vue";
 import Theme from '@/utils/Theme';
 import dayjs from 'dayjs';
+import {resolveDateFormat, fluentDayjsLocale} from '@/utils/Utils';
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import translate from "@/utils/translator/Translator";
 import toCountryName from "@/Modules/Reports/Utils/toCountryName";
@@ -116,7 +117,7 @@ const labels = computed(() => {
     try {
       const [year, month] = item.label.split("-");
       const date = dayjs(new Date(year, month - 1));
-      return date.format('MMM YYYY'); // e.g., "Jun 2024"
+      return date.locale(fluentDayjsLocale()).format(resolveDateFormat('month_year'));
     } catch {
       return item.label;
     }

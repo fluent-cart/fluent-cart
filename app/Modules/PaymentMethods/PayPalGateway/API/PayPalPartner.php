@@ -142,7 +142,12 @@ class PayPalPartner
      */
     public function sellerOnboarding()
     {
-        $return_url = admin_url('admin.php?fct_app_authenticator&method=paypal&mode=' . $this->mode);
+        $return_url = add_query_arg([
+            'fluent-cart' => 'paypal_connect',
+            'intent'      => 'return',
+            'mode'        => $this->mode,
+            '_wpnonce'    => wp_create_nonce('fluent_cart_paypal_connect_return_' . $this->mode),
+        ], home_url());
         $capabilities = [];
         $products = [
             'EXPRESS_CHECKOUT'

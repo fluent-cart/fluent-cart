@@ -3,21 +3,21 @@
 
 :root {
   // card
-  --fct-card-bg: #ffffff;
-  --fct-card-border-color: var(--fct-border-color, #d6dae1);
-  --fct-card-primary-text-color: var(--fct-primary-text-color, #2F3448);
-  --fct-card-text-color: var(--fct-secondary-text-color, #565865);
+  --fct-card-bg: var(--fct-card-bg-color);
+  --fct-card-border-color: var(--fct-border-color);
+  --fct-card-primary-text-color: var(--fct-primary-text-color);
+  --fct-card-text-color: var(--fct-secondary-text-color);
 
   // button
-  --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
-  --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-card-btn-bg-color: var(--fct-btn-bg-color);
+  --fct-card-btn-text-color: var(--fct-btn-text-color);
 
-  --fct-heading-color: var(--fct-primary-text-color, #2F3448);
+  --fct-heading-color: var(--fct-primary-text-color);
 }
 
 /* ==== fct-product-card ==== */
 .fct-product-card {
-  @apply relative h-full p-1 bg-[var(--fct-card-bg)] grid grid-cols-1 border border-solid rounded border-[var(--fct-card-border-color)] transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
+  @apply relative h-full p-1 grid grid-cols-1 border border-solid rounded transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
   *{
     box-sizing: border-box;
   }
@@ -27,10 +27,10 @@
   }
 
   h1,h2,h3,h4,h5,h6 {
-    @apply mt-0 text-[var(--fct-card-primary-text-color)] px-3 pt-3 text-base font-medium mb-1;
+    @apply mt-0 px-3 pt-3 text-base font-medium mb-1;
 
     a {
-      @apply text-[var(--fct-card-primary-text-color)] no-underline hover:underline focus:underline;
+      @apply no-underline hover:underline focus:underline;
     }
   }
 
@@ -65,30 +65,26 @@
     @apply px-3 pb-1 text-sm;
 
     .fct-product-sku__label {
-      @apply font-semibold text-[var(--fct-card-primary-text-color)];
+      @apply font-semibold;
     }
 
     .fct-product-sku__value {
-      @apply font-normal text-[var(--fct-card-text-color)];
+      @apply font-normal;
     }
   }
 
   .fct-product-card-prices {
-    @apply px-3 pb-3 text-[var(--fct-card-primary-text-color)] text-base;
+    @apply px-3 pb-3 text-base;
     + p {
         @apply mt-auto !important;
     }
   }
 
   button {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
-    box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
-
-    @apply w-full cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] focus:text-[var(--fct-card-btn-text-color)] @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px] capitalize;
+    @apply w-full cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px] capitalize;
 
     .fluent-cart-loader {
       @apply duration-300 pointer-events-none justify-center items-center rounded absolute inset-0 w-full h-full hidden;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
 
       svg {
         @apply w-5 h-5 mr-2 text-gray-200 animate-spin fill-blue-600;
@@ -113,14 +109,15 @@
 
 
 }
-.fct-product-image-wrap {
-    @apply relative;
-}
-.fct-product-view-button {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
-  box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
 
-  @apply flex items-center justify-center cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
+// The selector list guards the anchor variant: it now also carries the
+// generic `button` class, and a theme's own `.button` rule (0,1,0) must not
+// out-order our layout — a.fct-…(0,1,1) wins the tie regardless of load order.
+.fct-product-view-button,
+a.fct-product-view-button,
+button.fct-product-view-button {
+  // Layout only — colours in the body:not(.fluent-cart-no-colors) block below.
+  @apply flex items-center justify-center cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
 
   &.group.loading {
     .fluent-cart-loader {
@@ -133,10 +130,93 @@
   }
 }
 
+/*
+ * The button colours, present only while FluentCart is actually supplying
+ * colours. Under inherit_from_theme with a theme nothing could be read from,
+ * the body carries `fluent-cart-no-colors`, these declarations do not exist,
+ * and the theme's own button rules — which lost the cascade to them — apply
+ * instead. No variable can express that: an empty or undefined var() still
+ * wins the cascade and computes to `unset`, which is transparent, not the
+ * theme's colour.
+ */
+body:not(.fluent-cart-no-colors) {
+
+    // card
+    --fct-card-bg: var(--fct-card-bg-color);
+    --fct-card-border-color: var(--fct-border-color, #d6dae1);
+    --fct-card-primary-text-color: var(--fct-primary-text-color, #2F3448);
+    --fct-card-text-color: var(--fct-secondary-text-color, #565865);
+
+    // button
+    --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
+    --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+
+    --fct-heading-color: var(--fct-primary-text-color, #2F3448);
+
+  // FluentCart's fallbacks live under the gate: unreachable in takeover mode,
+  // identical everywhere else.
+  // Button text pairs white with a button colour that was supplied as a
+  // reference and so could not be contrast-measured — both supported vendors
+  // (Astra, Kadence) ship dark brand colours, and white is what their own
+  // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
+  --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
+  --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-card-bg: var(--fct-card-bg-color);
+  --fct-card-border-color: var(--fct-border-color, #d6dae1);
+
+  .fct-product-card {
+    // No background on purpose: the card sits on whatever the page paints,
+    // so it works on dark themes too. The border is the card's only surface.
+    @apply border-[var(--fct-card-border-color)];
+
+    h1,h2,h3,h4,h5,h6 {
+      @apply text-[var(--fct-card-primary-text-color)];
+
+      a {
+        @apply text-[var(--fct-card-primary-text-color)];
+      }
+    }
+
+    .fct-product-sku .fct-product-sku__label {
+      @apply text-[var(--fct-card-primary-text-color)];
+    }
+
+    .fct-product-sku .fct-product-sku__value {
+      @apply text-[var(--fct-card-text-color)];
+    }
+
+    .fct-product-card-prices {
+      @apply text-[var(--fct-card-primary-text-color)];
+    }
+  }
+
+  .fct-product-list-container .fct-product-list-heading {
+    @apply text-[var(--fct-heading-color)];
+  }
+
+  .fct-product-card button {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+    box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] focus:text-[var(--fct-card-btn-text-color)];
+
+    .fluent-cart-loader {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+    }
+  }
+
+  .fct-product-view-button {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
+    box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)];
+  }
+}
+
 /* ==== end fct-product-card ==== */
 .fct-product-list-container {
   .fct-product-list-heading {
-    @apply text-[26px] mb-7.5 font-bold text-[var(--fct-heading-color)];
+    @apply text-[26px] mb-7.5 font-bold mt-0;
   }
 }
 

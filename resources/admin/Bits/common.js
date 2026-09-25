@@ -4,8 +4,11 @@ import AppConfig from "@/utils/Config/AppConfig";
 import Str from "@/utils/support/Str";
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import Storage from "@/utils/Storage";
 import translate from "@/utils/translator/Translator";
+import {resolveDateFormat, fluentDayjsLocale, resolveYearAwareFormat} from "@/utils/Utils";
 
 export const calculatePercent = function (currentValue, compareValue, strict = false) {
     if (currentValue == 0) {
@@ -111,8 +114,50 @@ export const handleResponse = (response) => {
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+// A WordPress date format may use an ordinal day ('jS') or a week number ('W'),
+// which convert to Day.js tokens these plugins provide.
+dayjs.extend(advancedFormat);
+dayjs.extend(weekOfYear);
 
-let currentTimezone = dayjs.tz.guess();
+/**
+ * A manual UTC offset from the WordPress timezone setting, e.g. '+05:30'.
+ *
+ * wp_timezone_string() returns one of these when the site is configured with an
+ * offset rather than a city. Day.js .tz() only takes IANA names, so an offset
+ * has to go through .utcOffset() instead.
+ */
+const UTC_OFFSET_PATTERN = /^[+-]\d{2}:\d{2}$/;
+
+/**
+ * The timezone this helper renders in.
+ *
+ * FluentCart source: the viewer's own browser timezone, which is what this
+ * helper has always guessed. WordPress source: the site timezone from
+ * Settings > General. Resolved per call rather than once at module load, so a
+ * module evaluated before AppConfig is populated still reads the real value.
+ */
+function storeTimezone() {
+    const timezone = (AppConfig.get('datei18') || {}).timezone || {};
+
+    if (timezone.source === 'wordpress' && timezone.site) {
+        return timezone.site;
+    }
+
+    return dayjs.tz.guess();
+}
+
+/**
+ * Move a Day.js instance into a zone that may be either an IANA name or a
+ * manual UTC offset. An unusable zone falls back to the browser's rather than
+ * taking a whole table down.
+ */
+const applyTimezone = (instance, zone) => {
+    try {
+        return UTC_OFFSET_PATTERN.test(zone) ? instance.utcOffset(zone) : instance.tz(zone);
+    } catch (e) {
+        return instance.local();
+    }
+};
 
 function hasExplicitTimezone(value) {
     return /([Zz]|[+-]\d{2}:\d{2}|[+-]\d{4})/.test(value);
@@ -127,7 +172,7 @@ export const formatDate = (
 ) => {
     if (!datetimeValue) return '';
 
-    const targetTimezone = toTimezone || currentTimezone;
+    const targetTimezone = toTimezone || storeTimezone();
     const sourceDate = parseDateTime(datetimeValue, fromTimezone, targetTimezone);
 
     if (onlyTime) {
@@ -137,7 +182,8 @@ export const formatDate = (
     const dateFormat = buildDateFormat(sourceDate);
 
     return withTime
-        ? `${dateFormat} at ${formatTime(sourceDate)}`
+        /* translators: 1: formatted date, 2: formatted time */
+        ? translate('%1$s at %2$s', dateFormat, formatTime(sourceDate))
         : dateFormat;
 };
 
@@ -146,16 +192,16 @@ const parseDateTime = (datetimeValue, fromTimezone, targetTimezone) => {
     if (isEpochTimestamp(datetimeValue)) {
         const timestamp = Number(datetimeValue);
         const milliseconds = timestamp < 1e12 ? timestamp * 1000 : timestamp;
-        return dayjs(milliseconds).tz(targetTimezone);
+        return applyTimezone(dayjs(milliseconds), targetTimezone);
     }
 
     // Handle dates with explicit timezone info
     if (hasExplicitTimezone(datetimeValue)) {
-        return dayjs(datetimeValue).tz(targetTimezone);
+        return applyTimezone(dayjs(datetimeValue), targetTimezone);
     }
 
     // Handle dates without timezone (assume fromTimezone)
-    return dayjs.tz(datetimeValue, fromTimezone).tz(targetTimezone);
+    return applyTimezone(dayjs.tz(datetimeValue, fromTimezone), targetTimezone);
 };
 
 const isEpochTimestamp = (value) => {
@@ -163,23 +209,21 @@ const isEpochTimestamp = (value) => {
 };
 
 const buildDateFormat = (sourceDate) => {
-    const year = sourceDate.year();
-    const day = sourceDate.date().toString().padStart(2, '0');
-    const monthName = sourceDate.format('MMM');
-
-    const isCurrentYear = year === dayjs().year();
-
-    return isCurrentYear
-        ? `${monthName} ${day}`
-        : `${day} ${monthName}, ${year}`;
+    // The day/month order and the month name both come from the store's
+    // settings -- assembling them by hand here is what made this path
+    // impossible to localize. Whether the year may be dropped is the store's
+    // call too; resolveYearAwareFormat() reads it in the render timezone,
+    // which sourceDate is already in (no caller overrides formatDate's
+    // toTimezone argument).
+    return sourceDate
+        .locale(fluentDayjsLocale())
+        .format(resolveDateFormat(resolveYearAwareFormat(sourceDate)));
 };
 
 const formatTime = (sourceDate) => {
-    const hours = sourceDate.format('h');
-    const minutes = sourceDate.format('mm');
-    const period = sourceDate.format('a');
-
-    return `${hours}:${minutes} ${period}`;
+    return sourceDate
+        .locale(fluentDayjsLocale())
+        .format(resolveDateFormat('time'));
 };
 
 
@@ -498,12 +542,19 @@ export const epochToHumanDate = (epochTimestamp, showTime = true) => {
     }
     // return dateTime.format("Do MMMM YYYY [at] HH:mm A"); // 20th January 2026 at 12:33 PM
     // I want the date to be in the format of Jan 20, 2025 at 12:31 am
+    const localized = dateTime.locale(fluentDayjsLocale());
+
     if (showTime) {
         // Return date with time
-        return dateTime.format("MMM DD, YYYY [at] hh:mm a");
+        /* translators: 1: formatted date, 2: formatted time */
+        return translate(
+            '%1$s at %2$s',
+            localized.format(resolveDateFormat('date')),
+            localized.format(resolveDateFormat('time'))
+        );
     } else {
         // Return date without time
-        return dateTime.format("MMM DD, YYYY");
+        return localized.format(resolveDateFormat('date'));
     }
 }
 

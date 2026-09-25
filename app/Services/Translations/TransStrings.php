@@ -1,6 +1,9 @@
 <?php
 
 namespace FluentCart\App\Services\Translations;
+
+use FluentCart\App\Services\DateTime\DateFormatter;
+
 class TransStrings
 {
     public static function getStrings(): array
@@ -300,9 +303,49 @@ class TransStrings
         ];
     }
 
-    public static function dateTimeStrings(): array
+    /**
+     * Names and formats for every date FluentCart renders, PHP and JS alike.
+     *
+     * One filter covers the whole map: the month/weekday names, and the
+     * formats derived from the store's WordPress date/time settings. Formats
+     * are PHP date() strings -- the dialect Settings > General shows and
+     * get_option() returns; the SPA payload converts them to Day.js tokens.
+     *
+     * The NAMES follow the same source setting as the formats. On 'wordpress'
+     * they come from $wp_locale -- the exact arrays wp_date() renders with --
+     * so the PHP side and the SPA cannot disagree about what August is called.
+     * They used to come from FluentCart's own text domain while PHP rendered
+     * through wp_date(), so one locale produced two answers:
+     *
+     *     PHP  wp_date('M')                       ->  'Aout'   (WP core pack)
+     *     JS   _x('Aug', 'monthsShort', ...)      ->  'Aug'    (untranslated)
+     *
+     * and fluent-cart ships only a .pot, so the JS side was English on any
+     * store that had not sourced its own catalogue. $wp_locale also gets the
+     * hard cases right for free: German abbreviations keep their trailing
+     * period ('Aug.') and the four months German never abbreviates come back
+     * in full ('Marz', 'Mai', 'Juni', 'Juli').
+     *
+     * On 'fluent_cart' the text-domain names stay, because that source exists
+     * to reproduce what each side rendered before these settings landed.
+     *
+     * Cached per request AND per locale: DateFormatter reads this for every
+     * date it renders, and rebuilding ~30 gettext lookups inside a table loop
+     * is wasted work -- but the names now vary with the locale, so a request
+     * that switches locale (switch_to_locale() in a per-recipient mailer, a
+     * multilingual plugin) must not be served the first locale's month names.
+     */
+    public static function dateTimeStrings(bool $refresh = false): array
     {
-        return [
+        static $cached = [];
+
+        $locale = determine_locale();
+
+        if (!$refresh && isset($cached[$locale])) {
+            return $cached[$locale];
+        }
+
+        $strings = [
             'weekdays'      => array(
                 'sunday'    => _x('Sunday', 'weekdays', 'fluent-cart'),
                 'monday'    => _x('Monday', 'weekdays', 'fluent-cart'),
@@ -352,6 +395,88 @@ class TransStrings
             'am'            => __('AM', 'fluent-cart'),
             'pm'            => __('PM', 'fluent-cart'),
             'numericSystem' => _x('0_1_2_3_4_5_6_7_8_9', 'numeric system - Sequence must need to maintained', 'fluent-cart'),
+            'formats'       => DateFormatter::defaultFormats(),
+            // The bundle carries its own legacy literals, which are not the same
+            // as PHP's ('h:mm A' against 'h:i A' -- unpadded against padded). On
+            // the FluentCart source each side must reproduce its OWN past output,
+            // so the bundle needs to know which source is active rather than just
+            // reading the converted formats above.
+            'formats_source' => DateFormatter::usesWordPressFormats() ? 'wordpress' : 'fluent_cart',
+            // Read by the admin bundle and the customer dashboard, which pick a
+            // Day.js timezone from this rather than always rendering in the
+            // browser's. 'site' is only consulted when source is 'wordpress'.
+            'timezone'      => array(
+                'source' => DateFormatter::usesWordPressTimezone() ? 'wordpress' : 'fluent_cart',
+                'site'   => wp_timezone_string(),
+            ),
         ];
+
+        if (DateFormatter::usesWordPressFormats()) {
+            $strings = static::applyWordPressLocaleNames($strings);
+        }
+
+        return ($cached[$locale] = apply_filters('fluent_cart/date_time_strings', $strings));
+    }
+
+    /**
+     * Swap the text-domain month/weekday names for WordPress core's own.
+     *
+     * $wp_locale is what wp_date() renders with, so taking the names from the
+     * same object is what makes the PHP and JS sides agree by construction
+     * rather than by two catalogues happening to match.
+     *
+     * The KEYS are left exactly as built above. The SPA reads these maps by
+     * position (Object.values() against an English fallback list, see
+     * localeNames() in utils/dateFormats.js), and other consumers read them by
+     * key, so only the values may change here.
+     *
+     * Degrades to the text-domain names if $wp_locale is missing or shaped
+     * unexpectedly -- this runs on every rendered date and must never fatal.
+     *
+     * @param array<string, mixed> $strings
+     * @return array<string, mixed>
+     */
+    protected static function applyWordPressLocaleNames(array $strings): array
+    {
+        global $wp_locale;
+
+        if (!($wp_locale instanceof \WP_Locale)) {
+            return $strings;
+        }
+
+        // get_weekday() is 0-indexed from Sunday; get_month() takes '01'-'12'.
+        $weekdayIndex = 0;
+        foreach ($strings['weekdays'] as $key => $unused) {
+            $name = $wp_locale->get_weekday($weekdayIndex);
+            if ($name !== '') {
+                $strings['weekdays'][$key] = $name;
+                // The abbreviation is looked up BY the full name, so it has to
+                // be resolved from $wp_locale's own name, not from our key.
+                if (isset($strings['weekdaysShort'][substr($key, 0, 3)])) {
+                    $strings['weekdaysShort'][substr($key, 0, 3)] = $wp_locale->get_weekday_abbrev($name);
+                }
+            }
+            $weekdayIndex++;
+        }
+
+        $monthIndex = 1;
+        foreach ($strings['months'] as $key => $unused) {
+            $name = $wp_locale->get_month(str_pad((string)$monthIndex, 2, '0', STR_PAD_LEFT));
+            if ($name !== '') {
+                $strings['months'][$key] = $name;
+                $shortKey = strtolower(substr($key, 0, 3));
+                if (isset($strings['monthsShort'][$shortKey])) {
+                    $strings['monthsShort'][$shortKey] = $wp_locale->get_month_abbrev($name);
+                }
+            }
+            $monthIndex++;
+        }
+
+        $am = $wp_locale->get_meridiem('AM');
+        $pm = $wp_locale->get_meridiem('PM');
+        $strings['am'] = $am !== '' ? $am : $strings['am'];
+        $strings['pm'] = $pm !== '' ? $pm : $strings['pm'];
+
+        return $strings;
     }
 }

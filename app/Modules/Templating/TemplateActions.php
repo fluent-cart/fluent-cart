@@ -212,7 +212,10 @@ class TemplateActions
         }
 
         $products = $productsQuery->get();
-        (new ShopAppRenderer($products, [
+        (new ShopAppRenderer([
+            'products' => $products,
+            'total'    => $products->total(),
+        ], [
             'default_filters' => $productsQuery->getDefaultFilters(),
             'custom_filters'  => [
                 'taxonomies'  => [

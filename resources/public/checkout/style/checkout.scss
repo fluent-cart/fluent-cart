@@ -2,54 +2,99 @@
 @tailwind utilities;
 
 :root {
-  --fct-checkout-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
-  --fct-checkout-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+  --fct-checkout-primary-text-color: var(--fct-primary-text-color);
+  --fct-checkout-secondary-text-color: var(--fct-secondary-text-color);
 
   // border
-  --fct-checkout-border-color: var(--fct-border-color, theme('colors.gray.outline'));
-  --fct-checkout-active-border-color: var(--fct-active-border-color, theme('colors.primary.200'));
+  --fct-checkout-border-color: var(--fct-border-color);
+  --fct-checkout-active-border-color: var(--fct-active-border-color);
 
-  --fct-checkout-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
-  --fct-checkout-secondary-bg-color: var(--fct-secondary-bg-color, theme('colors.gray.50'));
+  --fct-checkout-primary-bg-color: var(--fct-primary-bg-color);
+  --fct-checkout-secondary-bg-color: var(--fct-secondary-bg-color);
 
   // button
   --fct-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-checkout-primary-bg-color));
-  --fct-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-checkout-btn-text-color: var(--fct-btn-text-color);
   --fct-btn-border-color: var(--fct-btn-border-color, var(--fct-checkout-btn-bg-color));
 
   // input
-  --fct-checkout-input-bg-color: var(--fct-input-bg-color, #ffffff);
-  --fct-checkout-input-disabled-bg-color: var(--fct-input-disabled-bg-color, theme('colors.gray.50'));
-  --fct-checkout-input-text-color: var(--fct-input-text-color, theme('colors.system.dark'));
-  --fct-checkout-input-placeholder-text-color: var(--fct-input-placeholder-text-color, theme('colors.gray.400'));
+  --fct-checkout-input-bg-color: var(--fct-input-bg-color);
+  --fct-checkout-input-disabled-bg-color: var(--fct-input-disabled-bg-color);
+  --fct-checkout-input-text-color: var(--fct-input-text-color);
+  --fct-checkout-input-placeholder-text-color: var(--fct-input-placeholder-text-color);
   --fct-checkout-input-border-color: var(--fct-checkout-border-color);
 
-  // summary
-  --fct-checkout-summary-bg-color: #ffffff;
-
-  --fct-checkout-payment-method-bg-color: #ffffff;
-
-  --fct-checkout-checkbox-bg: #ffffff;
-
-  --fct-checkout-address-wrapper-bg: #ffffff;
-
-  --fct-checkout-shipping-methods-bg: #ffffff;
-
   // modal
-  --fct-checkout-address-modal-bg: #ffffff;
-  --fct-checkout-address-active-border-color: #151d26;
-
-  // nice select
-  --fct-select-dropdown-bg: #ffffff;
-  --fct-select-option-hover-bg: #f6f6f6;
+  --fct-checkout-address-active-border-color: var(--fct-checkout-active-border-color);
 
   // radio
-  --fct-checkout-radio-bg-color: #ffffff;
   --fct-checkout-radio-border-color: var(--fct-checkout-border-color);
   --fct-checkout-radio-active-border-color: var(--fct-checkout-primary-bg-color);
   --fct-checkout-radio-active-bg-color: var(--fct-checkout-primary-bg-color);
-  --fct-checkout-radio-dot-bg-color: #ffffff;
+
+  // badge
+  --fct-checkout-badge-bg-color: var(--fct-checkout-primary-bg-color);
 }
+
+// FluentCart's own literal fallbacks, gated on NOT stand-aside: whenever
+// FluentCart is the one styling the page (default source, customize, or a
+// readable theme), any colour that was not set falls back to FluentCart's
+// own default here, per key. A printed colour always wins — the fallback
+// only fires when its global is unset. In the stand-aside state this block
+// is absent, so the theme inherits nothing of ours — not even a white.
+body:not(.fluent-cart-no-colors) {
+    --fct-checkout-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
+    --fct-checkout-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+
+    // border
+    --fct-checkout-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+    --fct-checkout-active-border-color: var(--fct-active-border-color, theme('colors.primary.200'));
+
+    --fct-checkout-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
+    --fct-checkout-secondary-bg-color: var(--fct-secondary-bg-color, theme('colors.gray.50'));
+
+    // button
+    --fct-checkout-btn-bg-color: var(--fct-btn-bg-color, #253241);
+    --fct-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-btn-border-color: var(--fct-btn-border-color, var(--fct-checkout-btn-bg-color));
+
+    // input
+    --fct-checkout-input-bg-color: var(--fct-input-bg-color, #ffffff);
+    --fct-checkout-input-disabled-bg-color: var(--fct-input-disabled-bg-color, theme('colors.gray.50'));
+    --fct-checkout-input-text-color: var(--fct-input-text-color, theme('colors.system.dark'));
+    --fct-checkout-input-placeholder-text-color: var(--fct-input-placeholder-text-color, theme('colors.gray.400'));
+    --fct-checkout-input-border-color: var(--fct-checkout-border-color);
+
+    // summary
+    --fct-checkout-summary-bg-color: var(--fct-card-bg-color, #ffffff);
+
+    --fct-checkout-payment-method-bg-color: var(--fct-card-bg-color, #ffffff);
+
+    --fct-checkout-checkbox-bg: var(--fct-input-bg-color, #ffffff);
+
+    --fct-checkout-address-wrapper-bg: var(--fct-card-bg-color, #ffffff);
+
+    --fct-checkout-shipping-methods-bg: var(--fct-card-bg-color, #ffffff);
+
+    // modal
+    --fct-checkout-address-modal-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-checkout-address-active-border-color: var(--fct-checkout-active-border-color);
+
+    // nice select
+    --fct-select-dropdown-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-select-option-hover-bg: var(--fct-secondary-btn-hover-bg-color, #f6f6f6);
+
+    // radio
+    --fct-checkout-radio-bg-color: var(--fct-input-bg-color, #ffffff);
+    --fct-checkout-radio-border-color: var(--fct-checkout-border-color);
+    --fct-checkout-radio-active-border-color: var(--fct-checkout-primary-bg-color);
+    --fct-checkout-radio-active-bg-color: var(--fct-checkout-primary-bg-color);
+    --fct-checkout-radio-dot-bg-color: #ffffff;
+
+    // badge
+    --fct-checkout-badge-bg-color: var(--fct-checkout-primary-bg-color);
+}
+
 .is-hidden {
   display: none !important;
 }
@@ -294,7 +339,7 @@
 #fct_wrapper_ship_to_different,
 #fct_wrapper_is_business {
   label {
-    color: inherit;
+    color: var(--fct-checkout-primary-text-color);
     font-size: inherit;
   }
 }
@@ -339,7 +384,7 @@
     }
   }
   h4 {
-    color: inherit;
+    color: var(--fct-checkout-primary-text-color);
     @apply my-0 font-semibold text-base leading-[22px];
   }
 }
@@ -364,7 +409,7 @@
     @apply mt-0 mb-1.5 text-sm text-[var(--fct-checkout-secondary-text-color)] last:mb-0 font-medium leading-[24px] mt-1;
     span {
       @apply mr-1 inline-block font-medium uppercase text-gray-50 rounded-full py-0.5 px-2 text-[10px] leading-[16px];
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 57.5%), #253241;
+      background: var(--fct-checkout-badge-bg-color);
     }
   }
 }
@@ -394,7 +439,7 @@
   input,
   select,
   textarea {
-    @apply box-border rounded-none bg-[var(--fct-checkout-input-bg-color)] w-full min-h-10 outline-none ring-0 shadow-none px-4 leading-none border-[0.5px] border-x-[1px] border-solid border-[var(--fct-checkout-border-color)] py-3 focus:border-[#d6dae1] focus:outline-none focus:shadow-none focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:text-[var(--fct-checkout-input-text-color)] placeholder:text-sm text-[15px];
+    @apply box-border rounded-none w-full min-h-10 outline-none ring-0 shadow-none px-4 leading-none border-[0.5px] border-x-[1px] border-solid py-3 focus:outline-none focus:shadow-none focus:border-[0.5px] focus:border-x-[1px] focus:border-solid placeholder:text-sm text-[15px];
   }
 
   select {
@@ -456,14 +501,14 @@
   .fct_address_selector_info {
     @apply font-medium leading-[24px] break-words m-0 text-sm text-[var(--fct-checkout-secondary-text-color)];
     span {
-      @apply mr-1 font-medium uppercase bg-primary-500 text-gray-50 rounded-full py-[1px] px-2 text-[10px] leading-none;
+      @apply mr-1 font-medium uppercase bg-[var(--fct-checkout-badge-bg-color)] text-gray-50 rounded-full py-[1px] px-2 text-[10px] leading-none;
     }
   }
 
   &.selected {
     @apply border-[var(--fct-checkout-address-active-border-color)];
     .fct_address_selector_icon {
-      @apply text-dark-700 opacity-100;
+      @apply text-[var(--fct-checkout-primary-bg-color)] opacity-100;
     }
   }
 }
@@ -880,7 +925,8 @@
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid bg-white p-3 text-left text-xs leading-[1.6] text-[var(--fct-checkout-primary-text-color)];
+    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid p-3 text-left text-xs leading-[1.6] text-[var(--fct-checkout-primary-text-color)];
+    background-color: var(--fct-card-bg-color, #ffffff);
     border-color: var(--fct-checkout-border-color);
     z-index: 20;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
@@ -996,6 +1042,12 @@ ul.fct_summary_items_list {
 
   .fct_coupon_input {
     @apply rounded pl-10 !important;
+    background-color: var(--fct-checkout-input-bg-color);
+    color: var(--fct-checkout-input-text-color);
+
+    &::placeholder {
+      color: var(--fct-checkout-input-placeholder-text-color);
+    }
   }
 
   .fct_coupon_icon {
@@ -1004,10 +1056,13 @@ ul.fct_summary_items_list {
   }
 
   button {
-    @apply leading-none absolute top-1/2 right-1.5 bg-gray-100 py-2 px-4 rounded-[6px] text-system-dark text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 hover:bg-gray-200 cursor-pointer;
+    @apply leading-none absolute top-1/2 right-1.5 py-2 px-4 rounded-[6px] text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 cursor-pointer;
+    background-color: var(--fct-secondary-btn-hover-bg-color, #eaecf0);
+    color: var(--fct-primary-text-color, #2f3448);
     transform: translateY(-50%);
 
     &:hover {
+      background-color: var(--fct-border-color, #d6dae1);
       transform: translateY(-50%);
     }
   }
@@ -1125,7 +1180,7 @@ ul.fct_summary_items_list {
 
 .fct_tax_summary_box {
   @apply w-full rounded p-4 mt-4;
-  background: #F4F5F8;
+  background: var(--fct-secondary-btn-hover-bg-color, #f4f5f8);
   .fct_tax_summary_header {
     @apply flex items-center justify-between mb-2.5;
   }
@@ -1181,7 +1236,8 @@ ul.fct_summary_items_list {
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden rounded-md border border-solid bg-white p-3 text-left text-xs leading-relaxed;
+    @apply absolute right-0 top-full mt-2 hidden rounded-md border border-solid p-3 text-left text-xs leading-relaxed;
+    background-color: var(--fct-card-bg-color, #ffffff);
     width: 220px;
     border-color: var(--fct-checkout-border-color);
     color: var(--fct-checkout-primary-text-color);
@@ -1670,6 +1726,29 @@ ul.fct_summary_items_list {
         @apply pb-0 mb-0;
     }
 }
+
+/*== Save card ==*/
+.fct-spm-save {
+    @apply mt-3 mb-5;
+    label {
+        @apply inline-flex items-center gap-2 text-sm font-medium text-[var(--fct-checkout-primary-text-color)] cursor-pointer;
+    }
+    p {
+        @apply text-xs leading-[1.5] opacity-[0.7] ml-6 mb-0 mt-0 text-[var(--fct-checkout-secondary-text-color)];
+    }
+}
+
+body:not(.fluent-cart-no-colors) {
+    .fct_address_modal.show {
+        input,
+        select,
+        textarea {
+            @apply bg-[var(--fct-checkout-input-bg-color)] border-[var(--fct-checkout-border-color)] focus:border-[#d6dae1] focus:text-[var(--fct-checkout-input-text-color)] text-[var(--fct-checkout-input-text-color)] placeholder:text-[var(--fct-checkout-input-placeholder-text-color)];
+        }
+    }
+}
+
+
 @media only screen and (max-width: 1280px){
   .fluent-cart-checkout-page{
     @apply px-5;

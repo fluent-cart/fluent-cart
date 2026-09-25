@@ -23,6 +23,9 @@
 }
 
 /*==== product modal =====*/
+// The quick-view modal is FluentCart chrome — an overlay no theme has rules
+// for — so its surfaces follow the printed globals with their own fallbacks:
+// dark sites get a dark panel, everything else keeps the white it always had.
 .fct-product-modal {
     @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5;
 }
@@ -32,17 +35,17 @@
 }
 
 .fct-product-modal-close {
-  @apply bg-white absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-gray-50 p-0 border-0;
+  @apply bg-[var(--fct-secondary-btn-bg-color,#ffffff)] text-[var(--fct-primary-text-color,#2F3448)] absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))] p-0 border-0;
   svg {
     @apply w-3 h-3;
   }
   &.hovered {
-    @apply bg-gray-50;
+    @apply bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))];
   }
 }
 
 .fct-product-modal-body {
-  @apply relative bg-white w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 rounded overflow-x-hidden;
+  @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 rounded overflow-x-hidden;
   &:active::-webkit-scrollbar-thumb,
   &:focus::-webkit-scrollbar-thumb,
   &:hover::-webkit-scrollbar-thumb {

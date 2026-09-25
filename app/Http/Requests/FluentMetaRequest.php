@@ -5,6 +5,7 @@ namespace FluentCart\App\Http\Requests;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\Permission\PermissionManager;
+use FluentCart\App\Services\Theme\ColorPalette;
 
 class FluentMetaRequest extends RequestGuard
 {
@@ -93,6 +94,9 @@ class FluentMetaRequest extends RequestGuard
             'additional_address_field'             => 'sanitize_text_field',
             'hide_coupon_field'                    => 'sanitize_text_field',
             'user_account_creation_mode'           => 'sanitize_text_field',
+            'auto_login_after_account_creation'    => function ($value) {
+                return $value === 'yes' ? 'yes' : 'no';
+            },
             'force_ssl'                            => 'sanitize_text_field',
             'checkout_page_id'                     => 'intval',
             'custom_payment_page_id'               => 'intval',
@@ -140,6 +144,14 @@ class FluentMetaRequest extends RequestGuard
             'product_slug'                         => 'sanitize_text_field',
             'min_receipt_number'                   => 'sanitize_text_field',
             'inv_prefix'                           => 'sanitize_text_field',
+            'date_time_format_source'              => function ($value) {
+                $value = sanitize_text_field($value);
+                return in_array($value, ['fluent_cart', 'wordpress'], true) ? $value : 'fluent_cart';
+            },
+            'timezone_source'                      => function ($value) {
+                $value = sanitize_text_field($value);
+                return in_array($value, ['fluent_cart', 'wordpress'], true) ? $value : 'fluent_cart';
+            },
             'weight_unit'                          => function ($value) {
                 if (!PermissionManager::hasPermission(['store/sensitive'])) {
                     $stored = get_option('fluent_cart_store_settings', []);
@@ -160,6 +172,35 @@ class FluentMetaRequest extends RequestGuard
             },
             'enable_image_zoom_in_single_product'  => 'sanitize_text_field',
             'enable_image_zoom_in_modal'           => 'sanitize_text_field',
+            'appearance_source'                    => function ($value) {
+                $value = sanitize_text_field($value);
+
+                return in_array($value, ColorPalette::sources(), true)
+                    ? $value
+                    : ColorPalette::SOURCE_DEFAULT;
+            },
+            'appearance_colors'                    => function ($value) {
+                if (!is_array($value)) {
+                    return [];
+                }
+
+                // Driven off the registry rather than the submitted keys, so an
+                // unknown property can never reach the storefront stylesheet.
+                $colors = [];
+
+                foreach (ColorPalette::globals() as $key => $definition) {
+                    $hex = sanitize_hex_color((string)Arr::get($value, $key, ''));
+
+                    // sanitize_hex_color() returns null for anything malformed
+                    // and '' for an empty picker; both mean "not set", which is
+                    // how a colour falls back to FluentCart's own default.
+                    if ($hex) {
+                        $colors[$key] = $hex;
+                    }
+                }
+
+                return $colors;
+            },
             'theme_setup'                          => function ($value) {
                 if (!is_array($value)) {
                     return [];

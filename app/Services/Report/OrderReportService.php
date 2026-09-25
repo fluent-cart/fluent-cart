@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\App;
+use FluentCart\App\Services\DateTime\DateFormatter;
 
 class OrderReportService extends ReportService
 {
@@ -274,7 +275,7 @@ class OrderReportService extends ReportService
         $grossSaleByHour = [];
 
         for ($hour = 0; $hour < 24; $hour++) {
-            $timeLabel = gmdate('g A', mktime($hour, 0));
+            $timeLabel = gmdate(DateFormatter::hourFormat(), mktime($hour, 0));
             $structuredData[$hour] = [
                 'hour'      => $timeLabel,
                 'Sunday'    => 0,

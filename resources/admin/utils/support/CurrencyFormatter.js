@@ -1,5 +1,6 @@
 import Arr from "@/utils/support/Arr";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/dateFormats";
 import translate from "@/utils/translator/Translator";
 import {translateNumber} from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
@@ -185,8 +186,8 @@ export default class CurrencyFormatter {
             const now = dayjs();
             const currentMonthIndex = now.format('YYYY-MM'); // e.g., "2025-05" for May 2025
             const previousMonthIndex = now.subtract(1, 'month').format('YYYY-MM'); // e.g., "2025-04" for April 2025
-            const currentMonthName = now.format('MMMM'); // e.g., "May"
-            const previousMonthName = now.subtract(1, 'month').format('MMMM'); // e.g., "April"
+            const currentMonthName = now.locale(fluentDayjsLocale()).format(resolveDateFormat('month_long'));
+            const previousMonthName = now.subtract(1, 'month').locale(fluentDayjsLocale()).format(resolveDateFormat('month_long'));
 
             // Extract data for current and previous months from data.gross_revenue
             const currentData = data[currentMonthIndex] || {current: 0, yoy_growth: 0};
@@ -223,7 +224,7 @@ export default class CurrencyFormatter {
             const now = dayjs();
             const currentYear = now.year(); // e.g., 2025
             const currentQuarter = Math.floor((now.month() + 3) / 3); // Q2 for May (month 4: (4+3)/3 = 2.33, floor to 2)
-            const currentMonthName = now.format('MMMM'); // e.g., "May"
+            const currentMonthName = now.locale(fluentDayjsLocale()).format(resolveDateFormat('month_long'));
 
             const quarterEndMonth = (currentQuarter * 3) - 1; // 0-based month (5 for Q2)
             let quarterEndDate = dayjs().year(currentYear).month(quarterEndMonth).endOf('month');

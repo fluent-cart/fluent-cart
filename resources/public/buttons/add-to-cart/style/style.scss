@@ -8,11 +8,16 @@
   --fct-add-to-cart-btn-border-color: var(--fct-secondary-btn-border-color, #d6dae1);
 }
 
-.fluent-cart-add-to-cart-button {
-  @apply bg-[var(--fct-add-to-cart-btn-bg-color)] border border-solid border-[var(--fct-add-to-cart-btn-border-color)] relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 text-[var(--fct-add-to-cart-btn-text-color)] hover:text-[var(--fct-add-to-cart-btn-text-color)] hover:border-[var(--fct-add-to-cart-btn-border-color)] hover:bg-[var(--fct-add-to-cart-btn-hover-bg-color)] transition duration-150 ease-in-out capitalize;
-  &:focus {
-    @apply text-[var(--fct-add-to-cart-btn-text-color)];
-  }
+// The selector list guards the layout: the element now also carries the
+// generic `button` class, and a theme's `.button` rule (0,1,0) must not
+// out-order ours — button.fluent-…(0,1,1) wins the tie regardless of order.
+.fluent-cart-add-to-cart-button,
+button.fluent-cart-add-to-cart-button {
+  // Layout only. The colours live in the body:not(.fluent-cart-no-colors)
+  // block below, same as product-card.scss: a declaration carrying an
+  // unresolvable var() still wins the cascade and computes to `unset`, so only
+  // the absence of the declaration lets the theme's own button rules apply.
+  @apply border border-solid relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 transition duration-150 ease-in-out capitalize;
 
   .fluent-cart-loader {
     @apply duration-300 pointer-events-none justify-center items-center bg-gray-100 rounded absolute inset-0 w-full h-full hidden;
@@ -36,7 +41,7 @@
   }
 
   &.out-of-stock{
-    @apply cursor-not-allowed text-system-light;
+    @apply cursor-not-allowed opacity-[0.5] pointer-events-none;
     &:hover {
         background-color: inherit;
     }
@@ -61,6 +66,22 @@
   &.fct-loading {
     .fluent-cart-loader {
       @apply flex;
+    }
+  }
+}
+
+/*
+ * The add-to-cart colours, present only while FluentCart is actually supplying
+ * colours. Under inherit_from_theme with a theme nothing could be read from,
+ * the body carries `fluent-cart-no-colors`, these declarations do not
+ * exist, and the theme's own button rules apply instead.
+ */
+body:not(.fluent-cart-no-colors) {
+  .fluent-cart-add-to-cart-button {
+    @apply bg-[var(--fct-add-to-cart-btn-bg-color)] border-[var(--fct-add-to-cart-btn-border-color)] text-[var(--fct-add-to-cart-btn-text-color)] hover:text-[var(--fct-add-to-cart-btn-text-color)] hover:border-[var(--fct-add-to-cart-btn-border-color)] hover:bg-[var(--fct-add-to-cart-btn-hover-bg-color)];
+
+    &:focus {
+      @apply text-[var(--fct-add-to-cart-btn-text-color)];
     }
   }
 }

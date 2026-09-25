@@ -30,7 +30,6 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Relations\HasMany;
 use FluentCart\Framework\Http\Request\Request;
-use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
 use FluentCart\Framework\Validator\Validator;
@@ -83,7 +82,7 @@ class CustomerOrderController extends BaseFrontendController
 
         $orders->transform(function ($order) {
             return [
-                'created_at'     => DateTime::gmtToTimezone($order->created_at, Arr::get($order->config, 'user_tz', wp_timezone_string()))->format('Y-m-d H:i:s'),
+                'created_at'     => $order->created_at->format('Y-m-d H:i:s'),
                 'invoice_no'     => $order->invoice_no,
                 'total_amount'   => $order->total_amount,
                 'currency'       => $order->currency,
@@ -266,7 +265,7 @@ class CustomerOrderController extends BaseFrontendController
         $formattedOrderData = [
             'fulfillment_type' => $order->fulfillment_type,
             'type'             => $order->type,
-            'created_at'       => DateTime::gmtToTimezone($order->created_at, Arr::get($order->config, 'user_tz', wp_timezone_string()))->format('Y-m-d H:i:s'),
+            'created_at'       => $order->created_at->format('Y-m-d H:i:s'),
             'invoice_no'       => $order->invoice_no,
             'currency'         => $order->currency,
             'uuid'             => $order->uuid,

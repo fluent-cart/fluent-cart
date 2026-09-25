@@ -41,12 +41,12 @@ return [
                 ],
                 [
                     'file'   => 'app/Models/Customer.php',
-                    'line'   => 119,
+                    'line'   => 129,
                     'needle' => 'function shipping_address()',
                 ],
                 [
                     'file'   => 'app/Models/Customer.php',
-                    'line'   => 124,
+                    'line'   => 134,
                     'needle' => 'function billing_address()',
                 ],
             ],
@@ -100,17 +100,17 @@ return [
             'source_checks' => [
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 96,
+                    'line'   => 97,
                     'needle' => '$orderQuery->selectRaw',
                 ],
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 107,
+                    'line'   => 108,
                     'needle' => 'COUNT(o.id) AS order_count',
                 ],
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 130,
+                    'line'   => 131,
                     'needle' => 'SUM(COALESCE(oi_sum.total_items, 0))',
                 ],
             ],

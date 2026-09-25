@@ -2,15 +2,24 @@
 
 namespace FluentCart\App\Services\ShortCodeParser\Parsers;
 
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\Framework\Support\Arr;
 
 class LicenseParser extends BaseParser
 {
     private $license;
 
+    /**
+     * Only used as the timezone context for DateFormatter — the order carries the
+     * user_tz captured at checkout. Null when the shortcode runs without one, in
+     * which case DateFormatter falls back to UTC.
+     */
+    private $order;
+
     public function __construct($data)
     {
         $this->license = Arr::get($data, 'license');
+        $this->order = Arr::get($data, 'order');
         parent::__construct($data);
     }
 
@@ -39,7 +48,7 @@ class LicenseParser extends BaseParser
                 return esc_html($license->activation_count);
             case 'expiration_date':
                 return $license->expiration_date
-                    ? esc_html(date('M j, Y', strtotime($license->expiration_date)))
+                    ? esc_html(DateFormatter::format($license->expiration_date, false, $this->order))
                     : __('Never', 'fluent-cart');
             default:
                 return Arr::get((array) $license, $accessor, '');

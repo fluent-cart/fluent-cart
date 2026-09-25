@@ -53,7 +53,7 @@
             <VueForm
                 v-if="!loading"
                 :form="form"
-                :showSubmitButton="true"
+                :showSubmitButton="!isAppearanceRoute"
 
                 @on-submit-button-click="saveSettings"
                 :submitButtonText="translate('Save')"
@@ -79,6 +79,7 @@
 <script setup>
 
 import {
+  computed,
   onMounted,
   ref, watch,
 } from "vue";
@@ -115,6 +116,9 @@ const route = useRoute();
 const currentRouteName = ref(route.name);
 const currentRouteTitle = ref(route.meta.title || 'Store Settings');
 const isRemindersSettingsRoute = () => currentRouteName.value === 'reminders';
+// The appearance tab carries its own live preview, so the form's trailing Save
+// button would sit under it far from the controls. The header Save still saves.
+const isAppearanceRoute = computed(() => currentRouteName.value === 'appearance');
 const getSettingsEndpoint = () => isRemindersSettingsRoute() ? 'email-notification/reminders' : 'settings/store';
 
 

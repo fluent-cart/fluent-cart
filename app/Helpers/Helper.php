@@ -610,8 +610,10 @@ class Helper
             return null;
         }
 
+        // Identity only — see CustomerResource::getCurrentCustomer() for why an
+        // email match must never reach a customer row.
         return Customer::query()->where('user_id', $user->ID)
-            ->orWhere('email', $user->user_email)
+            ->orderBy('id', 'ASC')
             ->first();
     }
 
@@ -1403,12 +1405,14 @@ class Helper
 
             if ($month && $day) {
                 /* translators: %s is a date, e.g. "on Aug 19" */
-                return sprintf(__('on %s', 'fluent-cart'), gmdate('M', gmmktime(12, 0, 0, $month, 1, 2001)) . ' ' . $day);
+                // wp_date(), not gmdate(): gmdate() has no locale, so this month
+                // name stayed English inside an otherwise translated sentence.
+                return sprintf(__('on %s', 'fluent-cart'), wp_date('M', gmmktime(12, 0, 0, $month, 1, 2001), new \DateTimeZone('UTC')) . ' ' . $day);
             }
 
             if ($month) {
                 /* translators: %s is a month name, e.g. "in August" */
-                return sprintf(__('in %s', 'fluent-cart'), gmdate('F', gmmktime(12, 0, 0, $month, 1, 2001)));
+                return sprintf(__('in %s', 'fluent-cart'), wp_date('F', gmmktime(12, 0, 0, $month, 1, 2001), new \DateTimeZone('UTC')));
             }
 
             /* translators: %s is an ordinal day of month, e.g. "on the 10th" */

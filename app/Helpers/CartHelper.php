@@ -791,7 +791,8 @@ class CartHelper
         if (is_user_logged_in()) {
             $wpUser = wp_get_current_user();
             $cart->user_id = get_current_user_id();
-            $customer = Customer::query()->where('email', wp_get_current_user()->user_email)->first();
+            // The cart belongs to the account's linked customer, not to whichever record holds its email.
+            $customer = Customer::query()->where('user_id', $wpUser->ID)->orderBy('id', 'ASC')->first();
             if ($customer) {
                 $cart->customer_id = $customer->id;
             }

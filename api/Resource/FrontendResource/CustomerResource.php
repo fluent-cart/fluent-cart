@@ -99,10 +99,16 @@ class CustomerResource extends BaseResourceApi
     {
         $email = Arr::get($data, 'email');
 
-        $customer = static::getQuery()->firstOrCreate(
-            ['email' => $email],
-            $data
-        );
+        $ownerId = (int) Arr::get($data, 'user_id');
+        if (!$ownerId || $ownerId !== get_current_user_id()) {
+            unset($data['user_id']);
+            $ownerId = 0;
+        }
+        $customer = $ownerId ? static::getQuery()->where('user_id', $ownerId)->orderBy('id')->first() : null;
+        if (!$customer) {
+            // Matching an existing email never changes its owner or profile.
+            $customer = static::getQuery()->firstOrCreate(['email' => $email], $data);
+        }
 
         if ($customer) {
             return static::makeSuccessResponse(

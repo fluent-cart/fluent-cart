@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Http\Routes\WebRoutes;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\Framework\Pagination\CursorPaginator;
+use FluentCart\Framework\Pagination\LengthAwarePaginator;
 use FluentCart\Framework\Support\Arr;
 
 class ShopAppRenderer
@@ -91,6 +92,13 @@ class ShopAppRenderer
             $this->total = 0;
         }else{
             $this->total = Arr::get($products, 'total', 0);
+            if (!$this->total && $this->products instanceof LengthAwarePaginator) {
+                // A raw LengthAwarePaginator's ArrayAccess proxies to its item
+                // collection, not its own properties, so Arr::get($products, 'total')
+                // above always misses when the caller passes the paginator directly
+                // instead of the normalized ['products' => ..., 'total' => ...] shape.
+                $this->total = $this->products->total();
+            }
         }
         //$this->total = $products['total'];
 

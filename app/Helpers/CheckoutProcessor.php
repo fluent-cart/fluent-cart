@@ -487,17 +487,23 @@ class CheckoutProcessor
             ->first();
 
         if ($existingTransaction) {
+            $meta = $existingTransaction->meta ?: [];
+
             // Retry vs duplicate for gateway idempotency (PaymentInstance::getIdempotencySeed):
             // re-submitting a pending transaction is a duplicate (keep attempt -> gateway
             // dedupes); re-submitting a FAILED one is a retry (bump attempt -> fresh seed,
             // never answered with the failed attempt's cached gateway response).
-            $attempt = (int) Arr::get($existingTransaction->meta ?: [], 'payment_attempt', 0);
+            $attempt = (int) Arr::get($meta, 'payment_attempt', 0);
             if ($existingTransaction->status === Status::PAYMENT_FAILED) {
                 $attempt++;
             }
+
+            // The gateway object prepared last time (a Paddle transaction, a PayPal
+            // order) is kept so the gateway can reuse it instead of creating another.
             if ($attempt) {
-                $transactionData['meta'] = ['payment_attempt' => $attempt];
+                $meta['payment_attempt'] = $attempt;
             }
+            $transactionData['meta'] = $meta;
 
             $existingTransaction->fill($transactionData);
             $existingTransaction->save();
@@ -926,7 +932,7 @@ class CheckoutProcessor
             'signup_fee'          => $signupFee,
             'signup_fee_tax'      => $signupFeeTax,
             'first_iteration_tax' => $firstIterationTax,
-            'is_recurring_coupon' => Arr::get($item, 'is_recurring_coupon', 'no'),
+            'recurring_discount'  => $recurringDiscountAmount,
             'total_discount'      => $discountTotal
         ]);
 
@@ -951,11 +957,6 @@ class CheckoutProcessor
                 'variation_type'          => Arr::get($item, 'other_info.variation_type', '')
             ]
         ];
-
-        // if recurring coupon is applied, we need to subtract the total discount from the recurring total
-        if (Arr::get($item, 'is_recurring_coupon', 'no') === 'yes') {
-            $subscriptionItem['recurring_total'] -= $discountTotal;
-        }
 
         $subscriptionData = wp_parse_args($subscriptionPricing, $subscriptionItem);
         $paymentMethod = Arr::get($this->orderData, 'payment_method', '');
@@ -1252,6 +1253,7 @@ class CheckoutProcessor
         $signupFeeTax = (int)($inputData['signup_fee_tax'] ?? 0);
         $firstIterationTax = (int)($inputData['first_iteration_tax'] ?? 0);
         $totalDiscount = (int)($inputData['total_discount'] ?? 0);
+        $recurringDiscount = (int)($inputData['recurring_discount'] ?? 0);
 
         // Determine if THIS subscription item is tax-inclusive (for behavior=3 mixed carts)
         $taxBehavior = (int) Arr::get($inputData, 'tax_behavior', 0);
@@ -1293,8 +1295,11 @@ class CheckoutProcessor
             } else {
                 $firstCycleCost = $recurringAmount + $signupFee - $totalDiscount;
 
-                if (Arr::get($inputData, 'is_recurring_coupon', 'no') === 'yes') {
-                    $recurringAmount -= $totalDiscount; // as now discount applied on recurring amount
+                // A recurring coupon discounts every cycle, so the per-cycle price itself
+                // is lower — the first cycle is not cheaper than the ones after it and
+                // must not be expressed as a trial.
+                if ($recurringDiscount > 0) {
+                    $recurringAmount -= $recurringDiscount;
                 }
 
                 if ($firstCycleCost < $recurringAmount) {

@@ -20,14 +20,26 @@
 }
 
 :root {
-  --fct-single-product-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
-  --fct-single-product-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
-  --fct-single-product-border-color: var(--fct-border-color, theme('colors.gray.outline'));
-  --fct-single-product-active-border-color: var(--fct-active-border-color, theme('colors.primary.500'));
+  --fct-single-product-primary-text-color: var(--fct-primary-text-color);
+  
+  --fct-single-product-secondary-text-color: var(--fct-secondary-text-color);
 
-  // qty
-  --fct-single-product-qty-bg: #eaecf0;
-  --fct-single-product-qty-text-color: #2F3448;
+  --fct-single-product-active-text-color: var(--fct-primary-active-text-color);
+
+  // border
+  --fct-single-product-border-color: var(--fct-border-color);
+  --fct-single-product-divider-color: var(--fct-divider-color);
+  --fct-single-product-active-border-color: var(--fct-active-border-color);
+
+}
+
+// FluentCart's own literals live under the gate, so takeover mode inherits
+// nothing of ours.
+body:not(.fluent-cart-no-colors) {
+  // qty — chrome: follows the printed globals so a dark site gets a dark
+  // control, with the control's own literals as the everywhere-else fallback.
+  --fct-single-product-qty-bg: var(--fct-secondary-bg-color, #eaecf0);
+  --fct-single-product-qty-text-color: var(--fct-primary-text-color, #2F3448);
 }
 
 
@@ -152,7 +164,7 @@
 }
 
 .fct-product-gallery-thumb {
-  @apply h-auto max-h-[600px] w-full border border-solid border-[var(--fct-single-product-border-color)] text-center rounded flex box-border;
+  @apply h-auto max-h-[600px] w-full text-center rounded flex box-border;
   .containerZoom {
     @apply rounded;
   }
@@ -260,7 +272,7 @@
 
 /*======== TAB =========*/
 .fct-product-tab-nav {
-  @apply flex gap-5 mb-5 border border-solid border-gray-divider border-x-0 border-t-0 relative;
+  @apply flex gap-5 mb-5 border border-solid border-[var(--fct-single-product-divider-color)] border-x-0 border-t-0 relative;
   .tab-active-bar {
     @apply absolute bottom-0 left-0 w-0 h-0.5 bg-dark-500;
     transition: left 300ms ease, width 300ms ease;
@@ -268,9 +280,9 @@
 }
 
 .fct-product-tab-nav-item {
-  @apply text-sm text-system-mid font-medium cursor-pointer pb-2.5 px-1 relative transition-all duration-200 outline-none focus:outline-none;
+  @apply text-sm text-[var(--fct-single-product-secondary-text-color)] font-medium cursor-pointer pb-2.5 px-1 relative transition-all duration-200 outline-none focus:outline-none;
   &.active {
-    @apply text-dark-500 font-semibold;
+    @apply text-[var(--fct-single-product-primary-text-color)] font-semibold;
   }
 }
 
@@ -304,7 +316,7 @@
 .fct-product-excerpt {
   @apply mb-5;
   p {
-    @apply m-0 text-[var(--fct-secondary-text-color)];
+    @apply m-0 text-[var(--fct-single-product-secondary-text-color)];
   }
 }
 
@@ -320,14 +332,6 @@
     color: #D6DAE1;
     @apply text-[15px] mx-3;
   }
-
-  .fct-product-sku__label {
-    @apply text-[15px] font-semibold text-[var(--fct-single-product-primary-text-color)];
-  }
-
-  .fct-product-sku__value {
-    @apply text-[15px] text-[var(--fct-single-product-secondary-text-color)];
-  }
   .fct-product-sku-info {
     @apply flex items-center gap-2;
     word-break: keep-all;
@@ -335,9 +339,15 @@
 }
 
 .fct-product-sku {
-  &.is-hidden {
-    @apply hidden;
-  }
+    .fct-product-sku__label {
+        @apply text-[15px] font-semibold text-[var(--fct-single-product-primary-text-color)];
+    }
+    .fct-product-sku__value {
+        @apply text-[15px] text-[var(--fct-single-product-secondary-text-color)];
+    }
+    &.is-hidden {
+        @apply hidden;
+    }
 }
 
 .fct-product-stock {
@@ -374,7 +384,7 @@
     @apply w-full text-[13px] border-collapse border-0 border-none;
 
     th, td {
-      @apply py-1.5 px-0 text-left border-0 border-b border-solid border-[var(--fct-single-product-border-color,#e5e7eb)];
+      @apply py-1.5 px-0 text-left border-0 border-b border-solid border-[var(--fct-single-product-divider-color)];
     }
 
     th {
@@ -526,7 +536,7 @@
 
 /*=== quantity ===*/
 .fct-product-payment-type {
-  @apply text-sm text-system-mid leading-[24px] mb-2.5;
+  @apply text-sm text-[var(--fct-single-product-secondary-text-color)] leading-[24px] mb-2.5;
   .additional-info{
     @apply flex flex-col;
   }
@@ -661,6 +671,29 @@ button.out-of-stock {
       @apply border-[var(--fct-single-product-active-border-color)];
     }
   }
+}
+
+
+body:not(.fluent-cart-no-colors) {
+
+    --fct-single-product-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
+
+    --fct-single-product-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+
+    --fct-single-product-active-text-color: var(--fct-primary-active-text-color, theme('colors.blue.500'));
+
+    // border
+    --fct-single-product-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+    --fct-single-product-divider-color: var(--fct-divider-color, theme('colors.gray.divider'));
+    --fct-single-product-active-border-color: var(--fct-active-border-color, theme('colors.primary.500'));
+
+    // qty
+    --fct-single-product-qty-bg: var(--fct-secondary-bg-color, #eaecf0);
+    --fct-single-product-qty-text-color: var(--fct-primary-text-color, #2F3448);
+
+    .fct-product-gallery-thumb {
+        @apply border border-solid border-[var(--fct-single-product-border-color)];
+    }
 }
 
 /*======== FluentPlayer product video =========*/

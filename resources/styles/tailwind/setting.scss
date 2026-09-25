@@ -37,6 +37,30 @@
 }
 
 
+#fct_admin_app_wrapper .fct-compliance-auto-login {
+    @apply flex flex-col items-start gap-3;
+
+    .setting-label {
+        @apply m-0;
+    }
+
+    .el-radio-group {
+        @apply flex flex-col items-start gap-3 mt-0;
+    }
+
+    .el-radio {
+        @apply m-0 h-auto items-start whitespace-normal;
+    }
+
+    .el-radio__input {
+        @apply mt-0.5;
+    }
+
+    .el-radio__label {
+        @apply whitespace-normal leading-5;
+    }
+}
+
 /*==== setting row ====*/
 .fct-setting-row{
     a{
@@ -354,14 +378,21 @@
                 @apply hidden #{!important};
             }
         }
+        .fct-color-picker-hex-input {
+            @apply bg-transparent border-x-0 border-t-0 border-solid border-transparent outline-none focus:outline-none p-0 m-0 w-full min-h-[auto] [font:inherit] text-inherit shadow-none focus:shadow-none placeholder:text-xs rounded-none placeholder:text-system-light transition-colors duration-150;
+            &:hover,
+            &:focus-visible {
+                @apply border-primary-300 dark:border-dark-200;
+            }
+        }
     }
     &-action-wrap{
-        @apply flex gap-2.5 justify-between w-full items-center;
+        @apply flex gap-2.5 justify-between w-full items-center relative;
         > span{
             @apply text-xs text-system-dark dark:text-gray-300;
         }
         .fct-color-picker-action{
-            @apply cursor-pointer text-system-mid p-1 rounded-xs hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-500;
+            @apply absolute top-0 right-[-4px] cursor-pointer text-system-mid p-1 rounded-xs hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-500;
             svg{
                 @apply w-5 h-5;
             }
@@ -581,6 +612,9 @@
 .fct-setting-container.is-collapsed {
   .fct-settings-nav-content {
     @apply pl-[230px];
+  }
+  .setting-wrap-inner {
+    max-width: 100%;
   }
 }
 

@@ -41,7 +41,7 @@ class Subscription extends Model
 
     protected $primaryKey = 'id';
 
-    protected $appends = ['url', 'payment_info', 'billingInfo', 'overridden_status', 'currency', 'reactivate_url', 'permissions', 'display_item_name', 'system_charge_state'];
+    protected $appends = ['url', 'payment_info', 'billingInfo', 'overridden_status', 'currency', 'reactivate_url', 'permissions', 'display_item_name', 'system_charge_state', 'payment_method_title'];
 
     protected $guarded = ['id'];
 
@@ -276,6 +276,25 @@ class Subscription extends Model
         $postTitle = $this->product ? $this->product->post_title : '';
 
         return $postTitle !== '' ? $postTitle . ' - ' . $attributeDisplayTitleString : $attributeDisplayTitleString;
+    }
+
+    /**
+     * Display label of the backing gateway ("Authorize.Net", "Cash"), the same
+     * source StatusHelper stamps into order.payment_method_title. Empty when the
+     * slug resolves to no registered gateway.
+     */
+    public function getPaymentMethodTitleAttribute(): string
+    {
+        $gateway = $this->resolveGateway();
+        if (!$gateway) {
+            return '';
+        }
+
+        $title = method_exists($gateway, 'getMeta')
+            ? $gateway->getMeta('title')
+            : Arr::get($gateway->meta(), 'title');
+
+        return (string) $title;
     }
 
     public function getUrlAttribute($value)

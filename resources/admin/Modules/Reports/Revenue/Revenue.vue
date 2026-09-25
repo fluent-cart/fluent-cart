@@ -1,6 +1,7 @@
 <script setup>
 import * as Card from "@/Bits/Components/Card/Card.js";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import ExportReport from "../ExportReport.vue";
 import translateNumber from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
@@ -35,9 +36,9 @@ export default {
       const parts = this.revenueReport[0]['group'].split('-');
       
       if (parts.length === 3) {
-        return 'MMMM DD, YYYY';
+        return resolveDateFormat('date');
       } else if (parts.length === 2) {
-        return 'MMMM YYYY';
+        return resolveDateFormat('month_year');
       }
       
       return '';
@@ -82,8 +83,11 @@ export default {
   },
   methods: {
     formatDate(date) {
-      const options = { year: "numeric", month: "long", day: "numeric" };
-      return new Date(date).toLocaleDateString(undefined, options);
+      // Not toLocaleDateString(undefined, ...): `undefined` is the BROWSER's
+      // locale and the options hardcode an English field order, so this
+      // ignored the store's date format -- while formatGroup() a few lines up
+      // already honoured it. One file, two answers.
+      return dayjs(date).locale(fluentDayjsLocale()).format(resolveDateFormat('date'));
     },
 
     formatCurrency(value) {

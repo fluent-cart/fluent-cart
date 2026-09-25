@@ -26,7 +26,7 @@ if (isset($styles) && is_array($styles) && !empty($enqueue_prefix)) {
     Vite::printAllStyles($styles, $enqueue_prefix.'_styles');
 }
 ?>
-<body>
+<body class="<?php echo esc_attr(implode(' ', \FluentCart\App\Services\Theme\FrontendTheme::bodyClasses([]))); ?>">
 
 <div style="width: 100%; box-sizing: border-box">
     <?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

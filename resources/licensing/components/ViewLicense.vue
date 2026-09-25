@@ -290,7 +290,7 @@
                                                     <el-timeline-item
                                                         v-for="log in logs"
                                                         :key="log"
-                                                        :timestamp="dayjs(license?.updated_at).format('MMMM DD, YYYY')"
+                                                        :timestamp="dayjs(license?.updated_at).locale(fluentDayjsLocale()).format(resolveDateFormat('date'))"
                                                         :placement="'top'"
                                                         :color="'blue'"
                                                     >
@@ -385,6 +385,7 @@ import * as Card from '@/Bits/Components/Card/Card.js';
 import Badge from "@/Bits/Components/Badge.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import LicenseInformation from "./LicenseInformation.vue";
 import ActivatedSiteInformation from "./ActivatedSiteInformation.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";

@@ -201,7 +201,11 @@ foreach ($manifest['cases'] as $entry) {
                 return;
             }
 
-            $result = FcTest::rest('GET', $route, $params);
+            $result = $auth === 'customer'
+                ? FcTest::withVerifiedCustomer(function () use ($route, $params) {
+                    return FcTest::rest('GET', $route, $params);
+                })
+                : FcTest::rest('GET', $route, $params);
 
             if (isset($entry['known_failure'])) {
                 $known = $entry['known_failure'];

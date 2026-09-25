@@ -690,6 +690,21 @@ class ModalCheckoutRenderer
             $selectedPaymentMethod = $firstMethod ? $firstMethod->getMeta('route') : '';
         }
 
+        /**
+         * The payment method rendered as checked. An add-on that renders its own
+         * selector outside this list (e.g. saved payment methods) returns a route
+         * that is not in the list, so no gateway here is checked — the page then
+         * arrives with the add-on's choice already selected instead of a gateway
+         * being checked first and switched over by JS after load.
+         *
+         * @param string $selectedPaymentMethod
+         * @param array  $context ['cart' => Cart, 'payment_methods' => array]
+         */
+        $selectedPaymentMethod = (string) apply_filters('fluent_cart/checkout/selected_payment_method', $selectedPaymentMethod, [
+            'cart'            => $this->cart,
+            'payment_methods' => $activePaymentMethods
+        ]);
+
         $checkoutMethodStyle = $this->storeSettings->get('checkout_method_style', 'logo');
 
         ?>

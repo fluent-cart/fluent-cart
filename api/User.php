@@ -117,16 +117,21 @@ class User
         ]);
 
         $this->updateUser($processedData, $userId);
-        $this->setUserLoggedIn($userId);
+        $storeSettings = new StoreSettings();
+        $autoLogin = $storeSettings->get('auto_login_after_account_creation') === 'yes';
+        if ($autoLogin) {
+            $this->setUserLoggedIn($userId);
+        }
         $this->sendEmail($userId);
 
-
-        $checkoutPage = (new StoreSettings())->getCustomerProfilePage() . '#/profile';
+        $profilePage = $storeSettings->getCustomerProfilePage() . '#/profile';
 
         return $this->sendSuccess([
-            'message' => __('User created successfully! You are now logged in.', 'fluent-cart'),
+            'message' => $autoLogin
+                ? __('User created successfully! You are now logged in.', 'fluent-cart')
+                : __('Your account has been created. Please check your email to set your password and log in.', 'fluent-cart'),
             'code' => 'user_created',
-            'redirect_url' => $checkoutPage
+            'redirect_url' => $autoLogin ? $profilePage : wp_login_url($profilePage)
         ]);
     }
 

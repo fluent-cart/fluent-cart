@@ -805,10 +805,8 @@ class Stripe extends AbstractPaymentGateway
         }
 
         $paymentArgs['public_key'] = $publicKey;
-
-        // Allow filtering the appearance configuration for Stripe Elements
-        $appearance = ['theme' => 'stripe'];
-        $appearance = apply_filters('fluent_cart/stripe_appearance', $appearance);
+        $appearance = $this->getElementsAppearance();
+        $fonts = $this->getElementsFonts();
 
         $storeCurrency = CurrencySettings::get('currency');
         $intentAmount = (int)$totalPrice;
@@ -881,11 +879,26 @@ class Stripe extends AbstractPaymentGateway
                 'payment_args'   => $paymentArgs,
                 'intent'         => $intentData,
                 'appearance'     => $appearance,
+                'fonts'          => $fonts,
                 'system_consent' => $systemConsent,
                 'consent_required' => $consentRequired,
             ],
             200
         );
+    }
+
+    public function getElementsAppearance(): array
+    {
+        $appearance = ['theme' => 'stripe'];
+
+        return (array) apply_filters('fluent_cart/stripe_appearance', $appearance);
+    }
+
+    public function getElementsFonts(): array
+    {
+        $fonts = (array) apply_filters('fluent_cart/stripe_elements_fonts', []);
+
+        return array_values(array_filter($fonts, 'is_array'));
     }
 
     public function getConnectInfo(): array
@@ -911,7 +924,7 @@ class Stripe extends AbstractPaymentGateway
     {
         $disputeId = Arr::get($transaction->meta, 'dispute_id');
         if (!$disputeId) {
-            $charge = (new API())->getStripeObject('payment_intents/' . $transaction->vendor_charge_id, ['expand' => ['latest_charge']]);
+            $charge = (new API())->getStripeObject('payment_intents/' . $transaction->vendor_charge_id, ['expand' => ['latest_charge']], $transaction->payment_mode);
 
             if (is_wp_error($charge) || empty($charge['dispute'])) {
                 new \WP_Error('No dispute ID found!', __('Please check stripe if the dispute is already accepted or not!', 'fluent-cart'));
@@ -920,7 +933,7 @@ class Stripe extends AbstractPaymentGateway
             $disputeId = Arr::get($charge, 'dispute', '');
         }
 
-        $closeDispute = (new API())->createStripeObject('disputes/' . $disputeId . '/close');
+        $closeDispute = (new API())->createStripeObject('disputes/' . $disputeId . '/close', [], $transaction->payment_mode);
 
         if (is_wp_error($closeDispute)) {
             return $closeDispute;

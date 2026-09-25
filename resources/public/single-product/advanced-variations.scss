@@ -12,7 +12,7 @@
 }
 
 .fct-attribute-label {
-  @apply text-sm font-medium text-system-dark;
+  @apply text-sm font-medium text-[var(--fct-single-product-primary-text-color)];
 }
 
 .screen-reader-text {
@@ -27,11 +27,11 @@
 
 .fct-attribute-selector {
   .fct-swatch-item {
-    @apply text-system-dark inline-flex items-center justify-center border border-solid border-gray-outline rounded cursor-pointer transition-all duration-150 bg-white p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
+    @apply text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] inline-flex items-center justify-center border border-solid border-[var(--fct-single-product-border-color,theme('colors.gray.outline'))] rounded cursor-pointer transition-all duration-150 bg-[var(--fct-card-bg-color,#ffffff)] p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
 
     &:hover:not(.disabled):not(.selected) {
       border-color: var(--fct-single-product-active-border-color);
-      @apply text-system-dark;
+      @apply text-[var(--fct-single-product-primary-text-color)];
     }
     &.disabled {
       @apply opacity-50 cursor-not-allowed relative;
@@ -52,14 +52,14 @@
 .fct-attribute-selector {
   .fct-swatch-color,
   .fct-swatch-image {
-    @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden gap-2 bg-gray-50 border-transparent hover:text-system-dark hover:border-primary-500 focus:text-system-dark focus:shadow-none;
+    @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden gap-2 bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border-transparent hover:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] hover:border-[var(--fct-single-product-active-border-color,theme('colors.primary.500'))] focus:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] focus:shadow-none;
 
     &:hover:not(.selected):not(.disabled) {
-      @apply bg-gray-50;
+      @apply bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))];
     }
 
     &.selected {
-      @apply bg-white border border-solid border-primary-500;
+      @apply bg-[var(--fct-card-bg-color,#ffffff)] border border-solid border-[var(--fct-single-product-active-border-color)] text-[var(--fct-single-product-active-text-color)];
     }
   }
 }
@@ -86,7 +86,7 @@
 /* Selected term title shown next to an image group's label, e.g.
    "Image: Design 2". The ": " prefix only appears once a value is set. */
 .fct-selected-term-title {
-  @apply font-normal text-system-mid;
+  @apply font-normal text-[var(--fct-single-product-secondary-text-color)];
 
   &:not(:empty)::before {
     content: ': ';
@@ -101,10 +101,10 @@
     /* White pill so the contained image (product shots are usually on a white
        background) blends edge-to-edge — the object-contain letterboxing is
        invisible rather than showing as grey gaps. */
-    @apply min-w-0 h-auto p-1 gap-0 bg-white;
+    @apply min-w-0 h-auto p-1 gap-0 bg-[var(--fct-card-bg-color,#ffffff)];
 
     &:hover:not(.selected):not(.disabled) {
-      @apply bg-white;
+      @apply bg-[var(--fct-card-bg-color,#ffffff)];
     }
 
     .fct-swatch-thumb {
@@ -112,7 +112,7 @@
          variation pill must not crop the design the shopper is choosing.
          object-contain overrides the base thumb's object-cover; portrait /
          landscape shots are contained inside the square, never cropped. */
-      @apply w-[72px] h-[72px] rounded bg-white;
+      @apply w-[72px] h-[72px] rounded bg-[var(--fct-card-bg-color,#ffffff)];
 
       img {
         @apply object-contain;
@@ -122,23 +122,23 @@
 }
 
 .fct-attribute-selector .fct-swatch-label {
-  @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden bg-gray-50 border border-solid border-transparent text-system-mid;
+  @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border border-solid border-transparent text-[var(--fct-single-product-secondary-text-color)];
 
   &:hover:not(.selected):not(.disabled) {
     /* Grey lift on hover — same pattern as color/image swatches. */
-    @apply bg-gray-100;
+    @apply bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.100'))];
     border: 1px solid theme('colors.gray.outline');
   }
 
   &.selected {
-    @apply bg-white border-primary-500 text-system-dark;
+    @apply bg-[var(--fct-card-bg-color,#ffffff)] border-[var(--fct-single-product-active-border-color)] text-[var(--fct-single-product-active-text-color)];
     box-shadow: none;
   }
 
   &.selected:hover,
   &.selected:focus,
   &.selected:focus-visible {
-     @apply bg-white border-primary-500 text-system-dark;
+     @apply bg-[var(--fct-card-bg-color,#ffffff)] border-[var(--fct-single-product-active-border-color)] text-[var(--fct-single-product-active-text-color)];
   }
 }
 

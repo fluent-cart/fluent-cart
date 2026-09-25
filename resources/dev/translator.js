@@ -4,9 +4,21 @@ const TranslationHelper = require('./TranslationHelper');
 
 
 // Define paths
+// Every Vite entry that imports resources/admin/utils/translator/Translator.js
+// resolves through THIS map at runtime, so all of them must be scanned here.
+// updatePhpTranslations() rewrites admin-translation.php from the scan result
+// alone — a bundle missing from this list has its keys DELETED on the next
+// `npm run translate`, which is how the withdrawal / order-bump / addon-assets
+// route titles were lost twice (#2563, then again at the 1.6.2 bump).
+// The customer-profile portal and the BlockEditor ship their own translators
+// and their own maps; they stay out of this list.
 let resourcesDir = [
     path.join('resources/admin'),
-    path.join('resources/licensing')
+    path.join('resources/licensing'),
+    path.join('resources/withdrawal'),
+    path.join('resources/order-bump'),
+    path.join('resources/addon-assets'),
+    path.join('resources/attributes')
 ];
 let phpFile = path.join('app/Services/Translations/admin-translation.php');
 

@@ -54,7 +54,7 @@ class IPN
         if (empty($refunds)) {
             $chargeId = Arr::get($charge, 'id', '');
             if ($chargeId) {
-                $refundsResponse = (new API())->getStripeObject('charges/' . $chargeId . '/refunds');
+                $refundsResponse = (new API())->getStripeObject('charges/' . $chargeId . '/refunds', [], StripeHelper::modeFromLivemode(isset($event->livemode) ? (bool)$event->livemode : null));
                 if (!is_wp_error($refundsResponse)) {
                     $refunds = Arr::get($refundsResponse, 'data', []);
                 }
@@ -407,7 +407,7 @@ class IPN
         $order = Arr::get($data, 'order');
         $invoice = $event->data->object;
 
-        $invoice = (new API())->getStripeObject('invoices/' . $invoice->id);
+        $invoice = (new API())->getStripeObject('invoices/' . $invoice->id, [], StripeHelper::modeFromLivemode(isset($event->livemode) ? (bool)$event->livemode : null));
 
         $vendorSubscriptionId = Arr::get($invoice, 'subscription', null)
             ?: Arr::get($invoice, 'parent.subscription_details.subscription', null);

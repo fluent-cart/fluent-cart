@@ -491,7 +491,25 @@ export var routes = {
                         component: CheckoutFields,
                         meta: {}
                     },
+                    {
+                        name: 'appearance',
+                        path: 'appearance', // Full path: /settings/store-settings/appearance
+                        component: StoreSettings,
+                        meta: {
+                            title: translate('Appearance'),
+                        }
+                    },
                 ]
+            },
+            {
+                name: 'compliance',
+                path: 'compliance',
+                component: StoreSettings,
+                meta: {
+                    active_menu: 'settings',
+                    title: translate('Compliance'),
+                    permission: 'store/settings'
+                }
             },
             ...AppConfig.get('addon_settings_routes', []).map(r => ({ component: StoreSettings, ...r })),
             {

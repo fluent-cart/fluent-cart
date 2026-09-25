@@ -2,11 +2,21 @@ import translate, {translateNumber} from "@/utils/translator/Translator";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+import advancedFormat from 'dayjs/plugin/advancedFormat.js';
+import weekOfYear from 'dayjs/plugin/weekOfYear.js';
 import AppConfig from "@/utils/Config/AppConfig";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {resolveDateFormat, fluentDayjsLocale, toStoreTimezone} from "@/utils/dateFormats";
+
+// Re-exported so every existing `@/utils/Utils` import keeps working.
+export {resolveDateFormat, fluentDayjsLocale, toStoreTimezone, storeNow, resolveYearAwareFormat} from "@/utils/dateFormats";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+// A WordPress date format may use an ordinal day ('jS') or a week number ('W'),
+// which convert to Day.js tokens these plugins provide.
+dayjs.extend(advancedFormat);
+dayjs.extend(weekOfYear);
 
 export default class Utils {
     static debounce(callback, wait = 300, context = null) {
@@ -21,22 +31,12 @@ export default class Utils {
 }
 
 
-export function dateTimeI18(dateTime, format = 'MMM DD') {
 
-    const datei18 = AppConfig.get('datei18');
-    const date = dayjs.utc(dateTime).local().locale({
-        name: 'fluent_date_time',
-        weekdays: Object.values(datei18.weekdays),
-        weekdaysShort: Object.values(datei18.weekdaysShort),
-        months: Object.values(datei18.months),
-        monthsShort: Object.values(datei18.monthsShort),
-        meridiem: (hour, minute, isLowercase) => {
-            const amText = datei18.am || 'AM';
-            const pmText = datei18.pm || 'PM';
-            const result = hour < 12 ? amText : pmText;
-            return isLowercase ? result.toLowerCase() : result;
-        }
-    }).format(format);
+export function dateTimeI18(dateTime, format = 'date_short') {
+
+    const date = toStoreTimezone(dateTime)
+        .locale(fluentDayjsLocale())
+        .format(resolveDateFormat(format));
 
     return getDateTimeStringI18(date, 'mNumber');
 }

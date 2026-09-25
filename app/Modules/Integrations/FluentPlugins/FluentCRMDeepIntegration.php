@@ -4,9 +4,12 @@ namespace FluentCart\App\Modules\Integrations\FluentPlugins;
 
 use FluentAffiliate\App\Models\Affiliate;
 use FluentCart\Api\ModuleSettings;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
+use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\URL;
 use FluentCrm\App\Models\Subscriber;
 use FluentCrm\App\Services\Helper;
@@ -577,16 +580,84 @@ class FluentCRMDeepIntegration
 
         $widgets['fluent_cart'] = [
             'title'   => __('Commerce Info', 'fluent-cart'),
-            'content' => $this->getStatsHtml($customer)
+            'content' => $this->getStatsHtml($customer, [$this, 'formatDateForFluentCrm'])
         ];
 
         return $widgets;
     }
 
-    public function getStatsHtml($customer)
+    /**
+     * The shared FluentCRM-context date formatter for every FluentCart date
+     * rendered inside a FluentCRM contact profile's Purchases page: the
+     * Commerce Info widget (via pushInfoWidgetToContact() below) AND the
+     * Purchase History tab's order table, Order Summary, and Purchased
+     * Products list, which the fluent-crm plugin renders in
+     * FluentCrm\App\Services\ExternalIntegrations\FluentCart\FluentCart and
+     * calls through this public method (cross-plugin, same as that class
+     * already importing FluentCart\App\Models\Customer).
+     *
+     * FluentCRM contacts can render every native date either as a relative
+     * difference ("2 hours ago") or, with its "classic" date/time preference
+     * enabled, as an absolute WordPress-formatted date -- both are
+     * FluentCRM's own display modes, produced by Helper::formatDateTime()
+     * itself. Product decision: on this FluentCRM-owned page, FluentCRM's
+     * preference always wins over FluentCart's own date format setting
+     * (DateFormatter / StoreSettings::date_time_format_source), in EITHER
+     * mode -- so both branches defer to Helper::formatDateTime() and neither
+     * falls through to DateFormatter for a reachable Helper.
+     *
+     * DateFormatter::format($datetime, false, wp_timezone()) remains only as
+     * the defensive fallback for when FluentCrm\App\Services\Helper can't be
+     * resolved at all (this plugin's own test suite doesn't load the
+     * FluentCRM plugin; see FluentCRMDeepIntegrationTest). Pinned to
+     * wp_timezone() so a store on FluentCart's 'fluent_cart' timezone source
+     * (no order context here) doesn't fall back to UTC.
+     *
+     * Scoped to this page: DateFormatter's own default behavior is unchanged
+     * everywhere else in FluentCart, including the FluentSupport customer
+     * widget, which renders this same getStatsHtml() markup but must NOT
+     * pick up FluentCRM's display preference -- see getStatsHtml()'s
+     * $dateFormatter parameter.
+     */
+    public function formatDateForFluentCrm($datetime): string
     {
+        if (empty($datetime)) {
+            return '';
+        }
+
+        if (class_exists(Helper::class)) {
+            return Helper::formatDateTime($datetime);
+        }
+
+        return DateFormatter::format($datetime, false, wp_timezone());
+    }
+
+    /**
+     * @param \FluentCart\App\Models\Customer $customer
+     * @param callable|null $dateFormatter Formats a single GMT datetime string
+     *        for display. Defaults to DateFormatter::format() unchanged, which
+     *        is what FluentSupportWidget::getPurchaseWidgets() relies on when
+     *        it calls this method directly -- FluentCRM's own date/time
+     *        preference must stay opt-in via formatDateForFluentCrm(),
+     *        passed explicitly by pushInfoWidgetToContact() below, or it would
+     *        leak into the unrelated FluentSupport widget.
+     */
+    public function getStatsHtml($customer, ?callable $dateFormatter = null)
+    {
+        $dateFormatter = $dateFormatter ?: [DateFormatter::class, 'format'];
+
         $viewUrl = URL::getDashboardUrl('customers/' . $customer->id . '/view');
         $naLabel = __('N/A', 'fluent-cart');
+
+        // This widget's count/dates come from the customer's aggregate columns,
+        // which recountStat() only ever populates from orders with a
+        // payment-success status (see Customer::recountStat()). The FluentCRM
+        // "Purchase History" tab's own order table/summary, by contrast, lists
+        // every FluentCart order regardless of payment status. Those two counts
+        // can legitimately disagree (e.g. a customer with only pending orders),
+        // so the labels here are explicit about being paid-only rather than
+        // reusing the ambiguous "Purchases"/"First Order"/"Last Order" captions.
+        $hasPaidPurchases = (int) $customer->purchase_count > 0;
 
         // Compact, consistent labels (no trailing colons) so they read well as
         // stat-card captions on the FluentCRM contact profile.
@@ -599,16 +670,20 @@ class FluentCRMDeepIntegration
                 'value' => '<a href="' . esc_url($viewUrl) . '" target="_blank" rel="noopener" class="fc_view_more">' . \FluentCart\App\Helpers\Helper::toDecimal($customer->ltv) . '</a>'
             ],
             [
-                'label' => __('Purchases', 'fluent-cart'),
+                'label' => __('Paid Purchases', 'fluent-cart'),
                 'value' => esc_html($customer->purchase_count)
             ],
             [
-                'label' => __('First Order', 'fluent-cart'),
-                'value' => $customer->first_purchase_date ? esc_html(gmdate('M j, Y', strtotime($customer->first_purchase_date))) : esc_html($naLabel)
+                'label' => __('First Paid Order', 'fluent-cart'),
+                // Guarded on purchase_count, not just the date column: a
+                // customer whose only paid order was later refunded/canceled
+                // can keep a stale first/last_purchase_date until the next
+                // recountStat() run, and this must read N/A regardless.
+                'value' => ($hasPaidPurchases && $customer->first_purchase_date) ? esc_html($dateFormatter($customer->first_purchase_date)) : esc_html($naLabel)
             ],
             [
-                'label' => __('Last Order', 'fluent-cart'),
-                'value' => $customer->last_purchase_date ? esc_html(gmdate('M j, Y', strtotime($customer->last_purchase_date))) : esc_html($naLabel)
+                'label' => __('Last Paid Order', 'fluent-cart'),
+                'value' => ($hasPaidPurchases && $customer->last_purchase_date) ? esc_html($dateFormatter($customer->last_purchase_date)) : esc_html($naLabel)
             ],
         ];
 
@@ -624,21 +699,59 @@ class FluentCRMDeepIntegration
         }
         $html .= '</ul>';
 
-        $orderedItems = $customer->success_order_items()->orderBy('id', 'DESC')->get();
+        // Aggregated in SQL and capped to the most recently purchased products,
+        // rather than pulling every paid order item the customer has ever had
+        // into PHP: a long-time customer's full order-item history can run into
+        // the thousands, and this widget only ever shows a short "Recent
+        // purchases" list. purchase_count/earliest/latest item ids are grouped
+        // per product server-side; only the (at most $recentProductsLimit)
+        // earliest-occurrence rows are then fetched to supply title/date/link.
+        $recentProductsLimit = 20;
+
+        // selectRaw bypasses the query grammar's table-prefixing, so the real
+        // (prefixed) items table name is required here -- a bare
+        // "fct_order_items" throws "Unknown column" once WordPress's table
+        // prefix isn't literally "fct_" (every wp-browser test run, and any
+        // site sharing tables with another install).
+        $itemsTable = App::db()->getTableName('fct_order_items');
+
+        $productAggregates = $customer->success_order_items()
+            ->selectRaw($itemsTable . '.object_id, COUNT(*) as purchase_count, MIN(' . $itemsTable . '.id) as earliest_item_id, MAX(' . $itemsTable . '.id) as latest_item_id')
+            // groupBy/orderBy go through the query grammar, which prefixes
+            // bare column names itself -- unlike selectRaw above, so this one
+            // must stay unqualified (and unambiguous: only the items table has
+            // an object_id column).
+            ->groupBy('object_id')
+            ->orderBy('latest_item_id', 'DESC')
+            ->limit($recentProductsLimit)
+            ->get();
+
+        $earliestItemIds = array_values(array_filter($productAggregates->pluck('earliest_item_id')->all()));
+
+        $earliestItemsById = [];
+        if ($earliestItemIds) {
+            foreach (OrderItem::query()->whereIn('id', $earliestItemIds)->get() as $earliestItem) {
+                $earliestItemsById[$earliestItem->id] = $earliestItem;
+            }
+        }
 
         // Group identical products and count repeat purchases
         $formattedItems = [];
-        foreach ($orderedItems as $orderedItem) {
-            $count = isset($formattedItems[$orderedItem->object_id]) ? $formattedItems[$orderedItem->object_id]['count'] + 1 : 1;
-            $formattedItems[$orderedItem->object_id] = [
-                'title'      => $orderedItem->title,
-                'post_title' => $orderedItem->post_title,
-                'count'      => $count,
-                // Items are iterated newest-first, so the last write for a
-                // product keeps its oldest row: the customer's first order for
-                // it. Both the shown date and the link point at that order.
-                'created_at' => $orderedItem->created_at,
-                'order_id'   => $orderedItem->order_id
+        foreach ($productAggregates as $productAggregate) {
+            $earliestItem = $earliestItemsById[$productAggregate->earliest_item_id] ?? null;
+            if (!$earliestItem) {
+                continue;
+            }
+
+            $formattedItems[$productAggregate->object_id] = [
+                'title'      => $earliestItem->title,
+                'post_title' => $earliestItem->post_title,
+                'count'      => (int) $productAggregate->purchase_count,
+                // earliest_item_id is the oldest item id per product: the
+                // customer's first order for it. Both the shown date and the
+                // link point at that order.
+                'created_at' => $earliestItem->created_at,
+                'order_id'   => $earliestItem->order_id
             ];
         }
 
@@ -661,7 +774,7 @@ class FluentCRMDeepIntegration
                 }
 
                 // Link the date straight to the (first) order for this product
-                $dateText = esc_html(gmdate('M j, Y', strtotime($formattedItem['created_at'])));
+                $dateText = esc_html($dateFormatter($formattedItem['created_at']));
                 if (!empty($formattedItem['order_id'])) {
                     $orderUrl = URL::getDashboardUrl('orders/' . $formattedItem['order_id'] . '/view');
                     $dateHtml = '<a class="fcrm_fc_product_date" href="' . esc_url($orderUrl) . '" target="_blank" rel="noopener">' . $dateText . '</a>';

@@ -94,6 +94,16 @@ class Customer extends Model
     }
 
     /**
+     * Customers not linked to any WordPress account. Legacy rows carry 0 as well as NULL.
+     */
+    public function scopeUnclaimed($query)
+    {
+        return $query->where(function ($query) {
+            $query->whereNull('user_id')->orWhere('user_id', 0);
+        });
+    }
+
+    /**
      * todo - contact_id ? - do we need it anymore?
      */
 
@@ -201,24 +211,18 @@ class Customer extends Model
     public function recountStat()
     {
 
-        $orders = \FluentCart\App\Models\Order::query()->where('customer_id', $this->id)
+        $stats = Order::query()->where('customer_id', $this->id)
             ->whereIn('payment_status', Status::getOrderPaymentSuccessStatuses())
-            ->get();
+            ->selectRaw('COUNT(*) AS purchase_count, MIN(created_at) AS first_purchase_date, MAX(created_at) AS last_purchase_date')
+            // Check before subtracting: payment columns can be unsigned in MySQL.
+            ->selectRaw('COALESCE(SUM(CASE WHEN COALESCE(total_paid, 0) > COALESCE(total_refund, 0) THEN COALESCE(total_paid, 0) - COALESCE(total_refund, 0) ELSE 0 END), 0) AS ltv')
+            ->toBase()->first();
 
-        $totalPayments = [];
-        $ltv = 0;
-        foreach ($orders as $order) {
-            $netPaid = $order->total_paid - $order->total_refund;
-            if ($netPaid > 0) {
-                $ltv += $netPaid;
-            }
-        }
-
-        $this->purchase_count = $orders->count();
-        $this->first_purchase_date = $orders->min('created_at') ?? null;
-        $this->last_purchase_date = $orders->max('created_at') ?? null;
-        $this->ltv = $ltv;
-        $this->aov = $this->purchase_count ? $ltv / $this->purchase_count : 0;
+        $this->purchase_count = (int) $stats->purchase_count;
+        $this->first_purchase_date = $stats->first_purchase_date;
+        $this->last_purchase_date = $stats->last_purchase_date;
+        $this->ltv = (int) $stats->ltv;
+        $this->aov = $this->purchase_count ? $this->ltv / $this->purchase_count : 0;
         $this->save();
 
 
@@ -393,19 +397,18 @@ class Customer extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * The WordPress user this customer is linked to, or empty when unlinked.
+     *
+     * A read never rewrites identity. The old $recheck path looked the user up
+     * by email and saved that ID onto the row — a rebinding path every caller
+     * inherited, trusting an address its holder can change with no
+     * confirmation. The link is written where identity is established
+     * (explicit creation, verified claims, admin). $recheck is kept so existing
+     * callers and integrations need no change.
+     */
     public function getWpUserId($recheck = false)
     {
-        if ($recheck) {
-            $user = get_user_by('email', $this->email);
-            if ($user) {
-                if ($user->ID != $this->user_id) {
-                    $this->user_id = $user->ID;
-                    unset($this->preventsLazyLoading);
-                    $this->save();
-                }
-            }
-        }
-
         return $this->user_id;
     }
 
@@ -467,26 +470,18 @@ class Customer extends Model
     }
 
 
+    /**
+     * @return \WP_User|false The linked WordPress user; false when unlinked or
+     *                        the linked account no longer exists. See getWpUserId()
+     *                        for why there is no email fallback.
+     */
     public function getWpUser()
     {
-        if ($this->user_id) {
-            $user = get_user_by('ID', $this->user_id);
-            if ($user) {
-                return $user;
-            }
-        }
-        
-        $user = get_user_by('email', $this->email);
-
-        if ($user) {
-            if ($user->ID != $this->user_id) {
-                $this->user_id = $user->ID;
-                unset($this->preventsLazyLoading);
-                $this->save();
-            }
+        if (!$this->user_id) {
+            return false;
         }
 
-        return $user;
+        return get_user_by('ID', $this->user_id);
     }
 
     public function scopeSearchByFullName ($query, $data) {

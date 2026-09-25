@@ -8,6 +8,8 @@ use FluentCart\App\CPT\Pages;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Services\Theme\ColorPalette;
+use FluentCart\App\Services\Theme\ThemePalette;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
@@ -81,6 +83,7 @@ class StoreSettings implements ArrayableInterface
             'additional_address_field'             => 'yes',
             'hide_coupon_field'                    => 'no',
             'user_account_creation_mode'           => 'all',
+            'auto_login_after_account_creation'    => 'no',
             'checkout_page_id'                     => '',
             'custom_payment_page_id'               => '',
             'registration_page_id'                 => '',
@@ -110,7 +113,17 @@ class StoreSettings implements ArrayableInterface
             'min_receipt_number'                   => '1',
             'inv_prefix'                           => 'INV-',
             'weight_unit'                          => 'kg',
-            'dimension_unit'                       => 'cm'
+            'dimension_unit'                       => 'cm',
+            'appearance_source'                    => ColorPalette::SOURCE_DEFAULT,
+            'appearance_colors'                    => [],
+            // 'wordpress', not 'fluent_cart': the FluentCart patterns are
+            // literals ('M j, Y'), and a literal renders a half-translated date
+            // on a localized store -- a German month in English field order,
+            // which a German reader misreads as day-first. Following
+            // Settings > General is the only source that is correct in every
+            // locale, so it is what a store gets until it chooses otherwise.
+            'date_time_format_source'              => 'wordpress',
+            'timezone_source'                      => 'fluent_cart'
         ];
 
         return apply_filters('fluent_cart/store_settings/values', $defaultSettings, []);
@@ -299,7 +312,7 @@ class StoreSettings implements ArrayableInterface
                                 ]
                             ],
 
-                            'settings_hr' => [
+                            'date_time_hr' => [
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
                             ],
@@ -563,6 +576,77 @@ class StoreSettings implements ArrayableInterface
                                             ],
                                         ],
                                         "value"        => "logo"
+                                    ],
+                                ]
+                            ],
+
+                            'settings_hr' => [
+                                'type'  => 'html',
+                                'value' => '<hr class="settings-divider">'
+                            ],
+
+                            'date_time_format_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'                   => [
+                                        'type'  => 'html',
+                                        'value' => '<span class="setting-label">' . __('Date & Time Format', 'fluent-cart') . '</span>
+                                                            <div class="form-note">' . __("Which date and time format to display. `Smart` keeps FluentCart's own format; `WordPress` follows Settings &rarr; General.", 'fluent-cart') . '</div>'
+                                    ],
+                                    'date_time_format_source' => [
+                                        'wrapperClass' => 'col-span-2 flex items-center',
+                                        'label'        => '',
+                                        'type'         => 'radio',
+                                        'options'      => [
+                                            [
+                                                // Label only -- the stored value stays 'fluent_cart'.
+                                                'label' => __('Smart', 'fluent-cart'),
+                                                'value' => 'fluent_cart',
+                                            ],
+                                            [
+                                                'label' => __('WordPress', 'fluent-cart'),
+                                                'value' => 'wordpress',
+                                            ],
+                                        ],
+                                        'value'        => 'fluent_cart'
+                                    ],
+                                ]
+                            ],
+
+                            'timezone_source_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'           => [
+                                        'type'  => 'html',
+                                        'value' => '<span class="setting-label">' . __('Timezone', 'fluent-cart') . '</span>
+                                                            <div class="form-note">' . __("Which timezone to display dates in. `Browser` shows admin and dashboard dates in the viewer's own timezone, and renders emails and invoices in the timezone captured at checkout; `WordPress` uses the site timezone from Settings &rarr; General.", 'fluent-cart') . '</div>'
+                                    ],
+                                    'timezone_source' => [
+                                        'wrapperClass' => 'col-span-2 flex items-center',
+                                        'label'        => '',
+                                        'type'         => 'radio',
+                                        'options'      => [
+                                            [
+                                                // Label only -- the stored value stays 'fluent_cart'.
+                                                'label' => __('Browser', 'fluent-cart'),
+                                                'value' => 'fluent_cart',
+                                            ],
+                                            [
+                                                'label' => __('WordPress', 'fluent-cart'),
+                                                'value' => 'wordpress',
+                                            ],
+                                        ],
+                                        'value'        => 'fluent_cart'
                                     ],
                                 ]
                             ],
@@ -1053,6 +1137,38 @@ class StoreSettings implements ArrayableInterface
                             ],
                         ],
                     ],
+                    'compliance'           => [
+                        'title'           => __('Compliance', 'fluent-cart'),
+                        'show_title'      => false,
+                        'type'            => 'section',
+                        'disable_nesting' => true,
+                        'columns'         => [
+                            'default' => 1,
+                            'md'      => 1,
+                        ],
+                        'schema'          => [
+                            'auto_login_after_account_creation' => [
+                                'wrapperClass' => 'fct-compliance-auto-login',
+                                'label'      => __('Login after account creation', 'fluent-cart'),
+                                'type'       => 'radio',
+                                'value'      => 'no',
+                                'attributes' => [
+                                    'aria-label' => __('Login after account creation', 'fluent-cart'),
+                                ],
+                                'options'    => [
+                                    [
+                                        'label' => __("Don't auto login after account creation", 'fluent-cart'),
+                                        'value' => 'no',
+                                    ],
+                                    [
+                                        'label' => __('Enable auto login after account creation', 'fluent-cart'),
+                                        'value' => 'yes',
+                                    ],
+                                ],
+                                'note'       => __('Choose whether customers are logged in automatically when FluentCart creates their account during registration or after checkout.', 'fluent-cart'),
+                            ],
+                        ],
+                    ],
                     'cart_and_checkout'    => [
                         'title'           => __('Cart & checkout', 'fluent-cart'),
                         'show_title'      => false,
@@ -1362,6 +1478,7 @@ class StoreSettings implements ArrayableInterface
                             ],
                         ]
                     ],
+                    'appearance'           => $this->getAppearanceSchema(),
                 ]
             ],
         ];
@@ -1370,6 +1487,12 @@ class StoreSettings implements ArrayableInterface
         // Only show weight/dimension unit fields to users with shipping-sensitive permission
         if (PermissionManager::hasPermission(['store/sensitive'])) {
             $storeSchema = &$fields['setting_tabs']['schema']['store_setup']['schema'];
+
+            $storeSchema['weight_unit_grid_divider'] = [
+                'type'  => 'html',
+                'value' => '<hr class="settings-divider">'
+            ];
+
             $storeSchema['weight_unit_grid'] = [
                 'type'            => 'grid',
                 'columns'         => ['default' => 1, 'md' => 3],
@@ -1512,6 +1635,9 @@ class StoreSettings implements ArrayableInterface
     public function isCheckoutPage(): bool
     {
         global $post;
+        if (!$post instanceof \WP_Post) {
+            return false;
+        }
         $pageId = $this->getCheckoutPageId();
         return intval($pageId) === intval($post->ID);
     }
@@ -1754,6 +1880,281 @@ class StoreSettings implements ArrayableInterface
         }
 
         return trim(str_replace(home_url('/'), '', $url), '/');
+    }
+
+    /**
+     * The Appearance settings tab.
+     *
+     * Built from the ColorPalette registry rather than written out by hand, so
+     * a colour added to the registry becomes settable here, sanitised on save
+     * and written to the storefront without three separate edits.
+     *
+     * @return array
+     */
+    protected function getAppearanceSchema(): array
+    {
+        // Plain text — the component renders these as text nodes, so no markup
+        // and no escaping here or the entities would show up verbatim.
+        $sourceOptions = [
+            [
+                'label' => __("FluentCart's own colors", 'fluent-cart'),
+                'value' => ColorPalette::SOURCE_DEFAULT,
+                'icon'  => 'PaletteLine',
+                'note'  => __('The storefront keeps the colors it ships with.', 'fluent-cart'),
+            ],
+            [
+                'label' => __('Inherit from the active theme', 'fluent-cart'),
+                'value' => ColorPalette::SOURCE_THEME,
+                'icon'  => 'PaintLine',
+                'note'  => sprintf(
+                    '%1$s %2$s',
+                    __('The storefront palette is rebuilt from your theme, and follows it when the theme changes.', 'fluent-cart'),
+                    ThemePalette::sourceLabel()
+                ),
+            ],
+            [
+                'label' => __('Customize', 'fluent-cart'),
+                'value' => ColorPalette::SOURCE_CUSTOM,
+                'icon'  => 'PaletteLine',
+                'note'  => __('Pick the colors yourself. Only the ones you set are written to the storefront.', 'fluent-cart'),
+            ],
+        ];
+
+        $sourceHeading = [
+            'label' => __('Where colors come from', 'fluent-cart'),
+            'note'  => __('Storefront colors cascade from a small set of globals, so changing one here updates every page that uses it.', 'fluent-cart'),
+        ];
+
+        return [
+            'title'           => __('Appearance', 'fluent-cart'),
+            'show_title'      => false,
+            'type'            => 'section',
+            'wrapperClass'    => 'fct-appearance-component-section',
+            'disable_nesting' => true,
+            'columns'         => [
+                'default' => 1,
+                'md'      => 1,
+            ],
+            'schema'          => [
+                'appearance_component' => [
+                    'type'           => 'component',
+                    'component'      => 'StoreSettings/AppearanceComponent',
+                    'wrapperClass'   => 'col-span-full',
+                    'label'          => false,
+                    // Rendered by the component itself, so the heading sits
+                    // inside .fct-appearance-component with the controls it
+                    // describes rather than as a sibling html field.
+                    'heading'        => $sourceHeading,
+                    'source_options' => $sourceOptions,
+                    'custom_source'  => ColorPalette::SOURCE_CUSTOM,
+                    'color_groups'   => $this->getAppearanceColorGroups(),
+                    'preview'        => $this->getAppearancePreviewData(),
+                ],
+                'appearance_source'    => [
+                    'type'  => 'hidden',
+                    'value' => ColorPalette::SOURCE_DEFAULT,
+                ],
+                'appearance_colors'    => [
+                    'type'  => 'hidden',
+                    'value' => (object)[],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * What the storefront preview needs to paint itself.
+     *
+     * The preview is drawn from semantic roles rather than settings keys, so
+     * one mock card covers all three sources: `customize` reads the pickers the
+     * owner has filled in, and the other two are resolved here because their
+     * colors only exist server side — `inherit_from_theme` is mixed out of
+     * theme.json by ThemePalette and nothing about it reaches the browser.
+     *
+     * @return array
+     */
+    protected function getAppearancePreviewData(): array
+    {
+        // No colour is sent with a slot. appearance.scss already writes every
+        // preview surface as `var(--fct-pv-x, <fallback>)`, so the mock has the
+        // same single source of truth the storefront does: a slot the component
+        // cannot resolve simply goes undeclared and the stylesheet's fallback
+        // applies.
+        return [
+            'slots'        => $this->getAppearancePreviewSlots(),
+            'theme_source' => ColorPalette::SOURCE_THEME,
+            'theme_roles'  => $this->getAppearanceThemeRoles(),
+            'notes'        => [
+                ColorPalette::SOURCE_THEME  => $this->getAppearanceThemeNote(),
+                ColorPalette::SOURCE_CUSTOM => __('Set only the colors you want to change — anything you leave unset keeps FluentCart\'s own default.', 'fluent-cart'),
+            ],
+        ];
+    }
+
+    /**
+     * Which custom property the preview paints each surface with.
+     *
+     * Keyed by settings key, not by role. Four separate globals claim the
+     * `accent` role — active text, the brand background and both active
+     * borders — so collapsing the preview to roles would let one picker drive
+     * surfaces the storefront keeps apart, and leave the others with no visible
+     * effect at all. `role` is carried only for theme inheritance, which
+     * genuinely is role-based: FrontendTheme::getThemeColors() gives every key
+     * sharing a role the same colour, so the preview collapsing there is the
+     * storefront's own behaviour rather than a shortcut.
+     *
+     * A slot with no `key` is a surface no global controls; it follows the
+     * role's default and cannot be edited.
+     *
+     * @return array
+     */
+    protected function getAppearancePreviewSlots(): array
+    {
+        return [
+            ['var' => 'surface', 'role' => 'surface', 'key' => 'card_bg_color'],
+            ['var' => 'surface-mute', 'role' => 'surface_mute'],
+            ['var' => 'surface-alt', 'role' => 'surface_alt', 'key' => 'secondary_bg_color'],
+            ['var' => 'text', 'role' => 'text', 'key' => 'primary_text_color'],
+            ['var' => 'text-muted', 'role' => 'text_muted', 'key' => 'secondary_text_color'],
+            ['var' => 'text-placeholder', 'role' => 'text_placeholder', 'key' => 'input_placeholder_text_color'],
+            ['var' => 'input-bg', 'role' => 'surface', 'key' => 'input_bg_color'],
+            ['var' => 'input-text', 'role' => 'text', 'key' => 'input_text_color'],
+            ['var' => 'input-disabled-bg', 'role' => 'surface_mute', 'key' => 'input_disabled_bg_color'],
+            ['var' => 'accent-text', 'role' => 'accent', 'key' => 'primary_active_text_color'],
+            ['var' => 'active-border', 'role' => 'accent', 'key' => 'active_border_color'],
+            ['var' => 'border', 'role' => 'border', 'key' => 'border_color'],
+            ['var' => 'divider', 'role' => 'divider', 'key' => 'divider_color'],
+            ['var' => 'button-bg', 'role' => 'button_bg', 'key' => 'btn_bg_color'],
+            ['var' => 'button-text', 'role' => 'button_text', 'key' => 'btn_text_color'],
+            ['var' => 'secondary-button-bg', 'role' => 'surface', 'key' => 'secondary_btn_bg_color'],
+            ['var' => 'secondary-button-text', 'role' => 'text', 'key' => 'secondary_btn_text_color'],
+            ['var' => 'secondary-button-border', 'role' => 'border', 'key' => 'secondary_btn_border_color'],
+            ['var' => 'secondary-button-hover-bg', 'role' => 'surface_mute', 'key' => 'secondary_btn_hover_bg_color'],
+        ];
+    }
+
+    /**
+     * Why the theme preview may not be the whole truth.
+     *
+     * Themes such as Astra publish their palette as `var(--ast-global-color-0)`
+     * rather than as colors. FrontendTheme writes those references straight
+     * through and the browser resolves them on the storefront, but the property
+     * is not declared in wp-admin, so the preview cannot show them. Saying so
+     * beats showing FluentCart's colors and letting the owner believe that is
+     * what inheriting will look like.
+     *
+     * @return string Empty when the preview is faithful.
+     */
+    protected function getAppearanceThemeNote(): string
+    {
+        if (!ThemePalette::hasUsableSource()) {
+            return __('The active theme publishes nothing to inherit, so the storefront keeps FluentCart\'s own colors.', 'fluent-cart');
+        }
+
+        foreach (ThemePalette::resolve() as $value) {
+            if (!sanitize_hex_color((string)$value)) {
+                return __('This theme publishes its palette as CSS variables. The storefront reads them, but they cannot be resolved here — the preview shows FluentCart\'s colors in their place.', 'fluent-cart');
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * The theme's colors for the preview, role by role.
+     *
+     * Only roles that resolved to a real color are returned — the preview
+     * falls back to each slot's own default for the rest.
+     *
+     * @return array Role => hex.
+     */
+    protected function getAppearanceThemeRoles(): array
+    {
+        // With nothing to inherit, FrontendTheme writes no declarations at all,
+        // so the storefront keeps FluentCart's colors — and so must the
+        // preview, or it would promise a change that never happens.
+        if (!ThemePalette::hasUsableSource()) {
+            return [];
+        }
+
+        $roles = [];
+
+        foreach (ThemePalette::resolve() as $role => $value) {
+            // A theme that publishes `var(--x)` is written to the storefront
+            // verbatim and resolved by the browser there, but that property is
+            // not declared in wp-admin. Unpreviewable, so leave it out and let
+            // the slot fall back to its own default.
+            $hex = sanitize_hex_color((string)$value);
+
+            if ($hex) {
+                $roles[$role] = $hex;
+            }
+        }
+
+        return $roles;
+    }
+
+    /**
+     * The colour knobs, grouped the way the registry groups them, as data the
+     * appearance component renders its pickers from.
+     *
+     * @return array
+     */
+    protected function getAppearanceColorGroups(): array
+    {
+        $groups = [];
+
+        foreach (ColorPalette::groups() as $groupKey => $groupLabel) {
+            $globals = ColorPalette::globalsFor($groupKey);
+
+            if (!$globals) {
+                continue;
+            }
+
+            $fields = [];
+
+            foreach ($globals as $key => $definition) {
+                $fields[] = [
+                    'key'     => $key,
+                    'label'   => Arr::get($definition, 'label', $key),
+                    'note'    => $this->getAppearanceFieldNote($definition),
+                    'default' => (string)Arr::get($definition, 'default', ''),
+                ];
+            }
+
+            $groups[] = [
+                'key'    => $groupKey,
+                'label'  => $groupLabel,
+                'fields' => $fields,
+            ];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * The hint under one colour picker: what it drives, and the value it
+     * falls back to when left empty.
+     *
+     * @param array $definition
+     * @return string
+     */
+    protected function getAppearanceFieldNote(array $definition): string
+    {
+        $usage = (string)Arr::get($definition, 'note', '');
+        $default = (string)Arr::get($definition, 'default', '');
+
+        if ($default === '') {
+            return $usage;
+        }
+
+        if ($usage === '') {
+            /* translators: %1$s: the hex colour FluentCart falls back to */
+            return sprintf(__('Default: %1$s', 'fluent-cart'), $default);
+        }
+
+        /* translators: 1: what the colour is used for, 2: the hex colour FluentCart falls back to */
+        return sprintf(__('%1$s Default: %2$s', 'fluent-cart'), $usage, $default);
     }
 
     /**

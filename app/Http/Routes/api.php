@@ -834,8 +834,8 @@ $router->prefix('files')->withPolicy('StoreSensitivePolicy')->group(function (Ro
 
 $router->post('/upload-editor-file', [FileUploadController::class, 'uploadEditorFile'])->withPolicy('AdminPolicy');
 
-$router->prefix('notes')->withPolicy('AdminPolicy')->group(function (Router $router) {
-    $router->post('/attach', [NotesController::class, 'attach']);
+$router->prefix('notes')->withPolicy('OrderPolicy')->group(function (Router $router) {
+    $router->post('/attach', [NotesController::class, 'attach'])->meta(['permissions' => 'orders/manage']);
 });
 
 $router->prefix('app')->withPolicy('AdminPolicy')->group(function (Router $router) {

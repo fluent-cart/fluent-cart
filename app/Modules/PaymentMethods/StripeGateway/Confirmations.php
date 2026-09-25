@@ -773,11 +773,11 @@ class Confirmations
         $fctCustomer->updateMeta($metaKey, $meta);
     }
 
-    public function confirmSetupIntent($setupIntent, $trxHash = null)
+    public function confirmSetupIntent($setupIntent, $trxHash = null, $mode = 'current')
     {
         $api = new API();
 
-        $response = $api->getStripeObject('setup_intents/' . $setupIntent);
+        $response = $api->getStripeObject('setup_intents/' . $setupIntent, [], $mode);
 
         if (is_wp_error($response)) {
             return $response;
@@ -840,13 +840,13 @@ class Confirmations
         $paymentMethod = Arr::get($response, 'payment_method');
         $customer = Arr::get($response, 'customer');
 
-        $billingInfo = $this->getPaymentMethodDetails($paymentMethod);
+        $billingInfo = $this->getPaymentMethodDetails($paymentMethod, $mode);
 
         // attach the payment method to the customer
         if ($paymentMethod && $customer) {
             $api->createStripeObject('payment_methods/' . $paymentMethod . '/attach', [
                 'customer' => $customer
-            ]);
+            ], $mode);
 
             $this->savePaymentMethodToCustomerMeta($customer, $paymentMethod, $order);
         }
@@ -924,9 +924,9 @@ class Confirmations
         }
     }
 
-    public function getPaymentMethodDetails($methodId)
+    public function getPaymentMethodDetails($methodId, $mode = 'current')
     {
-        $paymentMethodDetails = (new API())->makeRequest('payment_methods/' . $methodId, [], (new StripeSettingsBase())->getApiKey(), 'GET');
+        $paymentMethodDetails = (new API())->makeRequest('payment_methods/' . $methodId, [], (new StripeSettingsBase())->getApiKey($mode), 'GET');
 
         if (is_wp_error($paymentMethodDetails) || !$paymentMethodDetails) {
             $billingInfo = PaymentHelper::parsePaymentMethodDetails('stripe', ['type' => 'card']);
@@ -1076,7 +1076,7 @@ class Confirmations
             $disputeId = Arr::get($charge, 'dispute', '');
             $reason = 'unknown';
 
-            $retreiveDispute = (new API())->getStripeObject('disputes/' . $disputeId);
+            $retreiveDispute = (new API())->getStripeObject('disputes/' . $disputeId, [], StripeHelper::modeFromLivemode(Arr::isTrue($charge, 'livemode')));
 
             if (!is_wp_error($retreiveDispute)) {
                 $reason = Arr::get($retreiveDispute, 'reason');

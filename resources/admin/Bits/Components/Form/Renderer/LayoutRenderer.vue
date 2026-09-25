@@ -84,6 +84,7 @@ onMounted(async () => {
 
   <template v-if="field.type === 'section'">
     <FormSection
+        :class="field.wrapperClass"
         :form="form"
         :statePath="field.disable_nesting === true? fullStatePath : fieldKey+'.'"
         :field="field"

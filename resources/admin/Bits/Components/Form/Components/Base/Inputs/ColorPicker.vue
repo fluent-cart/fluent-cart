@@ -21,6 +21,52 @@ const handleColorReset = () => {
     model.value = '';
 };
 
+// Editable hex code: typing edits a draft, and every keystroke that forms a
+// valid hex commits it to the model, so the preview follows live. The draft
+// itself is never reformatted mid-typing — an invalid draft only snaps back
+// to the model's value on blur/Enter.
+const hexDraft = ref(model.value || '');
+
+const normalizeHex = (raw) => {
+    let value = (raw || '').trim();
+
+    if (value && value[0] !== '#') {
+        value = '#' + value;
+    }
+
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value) ? value.toLowerCase() : '';
+};
+
+watch(model, (val) => {
+    // Skip the echo of the draft's own commit — rewriting the draft here
+    // would reformat what the user is mid-typing (ABC → #abc under the
+    // cursor). External changes (the picker, the ✕, a parent reset) still
+    // sync, and blur/Enter normalises the displayed text.
+    if (normalizeHex(hexDraft.value) === (val || '')) {
+        return;
+    }
+
+    hexDraft.value = val || '';
+});
+
+const onHexInput = () => {
+    const hex = normalizeHex(hexDraft.value);
+
+    if (hex) {
+        model.value = hex;
+    }
+};
+
+const onHexCommit = () => {
+    const hex = normalizeHex(hexDraft.value);
+
+    if (hex) {
+        model.value = hex;
+    }
+
+    hexDraft.value = hex || model.value || '';
+};
+
 const matchSwatch = (val) => val
     ? COLOR_SWATCHES.findIndex(h => h.toLowerCase() === val.toLowerCase())
     : -1;
@@ -113,14 +159,22 @@ const onSwatchKeydown = (e, index) => {
                 />
                 <DynamicIcon v-if="!model" name="ColorPicker" class="fct-color-picker-icon w-4 h-4"/>
             </div>
-            <span v-if="!model" class="text-xs text-system-light">{{ translate('Add...') }}</span>
-            <div v-if="model" class="fct-color-picker-action-wrap">
-                <span>{{ model }}</span>
-                <DynamicIcon name="Cross" class="fct-color-picker-action w-5 h-5" @click="handleColorReset"/>
+            <div class="fct-color-picker-action-wrap">
+                <input
+                    v-model="hexDraft"
+                    type="text"
+                    class="fct-color-picker-hex-input"
+                    maxlength="7"
+                    spellcheck="false"
+                    :disabled="field && field.disabled"
+                    :placeholder="translate('Add...')"
+                    :aria-label="translate('Hex color code')"
+                    @input="onHexInput"
+                    @blur="onHexCommit"
+                    @keydown.enter.prevent="onHexCommit"
+                />
+                <DynamicIcon v-if="model" name="Cross" class="fct-color-picker-action w-5 h-5" @click="handleColorReset"/>
             </div>
         </div>
     </template>
 </template>
-
-<style scoped>
-</style>

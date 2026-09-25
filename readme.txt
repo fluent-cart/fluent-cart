@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.4
+Stable tag: 1.6.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,42 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.6.5 (Sep 24, 2026) =
+- Adds Appearance tab under Store Settings with FluentCart, theme-inherited, or custom color palettes.
+- Adds Theme-inherited palettes for block themes, Astra, Kadence, and GeneratePress.
+- Adds Storefront palette support for Stripe embedded payment forms.
+- Adds Editable hex color fields and live preview.
+- Adds Customer email verification and guest purchase recovery.
+- Adds Compliance setting for automatic login after account creation.
+- Adds Store-wide date, time, and timezone settings.
+- Adds Wildcard search guidance in admin.
+- Adds Feedback link and FluentCart version details in admin footer.
+- Adds First-cycle Paddle coupons as one-time discounts.
+- Adds Developer filter for order bumps on locked carts.
+- Improves Recurring coupon handling without simulated trials.
+- Improves Store Setup organization for date, time, and timezone.
+- Improves Admin subscription payment method display.
+- Improves Order bump styling with storefront colors.
+- Improves License lookup performance.
+- Improves Paddle subscription discount handling
+- Improves Multiple Authorize.Net, Paddle , Mollie payment, renewal, resync, card, and scheduling handling.
+- Improves PayPal connect authentication.
+- Fixes Guest orders incorrectly linking to existing accounts.
+- Fixes Customer email changes moving purchase history without verification.
+- Fixes Manual fixed discounts being stored one cent short.
+- Fixes Stripe embedded checkout errors and disabled button issues.
+- Fixes Stripe live/test mode lookup issues.
+- Fixes Duplicate gateway transactions on resubmitted checkouts.
+- Fixes Order note permissions for Manager and Super Admin roles.
+- Fixes Product bulk-action button state.
+- Fixes Custom palette button background and outline issues.
+- Fixes Empty product archive count display.
+- Fixes Product video gallery styling.
+- Fixes State and region translations.
+- Fixes Checkout page detection background errors.
+- Fixes PDF receipt tax badge rounding.
+- Fixes Order bump removal affecting booking items.
 
 = 1.6.4 (Sep 11, 2026) =
 - Adds FluentPlayer videos to product galleries with inline playback

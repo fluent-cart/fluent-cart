@@ -767,14 +767,12 @@ return [
             $adminId = get_current_user_id();
             try {
                 $setTestUser((int) $actor->user_id);
-                $own = FcTest::rest(
-                    'GET',
-                    'customer-profile/orders/' . $actor->own_uuid
-                );
-                $foreign = FcTest::rest(
-                    'GET',
-                    'customer-profile/orders/' . $foreignUuid
-                );
+                [$own, $foreign] = FcTest::withVerifiedCustomer(function () use ($actor, $foreignUuid) {
+                    return [
+                        FcTest::rest('GET', 'customer-profile/orders/' . $actor->own_uuid),
+                        FcTest::rest('GET', 'customer-profile/orders/' . $foreignUuid),
+                    ];
+                });
                 FcTest::assertHealthy($own, 'own customer-profile Order');
                 $ownPayload = $responsePayload($own);
                 FcTest::assert(

@@ -136,6 +136,8 @@ class DBMigrator
 
     public static function maybeMigrateDBChanges()
     {
+        self::maybeMigrateCustomerRecoveryIndexes();
+
         /*
          * TODO We will remove this after final release
          */
@@ -596,6 +598,38 @@ class DBMigrator
             AttributeTermsMigrator::migrate();
             AttributeSeeder::seed();
 
+            self::releaseMigrationLock();
+        }
+    }
+
+    /** Upgrade active stores without running index DDL on customer requests. */
+    public static function maybeMigrateCustomerRecoveryIndexes(): void
+    {
+        $option = '_fluent_cart_customer_recovery_indexes_version';
+        if (get_option($option) === '1') {
+            return;
+        }
+        if (!(defined('WP_CLI') && WP_CLI) && (!is_admin() || !current_user_can('manage_options'))) {
+            return;
+        }
+        if (!self::acquireMigrationLock()) {
+            return;
+        }
+        try {
+            if (get_option($option) === '1') {
+                return;
+            }
+            foreach ([SubscriptionsMigrator::class, OrderDownloadPermissionsMigrator::class, CartMigrator::class] as $migrator) {
+                if (!Schema::hasTable($migrator::$tableName)) {
+                    return;
+                }
+                $migrator::addCustomerRecoveryIndex();
+                if (!$migrator::hasCustomerRecoveryIndex()) {
+                    return; // Keep the upgrade pending if ALTER failed.
+                }
+            }
+            update_option($option, '1', false);
+        } finally {
             self::releaseMigrationLock();
         }
     }

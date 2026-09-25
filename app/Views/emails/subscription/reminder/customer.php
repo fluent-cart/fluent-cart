@@ -8,7 +8,7 @@
 
 $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $billingDate = \FluentCart\Framework\Support\Arr::get($reminder, 'billing_date', $subscription->next_billing_date);
-$billingLabel = $billingDate ? \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($billingDate)->format('M d, Y h:i A') : '';
+$billingLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($billingDate, true, $order);
 $renewalAmount = $subscription->recurring_total ?? 0;
 $billingInterval = $subscription->billing_interval ?? '';
 ?>

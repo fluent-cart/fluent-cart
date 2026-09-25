@@ -35,6 +35,22 @@
         </ul>
       </div>
 
+      <div class="fct-search-guide-example">
+        <h5>{{ $t('Wildcard Matching (= and != only)') }}</h5>
+        <ul class="fct-search-guide-list">
+          <li>
+            <el-tag type="info">value* {{ $t('Starts with') }}</el-tag>
+          </li>
+          <li>
+            <el-tag type="info">*value {{ $t('Ends with') }}</el-tag>
+          </li>
+          <li>
+            <el-tag type="info">*value* {{ $t('Contains') }}</el-tag>
+          </li>
+        </ul>
+        <p class="fct-search-guide-note">{{ $t('Use * as a wildcard with = or != operators. Example: sku = ABC*') }}</p>
+      </div>
+
       <Alert
           icon="InformationFill"
           type="info"

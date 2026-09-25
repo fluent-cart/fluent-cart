@@ -1,0 +1,23 @@
+
+.fct-review-prompt {
+	@apply relative mb-6 pb-6 border-b border-solid border-0 border-gray-200 dark:border-dark-500;
+
+	&__close {
+		@apply absolute -top-1 right-0 p-1 bg-transparent border-0 cursor-pointer rounded text-system-mid dark:text-gray-500;
+		svg {
+			@apply w-3.5 h-3.5 block;
+		}
+		&:hover {
+			@apply text-system-dark dark:text-gray-25;
+		}
+		&:focus-visible {
+			@apply outline-2 outline-offset-2 outline-primary-500;
+		}
+	}
+	&__title {
+		@apply mt-0 mb-1 pr-8 text-base font-medium leading-6 text-system-dark dark:text-gray-25;
+	}
+	&__text {
+		@apply mt-0 mb-4 text-sm leading-5 text-system-mid dark:text-gray-500;
+	}
+}

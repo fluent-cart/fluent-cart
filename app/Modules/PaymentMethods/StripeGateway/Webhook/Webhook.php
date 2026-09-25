@@ -105,6 +105,7 @@ class Webhook
     public function processAndInsertOrderByEvent($event)
     {
         $eventType = $event->type;
+        $eventLivemode = isset($event->livemode) ? (bool)$event->livemode : null;
 
         $this->unresolvedReason = '';
 
@@ -131,7 +132,7 @@ class Webhook
         if ($eventType === 'setup_intent.succeeded') {
             $setupIntentId = Arr::get((array)$vendorDataObject, 'id');
             if ($setupIntentId) {
-                $result = (new Confirmations())->confirmSetupIntent($setupIntentId);
+                $result = (new Confirmations())->confirmSetupIntent($setupIntentId, null, StripeHelper::modeFromLivemode($eventLivemode));
                 if (!is_wp_error($result)) {
                     wp_send_json([
                         'message' => 'Setup intent confirmed successfully.',
@@ -148,7 +149,7 @@ class Webhook
             $isSubscriptionCycle = $vendorDataObject->billing_reason === 'subscription_cycle';
             if ($isSubscriptionCycle) {
                 if ($eventType === 'invoice.paid') {
-                    $vendorDataObject = (new API())->getStripeObject('invoices/' . $vendorDataObject->id, ['expand' => ['payment_intent']]);
+                    $vendorDataObject = (new API())->getStripeObject('invoices/' . $vendorDataObject->id, ['expand' => ['payment_intent']], StripeHelper::modeFromLivemode($eventLivemode));
                     $createdOrder = $this->processSubscriptionRenewal($vendorDataObject);
                     if ($createdOrder) {
                         wp_send_json([
@@ -165,7 +166,7 @@ class Webhook
         if ($eventType === 'invoice.payment_failed') {
             $isSubscriptionCycle = $vendorDataObject->billing_reason === 'subscription_cycle';
             if ($isSubscriptionCycle) {
-                $invoice = (new API())->getStripeObject('invoices/' . $vendorDataObject->id);
+                $invoice = (new API())->getStripeObject('invoices/' . $vendorDataObject->id, [], StripeHelper::modeFromLivemode($eventLivemode));
                 if (!is_wp_error($invoice)) {
                     list($subscription, $parentOrder) = $this->resolveSubscriptionAndOrder($invoice);
 

@@ -10,7 +10,7 @@ $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $trialEndDate = \FluentCart\Framework\Support\Arr::get($reminder, 'trial_end_date',
     !empty($subscription->trial_ends_at) ? $subscription->trial_ends_at : $subscription->next_billing_date
 );
-$trialEndLabel = $trialEndDate ? \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($trialEndDate)->format('M d, Y h:i A') : '';
+$trialEndLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($trialEndDate, true, $order);
 $stage = \FluentCart\Framework\Support\Arr::get($reminder, 'stage', '');
 $daysBefore = preg_replace('/[^0-9]/', '', $stage);
 $daysText = !empty($daysBefore) ? sprintf(__('%d days', 'fluent-cart'), $daysBefore) : '';

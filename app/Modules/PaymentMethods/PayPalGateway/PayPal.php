@@ -66,6 +66,8 @@ class PayPal extends AbstractPaymentGateway
     {
         (new IPN())->init();
 
+        add_action('fluent_cart_action_paypal_connect', [ConnectConfig::class, 'handleConnect']);
+
         add_action('wp_ajax_nopriv_fluent_cart_confirm_paypal_payment', [$this, 'confirmPayPalSinglePayment']);
         add_action('wp_ajax_fluent_cart_confirm_paypal_payment', [$this, 'confirmPayPalSinglePayment']);
 

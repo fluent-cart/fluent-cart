@@ -175,6 +175,7 @@ run_static()
     "permission-inventory|lint: permission-inventory" \
     "name-mode-forms|lint: name-mode-forms" \
     "translation-map-integrity|lint: translation-map-integrity" \
+    "localized-dates|lint: localized-dates" \
     "lint-self-test|lint self-test"
   do
     label="${marker#*|}"

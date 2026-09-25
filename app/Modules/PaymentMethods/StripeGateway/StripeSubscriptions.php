@@ -273,7 +273,7 @@ class StripeSubscriptions extends AbstractSubscriptionModule
         }
 
         // first check if the subscription is already canceled in Stripe
-        $response = (new API())->getStripeObject('subscriptions/' . $vendorSubscriptionId, [], Arr::get($args, 'mode', 'live'));
+        $response = (new API())->getStripeObject('subscriptions/' . $vendorSubscriptionId, [], Arr::get($args, 'mode', 'current'));
 
         if (is_wp_error($response)) {
             return $response;

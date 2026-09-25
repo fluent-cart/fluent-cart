@@ -14,6 +14,7 @@ return [
     'plugin_slug'         => 'fluent-cart',
     'app_namespace'       => 'FluentCart\\App',
     'framework_namespace' => 'FluentCart\\Framework',
+    'customer_verification_meta' => '_fct_email_verification',
 
     // Substring used to decide whether a PHP notice/warning belongs to US.
     // Without it, sibling plugins make the diagnostics-as-failures rule useless.

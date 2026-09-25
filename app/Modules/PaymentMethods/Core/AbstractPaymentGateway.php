@@ -326,6 +326,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
                 $cancelResult = $oldGateway->subscriptions->cancel($subscription->vendor_subscription_id, [
                     'subscription_id' => $subscription->id,
                     'parent_order_id' => $subscription->parent_order_id,
+                    'mode'            => $subscription->order ? $subscription->order->mode : 'current',
                 ]);
                 if (is_wp_error($cancelResult)) {
                     fluent_cart_error_log(

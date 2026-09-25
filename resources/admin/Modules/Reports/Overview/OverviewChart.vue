@@ -1,6 +1,8 @@
 <script setup>
 import {ref, onMounted, nextTick, computed, watch, onUnmounted} from "vue";
 import * as echarts from "echarts";
+import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Screenshot from "@/Bits/Components/Screenshot.vue";
 import Theme from "@/utils/Theme";
@@ -80,9 +82,12 @@ const labels = computed(() => {
   if (props.dateRange) {
     return chartDataArray.value.map((item) => {
       try {
+        // See GrossVolumeChart: "default" is the browser's locale, not the
+        // store's, and it bypasses the store's month_year format.
         const [year, month] = item.label.split("-");
-        const date = new Date(year, month - 1);
-        return date.toLocaleString("default", {month: "short", year: "numeric"});
+        return dayjs(`${year}-${month}-01`)
+            .locale(fluentDayjsLocale())
+            .format(resolveDateFormat('month_year'));
       } catch {
         return item.label; // Fallback to raw label if parsing fails
       }

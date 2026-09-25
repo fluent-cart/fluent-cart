@@ -215,6 +215,11 @@ $runCommand(
     'translation-map-integrity',
     $phpBinary . ' ' . escapeshellarg($pluginDir . '/tests/lint/translation-map-integrity.php')
 );
+$localizedDatesLint = escapeshellarg($pluginDir . '/tests/lint/localized-dates.php');
+$runCommand(
+    'localized-dates',
+    $phpBinary . ' ' . $localizedDatesLint
+);
 
 $hardAssertProtected('before lint-self-test');
 $fixtureOutput = [];
@@ -282,9 +287,47 @@ foreach ($forbiddenNameModeEvidence as $evidence) {
         && strpos($nameModeText, $evidence) === false;
 }
 
-if ($fixtureProofOk && $nameModeProofOk) {
+$localizedDatesOutput = [];
+$localizedDatesCode = 0;
+exec(
+    $phpBinary . ' ' . $localizedDatesLint . ' '
+    . escapeshellarg($pluginDir . '/tests/lint/fixtures/localized-dates')
+    . ' 2>&1',
+    $localizedDatesOutput,
+    $localizedDatesCode
+);
+$localizedDatesText = implode("\n", $localizedDatesOutput);
+// All four shipped bug shapes must fire: the e-mail view's literal, the
+// receipt's get_option() bypass, the helper's gmdate() month name, and the
+// {{date}} shortcode's current_time().
+$requiredLocalizedDatesEvidence = [
+    'FAIL — 6 violation(s)',
+    'bad-email-literal.php',
+    'bad-receipt-option.php',
+    'bad-helper-gmdate.php',
+    'bad-current-time.php',
+];
+// A numeric wire format, an escaped literal, DateFormatter itself, and
+// wp_date() naming a month token must never be reported.
+$forbiddenLocalizedDatesEvidence = [
+    'good-wire-formats.php',
+    'good-date-formatter.php',
+    'good-current-time.php',
+];
+$localizedDatesProofOk = $localizedDatesCode === 1;
+foreach ($requiredLocalizedDatesEvidence as $evidence) {
+    $localizedDatesProofOk = $localizedDatesProofOk
+        && strpos($localizedDatesText, $evidence) !== false;
+}
+foreach ($forbiddenLocalizedDatesEvidence as $evidence) {
+    $localizedDatesProofOk = $localizedDatesProofOk
+        && strpos($localizedDatesText, $evidence) === false;
+}
+
+if ($fixtureProofOk && $nameModeProofOk && $localizedDatesProofOk) {
     WP_CLI::log(
-        'lint self-test: all raw-prefix and name-mode bug shapes fire and false-positive guards stay clean'
+        'lint self-test: all raw-prefix, name-mode and localized-date bug shapes fire '
+        . 'and false-positive guards stay clean'
     );
     $results['lint-self-test'] = 0;
 } else {
@@ -293,6 +336,9 @@ if ($fixtureProofOk && $nameModeProofOk) {
     }
     if (!$nameModeProofOk) {
         WP_CLI::log($nameModeText);
+    }
+    if (!$localizedDatesProofOk) {
+        WP_CLI::log($localizedDatesText);
     }
     WP_CLI::log(
         'lint self-test FAILED — fixture coverage or false-positive guards regressed'
@@ -308,6 +354,7 @@ $markerKeys = [
     'permission-inventory',
     'name-mode-forms',
     'translation-map-integrity',
+    'localized-dates',
     'lint-self-test',
 ];
 foreach ($markerKeys as $markerKey) {

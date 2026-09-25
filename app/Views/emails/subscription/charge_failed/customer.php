@@ -9,7 +9,7 @@
 
 $paymentMethodText = $subscription->getPaymentMethodText();
 $nextRetryAt = isset($next_retry_at) ? $next_retry_at : null;
-$formattedRetryDate = $nextRetryAt ? date_i18n(get_option('date_format'), strtotime($nextRetryAt)) : '';
+$formattedRetryDate = \FluentCart\App\Services\DateTime\DateFormatter::format($nextRetryAt, false, $order);
 // getCustomerDashboardUrl() returns a broken relative path ("/subscription/{uuid}")
 // when no customer profile page is configured — only render the CTA when the
 // dashboard base actually exists.

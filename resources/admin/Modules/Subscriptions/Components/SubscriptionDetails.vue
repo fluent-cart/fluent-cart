@@ -130,7 +130,7 @@
 
             <div v-else class="flex items-center gap-2.5">
               <span>
-                {{ Str.headline(subscription.current_payment_method) }}
+                {{ paymentMethod }}
               </span>
             </div>
 
@@ -404,6 +404,8 @@ import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Str from "../../../utils/support/Str";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
+import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import CancelSubscription from "@/Modules/Subscriptions/Components/CancelSubscription.vue";
 
 export default {
@@ -607,7 +609,8 @@ export default {
       return 'subscription_renewal_reminder';
     },
     paymentMethod() {
-      return this.subscription?.current_payment_method || '';
+      const slug = this.subscription?.current_payment_method || '';
+      return this.subscription?.payment_method_title || (slug ? Str.headline(slug.replace(/_/g, '-')) : '');
     },
     showNextBillingDate() {
       const status = (this.subscription?.status || '').toLowerCase();
@@ -1166,7 +1169,10 @@ export default {
         while (ts <= now) {
           ts.setDate(ts.getDate() + intervalDays);
         }
-        return ts.toLocaleDateString();
+        // Not toLocaleDateString(): no locale argument means the BROWSER's
+        // locale and the browser's own field order, so this preview could
+        // disagree with the very billing date rendered beside it.
+        return dayjs(ts).locale(fluentDayjsLocale()).format(resolveDateFormat('date'));
       })();
 
       try {

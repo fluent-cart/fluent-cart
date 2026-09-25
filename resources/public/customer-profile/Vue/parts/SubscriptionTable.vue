@@ -69,7 +69,7 @@
 
                                 <!-- translators: %s is the next billing date -->
                                 {{
-                                  $t('Auto renews on %s', dateTimeI18(scope.row.next_billing_date, 'DD MMM, YYYY'))
+                                  $t('Auto renews on %s', dateTimeI18(scope.row.next_billing_date, 'date'))
                                 }}
                             </div>
 

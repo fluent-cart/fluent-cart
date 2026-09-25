@@ -85,7 +85,9 @@ export const adjustTotalBasedOnDiscountChange = ($orderObj, $discountObj) => {
     return $orderObj;
   }
 
-  let dAmount = $discountObj.value ? $discountObj.value * 100 : 0;
+  // Round rather than truncate: 9.95 * 100 is 994.9999999999999 in binary
+  // float, and the parseInt() below would otherwise store 994 cents.
+  let dAmount = $discountObj.value ? Math.round($discountObj.value * 100) : 0;
   $discountObj.label = "";
 
   if ($discountObj.type === "percentage") {

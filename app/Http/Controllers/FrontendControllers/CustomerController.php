@@ -11,6 +11,7 @@ use FluentCart\App\Http\Controllers\Controller;
 use FluentCart\App\Http\Requests\CustomerRequest;
 use FluentCart\App\Http\Requests\FrontendRequests\CustomerAddressRequest;
 use FluentCart\App\Models\CustomerAddresses;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Renderer\AddressSelectRenderer;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
@@ -89,6 +90,12 @@ class CustomerController extends Controller
 
     public function updateAddressSelect(Request $request, $customerAddressId)
     {
+        if (is_user_logged_in() && EmailVerificationService::isRequired(get_current_user_id())) {
+            return $this->sendError([
+                'message' => __('Please verify your email before using saved addresses.', 'fluent-cart')
+            ], 403);
+        }
+
         // The imported CustomerResource is the FrontendResource variant, which has
         // no getCurrentCustomer — calling it there hits BaseResourceApi::__callStatic
         // and 500s for every caller. The current-customer resolver lives on the
@@ -176,6 +183,12 @@ class CustomerController extends Controller
 
     public function createAddress(Request $request) //CustomerAddressRequest
     {
+        if (is_user_logged_in() && EmailVerificationService::isRequired(get_current_user_id())) {
+            return $this->sendError([
+                'message' => __('Please verify your email before using saved addresses.', 'fluent-cart')
+            ], 403);
+        }
+
         $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
 
         if (empty($customer)) {

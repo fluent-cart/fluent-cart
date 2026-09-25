@@ -10,6 +10,8 @@ class CartMigrator extends Migrator
     public static string $tableName = 'fct_carts';
 
 
+    const CUSTOMER_RECOVERY_INDEX = 'idx_carts_customer_recovery';
+
     public static function getSqlSchema(): string
     {
         return "`customer_id` BIGINT(20) UNSIGNED NULL,
@@ -31,6 +33,21 @@ class CartMigrator extends Migrator
                 `created_at` DATETIME NULL,
                 `updated_at` DATETIME NULL,
                 `deleted_at` TIMESTAMP NULL,
-                UNIQUE KEY cart_hash (cart_hash)";
+                UNIQUE KEY cart_hash (cart_hash),
+                INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `cart_hash` ASC)";
+    }
+    public static function migrated()
+    {
+        static::addCustomerRecoveryIndex();
+    }
+
+    public static function addCustomerRecoveryIndex(): void
+    {
+        static::addIndexIfNotExists(self::CUSTOMER_RECOVERY_INDEX, ['customer_id', 'cart_hash']);
+    }
+
+    public static function hasCustomerRecoveryIndex(): bool
+    {
+        return static::hasIndex(self::CUSTOMER_RECOVERY_INDEX);
     }
 }

@@ -1,6 +1,6 @@
 <script setup>
 import {formatDate} from "../common";
-import {dateTimeI18} from "@/utils/Utils";
+import {dateTimeI18, resolveDateFormat, resolveYearAwareFormat, toStoreTimezone} from "@/utils/Utils";
 import {onMounted, ref} from "vue";
 
 const props = defineProps({
@@ -21,19 +21,21 @@ const props = defineProps({
     }
 });
 
-const format = ref('MMM DD, YYYY');
+const format = ref('date');
 
 onMounted(() => {
-    let dayMonthFormat = 'MMM DD, YYYY';
-    const dateObject = new Date(props.dateTime);
-    if(dateObject.getFullYear() === new Date().getFullYear()) {
-        dayMonthFormat = 'MMM DD';
-    }
+    // Whether the year may be dropped is the store's call, and it has to be
+    // decided in the same timezone the template renders in -- dateTimeI18()
+    // below runs the value through toStoreTimezone(), so the comparison does
+    // too rather than reading a browser-local native Date.
+    const dayMonthFormat = resolveYearAwareFormat(toStoreTimezone(props.dateTime));
 
     if (props.onlyTime) {
-        format.value = 'h:mm A';
+        format.value = 'time';
     } else if (props.withTime) {
-        format.value = dayMonthFormat + ' h:mm A';
+        // Resolved to raw patterns here because the two halves are concatenated;
+        // dateTimeI18() passes an unrecognised string through as a pattern.
+        format.value = resolveDateFormat(dayMonthFormat) + ' ' + resolveDateFormat('time');
     } else {
         format.value = dayMonthFormat;
     }
@@ -43,7 +45,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <span :title="dateTimeI18(dateTime, 'MMM DD, YYYY h:mm A')">
+  <span :title="dateTimeI18(dateTime, 'date_time')">
     {{ dateTimeI18(dateTime, format) }}
   </span>
 </template>

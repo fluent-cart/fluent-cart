@@ -6,6 +6,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\Report\DefaultReportService;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\Framework\Support\Arr;
@@ -572,18 +573,24 @@ class StoreDigestService
         $startTs = strtotime($start);
         $endTs = strtotime($end);
 
+        // date_i18n (not DateFormatter::format) because windowFor() hands us bare
+        // LOCAL wall-clock strings, not GMT -- converting them would shift the label.
+        // Only the pattern comes from the store's settings.
         if ($frequency === 'monthly') {
-            return date_i18n('F Y', $startTs);
+            // A month-and-year label has no WordPress setting of its own, so it is
+            // derived from the store's date format -- a year-first locale keeps its
+            // own field order instead of the English 'month year'.
+            return date_i18n(DateFormatter::monthYearFormat(), $startTs);
         }
         if ($frequency === 'weekly') {
-            /* translators: %1$s: start date (e.g. May 19), %2$s: end date (e.g. May 25, 2026) */
+            /* translators: %1$s: start date, %2$s: end date */
             return sprintf(
                 __('%1$s – %2$s', 'fluent-cart'),
-                date_i18n('M j', $startTs),
-                date_i18n('M j, Y', $endTs)
+                date_i18n(DateFormatter::dateFormat(), $startTs),
+                date_i18n(DateFormatter::dateFormat(), $endTs)
             );
         }
-        return date_i18n('F j, Y', $startTs);
+        return date_i18n(DateFormatter::dateFormat(), $startTs);
     }
 
     private static function storeName(): string

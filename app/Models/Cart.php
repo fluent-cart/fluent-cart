@@ -314,14 +314,22 @@ class Cart extends Model
      * Deliberately distinct from isLocked(), which additionally requires order_id
      * and is therefore false for renewal and early-installment carts, which never
      * set that column.
+     *
+     * Filterable so an integration that locks its cart only to pin its own item
+     * (e.g. a booking) can still take order bumps. The filter only decides the
+     * lock; a cart carrying an upgrade is refused after it either way. The upgrade
+     * swap in WebCheckoutHandler::handleOrderBumpRequest() ignores this filter and
+     * keeps refusing any `is_locked` cart.
      */
     public function acceptsAdditionalItems()
     {
-        if (Arr::get($this->checkout_data, 'is_locked') === 'yes') {
-            return false;
-        }
+        $accepts = (bool) apply_filters(
+            'fluent_cart/cart/accepts_additional_items',
+            Arr::get($this->checkout_data, 'is_locked') !== 'yes',
+            ['cart' => $this]
+        );
 
-        return empty(Arr::get($this->checkout_data, 'upgrade_data'));
+        return $accepts && empty(Arr::get($this->checkout_data, 'upgrade_data'));
     }
 
     public function addItem($item = [], $replacingIndex = null)

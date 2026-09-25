@@ -21,6 +21,7 @@ use FluentCart\App\Models\AttributeGroup;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Modules\FluentPlayer\FluentPlayerBridge;
+use FluentCart\App\Modules\AdminFooter\AdminFooter;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Services\Filter\TaxFilter;
 use FluentCart\App\Services\Filter\OrderFilter;
@@ -34,6 +35,7 @@ use FluentCart\App\Services\Filter\OrderBumpFilter;
 use FluentCart\App\Modules\Shipping\Services\Filter\ShippingClassFilter;
 use FluentCart\App\Modules\Shipping\Services\Filter\ShippingZoneFilter;
 use FluentCart\App\Modules\Integrations\AddOnModule;
+use FluentCart\App\Services\DateTime\DayjsFormatter;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Services\Permission\PermissionManager;
 use FluentCart\Database\DataBackfills;
@@ -51,6 +53,7 @@ class MenuHandler
             if ($page == 'fluent-cart') {
 
                 \FluentCart\App\Events\FirstTimePluginActivation::handle();
+                (new AdminFooter())->register();
                 add_action('admin_enqueue_scripts', function () {
                     Vite::enqueueStyle('fluent_cart_admin_app_css',
                         'styles/tailwind/style.css',
@@ -597,7 +600,7 @@ class MenuHandler
             'has_data_migrations'              => $hasDataMigrations,
             'subscription_intervals'           => Helper::getAvailableSubscriptionIntervalOptions(),
 
-            'datei18'               => TransStrings::dateTimeStrings(),
+            'datei18'               => DayjsFormatter::localizedStrings(),
             'el_strings'            => TransStrings::elStrings(),
             'wp_locale'             => get_locale(),
             'is_full_name_required' => CheckoutFieldsSchema::isFullNameRequired(),

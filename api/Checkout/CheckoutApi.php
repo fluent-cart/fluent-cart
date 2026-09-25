@@ -22,6 +22,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderAddress;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Services\CheckoutService;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -164,7 +165,12 @@ class CheckoutApi
 
         $orderData = OrderService::groupSanitizedData($validatedData);
 
-        $shippingMethodId = Arr::get($orderData, 'others.fc_shipping_method');
+        // The form posts the method twice: the checked radio (fc_shipping_method) and its
+        // hidden mirror (fc_selected_shipping_method). validateData() checks only the mirror
+        // against the address's zones, so pricing from the radio let a request pass with one
+        // method and be charged by another, from a zone the address is not in. Read from
+        // $validatedData, not the sanitized copy in others: that is the exact integer checked.
+        $shippingMethodId = (int) Arr::get($validatedData, 'fc_selected_shipping_method', 0);
 
         $shippingMethod = null;
         $shippingCharge = 0;
@@ -292,12 +298,14 @@ class CheckoutApi
 
     private static function getOrCreateCustomer(CartCheckoutHelper $cartCheckoutHelper, $orderData)
     {
-        $customerEmail = static::getCustomerEmail($orderData['billing_address']);
-        if (is_user_logged_in()) {
-            $customerEmail = wp_get_current_user()->user_email;
-            Arr::set($orderData, 'billing_address.email', $customerEmail);
+        $customer = is_user_logged_in() ? ApiCustomerResource::getCurrentCustomer() : null;
+        $email = static::getCustomerEmail($orderData['billing_address']);
+        Arr::set($orderData, 'billing_address.email', $email);
+        if (!$customer) {
+            // Reuse the email's customer for the purchase without granting ownership.
+            $customer = Customer::query()->where('email', $email)->orderBy('id')->first();
         }
-        $customer = $cartCheckoutHelper->getCustomer($customerEmail);
+
         return static::createCustomerWithAddress(
             $customer,
             $orderData,
@@ -524,7 +532,8 @@ class CheckoutApi
     {
         $customer = $order->customer;
 
-        if (empty($customer)) {
+        if (empty($customer) || !is_user_logged_in() || (int) $customer->user_id !== get_current_user_id()
+            || EmailVerificationService::isRequired(get_current_user_id())) {
             return;
         }
 
@@ -536,15 +545,10 @@ class CheckoutApi
             'last_name'  => $lastName,
         ]);
 
-        $user = get_user_by('email', $customer->email);
-
-        if (empty($user)) {
-            return;
-        }
-
-        if (is_user_logged_in() && $user->ID === get_current_user_id()) {
-            update_user_meta($user->ID, 'first_name', $firstName);
-            update_user_meta($user->ID, 'last_name', $lastName);
+        // Keep profile updates tied to the buyer's stored account link too.
+        if (is_user_logged_in() && (int) $customer->user_id === get_current_user_id()) {
+            update_user_meta(get_current_user_id(), 'first_name', $firstName);
+            update_user_meta(get_current_user_id(), 'last_name', $lastName);
         }
     }
 
@@ -575,29 +579,27 @@ class CheckoutApi
             $billingAddress['email'] = $current_user->user_email;
             $billingAddress['user_id'] = $current_user->ID;
         } else {
-            static::handleUserCreation($orderData, $billingAddress);
+            unset($billingAddress['user_id']);
         }
 
         $customer = CustomerResource::create($billingAddress);
         $customer = Arr::get($customer, 'data', null);
         $customerId = Arr::get($customer, 'id', null);
-        static::createCustomerAddress($billingAddress, $customerId);
-        static::createCustomerAddress($shippingAddress, $customerId);
+        if ($customer && $customer->wasRecentlyCreated) {
+            static::createCustomerAddress($billingAddress, $customerId);
+            static::createCustomerAddress($shippingAddress, $customerId);
+        }
 
         return $customer;
     }
 
     private static function updateExistingCustomer($customer, $orderData, $billingAddress, $shippingAddress)
     {
-        if (empty($customer->user_id)) {
-            $currentLoggedInUser = wp_get_current_user();
-            if ($currentLoggedInUser && $currentLoggedInUser->user_email === $customer->email) {
-                $userId = get_current_user_id();
-                $customer->update(['user_id' => $userId]);
-                $billingAddress['user_id'] = $userId;
-            }
+        // Order addresses come from this checkout; saved profile data needs proof.
+        if (!is_user_logged_in() || (int) $customer->user_id !== get_current_user_id()
+            || EmailVerificationService::isRequired(get_current_user_id())) {
+            return;
         }
-
         $customer->load(['billing_address', 'shipping_address']);
 
         if ($customer->billing_address->count() < 1) {
@@ -605,21 +607,6 @@ class CheckoutApi
         }
         if ($customer->shipping_address->count() < 1) {
             static::createCustomerAddress($shippingAddress, $customer->id);
-        }
-
-        static::handleUserCreation($orderData, $billingAddress, $customer);
-    }
-
-    private static function handleUserCreation($orderData, &$billingAddress, $customer = null)
-    {
-        $userEmail = Arr::get($billingAddress, 'email');
-        $user = get_user_by('email', $userEmail);
-
-        if ($user) {
-            $billingAddress['user_id'] = $user->ID;
-            if ($customer) {
-                $customer->update(['user_id' => $user->ID]);
-            }
         }
     }
 
@@ -1004,7 +991,14 @@ class CheckoutApi
 
         if ($cart->requireShipping()) {
             if (!empty($data['fc_selected_shipping_method'])) {
-                $selectedMethod = $data['fc_selected_shipping_method'];
+                // One integer, decided here, is both what is checked and what placeOrder() prices.
+                // A loose compare let PHP 7.4 match "1<b>2" to method 1, and sanitize_text_field()
+                // then turned the same string into "12", so the order was priced by method 12.
+                $rawMethod = $data['fc_selected_shipping_method'];
+                $isPlainId = (is_string($rawMethod) || is_int($rawMethod)) && (string) absint($rawMethod) === (string) $rawMethod;
+                $selectedMethod = $isPlainId ? absint($rawMethod) : 0;
+                $data['fc_selected_shipping_method'] = $selectedMethod;
+
                 $shippingCountry = Arr::get($data, 'billing_country', '');
                 $shippingState = Arr::get($data, 'billing_state', '');
                 $shipToDifferent = Arr::get($data, 'ship_to_different', 'no') === 'yes';
@@ -1022,7 +1016,7 @@ class CheckoutApi
                 } else {
                     $found = false;
                     foreach ($availableShippingMethods as $shippingMethod) {
-                        if ($shippingMethod->id == $selectedMethod) {
+                        if ((int) $shippingMethod->id === $selectedMethod) {
                             $found = true;
                             break;
                         }

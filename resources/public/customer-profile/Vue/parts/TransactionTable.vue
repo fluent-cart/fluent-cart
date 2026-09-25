@@ -10,7 +10,7 @@
       <el-table-column :label="$t('Date')" :width="120">
         <template #default="scope">
           <time class="text truncate" :datetime="scope.row.created_at">
-            {{ dateTimeI18(scope.row.created_at, 'MMM DD, YYYY') }}
+            {{ dateTimeI18(scope.row.created_at, 'date') }}
           </time>
         </template>
       </el-table-column>

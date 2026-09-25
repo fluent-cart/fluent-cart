@@ -660,7 +660,7 @@ return array(
         'UE' => __('Upper East', 'fluent-cart'),
         'UW' => __('Upper West', 'fluent-cart'),
         'TV' => __('Volta', 'fluent-cart'),
-        'WP' => __('Western', 'fluent-cart'),
+        'WP' => _x('Western', 'Ghanaian Region', 'fluent-cart'),
         'WN' => __('Western North', 'fluent-cart'),
     ),
     'GP' => array(),
@@ -2254,7 +2254,7 @@ return array(
         'WC' => __('Western Cape', 'fluent-cart'),
     ),
     'ZM' => array( // Zambian provinces.
-        'ZM-01' => __('Western', 'fluent-cart'),
+        'ZM-01' => _x('Western', 'Zambia Province', 'fluent-cart'),
         'ZM-02' => __('Central', 'fluent-cart'),
         'ZM-03' => __('Eastern', 'fluent-cart'),
         'ZM-04' => __('Luapula', 'fluent-cart'),

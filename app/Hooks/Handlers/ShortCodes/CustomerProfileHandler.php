@@ -7,12 +7,17 @@ use FluentCart\Api\PaymentMethods;
 use FluentCart\Api\Resource\CustomerResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
+use FluentCart\App\Services\CustomerIdentity\EmailClaimPortal;
+use FluentCart\App\Services\CustomerIdentity\CustomerRecoveryService;
+use FluentCart\App\Services\CustomerIdentity\EmailClaimService;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Services\TemplateService;
+use FluentCart\App\Services\DateTime\DayjsFormatter;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
@@ -39,6 +44,16 @@ class CustomerProfileHandler extends ShortCode
     {
         parent::register();
 
+        add_action(CustomerRecoveryService::HOOK, [CustomerRecoveryService::class, 'run']);
+
+        add_action('template_redirect', function () {
+            $redirect = EmailClaimPortal::handleSubmission();
+            if ($redirect) {
+                wp_safe_redirect($redirect);
+                exit;
+            }
+        });
+
         // Add wildcard customer profile pages
         // add a custom permalink endpoint
         add_action('init', function () {
@@ -64,6 +79,11 @@ class CustomerProfileHandler extends ShortCode
             $redirectUrl = $this->resolveLoginRedirectUrl(
                 (new StoreSettings())->getCustomerProfilePage()
             );
+
+            $claimToken = Arr::get($_GET, EmailClaimService::QUERY_TOKEN, '');
+            if (is_string($claimToken) && $claimToken !== '') {
+                $redirectUrl = add_query_arg(EmailClaimService::QUERY_TOKEN, sanitize_text_field(wp_unslash($claimToken)), (new StoreSettings())->getCustomerProfilePage());
+            }
 
             if (defined('FLUENT_AUTH_VERSION') && (new \FluentAuth\App\Hooks\Handlers\CustomAuthHandler())->isEnabled()) {
                 ?>
@@ -128,6 +148,13 @@ class CustomerProfileHandler extends ShortCode
             'public/customer-profile/style/customer-profile-global.scss',
         );
 
+        // Gate before custom endpoint callbacks or the dashboard load customer data.
+        $verificationNotice = EmailClaimPortal::render();
+        if (EmailVerificationService::isRequired(get_current_user_id())) {
+            echo $verificationNotice; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view
+            return;
+        }
+
         $customEndpointContent = $this->maybeCustomEndpointContent();
 
         if(!$customEndpointContent) {
@@ -136,7 +163,8 @@ class CustomerProfileHandler extends ShortCode
 
         $colors = self::generateCssColorVariables(Arr::get($this->shortCodeAttributes, 'colors', ''));
         add_action('fluent_cart/customer_menu', array($this, 'renderCustomerMenu'));
-        add_action('fluent_cart/customer_app', function () use ($customEndpointContent) {
+        add_action('fluent_cart/customer_app', function () use ($customEndpointContent, $verificationNotice) {
+            echo $verificationNotice; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view
             if($customEndpointContent) {
                 echo $customEndpointContent; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             } else {
@@ -404,7 +432,7 @@ class CustomerProfileHandler extends ShortCode
                     'last_name'  =>  $currentCustomer ? $currentCustomer->last_name : '',
                 ],
                 'logout_url'        => wp_logout_url(home_url()),
-                'datei18'           => TransStrings::dateTimeStrings(),
+                'datei18'           => DayjsFormatter::localizedStrings(),
                 'el_strings'        => TransStrings::elStrings(),
                 'wp_locale'         => get_locale(),
                 'is_company_name_enabled' => CheckoutFieldsSchema::isCompanyNameEnabled(),

@@ -8,9 +8,7 @@
 
 $renewalAmount = $subscription->recurring_total ?? 0;
 $billingInterval = $subscription->billing_interval ?? '';
-$accessUntilLabel = !empty($subscription->next_billing_date)
-    ? \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($subscription->next_billing_date)->format('M d, Y')
-    : '';
+$accessUntilLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($subscription->next_billing_date, false, $order);
 ?>
 
 <div class="space_bottom_30">

@@ -16,29 +16,46 @@ html, body {
   margin-bottom: 16px;
 }
 
+:root {
+    --fct-modal-checkout-primary-text-color: var(--fct-primary-text-color);
+    --fct-modal-checkout-secondary-text-color: var(--fct-secondary-text-color);
+    --fct-modal-checkout-active-text-color: var(--fct-primary-active-text-color);
+
+    // border
+    --fct-modal-checkout-border-color: var(--fct-border-color);
+    --fct-modal-checkout-divider-color: var(--fct-divider-color);
+    --fct-modal-checkout-active-border-color: var(--fct-active-border-color);
+    --fct-modal-checkout-secondary-active-border-color: var(--fct-secondary-active-border-color);
+
+    --fct-modal-checkout-border-radius: 6px;
+
+    --fct-modal-checkout-primary-bg-color: var(--fct-primary-bg-color);
+
+    // button
+    --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-modal-checkout-primary-bg-color));
+    --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color);
+
+    --fct-modal-checkout-input-disabled-bg: var(--fct-input-disabled-bg);
+
+    // checkbox
+    --fct-modal-checkout-checkbox-bg-color: var(--fct-modal-checkout-primary-bg-color);
+    
+    --fct-modal-checkout-checkbox-active-border-color: var(--fct-modal-checkout-checkbox-bg-color);
+
+
+    // input
+    --fct-modal-checkout-input-bg-color: var(--fct-input-bg-color);
+    --fct-modal-checkout-input-disabled-bg-color: var(--fct-input-disabled-bg-color);
+    --fct-modal-checkout-input-text-color: var(--fct-input-text-color);
+    --fct-modal-checkout-input-placeholder-text-color: var(--fct-input-placeholder-text-color);
+    --fct-modal-checkout-input-border-color: var(--fct-modal-checkout-border-color);
+}
+
+
 .fct-modal-checkout-form-wrapper {
-  --fct-modal-checkout-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
-  --fct-modal-checkout-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
-  --fct-modal-checkout-active-text-color: var(--fct-primary-active-text-color, theme('colors.blue.500'));
-
-  // border
-  --fct-modal-checkout-border-color: var(--fct-border-color, theme('colors.gray.outline'));
-  --fct-modal-checkout-divider-color: var(--fct-divider-color, theme('colors.gray.divider'));
-  --fct-modal-checkout-active-border-color: var(--fct-active-border-color, theme('colors.primary.500'));
-  --fct-modal-checkout-secondary-active-border-color: var(--fct-secondary-active-border-color, theme('colors.blue.500'));
-
-  --fct-modal-checkout-border-radius: 6px;
-
-  --fct-modal-checkout-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
-
-  // button
-  --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-modal-checkout-primary-bg-color));
-  --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
-
-  --fct-modal-checkout-input-disabled-bg: var(--fct-input-disabled-bg, theme('colors.gray.50'));
-
-
-  background-color: #ffffff;
+  // Paired with the site's surface like every other panel; white everywhere
+  // the palette does not say otherwise.
+  background-color: var(--fct-card-bg-color, #ffffff);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   * {
@@ -75,7 +92,7 @@ html, body {
     border-width: 1px;
     border-style: solid;
     border-color: var(--fct-modal-checkout-border-color);
-    background-color: #fff;
+    background-color: var(--fct-modal-checkout-input-bg-color, #fff);
     padding: 0;
     flex-shrink: 0;
     &::before {
@@ -97,26 +114,26 @@ html, body {
       transform: rotate(45deg);
     }
     &:checked {
-      border-color: var(--fct-modal-checkout-active-border-color);
-      background-color: var(--fct-modal-checkout-primary-bg-color);
+      border-color: var(--fct-modal-checkout-checkbox-active-border-color);
+      background-color: var(--fct-modal-checkout-checkbox-bg-color);
       &::before {
         opacity: 1;
       }
+      &:focus,
       &:hover {
-        background-color: var(--fct-modal-checkout-primary-bg-color);
+        border-color: var(--fct-modal-checkout-checkbox-active-border-color);
+        background-color: var(--fct-modal-checkout-checkbox-bg-color);
       }
     }
   }
 
   .fct_checkout_input_group {
     input {
-      // Self-contained border so the connected address box renders regardless
-      // of the host theme. On the normal checkout page this border comes from
-      // the `.fct_checkout` base rule (checkout.scss), which is absent under
-      // the modal `.fct-modal-checkout-form-wrapper` — leaving the field open
-      // to theme resets (e.g. Divi's global `input[type=text]` style). The
-      // corner/divider tweaks in checkout.scss then layer on top of this.
-      @apply appearance-none w-full min-h-10 m-0 rounded-none bg-white text-sm leading-none px-4 py-2.5 outline-none ring-0 shadow-none text-[var(--fct-modal-checkout-primary-text-color)] placeholder:text-sm placeholder:text-[theme('colors.gray.400')] border-[0.5px] border-x-[1px] border-solid border-[var(--fct-modal-checkout-border-color)] focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:border-[var(--fct-modal-checkout-active-border-color)] focus:text-[var(--fct-modal-checkout-primary-text-color)] focus:outline-none focus:shadow-none box-border;
+      @apply appearance-none w-full min-h-10 m-0 rounded-none text-sm leading-none px-4 py-2.5 outline-none ring-0 shadow-none placeholder:text-sm border-[0.5px] border-x-[1px] border-solid focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:outline-none focus:shadow-none box-border;
+
+      &:disabled {
+        @apply cursor-not-allowed;
+      }
     }
   }
   .fct_checkout_agree_terms {
@@ -173,16 +190,19 @@ html, body {
   .fct_summary_items_list {
     margin-top: 0;
   }
+  // The tinted wells on the details panel. gray.100 stays as the literal
+  // fallback; on a printed palette they follow the muted surface so the
+  // panel and its wells stay one family in dark palettes too.
   .fct_coupon {
     .fct_coupon_toggle a {
-        @apply bg-gray-100;
+        background-color: var(--fct-secondary-btn-hover-bg-color, #eaecf0);
     }
     &.is_coupon_active {
-         @apply bg-gray-100;
+         background-color: var(--fct-secondary-btn-hover-bg-color, #eaecf0);
     }
   }
   .fct_tax_summary_box {
-    @apply bg-gray-100;
+    background-color: var(--fct-secondary-btn-hover-bg-color, #eaecf0);
   }
   .fct_allow_create_account_wrapper,
   .fct_b2b_toggle_wrapper {
@@ -199,7 +219,7 @@ html, body {
 }
 
 .fct-modal-checkout-details {
-  background-color: #f5f7fa;
+  background-color: var(--fct-secondary-bg-color, #f5f7fa);
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
   display: flex;
@@ -221,7 +241,7 @@ html, body {
 
 /*==== Summary ====*/
 .fct-modal-checkout-summary {
-  background-color: #f3f6fb;
+  background-color: var(--fct-card-bg-color, #f3f6fb);
   display: flex;
   gap: 15px;
   padding: 20px;
@@ -293,9 +313,6 @@ html, body {
     opacity: 0.6;
     font-size: 12px;
     font-weight: 400;
-  }
-
-  .fct-modal-cs-line-price--discounted {
   }
 
   .fct-modal-cs-license {
@@ -520,7 +537,7 @@ html, body {
     }
     input {
       width: 100%;
-      background-color: #fff;
+      background-color: var(--fct-modal-checkout-input-bg-color, #fff);
       max-width: 100%;
       min-height: 29px;
       border: 1px solid var(--fct-modal-checkout-border-color);
@@ -533,7 +550,7 @@ html, body {
       box-shadow: none;
       height: auto;
       &:focus {
-        background-color: #fff;
+        background-color: var(--fct-modal-checkout-input-bg-color, #fff);
         border-color: var(--fct-modal-checkout-active-border-color);
       }
     }
@@ -607,23 +624,13 @@ html, body {
       width: 100%;
       height: auto;
       min-height: 38px;
-      border: 1px solid var(--fct-modal-checkout-border-color);
       border-radius: var(--fct-modal-checkout-border-radius);
       padding: 5px 12px;
       font-size: 14px;
       line-height: 1;
-      color: var(--fct-modal-checkout-primary-text-color);
       outline: none;
       box-shadow: none;
       box-sizing: border-box;
-      &:focus {
-        background-color: #fff;
-        border-color: var(--fct-modal-checkout-active-border-color);
-      }
-      &:disabled {
-        background-color: var(--fct-modal-checkout-input-disabled-bg);
-        color: var(--fct-modal-checkout-secondary-text-color);
-      }
     }
   }
 
@@ -656,7 +663,7 @@ html, body {
   }
   .fct_payment_method_logo {
     label {
-      background-color: #fff;
+      background-color: var(--fct-card-bg-color, #fff);
       gap: 6px;
       line-height: 28px;
       color: var(--fct-modal-checkout-secondary-text-color);
@@ -765,7 +772,7 @@ html, body {
     min-height: 14px;
     max-height: 14px;
     flex: 0 0 14px;
-    background-color: #ffffff;
+    background-color: var(--fct-card-bg-color, #ffffff);
     color: var(--fct-modal-checkout-secondary-text-color);
     border-color: var(--fct-modal-checkout-border-color);
     appearance: none;
@@ -777,7 +784,8 @@ html, body {
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid bg-white p-3 text-left text-xs leading-[1.6];
+    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid p-3 text-left text-xs leading-[1.6];
+    background-color: var(--fct-card-bg-color, #ffffff);
     color: var(--fct-modal-checkout-primary-text-color);
     border-color: var(--fct-modal-checkout-border-color);
     z-index: 20;
@@ -807,4 +815,77 @@ html, body {
     min-width: 220px;
     width: 220px;
   }
+}
+
+body:not(.fluent-cart-no-colors) {
+
+    --fct-modal-checkout-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
+    --fct-modal-checkout-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+    --fct-modal-checkout-active-text-color: var(--fct-primary-active-text-color, theme('colors.blue.500'));
+
+    // border
+    --fct-modal-checkout-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+    --fct-modal-checkout-divider-color: var(--fct-divider-color, theme('colors.gray.divider'));
+    --fct-modal-checkout-active-border-color: var(--fct-active-border-color, theme('colors.primary.500'));
+    --fct-modal-checkout-secondary-active-border-color: var(--fct-secondary-active-border-color, theme('colors.blue.500'));
+
+    --fct-modal-checkout-border-radius: 6px;
+
+    --fct-modal-checkout-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
+
+    // button
+    --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-modal-checkout-primary-bg-color));
+    --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+
+    --fct-modal-checkout-input-disabled-bg: var(--fct-input-disabled-bg, theme('colors.gray.50'));
+
+    // checkbox
+    --fct-modal-checkout-checkbox-bg-color: var(--fct-modal-checkout-primary-bg-color);
+    
+    --fct-modal-checkout-checkbox-active-border-color: var(--fct-modal-checkout-checkbox-bg-color);
+
+
+    // input
+    --fct-modal-checkout-input-bg-color: var(--fct-input-bg-color, #ffffff);
+    --fct-modal-checkout-input-disabled-bg-color: var(--fct-input-disabled-bg-color, theme('colors.gray.50'));
+    --fct-modal-checkout-input-text-color: var(--fct-input-text-color, theme('colors.system.dark'));
+    --fct-modal-checkout-input-placeholder-text-color: var(--fct-input-placeholder-text-color, theme('colors.gray.400'));
+    --fct-modal-checkout-input-border-color: var(--fct-modal-checkout-border-color);
+
+    // Button text pairs white with a button colour that was supplied as a
+    // reference and so could not be contrast-measured — both supported vendors
+    // (Astra, Kadence) ship dark brand colours, and white is what their own
+    // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
+    --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, #253241);
+    --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    .fct-modal-checkout-form-wrapper {
+        .fct-modal-form-info {
+            input {
+                border: 1px solid var(--fct-modal-checkout-border-color);
+                color: var(--fct-modal-checkout-input-text-color);
+                background-color: var(--fct-modal-checkout-input-bg-color);
+                &::placeholder {
+                    color: var(--fct-modal-checkout-input-placeholder-text-color);
+                }
+                &:focus {
+                    border-color: var(--fct-modal-checkout-active-border-color);
+                }
+                &:disabled {
+                    background-color: var(--fct-modal-checkout-input-disabled-bg);
+                    color: var(--fct-modal-checkout-secondary-text-color);
+                }
+            }
+        }
+
+        .fct_checkout_input_group {
+            input {
+                @apply bg-[var(--fct-modal-checkout-input-bg-color)] text-[var(--fct-modal-checkout-input-text-color)] placeholder:text-[var(--fct-modal-checkout-input-placeholder-text-color)] border-[var(--fct-modal-checkout-input-border-color)] focus:border-[var(--fct-modal-checkout-active-border-color)] focus:text-[var(--fct-modal-checkout-input-text-color)];
+
+                &:disabled {
+                    @apply bg-[var(--fct-modal-checkout-input-disabled-bg-color)];
+                }
+            }
+        }
+
+    }
 }

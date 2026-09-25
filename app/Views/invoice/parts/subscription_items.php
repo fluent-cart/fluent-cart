@@ -1,4 +1,10 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
+<?php
+/**
+ * @var \FluentCart\Framework\Database\Orm\Collection $subscriptions
+ * @var \FluentCart\App\Models\Order $order
+ */
+?>
 <?php if ($subscriptions->count() > 0): ?>
 
 <div style="font-size:16px;font-weight:600;color:rgb(44,62,80);margin: 16px 0 0 0;line-height:24px;">
@@ -36,7 +42,7 @@
                                     /* translators: %s is the auto-renewal date and time */
                                     esc_html__('- Auto renews on %s', 'fluent-cart'),
                                     esc_html(
-                                        \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($subs->next_billing_date)->format('M d, Y h:i A')
+                                        \FluentCart\App\Services\DateTime\DateFormatter::format($subs->next_billing_date, true, $order)
                                     )
                                 );
                                 ?>

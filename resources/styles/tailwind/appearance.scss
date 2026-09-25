@@ -1,0 +1,355 @@
+/* Appearance */
+.fct-appearance-component-section {
+    @apply bg-white rounded dark:bg-dark-500;
+    .fct-card {
+        @apply bg-transparent rounded-none m-0;
+    }
+    .fct-card-body {
+        @apply p-0;
+    }
+}
+
+
+.fct-appearance-component-wrapper {
+    @apply flex items-start;
+}
+
+.fct-appearance-component {
+    @apply w-[450px] p-5;
+    .fct-appearance-heading {
+        @apply mb-5;
+    }
+}
+.fct-appearance-source {
+    @apply grid gap-5;
+}
+
+.fct-appearance-source-card {
+    @apply border-solid border-gray-outline border rounded dark:border-dark-400;
+    transition: border-color 0.15s ease;
+
+    &.is-checked {
+        @apply border-primary-500 dark:border-dark-300;
+    }
+
+    .fct-appearance-source-card__header {
+        @apply flex items-start gap-2.5 p-4 cursor-pointer relative;
+
+        &:focus-visible {
+            @apply outline-2 outline-offset-2 outline-primary-500;
+        }
+    }
+    .fct-appearance-source-card__text {
+         @apply flex-1;
+    }
+    .fct-appearance-source-card__title {
+         @apply block text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+
+    .fct-appearance-source-card__note {
+        @apply block text-xs text-system-mid font-normal mt-1 dark:text-gray-300;
+    }
+
+    .fct-appearance-source-icon {
+        @apply w-4.5 h-4.5 flex-shrink-0 absolute top-4 right-4;
+    }
+
+    .fct-appearance-source-option-icon {
+        @apply w-5 h-5 flex-shrink-0;
+    }
+}
+
+.fct-appearance-colors {
+    @apply px-4 pb-4 pt-4 border-0 border-t border-x-0 border-solid border-gray-divider relative dark:border-dark-400;
+    .fct-reset-color-btn {
+        @apply absolute top-4 right-4 z-10;
+    }
+}
+
+.fct-appearance-color-group {
+    + .fct-appearance-color-group {
+        @apply mt-5 pt-5 border border-x-0 border-b-0 border-solid border-gray-divider dark:border-dark-400;
+    }
+
+    &__label {
+        @apply block text-xs font-medium uppercase tracking-wide text-system-light mb-2.5 dark:text-gray-300;
+    }
+}
+
+.fct-appearance-color-fields {
+    @apply grid grid-cols-2 gap-x-4 gap-y-3 items-end;
+}
+
+/*====== storefront preview ========*/
+.fct-appearance-preview {
+    @apply border border-solid border-gray-divider border-y-0 border-r-0 rounded-tr rounded-br flex-1 flex flex-col overflow-hidden dark:border-dark-400;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+
+    &__header {
+        @apply flex items-center justify-between gap-4 px-5 py-3 border-0 border-b border-solid border-gray-divider dark:border-dark-400;
+    }
+
+    &__title {
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+
+    &__note {
+        @apply m-0 px-5 py-2.5 text-xs text-system-mid bg-warning-50 border-0 border-b border-solid border-gray-outline dark:text-gray-300 dark:bg-warning-500/10 dark:border-dark-400;
+    }
+
+    &__body {
+        @apply flex-1 p-6 overflow-y-auto;
+    }
+    &__grid {
+        @apply grid grid-cols-2 gap-5 items-start;
+
+        // An odd number of mocks would leave the last one beside an empty
+        // cell, so it takes the whole row instead.
+        > :last-child {
+            grid-column: 1 / -1;
+        }
+    }
+}
+
+/* Every colour below is a preview variable, so the mock repaints as soon as
+   the palette changes. Never style these with admin theme colours. */
+.fct-preview-card {
+    @apply w-full p-4 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    background: var(--fct-pv-surface, #ffffff);
+
+    &__media {
+        @apply flex items-center justify-center h-[140px] rounded-lg mb-3 border border-solid;
+        background: var(--fct-pv-surface-mute, #f5f6f7);
+        color: #adb5c2;
+        border-color: var(--fct-pv-border, #d6dae1);
+    }
+
+    &__media-icon {
+        @apply w-6 h-6;
+    }
+
+    &__heading {
+        @apply flex items-center gap-2;
+    }
+
+    &__badge {
+        @apply px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase;
+        background: var(--fct-pv-button-bg, #253241);
+        color: var(--fct-pv-button-text, #ffffff);
+        letter-spacing: 0.03em;
+    }
+
+    &__title {
+        @apply text-sm font-semibold;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__meta {
+        @apply mt-1.5 mb-0 text-xs;
+        color: var(--fct-pv-text-muted, #565865);
+    }
+
+    &__price {
+        @apply mt-1 mb-0 text-sm font-semibold;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__variants {
+        @apply flex items-center gap-2 mt-3 pt-3;
+        border-top: 1px solid var(--fct-pv-divider, #eaecf0);
+    }
+
+    &__swatch {
+        @apply w-5 h-5 rounded-full flex-shrink-0;
+        background: var(--fct-pv-surface-mute, #f5f6f7);
+        border: 1px solid var(--fct-pv-border, #d6dae1);
+
+        &.is-active {
+            background: var(--fct-pv-surface, #ffffff);
+            border: 2px solid var(--fct-pv-active-border, #253241);
+        }
+    }
+
+    &__variant-label {
+        @apply text-xs;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__button {
+        @apply mt-3 py-2.5 rounded text-center text-sm font-semibold;
+        background: var(--fct-pv-button-bg, #253241);
+        color: var(--fct-pv-button-text, #ffffff);
+
+        // The hover colour is the one button global with no resting state to
+        // show, so the mock reacts to the pointer to make it visible.
+        &--secondary {
+            @apply mt-2 border border-solid;
+            background: var(--fct-pv-secondary-button-bg, #ffffff);
+            color: var(--fct-pv-secondary-button-text, #2f3448);
+            border-color: var(--fct-pv-secondary-button-border, #d6dae1);
+            transition: background 0.15s ease;
+
+            &:hover {
+                background: var(--fct-pv-secondary-button-hover-bg, #f5f6f7);
+            }
+        }
+    }
+
+    &__link {
+        @apply mt-2.5 text-center text-sm;
+        color: var(--fct-pv-accent-text, #017ef3);
+    }
+}
+
+.fct-preview-cart {
+    @apply w-full p-5 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    background: var(--fct-pv-surface, #ffffff);
+
+    &__title {
+        @apply block text-base font-semibold mb-4;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__item {
+        @apply flex items-center gap-3 py-3;
+        border-top: 1px solid var(--fct-pv-divider, #eaecf0);
+    }
+
+    &__thumb {
+        @apply flex-shrink-0 flex items-center justify-center w-11 h-11 rounded border border-solid;
+        background: var(--fct-pv-surface-mute, #f5f6f7);
+        color: #adb5c2;
+        border-color: var(--fct-pv-border, #d6dae1);
+    }
+
+    &__thumb-icon {
+        @apply w-4.5 h-4.5;
+    }
+
+    &__item-text {
+        @apply flex-1 min-w-0;
+    }
+
+    &__item-name {
+        @apply block text-sm font-medium truncate;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__item-qty {
+        @apply block text-xs mt-0.5;
+        color: var(--fct-pv-text-muted, #565865);
+    }
+
+    &__item-price {
+        @apply flex-shrink-0 text-sm font-semibold;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__subtotal {
+        @apply flex items-center justify-between py-3;
+        border-top: 1px solid var(--fct-pv-divider, #eaecf0);
+    }
+
+    &__subtotal-label {
+        @apply text-sm;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__subtotal-value {
+        @apply text-sm font-semibold;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__button {
+        @apply mt-1 py-3 rounded text-center text-sm font-semibold;
+        background: var(--fct-pv-button-bg, #253241);
+        color: var(--fct-pv-button-text, #ffffff);
+    }
+}
+
+.fct-preview-form {
+    @apply w-full p-5 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    background: var(--fct-pv-surface, #ffffff);
+
+    &__title {
+        @apply block text-base font-semibold mb-4;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__field {
+        @apply mb-4;
+    }
+
+    &__label {
+        @apply block text-sm font-medium mb-1.5;
+        color: var(--fct-pv-text, #2f3448);
+    }
+
+    &__input {
+        @apply py-2.5 px-3 rounded text-sm border border-solid;
+        background: var(--fct-pv-input-bg, #ffffff);
+        color: var(--fct-pv-input-text, #2f3448);
+        border-color: var(--fct-pv-border, #d6dae1);
+
+        &.is-placeholder {
+            color: var(--fct-pv-text-placeholder, #adb5c2);
+        }
+
+        &.is-disabled {
+            @apply cursor-not-allowed;
+            background: var(--fct-pv-input-disabled-bg, #f5f6f7);
+            color: var(--fct-pv-text-placeholder, #adb5c2);
+        }
+    }
+
+    &__select {
+        @apply flex items-center justify-between gap-2;
+    }
+
+    &__select-icon {
+        @apply w-4 h-4 flex-shrink-0;
+        color: var(--fct-pv-text-muted, #565865);
+    }
+
+    &__button {
+        @apply py-3 rounded text-center text-sm font-semibold;
+        background: var(--fct-pv-button-bg, #253241);
+        color: var(--fct-pv-button-text, #ffffff);
+    }
+}
+
+@media (max-width: 1280px) {
+    .fct-appearance-component {
+        @apply w-[250px];
+    }
+    .fct-appearance-color-fields {
+        @apply grid-cols-1;
+        .setting-label {
+            @apply text-xs;
+        }
+    }
+    .fct-appearance-color-group__label {
+        @apply text-[11px];
+    }
+}
+
+@media (max-width: 1240px) {
+    .fct-appearance-component-wrapper {
+        @apply grid;
+    }
+    .fct-appearance-component {
+        @apply w-auto;
+    }
+    .fct-appearance-preview {
+        @apply relative border-0 rounded-none h-auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .fct-appearance-preview__grid {
+        @apply grid-cols-1;
+    }
+}

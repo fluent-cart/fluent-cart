@@ -361,6 +361,7 @@
 import {ref, computed, watch, onMounted, nextTick} from "vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import Theme from "@/utils/Theme";
 import translate, { pluralizeTranslate } from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
@@ -441,7 +442,7 @@ const monthsForYear = (year) => {
     if (monthKey.startsWith(year)) {
       months.push({
         value: monthKey,
-        label: dayjs(monthKey).format("MMMM"),
+        label: dayjs(monthKey).locale(fluentDayjsLocale()).format(resolveDateFormat('month_long')),
       });
     }
   });
@@ -477,7 +478,7 @@ const canShowComparison = computed(() => {
 // Generate labels for the selected data points
 const primaryLabel = computed(() => {
   if (primaryMonth.value) {
-    return dayjs(primaryMonth.value).format("MMM YYYY");
+    return dayjs(primaryMonth.value).locale(fluentDayjsLocale()).format(resolveDateFormat('month_year'));
   } else {
     return primaryYear.value;
   }
@@ -485,7 +486,7 @@ const primaryLabel = computed(() => {
 
 const comparisonLabel = computed(() => {
   if (comparisonMonth.value) {
-    return dayjs(comparisonMonth.value).format("MMM YYYY");
+    return dayjs(comparisonMonth.value).locale(fluentDayjsLocale()).format(resolveDateFormat('month_year'));
   } else {
     return comparisonYear.value;
   }

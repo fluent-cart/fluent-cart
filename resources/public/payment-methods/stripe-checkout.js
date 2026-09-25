@@ -218,6 +218,9 @@ class StripeCheckout {
         if (this.data.appearance) {
             elementsOptions.appearance = this.data.appearance;
         }
+        if (Array.isArray(this.data.fonts) && this.data.fonts.length) {
+            elementsOptions.fonts = this.data.fonts;
+        }
         elementsOptions.locale = window.fct_stripe_data?.locale || 'auto';
 
         const elements = await stripe.elements(elementsOptions);
@@ -450,6 +453,17 @@ class StripeCheckout {
                 }
 
                 elements.submit().then(result => {
+                    // Wallet collection and validation errors resolve as {error}.
+                    // No confirmation was attempted, so let the buyer correct and retry.
+                    if (result?.error) {
+                        stopStripeChallengeWatch();
+                        loaderElement?.classList?.remove('active');
+                        that.paymentLoader?.hideLoader();
+                        that.paymentLoader?.enableCheckoutButton(submitButton?.text);
+                        displayErrorMessage(result.error.message);
+                        return;
+                    }
+
                     const confirmIntent = intentType === "setup" ? stripe.confirmSetup : stripe.confirmPayment;
                     const accessor = intentType === "setup" ? 'setupIntent' : 'paymentIntent';
 

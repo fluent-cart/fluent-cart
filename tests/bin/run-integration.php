@@ -710,7 +710,7 @@ WP_CLI::log(sprintf(
     . "permission_PUBLIC-EXEMPT=%d\n"
     . "CRUD inventory: routes=%d round_trip=%d safety_exclusion=%d domains=%d missing=%d\n"
     . "validation inventory: request_wiring=%d read_probes=%d "
-    . "destructive_policies=18 v_html_sinks=%d\n"
+    . "destructive_policies=17 v_html_sinks=%d\n"
     . "throughput inventory: profiles=%d list=%d aggregate=%d rows=%d/%d\n"
     . "report inventory: declarations=42 GET=41 POST=1 Phase1_query_shapes=%d "
     . "GET_value=%d GET_KNOWN-FAILURE=%d GET_skipped=%d POST_skipped=%d",

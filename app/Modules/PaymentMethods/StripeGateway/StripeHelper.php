@@ -148,6 +148,24 @@ class StripeHelper
         return $amount;
     }
 
+    /**
+     * Convert a Stripe object's `livemode` flag to a getStripeObject()/getApiKey()
+     * `$mode` argument. The store's global mode toggle ('current') is not a reliable
+     * proxy for which key an already-fetched object needs — use its own livemode
+     * whenever one is available instead of guessing from the store setting.
+     *
+     * @param bool|null $livemode Null when no prior object/event is available yet.
+     * @return string 'live', 'test', or 'current'
+     */
+    public static function modeFromLivemode($livemode)
+    {
+        if (is_null($livemode)) {
+            return 'current';
+        }
+
+        return $livemode ? 'live' : 'test';
+    }
+
     public static function processRemoteRefund($transaction, $amount, $args)
     {
         $intentId = $transaction->vendor_charge_id;

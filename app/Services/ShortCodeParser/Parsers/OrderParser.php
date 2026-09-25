@@ -10,6 +10,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\TemplateService;
@@ -105,12 +106,10 @@ class OrderParser extends BaseParser
             $date = Arr::get($this->data, $this->attributeMap[$accessor]);
             $timestamp = DateTime::anyTimeToGmt($date)->getTimestamp();
 
-            $date = wp_date(
-                get_option('date_format'),
-                $timestamp,
-                new \DateTimeZone($this->orderTz)
-            );
-            
+            // Through DateFormatter so the store's format and timezone settings
+            // reach this too; orderTz is only consulted on the Browser source.
+            $date = DateFormatter::format($timestamp, false, $this->orderTz);
+
             return Helper::translateNumber($date);
         }
 

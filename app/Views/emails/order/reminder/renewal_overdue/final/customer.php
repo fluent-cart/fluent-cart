@@ -7,7 +7,7 @@
 
 $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $dueAt = \FluentCart\Framework\Support\Arr::get($reminder, 'due_at', '');
-$dueDate = $dueAt ? \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($dueAt)->format('M d, Y h:i A') : '';
+$dueDate = \FluentCart\App\Services\DateTime\DateFormatter::format($dueAt, true, $order);
 $dueAmount = \FluentCart\Framework\Support\Arr::get($reminder, 'due_amount', 0);
 if (!$dueAmount) {
     $dueAmount = max(((int)$order->total_amount - (int)$order->total_paid), 0);

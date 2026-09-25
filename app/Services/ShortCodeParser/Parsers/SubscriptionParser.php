@@ -3,15 +3,24 @@
 namespace FluentCart\App\Services\ShortCodeParser\Parsers;
 
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\Framework\Support\Arr;
 
 class SubscriptionParser extends BaseParser
 {
     private $subscription;
 
+    /**
+     * Only used as the timezone context for DateFormatter — the order carries the
+     * user_tz captured at checkout. Null when the shortcode runs without one, in
+     * which case DateFormatter falls back to UTC.
+     */
+    private $order;
+
     public function __construct($data)
     {
         $this->subscription = Arr::get($data, 'subscription');
+        $this->order = Arr::get($data, 'order');
         parent::__construct($data);
     }
 
@@ -40,7 +49,7 @@ class SubscriptionParser extends BaseParser
                 return wp_kses_post($subscription->payment_info);
             case 'next_billing_date':
                 return $subscription->next_billing_date
-                    ? esc_html(date('M j, Y', strtotime($subscription->next_billing_date)))
+                    ? esc_html(DateFormatter::format($subscription->next_billing_date, false, $this->order))
                     : __('N/A', 'fluent-cart');
             case 'bill_times':
                 return $subscription->bill_times
@@ -52,7 +61,7 @@ class SubscriptionParser extends BaseParser
                 return esc_html($subscription->trial_days ?: '0');
             case 'expire_at':
                 return $subscription->expire_at
-                    ? esc_html(date('M j, Y', strtotime($subscription->expire_at)))
+                    ? esc_html(DateFormatter::format($subscription->expire_at, false, $this->order))
                     : __('Never', 'fluent-cart');
             default:
                 return Arr::get((array) $subscription, $accessor, '');

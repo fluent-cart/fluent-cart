@@ -2,25 +2,29 @@
 @tailwind utilities;
 
 :root {
+  // The drawer is FluentCart chrome — a modal overlay no theme has rules for —
+  // so every variable carries its own fallback: printed globals still override
+  // on readable themes, but the no-colors state can never strip the panel.
   --fct-cart-drawer-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
   --fct-cart-drawer-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
 
   --fct-cart-drawer-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
 
   --fct-cart-drawer-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+  --fct-cart-drawer-divider-color: var(--fct-divider-color, theme('colors.gray.divider'));
 
   // cart
-  --fct-cart-drawer-bg: #ffffff;
-  --fct-cart-drawer-open-btn-bg-color: #ffffff;
-  --fct-cart-drawer-close-btn-color: theme('colors.dark.500');
+  --fct-cart-drawer-bg: var(--fct-card-bg-color, #ffffff);
+  --fct-cart-drawer-open-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+  --fct-cart-drawer-close-btn-color: var(--fct-primary-text-color, theme('colors.dark.500'));
 
   // quantity
-  --fct-cart-drawer-quantity-bg-color: #ffffff;
+  --fct-cart-drawer-quantity-bg-color: var(--fct-input-bg-color, #ffffff);
   --fct-cart-drawer-quantity-color: var(--fct-cart-drawer-primary-text-color);
   --fct-cart-drawer-quantity-border-color: var(--fct-cart-drawer-border-color);
-  --fct-cart-drawer-quantity-btn-bg: theme('colors.gray.neutral');
+  --fct-cart-drawer-quantity-btn-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.neutral'));
   --fct-cart-drawer-quantity-btn-color: var(--fct-cart-drawer-secondary-text-color);
-  --fct-cart-drawer-quantity-btn-hover-bg: theme('colors.gray.50');
+  --fct-cart-drawer-quantity-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.50'));
 
   // cart badge count
   --fct-cart-drawer-badge-bg-color: #000;
@@ -32,18 +36,18 @@
   --fct-cart-drawer-btn-border-color: var(--fct-btn-border-color, var(--fct-cart-drawer-btn-bg-color));
 
   // view cart button
-  --fct-view-cart-btn-bg-color: #ffffff;
+  --fct-view-cart-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
   --fct-view-cart-drawer-btn-color: var(--fct-cart-drawer-primary-text-color);
   --fct-view-cart-drawer-btn-border-color: var(--fct-cart-drawer-border-color);
-  --fct-view-cart-drawer-btn-hover-bg: theme('colors.gray.25');
+  --fct-view-cart-drawer-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.25'));
 
   // delete button
-  --fct-cart-item-delete-btn-bg-color: #ffffff;
-  --fct-cart-item-delete-btn-hover-bg-color: theme('colors.gray.50');
+  --fct-cart-item-delete-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+  --fct-cart-item-delete-btn-hover-bg-color: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.50'));
   --fct-cart-item-delete-btn-border-color: var(--fct-cart-drawer-border-color);
   --fct-cart-item-delete-btn-color: var(--fct-cart-drawer-primary-text-color);
 
-  --fct-cart-drawer-footer-action-bg-color: #ffffff;
+  --fct-cart-drawer-footer-action-bg-color: var(--fct-card-bg-color, #ffffff);
 }
 
 .fct-cart-drawer-container,
@@ -107,8 +111,76 @@
 }
 .fct-cart-drawer-footer{
   @apply absolute bottom-0 w-full;
-  .fct-primary-btn {
-    @apply no-underline w-full;
+  // Layout only — the checkout CTA's colours live in the gated block below,
+  // because a CTA is the one thing themes really do style: the anchor also
+  // carries the generic `button` class so a theme's `.button` rules can dress
+  // it when FluentCart stands aside.
+  a {
+    @apply border-0 w-full flex items-center justify-center relative rounded text-base font-semibold cursor-pointer leading-none py-[15px] px-4 transition-all focus:outline-none max-h-10 m-0 no-underline;
+    &.view-cart-button {
+      @apply border border-solid bg-[var(--fct-view-cart-btn-bg-color)] border-[var(--fct-view-cart-drawer-btn-border-color)] text-[var(--fct-view-cart-drawer-btn-color)] hover:bg-[var(--fct-view-cart-drawer-btn-hover-bg)] shadow-none;
+    }
+  }
+}
+
+body:not(.fluent-cart-no-colors) {
+
+    --fct-cart-drawer-primary-text-color: var(--fct-primary-text-color, theme('colors.system.dark'));
+    --fct-cart-drawer-secondary-text-color: var(--fct-secondary-text-color, theme('colors.system.mid'));
+
+    --fct-cart-drawer-primary-bg-color: var(--fct-primary-bg-color, theme('colors.primary.500'));
+
+    --fct-cart-drawer-border-color: var(--fct-border-color, theme('colors.gray.outline'));
+    --fct-cart-drawer-divider-color: var(--fct-divider-color, theme('colors.gray.divider'));
+
+    // cart
+    --fct-cart-drawer-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-cart-drawer-open-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+    --fct-cart-drawer-close-btn-color: var(--fct-primary-text-color, theme('colors.dark.500'));
+
+    // quantity
+    --fct-cart-drawer-quantity-bg-color: var(--fct-input-bg-color, #ffffff);
+    --fct-cart-drawer-quantity-color: var(--fct-cart-drawer-primary-text-color);
+    --fct-cart-drawer-quantity-border-color: var(--fct-cart-drawer-border-color);
+    --fct-cart-drawer-quantity-btn-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.neutral'));
+    --fct-cart-drawer-quantity-btn-color: var(--fct-cart-drawer-secondary-text-color);
+    --fct-cart-drawer-quantity-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.50'));
+
+    // cart badge count
+    --fct-cart-drawer-badge-bg-color: #000;
+    --fct-cart-drawer-badge-text-color: #ffffff;
+
+    // button
+    --fct-cart-drawer-btn-bg-color: var(--fct-btn-bg-color, var(--fct-cart-drawer-primary-bg-color));
+    --fct-cart-drawer-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-cart-drawer-btn-border-color: var(--fct-btn-border-color, var(--fct-cart-drawer-btn-bg-color));
+
+    // view cart button
+    --fct-view-cart-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+    --fct-view-cart-drawer-btn-color: var(--fct-cart-drawer-primary-text-color);
+    --fct-view-cart-drawer-btn-border-color: var(--fct-cart-drawer-border-color);
+    --fct-view-cart-drawer-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.25'));
+
+    // delete button
+    --fct-cart-item-delete-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);
+    --fct-cart-item-delete-btn-hover-bg-color: var(--fct-secondary-btn-hover-bg-color, theme('colors.gray.50'));
+    --fct-cart-item-delete-btn-border-color: var(--fct-cart-drawer-border-color);
+    --fct-cart-item-delete-btn-color: var(--fct-cart-drawer-primary-text-color);
+
+    --fct-cart-drawer-footer-action-bg-color: var(--fct-card-bg-color, #ffffff);
+
+  .fct-cart-drawer-footer a:not(.view-cart-button) {
+    // The same recipe as the store's Add-to-cart pills: the white sheen keeps
+    // the button readable even when its colour matches the panel behind it,
+    // which is exactly what happens on a dark theme.
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-cart-drawer-btn-bg-color);
+    box-shadow: inset 0 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
+
+    @apply text-[var(--fct-cart-drawer-btn-text-color)];
+
+    &:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-cart-drawer-btn-bg-color);
+    }
   }
 //   a {
 //     @apply bg-[var(--fct-cart-drawer-btn-bg-color)] border-0 text-[var(--fct-cart-drawer-btn-text-color)] w-full flex items-center justify-center relative rounded text-base font-semibold cursor-pointer leading-none py-[15px] px-4 transition-all focus:outline-none max-h-10 shadow-none m-0 no-underline hover:bg-[var(--fct-cart-drawer-btn-bg-color)];
@@ -151,7 +223,7 @@
 /*=== cart item ===*/
 .fct-cart-drawer-list {
   .fct-cart-item {
-    @apply flex justify-between p-5 relative border border-solid border-gray-divider border-t-0 border-l-0 border-r-0;
+    @apply flex justify-between p-5 relative border border-solid border-[var(--fct-cart-drawer-divider-color)] border-t-0 border-l-0 border-r-0;
     .fct-cart-item-info{
       @apply flex gap-4.5 flex-1;
     }
@@ -177,7 +249,7 @@
       }
 
       .fct-cart-item-variant {
-        @apply text-sm text-system-mid leading-[20px] mb-1 mt-0;
+        @apply text-sm text-[var(--fct-cart-drawer-secondary-text-color)] leading-[20px] mb-1 mt-0;
         &.variant-title-hidden{
           @apply hidden;
         }
@@ -243,7 +315,9 @@
     @apply shadow-none m-0 outline-0 w-8 h-8 p-0 flex justify-center items-center transition-all bg-[var(--fct-cart-drawer-quantity-btn-bg)] text-[var(--fct-cart-drawer-quantity-btn-color)];
     cursor: pointer;
     svg{
-      @apply w-3 h-3 fill-black;
+      // The button declares its foreground above; the glyph follows it, so a
+      // dark palette's derived text colour reaches the ± icons too.
+      @apply w-3 h-3 fill-current;
     }
     &:hover{
       @apply bg-[var(--fct-cart-drawer-quantity-btn-hover-bg)];
@@ -251,15 +325,15 @@
   }
 
   .decrease-btn{
-    @apply rounded-tl rounded-bl border border-solid border-gray-outline border-t-0 border-l-0 border-b-0 rounded-tr-none rounded-br-none;
+    @apply rounded-tl rounded-bl border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-l-0 border-b-0 rounded-tr-none rounded-br-none;
   }
 
   .increase-btn{
-    @apply rounded-tr rounded-br border border-solid border-gray-outline border-t-0 border-r-0 border-b-0 rounded-tl-none rounded-bl-none;
+    @apply rounded-tr rounded-br border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-r-0 border-b-0 rounded-tl-none rounded-bl-none;
   }
 
   .qty-value {
-    @apply flex items-center justify-center h-8 w-10 font-medium text-[13px] text-[var(--fct-cart-drawer-quantity-color)] px-1 py-0 text-center shadow-none border-0;
+    @apply bg-transparent flex items-center justify-center h-8 w-10 font-medium text-[13px] text-[var(--fct-cart-drawer-quantity-color)] px-1 py-0 text-center shadow-none border-0;
   }
 
   &.is-subscription-product{
@@ -268,7 +342,7 @@
 }
 /*== total wrapper ==*/
 .fct-cart-total-wrapper {
-  @apply flex items-center justify-between gap-2 font-semibold text-system-dark text-lg;
+  @apply flex items-center justify-between gap-2 font-semibold text-[var(--fct-cart-drawer-primary-text-color)] text-lg;
 }
 
 .fluent-cart-cart-cart-button-wrap {

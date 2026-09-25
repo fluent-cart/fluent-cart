@@ -136,10 +136,14 @@ class CustomerResource extends BaseResourceApi
         $data = static::resolveCustomerName($data);
 
         $data['purchase_value'] = [];
-        $customer = static::getQuery()->firstOrCreate(
-            ['email' => $email],
-            $data
-        );
+
+        // Preserve an established account link; otherwise reuse the email row
+        // without linking it. Only the verification flow can claim guest history.
+        $ownerId = (int) Arr::get($data, 'user_id');
+        $customer = $ownerId ? static::getQuery()->where('user_id', $ownerId)->orderBy('id')->first() : null;
+        if (!$customer) {
+            $customer = static::getQuery()->firstOrCreate(['email' => $email], $data);
+        }
 
         if (empty($customer)) {
             return static::makeErrorResponse([
@@ -147,11 +151,20 @@ class CustomerResource extends BaseResourceApi
             ]);
         }
 
-        $isUserAttached = false;
-        $user = get_user_by('email', $email);
-        if ($user) {
-            $customer->update(['user_id' => $user->ID]);
-            $isUserAttached = true;
+        // Linking happens only where identity is established. A row that
+        // already existed is never claimed here: firstOrCreate() may have found
+        // somebody else's record by its address. A fresh row is linked to the
+        // account holding its email only for an actor with authority over that
+        // account (an admin screen, the MCP tools) or when the caller supplied
+        // the user_id it established itself (a signed-in checkout, the User
+        // API). An anonymous caller — a guest at checkout — links nothing.
+        $isUserAttached = (bool) $customer->user_id;
+        if ($customer->wasRecentlyCreated && !$isUserAttached) {
+            $user = get_user_by('email', $email);
+            if ($user && get_current_user_id() && current_user_can('edit_user', $user->ID)) {
+                $customer->update(['user_id' => $user->ID]);
+                $isUserAttached = true;
+            }
         }
 
         if (Arr::get($data, 'wp_user') === 'yes' && !$isUserAttached) {
@@ -411,27 +424,20 @@ class CustomerResource extends BaseResourceApi
 
         $currentUser = get_user_by('ID', get_current_user_id());
 
-        // Try to get the existing customer
-        $query = Customer::query()->where('user_id', $currentUser->ID)
-            ->orWhere('email', $currentUser->user_email)
-            ->with(['billing_address', 'shipping_address']);
+        // Reading the current customer must not claim a record by email.
+        $existingCustomer = Customer::query()->where('user_id', $currentUser->ID)
+            ->orderBy('id', 'ASC')
+            ->with(['billing_address', 'shipping_address'])
+            ->first();
 
-
-        $existingCustomer = $query->first();
-
-        // Return if found
         if ($existingCustomer) {
-            if ($existingCustomer->user_id != $currentUser->ID) {
-                // Update the user_id if it doesn't match
-                $existingCustomer->user_id = $currentUser->ID;
-                $existingCustomer->save();
-            }
-
             static::$currentCustomerRuntimeCache = $existingCustomer;
             return $existingCustomer;
         }
 
-        if (!$createIfNotExists) {
+        if (!$createIfNotExists || Customer::query()->where('email', $currentUser->user_email)->exists()) {
+            // Do not create a duplicate or expose an unclaimed customer to a getter.
+            // Email confirmation links the existing row before dashboard access.
             return null;
         }
 

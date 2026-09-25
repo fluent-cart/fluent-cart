@@ -143,6 +143,10 @@ const routes = ref([
       {
         name: translate('Subscriptions'),
         url: '/settings/store-settings/subscriptions_setup'
+      },
+      {
+        name: translate('Appearance'),
+        url: '/settings/store-settings/appearance'
       }
 
     ]
@@ -282,6 +286,13 @@ if (hasPro) {
 }
 
 AppConfig.get('addon_settings_sidebar', []).forEach(item => routes.value.push(item));
+
+routes.value.push({
+  name: translate('Compliance'),
+  icon: 'ShieldCheck',
+  permission: ['store/settings'],
+  url: '/settings/compliance'
+});
 
 /*
 |--------------------------------------------------------------------------

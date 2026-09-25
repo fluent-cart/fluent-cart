@@ -1,6 +1,8 @@
 <script setup>
 import {ref, onMounted, nextTick, computed, watch, onUnmounted} from "vue";
 import * as echarts from "echarts";
+import dayjs from "dayjs";
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Screenshot from "@/Bits/Components/Screenshot.vue";
 import Theme from "@/utils/Theme";
@@ -90,9 +92,13 @@ const labels = computed(() => {
 
     if(props.isDate){
       try {
+        // Not toLocaleString("default", ...): "default" is the BROWSER's
+        // locale, so a German store viewed from an English browser labelled
+        // its axis "Oct 2025" while every other chart said "Oktober 2025".
         const [year, month] = item.label.split("-");
-        const date = new Date(year, month - 1);
-        return date.toLocaleString("default", {month: "short", year: "numeric"});
+        return dayjs(`${year}-${month}-01`)
+            .locale(fluentDayjsLocale())
+            .format(resolveDateFormat('month_year'));
       } catch {
         return item.label;
       }

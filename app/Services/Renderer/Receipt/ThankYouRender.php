@@ -682,7 +682,7 @@ class ThankYouRender
                                         /* translators: 1: Next billing date */
                                                 esc_html__('- Auto renews on %1$s', 'fluent-cart'),
                                                 esc_html(
-                                                        \FluentCart\App\Services\DateTime\DateTime::gmtToTimezone($subs->next_billing_date)->format('M d, Y h:i A')
+                                                        \FluentCart\App\Services\DateTime\DateFormatter::format($subs->next_billing_date, true, $order)
                                                 )
                                         );
                                         ?>

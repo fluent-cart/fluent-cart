@@ -3,14 +3,8 @@
 namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\App\Helpers\Status;
-use FluentCart\App\Models\AppliedCoupon;
-use FluentCart\App\Models\Cart;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Models\Customer;
-use FluentCart\App\Models\CustomerAddresses;
-use FluentCart\App\Models\CustomerMeta;
-use FluentCart\App\Models\Order;
-use FluentCart\App\Models\OrderDownloadPermission;
-use FluentCart\App\Models\Subscription;
 use FluentCart\Framework\Support\Arr;
 
 class UserHandler
@@ -19,6 +13,8 @@ class UserHandler
     {
         add_action('delete_user', [$this, 'userDeleteHandler'], 10, 1);
         add_action('user_register', [$this, 'userRegistrationHandler'], 10, 1);
+        add_action('password_reset', [EmailVerificationService::class, 'capturePasswordResetProof'], 10, 1);
+        add_action('after_password_reset', [EmailVerificationService::class, 'verifyAfterPasswordReset'], 10, 1);
 
         // Let's handle auto user registration!
         add_action('fluent_cart/cart_completed', [$this, 'maybeCreateUser'], 10, 1);
@@ -29,44 +25,15 @@ class UserHandler
 
     public function handleWpUserProfileUpdated($userId, $oldData, $newData = [])
     {
-        $emailChanged = $oldData->user_email !== $newData['user_email'];
-
-        if (!$emailChanged) {
-            return; //  we will change the first name and last name a bit later
+        $user = $userId ? get_userdata($userId) : false;
+        $oldEmail = is_object($oldData) && isset($oldData->user_email) ? wp_unslash($oldData->user_email) : '';
+        if (!$user || EmailVerificationService::isSame($oldEmail, $user->user_email)) {
+            return;
         }
 
-        $newEmail = $newData['user_email'];
-        $oldEmail = $oldData->user_email;
-
-
-        $attachToCustomer = Customer::query()->where('email', $newEmail)->first();
-
-
-        // if $attachToCustomer is empty, then simply just update the customer email
-        if (empty($attachToCustomer)) {
-            $oldCustomer = Customer::query()->where('email', $oldEmail)->first();
-            Customer::query()->where('email', $oldEmail)->update(['email' => $newEmail]);
-            do_action('fluent_cart/customer_email_changed', [
-                'old_customer' => $oldCustomer,
-                'new_customer' => $oldCustomer,
-                'old_email'    => $oldEmail,
-                'new_email'    => $newEmail,
-                'userId'       => $userId
-            ]);
-        } else {
-            $oldCustomer = Customer::query()->where('email', $oldEmail)->first();
-            if (empty($oldCustomer)) {
-                $attachToCustomer->update(['user_id' => $userId]);
-                return;
-            }
-
-            $this->moveCustomerResources($oldCustomer->id, $attachToCustomer->id);
-            $oldCustomer->recountStat();
-            $attachToCustomer->recountStat();
-        }
-
+        // Account changes do not prove inbox ownership or change customer contact details.
+        EmailVerificationService::markPending((int) $userId, $user->user_email);
     }
-
 
     public function maybeCreateUser($data)
     {
@@ -74,7 +41,7 @@ class UserHandler
         $order = Arr::get($data, 'order');
         $customer = $order->customer;
 
-        if ($customer->getWpUserId(true)) {
+        if ($customer->getWpUserId()) {
             return; // User already exists
         }
 
@@ -104,66 +71,23 @@ class UserHandler
      */
     public function userDeleteHandler($userId)
     {
-        $user = get_user_by('ID', $userId);
-        if (!$user) {
+        if (!$userId) {
             return;
         }
 
-        // Check if the user_email is a customer
-        $customer = Customer::query()
-            ->where('email', $user->user_email)
-            ->first();
-
-        // remove user_id from $customer
-        if ($customer) {
-            $customer->update(['user_id' => NULL]);
-        }
+        // Unlink by identity. Matching on the account's email unlinked whichever
+        // customer happened to hold it — possibly another account's — and left
+        // this account's own customers pointing at a dead user id when their
+        // contact address had drifted from the account's.
+        Customer::query()->where('user_id', $userId)->update(['user_id' => null]);
     }
 
     public function userRegistrationHandler($userId)
     {
-        // get user by $userId
-        $user = get_user_by('ID', $userId);
-
-        // Check if the user_email is a customer
-        $customer = Customer::query()
-            ->where('email', $user->user_email)
-            ->first();
-
-        if ($customer) {
-            $this->updateCustomer($customer, $user, $userId);
-            return;
+        $user = $userId ? get_userdata($userId) : false;
+        if ($user) {
+            EmailVerificationService::markPending((int) $userId, $user->user_email);
         }
     }
 
-    private function updateCustomer(Customer $customer, object $user, int $userId): void
-    {
-        $data = ['user_id' => $userId];
-
-        if (!empty($user->first_name)) {
-            $data['first_name'] = $user->first_name;
-        }
-
-        if (!empty($user->last_name)) {
-            $data['last_name'] = $user->last_name;
-        }
-
-        $customer->update($data);
-    }
-
-    private function moveCustomerResources($fromCustomerId, $toCustomerId)
-    {
-        OrderDownloadPermission::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        Order::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        AppliedCoupon::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        Cart::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        CustomerMeta::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        CustomerAddresses::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-        Subscription::query()->where('customer_id', $fromCustomerId)->update(['customer_id' => $toCustomerId]);
-
-        do_action('fluent_cart/customer_resources_moved', [
-            'from_customer_id' => $fromCustomerId,
-            'to_customer_id'   => $toCustomerId
-        ]);
-    }
 }

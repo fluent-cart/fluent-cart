@@ -369,6 +369,12 @@ class FcPublicSurfaceFixture
         self::$history[$owned['user_id']] = $owned;
 
         try {
+            // These actors test customer ownership after inbox verification.
+            // Keep the UUID guard reachable instead of stopping at verification.
+            update_user_meta($userId, '_fct_email_verification', [
+                'email' => strtolower($email),
+                'verified' => true,
+            ]);
             $customer = $customerClass::query()->create([
                 'user_id'        => (int) $userId,
                 'email'          => $email,

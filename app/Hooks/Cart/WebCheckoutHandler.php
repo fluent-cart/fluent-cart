@@ -1056,6 +1056,12 @@ class WebCheckoutHandler
             ]);
         }
 
+        // A locked cart may still take bumps through the accepts_additional_items
+        // filter, but must never let an item it pinned be swapped out.
+        if (Arr::get($checkoutData, 'is_locked') === 'yes') {
+            return new \WP_Error('invalid_request', __('This cart is locked and cannot be modified.', 'fluent-cart'));
+        }
+
         if (!$upgradeFromVariationId || !$targetVariationId) {
             return new \WP_Error('invalid_request', __('Invalid upgrade request.', 'fluent-cart'));
         }

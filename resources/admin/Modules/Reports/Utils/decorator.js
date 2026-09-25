@@ -1,10 +1,11 @@
 import dayjs from "dayjs"
 import Theme from "@/utils/Theme"
+import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils"
 import { monthNames } from "./monthNames"
 
 export function tooltipSuffix(dateRange) {
-    const startDate = dayjs(dateRange[0]).format("MMMM D, YYYY")
-    const endDate = dayjs(dateRange[1]).format("MMMM D, YYYY")
+    const startDate = dayjs(dateRange[0]).locale(fluentDayjsLocale()).format(resolveDateFormat('date'))
+    const endDate = dayjs(dateRange[1]).locale(fluentDayjsLocale()).format(resolveDateFormat('date'))
     const isSameDate = startDate === endDate
 
     return isSameDate ? `on ${startDate}.` : `between ${startDate} and ${endDate}.`

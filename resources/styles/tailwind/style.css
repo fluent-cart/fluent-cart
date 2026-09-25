@@ -67,6 +67,7 @@
 @import "subscription.scss";
 @import "activity.scss";
 @import "dashboard-recent-activities.scss";
+@import "dashboard-review-prompt.scss";
 @import "current-user-info.scss";
 @import "dashboard-stat-widget.scss";
 @import "fluid-tab.scss";
@@ -85,6 +86,7 @@
 @import "advanced-variation.scss";
 @import "attributes.scss";
 @import "mcp.scss";
+@import "appearance.scss";
 
 @import "responsive.scss";
 
