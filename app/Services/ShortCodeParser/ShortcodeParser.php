@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\ShortCodeParser;
 
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Models\Order;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\WpMetaHelper;
@@ -298,6 +299,18 @@ class ShortcodeParser
                         }
                     } elseif ($targetItem === 'payment_link') {
                         $parsedData[$placeholder] = PaymentHelper::getCustomPaymentLink(Arr::get($order, 'uuid'));
+                    } elseif ($targetItem === 'review_url') {
+                        // Resolved here rather than through OrderParser: this
+                        // parser handles every order.* code itself and never
+                        // consults that class, so a methodMap entry alone would
+                        // render an empty string in a real email.
+                        $reviewHash = (string) Arr::get($order, 'uuid', '');
+                        if ($reviewHash !== '') {
+                            $parsedData[$placeholder] = Order::reviewUrlForHash($reviewHash);
+                        } else {
+                            $reviewOrder = Order::query()->find(Arr::get($order, 'id'));
+                            $parsedData[$placeholder] = $reviewOrder instanceof Order ? $reviewOrder->getOrderReviewUrl() : '';
+                        }
                     } else if ($targetItem === 'total_amount') {
                         $parsedData[$placeholder] = Helper::toDecimal(Arr::get($order, 'total_amount'), false);
                     } elseif ($targetItem === 'total_paid') {

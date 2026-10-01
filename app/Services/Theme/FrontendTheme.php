@@ -75,8 +75,8 @@ class FrontendTheme
      * gateway: the payment module stays unaware of the theme service, and
      * removing or replacing FluentCart's contribution is a *_filter() call.
      *
-     * A default-filler, not an owner: the palette supplies its theme and its
-     * three colour variables, and everything else — a customised seed, or
+     * A default-filler, not an owner: the palette supplies its theme, its
+     * colour variables and its tab rules, and everything else — a customised seed, or
      * what an earlier listener added (labels, rules, extra variables) —
      * survives. The theme is only taken over from the plain default, since
      * an explicit theme choice is a choice. With no opinion (default source,
@@ -105,6 +105,22 @@ class FrontendTheme
             $palette['variables']
         );
 
+        // Per selector: the palette sets its properties, and every other
+        // selector and property an earlier listener wrote survives. Selectors
+        // start with a dot, so they are indexed directly, never via Arr::get().
+        $rules = (array)Arr::get($appearance, 'rules', []);
+
+        foreach ((array)Arr::get($palette, 'rules', []) as $selector => $properties) {
+            $rules[$selector] = array_merge(
+                isset($rules[$selector]) ? (array)$rules[$selector] : [],
+                $properties
+            );
+        }
+
+        if ($rules) {
+            $appearance['rules'] = $rules;
+        }
+
         return $appearance;
     }
 
@@ -125,7 +141,10 @@ class FrontendTheme
      * Seeds the `fluent_cart/stripe_appearance` filter's default — a listener
      * still overrides everything here.
      *
-     * @return array Stripe appearance config: ['theme' => ..., 'variables' => ...].
+     * The button pair reaches Stripe on its own, without the input pair: it
+     * is the accent, and it fills the selected payment-method tab.
+     *
+     * @return array Stripe appearance config: ['theme' => ..., 'variables' => ..., 'rules' => ...].
      */
     public static function stripeAppearance(): array
     {
@@ -140,25 +159,48 @@ class FrontendTheme
         $inputBg = (string)Arr::get($colors, 'input_bg_color', '');
         $inputText = (string)Arr::get($colors, 'input_text_color', '');
 
-        if ($inputBg === '' || $inputText === '') {
+        if ($inputBg !== '' && $inputText !== '') {
+            // readableOn() picks white on a dark surface — which is exactly
+            // when Stripe should start from night instead of its light theme.
+            $appearance['theme'] = ColorMath::readableOn($inputBg) === '#ffffff' ? 'night' : 'stripe';
+            $appearance['variables'] = [
+                'colorBackground' => $inputBg,
+                'colorText'       => $inputText,
+            ];
+        }
+
+        // The accent and the selected payment-method tab follow the button,
+        // not primary_bg_color: that is a pale surface behind active states,
+        // and as Stripe's accent it washed the selected tab out entirely.
+        $buttonBg = (string)Arr::get($colors, 'btn_bg_color', '');
+
+        if ($buttonBg === '') {
             return $appearance;
         }
 
-        $appearance = [
-            // readableOn() picks white on a dark surface — which is exactly
-            // when Stripe should start from night instead of its light theme.
-            'theme'     => ColorMath::readableOn($inputBg) === '#ffffff' ? 'night' : 'stripe',
-            'variables' => [
-                'colorBackground' => $inputBg,
-                'colorText'       => $inputText,
-            ],
+        $buttonText = (string)Arr::get($colors, 'btn_text_color', '');
+
+        if ($buttonText === '') {
+            $buttonText = ColorMath::readableText($buttonBg);
+        }
+
+        $appearance['variables']['colorPrimary'] = $buttonBg;
+
+        $selectedTab = [
+            'backgroundColor' => $buttonBg,
+            'borderColor'     => $buttonBg,
+            'color'           => $buttonText,
         ];
 
-        $accent = (string)Arr::get($colors, 'primary_bg_color', '');
-
-        if ($accent !== '') {
-            $appearance['variables']['colorPrimary'] = $accent;
-        }
+        $appearance['rules'] = [
+            '.Tab:hover'                => ['borderColor' => $buttonBg],
+            '.Tab--selected'            => $selectedTab,
+            '.Tab--selected:hover'      => $selectedTab,
+            '.Tab--selected:focus'      => $selectedTab,
+            '.TabIcon--selected'        => ['fill' => $buttonText],
+            '.TabIcon--selected:hover'  => ['fill' => $buttonText],
+            '.TabLabel--selected'       => ['color' => $buttonText],
+        ];
 
         return $appearance;
     }
@@ -382,6 +424,49 @@ class FrontendTheme
     }
 
     /**
+     * Give a customised button what theme inheritance would have given it.
+     *
+     * Customize lets the owner leave a button's text unset, and every
+     * stylesheet then falls back to its own literal text — not always one
+     * that reads on the background the owner did set (the product carousel's
+     * hovered arrow fell back to a dark icon). Theme inheritance already
+     * measures a missing partner; this does the same for the button pair and
+     * the hover pair.
+     *
+     * A button background with no hover background also gets the hover
+     * inheritance derives — the button moved 12% away from itself — with the
+     * resting text carried over while it reads; otherwise the button hovered
+     * in its resting colour, with no visible change. A colour the owner chose
+     * is worn as given.
+     *
+     * @param array $colors Settings key => hex, as the owner set them.
+     * @return array
+     */
+    protected static function withButtonPartners(array $colors): array
+    {
+        if (isset($colors['btn_bg_color']) && !isset($colors['btn_text_color'])) {
+            $colors['btn_text_color'] = ColorMath::readableText($colors['btn_bg_color']);
+        }
+
+        if (isset($colors['btn_bg_color']) && !isset($colors['btn_hover_bg_color'])) {
+            $colors['btn_hover_bg_color'] = ColorMath::shiftFromItself($colors['btn_bg_color'], 12);
+
+            if (!isset($colors['btn_hover_text_color'])) {
+                $colors['btn_hover_text_color'] = ThemePalette::hoverTextFor(
+                    $colors['btn_hover_bg_color'],
+                    $colors['btn_text_color']
+                );
+            }
+        }
+
+        if (isset($colors['btn_hover_bg_color']) && !isset($colors['btn_hover_text_color'])) {
+            $colors['btn_hover_text_color'] = ColorMath::readableText($colors['btn_hover_bg_color']);
+        }
+
+        return $colors;
+    }
+
+    /**
      * Every colour that will actually be written, keyed by settings key.
      *
      * @return array
@@ -391,7 +476,7 @@ class FrontendTheme
         $source = self::getSource();
 
         if ($source === ColorPalette::SOURCE_CUSTOM) {
-            $colors = self::getCustomColors();
+            $colors = self::withButtonPartners(self::getCustomColors());
         } elseif ($source === ColorPalette::SOURCE_THEME) {
             $colors = self::getThemeColors();
         } else {

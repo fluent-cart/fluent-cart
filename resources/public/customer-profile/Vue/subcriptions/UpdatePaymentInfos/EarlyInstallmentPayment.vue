@@ -15,7 +15,7 @@
             <div class="fct-early-payment-content">
                 <div class="fct-installment-progress mb-4">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm text-system-mid">{{ $t('Installment Progress') }}</span>
+                        <span class="text-sm text-[var(--fct-customer-dashboard-text-color,#565865)]">{{ $t('Installment Progress') }}</span>
                         <span class="text-sm font-medium">
                             {{ subscription.bill_count }} / {{ subscription.bill_times }}
                         </span>
@@ -27,13 +27,13 @@
                     />
                 </div>
 
-                <div class="fct-installment-summary p-3 rounded" style="background: var(--fct-bg-secondary, #f5f7fa);">
+                <div class="fct-installment-summary p-3 rounded" style="background: var(--fct-customer-dashboard-surface-light, #f5f7fa);">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm text-system-mid">{{ $t('Remaining installments') }}</span>
+                        <span class="text-sm text-[var(--fct-customer-dashboard-text-color,#565865)]">{{ $t('Remaining installments') }}</span>
                         <span class="text-sm font-medium">{{ subscription.remaining_installments }}</span>
                     </div>
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm text-system-mid">{{ $t('Per installment') }}</span>
+                        <span class="text-sm text-[var(--fct-customer-dashboard-text-color,#565865)]">{{ $t('Per installment') }}</span>
                         <span class="text-sm">{{ formatNumber(subscription.recurring_amount, true, false, subscription.currency) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-2" style="border-top: 1px solid var(--fct-border-color, #e4e7ed);">

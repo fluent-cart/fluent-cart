@@ -4,24 +4,24 @@
     }
     @apply grid basis-[70%] grid-cols-3 gap-5 list-none p-0 m-0 #{!important};
     .title{
-        @apply text-sm leading-[20px] mb-1 text-system-mid font-medium;
+        @apply text-sm leading-[20px] mb-1 text-[var(--fct-customer-dashboard-text-color,#565865)] font-medium;
     }
     .text{
-        @apply text-base font-medium text-system-dark;
+        @apply text-base font-medium text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
     }
 }
 
 .fct-customer-dashboard-list-content {
     &-item{
-        @apply flex justify-between items-center gap-7.5 py-5 px-6 border border-solid border-gray-divider border-x-0 border-t-0 last:border-b-0;
+        @apply flex justify-between items-center gap-7.5 py-5 px-6 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-x-0 border-t-0 last:border-b-0;
         .title{
-            @apply text-[15px] font-medium text-system-dark leading-[22px] mb-1;
+            @apply text-[15px] font-medium text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] leading-[22px] mb-1;
         }
         .variation-title{
-            @apply text-sm text-system-mid leading-[20px] mb-2;
+            @apply text-sm text-[var(--fct-customer-dashboard-text-color,#565865)] leading-[20px] mb-2;
         }
         .text{
-            @apply text-[13px] text-system-mid font-normal leading-[18px];
+            @apply text-[13px] text-[var(--fct-customer-dashboard-text-color,#565865)] font-normal leading-[18px];
             + .fct-btn-group{
                 @apply mt-4;
             }
@@ -32,7 +32,9 @@
         .license-right-content{
             @apply grid gap-3 relative flex-1 w-[620px];
             &.has-bg{
-                @apply bg-gray-25 rounded p-5;
+                @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)];
+                border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+                padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
             }
             .license-badge{
                 @apply absolute top-5 right-5;
@@ -43,6 +45,6 @@
 
 .fct-more-option-wrap{
     .more-btn{
-        @apply border-0 flex items-center justify-center p-0 bg-transparent text-system-dark w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
+        @apply border-0 flex items-center justify-center p-0 bg-transparent text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
     }
 }

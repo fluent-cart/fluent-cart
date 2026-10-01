@@ -249,6 +249,10 @@
     @apply w-10 h-10 rounded-full block;
   }
 
+  .fct-user-avatar {
+    @apply w-10 h-10;
+  }
+
   .fct-customer-name {
     @apply font-medium text-sm text-system-dark dark:text-gray-50;
   }
@@ -391,6 +395,10 @@
 
     img {
       @apply w-full h-full object-cover;
+    }
+
+    .fct-user-avatar {
+      @apply w-full h-full;
     }
   }
 

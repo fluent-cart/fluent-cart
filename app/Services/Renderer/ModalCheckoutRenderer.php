@@ -278,7 +278,7 @@ class ModalCheckoutRenderer
         $subtotalRaw       = (int) Arr::get($this->cart->cart_data, '0.subtotal', 0);
         $lineTotalRaw      = (int) Arr::get($this->cart->cart_data, '0.line_total', 0);
         $hasCouponDiscount = $couponDiscount > 0 && $lineTotalRaw < $subtotalRaw;
-        $media = Arr::get($this->cart->cart_data, '0.featured_media', '');
+        $media = Helper::productImageOrPlaceholder(Arr::get($this->cart->cart_data, '0.featured_media', ''));
 
         // Mirror CartItemRenderer's event payload so the shared line-item hooks
         // (e.g. the per-item tax breakdown) also fire in modal checkout.

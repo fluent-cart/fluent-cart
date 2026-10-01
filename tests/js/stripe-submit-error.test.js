@@ -1,8 +1,9 @@
 import {describe, expect, it, vi} from 'vitest';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {unwrapIife} from './support/unwrap-iife.js';
 
-const source = fs.readFileSync(new URL('../../resources/public/payment-methods/stripe-checkout.js', import.meta.url), 'utf8');
+const source = unwrapIife(fs.readFileSync(new URL('../../resources/public/payment-methods/stripe-checkout.js', import.meta.url), 'utf8'));
 
 // Execute the real checkout module with Stripe and DOM boundaries mocked.
 async function checkout(submitResult, object = 'payment_intent') {

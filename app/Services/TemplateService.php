@@ -84,6 +84,7 @@ class TemplateService
             'login_page_id'            => 'login',
             'cart_page_id'             => 'cart',
             'receipt_page_id'          => 'receipt',
+            'order_review_page_id'     => 'order_review',
             'shop_page_id'             => 'shop',
             'customer_profile_page_id' => 'customer_dashboard',
         ];

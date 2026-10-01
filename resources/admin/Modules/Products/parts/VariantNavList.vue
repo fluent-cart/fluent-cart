@@ -5,7 +5,7 @@ import translate from "@/utils/translator/Translator";
 import Asset from "@/utils/support/Asset";
 import Animation from "@/Bits/Components/Animation.vue";
 
-const getPlaceholderImage = () => Asset.getUrl('images/placeholder.svg');
+const getPlaceholderImage = () => Asset.productPlaceholder();
 
 const props = defineProps({
     items: Array,

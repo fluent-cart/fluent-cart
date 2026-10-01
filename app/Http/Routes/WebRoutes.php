@@ -24,6 +24,7 @@ use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\Renderer\CheckoutRenderer;
 use FluentCart\App\Services\Renderer\ModalCheckoutRenderer;
+use FluentCart\App\Services\Renderer\OrderReviewRenderer;
 
 class WebRoutes
 {
@@ -283,7 +284,38 @@ class WebRoutes
                         'wp_footer'      => false,
                     ]);
                 return true;
-                
+
+            case 'order-review':
+                ob_start();
+                $orderFound = (new OrderReviewRenderer(
+                    sanitize_text_field($request->get('order_hash', ''))
+                ))->render();
+                $orderReview = ob_get_clean();
+
+                // A bad or stale link is a page that does not exist, and
+                // says so to crawlers as well as people.
+                if (!$orderFound) {
+                    status_header(404);
+                }
+
+                // wp_head/wp_footer left on, unlike the receipt: the review
+                // form's script and stylesheet are enqueued during render()
+                // and there is nowhere else for them to print. It also lets
+                // the theme dress a page the customer reaches from an email.
+                // wp_head/wp_footer forced on. This route renders the whole
+                // document, so nothing else prints them — and the view's
+                // is_page() guard would otherwise skip both on a site whose
+                // front page is static, silently dropping every asset the
+                // review form (and Pro's photo fields) enqueued.
+                FrontendView::make(
+                    __('Review Your Order', 'fluent-cart'),
+                    $orderReview,
+                    [
+                        'wp_head'   => true,
+                        'wp_footer' => true,
+                    ]
+                );
+                return true;
 
             case 'print-invoice':
                 return self::handlePrintRoute('invoice');

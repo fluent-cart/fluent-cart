@@ -9,7 +9,6 @@ use FluentCart\App\Models\AttributeTerm;
 use FluentCart\App\Models\ProductMeta;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Services\Helpers;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
 
@@ -334,6 +333,6 @@ class ProductAdminHelper
 
     public static function getFeaturedMedia($featuredMedia): string
     {
-        return !empty($featuredMedia) ? Arr::get($featuredMedia, 'url') : Vite::getAssetUrl('images/placeholder.svg');
+        return !empty($featuredMedia) ? Arr::get($featuredMedia, 'url') : Helper::getProductPlaceholderUrl();
     }
 }

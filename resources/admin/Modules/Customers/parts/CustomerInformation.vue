@@ -37,7 +37,7 @@
         <div class="fct-admin-sidebar-item">
           <div class="fct-profile-card">
             <div class="fct-profile-image">
-              <img :src="customer?.photo" :alt="customerDisplayName"/>
+              <UserAvatar :url="customer?.photo" :name="customerDisplayName"/>
             </div>
             <div class="fct-profile-details">
               <div class="title">
@@ -270,6 +270,7 @@
 
 <script setup>
 import * as Card from "@/Bits/Components/Card/Card.js";
+import UserAvatar from "@/Bits/Components/UserAvatar.vue";
 import {translateNumber} from "@/utils/translator/Translator";
 import {formatNumber} from "@/Bits/productService";
 import translate from "@/utils/translator/Translator";

@@ -44,6 +44,51 @@ class Helper
      * @param array $otherInfo A variant's other_info payload
      * @return string|null Error message, or null when valid
      */
+    /**
+     * One resolver for every `photo` a FluentCart record appends: the
+     * uploaded customer photo for the user when one is set, otherwise the
+     * WordPress avatar by user id or email. Gravatar is asked with
+     * default=404, so an address with no avatar of its own fails to load
+     * and the UI falls back to its placeholder icon instead of Gravatar's
+     * stock image. esc_url_raw throughout — the value travels through
+     * JSON, where esc_url's entity-encoded ampersands would break the
+     * query string.
+     *
+     * @param int|string|null $userId user id owning a possible uploaded photo
+     * @param string|null $email fallback identity when there is no user
+     * @return string the photo URL, or '' when avatars are off or the
+     *                record carries no identity to resolve one from
+     */
+    public static function getUserAvatarUrl($userId, $email, int $size = 100): string
+    {
+        if (!get_option('show_avatars')) {
+            return '';
+        }
+
+        if ($userId) {
+            $customPhotoUrl = esc_url_raw(
+                (string) get_user_meta((int) $userId, 'fc_customer_photo_url', true)
+            );
+
+            if ($customPhotoUrl) {
+                return $customPhotoUrl;
+            }
+        }
+
+        $userIdOrEmail = ((int) $userId) ?: (string) $email;
+
+        if (!$userIdOrEmail) {
+            return '';
+        }
+
+        $url = get_avatar_url($userIdOrEmail, [
+            'size'    => $size,
+            'default' => '404',
+        ]);
+
+        return $url ? esc_url_raw($url) : '';
+    }
+
     public static function installmentTimesError($otherInfo)
     {
         if (Arr::get($otherInfo, 'installment', 'no') !== 'yes') {
@@ -2112,5 +2157,39 @@ class Helper
         return (int) $order->tax_behavior === 2
             ? esc_html__('(Included)', 'fluent-cart')
             : esc_html__('(Excluded)', 'fluent-cart');
+    }
+
+    /**
+     * Product placeholder illustration (an open box holding a picture) shown
+     * wherever a product has no image. The web copy is a 1200px WebP (sharp on 2x screens); email
+     * clients (Outlook) and PDF renderers get a 300px PNG of the same art.
+     */
+    const PRODUCT_PLACEHOLDER_IMAGE = 'images/product-placeholder.webp';
+    const PRODUCT_PLACEHOLDER_EMAIL_IMAGE = 'images/product-placeholder.png';
+
+    public static function getProductPlaceholderUrl(): string
+    {
+        return \FluentCart\App\Vite::getAssetUrl(static::PRODUCT_PLACEHOLDER_IMAGE);
+    }
+
+    public static function getProductPlaceholderEmailUrl(): string
+    {
+        return \FluentCart\App\Vite::getAssetUrl(static::PRODUCT_PLACEHOLDER_EMAIL_IMAGE);
+    }
+
+    /**
+     * A product image URL, or the placeholder when there is none. Carts store
+     * the thumbnail URL in cart_data, so carts built before the illustration
+     * still carry the old generic icon (images/placeholder.svg); map that too.
+     */
+    public static function productImageOrPlaceholder($url): string
+    {
+        $url = is_string($url) ? $url : '';
+
+        if ($url === '' || preg_match('#/images/placeholder\.svg(\?.*)?$#', $url)) {
+            return static::getProductPlaceholderUrl();
+        }
+
+        return $url;
     }
 }

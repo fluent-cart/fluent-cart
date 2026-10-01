@@ -2,6 +2,9 @@
 
 namespace FluentCart\App\Services\Email;
 
+use FluentCart\App\Helpers\Status;
+use FluentCart\App\Models\Product;
+use FluentCart\App\Models\ProductReview;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Support\Collection;
 use FluentCart\Framework\Support\Str;
@@ -41,6 +44,22 @@ class EmailPreviewService
             }
         }
 
+        // The review templates read a review, not an order. Without one the
+        // preview of any of them fatals on the first property it touches.
+        if (Str::startsWith($template, 'review.')) {
+            $previewData['product'] = $this->getPreviewProduct();
+            $previewData['review'] = $this->getDummyReview((int) $previewData['product']->ID);
+
+            if (Str::startsWith($template, 'review.replied.')) {
+                $previewData['reply'] = $this->getDummyReply((int) $previewData['product']->ID);
+            }
+            // A review is not about an order, and a real send carries none —
+            // the order header (date, number) renders only when one is there.
+            // Left in, the preview would show a header the email never has.
+            $previewData['order'] = null;
+            $previewData['transaction'] = null;
+        }
+
         if (Str::startsWith($template, 'subscription.')) {
             $previewData['transaction'] = $subscription->getLatestTransaction();
 
@@ -59,6 +78,67 @@ class EmailPreviewService
         }
 
         return $previewData;
+    }
+
+    /**
+     * A stand-in review with every field the review templates and the
+     * {{review.*}} codes read. A real model, not a stdClass: the templates
+     * call attachItemLabels() on it and the parser type-checks for one.
+     */
+    /**
+     * The product a review preview is about: a real published one when the
+     * store has any, so the preview links where the email will — the
+     * "See your review" button needs a page to point at, and a placeholder
+     * has none. An empty store previews without the button, as the email
+     * would for a product since deleted.
+     */
+    private function getPreviewProduct(): object
+    {
+        $product = Product::query()
+            ->where('post_status', 'publish')
+            ->orderBy('ID', 'DESC')
+            ->first();
+
+        if ($product) {
+            return $product;
+        }
+
+        return (object) [
+            'ID'         => 0,
+            'post_title' => 'Sample Product',
+        ];
+    }
+
+    private function getDummyReview(int $postId = 0): ProductReview
+    {
+        $review = new ProductReview([
+            'post_id'        => $postId,
+            'reviewer_name'  => 'John Doe',
+            'reviewer_email' => 'john.doe@example.com',
+            'title'          => 'Exactly what I was looking for',
+            'review'         => 'Arrived quickly and works just as described. Would happily buy again.',
+            'rating'         => 5,
+        ]);
+        $review->id = 0;
+        $review->status = Status::REVIEW_APPROVED;
+
+        return $review;
+    }
+
+    private function getDummyReply(int $postId = 0): ProductReview
+    {
+        $reply = new ProductReview([
+            'post_id'        => $postId,
+            'parent_id'      => 0,
+            'reviewer_name'  => 'The Store Team',
+            'reviewer_email' => 'store@example.com',
+            'review'         => 'Thank you so much for the kind words — we are thrilled it worked out. Enjoy!',
+        ]);
+        $reply->id = 0;
+        $reply->status = Status::REVIEW_APPROVED;
+        $reply->is_admin_reply = 1;
+
+        return $reply;
     }
 
     private function getDummyCustomer(): object

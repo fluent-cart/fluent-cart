@@ -450,6 +450,7 @@ import CustomDiscount from "./CustomDiscount.vue";
 import OrderCustomerInformation from "./OrderCustomerInformation.vue";
 import Shipping from "./Shipping.vue";
 import Arr from "@/utils/support/Arr";
+import Asset from "@/utils/support/Asset";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import dayjs from "dayjs";
@@ -549,7 +550,7 @@ export default {
       if (thumbnail && thumbnail !== null && thumbnail !== undefined) {
         return thumbnail;
       } else {
-        return assetUrl + "images/empty-image.svg";
+        return Asset.productPlaceholder();
       }
     },
     getClass(thumbnail) {

@@ -220,6 +220,7 @@ class EditorShortCodeHelper
                 '{{order.id}}'                      => __('Order ID', 'fluent-cart'),
                 '{{order.customer_dashboard_link}}' => __('Customer Dashboard Link', 'fluent-cart'),
                 '{{order.payment_link}}'            => __('Order Payment Link', 'fluent-cart'),
+                '{{order.review_url}}'              => __('Order Review Link', 'fluent-cart'),
                 '{{order.status}}'                  => __('Order Status', 'fluent-cart'),
                 '{{order.parent_id}}'               => __('Order Parent Id', 'fluent-cart'),
                 '{{order.invoice_no}}'              => __('Order Number', 'fluent-cart'),

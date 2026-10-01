@@ -1,0 +1,3358 @@
+@config "./single-product.config.js";
+@tailwind utilities;
+/* Review photos open in the product gallery's lightbox; reviews also render
+   on pages that never load the gallery styles (the standalone block, the
+   order-review page), so the skin travels with them. */
+@import "./lightbox/lightbox.css";
+
+/* The thread modal sits at 99999; a photo opened from inside it must land
+   above, not behind. The class is doubled so the rule wins on specificity
+   rather than on order: this file and single-product.scss both import
+   lightbox.css, and whichever copy loads last would otherwise re-declare
+   the shipped z-index and put the photo back underneath. */
+.fct-lightboxOverlay.fct-lightboxOverlay {
+    z-index: 100000;
+}
+
+.fct-lightbox.fct-lightbox {
+    z-index: 100001;
+}
+
+/* ─── Colour tokens ─────────────────────────────────────────
+   Reviews follow the storefront palette through their own scope, the same
+   shape as the shop's --fct-shop-*: each token aliases a palette global on
+   :root, and the gate below re-declares it with the literal the rule had
+   before the section was bound, so a Default store renders as it always did.
+
+   The rules sit outside the gate — review chrome is FluentCart's own, and no
+   theme styles it — so every use repeats that literal as its own fallback:
+   with the store standing aside (fluent-cart-no-colors) the :root alias is
+   unresolved and the use-site literal applies.
+
+   Several tokens share a global and differ only in their fallback. Each is the
+   literal a group of rules already had; collapsing them would move Default.
+   Stars are not palette colours: gold by convention, overridden only by the
+   block's own colour (--fct-star-color). See dev-docs/appearance/04. */
+:root {
+    // text
+    --fct-review-heading-color: var(--fct-single-product-primary-text-color, var(--fct-primary-text-color));
+    --fct-review-text-color: var(--fct-primary-text-color);
+    --fct-review-strong-text-color: var(--fct-primary-text-color);
+    --fct-review-body-text-color: var(--fct-primary-text-color);
+    --fct-review-label-color: var(--fct-primary-text-color);
+    --fct-review-secondary-text-color: var(--fct-secondary-text-color);
+    --fct-review-muted-text-color: var(--fct-secondary-text-color);
+    --fct-review-meta-text-color: var(--fct-secondary-text-color);
+    --fct-review-subtle-text-color: var(--fct-secondary-text-color);
+    --fct-review-note-text-color: var(--fct-secondary-text-color);
+    --fct-review-faint-text-color: var(--fct-secondary-text-color);
+    --fct-review-caption-color: var(--fct-secondary-text-color);
+    --fct-review-accent-color: var(--fct-accent-color, var(--fct-primary-active-text-color));
+
+    // surfaces, borders, dividers
+    --fct-review-card-bg: var(--fct-card-bg-color);
+    --fct-review-card-border-color: var(--fct-border-color);
+    --fct-review-panel-border-color: var(--fct-border-color);
+    --fct-review-divider-color: var(--fct-divider-color);
+    --fct-review-separator-color: var(--fct-divider-color);
+    --fct-review-soft-divider-color: var(--fct-divider-color);
+    --fct-review-surface-alt: var(--fct-secondary-bg-color);
+    --fct-review-cta-bar-bg: var(--fct-secondary-bg-color);
+    --fct-review-tile-bg: var(--fct-secondary-bg-color);
+    --fct-review-tile-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+    --fct-review-bar-track: var(--fct-border-color);
+    --fct-review-pill-bg: var(--fct-card-bg-color);
+    --fct-review-pill-border-color: var(--fct-border-color);
+
+    // controls: chips, close buttons, star picker, slider arrows
+    --fct-review-control-bg: var(--fct-card-bg-color);
+    --fct-review-control-border-color: var(--fct-border-color);
+    --fct-review-control-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+    --fct-review-chip-bg: var(--fct-card-bg-color);
+    --fct-review-chip-text: var(--fct-secondary-text-color);
+    --fct-review-chip-border: var(--fct-border-color);
+    --fct-review-chip-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+    --fct-review-chip-active-bg: var(--fct-secondary-bg-color);
+    --fct-review-chip-active-text: var(--fct-primary-text-color);
+    --fct-review-chip-active-border: var(--fct-active-border-color);
+
+    // sort select and the review form
+    --fct-review-select-text: var(--fct-input-text-color);
+    --fct-review-select-focus-border: var(--fct-active-border-color);
+    --fct-review-input-bg: var(--fct-input-bg-color);
+    --fct-review-input-text: var(--fct-input-text-color);
+    --fct-review-input-border: var(--fct-border-color);
+    --fct-review-input-focus-border: var(--fct-active-border-color);
+    --fct-review-input-placeholder: var(--fct-input-placeholder-text-color);
+
+    // primary button pair: Next / Submit, the current page, the active step
+    --fct-review-btn-bg: var(--fct-btn-bg-color);
+    --fct-review-btn-text: var(--fct-btn-text-color);
+    --fct-review-btn-hover-bg: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color));
+    --fct-review-btn-hover-text: var(--fct-btn-hover-text-color, var(--fct-btn-text-color));
+
+    // Write a Review: an outline button that fills with the button pair
+    --fct-review-cta-bg: var(--fct-secondary-btn-bg-color);
+    --fct-review-cta-text: var(--fct-secondary-btn-text-color);
+    --fct-review-cta-border: var(--fct-secondary-btn-border-color);
+    --fct-review-cta-hover-bg: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color));
+    --fct-review-cta-hover-text: var(--fct-btn-hover-text-color, var(--fct-btn-text-color));
+
+    // secondary buttons: Back, page numbers, helpful votes
+    --fct-review-secondary-btn-bg: var(--fct-secondary-btn-bg-color);
+    --fct-review-secondary-btn-text: var(--fct-secondary-btn-text-color);
+    --fct-review-secondary-btn-border: var(--fct-secondary-btn-border-color);
+    --fct-review-secondary-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+    --fct-review-secondary-btn-hover-border: var(--fct-active-border-color);
+    --fct-review-vote-text: var(--fct-secondary-btn-text-color);
+    --fct-review-vote-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+    --fct-review-vote-hover-border: var(--fct-active-border-color);
+
+    // slider pagination and the dot pager
+    --fct-review-dot-color: var(--fct-border-color);
+    --fct-review-dot-hover-color: var(--fct-secondary-text-color);
+    --fct-review-indicator-color: var(--fct-btn-bg-color);
+    --fct-review-indicator-mid-color: var(--fct-btn-bg-color);
+
+    // avatar and variation badge
+    --fct-review-avatar-bg: var(--fct-secondary-bg-color);
+    --fct-review-avatar-icon: var(--fct-secondary-text-color);
+    --fct-review-badge-bg: var(--fct-secondary-bg-color);
+    --fct-review-badge-text: var(--fct-secondary-text-color);
+
+    // Fixed: not palette colours.
+    --fct-review-star-color: #f59e0b;
+    --fct-review-star-empty-color: #d1d5db;
+    --fct-review-star-picker-color: #98A2B3;
+    --fct-review-focus-ring: var(--fct-accent-color, #3b82f6);
+}
+
+body:not(.fluent-cart-no-colors) {
+    // text
+    --fct-review-heading-color: var(--fct-single-product-primary-text-color, var(--fct-primary-text-color, #1f2937));
+    --fct-review-text-color: var(--fct-primary-text-color, #1f2937);
+    --fct-review-strong-text-color: var(--fct-primary-text-color, #111827);
+    --fct-review-body-text-color: var(--fct-primary-text-color, #374151);
+    --fct-review-label-color: var(--fct-primary-text-color, #2F3448);
+    --fct-review-secondary-text-color: var(--fct-secondary-text-color, #565865);
+    --fct-review-muted-text-color: var(--fct-secondary-text-color, #6b7280);
+    --fct-review-meta-text-color: var(--fct-secondary-text-color, #696778);
+    --fct-review-subtle-text-color: var(--fct-secondary-text-color, #4b5563);
+    --fct-review-note-text-color: var(--fct-secondary-text-color, #64748b);
+    --fct-review-faint-text-color: var(--fct-secondary-text-color, #9D9FAC);
+    --fct-review-caption-color: var(--fct-secondary-text-color, #98A2B3);
+    --fct-review-accent-color: var(--fct-accent-color, var(--fct-primary-active-text-color, #3b82f6));
+
+    // surfaces, borders, dividers
+    --fct-review-card-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-review-card-border-color: var(--fct-border-color, #D6DAE1);
+    --fct-review-panel-border-color: var(--fct-border-color, #e5e7eb);
+    --fct-review-divider-color: var(--fct-divider-color, #EAECF0);
+    --fct-review-separator-color: var(--fct-divider-color, #e5e7eb);
+    --fct-review-soft-divider-color: var(--fct-divider-color, #f3f4f6);
+    --fct-review-surface-alt: var(--fct-secondary-bg-color, #F5F6F7);
+    --fct-review-cta-bar-bg: var(--fct-secondary-bg-color, #f8f8f7);
+    --fct-review-tile-bg: var(--fct-secondary-bg-color, #f3f4f6);
+    --fct-review-tile-hover-bg: var(--fct-secondary-btn-hover-bg-color, #e5e7eb);
+    // The border, not the divider: palettes often set the divider to the
+    // card colour, and the empty track then vanished into the summary card.
+    --fct-review-bar-track: var(--fct-border-color, #F5F6F7);
+    --fct-review-pill-bg: var(--fct-card-bg-color, rgb(255 255 255 / 95%));
+    --fct-review-pill-border-color: var(--fct-border-color, rgb(229 231 235 / 50%));
+
+    // controls
+    --fct-review-control-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-review-control-border-color: var(--fct-border-color, #D6DAE1);
+    --fct-review-control-hover-bg: var(--fct-secondary-btn-hover-bg-color, #F5F6F7);
+    --fct-review-chip-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-review-chip-text: var(--fct-secondary-text-color, #565865);
+    --fct-review-chip-border: var(--fct-border-color, #D6DAE1);
+    --fct-review-chip-hover-bg: var(--fct-secondary-btn-hover-bg-color, #EAECF0);
+    --fct-review-chip-active-bg: var(--fct-secondary-bg-color, #EAECF0);
+    --fct-review-chip-active-text: var(--fct-primary-text-color, #565865);
+    --fct-review-chip-active-border: var(--fct-active-border-color, #D6DAE1);
+
+    // sort select and the review form
+    --fct-review-select-text: var(--fct-input-text-color, #565865);
+    --fct-review-select-focus-border: var(--fct-active-border-color, #EAECF0);
+    --fct-review-input-bg: var(--fct-input-bg-color, #ffffff);
+    --fct-review-input-text: var(--fct-input-text-color, #2f3448);
+    --fct-review-input-border: var(--fct-border-color, #d6dae1);
+    --fct-review-input-focus-border: var(--fct-active-border-color, #1f2937);
+    --fct-review-input-placeholder: var(--fct-input-placeholder-text-color, #6b7280);
+
+    // primary button pair — dark background, white text, like every button
+    // fallback pair (04, rule 2), so a half-printed pair still reads.
+    --fct-review-btn-bg: var(--fct-btn-bg-color, #1f2937);
+    --fct-review-btn-text: var(--fct-btn-text-color, #ffffff);
+    --fct-review-btn-hover-bg: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #374151));
+    --fct-review-btn-hover-text: var(--fct-btn-hover-text-color, var(--fct-btn-text-color, #ffffff));
+
+    // Write a Review
+    --fct-review-cta-bg: var(--fct-secondary-btn-bg-color, #ffffff);
+    --fct-review-cta-text: var(--fct-secondary-btn-text-color, #2F3448);
+    --fct-review-cta-border: var(--fct-secondary-btn-border-color, #D6DAE1);
+    --fct-review-cta-hover-bg: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #253241));
+    --fct-review-cta-hover-text: var(--fct-btn-hover-text-color, var(--fct-btn-text-color, #ffffff));
+
+    // secondary buttons
+    --fct-review-secondary-btn-bg: var(--fct-secondary-btn-bg-color, #ffffff);
+    --fct-review-secondary-btn-text: var(--fct-secondary-btn-text-color, #374151);
+    --fct-review-secondary-btn-border: var(--fct-secondary-btn-border-color, #d1d5db);
+    --fct-review-secondary-btn-hover-bg: var(--fct-secondary-btn-hover-bg-color, #f3f4f6);
+    --fct-review-secondary-btn-hover-border: var(--fct-active-border-color, #6b7280);
+    --fct-review-vote-text: var(--fct-secondary-btn-text-color, #1f2937);
+    --fct-review-vote-hover-bg: var(--fct-secondary-btn-hover-bg-color, #f9fafb);
+    --fct-review-vote-hover-border: var(--fct-active-border-color, #9ca3af);
+
+    // slider pagination and the dot pager
+    --fct-review-dot-color: var(--fct-border-color, #d1d5db);
+    --fct-review-dot-hover-color: var(--fct-secondary-text-color, #9ca3af);
+    --fct-review-indicator-color: var(--fct-btn-bg-color, #111827);
+    --fct-review-indicator-mid-color: var(--fct-btn-bg-color, #1f2937);
+
+    // avatar and variation badge
+    --fct-review-avatar-bg: var(--fct-secondary-bg-color, #EAECF0);
+    --fct-review-avatar-icon: var(--fct-secondary-text-color, #98A2B3);
+    --fct-review-badge-bg: var(--fct-secondary-bg-color, #EAECF0);
+    --fct-review-badge-text: var(--fct-secondary-text-color, #8E99AA);
+}
+
+/* While FluentCart prints colours, the fields wear the palette's input
+   surface: the input text is chosen to read on it, not on whatever the theme
+   paints a field. Default (fluent-cart-theme) sets no background, so the
+   theme's own field background stays, as before. */
+body.fluent-cart-custom:not(.fluent-cart-no-colors) {
+    .fct-reviews-sort select,
+    .fct-review-form-field input[type="text"],
+    .fct-review-form-field input[type="email"],
+    .fct-review-form-field textarea {
+        background-color: var(--fct-review-input-bg, #ffffff);
+    }
+
+    // The summary card holds palette text but paints no surface in Default,
+    // so it sits on the theme's page: a light palette on a dark theme put
+    // the average score at 1.07:1. While colours print it wears the card
+    // surface, as product cards do (04, rule 8). Default stays transparent,
+    // and so does a palette with no card colour: the raw global, not the
+    // token, whose white fallback would paint one.
+    .fct-reviews-summary {
+        background-color: var(--fct-card-bg-color, transparent);
+    }
+
+    // Pairs are owned together (01, rule 3): where the palette paints the
+    // field it also sets the text on it. Some theme dark modes force field
+    // text with !important (Astra: .astra-dark-mode-enable input[type=text]),
+    // which put white text on the palette's white field — so the text is
+    // matched with !important here, and only here, while colours print.
+    .fct-review-form-field input[type="text"],
+    .fct-review-form-field input[type="email"],
+    .fct-review-form-field textarea {
+        color: var(--fct-review-input-text, #2f3448) !important;
+    }
+
+    // Same reason for the step question: a theme's `.dark-mode label`
+    // (0,1,1) outweighs its single class and left it white on a light form.
+    .fct-review-step-question {
+        color: var(--fct-review-label-color, #2F3448);
+    }
+
+    // Restated: the surface above outweighs the select's own hover rule.
+    .fct-reviews-sort select:hover {
+        background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+    }
+}
+
+/* 2-column layout: summary left, list right */
+.fct-reviews-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+// No summary aside (Review List block, or showSummary off) — the list
+// owns the full width instead of landing in the 320px aside track.
+.fct-reviews-layout--single {
+    grid-template-columns: 1fr;
+}
+
+// Summary Top moves the rating summary above the reviews. Keep the aside in
+// normal flow so it cannot retain the default 320px sidebar track.
+.fct-reviews-layout--summary-top {
+    grid-template-columns: 1fr;
+
+    .fct-reviews-layout-left,
+    .fct-reviews-layout-right {
+        width: 100%;
+    }
+
+    .fct-reviews-layout-left {
+        position: static;
+    }
+}
+
+// Summary CTA intentionally keeps the invitation beside the list. Declaring
+// it explicitly prevents the semantic modifier from depending on the base
+// layout when builders add their own section styles.
+.fct-reviews-layout--summary-cta {
+    grid-template-columns: 320px minmax(0, 1fr);
+}
+
+// Rating Summary with Review wrapper — the wrapper IS the card box, so
+// the summary content and the Write a Review button share one card.
+// The children's own section chrome (separator, card border) flattens
+// inside it.
+.fct-review-summary-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: var(--fct-container-padding-y, theme('spacing.6')) var(--fct-container-padding-x, theme('spacing.5'));
+    background: var(--fct-review-card-bg, #ffffff);
+    border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+    border-radius: var(--fct-container-radius, theme('borderRadius[2.5]'));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    .fct-product-reviews-section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .fct-reviews-summary {
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+}
+
+.fct-reviews-layout-left {
+    position: sticky;
+    top: 20px;
+}
+
+.fct-reviews-layout-right {
+    min-width: 0;
+}
+
+.fct-reviews-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+/* The header when it is composed of blocks.
+ *
+ * It is the list's own child now rather than something nested in the
+ * renderer's header, so it does not inherit that header's spacing and has to
+ * carry its own — the same 16px, or the chips sit straight on top of the
+ * first row of reviews.
+ *
+ * flex: 1 1 100% is kept for a header still placed inside
+ * .fct-reviews-list-header, where it takes the full width and lays its own
+ * children out instead of sitting beside the count. */
+.fct-reviews-header-blocks {
+    flex: 1 1 100%;
+    margin-bottom: 16px;
+}
+
+/* Grid view.
+ *
+ * The class sits on the list element, which the storefront script empties and
+ * refills rather than replaces — so the layout holds across a page change,
+ * a filter and a sort without having to be sent with the request.
+ *
+ * The row's own bottom margin is dropped in favour of the grid's gap, or the
+ * columns would be spaced one way and the rows another. auto-fit with a
+ * minimum width rather than a flat column count: a review narrower than about
+ * 260px is a column of single words, and at the 320px reflow width there is
+ * only room for one whatever the setting says.
+ */
+/* The slider borrows this until Swiper builds it, so it paints in columns
+   rather than as a stack. Swiper adds .swiper, which stands the rule down. */
+.fct-reviews-list--grid,
+.fct-reviews-list--slider:not(.swiper) {
+    display: grid;
+    gap: 12px;
+    /* minmax(0, 1fr): an equal share of the row, and allowed to shrink below
+       its own content. The earlier auto-fit track paired a 260px minimum with
+       a computed maximum, and on a narrow container the maximum fell below the
+       minimum -- at 366px across and two columns the maximum is 177px -- so the
+       track clamped back up to 260px and pushed the card out of its container.
+       A fraction cannot do that, and the breakpoints below drop the count
+       rather than letting a column go narrower than it can read at. */
+    grid-template-columns: repeat(var(--fct-review-columns, 2), minmax(0, 1fr));
+    /* Stretch, so every card in a row ends on the same line. With `start` each
+       card was only as tall as its own text and height:100% had nothing to
+       resolve against, which is what left the ragged bottom edge. */
+    align-items: stretch;
+
+    .fct-review-item {
+        margin-bottom: 0;
+        height: 100%;
+    }
+}
+
+/* Slider view.
+ *
+ * Swiper is built client-side from the rendered rows, so before it runs the
+ * list is still a plain stack — these rules are what it becomes, not what it
+ * starts as. The row keeps its card styling; only the arrangement changes.
+ */
+.fct-reviews-list--slider {
+    position: relative;
+
+    .fct-review-item {
+        margin-bottom: 0;
+        height: auto;
+    }
+
+    .swiper-slide {
+        height: auto;
+        display: flex;
+
+        > .fct-review-item {
+            width: 100%;
+        }
+    }
+}
+
+/* Cards that share a baseline, in both laid-out views.
+ *
+ * Equal height on its own is not enough and can be worse: with nothing else
+ * done, one twenty-line review sets the height for the two-line one beside it
+ * and the row becomes mostly empty card. So the content is clamped and the
+ * footer is pushed to the bottom — the cards end level, the text stops at the
+ * same place, and the reply and vote controls line up across the row.
+ *
+ * The list view is untouched: a full-width review has no neighbour to match
+ * and nothing to gain from being cut short. */
+.fct-reviews-list--grid,
+.fct-reviews-list--slider {
+    .fct-review-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Whatever the row ends with sits on the bottom edge rather than floating
+       under short text.
+     *
+     * Only what actually ends the row. An auto margin takes the space the card
+     * has left over, which is none in the tallest card of a row — so a control
+     * in the middle of the card given one has a gap in every card except that
+     * one, where it ends up flush against the text above it. The Reply control
+     * is in the middle and keeps its own fixed margin instead. */
+    .fct-review-footer,
+    .wp-block-fluent-cart-review-item-votes {
+        margin-top: auto;
+    }
+
+    /* The gap auto cannot guarantee. An auto margin takes the space the card
+       has left over, and the tallest card in a row has none — so the footer
+       ends up flush against the text there and spaced everywhere else. Padding
+       is not free space, so it holds whatever the card's height. */
+    .fct-review-footer {
+        padding-top: 12px;
+    }
+
+    /* Both spellings of the same paragraph: the fixed row draws one class, a
+       row composed of blocks draws the other.
+     *
+     * Only while .is-clamped is on, which the script adds together with the
+     * control that takes it off again. Cutting the text from the stylesheet
+     * would cut it for a reader without JavaScript too, and leave them nothing
+     * to undo it with — the review would simply end mid-sentence. Without the
+     * script the row is ragged instead, which is the lesser of the two. */
+    .fct-review-item-content.is-clamped,
+    .wp-block-fluent-cart-review-item-content.is-clamped {
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+}
+
+.fct-review-readmore {
+    appearance: none;
+    -webkit-appearance: none;
+    align-self: flex-start;
+    width: auto;
+    min-width: 0;
+    margin: 6px 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fct-review-text-color, #1f2937);
+    font: inherit;
+    font-size: .875em;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.fct-review-readmore:hover,
+.fct-review-readmore:focus,
+.fct-review-readmore:focus-visible,
+.fct-review-readmore:active {
+    border: 0;
+    background: none;
+    color: var(--fct-review-text-color, #1f2937);
+    box-shadow: none;
+}
+
+.fct-review-readmore:hover {
+    text-decoration: none;
+}
+
+.fct-review-readmore:focus-visible {
+    outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+    outline-offset: 2px;
+}
+
+.fct-reviews-slider-nav {
+    /* The product carousel's arrow, to its own numbers: 38px circle, white,
+       hairline border, the same lift on hover. Every theme-button property is
+       reset rather than overridden — a bare <button> otherwise inherits the
+       theme's padding and min-width, which turned these into wide pills.
+       Sizes come from .fct-arrows-{sm,md,lg} on the container, the class the
+       carousel uses, so one description covers both blocks. */
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    transform: translateY(-50%);
+    border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+    border-radius: 999px;
+    background: var(--fct-review-control-bg, #ffffff);
+    color: var(--fct-review-strong-text-color, #111827);
+    line-height: 1;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 18%);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: transform .2s ease, box-shadow .2s ease;
+
+    .fct-nav-arrow-svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* The colours are repeated in every state, not stated once at rest. The
+       carousel's arrow is a <div>, so a theme's global button styling never
+       reaches it; this one is a real <button>, and Astra — among others —
+       paints `button:hover, button:focus` in the theme accent at a higher
+       specificity than this rule's plain class. Left to inherit, the arrow
+       turned solid blue the moment it was hovered, and stayed blue after a
+       click, since the button keeps focus. */
+    &:hover,
+    &:focus,
+    &:focus-visible {
+        border-color: var(--fct-review-panel-border-color, #e5e7eb);
+        background: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-strong-text-color, #111827);
+    }
+
+    &:hover {
+        transform: translateY(-50%) scale(1.08);
+        box-shadow: 0 14px 28px rgb(0 0 0 / 25%);
+    }
+
+    /* Swiper adds this to an arrow with nowhere to go. The carousel's own
+       treatment: faded, no shadow — a raised button that cannot be pressed
+       reads as pressable — and not selectable, since a dead control that
+       highlights on a drag looks broken rather than disabled. It keeps
+       pointer-events so it still answers hover and focus and can say why it
+       is disabled, rather than vanishing from the pointer entirely. */
+    &.swiper-button-disabled {
+        opacity: .35;
+        cursor: default;
+        pointer-events: auto;
+        user-select: none;
+        box-shadow: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+        outline-offset: 2px;
+    }
+}
+
+/* Sits after the slider rather than inside it, so it is laid out in the
+   normal flow and cannot paint over the last row of a card. The resets undo
+   Swiper's own absolute placement, which assumes a child of the slider. */
+/* The placement wrapper. The carousels put 16px here and another 24px on the
+   pill inside; this sits closer to its slides, and the whole offset is stated
+   once here so every type clears the cards by the same amount. */
+.fct-reviews-slider-pagination-wrap {
+    display: flex;
+    margin-top: 10px;
+}
+
+/* Every selector below names three classes, and the count is the point.
+   Swiper sizes and positions each pagination type through two-class rules of
+   its own — .swiper-pagination-bullets.swiper-pagination-horizontal and
+   .swiper-pagination-progressbar.swiper-pagination-horizontal both set
+   width:100% and pin the element 8px from the bottom. Its stylesheet is
+   enqueued while the section renders, after this one, so anything of ours at
+   equal specificity loses on order. Hence the wrapper, plus both of the
+   element's own classes.
+
+   The pill itself is the product and media carousels' pagination, to their
+   numbers rather than to a second set of them: same shape, same dot size, gap
+   and palette, and the same 24px on top of the wrapper's 16px. Their rule is
+   scoped to .fct-product-carousel, so the values are restated here and named
+   as theirs, kept in step by hand. */
+.fct-reviews-slider-pagination-wrap .swiper-pagination.fct-reviews-slider-pagination {
+    /* In the flow, sized to its dots: not absolute, and not full width. Both
+       of those are what put the bar across the bottom of the cards. */
+    position: relative;
+    inset: auto;
+    width: fit-content;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    /* Centred, with no offset of its own: the wrapper owns the gap above. */
+    margin: 0 auto;
+    padding: 8px 14px;
+    border: 1px solid var(--fct-review-pill-border-color, rgb(229 231 235 / 50%));
+    border-radius: 24px;
+    background: var(--fct-review-pill-bg, rgb(255 255 255 / 95%));
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%), 0 2px 4px rgb(0 0 0 / 6%);
+    backdrop-filter: blur(8px);
+    pointer-events: auto;
+    text-align: center;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    margin: 0 !important;
+    border-radius: 50%;
+    background: var(--fct-review-dot-color, #d1d5db);
+    opacity: 1;
+    cursor: pointer;
+    transition: transform .2s ease, background-color .2s ease;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-bullet:hover {
+    background: var(--fct-review-dot-hover-color, #9ca3af);
+    transform: scale(1.3);
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-bullet-active {
+    background: var(--fct-review-indicator-color, #111827);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px rgb(17 24 39 / 20%);
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-lock {
+    /* Nothing to page through. Shown, not hidden, the same way the arrows
+       stay and grey out, so the control does not vanish under the reader. */
+    opacity: .5;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-fraction {
+    min-width: 76px;
+    color: var(--fct-review-strong-text-color, #111827);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+
+/* Segmented: a bar per page, the ones behind the reader filled in, and a
+   counter after them. Not a Swiper type — it is the custom one with a
+   renderer — so the geometry is ours, taken from the two carousels: their
+   padding, gap, segment size and palette.
+
+   Their active segment runs an endless shimmer. Left out here: a review
+   section is something a reader sits with, and an indefinite animation beside
+   the text they are reading is a distraction the carousel can afford and this
+   cannot. The active segment is the same colour, held still. */
+.fct-reviews-slider-pagination-wrap.fct-pagination-segmented .swiper-pagination.fct-reviews-slider-pagination {
+    gap: 6px;
+    min-width: 150px;
+    max-width: 90%;
+    overflow-x: auto;
+    padding: 10px 16px;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-segment {
+    /* A bare <button> otherwise inherits the theme's padding, min-width and
+       border, which turns a 4px bar into a pill. Same reset the arrows take. */
+    appearance: none;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    position: relative;
+    flex: 1;
+    min-width: 40px;
+    max-width: 80px;
+    height: 4px;
+    border-radius: 8px;
+    background: var(--fct-review-dot-color, #d1d5db);
+    transition: transform .3s cubic-bezier(.4, 0, .2, 1), background-color .3s ease;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-segment:hover {
+    transform: scaleY(1.3);
+    cursor: pointer;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-segment:focus-visible {
+    outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+    outline-offset: 3px;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-segment.is-active {
+    background: linear-gradient(90deg, var(--fct-review-indicator-color, #111827) 0%, var(--fct-review-indicator-mid-color, #1f2937) 50%, var(--fct-review-indicator-color, #111827) 100%);
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-segment.is-completed {
+    background: var(--fct-review-indicator-color, #111827);
+    box-shadow: 0 0 6px rgb(17 24 39 / 20%);
+}
+
+.fct-reviews-slider-pagination-wrap .segment-counter {
+    margin-left: 8px;
+    color: var(--fct-review-subtle-text-color, #4b5563);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    white-space: nowrap;
+}
+
+/* The bar is the one type where Swiper's element cannot be the pill: it IS
+   the track, with the fill inside it. So the pill moves out to the wrapper
+   and the track sits within it, which is how the canvas preview draws it and
+   how the two carousels draw theirs. */
+.fct-reviews-slider-pagination-wrap.fct-pagination-progressbar {
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    min-width: 44px;
+    /* Restates the wrapper's own 10px: this selector is the more specific of
+       the two, so a bare `0 auto` here would cancel it. */
+    margin: 10px auto 0;
+    padding: 8px 14px;
+    border: 1px solid var(--fct-review-pill-border-color, rgb(229 231 235 / 50%));
+    border-radius: 24px;
+    background: var(--fct-review-pill-bg, rgb(255 255 255 / 95%));
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%), 0 2px 4px rgb(0 0 0 / 6%);
+    backdrop-filter: blur(8px);
+}
+
+/* The track. Its own entry because the pill rule above sets a width, and
+   Swiper's progressbar rule would otherwise still reach the height and the
+   absolute placement. The pill chrome is stripped here — the wrapper carries
+   it now — and the margin with it, or the offset would be counted twice. */
+.fct-reviews-slider-pagination-wrap .swiper-pagination.fct-reviews-slider-pagination.swiper-pagination-progressbar {
+    position: relative;
+    inset: auto;
+    width: 180px;
+    height: 4px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--fct-review-separator-color, #e5e7eb);
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.fct-reviews-slider-pagination-wrap .swiper-pagination-progressbar .swiper-pagination-progressbar-fill {
+    border-radius: 999px;
+    background: var(--fct-review-indicator-color, #111827);
+}
+
+/* The frame the arrows live in. Swiper gives the track overflow:hidden, so an
+   arrow inside it can only ever sit fully over a card; the frame sits around
+   the track and holds them instead.
+
+   Each size states half its own width, which is what lets an arrow straddle
+   the track's edge without the stylesheet guessing. */
+.fct-reviews-slider-frame {
+    position: relative;
+    --fct-arrow-half: 19px;
+
+    &.fct-arrows-sm {
+        --fct-arrow-half: 15px;
+    }
+
+    &.fct-arrows-lg {
+        --fct-arrow-half: 23px;
+    }
+}
+
+/* On the reviews: centred on the track's edge, half over the first and last
+   review and half clear of it.
+
+   No padding, so the track keeps its full width and its reviews line up with
+   the count and the chips above them. The arrow hangs out of the frame by its
+   own half instead — the only placement that does, which is the trade for
+   that alignment. */
+.fct-reviews-slider-frame.is-arrows-overlap {
+    .fct-reviews-slider-prev {
+        left: calc(-1 * var(--fct-arrow-half));
+    }
+
+    .fct-reviews-slider-next {
+        right: calc(-1 * var(--fct-arrow-half));
+    }
+}
+
+/* Beside the track, clear of every review. The padding reserves the room
+   rather than pulling the arrows out with negative offsets, so they cannot
+   hang off the page on a narrow screen. */
+.fct-reviews-slider-frame.is-arrows-outside {
+    padding-inline: 52px;
+
+    .fct-reviews-slider-prev {
+        left: 0;
+    }
+
+    .fct-reviews-slider-next {
+        right: 0;
+    }
+}
+
+/* Under the track, in a row of their own. */
+.fct-reviews-slider-frame.is-arrows-bottom .fct-reviews-slider-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+
+    .fct-reviews-slider-nav {
+        position: static;
+        transform: none;
+
+        &:hover {
+            transform: scale(1.08);
+        }
+    }
+}
+
+/* Inside the track, at the product carousel's own offset, overlapping the
+   first and last card the way its arrows overlap the first and last product. */
+.fct-reviews-slider-prev {
+    left: 10px;
+}
+
+.fct-reviews-slider-next {
+    right: 10px;
+}
+
+.fct-arrows-sm {
+    .fct-reviews-slider-nav {
+        width: 30px;
+        height: 30px;
+    }
+
+    .fct-nav-arrow-svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .fct-reviews-slider-nav:hover {
+        transform: translateY(-50%) scale(1.12);
+    }
+}
+
+.fct-arrows-lg {
+    .fct-reviews-slider-nav {
+        width: 46px;
+        height: 46px;
+    }
+
+    .fct-nav-arrow-svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .fct-reviews-slider-nav:hover {
+        transform: translateY(-50%) scale(1.05);
+    }
+}
+
+/* The carousel's small-screen step, to its number. After the size blocks, so
+   it settles the size on a narrow screen whatever was chosen — which is also
+   why .fct-arrows-sm comes out a touch larger there than the 30px it asks
+   for, exactly as it does on the carousel. */
+@media (max-width: 768px) {
+    .fct-reviews-slider-nav {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* "Page 2 of 7", and the dots — the two alternatives to the numbered pager. */
+.fct-reviews-page-fraction {
+    padding: 0 6px;
+    font-size: 14px;
+    color: var(--fct-review-body-text-color, #374151);
+    white-space: nowrap;
+
+    strong {
+        font-weight: 600;
+    }
+}
+
+/* The button is 24px square and transparent; the dot it draws is 10px.
+ *
+ * A 10px button is what the design wants to look like and not what anyone can
+ * hit: WCAG 2.2 Target Size (Minimum) asks for 24x24 CSS pixels, and the
+ * spacing exception below that needs 24px between centres, which 10px dots
+ * 8px apart do not reach either. The hit area grows, the dot does not. */
+.fct-reviews-page-bullet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+
+    &::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border: 1px solid var(--fct-review-dot-color, #d1d5db);
+        border-radius: 50%;
+        background: var(--fct-review-control-bg, #ffffff);
+    }
+
+    &.active::before {
+        background: var(--fct-review-btn-bg, #1f2937);
+        border-color: var(--fct-review-btn-bg, #1f2937);
+    }
+
+    /* On the dot rather than the invisible box, so the ring reads as belonging
+       to the control the reader can see. */
+    &:focus-visible {
+        outline: none;
+    }
+
+    &:focus-visible::before {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+        outline-offset: 2px;
+    }
+}
+
+/* No gap: the 24px boxes sit edge to edge, which keeps their centres 24px
+   apart — the spacing the exception asks for — while the visible dots stay
+   14px apart, close to the 18px they had. */
+.fct-reviews-pagination-inner.is-bullets {
+    gap: 0;
+}
+
+/* Pager alignment, set by the Review Pagination block. On the wrapper rather
+   than on .fct-reviews-pagination-inner because the storefront script replaces
+   this element's innerHTML on every page change — the inner element it aligns
+   is a new one each time, and this one is not. */
+.fct-reviews-pagination {
+    &.is-justified-left > .fct-reviews-pagination-inner {
+        justify-content: flex-start;
+    }
+
+    &.is-justified-center > .fct-reviews-pagination-inner {
+        justify-content: center;
+    }
+
+    &.is-justified-right > .fct-reviews-pagination-inner {
+        justify-content: flex-end;
+    }
+}
+
+.fct-reviews-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--fct-review-heading-color, #1f2937);
+}
+
+/* Rating Summary — big number + stars head, bars beneath */
+.fct-reviews-summary {
+    @apply border border-solid;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+    border-color: var(--fct-review-card-border-color, #D6DAE1);
+
+}
+
+/* The summary is measured against the width it was given, not the window's:
+   the same block sits in a 320px column beside the reviews and across the full
+   width above them, and only the element knows which. A media query reads the
+   window and would hand the narrow column the wide arrangement.
+   The container is the wrapper, not the summary — a container query styles a
+   container's descendants, never the container itself. */
+.fct-review-summary-block {
+    container-type: inline-size;
+}
+
+/* Wide enough to read across: the score, the bars and the CTA side by side,
+   which is the arrangement a shopper meets on the large marketplaces. Below
+   this the parts stack, which is what a side column wants. */
+@container (min-width: 600px) {
+    .fct-reviews-summary {
+        display: flex;
+        align-items: flex-start;
+        gap: 32px;
+    }
+
+    .fct-reviews-summary-left {
+        /* The rule below it draws a divider under the score when stacked;
+           side by side that line belongs down the side, or nowhere. */
+        @apply border-b-0 mb-0 pb-0;
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fct-reviews-summary-head-meta {
+        @apply pl-0 ml-0 border-0;
+    }
+
+    .fct-reviews-summary-right {
+        @apply mb-0;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .fct-reviews-summary-write-btn {
+        flex: 0 0 auto;
+        align-self: center;
+    }
+}
+
+.fct-reviews-summary-left {
+    @apply flex gap-1 border border-solid border-x-0 border-t-0 mb-5 pb-5;
+    border-color: var(--fct-review-divider-color, #EAECF0);
+}
+
+.fct-reviews-average-number {
+    @apply text-[40px] leading-[48px] font-medium;
+    color: var(--fct-review-heading-color, #1f2937);
+}
+
+.fct-reviews-average-max {
+    @apply text-sm;
+    color: var(--fct-review-faint-text-color, #9D9FAC);
+}
+
+.fct-reviews-summary-head-meta {
+    @apply pl-4 ml-2.5 border border-solid border-r-0 border-y-0;
+    border-color: var(--fct-review-divider-color, #EAECF0);
+}
+.fct-reviews-total {
+    @apply text-[13px];
+    color: var(--fct-review-meta-text-color, #696778);
+}
+
+.fct-reviews-summary-right {
+    @apply w-full mb-5 flex flex-col gap-2;
+}
+
+
+.fct-review-cta-icon {
+    line-height: 1;
+}
+
+.fct-reviews-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fct-reviews-bar-label {
+    @apply text-sm flex items-center gap-1;
+    color: var(--fct-review-meta-text-color, #696778);
+    white-space: nowrap;
+}
+
+.fct-bar-star-icon {
+    @apply text-sm leading-none;
+    color: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+}
+
+// flex-1 + min-w-0 rather than a fixed min-width: in the 320px summary
+// aside the track still settles at ~210px, but it can shrink below that
+// on narrow phones and at the WCAG 320px reflow width instead of pushing
+// the row wider than the card.
+.fct-reviews-bar-track {
+    @apply h-3 rounded-[2px] overflow-hidden flex-1 min-w-0;
+    background-color: var(--fct-review-bar-track, #F5F6F7);
+}
+
+.fct-reviews-bar-fill {
+    @apply h-full rounded-[2px];
+    background: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+    transition: width 0.3s ease;
+}
+
+/* All bars use the same star color (amber/gold) */
+
+.fct-reviews-bar-count {
+    @apply text-sm;
+    color: var(--fct-review-meta-text-color, #696778);
+}
+
+/* Controls (Filter Chips + Sort) */
+/* Scope the controls to the review section. The element qualifier provides
+   enough specificity to beat generic WordPress layout styles without
+   repeating the same class or relying on !important. */
+.fct-product-reviews-section .fct-reviews-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+    /* The chips are the last thing above the cards in every layout that shows
+       them, and the list's own gap only separates cards from each other. */
+    margin-bottom: 16px;
+}
+
+/* Masonry: cards keep their own height and the column fills around them,
+   rather than every card in a row being stretched to the tallest. CSS columns
+   rather than grid, because a grid row is a row — it cannot stagger. The cards
+   are told not to split across a column break, which is the whole trick. */
+.fct-reviews-list--masonry {
+    column-count: var(--fct-review-columns, 2);
+    column-gap: 12px;
+
+    .fct-review-item {
+        break-inside: avoid;
+        /* The gap between stacked cards: column-gap is horizontal only, and a
+           margin is what a column layout has instead of a row gap. */
+        margin-bottom: 12px;
+        /* Safari needs the pair below to honour break-inside in columns. */
+        -webkit-column-break-inside: avoid;
+        page-break-inside: avoid;
+        box-sizing: border-box;
+    }
+}
+
+/* How narrow a list may get before it drops a column depends on how many it
+ * was asked for. A single threshold for every count was the mistake: a grid
+ * set to three was flattened to two beside the summary, where three is 285px
+ * a card and reads perfectly well, while four at the same width is 200px and
+ * does not. The ladder below reduces a count only once the cards would be too
+ * narrow to read, and never raises one -- a list asked for two stays two at
+ * every width until it stacks.
+ *
+ * Same ladder twice: on the container for a list that has one, and on the
+ * viewport for a full-width list that belongs to no container. */
+@mixin fct-review-grid-columns($count) {
+    &.fct-reviews-list--grid,
+    &.fct-reviews-list--slider:not(.swiper) {
+        grid-template-columns: repeat(#{$count}, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1100px) {
+    .fct-reviews-list--cols-4,
+    .fct-reviews-list--cols-5,
+    .fct-reviews-list--cols-6 {
+        @include fct-review-grid-columns(3);
+    }
+}
+
+@media (max-width: 860px) {
+    .fct-reviews-list--cols-3,
+    .fct-reviews-list--cols-4,
+    .fct-reviews-list--cols-5,
+    .fct-reviews-list--cols-6 {
+        @include fct-review-grid-columns(2);
+    }
+}
+
+@media (max-width: 520px) {
+    .fct-reviews-list--grid,
+    .fct-reviews-list--slider:not(.swiper) {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .fct-reviews-list--masonry {
+        column-count: min(2, var(--fct-review-columns, 2));
+    }
+}
+
+@media (max-width: 640px) {
+    .fct-reviews-list--masonry {
+        column-count: 1;
+    }
+}
+
+/* The list reads its own box, not the window.
+ *
+ * Beside a 320px summary the list has far less room than the viewport
+ * suggests -- on a 1200px page it is about 856px, so a four-column grid is
+ * 200px a card and a six-column strip is 130px. The viewport breakpoints
+ * above cannot see that, which is how a four-up layout ended up at roughly
+ * 160px a card in the editor while the window was still 1300px wide.
+ *
+ * Both paths get a container: the rendered layout's right-hand side, and the
+ * column a composed layout puts the list in. A list at full width belongs to
+ * no container, so these never fire for it and the viewport rules stand.
+ *
+ * The clamps only ever reduce. Two is the floor the column count is already
+ * clamped to, so no list is given more columns here than it asked for. */
+.fct-reviews-layout-right,
+.fct-product-reviews-section .wp-block-column,
+.fct-product-reviews-block-editor .wp-block-column {
+    container-type: inline-size;
+}
+
+@container (max-width: 1000px) {
+    .fct-reviews-list--cols-4,
+    .fct-reviews-list--cols-5,
+    .fct-reviews-list--cols-6 {
+        @include fct-review-grid-columns(3);
+    }
+}
+
+@container (max-width: 760px) {
+    .fct-reviews-list--cols-3,
+    .fct-reviews-list--cols-4,
+    .fct-reviews-list--cols-5,
+    .fct-reviews-list--cols-6 {
+        @include fct-review-grid-columns(2);
+    }
+}
+
+/* Masonry holds its columns longer than a grid does. Each card is only as tall
+   as its own review, so a narrow column is a column of photographs rather than
+   a column of single words -- a four-wide wall beside the summary is about
+   214px a column, which is what the layout is for. */
+@container (max-width: 600px) {
+    /* column-count takes a math function, so masonry can keep a smaller
+       count the merchant chose rather than being pushed up to two. */
+    .fct-reviews-list--masonry {
+        column-count: min(2, var(--fct-review-columns, 2));
+    }
+}
+
+@container (max-width: 420px) {
+    .fct-reviews-list--grid,
+    .fct-reviews-list--slider:not(.swiper) {
+        grid-template-columns: 1fr;
+    }
+}
+
+@container (max-width: 400px) {
+    .fct-reviews-list--masonry {
+        column-count: 1;
+    }
+}
+
+/* Filter Chips */
+.fct-reviews-filter-chips {
+    @apply flex items-center gap-1.5 flex-wrap;
+    .fct-filter-chip {
+        @apply px-2.5 py-2 flex items-center gap-1 border border-solid text-[13px] shadow-none transition-colors duration-200;
+        border-radius: var(--fct-badge-radius, theme('borderRadius.DEFAULT'));
+        border-color: var(--fct-review-chip-border, #D6DAE1);
+        background-color: var(--fct-review-chip-bg, #ffffff);
+        color: var(--fct-review-chip-text, #565865);
+
+        &:hover {
+            background-color: var(--fct-review-chip-hover-bg, #EAECF0);
+        }
+
+        &.active {
+            border-color: var(--fct-review-chip-active-border, #D6DAE1);
+            background-color: var(--fct-review-chip-active-bg, #EAECF0);
+            color: var(--fct-review-chip-active-text, #565865);
+        }
+    }
+}
+
+
+.fct-reviews-sort {
+    @apply relative flex items-center flex-shrink-0;
+
+    /* Sizes to the select wherever it is placed. Inside .fct-reviews-list-header
+       the flex row already did that, so this changes nothing there; standing on
+       its own — which is what a list composed from blocks gives it, with no
+       header row around the count, the chips and this — it is a block-level
+       flex container and would otherwise stretch the control across the card. */
+    width: fit-content;
+    max-width: 100%;
+
+    &::before {
+        content: '';
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid var(--fct-review-muted-text-color, #6b7280);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    select {
+        appearance: none;
+        -webkit-appearance: none;
+        /* The caret is drawn by ::before at right:10px and is 8px wide, so
+           the text needs to stop clear of it. A symmetric px-2.5 let the
+           longest option — Highest Rating — run underneath the arrow. */
+        @apply h-auto text-sm cursor-pointer shadow-none leading-none pl-2.5 pr-7 border border-solid focus:outline-none;
+        padding-top: var(--fct-input-padding-y, theme('spacing.2'));
+        padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        border-color: var(--fct-review-control-border-color, #D6DAE1);
+        color: var(--fct-review-select-text, #565865);
+
+        &:hover {
+            background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+        }
+
+        &:focus {
+            border-color: var(--fct-review-select-focus-border, #EAECF0);
+        }
+
+        &:focus,
+        &:focus-visible,
+        &:active {
+            box-shadow: none;
+            outline: none;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+            outline-offset: 1px;
+        }
+    }
+}
+
+/* Bars are display-only (no click interaction) */
+
+/* Stars */
+.fct-star {
+    @apply text-lg leading-none;
+    color: var(--fct-review-star-empty-color, #d1d5db);
+}
+
+.fct-star-filled {
+    color: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+}
+
+.fct-star-half {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+}
+
+// The star and nav glyphs are inline SVGs sized in em, aligned to sit on
+// the text baseline the way the old entity glyphs did.
+.fct-star-svg,
+.fct-nav-arrow-svg {
+    display: inline-block;
+    vertical-align: -0.125em;
+}
+
+.fct-star-half-empty {
+    color: var(--fct-review-star-empty-color, #d1d5db);
+}
+
+.fct-star-half-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    width: 50%;
+    color: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+}
+
+.fct-star-empty {
+    color: var(--fct-review-star-empty-color, #d1d5db);
+}
+
+/* Review List */
+.fct-reviews-list {
+    margin-bottom: 20px;
+}
+
+/* The list's loading state. The loader is a zero-height anchor above the
+   rows with the spinner floated below it, so showing and hiding it moves
+   nothing - the rows stay put, dimmed, until the new ones replace them.
+   An in-flow "Loading..." line here used to push the list and the pager
+   down by its own height on every sort, filter and page change. */
+.fct-reviews-loading {
+    position: relative;
+    height: 0;
+    display: none;
+    z-index: 2;
+
+    &.is-visible {
+        display: block;
+    }
+
+    // Three classes deep on purpose: the modal's spinner rule further down
+    // shares .fct-loader-spinner and sets it relative, and this has to win.
+    &.is-visible .fct-loader-spinner {
+        position: absolute;
+        // Centred on the rows - Reviews.js sets where they start relative
+        // to this anchor and how tall they are on show - and no lower than
+        // 40vh into them, so on a long list the spinner is still on screen.
+        // The offset matters in a composed block, where the count, chips
+        // and sort sit between this anchor and the rows: without it the
+        // spinner landed on the controls, plainly so with no reviews to
+        // centre on. Floored at 0 so a one-line empty state still gets it.
+        top: calc(var(--fct-reviews-rows-top, 0px) + max(0px, min(calc(var(--fct-reviews-rows-height, 120px) / 2 - 20px), 40vh)));
+        left: var(--fct-reviews-rows-center-x, 50%);
+        width: 40px;
+        height: 40px;
+        margin-left: -20px;
+    }
+}
+
+[data-reviews-list].is-loading {
+    opacity: 0.45;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+}
+
+/* The empty state is one paragraph, and the laid-out views must not treat
+   it as a card: masonry's column-count flowed it across the columns, split
+   mid-sentence, and grid and slider gave it one cell of the row. It spans
+   the whole container in all three. */
+.fct-reviews-list--masonry .fct-reviews-empty {
+    column-span: all;
+}
+
+.fct-reviews-list--grid .fct-reviews-empty,
+.fct-reviews-list--slider:not(.swiper) .fct-reviews-empty {
+    grid-column: 1 / -1;
+}
+
+.fct-reviews-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    font-style: italic;
+}
+
+.fct-reviews-error {
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+    text-align: center;
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--fct-container-radius, theme('borderRadius.sm'));
+}
+
+/* Screen-reader only text for accessibility */
+.fct-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Review Card */
+.fct-review-item {
+    @apply border border-solid mb-3 last:mb-0;
+    padding: var(--fct-container-padding-y, theme('spacing.4')) var(--fct-container-padding-x, theme('spacing.4'));
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+    border-color: var(--fct-review-card-border-color, #D6DAE1);
+    background-color: var(--fct-review-card-bg, #ffffff);
+
+    .fct-review-view-replies {
+        @apply flex items-center gap-1 border border-solid leading-none py-1.5 px-2 rounded shadow-none text-sm;
+        border-color: var(--fct-review-control-border-color, #D6DAE1);
+        background-color: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-label-color, #2F3448);
+
+        &:hover {
+            background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+            outline-offset: 1px;
+        }
+    }
+
+    .fct-review-reply-icon {
+        flex-shrink: 0;
+    }
+}
+
+.fct-review-avatar-circle {
+    @apply w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden;
+    background-color: var(--fct-review-avatar-bg, #EAECF0);
+    color: var(--fct-review-avatar-icon, #98A2B3);
+
+    // The photo sits over the placeholder; when it fails to load it removes
+    // itself and the icon underneath shows.
+    .fct-review-avatar-photo {
+        @apply absolute inset-0 w-full h-full object-cover;
+    }
+
+    .fct-review-avatar-placeholder {
+        @apply w-1/2 h-1/2;
+    }
+}
+
+.fct-review-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fct-review-item-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fct-review-item-name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.fct-review-item-stars .fct-star {
+    font-size: 15px;
+}
+
+.fct-review-item-variant {
+    @apply py-1 px-1.5 leading-none text-xs;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.lg'));
+    background-color: var(--fct-review-badge-bg, #EAECF0);
+    color: var(--fct-review-badge-text, #8E99AA);
+
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fct-review-modal-item {
+    @apply text-xs mb-1;
+    color: var(--fct-review-caption-color, #98A2B3);
+}
+
+/* Verified Pill */
+.fct-review-verified {
+    @apply bg-success-50 text-success-500 py-1 px-1.5 leading-none text-xs;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.lg'));
+
+    /* The badge paints a background, so it has to size to its text rather than
+       to its container. The fixed row renders it as a <span> and got that for
+       free; the Review Item's Verified Badge block renders a <div>, which
+       without this stretches the green pill across the whole card. Stated here
+       rather than fixing the element type so the badge is right wherever it is
+       placed — the same reason .fct-review-item-variant, the chip beside it,
+       declares its own display. */
+    display: inline-block;
+    vertical-align: middle;
+    /* inline-block is not enough on its own. In grid and slider views the card
+       is a flex column, so the badge is a flex item: its display is blockified
+       and align-items: stretch pulls the green pill across the whole card.
+       A definite cross size is not stretched, so fit-content holds wherever
+       the badge sits -- and unlike align-self it does not drop the badge to
+       the top of the name line, where the cross axis runs the other way. */
+    width: fit-content;
+    max-width: 100%;
+
+    &::before {
+        content: "";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 2px;
+        vertical-align: middle;
+        background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.75358 3.81504C7.87761 3.53147 6.92534 3.92591 6.50643 4.74584L6.00282 5.73158C5.94298 5.8487 5.84772 5.94396 5.7306 6.00379L4.74487 6.50741C3.92493 6.92631 3.53049 7.87858 3.81406 8.75456L4.15497 9.80768C4.19548 9.93281 4.19548 10.0676 4.15497 10.1927L3.81406 11.2458C3.53049 12.1218 3.92493 13.0741 4.74487 13.493L5.7306 13.9966C5.84772 14.0564 5.94298 14.1517 6.00282 14.2688L6.50643 15.2546C6.92534 16.0745 7.87761 16.4689 8.75358 16.1854L9.80671 15.8444C9.93183 15.8039 10.0666 15.8039 10.1917 15.8444L11.2448 16.1854C12.1208 16.4689 13.0731 16.0745 13.492 15.2546L13.9956 14.2688C14.0555 14.1517 14.1507 14.0564 14.2678 13.9966L15.2536 13.493C16.0735 13.0741 16.468 12.1218 16.1844 11.2458L15.8435 10.1927C15.803 10.0676 15.803 9.93281 15.8435 9.80768L16.1844 8.75456C16.468 7.87858 16.0735 6.92631 15.2536 6.50741L14.2678 6.00379C14.1507 5.94396 14.0555 5.8487 13.9956 5.73158L13.492 4.74584C13.0731 3.92591 12.1208 3.53147 11.2448 3.81504L10.1917 4.15595C10.0666 4.19645 9.93183 4.19646 9.80671 4.15595L8.75358 3.81504ZM6.72406 9.84849L7.60795 8.96456L9.37571 10.7324L12.9113 7.19684L13.7951 8.08072L9.37571 12.5001L6.72406 9.84849Z' fill='%23189877'/%3E%3C/svg%3E") no-repeat center;
+        background-size: contain;
+    }
+}
+
+.fct-review-item-meta-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Room above the sign-off.
+ *
+ * Only where the badge stands on its own at the foot of the card: the card is
+ * a flex column with no gap, so each child carries its own spacing and the
+ * badge otherwise sits straight under the last line of the quote. Inside the
+ * name line it is between the name and the stars, where a top margin would
+ * push it out of line -- hence the child selector rather than the badge
+ * itself. Both shapes are covered: the group a preset wraps it in, and the
+ * bare block a merchant may have placed by hand. */
+.fct-review-item-signoff,
+.fct-review-item > .fct-review-verified {
+    margin-top: 10px;
+}
+
+.fct-review-item-author {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--fct-review-heading-color, #1f2937);
+    overflow-wrap: break-word;
+}
+
+.fct-review-item-date {
+    @apply text-xs leading-[1.5];
+    color: var(--fct-review-secondary-text-color, #565865);
+}
+
+.fct-review-item-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: var(--fct-review-heading-color, #1f2937);
+    overflow-wrap: break-word;
+}
+
+.fct-review-item-content {
+    @apply text-sm leading-[1.6] mb-1;
+    color: var(--fct-review-secondary-text-color, #565865);
+    overflow-wrap: break-word;
+}
+
+/* Review Footer (Pro votes injection target) */
+.fct-review-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+
+    &:empty {
+        display: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+}
+
+/* Helpful votes (Pro-injected) — "Helpful?" label + outlined thumb chips */
+.fct-review-footer .fct-vote-label {
+    font-size: 13px;
+    color: var(--fct-review-subtle-text-color, #4b5563);
+    margin-right: 2px;
+}
+
+.fct-review-footer .fct-vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px !important;
+    background: var(--fct-review-secondary-btn-bg, #ffffff) !important;
+    color: var(--fct-review-vote-text, #1f2937) !important;
+    border: 1px solid var(--fct-review-secondary-btn-border, #d1d5db) !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    line-height: 1.4 !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+        background: var(--fct-review-vote-hover-bg, #f9fafb) !important;
+        border-color: var(--fct-review-vote-hover-border, #9ca3af) !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-muted-text-color, #6b7280) !important;
+        outline-offset: 2px !important;
+    }
+
+    &.fct-vote-active {
+        background: var(--fct-review-secondary-btn-bg, #ffffff) !important;
+        border-color: var(--fct-review-secondary-btn-border, #d1d5db) !important;
+        color: var(--fct-review-vote-text, #1f2937) !important;
+    }
+}
+
+.fct-review-footer .fct-vote-count {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Admin Replies — Green Theme */
+.fct-review-reply {
+    padding: 10px 12px;
+    background: #f0fdf4;
+    border-radius: 6px;
+    margin-bottom: 8px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.fct-review-reply-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.fct-review-reply-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    background: #dcfce7;
+    padding: 2px 8px;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.fct-review-reply-meta {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.fct-review-reply-content {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+/* Reviewer follow-up replies — neutral theme to differentiate from store */
+
+
+/* Modal overlay */
+.fct-review-modal-overlay {
+    // display:flex below beats the UA stylesheet's [hidden] rule, so the
+    // shell printed by ProductReviewRenderer needs this to stay hidden
+    // until the script opens it.
+    &[hidden] {
+        display: none;
+    }
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.fct-review-modal {
+    background: var(--fct-review-card-bg, #ffffff);
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    .fct-review-modal-close {
+        @apply absolute top-1/2 right-4 w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
+        background-color: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-secondary-text-color, #565865);
+
+        &:hover {
+            background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+        }
+        transform: translateY(-50%);
+    }
+}
+
+.fct-review-modal-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 56px 16px 20px;
+    border-bottom: 1px solid var(--fct-review-separator-color, #e5e7eb);
+    min-height: 56px;
+}
+
+.fct-review-modal-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fct-review-text-color, #1f2937);
+    margin: 0;
+    text-align: left;
+}
+
+.fct-review-modal-author-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .fct-review-avatar-circle {
+        flex-shrink: 0;
+    }
+}
+
+.fct-review-modal-name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-width: 0;
+    line-height: 1;
+
+    .fct-review-modal-stars {
+        margin-bottom: 0;
+    }
+    .fct-star {
+        @apply text-base;
+    }
+}
+
+.fct-review-modal-meta-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.fct-review-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.fct-review-modal-original {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--fct-review-separator-color, #e5e7eb);
+}
+
+.fct-review-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.fct-review-modal-author {
+    font-weight: 600;
+    color: var(--fct-review-text-color, #1f2937);
+    font-size: 15px;
+}
+
+.fct-review-modal-date {
+    @apply text-xs;
+    color: var(--fct-review-secondary-text-color, #565865);
+}
+
+.fct-review-modal-stars {
+    margin-bottom: 8px;
+}
+
+.fct-review-modal-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fct-review-text-color, #1f2937);
+    margin-bottom: 6px;
+}
+
+.fct-review-modal-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--fct-review-body-text-color, #374151);
+    white-space: pre-wrap;
+}
+
+.fct-review-modal-media {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+
+    .fct-review-media-thumb {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+        cursor: pointer;
+        transition: opacity 0.15s;
+
+        &:hover {
+            opacity: 0.85;
+        }
+    }
+}
+
+.fct-review-modal-replies {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.fct-review-modal-empty {
+    // Left-aligned: it sits in the replies column as body copy, not as a
+    // centred placeholder card.
+    text-align: left;
+    // #6b7280 (Tailwind gray-500) — ~4.83:1 against white, passes WCAG AA;
+    // #9ca3af was ~2.54:1 and failed the 4.5:1 minimum for body text.
+    color: var(--fct-review-muted-text-color, #6b7280);
+    font-size: 13px;
+    padding: 5px 0;
+}
+
+.fct-review-modal-footer {
+    border-top: 1px solid var(--fct-review-separator-color, #e5e7eb);
+    padding: 16px 0px 20px;
+    background: var(--fct-review-card-bg, #ffffff);
+    border-radius: 0 0 var(--fct-popup-radius, theme('borderRadius.DEFAULT')) var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
+}
+
+/* Pagination */
+.fct-reviews-pagination-inner {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.fct-reviews-page-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--fct-review-secondary-btn-border, #d1d5db) !important;
+    background: var(--fct-review-secondary-btn-bg, #ffffff) !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--fct-review-secondary-btn-text, #374151) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1 !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+
+    &:hover:not(:disabled):not(.active) {
+        background: var(--fct-review-secondary-btn-hover-bg, #f3f4f6) !important;
+        border-color: var(--fct-review-secondary-btn-hover-border, #6b7280) !important;
+        color: var(--fct-review-secondary-btn-text, #374151) !important;
+    }
+
+    &.active {
+        background: var(--fct-review-btn-bg, #1f2937) !important;
+        color: var(--fct-review-btn-text, #ffffff) !important;
+        border-color: var(--fct-review-btn-bg, #1f2937) !important;
+        font-weight: 600 !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6) !important;
+        outline-offset: 2px !important;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: default;
+        pointer-events: none;
+    }
+}
+
+.fct-reviews-page-nav {
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: var(--fct-review-muted-text-color, #6b7280) !important;
+    min-width: 38px;
+
+    &:hover:not(:disabled) {
+        color: var(--fct-review-body-text-color, #374151) !important;
+    }
+}
+
+.fct-reviews-page-ellipsis {
+    min-width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    letter-spacing: 2px;
+}
+
+/* ─── CTA Bar ("Bought this product?") ──────────────────── */
+
+.fct-review-form-section {
+    max-width: 800px;
+}
+
+.fct-review-cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.6'));
+    background: var(--fct-review-cta-bar-bg, #f8f8f7);
+    border-radius: var(--fct-container-radius, theme('borderRadius[2.5]'));
+}
+
+.fct-review-cta-text {
+    strong {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--fct-review-text-color, #1f2937);
+        margin-bottom: 2px;
+    }
+
+    span {
+        font-size: 13px;
+        color: var(--fct-review-muted-text-color, #6b7280);
+    }
+}
+
+
+.fct-review-cta-label {
+    @apply inline-flex items-center gap-1;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.fct-review-cta-btn {
+    // focus-visible, not focus: a mouse click would otherwise leave the
+    // button filled dark long after it was pressed — and a link keeps that
+    // state when the visitor comes back to the page.
+    @apply inline-flex items-center justify-center gap-1 border border-solid text-sm font-medium no-underline shadow-none transition-colors duration-200;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-top: var(--fct-btn-padding-y, theme('spacing.2'));
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.2'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
+    border-color: var(--fct-review-cta-border, #D6DAE1);
+    background-color: var(--fct-review-cta-bg, #ffffff);
+    color: var(--fct-review-cta-text, #2F3448);
+
+    &:hover,
+    &:focus-visible {
+        border-color: var(--fct-review-cta-hover-bg, #253241);
+        background-color: var(--fct-review-cta-hover-bg, #253241);
+        color: var(--fct-review-cta-hover-text, #ffffff);
+    }
+
+    // The accent ring the rest of this file focuses with, hugging the
+    // border: grey at a wider offset read as a second border around an
+    // already-bordered button.
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+        outline-offset: 1px;
+    }
+}
+
+// Layout-specific only: inside the summary card the CTA spans the column.
+// Two ways to be in that card — the renderer's own layout, and the Rating
+// Summary block that composes the same card out of blocks. The button
+// stretches in both, so the two placements do not disagree.
+.fct-reviews-layout .fct-reviews-summary-write-btn,
+.fct-review-summary-group .fct-reviews-summary-write-btn {
+    @apply w-full;
+}
+
+// The button's block wrapper is what the CTA measures itself against, so it
+// has to span the column before the button can.
+.fct-review-summary-group .fct-write-a-review-button-block {
+    @apply w-full;
+}
+
+/* ─── Review Drawer (slide-in panel) ────────────────────── */
+
+.fct-review-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    justify-content: flex-end;
+    transition: background 0.3s;
+
+    &.fct-drawer-open {
+        background: rgba(0, 0, 0, 0.4);
+
+        .fct-review-drawer {
+            transform: translateX(0);
+        }
+    }
+}
+
+.fct-review-drawer {
+    width: 540px;
+    max-width: 100vw;
+    height: 100%;
+    background: var(--fct-review-card-bg, #ffffff);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+
+    .fct-review-drawer-close {
+        @apply w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
+        background-color: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-secondary-text-color, #565865);
+
+        &:hover {
+            background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+        }
+    }
+}
+
+.fct-review-drawer-header {
+    @apply flex items-center justify-between border border-solid border-x-0 border-t-0 p-5;
+    border-color: var(--fct-review-divider-color, #EAECF0);
+}
+
+.fct-review-drawer-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fct-review-text-color, #1f2937);
+    margin: 0;
+}
+
+
+
+/* ─── Stepper ───────────────────────────────── */
+
+.fct-review-stepper {
+    @apply flex items-center pt-5 px-5 flex items-center flex-shrink-0;
+}
+
+.fct-review-step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.fct-step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid var(--fct-review-secondary-btn-border, #d1d5db);
+    color: var(--fct-review-muted-text-color, #6b7280);
+    background: var(--fct-review-control-bg, #ffffff);
+    transition: all 0.2s;
+}
+
+.fct-step-label {
+    font-size: 11px;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.fct-review-step-indicator.active .fct-step-circle {
+    background: var(--fct-review-btn-bg, #1f2937);
+    border-color: var(--fct-review-btn-bg, #1f2937);
+    color: var(--fct-review-btn-text, #ffffff);
+}
+
+.fct-review-step-indicator.active .fct-step-label {
+    color: var(--fct-review-text-color, #1f2937);
+    font-weight: 600;
+}
+
+.fct-review-step-indicator.completed .fct-step-circle {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+}
+
+.fct-review-step-indicator.completed .fct-step-label {
+    color: #22c55e;
+}
+
+.fct-step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--fct-review-separator-color, #e5e7eb);
+    margin: 0 8px;
+    margin-bottom: 18px;
+}
+
+/* ─── Drawer Body (scrollable) ──────────────────────────── */
+
+.fct-review-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+// Same type as the form-field labels below it — both are labels for a
+// control, so they read at one size, weight and colour.
+.fct-review-step-question {
+    @apply block text-sm font-medium;
+    color: var(--fct-review-label-color, #2F3448);
+    .required {
+        color: #ef4444;
+    }
+}
+
+.fct-review-step-description {
+    font-size: 14px;
+    color: var(--fct-review-subtle-text-color, #4b5563);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.fct-review-step-hint {
+    font-size: 13px;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    margin-top: 16px;
+    font-style: italic;
+}
+
+/* Rating label (Poor, Fair, Good...) */
+// Stands in for the form when the store requires a login the visitor does not
+// have. Only the standalone placement prints this — a drawer or a modal has a
+// trigger that becomes the log-in link itself.
+.fct-review-login-required {
+    @apply flex flex-col items-start gap-3;
+    @apply border border-solid;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+    border-radius: var(--fct-container-radius, theme('borderRadius.xl'));
+    border-color: var(--fct-review-card-border-color, #D6DAE1);
+    background-color: var(--fct-review-surface-alt, #F5F6F7);
+}
+
+.fct-review-login-required-text {
+    @apply m-0 text-sm;
+    color: var(--fct-review-secondary-text-color, #565865);
+}
+
+// ─── Rating tooltip ────────────────────────────────────────
+// One per star, inside the star's own box, so the bubble is positioned
+// against the star it names and nothing has to measure anything.
+
+.fct-star-tooltip {
+    @apply inline-flex items-center text-sm font-medium;
+    @apply border border-solid;
+    border-color: var(--fct-review-card-border-color, #D6DAE1);
+    background-color: var(--fct-review-surface-alt, #F5F6F7);
+    color: var(--fct-review-secondary-text-color, #565865);
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    padding: 3px 10px;
+    border-radius: var(--fct-popup-radius, 999px);
+    line-height: 1.2;
+    white-space: nowrap;
+    z-index: 10;
+
+    opacity: 0;
+    visibility: hidden;
+    // Never under the pointer — hit-testing it would flicker the hover it is
+    // reporting, and it must not swallow a click meant for the star.
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+
+    // The arrow, on top, pointing up at its star. Inherits both fills from
+    // the bubble, so it follows the type colour without repeating it.
+    &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        width: 8px;
+        height: 8px;
+        margin-bottom: -5px;
+        transform: translateX(-50%) rotate(45deg);
+        background: inherit;
+        border-left: 1px solid;
+        border-top: 1px solid;
+        border-color: inherit;
+    }
+
+    // Coloured by what the word says. Variant names follow .fct-badge's, but
+    // not its pairings: that badge sets warning-800 on warning-100, 3.88:1,
+    // under AA for text this size. These are 5.85, 8.07, 5.44 and 5.17 to one.
+    &.fct-danger {
+        @apply bg-red-100 text-red-800 border-red-200;
+    }
+
+    &.fct-warning {
+        @apply bg-warning-100 text-warning-dark border-warning-200;
+    }
+
+    &.fct-info {
+        @apply bg-blue-100 text-blue-800 border-blue-200;
+    }
+
+    &.fct-success {
+        @apply bg-success-100 text-success-800 border-success-200;
+    }
+}
+
+// Up only while the star is under the pointer, or has keyboard focus so it is
+// not a mouse-only affordance. Not while it is the chosen one: the bubble
+// hangs below the row, and one that stays up sits over the next field for as
+// long as a rating is set.
+.fct-star-select:hover .fct-star-tooltip,
+.fct-star-select:focus-visible .fct-star-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    // Keep the centring translate, drop the movement and the fade.
+    .fct-star-tooltip,
+    .fct-star-select:hover .fct-star-tooltip,
+    .fct-star-select:focus-visible .fct-star-tooltip {
+        transition: none;
+        transform: translateX(-50%);
+    }
+}
+
+/* ─── Form Fields ───────────────────────────────────────── */
+
+.fct-review-form-message {
+    padding: 10px 14px;
+    border-radius: var(--fct-container-radius, theme('borderRadius.sm'));
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.fct-review-form-message-success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.fct-review-form-message-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.fct-review-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/**
+ * Shown instead of the name/email inputs when an order hash already settled
+ * who is posting (the public order-review page). The identity is fixed
+ * server-side, so this states it rather than offering a field that would be
+ * overwritten.
+ */
+.fct-review-posting-as {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--fct-review-note-text-color, #64748b);
+}
+
+.fct-review-form-field {
+    margin-bottom: var(--fct-field-spacing, theme('spacing[3.5]'));
+    position: relative;
+
+    label {
+        color: var(--fct-review-label-color, #2F3448);
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+
+        .required {
+            color: #ef4444;
+        }
+    }
+
+    .fct-label-hint {
+        font-weight: 400;
+        color: var(--fct-review-muted-text-color, #6b7280);
+        font-size: 13px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+        width: 100%;
+        padding: var(--fct-input-padding-y, theme('spacing[2.5]')) var(--fct-input-padding-x, theme('spacing.3'));
+        border: 1px solid var(--fct-review-input-border, #d6dae1);
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        font-size: 14px;
+        color: var(--fct-review-input-text, #2f3448);
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        font-family: inherit;
+
+        &:focus {
+            outline: none;
+            border-color: var(--fct-review-input-focus-border, #1f2937);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+            outline-offset: 1px;
+        }
+
+        &::placeholder {
+            color: var(--fct-review-input-placeholder, #6b7280);
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+}
+
+.fct-char-count {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    margin-top: 4px;
+}
+
+/* ─── Star Selector ─────────────────────────────────────── */
+// Positioning parent for the rating badge, which hangs beneath the star it
+// describes rather than sitting alongside the row.
+//
+// The badge is absolutely positioned and only visible while the row is being
+// used, so the row does not reserve space for it: reserving 38px permanently
+// to hold a transient tooltip left a hole under the stars the rest of the
+// time. It floats over what follows, which is what a tooltip is for.
+.fct-star-selector-wrap {
+    @apply relative flex items-center mb-2.5;
+}
+
+.fct-star-selector {
+    @apply inline-flex gap-2;
+    .fct-star-select {
+        // Positioning context for this star's own tooltip.
+        position: relative;
+        // The star svg is sized in em, so the button's font-size is the star's size.
+        @apply border border-solid rounded p-2 w-10 h-10 flex items-center justify-center shadow-none;
+        border-color: var(--fct-review-control-border-color, #D6DAE1);
+        background-color: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-star-picker-color, #98A2B3);
+        font-size: 20px;
+
+        &.selected,
+        &.hover {
+            color: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+    }
+}
+
+.fct-star-selector {
+    @apply flex justify-center gap-2;
+}
+
+
+
+/* ─── Drawer Footer ─────────────────────────────────────── */
+
+.fct-review-drawer-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--fct-review-soft-divider-color, #f3f4f6);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.fct-review-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--fct-btn-padding-y, theme('spacing.3')) var(--fct-btn-padding-x, theme('spacing.5')) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--fct-review-secondary-btn-text, #374151) !important;
+    background: var(--fct-review-secondary-btn-bg, #ffffff) !important;
+    border: 1px solid var(--fct-review-secondary-btn-border, #d1d5db) !important;
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT')) !important;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--fct-review-secondary-btn-hover-bg, #f3f4f6) !important;
+        color: var(--fct-review-secondary-btn-text, #374151) !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6) !important;
+        outline-offset: 2px !important;
+    }
+}
+
+.fct-review-next-btn,
+.fct-review-submit-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--fct-btn-padding-y, theme('spacing.3')) var(--fct-btn-padding-x, theme('spacing.6')) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--fct-review-btn-text, #ffffff) !important;
+    background: var(--fct-review-btn-bg, #1f2937) !important;
+    border: none !important;
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT')) !important;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--fct-review-btn-hover-bg, #374151) !important;
+        color: var(--fct-review-btn-hover-text, #ffffff) !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6) !important;
+        outline-offset: 2px !important;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.fct-review-step-info {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    color: var(--fct-review-muted-text-color, #6b7280);
+    margin-top: 4px;
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .fct-reviews-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .fct-reviews-layout-left {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .fct-reviews-summary-left {
+        flex-direction: row;
+        gap: 12px;
+    }
+
+    .fct-review-item {
+        padding: var(--fct-container-padding-y, theme('spacing[3.5]')) var(--fct-container-padding-x, theme('spacing.4'));
+    }
+
+    .fct-review-item-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .fct-product-reviews-section .fct-reviews-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fct-review-drawer {
+        width: 100vw;
+    }
+
+    .fct-review-cta-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .fct-review-form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Thread modal loader ──────────────────────────────────────────────
+   Same spinner the product modal shows while its server-rendered view
+   loads. Defined here rather than relying on cart-drawer.scss, which is
+   not guaranteed on a page that only carries the reviews block. */
+.fct-review-modal-loading {
+    position: relative;
+    min-height: 160px;
+}
+
+.fct-review-modal-loading .fct-loader-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 2;
+}
+
+.fct-review-modal-loading .fct-loader-spinner,
+.fct-reviews-loading .fct-loader-spinner {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    flex: none;
+
+    &:after,
+    &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 9999px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-right-color: transparent;
+        color: var(--fct-review-subtle-text-color, #4b5563);
+        animation: fluentCartSpin 1.3s linear infinite;
+    }
+
+    &:after {
+        top: 10%;
+        left: 10%;
+        width: 80%;
+        height: 80%;
+        transform: rotate(30deg);
+        animation: fluentCartSpin 1s linear infinite;
+    }
+}
+
+@keyframes fluentCartSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ─── Form modal container ──────────────────────────────────
+   Same overlay contract as the drawer (data-review-drawer, the
+   same open class, the same focus trap) — it just lands in the
+   middle of the screen instead of sliding in from the edge.
+
+   fct-review-form-modal, not fct-review-modal: that name is the
+   review thread modal above, which never takes fct-drawer-open.
+   Sharing it made the thread modal inherit the hidden state set
+   here and render transparent. */
+
+.fct-review-form-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    transition: background 0.3s;
+
+    &.fct-drawer-open {
+        background: rgba(0, 0, 0, 0.4);
+
+        .fct-review-form-modal {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+}
+
+.fct-review-form-modal {
+    width: 560px;
+    max-width: 100%;
+    max-height: 100%;
+    background: var(--fct-review-card-bg, #ffffff);
+    border-radius: var(--fct-popup-radius, theme('borderRadius[3]'));
+    display: flex;
+    flex-direction: column;
+    transform: translateY(16px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+
+    .fct-review-drawer-close {
+        @apply w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
+        background-color: var(--fct-review-control-bg, #ffffff);
+        color: var(--fct-review-secondary-text-color, #565865);
+
+        &:hover {
+            background-color: var(--fct-review-control-hover-bg, #F5F6F7);
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .fct-review-form-modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .fct-review-form-modal {
+        border-radius: var(--fct-popup-radius, theme('borderRadius[3]')) var(--fct-popup-radius, theme('borderRadius[3]')) 0 0;
+        max-height: 92%;
+    }
+}
+
+/* ─── Standalone container ──────────────────────────────────
+   The form printed straight onto the page: no trigger, no
+   overlay. Works with either layout — a stepped card walks the
+   same steps in place, an inline card shows everything at once. */
+
+.fct-review-standalone {
+    background: var(--fct-review-card-bg, #ffffff);
+    border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+    border-radius: var(--fct-container-radius, theme('borderRadius[3]'));
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+
+    // The stepper carries the drawer's own padding, which assumed a padded
+    // body underneath it. The card supplies that padding itself, so the
+    // stepper only needs the gap below it.
+    .fct-review-stepper {
+        @apply p-0 mb-5;
+    }
+}
+
+// Stepped only. In the drawer the footer is separated by the panel's edge;
+// the card has to draw that separation. The inline card keeps the plain
+// footer it already had.
+[data-layout="steps"] .fct-review-standalone-footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--fct-review-soft-divider-color, #f3f4f6);
+}
+
+// A step's question needs air before its control, the way it had before the
+// margin came off the shared label. The inline groups space themselves and
+// keep the tighter label.
+.fct-review-step .fct-review-step-question {
+    @apply mb-2.5;
+}
+
+.fct-review-standalone-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-top: 20px;
+
+    .fct-review-submit-btn {
+        flex: 0 0 auto;
+        min-width: 160px;
+    }
+}
+
+/* Inline layout: the field groups sit one under the other, separated
+   rather than swapped in and out by the wizard. */
+.fct-review-inline-group {
+    // The rule already separates the groups; 20px of padding under it as well
+    // pushed each label a long way off the field it belonged to.
+    & + & {
+        padding-top: 12px;
+        border-top: 1px solid var(--fct-review-soft-divider-color, #f3f4f6);
+    }
+
+    .fct-star-selector {
+        justify-content: flex-start;
+    }
+}
+
+/* Submitted: the fields are gone and the success message is the card. */
+.fct-review-form-section-none.fct-review-form-submitted {
+    .fct-review-standalone {
+        border-style: dashed;
+    }
+
+    .fct-review-form-message {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .fct-review-standalone {
+        padding: var(--fct-container-padding-y, theme('spacing.4')) var(--fct-container-padding-x, theme('spacing.4'));
+    }
+
+    .fct-review-standalone-footer .fct-review-submit-btn {
+        flex: 1 1 auto;
+    }
+}
+
+/* ─── Review media gallery ──────────────────────────────────
+   The tile size comes from custom properties the renderer prints inline on
+   the gallery, because PRO's review stylesheet enqueues after this one and
+   carries a plain `width: 72px` for the same class — equal specificity, and
+   source order would decide it. An inline custom property is out of that
+   argument. The fallbacks are that same 72px, so a gallery with no size set
+   looks exactly as it always has. */
+/* A flush photograph at the head of a card is the card's top edge.
+ *
+ * The card carries 16px of padding and PRO gives the gallery 14px of vertical
+ * margin and every thumbnail a border and a radius -- all right for a strip of
+ * thumbnails under a paragraph, all wrong for a photograph that is meant to be
+ * the top of the card. Negative margins take the gallery back out through the
+ * padding, and the radius moves to the gallery so the photograph turns the
+ * card's own corners instead of showing square ones inside them.
+ *
+ * The setting alone decides, with no check on where the gallery sits. Position
+ * was the wrong test: in the editor Gutenberg puts its own elements inside a
+ * block's inner-blocks container -- insertion points, appenders -- so the
+ * gallery is often not the first child there even when it is drawn first, and
+ * the canvas disagreed with the page about a layout they build from the same
+ * blocks. Flush is asked for; a merchant who turns it on somewhere odd gets
+ * what they asked for. Two classes, so it outweighs PRO's single-class rules
+ * whichever stylesheet the page loads last. */
+/* The photograph as the card itself.
+ *
+ * The gallery stops being a block in the stack and becomes the card's
+ * background, with the stars, the name and the date reading over the foot of
+ * it. An absolutely positioned box is laid against its ancestor's padding box,
+ * so inset: 0 covers the card's own padding without that padding having to be
+ * unset -- the words keep it, the photograph ignores it.
+ *
+ * A review with no attachment renders no gallery at all, so the same template
+ * draws a plain card for it. That is what lets one grid hold photograph cards
+ * and quote cards without asking anybody to choose between them. */
+.fct-review-item:has(.fct-review-media-gallery--backdrop) {
+    position: relative;
+    overflow: hidden;
+    /* The card's height would otherwise be its words, and its words are the
+       only thing in it that is not absolutely positioned. */
+    min-height: 300px;
+    /* The words sit at the foot of the photograph, where the scrim is. */
+    justify-content: flex-end;
+
+    /* Everything that is not the photograph reads over it. */
+    > * {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* The scrim. A photograph is whatever a customer took, so white text on it
+       is a coin toss; the gradient is what makes the name legible over a pale
+       sky and a dark room alike. */
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: linear-gradient(
+            to top,
+            rgba(17, 24, 39, 0.78) 0%,
+            rgba(17, 24, 39, 0.45) 30%,
+            rgba(17, 24, 39, 0) 62%
+        );
+    }
+
+    .fct-review-media-gallery--backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        margin: 0;
+        display: block;
+
+        .fct-review-media-thumb {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            border-radius: 0;
+            object-fit: cover;
+        }
+
+        /* One photograph is the background; the others are not a filmstrip
+           across it. The + badge still says how many there are. */
+        .fct-review-media-thumb ~ .fct-review-media-thumb,
+        .fct-review-media-tile ~ .fct-review-media-tile {
+            display: none;
+        }
+    }
+
+    .fct-review-item-author,
+    .fct-review-item-date,
+    .fct-review-item-title,
+    .fct-review-item-content {
+        color: #fff;
+    }
+}
+
+/* The quote card beside the photograph cards.
+ *
+ * Scoped to a list that is actually using backdrops, so an ordinary grid is
+ * left alone: in a wall the cards with no photograph are the ones carrying the
+ * words, and centring them is what stops them reading as a photograph card
+ * that failed to load. */
+.fct-reviews-list:has(.fct-review-media-gallery--backdrop)
+    .fct-review-item:not(:has(.fct-review-media-gallery)) {
+    justify-content: center;
+    text-align: center;
+
+    .fct-review-item-stars,
+    .fct-review-item-name-line,
+    .fct-review-item-header-left {
+        justify-content: center;
+    }
+}
+
+.fct-review-item .fct-review-media-gallery--flush {
+    margin: -16px -16px 12px;
+    width: auto;
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+
+    .fct-review-media-thumb {
+        border: 0;
+        border-radius: 0;
+
+        /* One height for every card in the row.
+         *
+         * A ratio rather than a pixel height: the same card is about 400px
+         * across at two columns and 200px at four, and a height that suits one
+         * is a letterbox or a tower at the other. The photograph covers the
+         * box, so a tall bottle and a wide flatlay end on the same line.
+         *
+         * A height the merchant actually asked for still wins -- a definite
+         * height and width leave aspect-ratio nothing to resolve -- so this
+         * only shapes the tiles left on auto. */
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+    }
+
+    .fct-review-media-video {
+        border-radius: 0;
+
+        /* The wrapper is sized by the rule above; the video has to fill it or
+           it sits at its own dimensions inside a box of the right shape. */
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+}
+
+.fct-review-media-gallery .fct-review-media-thumb {
+    width: var(--fct-review-thumb-w, 72px);
+    height: var(--fct-review-thumb-h, 72px);
+    flex: none;
+}
+
+/* A tile past the visible limit carries the hidden attribute, and the browser
+   hides it with `[hidden] { display: none }` — a rule of the same weight as
+   any single class here, which a later stylesheet wins. The video tile sets
+   display to make room for its play overlay, and was taking a row of the
+   gallery while hidden. Scoped to the gallery so it outweighs them all. */
+.fct-review-media-gallery .fct-review-media-thumb[hidden] {
+    display: none;
+}
+
+/* The video tile is a button around the video: a replaced element carries no
+   pseudo-element, so the play badge needs a box of its own. */
+.fct-review-media-video {
+    position: relative;
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+    border-radius: 8px;
+    border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Once it plays the video shows its own controls, and the overlay would
+       sit on top of them — swallowing a seek or a pause. */
+    &.is-playing .fct-review-media-play {
+        display: none;
+    }
+}
+
+/* The one pressable thing in a video tile, covering it until playback starts
+   and out of the way afterwards. */
+.fct-review-media-play {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+
+    &::after {
+        content: '';
+        border-style: solid;
+        border-width: 7px 0 7px 12px;
+        border-color: transparent transparent transparent #fff;
+        margin-left: 3px;
+    }
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.42);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+        outline-offset: -2px;
+    }
+}
+
+/* The box holding a photo and the + badge over it. A thumbnail is an <img>,
+   and a replaced element holds nothing, so the pair needs a parent — and that
+   parent is the flex item now, so it takes the tile sizing. */
+.fct-review-media-tile {
+    position: relative;
+    display: block;
+    flex: none;
+    width: var(--fct-review-thumb-w, 72px);
+    height: var(--fct-review-thumb-h, 72px);
+    max-width: 100%;
+}
+
+.fct-review-media-tile .fct-review-media-thumb {
+    width: 100%;
+    height: 100%;
+}
+
+/* The + as a badge in the photo's corner: it sizes to its own label, so none
+   of the gallery's tile sizing applies to it. */
+.fct-review-media-more.is-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    gap: 6px;
+    min-height: 0;
+    padding: 5px 11px;
+    font-size: 13px;
+    border: 0;
+    border-radius: 999px;
+    /* White on #111827 is ~17:1, and at 0.85 over the worst backdrop a photo
+       can put behind it — solid white — it is still ~11:1. The pill decides
+       its own contrast, so a light photo and a dark one read the same. */
+    background: rgba(17, 24, 39, 0.85);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+
+    &:hover {
+        background: rgba(17, 24, 39, 0.95);
+    }
+}
+
+.fct-review-media-more-icon {
+    flex: none;
+    /* The count is the message; the glyph is there to say what is being
+       counted. */
+    opacity: 0.85;
+}
+
+/* The "+2" on a tile of its own. It has no photo to take a height from, so at
+   auto height it would collapse to the height of its own label. */
+.fct-review-media-more {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0;
+    /* #4b5563 on #f3f4f6 is ~7.5:1, well past the 4.5:1 minimum. */
+    background: var(--fct-review-tile-bg, #f3f4f6);
+    color: var(--fct-review-subtle-text-color, #4b5563);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid var(--fct-review-panel-border-color, #e5e7eb);
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--fct-review-tile-hover-bg, #e5e7eb);
+    }
+}
+
+.fct-review-media-more:focus-visible {
+    outline: 2px solid var(--fct-review-focus-ring, #3b82f6);
+    outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Testimonials.
+ *
+ * A review card opens with who wrote it and the date, and leaves the words to
+ * be found underneath -- which is right for a list a shopper is reading
+ * through, and wrong for a quote meant to be read by someone who did not come
+ * looking for it. The preset reverses the order so the words come first; this
+ * is what makes them look like a quote rather than a paragraph that happens to
+ * be at the top of a card.
+ *
+ * Two selectors, one block. The class is set by the preset on the Review Item,
+ * and the two renderers put it in different places: the server writes the
+ * block's classes onto every card it draws, while the canvas puts them on the
+ * wrapper standing in for the list and draws its cards inside as
+ * `.fct-review-item-body`. One stylesheet serves both because reviews.scss is
+ * deliberately loaded into the editor iframe.
+ *
+ * `[class]` on the canvas half is specificity, not decoration. The canvas
+ * gives its card chrome as `.fct-review-list-block-editor .fct-review-item-body`
+ * -- two classes, the same as this rule -- so without it whichever stylesheet
+ * the iframe happened to load second would win the padding, and the quotation
+ * mark would sit on top of the words half the time.
+ * ───────────────────────────────────────────────────────────────────────── */
+.fct-review-item.fct-review-testimonial,
+.fct-review-testimonial .fct-review-item-body[class] {
+    @apply text-center relative;
+    padding-top: 42px;
+
+    /* The quotation mark. Decoration, so it is drawn rather than inserted as
+       a block: nothing in the card should be selectable text that no review
+       wrote. Sized large and set pale -- read as punctuation, not as content. */
+    &::before {
+        content: '\201C';
+        @apply absolute left-0 right-0 text-center pointer-events-none;
+        top: 10px;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 56px;
+        line-height: 1;
+        color: var(--fct-review-accent-color, #3b82f6);
+        opacity: 0.22;
+    }
+
+    /* The headline, then the quote. Bigger and looser than list text: three to
+       a row, a testimonial has the width to be read as a sentence. */
+    .fct-review-item-title {
+        @apply font-semibold mb-2;
+    }
+
+    .fct-review-item-content {
+        color: var(--fct-review-secondary-text-color, #565865);
+        line-height: 1.7;
+        margin-bottom: 14px;
+    }
+
+    /* The clamp toggle, which review-clamp.js inserts as a sibling button
+       after the quote. Its own rule aligns it to the start of the card and
+       gives it 6px of clearance -- right for a list, where it trails the
+       review it belongs to, and wrong here, where it lands between the quote
+       and the person who said it and has to read as neither.
+
+       Centred explicitly rather than by inheritance: `align-self` decides it
+       whenever the card is laid out as a flex column, and text-align cannot
+       reach that. Margins are set on one side only, never a pair that meets
+       -- adjacent margins collapse in block flow and do not in flex, so a
+       pair would space differently in the two. */
+    .fct-review-readmore {
+        @apply block;
+        align-self: center;
+        margin: 0 auto 16px;
+        padding: 4px 8px;
+    }
+
+    /* The byline, centred under the quote. The header group is built as the
+       avatar beside a column holding the name line, so centring both axes is
+       what puts the face, the name and the stars on one centred line. */
+    .fct-review-item-header-left {
+        @apply justify-center;
+    }
+
+    /* And the wrapper around it, which only a rendered row builds -- a row
+       composed of blocks puts the group straight on the card. Its own rule
+       spaces a byline and a date apart with space-between, which strands a
+       lone byline at the left edge of a card whose every other line is
+       centred. */
+    .fct-review-item-header {
+        @apply justify-center;
+    }
+
+    .fct-review-item-meta-text {
+        @apply items-center;
+    }
+
+    .fct-review-item-name-line {
+        @apply justify-center;
+    }
+
+    /* Signed off under the name rather than beside it. */
+    .fct-review-item-signoff {
+        @apply justify-center mt-2;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Photo Grid: the photograph sells the card, the words explain it, and the
+ * byline signs it off.
+ *
+ * The byline comes last here rather than first, so it needs air above it. With
+ * none, the name ran straight under the Read more and the two read as one
+ * block -- the link looked like part of the attribution rather than the end of
+ * the review.
+ *
+ * Set on the header rather than under the Read more because the Read more is
+ * conditional: review-clamp.js only inserts it when the quote is long enough
+ * to need one, and a short review would otherwise lose the spacing along with
+ * it.
+ *
+ * Carried on the two selectors the two renderers need, the same as the cards
+ * below: the server writes the block's classes onto every card, the canvas
+ * onto the wrapper standing in for the list.
+ * ───────────────────────────────────────────────────────────────────────── */
+.fct-review-item.fct-review-photo-grid,
+.fct-review-photo-grid .fct-review-item-body[class] {
+    /* Both spellings of the byline, because the two renderers build it
+       differently: a rendered row wraps it in a header element, and a row
+       composed of blocks has no wrapper -- the header group is the card's own
+       child. Matched as direct children so the rendered row does not take the
+       margin twice, once on the wrapper and again on the group inside it. */
+    > .fct-review-item-header,
+    > .fct-review-item-header-left {
+        margin-top: 14px;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * A card that is nothing but a photograph.
+ *
+ * Flush already takes the gallery out through the card's padding at the top
+ * and sides, because it is written for a card that carries words underneath —
+ * it leaves the foot alone and the words sit in it. Here there are no words:
+ * every field is off and the photograph is the whole card, so the padding it
+ * leaves at the foot is a white band under each picture and the strip reads as
+ * a row of cards rather than as a band.
+ *
+ * Set by the preset on the Review Item, and carried on the two selectors the
+ * two renderers need — the server writes the block's classes onto every card,
+ * the canvas onto the wrapper standing in for the list. `[class]` on the
+ * canvas half for the same reason as the testimonial card: the editor's own
+ * card chrome is two classes and would otherwise win on source order.
+ * ───────────────────────────────────────────────────────────────────────── */
+.fct-review-item.fct-review-photo-only,
+.fct-review-photo-only .fct-review-item-body[class] {
+    @apply p-0 overflow-hidden;
+
+    .fct-review-media-gallery--flush {
+        @apply m-0;
+        border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+    }
+}
+
+/* A strip's tile is small, and two things sized for a full-width gallery do not
+   scale down with it.
+ *
+ * The +N pill is set at 13px with 5px/11px of padding, which reads as a label
+ * on a 600px photograph and as a sticker on a 200px one — in a band of five it
+ * was the loudest thing on screen, competing with the pictures it is counting.
+ * At strip size it only has to be legible, so it comes down a step and keeps
+ * its own backdrop, which is what holds its contrast over a light photo.
+ *
+ * And nothing said these open. A photograph with no caption and no chrome gives
+ * a visitor nothing to read as "clickable", so the tile lifts very slightly
+ * under the cursor — enough to answer the question, not enough to make a row of
+ * five feel restless. Held back on a coarse pointer and for anyone who has
+ * asked for less motion. */
+.fct-review-item.fct-review-photo-only,
+.fct-review-photo-only .fct-review-item-body[class] {
+    .fct-review-media-more.is-overlay {
+        top: 6px;
+        right: 6px;
+        gap: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+
+    .fct-review-media-more-icon {
+        width: 13px;
+        height: 13px;
+    }
+
+    .fct-review-media-thumb {
+        transition: transform 0.25s ease;
+    }
+
+    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+        .fct-review-media-tile:hover .fct-review-media-thumb {
+            transform: scale(1.04);
+        }
+    }
+}

@@ -28,6 +28,8 @@
 @import "product.scss";
 @import "card.scss";
 @import "order.scss";
+@import "user-avatar.scss";
+@import "review.scss";
 @import "step.scss";
 @import "icon.scss";
 @import "chart.scss";

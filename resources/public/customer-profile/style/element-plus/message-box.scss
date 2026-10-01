@@ -1,5 +1,6 @@
 .el-message-box{
-  @apply rounded p-0;
+  @apply p-0;
+  border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
   &__content{
     @apply pb-5 pt-2.5 px-5;
   }
@@ -10,23 +11,23 @@
     }
   }
   &__title{
-    @apply text-base text-system-dark font-semibold;
+    @apply text-base text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-semibold;
   }
   &__message {
     p{
-      @apply text-sm leading-[20px] text-system-mid;
+      @apply text-sm leading-[20px] text-[var(--fct-customer-dashboard-text-color,#565865)];
     }
   }
   &__btns{
-    @apply p-5 border border-solid border-gray-divider border-b-0 border-x-0;
+    @apply p-5 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-b-0 border-x-0;
     .el-button{
-      @apply rounded;
+      border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
       &:not(.el-button--primary){
-        @apply text-primary-500 hover:bg-primary-25 hover:border-primary-100 ;
+        @apply text-[var(--fct-customer-dashboard-link-color,#253241)] hover:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] hover:border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] ;
       }
     }
     .el-button--primary{
-      @apply bg-primary-500 border-primary-500;
+      @apply bg-[var(--fct-customer-dashboard-btn-bg-color,#253241)] border-[color:var(--fct-customer-dashboard-btn-border-color,#253241)];
     }
     button:hover,
     button:focus,

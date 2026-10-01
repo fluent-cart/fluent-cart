@@ -6,7 +6,6 @@ use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Hooks\Handlers\ShortCodes\ProductCardShortCode;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
 
@@ -41,7 +40,7 @@ class ProductCardBlockEditor extends BlockEditor
                 'name'  => static::getEditorName(),
                 'title' => __('Product Card', 'fluent-cart'),
                 'description' => __('This block will display the product card.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
                 'currency_sign' => $currencySign,
                 'currency_position' => $currencyPosition
             ],

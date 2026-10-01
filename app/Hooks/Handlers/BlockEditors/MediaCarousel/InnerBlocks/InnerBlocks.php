@@ -11,7 +11,6 @@ use FluentCart\App\Models\Product;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\Vite;
 
 class InnerBlocks
 {
@@ -169,7 +168,7 @@ class InnerBlocks
             }
 
             $image = [
-                'url'   => $product->thumbnail ?: Vite::getAssetUrl('images/placeholder.svg'),
+                'url'   => $product->thumbnail ?: Helper::getProductPlaceholderUrl(),
                 'title' => $product->post_title,
                 'link'  => $product->view_url ?? '',
             ];
@@ -313,7 +312,7 @@ class InnerBlocks
         }
 
         if (empty($images)) {
-            $placeholder = Vite::getAssetUrl('images/placeholder.svg');
+            $placeholder = Helper::getProductPlaceholderUrl();
 
             $images[] = [
                 'url'   => $placeholder,

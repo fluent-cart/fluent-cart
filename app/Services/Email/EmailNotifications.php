@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Email;
 
+use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Services\Cache;
 use FluentCart\App\Services\TemplateService;
@@ -18,10 +19,22 @@ class EmailNotifications
 
     const META_KEY = 'email_notifications_config';
 
+    /** The events the reviews module raises. */
+    const REVIEW_EVENTS = ['review_created', 'review_approved_done', 'review_replied_done'];
+
     public static function getNotifications(): array
     {
         $settings = static::getDefaultNotifications();
         $settings = apply_filters('fluent_cart/email_notifications', $settings);
+
+        // Review notifications are neither offered nor sent while the module
+        // is off; their stored settings are kept by name.
+        if (!ModuleSettings::isActive('reviews')) {
+            $settings = array_filter($settings, function ($setting) {
+                return !in_array(Arr::get($setting, 'event'), static::REVIEW_EVENTS, true);
+            });
+        }
+
         $config = Arr::get(static::cachedSettings(), 'notification_config', []);
 
         foreach ($settings as $key => &$setting) {
@@ -636,8 +649,121 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
+            'review_submitted_admin' => [
+                'event'            => 'review_created',
+                'group'            => 'review',
+                'group_label'      => __('Review Actions', 'fluent-cart'),
+                'title'            => __('Send mail to admin when a new review is submitted', 'fluent-cart'),
+                'description'      => __('Email admin when a customer submits a new review.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'review.submitted.admin',
+                'is_async'         => false,
+                'pre_header'       => __('A new product review has been submitted.', 'fluent-cart'),
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('New Review Submitted', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'review_approved_customer' => [
+                // The settled hook, not the transition: fired from a queued
+                // job once the review has been re-read and is still approved,
+                // the way order_paid_done is to order_paid. A bulk approve is
+                // fifty of these, and none of them is sent inside that request.
+                'event'            => 'review_approved_done',
+                'group'            => 'review',
+                'group_label'      => __('Review Actions', 'fluent-cart'),
+                'title'            => __('Send mail to the reviewer when their review is approved', 'fluent-cart'),
+                'description'      => __('Email the customer who wrote a review once it is approved and visible on the product page.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                // Declared, because the customer recipient resolves through an
+                // order and a review has none. The resolver behind this code is
+                // the one every review notification uses.
+                'to'               => '{{review.recipient_email}}',
+                'smartcode_groups' => [],
+                'template_path'    => 'review.approved.customer',
+                'is_async'         => false,
+                'pre_header'       => __('Your review is now live.', 'fluent-cart'),
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Your review of {{review.product_title}} is now live', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'review_replied_customer' => [
+                // Fired from a queued job once the reply and the review it
+                // answers have both been re-read and are still published.
+                'event'            => 'review_replied_done',
+                'group'            => 'review',
+                'group_label'      => __('Review Actions', 'fluent-cart'),
+                'title'            => __('Send mail to the reviewer when the store replies to their review', 'fluent-cart'),
+                'description'      => __('Email the customer who wrote a review when the store posts a reply to it.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                // The review's author, resolved the way every review
+                // notification resolves it — {{review.*}} is the review being
+                // answered, not the reply.
+                'to'               => '{{review.recipient_email}}',
+                'smartcode_groups' => [],
+                'template_path'    => 'review.replied.customer',
+                'is_async'         => false,
+                'pre_header'       => __('The store has replied to your review.', 'fluent-cart'),
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('{{settings.store_name}} replied to your review of {{review.product_title}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
         ];
 
+    }
+
+    /**
+     * The names of the notifications that would send for an event — the same
+     * gate getNotificationsOfEvent() applies, without rendering a body.
+     *
+     * For a caller that only needs to know whether, and which, before it
+     * commits to something — a once-only lease, say — and will render at
+     * send time through mailByEmailName(). Rendering here as well would draw
+     * every template twice per send.
+     *
+     * Kept in step with getNotificationsOfEvent(): the four conditions below
+     * are that method's, in the same order.
+     *
+     * @param string $event
+     * @return string[] notification names, in registry order
+     */
+    public static function activeNotificationNamesOfEvent($event): array
+    {
+        $mailingSettings = static::getSettings();
+        $names = [];
+
+        foreach (static::getNotifications() as $key => $notification) {
+            if (Arr::get($notification, 'event') !== $event) {
+                continue;
+            }
+
+            $settings = Arr::get($notification, 'settings');
+            if (!in_array($notification['event'], ['order_placed_offline', 'renewal_reminder_overdue']) && Arr::get($settings, 'active') !== 'yes') {
+                continue;
+            }
+
+            $recipient = Arr::get($notification, 'recipient');
+            if (!Arr::get($notification, 'to') && !in_array($recipient, ['admin', 'customer', 'user', 'subscriber'])) {
+                continue;
+            }
+
+            if (empty(static::resolveRecipientTemplate($notification, $mailingSettings))) {
+                continue;
+            }
+
+            $names[] = (string) $key;
+        }
+
+        return $names;
     }
 
     public static function getNotificationsOfEvent($event, $viewData): array

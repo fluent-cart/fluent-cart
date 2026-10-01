@@ -25,6 +25,12 @@ class UserHandler
 
     public function handleWpUserProfileUpdated($userId, $oldData, $newData = [])
     {
+        // State is recorded only while the store requires verification; accounts
+        // without it are treated as existing accounts if verification is enabled later.
+        if (!EmailVerificationService::isEnabled()) {
+            return;
+        }
+
         $user = $userId ? get_userdata($userId) : false;
         $oldEmail = is_object($oldData) && isset($oldData->user_email) ? wp_unslash($oldData->user_email) : '';
         if (!$user || EmailVerificationService::isSame($oldEmail, $user->user_email)) {
@@ -84,6 +90,10 @@ class UserHandler
 
     public function userRegistrationHandler($userId)
     {
+        if (!EmailVerificationService::isEnabled()) {
+            return;
+        }
+
         $user = $userId ? get_userdata($userId) : false;
         if ($user) {
             EmailVerificationService::markPending((int) $userId, $user->user_email);

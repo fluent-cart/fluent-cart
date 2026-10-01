@@ -2,14 +2,19 @@
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply border border-solid border-gray-outline rounded-tl rounded-bl rounded-tr-none rounded-br-none bg-white shadow-none outline-none px-3 m-0 text-sm truncate text-system-dark min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
+    @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-tr-none rounded-br-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
+    border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
+    padding-right: var(--fct-input-padding-x, theme('spacing.3')) !important;
     width: calc(100% - 70px);
     &::-webkit-input-placeholder{
-      @apply text-system-light text-sm dark:text-gray-800 opacity-50;
+      @apply text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] text-sm dark:text-gray-800 opacity-50;
     }
   }
   .copy-tooltip{
-    @apply absolute -top-[60%] left-1/2 z-[2] bg-success-500 block rounded text-white py-1.5 px-2 text-xs font-normal opacity-0 transition-all duration-200 leading-3;
+    @apply absolute -top-[60%] left-1/2 z-[2] bg-success-500 block text-white py-1.5 px-2 text-xs font-normal opacity-0 transition-all duration-200 leading-3;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     transform: translateX(-50%);
     //&::after{
     //  @apply absolute -bottom-[6px] left-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-dark-300 border-solid;
@@ -22,9 +27,11 @@
     }
   }
   .fct-copy-btn{
-    @apply min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br h-full hover:bg-gray-100 dark:bg-dark-500 dark:border-dark-400 dark:text-gray-300 dark:hover:bg-dark-400;
+    @apply min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-l-0 h-full hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)] dark:bg-dark-500 dark:border-dark-400 dark:text-gray-300 dark:hover:bg-dark-400;
+    border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+    border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
     &:disabled{
-      @apply pointer-events-none bg-gray-neutral text-system-light dark:bg-dark-400;
+      @apply pointer-events-none bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] dark:bg-dark-400;
     }
   }
 }
@@ -33,7 +40,8 @@
 .fct-copy-basic{
   @apply relative;
   .copy-tooltip{
-    @apply whitespace-nowrap text-center absolute -top-[60%] left-1/2 z-[2] bg-dark-500 block rounded text-white py-1.5 px-2 text-xs font-normal opacity-0 invisible transition-all duration-200 leading-3;
+    @apply whitespace-nowrap text-center absolute -top-[60%] left-1/2 z-[2] bg-dark-500 block text-white py-1.5 px-2 text-xs font-normal opacity-0 invisible transition-all duration-200 leading-3;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     transform: translateX(-50%);
     &::after{
       @apply absolute -bottom-[6px] left-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-transparent border-t-[6px] border-t-dark-500 border-solid transition-all duration-200;
@@ -48,9 +56,9 @@
     }
   }
   .fct-copy-btn{
-    @apply bg-transparent border-0 p-0 cursor-pointer w-6 h-6 rounded-sm flex items-center justify-center hover:bg-gray-50 dark:hover:bg-dark-400;
+    @apply bg-transparent border-0 p-0 cursor-pointer w-6 h-6 rounded-sm flex items-center justify-center hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] dark:hover:bg-dark-400;
     svg{
-      @apply fill-system-mid dark:fill-gray-500;
+      @apply fill-[var(--fct-customer-dashboard-text-color,#565865)] dark:fill-gray-500;
     }
   }
   &:hover{
@@ -66,6 +74,6 @@
     @apply inline-flex;
   }
   .el-tooltip__trigger{
-    @apply ml-1 text-gray-500;
+    @apply ml-1 text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)];
   }
 }

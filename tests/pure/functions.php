@@ -18,6 +18,8 @@ use FluentCart\App\Modules\PaymentMethods\StripeGateway\StripeHelper;
 use FluentCart\App\Services\Coupon\DiscountService;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Localization\PostcodeVerification;
+use FluentCart\App\Services\Renderer\ProductReviewRenderer;
+use FluentCart\App\Services\Renderer\ReviewThreadMarkup;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 
 class FcPureDiscountProbe extends DiscountService
@@ -1377,6 +1379,179 @@ return [
                 'Please set store country and currency first!',
                 $missingMessage,
                 'missing store configuration fails before provider eligibility is evaluated'
+            );
+        },
+    ],
+
+    [
+        'id'            => 'pure-review-media-gallery-visible-limit',
+        'name'          => 'Review media gallery hides the overflow rather than dropping it',
+        'phase'         => 12,
+        'known_failure' => false,
+        'targets'       => ['FluentCart\App\Services\Renderer\ReviewThreadMarkup::mediaGalleryHtml'],
+        'boundaries'    => ['limit below count', 'limit at count', 'limit above count', 'no limit', 'empty'],
+        'run'           => function () {
+            $media = [
+                ['url' => 'https://example.test/a.jpg', 'type' => 'image'],
+                ['url' => 'https://example.test/b.jpg', 'type' => 'image'],
+                ['url' => 'https://example.test/c.mp4', 'type' => 'video'],
+            ];
+
+            $shape = function ($visible, $more = 'tile') use ($media) {
+                $html = ReviewThreadMarkup::mediaGalleryHtml($media, 'list', [
+                    'visible' => $visible,
+                    'more'    => $more,
+                ]);
+
+                return [
+                    // Every attachment stays in the markup: the lightbox
+                    // builds its album from the gallery, so a dropped tile is
+                    // a photo the + could never open into. Counted by the URL
+                    // each attachment carries and the + does not — photo and
+                    // video tiles do not share a class list.
+                    'tiles'  => substr_count($html, 'data-media-url='),
+                    'hidden' => substr_count($html, ' hidden'),
+                    'more'    => substr_count($html, 'data-media-more-count'),
+                    'overlay' => substr_count($html, 'fct-review-media-tile'),
+                ];
+            };
+
+            FcTest::assertSame(
+                [
+                    'below'    => ['tiles' => 3, 'hidden' => 2, 'more' => 1, 'overlay' => 0],
+                    'at'       => ['tiles' => 3, 'hidden' => 0, 'more' => 0, 'overlay' => 0],
+                    'above'    => ['tiles' => 3, 'hidden' => 0, 'more' => 0, 'overlay' => 0],
+                    'none'     => ['tiles' => 3, 'hidden' => 0, 'more' => 0, 'overlay' => 0],
+                    // The + hidden leaves the overflow hidden and unannounced;
+                    // it never un-hides what the limit hid.
+                    'no-plus'  => ['tiles' => 3, 'hidden' => 2, 'more' => 0, 'overlay' => 0],
+                    // Overlaid, the + rides the last visible attachment inside
+                    // a box of its own rather than taking a tile.
+                    'overlaid' => ['tiles' => 3, 'hidden' => 2, 'more' => 1, 'overlay' => 1],
+                ],
+                [
+                    'below'    => $shape(1),
+                    'at'       => $shape(3),
+                    'above'    => $shape(9),
+                    'none'     => $shape(0),
+                    'no-plus'  => $shape(1, 'none'),
+                    'overlaid' => $shape(1, 'overlay'),
+                ],
+                'only a limit below the count hides tiles, and it hides rather than drops them'
+            );
+
+            FcTest::assertSame(
+                '',
+                ReviewThreadMarkup::mediaGalleryHtml([], 'list', ['visible' => 2]),
+                'a review with no attachments draws no gallery'
+            );
+
+            // An item can render as nothing — a payload with no URL, or a
+            // consumer of the media_item_html filter declining the type. The
+            // limit counts tiles that were drawn, so one of those must not eat
+            // a place in the row: ask for two and get two.
+            $withDud = [
+                ['url' => 'https://example.test/a.jpg', 'type' => 'image'],
+                ['type' => 'image'],
+                ['url' => 'https://example.test/b.jpg', 'type' => 'image'],
+                ['url' => 'https://example.test/c.jpg', 'type' => 'image'],
+            ];
+            $dudHtml = ReviewThreadMarkup::mediaGalleryHtml($withDud, 'list', [
+                'visible' => 2,
+                'more'    => 'tile',
+            ]);
+
+            FcTest::assertSame(
+                ['drawn' => 3, 'hidden' => 1, 'more' => '1'],
+                [
+                    'drawn'  => substr_count($dudHtml, 'data-media-url='),
+                    'hidden' => substr_count($dudHtml, ' hidden'),
+                    'more'   => preg_match('#data-media-more-count="(\d+)"#', $dudHtml, $m) ? $m[1] : '',
+                ],
+                'an attachment that renders nothing does not consume a visible slot'
+            );
+        },
+    ],
+    [
+        'id'            => 'pure-review-media-tile-bounds',
+        'name'          => 'Review media tile size and count are bounded at both ends',
+        'phase'         => 12,
+        'known_failure' => false,
+        'targets'       => [
+            'FluentCart\App\Services\Renderer\ProductReviewRenderer::mediaTileSize',
+            'FluentCart\App\Services\Renderer\ProductReviewRenderer::mediaVisibleCount',
+        ],
+        'boundaries'    => ['zero', 'negative', 'below minimum', 'above maximum', 'non-numeric'],
+        'run'           => function () {
+            FcTest::assertSame(
+                [0, 0, 16, 400, 0, 96],
+                [
+                    ProductReviewRenderer::mediaTileSize(0),
+                    ProductReviewRenderer::mediaTileSize(-40),
+                    ProductReviewRenderer::mediaTileSize(4),
+                    ProductReviewRenderer::mediaTileSize(40000),
+                    ProductReviewRenderer::mediaTileSize('not-a-size'),
+                    ProductReviewRenderer::mediaTileSize('96'),
+                ],
+                'a tile size is 0 (stylesheet default) or clamped into 16-400px'
+            );
+
+            FcTest::assertSame(
+                [
+                    '--fct-review-thumb-w:96px;--fct-review-thumb-h:80px;',
+                    // Full width replaces the pixel width rather than joining
+                    // it, so the two can never both be on the element.
+                    '--fct-review-thumb-w:100%;--fct-review-thumb-h:80px;',
+                    // No height asked for at full width is the photo's own,
+                    // not the 72px the stylesheet falls back to — a photo the
+                    // width of the review inside 72px is a sliver of one.
+                    '--fct-review-thumb-w:100%;--fct-review-thumb-h:auto;',
+                    '',
+                ],
+                [
+                    ReviewThreadMarkup::mediaSizeStyle(['width' => 96, 'height' => 80]),
+                    ReviewThreadMarkup::mediaSizeStyle(['width' => 96, 'height' => 80, 'fullWidth' => true]),
+                    ReviewThreadMarkup::mediaSizeStyle(['width' => 96, 'fullWidth' => true]),
+                    ReviewThreadMarkup::mediaSizeStyle([]),
+                ],
+                'tile size is a declaration only when something sets it, and full width wins the width'
+            );
+
+            FcTest::assertSame(
+                ['overlay', 'tile', 'none', 'overlay', 'overlay', 'overlay'],
+                [
+                    ReviewThreadMarkup::moreTilePlacement('overlay'),
+                    ReviewThreadMarkup::moreTilePlacement('TILE'),
+                    ReviewThreadMarkup::moreTilePlacement(' none '),
+                    // Anything the three render paths do not know falls back
+                    // to the default rather than drawing no + at all.
+                    ReviewThreadMarkup::moreTilePlacement('sideways'),
+                    ReviewThreadMarkup::moreTilePlacement(true),
+                    ReviewThreadMarkup::moreTilePlacement(null),
+                ],
+                'the + placement is whitelisted, not passed through'
+            );
+
+            // The cap is the store's photos-per-review setting, not a constant
+            // of this class, so the expectation is read from the same place
+            // rather than pinned to a number a store can change.
+            $maxPhotos = ProductReviewRenderer::maxPhotosPerReview();
+
+            FcTest::assertSame(
+                [0, 0, $maxPhotos, min(3, $maxPhotos)],
+                [
+                    ProductReviewRenderer::mediaVisibleCount(0),
+                    ProductReviewRenderer::mediaVisibleCount(-3),
+                    ProductReviewRenderer::mediaVisibleCount(500),
+                    ProductReviewRenderer::mediaVisibleCount('3'),
+                ],
+                'a visible count never goes negative and never past what a review may hold'
+            );
+
+            FcTest::assertSame(
+                true,
+                $maxPhotos >= 1,
+                'the photos-per-review cap floors at one, whatever the setting says'
             );
         },
     ],

@@ -77,7 +77,11 @@ class AdminHelper
         $menu = [
             'label'      => __('Products', 'fluent-cart'),
             'link'       => $baseUrl . 'products',
-            'permission' => ['products/view']
+            // Any-of: a reviews-only role (reviews/manage without
+            // products/view) must still see the parent, or its authorized
+            // Reviews child could never render. Children gate individually —
+            // including on the reviews module being switched on at all.
+            'permission' => ['products/view', 'reviews/manage']
         ];
 
         $children = [];
@@ -104,6 +108,17 @@ class AdminHelper
                 'label'      => __('Inventory', 'fluent-cart'),
                 'link'       => $baseUrl . 'products/inventory',
                 'permission' => ['products/view']
+            ];
+        }
+
+        // Only while the store has reviews switched on. The screen behind it
+        // already redirects to the dashboard when the module is off, so an
+        // entry here would be a menu item that bounces whoever clicks it.
+        if (ModuleSettings::isActive('reviews')) {
+            $children['reviews'] = [
+                'label'      => __('Reviews', 'fluent-cart'),
+                'link'       => $baseUrl . 'reviews',
+                'permission' => ['reviews/manage']
             ];
         }
 

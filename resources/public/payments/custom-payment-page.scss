@@ -80,7 +80,9 @@ ul{
     }
   }
   &-order-summary{
-    @apply bg-white w-[570px] p-5 rounded h-full;
+    @apply bg-white w-[570px] h-full;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     &-head{
       @apply pb-5;
       .fluent-cart-custom-payment-store-logo{
@@ -170,13 +172,20 @@ ul{
     }
   }
   &-methods{
-    @apply bg-white w-[370px] p-5 rounded h-full;
+    @apply bg-white w-[370px] h-full;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     h4 {
       @apply text-base mt-0 mb-4.5;
     }
   }
   &-submit-button{
-    @apply w-full py-3 px-5 rounded cursor-pointer text-white border-0 text-sm font-semibold mt-5;
+    @apply w-full cursor-pointer text-white border-0 text-sm font-semibold mt-5;
+    padding-top: var(--fct-btn-padding-y, theme('spacing.3'));
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.3'));
+    padding-left: var(--fct-btn-padding-x, theme('spacing.5'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.5'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #1C2732;
     box-shadow: 0px 1px 2px 0px rgba(27, 28, 29, 0.48), 0px 0px 0px 1px #242628;
     &:disabled,
@@ -200,7 +209,8 @@ ul{
 }
 
 .fluent-cart-checkout-page-single-payment-method-with-logo {
-  @apply w-full border border-solid border-gray-outline rounded mb-3 last:mb-0;
+  @apply w-full border border-solid border-gray-outline mb-3 last:mb-0;
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
 
   #fluent_cart_payment_method_stripe:checked + label + .fluent-cart-checkout_embed_payment_container_stripe,
@@ -229,13 +239,16 @@ ul{
 
   &:last-child {
     label {
-      @apply border-b-0 rounded-bl rounded-br;
+      @apply border-b-0;
+      border-bottom-left-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+      border-bottom-right-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     }
   }
 }
 
 .fluent-cart-checkout-page-single-payment-method {
-  @apply w-full border relative border-solid border-gray-outline rounded mb-3 last:mb-0;
+  @apply w-full border relative border-solid border-gray-outline mb-3 last:mb-0;
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
   #fluent_cart_payment_method_stripe:checked + label + .fluent-cart-checkout_embed_payment_container_stripe,
   #fluent_cart_payment_method_paypal:checked + label + .fluent-cart-checkout_embed_payment_container_paypal,

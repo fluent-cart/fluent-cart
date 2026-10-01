@@ -12,13 +12,17 @@
  */
 
 .fct-portal-section--error {
-  @apply border border-dashed border-gray-outline rounded p-6 text-center dark:border-dark-400;
+  @apply border border-dashed border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] text-center dark:border-dark-400;
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+  padding: var(--fct-container-padding-y, theme('spacing.6')) var(--fct-container-padding-x, theme('spacing.6'));
 
   .fct-portal-section-error-text {
-    @apply m-0 text-sm text-system-light;
+    @apply m-0 text-sm text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
   }
 }
 
 .fct-saved-payment-methods-section {
-    @apply mt-7.5 pt-7.5 border border-solid border-x-0 border-b-0 border-gray-divider;
+    @apply border border-solid border-x-0 border-b-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+    margin-top: var(--fct-section-spacing, theme('spacing[7.5]'));
+    padding-top: var(--fct-section-spacing, theme('spacing[7.5]'));
 }

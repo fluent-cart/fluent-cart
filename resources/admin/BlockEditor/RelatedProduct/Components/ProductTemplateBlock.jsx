@@ -22,6 +22,7 @@ const parentBlockName = blockEditorData.slug + '/' + blockEditorData.name;
 const PRODUCT_TEMPLATE = [
     ['fluent-cart/shopapp-product-image'],
     ['fluent-cart/shopapp-product-title'],
+    ['fluent-cart/product-rating'],
     ['fluent-cart/shopapp-product-price'],
     ['fluent-cart/shopapp-product-buttons'],
 ];
@@ -36,6 +37,7 @@ const ProductTemplateInnerBlocks = () => {
             allowedBlocks: [
                 'fluent-cart/shopapp-product-image',
                 'fluent-cart/shopapp-product-title',
+                'fluent-cart/product-rating',
                 'fluent-cart/shopapp-product-price',
                 'fluent-cart/shopapp-product-buttons',
             ],

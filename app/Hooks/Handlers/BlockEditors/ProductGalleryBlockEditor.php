@@ -42,7 +42,7 @@ class ProductGalleryBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Product Gallery', 'fluent-cart'),
                 'description'       => __('This block will display the product gallery.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

@@ -20,6 +20,7 @@ import translate from "@/utils/translator/Translator";
 import Confirmation from "@/utils/Confirmation";
 import Clipboard from "@/utils/Clipboard";
 import AppConfig from "@/utils/Config/AppConfig";
+import Asset from "@/utils/support/Asset";
 
 const props = defineProps({
   product: Object,
@@ -378,7 +379,7 @@ const onInlinePriceCommit = (variant) => {
 // expects a flat array (`variant.media[0]?.url`). Without re-running this after
 // the productEditModel reloader fires (e.g. after generateVariations), images
 // appear to vanish even though the DB still holds them: media reverts to the
-// raw object shape and `media[0]` is undefined → the empty-image placeholder
+// raw object shape and `media[0]` is undefined → the product placeholder
 // renders.
 watch(() => props.product.variants, (variants) => {
   if (!Array.isArray(variants)) return;
@@ -1327,7 +1328,7 @@ const handleVariantNavCommand = (command, item) => {
                   <img :src="variant.media[0]?.url" :alt="variant.variation_title"
                        class="!object-contain rounded border border-solid border-gray-outline dark:border-dark-400"/>
                 </div>
-                <img v-else :src="appVars.asset_url + 'images/empty-image.svg'" :alt="translate('No Image')"/>
+                <img v-else :src="Asset.productPlaceholder()" :alt="translate('No Image')"/>
               </div>
 
               <div class="fct-product-pricing-table-item-content">

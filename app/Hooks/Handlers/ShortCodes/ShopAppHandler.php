@@ -14,7 +14,6 @@ use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\RenderContext;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
 use FluentCart\App\Services\TemplateService;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 
@@ -246,7 +245,7 @@ class ShopAppHandler
         $allProducts = $this->getInitialProducts();
         $this->defaultViewData = [
             'products'                         => Arr::get($allProducts, 'products', []),
-            'placeholder_image'                => Vite::getAssetUrl('images/placeholder.svg'),
+            'placeholder_image'                => Helper::getProductPlaceholderUrl(),
             'paginator'                        => $this->shortcodeAttributes['paginator'],
             'view_mode'                        => $this->shortcodeAttributes['view_mode'],
             'price_format'                     => $this->shortcodeAttributes['price_format'],

@@ -3,6 +3,8 @@
 namespace FluentCart\App\Services;
 
 use FluentCart\App\Models\Customer;
+use FluentCart\Api\Resource\CustomerResource;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 
 class AuthService
 {
@@ -11,16 +13,39 @@ class AuthService
     {
         $userName = self::createUserNameFromStrings($customer->email, [$customer->first_name, $customer->last_name]);
 
-        return self::registerNewUser(
-            $userName,
-            $customer->email,
-            '',
-            [
+        // With verification not required, link the account to its customer before
+        // other registration listeners run. The update never takes a customer
+        // another account owns, nor one whose stored email changed meanwhile;
+        // an unlinked one is linked on the first portal visit.
+        $link = function ($userId) use ($customer) {
+            $user = get_userdata($userId);
+            if ($user && EmailVerificationService::isSame($user->user_email, $customer->email)) {
+                $linked = Customer::query()->where('id', $customer->id)->unclaimed()
+                    ->whereRaw('LOWER(TRIM(email)) = ?', [EmailVerificationService::normalize($user->user_email)])
+                    ->update(['user_id' => (int) $userId]);
+                if ($linked) {
+                    $customer->refresh();
+                }
+                CustomerResource::resetCurrentCustomerRuntimeCache();
+            }
+        };
+
+        $linkCustomer = !EmailVerificationService::isEnabled();
+        if ($linkCustomer) {
+            add_action('user_register', $link, PHP_INT_MIN, 1);
+        }
+
+        try {
+            return self::registerNewUser($userName, $customer->email, '', [
                 'first_name' => $customer->first_name,
                 'last_name'  => $customer->last_name,
                 'role'       => $userRole
-            ]
-        );
+            ]);
+        } finally {
+            if ($linkCustomer) {
+                remove_action('user_register', $link, PHP_INT_MIN);
+            }
+        }
     }
 
     public static function registerNewUser($user_login, $user_email, $user_pass = '', $extraData = [])

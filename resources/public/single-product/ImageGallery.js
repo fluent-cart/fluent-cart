@@ -187,7 +187,7 @@ export default class ImageGallery {
     }
 
     // Reset the main gallery image to the product default (featured image, or
-    // the placeholder.svg the renderer emits when the product has no image) and
+    // the product placeholder the renderer emits when the product has no image) and
     // clear any active thumbnail, since no term/variant thumbnail represents it.
     #resetMainImageToDefault() {
         const productThumbnail = this.findOneInContainer('[data-fluent-cart-single-product-page-product-thumbnail]');

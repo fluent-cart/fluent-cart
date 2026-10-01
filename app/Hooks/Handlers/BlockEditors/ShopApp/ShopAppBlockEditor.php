@@ -10,7 +10,6 @@ use FluentCart\App\Hooks\Handlers\BlockEditors\ShopApp\InnerBlocks\InnerBlocks;
 use FluentCart\App\Hooks\Handlers\ShortCodes\ShopAppHandler;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
 use FluentCart\Framework\Support\Str;
@@ -73,7 +72,7 @@ class ShopAppBlockEditor extends BlockEditor
                 'title'              => __('Products', 'fluent-cart'),
             ],
             'fluent_cart_block_editor_asset' => [
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation'  => TransStrings::blockStrings()
         ];

@@ -55,6 +55,8 @@ const inputs = [
     "resources/admin/BlockEditor/ReactSupport.js",
     "resources/admin/BlockEditor/ShopApp/ShopAppBlockEditor.jsx",
     "resources/admin/BlockEditor/ShopApp/InnerBlocks/InnerBlocks.jsx",
+    "resources/admin/BlockEditor/ProductReviewList/InnerBlocks/InnerBlocks.jsx",
+    "resources/admin/BlockEditor/ProductReviewList/style/product-review-list-block-editor.css",
     "resources/admin/BlockEditor/ShopApp/style/shop-app-block-editor.css",
     "resources/admin/BlockEditor/PricingTable/PricingTableBlockEditor.jsx",
     "resources/admin/BlockEditor/PricingTable/style/pricing-table-block-editor.scss",
@@ -197,6 +199,28 @@ const inputs = [
     "resources/public/single-product/single-product.scss",
     'resources/public/single-product/xzoom/xzoom.js',
     'resources/public/single-product/xzoom/xzoom.css',
+    // Reviews
+    "resources/public/single-product/Reviews.js",
+    "resources/public/single-product/ReviewForm.js",
+    "resources/public/single-product/reviews.scss",
+    // Public order-review page (?fluent-cart=order-review)
+    "resources/public/order-review/order-review.scss",
+    "resources/public/order-review/order-review.js",
+    // Product Reviews Block
+    "resources/admin/BlockEditor/ProductReviews/ProductReviewsBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviews/style/product-reviews-block-editor.scss",
+    // Product Rating Block
+    "resources/admin/BlockEditor/ProductRating/ProductRatingBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductRating/style/product-rating-block-editor.scss",
+    // Product Review Form Block (the trigger) and the standalone form itself
+    "resources/admin/BlockEditor/WriteAReviewButton/WriteAReviewButtonBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewForm/ProductReviewFormBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewForm/style/product-review-form-block-editor.scss",
+    // Review child blocks (Rating Summary / Review List)
+    "resources/admin/BlockEditor/ProductReviewSummary/ProductReviewSummaryBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewList/ProductReviewListBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductReviewSummaryGroup/ProductReviewSummaryGroupBlockEditor.jsx",
+    "resources/admin/BlockEditor/WriteAReviewButton/style/write-a-review-button-block-editor.scss",
     // Similar product
     "resources/public/single-product/similar-product.scss",
     // Advanced Variation — storefront selector (styles + interactive JS)
@@ -217,6 +241,8 @@ const inputs = [
     "resources/withdrawal/withdrawal.js",
     // Addon Assets
     "resources/addon-assets/addon-assets.js",
+    // Reviews PRO
+    "resources/reviews-pro/reviews-pro.js",
     // Subscriptions
     "resources/admin/Modules/Subscriptions/subscription.js",
     "resources/admin/Modules/Shipping/shipping.js",

@@ -105,7 +105,7 @@
                                                                 rel="noopener noreferrer"
                                                                :aria-label="$t('View product') + ' ' + filteredOrderItem.title"
                                                             >
-                                                                <span class="text-gray-600"
+                                                                <span class="text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)]"
                                                                     v-if="filteredOrderItem.quantity > 1">
                                                                     {{
                                                                         translateNumber(filteredOrderItem.quantity)

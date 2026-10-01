@@ -196,7 +196,7 @@ class Product extends Model
     public function getThumbnailAttribute()
     {
         if (empty($this->detail) || empty($this->detail->featured_media)) {
-            return Vite::getAssetUrl('images/placeholder.svg');
+            return Helper::getProductPlaceholderUrl();
         }
         return Arr::get($this->detail->featured_media, 'url');
     }
@@ -492,7 +492,7 @@ class Product extends Model
     public function images(): array
     {
         $images = [];
-        $thumbnailImage = $this->thumbnail ?? Vite::getAssetUrl('images/placeholder.svg');
+        $thumbnailImage = $this->thumbnail ?? Helper::getProductPlaceholderUrl();
 
         $galleryImages = get_post_meta($this->ID, 'fluent-products-gallery-image', true);
 
@@ -804,5 +804,12 @@ class Product extends Model
     public function integrations(): \FluentCart\Framework\Database\Orm\Relations\HasMany
     {
         return $this->hasMany(ProductMeta::class, 'object_id')->where('object_type', 'product_integration');
+    }
+
+    public function reviews(): \FluentCart\Framework\Database\Orm\Relations\HasMany
+    {
+        return $this->hasMany(ProductReview::class, 'post_id', 'ID')
+            ->whereNull('parent_id')
+            ->where('status', Status::REVIEW_APPROVED);
     }
 }

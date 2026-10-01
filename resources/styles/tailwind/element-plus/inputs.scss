@@ -491,6 +491,12 @@
 .el-input .el-input__count .el-input__count-inner{
     @apply dark:bg-transparent dark:text-gray-300;
 }
+/* The textarea draws its counter straight on .el-input__count, with no
+   inner span — the rule above never reached it, so it kept a white
+   background on the dark surface. */
+.el-textarea .el-input__count{
+    @apply dark:bg-transparent dark:text-gray-300;
+}
 .fct-input-group{
     @apply flex gap-2;
     .el-input-group__append{

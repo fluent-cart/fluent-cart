@@ -43,17 +43,37 @@ $(() => {
             return false;
         }
 
-        const checkoutUrl = custom_checkout_url;
-        // get params from the search string
-        const params = new URLSearchParams(window.location.search);
-
-        let licenseKey = params.get('license_key') || '';
-        let coupon = params.get('coupon') || '';
-
-
-        loaderElement.addClass('active');
+        // Held from here because preparation is awaited: taking it at the order
+        // request leaves the wallet sheet open with nothing holding the page.
         isPlacingOrder = true;
+
         try {
+            // Safari drops the user gesture across any await, so a wallet sheet has
+            // to start opening here — still inside the click — not after the order
+            // request.
+            const preparations = [];
+            window.dispatchEvent(new CustomEvent('fluent_cart_before_checkout_' + payMethod, {
+                detail: {
+                    // A rejection vetoes too — collection state is unknown.
+                    waitFor: (promise) => preparations.push(
+                        Promise.resolve(promise).catch(() => false)
+                    )
+                }
+            }));
+
+            if (preparations.length && (await Promise.all(preparations)).includes(false)) {
+                return false;
+            }
+
+            const checkoutUrl = custom_checkout_url;
+            // get params from the search string
+            const params = new URLSearchParams(window.location.search);
+
+            let licenseKey = params.get('license_key') || '';
+            let coupon = params.get('coupon') || '';
+
+            loaderElement.addClass('active');
+
             return await jQuery.post(checkoutUrl, {
                 order_hash: orderHash,
                 mode: paymentMode,

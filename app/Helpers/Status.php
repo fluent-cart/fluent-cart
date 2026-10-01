@@ -32,6 +32,17 @@ class Status
     public const PAYMENT_SCHEDULED = 'payment_scheduled';
 
     // Transaction Statuses
+    // Product review statuses — fct_product_reviews.status values
+    public const REVIEW_APPROVED = 'approved';
+    public const REVIEW_PENDING = 'pending';
+    public const REVIEW_SPAM = 'spam';
+    public const REVIEW_TRASH = 'trash';
+
+    // Review permission modes — who may submit a review
+    public const REVIEW_PERMISSION_VERIFIED_BUYERS = 'verified_buyers';
+    public const REVIEW_PERMISSION_LOGGED_IN = 'logged_in';
+    public const REVIEW_PERMISSION_ANYONE = 'anyone';
+
     public const TRANSACTION_SUCCEEDED = 'succeeded';
     public const TRANSACTION_AUTHORIZED = 'authorized';
     public const TRANSACTION_PENDING = 'pending';
@@ -349,6 +360,59 @@ class Status
     public static function getTransactionSuccessStatuses()
     {
         return apply_filters('fluent_cart/transaction_success_statuses', [self::TRANSACTION_SUCCEEDED, self::TRANSACTION_AUTHORIZED], []);
+    }
+
+    /**
+     * All product review statuses (fct_product_reviews.status values).
+     */
+    public static function getReviewStatuses(): array
+    {
+        return [
+            self::REVIEW_APPROVED,
+            self::REVIEW_PENDING,
+            self::REVIEW_SPAM,
+            self::REVIEW_TRASH,
+        ];
+    }
+
+    /**
+     * Review statuses that count as an existing review for duplicate
+     * detection. Spam and trash are deliberately excluded — a review the
+     * store rejected does not block the customer from submitting a fresh
+     * one. Every surface that projects "can this user review?" must use
+     * this set so it never contradicts the
+     * ProductReviewService::canSubmitReview() write-path guard.
+     */
+    public static function getReviewDuplicateStatuses(): array
+    {
+        return apply_filters('fluent_cart/review_duplicate_statuses', [
+            self::REVIEW_APPROVED,
+            self::REVIEW_PENDING,
+        ]);
+    }
+
+    /**
+     * Review statuses the author may see in their own history: everything
+     * except spam and trash.
+     *
+     * Derived by exclusion, not by listing, so a status added later is
+     * visible to its author by default — only the two that mean "this is not
+     * really a review" are held back, and a customer who has been silently
+     * spammed or trashed is not shown that judgement.
+     *
+     * Deliberately NOT getReviewDuplicateStatuses(). The two sets happen to
+     * hold the same values today, but they answer different questions, and
+     * that one is filterable: a site narrowing its duplicate rules would
+     * otherwise hide customers' pending reviews from them as a side effect.
+     *
+     * @return array
+     */
+    public static function getReviewAuthorVisibleStatuses(): array
+    {
+        return array_values(array_diff(
+            static::getReviewStatuses(),
+            [self::REVIEW_SPAM, self::REVIEW_TRASH]
+        ));
     }
 
     // Get all statuses (optional utility)

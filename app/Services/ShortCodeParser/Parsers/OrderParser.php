@@ -56,6 +56,7 @@ class OrderParser extends BaseParser
 
     protected array $methodMap = [
         'item_count'         => 'getItemCount',
+        'review_url'         => 'getReviewUrl',
         'is_digital'         => 'getIsDigital',
         'store_vat_display'                => 'getStoreVatDisplay',
         'store_company_name'               => 'getStoreCompanyName',
@@ -359,6 +360,36 @@ class OrderParser extends BaseParser
         $orderLink = TemplateService::getCustomerProfileUrl('order/' . Arr::get($this->order, 'uuid'));
 
         return is_user_logged_in() ? $orderLink : wp_login_url($orderLink);
+    }
+
+    /**
+     * The public "review your order" page for this order.
+     *
+     * Carries the order uuid, which is what lets the link work for a
+     * guest-checkout buyer with no account to sign into — so, unlike
+     * getCustomerOrderLink(), it is never wrapped in wp_login_url().
+     *
+     * Drop {{order.review_url}} into any order email template to invite a
+     * review. Best paired with a notification that fires after fulfilment;
+     * the page only resolves once the order has actually completed.
+     */
+    public function getReviewUrl($accessor = null, $code = null)
+    {
+        $orderHash = (string) Arr::get($this->order, 'uuid', '');
+
+        if ($orderHash !== '') {
+            return Order::reviewUrlForHash($orderHash);
+        }
+
+        $orderId = Arr::get($this->order, 'id');
+
+        if (empty($orderId)) {
+            return $code;
+        }
+
+        $order = Order::query()->find($orderId);
+
+        return $order instanceof Order ? $order->getOrderReviewUrl() : $code;
     }
 
     public function getPaymentLink($accessor = null, $code = null)

@@ -239,6 +239,7 @@ class CustomerOrderController extends BaseFrontendController
             $productIds[] = $item->post_id;
         }
 
+
         $upgradableVariationIds = [];
         $isUpgradeEligibleOrder = in_array($order->payment_status, [
             Status::PAYMENT_PAID,
@@ -302,7 +303,7 @@ class CustomerOrderController extends BaseFrontendController
 
         $formattedOrderData['subscriptions'] = $order->subscriptions
             ->filter(function ($subscription) {
-                return !in_array($subscription->status, [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED]);
+                return $subscription->isVisibleToCustomer();
             })
             ->map(function ($subscription) {
                 return OrderService::transformSubscription($subscription);

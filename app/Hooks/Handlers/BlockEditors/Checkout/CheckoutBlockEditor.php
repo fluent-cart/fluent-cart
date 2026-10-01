@@ -2,7 +2,7 @@
 
 namespace FluentCart\App\Hooks\Handlers\BlockEditors\Checkout;
 
-
+use FluentCart\App\Helpers\Helper;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
@@ -13,7 +13,6 @@ use FluentCart\App\Services\Renderer\CartRenderer;
 use FluentCart\App\Services\Renderer\CheckoutRenderer;
 use FluentCart\App\Services\Renderer\RenderHelper;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
 
@@ -60,7 +59,7 @@ class CheckoutBlockEditor extends BlockEditor
                         'name'              => static::getEditorName(),
                         'title'             => __('Checkout Page', 'fluent-cart'),
                         'description'       => __('This block will display the checkout page.', 'fluent-cart'),
-                        'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                        'placeholder_image' => Helper::getProductPlaceholderUrl(),
                 ],
                 'fluent_cart_block_translation' => TransStrings::blockStrings()
         ];

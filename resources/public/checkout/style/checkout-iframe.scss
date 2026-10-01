@@ -34,6 +34,8 @@ html, body {
     // button
     --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-modal-checkout-primary-bg-color));
     --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color);
+    --fct-modal-checkout-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-modal-checkout-btn-bg-color));
+    --fct-modal-checkout-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-modal-checkout-btn-text-color));
 
     --fct-modal-checkout-input-disabled-bg: var(--fct-input-disabled-bg);
 
@@ -129,7 +131,11 @@ html, body {
 
   .fct_checkout_input_group {
     input {
-      @apply appearance-none w-full min-h-10 m-0 rounded-none text-sm leading-none px-4 py-2.5 outline-none ring-0 shadow-none placeholder:text-sm border-[0.5px] border-x-[1px] border-solid focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:outline-none focus:shadow-none box-border;
+      @apply appearance-none w-full min-h-10 m-0 rounded-none text-sm leading-none outline-none ring-0 shadow-none placeholder:text-sm border-[0.5px] border-x-[1px] border-solid focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:outline-none focus:shadow-none box-border;
+      padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+      padding-right: var(--fct-input-padding-x, theme('spacing.4'));
+      padding-top: var(--fct-input-padding-y, theme('spacing[2.5]'));
+      padding-bottom: var(--fct-input-padding-y, theme('spacing[2.5]'));
 
       &:disabled {
         @apply cursor-not-allowed;
@@ -156,8 +162,8 @@ html, body {
       height: auto;
       min-height: 48px;
       border: 0;
-      border-radius: var(--fct-modal-checkout-border-radius);
-      padding: 10px 12px;
+      border-radius: var(--fct-btn-radius, var(--fct-modal-checkout-border-radius));
+      padding: var(--fct-btn-padding-y, theme('spacing[2.5]')) var(--fct-btn-padding-x, theme('spacing.3'));
       font-size: 15px;
       line-height: 1;
       color: var(--fct-modal-checkout-btn-text-color);
@@ -168,8 +174,8 @@ html, body {
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%), var(--fct-modal-checkout-btn-bg-color);
       text-align: center;
       &:hover {
-        background-color: var(--fct-modal-checkout-btn-bg-color);
-        color: var(--fct-modal-checkout-btn-text-color);
+        background-color: var(--fct-modal-checkout-btn-hover-bg-color);
+        color: var(--fct-modal-checkout-btn-hover-text-color);
       }
     }
     &.fct-payment-loading {
@@ -184,8 +190,8 @@ html, body {
     border-color: var(--fct-modal-checkout-active-border-color);
   }
   .fct_coupon_field button:hover {
-    background-color: var(--fct-modal-checkout-btn-bg-color);
-    color: var(--fct-modal-checkout-btn-text-color);
+    background-color: var(--fct-modal-checkout-btn-hover-bg-color);
+    color: var(--fct-modal-checkout-btn-hover-text-color);
   }
   .fct_summary_items_list {
     margin-top: 0;
@@ -220,13 +226,13 @@ html, body {
 
 .fct-modal-checkout-details {
   background-color: var(--fct-secondary-bg-color, #f5f7fa);
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
+  border-top-left-radius: var(--fct-popup-radius, theme('borderRadius[3]'));
+  border-bottom-left-radius: var(--fct-popup-radius, theme('borderRadius[3]'));
   display: flex;
   flex: 0 0 50%;
   flex-flow: column nowrap;
   padding: 30px;
-  gap: 22px;
+  gap: var(--fct-section-spacing, theme('spacing[5.5]'));
   .fct_shipping_methods_item label {
     display: flex;
   }
@@ -244,9 +250,9 @@ html, body {
   background-color: var(--fct-card-bg-color, #f3f6fb);
   display: flex;
   gap: 15px;
-  padding: 20px;
+  padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
   border: 1px solid var(--fct-modal-checkout-border-color);
-  border-radius: var(--fct-modal-checkout-border-radius);
+  border-radius: var(--fct-container-radius, var(--fct-modal-checkout-border-radius));
 
   .fct-modal-cs-img {
     flex-shrink: 0;
@@ -413,7 +419,7 @@ html, body {
   }
   .fct-coupon {
     background: #e4e7eb;
-    border-radius: 4px;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     padding-left: 6px;
     line-height: 1.5;
     font-size: 13px;
@@ -430,8 +436,8 @@ html, body {
     align-items: center;
     justify-content: center;
     min-height: 28px;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
+    border-bottom-right-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     cursor: pointer;
     &:hover {
       background: #bbc3cb;
@@ -462,9 +468,9 @@ html, body {
 }
 .fct-modal-checkout-reviews {
   border: 1px solid var(--fct-modal-checkout-border-color);
-  border-radius: var(--fct-modal-checkout-border-radius);
+  border-radius: var(--fct-container-radius, var(--fct-modal-checkout-border-radius));
   display: flex;
-  padding: 20px;
+  padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
   margin-top: auto;
   gap: 20px;
   .fct-reviews-picture {
@@ -541,8 +547,8 @@ html, body {
       max-width: 100%;
       min-height: 29px;
       border: 1px solid var(--fct-modal-checkout-border-color);
-      border-radius: 4px;
-      padding: 5px 60px 5px 12px;
+      border-radius: var(--fct-input-radius, theme('borderRadius.xs'));
+      padding: var(--fct-input-padding-y, theme('spacing[1.25]')) 60px var(--fct-input-padding-y, theme('spacing[1.25]')) var(--fct-input-padding-x, theme('spacing.3'));
       font-size: 14px;
       line-height: 1;
       color: var(--fct-modal-checkout-primary-text-color);
@@ -624,8 +630,8 @@ html, body {
       width: 100%;
       height: auto;
       min-height: 38px;
-      border-radius: var(--fct-modal-checkout-border-radius);
-      padding: 5px 12px;
+      border-radius: var(--fct-input-radius, var(--fct-modal-checkout-border-radius));
+      padding: var(--fct-input-padding-y, theme('spacing[1.25]')) var(--fct-input-padding-x, theme('spacing.3'));
       font-size: 14px;
       line-height: 1;
       outline: none;
@@ -673,7 +679,7 @@ html, body {
   }
   .fct_payment_method_wrapper {
     margin-bottom: 0;
-    border-radius: var(--fct-modal-checkout-border-radius);
+    border-radius: var(--fct-container-radius, var(--fct-modal-checkout-border-radius));
     &.active {
       border-color: var(--fct-modal-checkout-active-border-color);
     }
@@ -732,7 +738,8 @@ html, body {
   }
 
   .fct_item_tax_badge {
-    @apply inline-flex items-center gap-1 rounded-[4px] px-[7px] py-[2px] text-[11px] font-medium leading-[1.4];
+    @apply inline-flex items-center gap-1 px-[7px] py-[2px] text-[11px] font-medium leading-[1.4];
+    border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
 
     &.is-inclusive {
       background: #EAF3DE;
@@ -784,7 +791,8 @@ html, body {
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden w-[190px] rounded-md border border-solid p-3 text-left text-xs leading-[1.6];
+    @apply absolute right-0 top-full mt-2 hidden w-[190px] border border-solid p-3 text-left text-xs leading-[1.6];
+    border-radius: var(--fct-popup-radius, theme('borderRadius.md'));
     background-color: var(--fct-card-bg-color, #ffffff);
     color: var(--fct-modal-checkout-primary-text-color);
     border-color: var(--fct-modal-checkout-border-color);
@@ -836,6 +844,8 @@ body:not(.fluent-cart-no-colors) {
     // button
     --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, var(--fct-modal-checkout-primary-bg-color));
     --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-modal-checkout-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-modal-checkout-btn-bg-color));
+    --fct-modal-checkout-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-modal-checkout-btn-text-color));
 
     --fct-modal-checkout-input-disabled-bg: var(--fct-input-disabled-bg, theme('colors.gray.50'));
 
@@ -858,6 +868,8 @@ body:not(.fluent-cart-no-colors) {
     // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
     --fct-modal-checkout-btn-bg-color: var(--fct-btn-bg-color, #253241);
     --fct-modal-checkout-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-modal-checkout-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-modal-checkout-btn-bg-color));
+    --fct-modal-checkout-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-modal-checkout-btn-text-color));
     .fct-modal-checkout-form-wrapper {
         .fct-modal-form-info {
             input {

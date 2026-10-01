@@ -45,7 +45,8 @@
 }
 
 .fct-product-modal-body {
-  @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 rounded overflow-x-hidden;
+  @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden;
+  border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
   &:active::-webkit-scrollbar-thumb,
   &:focus::-webkit-scrollbar-thumb,
   &:hover::-webkit-scrollbar-thumb {
@@ -61,7 +62,7 @@
     @apply gap-8;
   }
   .fluent-cart-similar-product-list{
-    @apply gap-5;
+    gap: var(--fct-grid-gap, theme('spacing.5'));
   }
   .fluent-cart-single-product-page-product-variant-title{
     @apply max-w-[200px];
@@ -89,7 +90,8 @@
 
 // related products
 .fct-related-products-grid {
-  @apply grid gap-5;
+  @apply grid;
+  gap: var(--fct-grid-gap, theme('spacing.5'));
   --fct-related-product-columns: 4;
   grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
 }

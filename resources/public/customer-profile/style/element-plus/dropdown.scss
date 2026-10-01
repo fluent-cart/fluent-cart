@@ -1,34 +1,36 @@
 .el-select-dropdown__list{
     @apply p-3 #{!important};
     .el-select-dropdown__item{
-        @apply rounded text-system-mid px-2.5 text-[13px] h-7.5 #{!important};
+        @apply rounded text-[var(--fct-customer-dashboard-text-color,#565865)] px-2.5 text-[13px] h-7.5 #{!important};
         &.is-selected{
-            @apply text-primary-500 font-medium #{!important};
+            @apply text-[var(--fct-customer-dashboard-link-color,#253241)] font-medium #{!important};
         }
         &.is-hovering{
-            @apply bg-primary-25 dark:bg-dark-600 #{!important};
+            @apply bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] dark:bg-dark-600 #{!important};
         }
     }
 }
 .el-select__popper.el-popper{
-    @apply border-gray-outline #{!important};
+    @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] #{!important};
 }
 .el-popper{
-    @apply rounded #{!important};
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT')) !important;
 }
 .el-dropdown-menu{
     @apply dark:bg-primary-500;
 }
 .el-dropdown__popper{
     &.fct-dropdown{
-        @apply min-w-[160px] rounded border-0;
+        @apply min-w-[160px] border-0;
+        border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
         box-shadow: 0px -4px 16px -12px rgba(14, 18, 27, 0.10), 0px 16px 32px 0px rgba(14, 18, 27, 0.10);
         .el-dropdown-menu{
-            @apply p-2 rounded #{!important};
+            @apply p-2 #{!important};
+            border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT')) !important;
             &__item{
-                @apply gap-2 text-system-dark relative rounded-sm hover:bg-gray-50 mb-0 p-2 last:mb-0 focus:bg-gray-50 focus:text-system-dark;
+                @apply gap-2 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] relative rounded-sm hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] mb-0 p-2 last:mb-0 focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] focus:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
                 &.active{
-                    @apply text-dark-500;
+                    @apply text-[var(--fct-customer-dashboard-link-color,#253241)];
                 }
                 &.item-destructive{
                     @apply text-red-500 focus:bg-red-25 focus:text-red-500 hover:bg-red-25;
@@ -36,7 +38,7 @@
                 &.item-link{
                     @apply p-0 rounded-none bg-transparent cursor-default;
                     a {
-                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-system-dark relative rounded-sm focus:outline-none focus:shadow-none hover:bg-gray-50 mb-0 last:mb-0 focus:bg-gray-50 focus:text-system-dark;
+                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] relative rounded-sm focus:outline-none focus:shadow-none hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] mb-0 last:mb-0 focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] focus:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
                         .icon{
                             svg{
                                 @apply w-4 h-4;

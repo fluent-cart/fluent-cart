@@ -13,6 +13,7 @@ use FluentCart\App\Modules\Data\ProductQuery;
 use FluentCart\App\Services\Renderer\ProductListRenderer;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
+use FluentCart\App\Services\Schema\ProductSchema;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Support\Arr;
 
@@ -23,6 +24,14 @@ class TemplateActions
         add_action('fluent_cart/template/main_content', [$this, 'renderMainContent']);
         add_action('fluent_cart/template/product_archive', [$this, 'renderProductArchive']);
         add_action('fluent_cart/product/render_product_header', [$this, 'renderProductHeader']);
+        // Block themes render reviews from the product template, so the
+        // built-in listener is not attached there — the hook still fires for
+        // third-party listeners. Safe to decide here: the theme is resolved
+        // at after_setup_theme, before init runs this.
+        if (!function_exists('wp_is_block_theme') || !wp_is_block_theme()) {
+            add_action('fluent_cart/product/after_product_content', [$this, 'renderProductReviews']);
+        }
+        add_action('wp_head', [$this, 'renderProductJsonLd']);
 
         // Universal hook for after_product_content — fires on both classic and block themes
         // Block themes render <!-- wp:post-content --> which runs the_content filter
@@ -47,7 +56,7 @@ class TemplateActions
 
             return $content;
         }, 999);
-
+        
         add_shortcode('fluent_cart_product_header', function ($atts = []) {
             $atts = shortcode_atts([
                 'id' => 0,
@@ -121,7 +130,8 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container'
+                'fct-similar-product-list-container',
+                ['rating_context' => 'relevant']
             ))->render();
 
             $content = ob_get_clean();
@@ -300,7 +310,8 @@ class TemplateActions
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
-                'fct-similar-product-list-container'
+                'fct-similar-product-list-container',
+                ['rating_context' => 'relevant']
             ))->render();
 
             $relevantProducts = ob_get_clean();
@@ -349,6 +360,58 @@ class TemplateActions
 
         // Remove extra whitespace between tags to clean up the output
         return preg_replace('/>\s+</', '><', $cleaned);
+    }
+
+    /**
+     * Whether the product page should carry its review section at all.
+     *
+     * Sits beside the relevant-products switch in Product Page settings and
+     * works the same way, so one control governs the section wherever it is
+     * rendered from — a review block, or the append below.
+     *
+     * @param int $postId
+     * @return bool
+     */
+    public static function shouldShowReviewsOnProductPage($postId): bool
+    {
+        $show = (new StoreSettings())->get('show_reviews_in_single_page', 'yes') == 'yes';
+
+        return (bool) apply_filters('fluent_cart/single_product_page/show_reviews', $show, $postId);
+    }
+
+    private function isReviewModuleAvailable()
+    {
+        return \FluentCart\Api\ModuleSettings::isActive('reviews')
+            && class_exists(\FluentCart\App\Services\ProductReviewService::class);
+    }
+
+    public function renderProductReviews($postId)
+    {
+        if (!$postId || !$this->isReviewModuleAvailable()) {
+            return;
+        }
+
+        $renderer = new \FluentCart\App\Services\Renderer\ProductReviewRenderer($postId);
+        $renderer->render();
+        $renderer->renderForm();
+    }
+
+    public function renderProductJsonLd()
+    {
+        if (!is_singular(\FluentCart\App\CPT\FluentProducts::CPT_NAME)) {
+            return;
+        }
+
+        $postId = get_the_ID();
+        if (!$postId) {
+            return;
+        }
+
+        // The node itself — product, offers, aggregate rating, the reviews
+        // the page shows — is ProductSchema's; this is only the page gate.
+        // The reviews module gate lives there too, on the review parts
+        // alone: a product is for sale whether or not it takes reviews.
+        ProductSchema::render($postId);
     }
 
 }

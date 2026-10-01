@@ -5,7 +5,6 @@ namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 use FluentCart\App\Hooks\Handlers\ShortCodes\ProductCardShortCode;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Helpers\Helper;
@@ -42,7 +41,7 @@ class ProductInfoBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Product Info', 'fluent-cart'),
                 'description'       => __('This block will display the product information.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

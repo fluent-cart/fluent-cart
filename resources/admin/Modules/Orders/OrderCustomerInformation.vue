@@ -2,6 +2,7 @@
 import * as Card from "@/Bits/Components/Card/Card.js";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import UserAvatar from "@/Bits/Components/UserAvatar.vue";
 import Rest from "@/utils/http/Rest";
 import {computed, onMounted, ref, watch} from "vue";
 import Notify from "@/utils/Notify";
@@ -441,9 +442,9 @@ onMounted(() => {
                 name: 'view_customer',
                 params: { customer_id: currentlySelectedCustomer.id },
               })">
-                <img
-                    :src="currentlySelectedCustomer.photo"
-                    :alt="currentlySelectedCustomer?.full_name"
+                <UserAvatar
+                    :url="currentlySelectedCustomer.photo"
+                    :name="currentlySelectedCustomer?.full_name"
                 />
               </div>
               <div

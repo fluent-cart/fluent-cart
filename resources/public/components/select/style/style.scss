@@ -12,7 +12,10 @@
         @apply relative bg-white rounded-none transition-all duration-[300ms] border-[0.5px] border-solid border-gray-200;
         .select {
             &-input {
-                @apply w-full py-3 pr-10 pl-4 text-sm border-none outline-none bg-transparent pointer-events-none;
+                @apply w-full pr-10 text-sm border-none outline-none bg-transparent pointer-events-none;
+                padding-top: var(--fct-input-padding-y, theme('spacing.3'));
+                padding-bottom: var(--fct-input-padding-y, theme('spacing.3'));
+                padding-left: var(--fct-input-padding-x, theme('spacing.4'));
                 &:focus {
                     @apply cursor-text;
                 }
@@ -48,7 +51,8 @@
             &-dropdown {
                 transform: translateY(-10px);
                 box-shadow: 0px 0px 12px rgba(0,0,0,0.12);
-                @apply absolute top-full left-0 right-0 max-h-[200px] z-[1000] opacity-0 invisible bg-white overflow-x-hidden rounded box-border p-2.5 border-[1px] border-solid border-gray-outline transition-all duration-300;
+                @apply absolute top-full left-0 right-0 max-h-[200px] z-[1000] opacity-0 invisible bg-white overflow-x-hidden box-border p-2.5 border-[1px] border-solid border-gray-outline transition-all duration-300;
+                border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
                 * {
                     @apply box-border;
                 }
@@ -184,7 +188,8 @@
 .fct-nice-select {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: all .2s ease-in-out;
-    @apply w-full h-9.5 pl-4.5 pr-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
+    @apply w-full h-9.5 pr-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
+    padding-left: var(--fct-input-padding-x, theme('spacing[4.5]'));
 
     &:after {
         content: "";
@@ -243,7 +248,8 @@
         @apply h-auto py-[7px] px-3 min-h-9 leading-[22px];
         span {
             &.current {
-                @apply border-[1px] border-solid border-[var(--fct-checkout-input-border-color)] bg-[#eee] py-0 px-2.5 rounded-[3px] inline-block leading-[24px] text-sm mb-[3px] mr-[3px];
+                @apply border-[1px] border-solid border-[var(--fct-checkout-input-border-color)] bg-[#eee] py-0 px-2.5 inline-block leading-[24px] text-sm mb-[3px] mr-[3px];
+                border-radius: var(--fct-badge-radius, theme('borderRadius[0.75]'));
             }
         }
         .multiple-options {
@@ -259,7 +265,8 @@
         }
     }
     &-dropdown {
-        @apply bg-[var(--fct-select-dropdown-bg)] rounded shadow-[0px_16px_32px_-4px_rgba(27,37,51,0.2)] pointer-events-none absolute top-0 left-0 z-[9] hidden max-h-[230px] overflow-x-hidden;
+        @apply bg-[var(--fct-select-dropdown-bg)] shadow-[0px_16px_32px_-4px_rgba(27,37,51,0.2)] pointer-events-none absolute top-0 left-0 z-[9] hidden max-h-[230px] overflow-x-hidden;
+        border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
         &::-webkit-scrollbar {
             @apply w-1.5;
         }
@@ -314,7 +321,8 @@
             @apply pointer-events-none;
             &:before {
                 content: 'Loading...';
-                @apply absolute top-0 left-0 w-full h-full bg-white pl-4.5 pr-7.5 text-[#acb5c2];
+                @apply absolute top-0 left-0 w-full h-full bg-white pr-7.5 text-[#acb5c2];
+                padding-left: var(--fct-input-padding-x, theme('spacing[4.5]'));
             }
         }
     }
@@ -343,7 +351,6 @@
     .select-selection {
         @apply bg-[#e4e4e4]
         border-[1px] border-[#aaa]
-        rounded-xs
         box-border
         inline-block
         ml-[5px]
@@ -356,6 +363,7 @@
         text-ellipsis
         align-bottom
         whitespace-nowrap;
+        border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     }
 
     button {

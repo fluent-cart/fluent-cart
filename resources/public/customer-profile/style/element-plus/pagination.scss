@@ -1,38 +1,38 @@
 .el-pagination{
     .el-select {
-        @apply text-left w-[106px] m-0 font-medium text-[var(--fct-customer-dashboard-paginator-text-color)] #{!important};
+        @apply text-left w-[106px] m-0 font-medium text-[var(--fct-customer-dashboard-paginator-text-color,#565865)] #{!important};
         .el-input {
            @apply w-auto #{!important};
         }
         .el-input__wrapper,
         .el-select__wrapper {
-            @apply min-h-8 font-normal py-1.5 px-1.5 bg-gray-neutral border border-solid border-gray-outline rounded justify-start focus:shadow-none #{!important};
+            @apply min-h-8 font-normal py-1.5 px-1.5 bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded justify-start focus:shadow-none #{!important};
             box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
             &.is-hovering:not(.is-focused){
                 @apply shadow-none;
             }
         }
         .el-select__placeholder.is-transparent{
-            @apply text-system-mid #{!important};
+            @apply text-[var(--fct-customer-dashboard-text-color,#565865)] #{!important};
         }
         .el-select__caret{
-            @apply text-system-mid #{!important};
+            @apply text-[var(--fct-customer-dashboard-text-color,#565865)] #{!important};
         }
         .el-select__prefix,
         .el-select__suffix {
-            @apply text-[var(--fct-customer-dashboard-paginator-text-color)];
+            @apply text-[var(--fct-customer-dashboard-paginator-text-color,#565865)];
         }
         .el-select__placeholder {
-            @apply text-[var(--fct-customer-dashboard-paginator-text-color)];
+            @apply text-[var(--fct-customer-dashboard-paginator-text-color,#565865)];
         }
     }
     .el-input{
         &__inner {
-            @apply text-left w-[90px] m-0 font-medium text-system-mid;
+            @apply text-left w-[90px] m-0 font-medium text-[var(--fct-customer-dashboard-text-color,#565865)];
         }
         &__suffix-inner{
             .el-icon{
-                @apply text-system-dark #{!important};
+                @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] #{!important};
             }
             &:first-child {
                 @apply ml-0 #{!important};
@@ -40,7 +40,7 @@
         }
     }
     button{
-        @apply min-h-[28px] min-w-[28px] pt-0.5 h-auto text-system-mid #{!important};
+        @apply min-h-[28px] min-w-[28px] pt-0.5 h-auto text-[var(--fct-customer-dashboard-text-color,#565865)] #{!important};
     }
     &.is-background{
         @apply bg-transparent;
@@ -60,7 +60,7 @@
         .el-pager {
             @apply p-0;
             li {
-                @apply bg-white min-h-8 min-w-8 py-0 p-1 h-auto rounded text-sm font-medium leading-5 transition-all duration-200 border border-solid border-gray-outline hover:bg-gray-50 hover:text-system-dark;
+                @apply bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] min-h-8 min-w-8 py-0 p-1 h-auto rounded text-sm font-medium leading-5 transition-all duration-200 border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
                 &.is-active{
                     @apply text-[var(--fct-customer-dashboard-paginator-items-active-color)] bg-[var(--fct-customer-dashboard-paginator-items-active-bg)] border-[var(--fct-customer-dashboard-paginator-items-active-border)] #{!important};
                 }

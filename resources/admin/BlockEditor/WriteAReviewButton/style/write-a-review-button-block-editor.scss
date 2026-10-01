@@ -1,0 +1,33 @@
+.fct-write-a-review-button-block-editor {
+    // Shrink to the button. Without this the block's div fills the column and
+    // the selection outline claims width the button does not occupy.
+    @apply w-fit max-w-full;
+
+    // Inside a review container the button spans the column, so the block does.
+    &.is-inside-container {
+        @apply w-full;
+    }
+
+    // Canvas preview mirrors the frontend output: the block renders the
+    // Write a Review trigger (the form itself lives in the drawer), so the
+    // preview is the same button, styled like the public fct-review-cta-btn.
+    .fct-write-a-review-button-block-editor-cta {
+        // Mirrors the frontend .fct-review-cta-btn: a white outlined pill
+        // sized to its label. The frontend only stretches it inside the
+        // summary card (.fct-reviews-layout .fct-reviews-summary-write-btn),
+        // so the preview must not stretch it anywhere else — a full-width
+        // bar here promises a button the page will never render.
+        @apply inline-flex box-border justify-center items-center gap-1.5 px-4 py-2;
+        @apply text-sm font-medium text-gray-600 bg-white;
+        @apply border border-solid border-gray-300 rounded-md;
+
+        svg {
+            @apply w-4 h-4;
+        }
+
+        // Inside a review container the frontend does span the column.
+        &.is-full {
+            @apply flex w-full;
+        }
+    }
+}

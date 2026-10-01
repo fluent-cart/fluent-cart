@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Payments;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\App\Helpers\ProductAdminHelper;
 use FluentCart\App\Models\ProductVariation;
@@ -139,16 +140,19 @@ class PaymentReceipt
         foreach ($orderItems as $key => &$item) {
 
             $variant = $variantMap->firstWhere('id', $item['object_id']);
-            $mediaUrl = Vite::getAssetUrl('images/placeholder.svg');
+            // Receipts travel into emails and PDFs, where WebP is not safe
+            // (Outlook), so an image-less item gets the PNG placeholder.
+            $mediaUrl = '';
             if ($variant) {
-                $mediaUrl = $variant->thumbnail ?: (new ProductAdminHelper())->getFeaturedMedia($variant->product_detail->featured_media);
+                $detail = $variant->product_detail;
+                $mediaUrl = $variant->thumbnail ?: ($detail ? Arr::get((array) $detail->featured_media, 'url', '') : '');
                 //Image Check Test
                 //$mediaUrl = Arr::get($variant->media, 'meta_value.0.url', (new ProductAdminHelper())->getFeaturedMedia($variant->product_detail->featured_media));
             }
 
             Arr::set(
                 $this->order, 'order_items.' . $key . '.media_url',
-                $mediaUrl
+                $mediaUrl ?: Helper::getProductPlaceholderEmailUrl()
             );
 
             Arr::set(

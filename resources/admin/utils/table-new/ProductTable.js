@@ -1,7 +1,6 @@
 import Table from "@/utils/table-new/Table";
 import translate from "@/utils/translator/Translator";
-
-import {useRoute} from 'vue-router'
+import AppConfig from "@/utils/Config/AppConfig";
 
 class ProductTable extends Table {
 
@@ -26,6 +25,10 @@ class ProductTable extends Table {
     }
 
     getToggleableColumns() {
+        // The Reviews column links to a screen that redirects while the
+        // reviews module is off, so it is not offered then.
+        const reviewsActive = AppConfig.get('modules_settings.reviews.active') === 'yes';
+
         return [
             {
                 label: translate('Type'),
@@ -50,7 +53,11 @@ class ProductTable extends Table {
             {
                 label: translate('Date'),
                 value: 'post_date'
-            }
+            },
+            ...(reviewsActive ? [{
+                label: translate('Reviews'),
+                value: 'reviews'
+            }] : [])
         ];
     }
 

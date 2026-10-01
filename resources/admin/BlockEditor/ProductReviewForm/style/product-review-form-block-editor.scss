@@ -1,0 +1,8 @@
+.fct-review-form-block-editor {
+    // The canvas renders the block's real markup (ServerSideRender), so the
+    // storefront stylesheet does the work. Only the empty-state note is ours.
+    .fct-review-form-block-editor-hint {
+        @apply p-4 text-sm text-center text-gray-500;
+        @apply bg-gray-50 border border-dashed border-gray-300 rounded-lg;
+    }
+}

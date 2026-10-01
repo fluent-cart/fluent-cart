@@ -1088,6 +1088,7 @@ import ShippingComponent from "./Shipping.vue";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import Notify from "@/utils/Notify";
 import Arr from "@/utils/support/Arr";
+import Asset from "@/utils/support/Asset";
 import Alert from "@/Bits/Components/Alert.vue";
 import Rest from "@/utils/http/Rest";
 import UtmDetails from "@/Modules/Orders/Components/UtmDetails.vue";
@@ -1240,7 +1241,7 @@ export default {
       return "charge";
     },
     placeholderImage() {
-      return `${AppConfig.get('asset_url')}images/empty-image.svg`;
+      return Asset.productPlaceholder();
     },
     canSendPaymentReminder() {
       return this.canSendPaymentReminderFlag;

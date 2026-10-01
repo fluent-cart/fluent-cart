@@ -83,13 +83,15 @@ class StoreSettings implements ArrayableInterface
             'additional_address_field'             => 'yes',
             'hide_coupon_field'                    => 'no',
             'user_account_creation_mode'           => 'all',
-            'auto_login_after_account_creation'    => 'no',
+            'auto_login_after_account_creation'    => 'yes',
+            'require_customer_email_verification' => 'no',
             'checkout_page_id'                     => '',
             'custom_payment_page_id'               => '',
             'registration_page_id'                 => '',
             'login_page_id'                        => '',
             'cart_page_id'                         => '',
             'receipt_page_id'                      => '',
+            'order_review_page_id'                 => '',
             'shop_page_id'                         => '',
             'customer_profile_page_id'             => '',
             'customer_profile_page_slug'           => '',
@@ -102,6 +104,9 @@ class StoreSettings implements ArrayableInterface
             'store_state'                          => '',
             'show_relevant_product_in_single_page' => 'yes',
             'show_relevant_product_in_modal'       => '',
+            'show_reviews_in_single_page'          => 'yes',
+            'show_rating_in_shop'                  => 'yes',
+            'show_rating_in_relevant'              => 'yes',
             'order_mode'                           => 'test',
             'subscription_mode_guard'              => 'yes',
             'variation_view'                       => 'both',
@@ -144,7 +149,8 @@ class StoreSettings implements ArrayableInterface
             'customer_profile_page_id' => $this->getCustomerProfilePage(),
             'cart_page_id'             => $this->getCartPage(),
             'checkout_page_id'         => $this->getCheckoutPage(),
-            'receipt_page_id'          => $this->getReceiptPage()
+            'receipt_page_id'          => $this->getReceiptPage(),
+            'order_review_page_id'     => $this->getOrderReviewPage()
         ];
         $isProActive = App::isProActive();
         $proFeatureIcon = Vite::getAssetUrl('images/crown.svg');
@@ -893,6 +899,43 @@ class StoreSettings implements ArrayableInterface
                                 ]
                             ],
 
+                            'hr_order_review' => [
+                                'type'  => 'html',
+                                'value' => '<hr class="settings-divider">'
+                            ],
+
+                            'order_review_page_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'                 => [
+                                        'type'  => 'html',
+                                        'value' => '<span class="setting-label">' . __('Select Order Review Page', 'fluent-cart') . '</span>
+                                                            <div class="form-note">' . __("Select the page where customers will review the products they bought, from the link in their order email.", 'fluent-cart') . '</div>'
+                                    ],
+                                    'order_review_page_id'  => [
+                                        'wrapperClass' => 'col-span-2',
+                                        'label'        => false,
+                                        'page_title'   => __('Review Your Order', 'fluent-cart'),
+                                        'type'         => 'component',
+                                        'component'    => 'StoreSettings/PageSelector',
+                                        'page_key'     => 'order_review_page_id',
+                                        'preview_link' => $previewLinks['order_review_page_id'],
+                                        'hide_note'    => true,
+                                        'options'      => $pages,
+                                        'value'        => '',
+                                        'note'         => \FluentCart\App\Helpers\Helper::getShortcodeInstructionString(
+                                            '[fluent_cart_order_review]',
+                                            __('Review Your Order', 'fluent-cart')
+                                        ),
+                                    ],
+                                ]
+                            ],
+
                             'hr4' => [
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
@@ -952,7 +995,7 @@ class StoreSettings implements ArrayableInterface
                                     'label'  => [
                                         'type'  => 'html',
                                         'value' => '<span class="setting-label">' . __('Single Product Setup', 'fluent-cart') . '</span>
-                                                            <div class="form-note">' . __("Control the display of relevant information.", 'fluent-cart') . '</div>'
+                                                            <div class="form-note">' . __("Choose which sections to display on the single product page.", 'fluent-cart') . '</div>'
                                     ],
                                     'fields' => [
                                         'type'            => 'grid',
@@ -971,6 +1014,15 @@ class StoreSettings implements ArrayableInterface
                                                 "label" => __('Show Relevant In Product Modal', 'fluent-cart'),
                                                 "type"  => "checkbox",
                                                 "value" => "no"
+                                            ],
+                                            "show_reviews_in_single_page"          => [
+                                                "label" => __('Show Reviews In Single Page', 'fluent-cart'),
+                                                "type"  => "checkbox",
+                                                "value" => "yes"
+                                            ],
+                                            "show_reviews_note"                    => [
+                                                "type"  => "html",
+                                                "value" => '<div class="form-note">' . __('For block themes, add the Product Reviews block to your Single Product template to display reviews on your product page.', 'fluent-cart') . '</div>'
                                             ],
                                         ]
                                     ]
@@ -1135,6 +1187,51 @@ class StoreSettings implements ArrayableInterface
 
                                 ]
                             ],
+
+                            'hr_product_slug' => [
+                                'type'  => 'html',
+                                'value' => '<hr class="settings-divider">'
+                            ],
+
+                            'product_rating_grid' => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'  => [
+                                        'type'  => 'html',
+                                        'value' => sprintf(
+                                            '<span class="setting-label">%1$s</span><div class="form-note">%2$s</div>',
+                                            __('Product Rating', 'fluent-cart'),
+                                            __('Show star ratings when reviews are enabled.', 'fluent-cart')
+                                        )
+                                    ],
+                                    'fields' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'schema'          => [
+                                            "show_rating_in_shop" => [
+                                                "label" => __('Show Rating in Shop', 'fluent-cart'),
+                                                "type"  => "checkbox",
+                                                "value" => "yes"
+                                            ],
+                                            "show_rating_in_relevant" => [
+                                                "label" => __('Show Rating in Relevant Products', 'fluent-cart'),
+                                                "type"  => "checkbox",
+                                                "value" => "yes"
+                                            ],
+                                        ]
+                                    ]
+
+                                ]
+                            ],
                         ],
                     ],
                     'compliance'           => [
@@ -1147,25 +1244,97 @@ class StoreSettings implements ArrayableInterface
                             'md'      => 1,
                         ],
                         'schema'          => [
-                            'auto_login_after_account_creation' => [
-                                'wrapperClass' => 'fct-compliance-auto-login',
-                                'label'      => __('Login after account creation', 'fluent-cart'),
-                                'type'       => 'radio',
-                                'value'      => 'no',
-                                'attributes' => [
-                                    'aria-label' => __('Login after account creation', 'fluent-cart'),
-                                ],
-                                'options'    => [
-                                    [
-                                        'label' => __("Don't auto login after account creation", 'fluent-cart'),
-                                        'value' => 'no',
+                            'email_verification_grid' => [
+                                'type' => 'grid',
+                                'disable_nesting' => true,
+                                'columns' => ['default' => 1, 'md' => 3],
+                                'wrapperClass' => 'items-start',
+                                'schema' => [
+                                    'label' => [
+                                        'type' => 'html',
+                                        'value' => sprintf(
+                                            '<span class="setting-label">%1$s</span><div class="form-note">%2$s</div>',
+                                            esc_html__('Customer email verification', 'fluent-cart'),
+                                            esc_html__('Confirm email ownership before customers access their portal and saved checkout addresses.', 'fluent-cart')
+                                        ),
                                     ],
-                                    [
-                                        'label' => __('Enable auto login after account creation', 'fluent-cart'),
-                                        'value' => 'yes',
+                                    'fields' => [
+                                        'type' => 'grid',
+                                        'disable_nesting' => true,
+                                        'columns' => ['default' => 1],
+                                        'wrapperClass' => 'md:col-span-2',
+                                        'schema' => [
+                                            'require_customer_email_verification' => [
+                                                'wrapperClass' => 'fct-compliance-auto-login',
+                                                'label' => false,
+                                                'type' => 'radio',
+                                                'value' => 'no',
+                                                'attributes' => [
+                                                    'aria-label' => __('Customer email verification', 'fluent-cart'),
+                                                ],
+                                                'options' => [
+                                                    [
+                                                        'label' => __('Required', 'fluent-cart'),
+                                                        'value' => 'yes',
+                                                    ],
+                                                    [
+                                                        'label' => __('Not required', 'fluent-cart'),
+                                                        'value' => 'no',
+                                                    ],
+                                                ],
+                                                'note' => __('When not required, new checkout accounts are linked to their purchases immediately.', 'fluent-cart'),
+                                            ],
+                                        ],
                                     ],
                                 ],
-                                'note'       => __('Choose whether customers are logged in automatically when FluentCart creates their account during registration or after checkout.', 'fluent-cart'),
+                            ],
+                            'compliance_divider' => [
+                                'type' => 'html',
+                                'value' => '<hr class="settings-divider">',
+                            ],
+                            'account_login_grid' => [
+                                'type' => 'grid',
+                                'disable_nesting' => true,
+                                'columns' => ['default' => 1, 'md' => 3],
+                                'wrapperClass' => 'items-start',
+                                'schema' => [
+                                    'label' => [
+                                        'type' => 'html',
+                                        'value' => sprintf(
+                                            '<span class="setting-label">%1$s</span><div class="form-note">%2$s</div>',
+                                            esc_html__('Login after account creation', 'fluent-cart'),
+                                            esc_html__('Choose how customers sign in after registering or completing checkout.', 'fluent-cart')
+                                        ),
+                                    ],
+                                    'fields' => [
+                                        'type' => 'grid',
+                                        'disable_nesting' => true,
+                                        'columns' => ['default' => 1],
+                                        'wrapperClass' => 'md:col-span-2',
+                                        'schema' => [
+                                            'auto_login_after_account_creation' => [
+                                                'wrapperClass' => 'fct-compliance-auto-login',
+                                                'label' => false,
+                                                'type' => 'radio',
+                                                'value' => 'yes',
+                                                'attributes' => [
+                                                    'aria-label' => __('Login after account creation', 'fluent-cart'),
+                                                ],
+                                                'options' => [
+                                                    [
+                                                        'label' => __('Log in automatically', 'fluent-cart'),
+                                                        'value' => 'yes',
+                                                    ],
+                                                    [
+                                                        'label' => __('Let customers log in', 'fluent-cart'),
+                                                        'value' => 'no',
+                                                    ],
+                                                ],
+                                                'note' => __('Email verification still applies when required above.', 'fluent-cart'),
+                                            ],
+                                        ],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -1543,6 +1712,23 @@ class StoreSettings implements ArrayableInterface
             ];
         }
 
+        // Review settings only apply while the reviews module is active —
+        // hide them (and their dividers) otherwise: the Product Rating
+        // section, the "Show Reviews In Single Page" toggle with its note,
+        // and the Order Review page selector. The stored values survive:
+        // save() merges the submitted form over what is stored, so a field
+        // left off the form keeps its value for when the module returns.
+        if (!ModuleSettings::isActive('reviews')) {
+            unset(
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['hr_product_slug'],
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['product_rating_grid'],
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['product_settings_grid']['schema']['fields']['schema']['show_reviews_in_single_page'],
+                $fields['setting_tabs']['schema']['single_product_setup']['schema']['product_settings_grid']['schema']['fields']['schema']['show_reviews_note'],
+                $fields['setting_tabs']['schema']['pages_setup']['schema']['hr_order_review'],
+                $fields['setting_tabs']['schema']['pages_setup']['schema']['order_review_page_grid']
+            );
+        }
+
         return apply_filters("fluent_cart/store_settings/fields", $fields, []);
     }
 
@@ -1658,6 +1844,7 @@ class StoreSettings implements ArrayableInterface
                 'login_page_id',
                 'cart_page_id',
                 'receipt_page_id',
+                'order_review_page_id',
                 'shop_page_id',
                 'customer_profile_page_id',
                 'customer_profile_page_slug',
@@ -1728,6 +1915,26 @@ class StoreSettings implements ArrayableInterface
     public function getReceiptPage(): string
     {
         if ($pageId = $this->getReceiptPageId()) {
+            if (Pages::isPage($pageId)) {
+                return $this->getPageLink($pageId);
+            }
+        }
+        return home_url();
+    }
+
+    public function getOrderReviewPageId()
+    {
+        return Arr::get($this->storeSettings, 'order_review_page_id');
+    }
+
+    /**
+     * The page hosting [fluent_cart_order_review], or home_url() when the store
+     * has not picked one — Order::getOrderReviewUrl() then falls back to the
+     * ?fluent-cart=order-review route, which needs no page at all.
+     */
+    public function getOrderReviewPage(): string
+    {
+        if ($pageId = $this->getOrderReviewPageId()) {
             if (Pages::isPage($pageId)) {
                 return $this->getPageLink($pageId);
             }
@@ -1906,11 +2113,7 @@ class StoreSettings implements ArrayableInterface
                 'label' => __('Inherit from the active theme', 'fluent-cart'),
                 'value' => ColorPalette::SOURCE_THEME,
                 'icon'  => 'PaintLine',
-                'note'  => sprintf(
-                    '%1$s %2$s',
-                    __('The storefront palette is rebuilt from your theme, and follows it when the theme changes.', 'fluent-cart'),
-                    ThemePalette::sourceLabel()
-                ),
+                'note'  => __('FluentCart uses your active theme\'s colors for the storefront. If they don\'t come through as expected, choose Customize to set them yourself.', 'fluent-cart'),
             ],
             [
                 'label' => __('Customize', 'fluent-cart'),
@@ -2051,8 +2254,11 @@ class StoreSettings implements ArrayableInterface
             return __('The active theme publishes nothing to inherit, so the storefront keeps FluentCart\'s own colors.', 'fluent-cart');
         }
 
+        // Only a colour with no hex anywhere is unpreviewable. A live
+        // reference with a hex fallback — what the theme-settings readers and
+        // Blocksy write — previews as that fallback.
         foreach (ThemePalette::resolve() as $value) {
-            if (!sanitize_hex_color((string)$value)) {
+            if ((string)$value !== '' && ThemePalette::measurable((string)$value) === '') {
                 return __('This theme publishes its palette as CSS variables. The storefront reads them, but they cannot be resolved here — the preview shows FluentCart\'s colors in their place.', 'fluent-cart');
             }
         }
@@ -2080,11 +2286,13 @@ class StoreSettings implements ArrayableInterface
         $roles = [];
 
         foreach (ThemePalette::resolve() as $role => $value) {
-            // A theme that publishes `var(--x)` is written to the storefront
-            // verbatim and resolved by the browser there, but that property is
-            // not declared in wp-admin. Unpreviewable, so leave it out and let
-            // the slot fall back to its own default.
-            $hex = sanitize_hex_color((string)$value);
+            // A theme that publishes a bare `var(--x)` is written to the
+            // storefront verbatim and resolved by the browser there, but that
+            // property is not declared in wp-admin. Unpreviewable, so leave it
+            // out and let the slot fall back to its own default. A reference
+            // with a hex fallback (`var(--x, #hex)`) previews as that hex —
+            // the same colour the storefront measures it by.
+            $hex = ThemePalette::measurable((string)$value);
 
             if ($hex) {
                 $roles[$role] = $hex;

@@ -178,6 +178,22 @@ class ColorPalette
                 'group'   => 'button',
                 'role'    => 'button_text',
             ],
+            // Left unset, every primary button hovers in its resting colour —
+            // the stylesheets fall back to it — which is how they always hovered.
+            'btn_hover_bg_color'           => [
+                'var'     => '--fct-btn-hover-bg-color',
+                'label'   => __('Button hover background', 'fluent-cart'),
+                'note'    => __('What the primary buttons turn to under the pointer.', 'fluent-cart'),
+                'group'   => 'button',
+                'role'    => 'button_hover_bg',
+            ],
+            'btn_hover_text_color'         => [
+                'var'     => '--fct-btn-hover-text-color',
+                'label'   => __('Button hover text', 'fluent-cart'),
+                'note'    => '',
+                'group'   => 'button',
+                'role'    => 'button_hover_text',
+            ],
             'secondary_btn_bg_color'       => [
                 'var'     => '--fct-secondary-btn-bg-color',
                 'label'   => __('Secondary button background', 'fluent-cart'),
@@ -325,6 +341,8 @@ class ColorPalette
             'text_muted'       => __('Muted text', 'fluent-cart'),
             'text_placeholder' => __('Placeholder text', 'fluent-cart'),
             'button_text'      => __('Button text', 'fluent-cart'),
+            'button_hover_bg'  => __('Button hover', 'fluent-cart'),
+            'button_hover_text' => __('Button hover text', 'fluent-cart'),
             'secondary_button_bg'   => __('Secondary button', 'fluent-cart'),
             'secondary_button_text' => __('Secondary button text', 'fluent-cart'),
         ];

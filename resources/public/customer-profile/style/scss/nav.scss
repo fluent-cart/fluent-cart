@@ -1,6 +1,6 @@
 /*=== tab content =====*/
 .fct-customer-dashboard-navs-wrap {
-  @apply w-[272px] flex-none border border-l-0 border-y-0 border-solid border-[var(--fct-customer-dashboard-border-color)] relative transition-all duration-200 ease-in-out;
+  @apply w-[272px] flex-none border border-l-0 border-y-0 border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] relative transition-all duration-200 ease-in-out;
 
   #fct-customer-menu-container {
     @apply p-5;
@@ -40,7 +40,7 @@
     .fct-nav-compact-toggle-wrap {
         @apply absolute top-[50px] right-[-12px] z-[2];
         button {
-            @apply bg-white border-0 p-0 m-0 w-6 h-6 rounded-[6px] border border-solid border-gray-outline flex items-center justify-center cursor-pointer min-h-[auto];
+            @apply bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] border-0 p-0 m-0 w-6 h-6 rounded-[6px] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] flex items-center justify-center cursor-pointer min-h-[auto];
             box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03);
             svg {
                 @apply transition-transform duration-200 ease-in-out;
@@ -54,6 +54,12 @@
 
         .fct-compact-toggle-icon {
             @apply block;
+
+            // The glyph's fill is hard-coded in the markup (#565865); CSS
+            // outranks the attribute, so it follows the palette like the text.
+            path {
+                fill: var(--fct-customer-dashboard-text-color, #565865);
+            }
         }
     }
 }
@@ -69,18 +75,19 @@
 .fct-customer-navs {
   @apply flex-col gap-0 items-start p-0 m-0;
   .fct-customer-nav-link {
-    @apply no-underline flex items-center gap-2 text-[var(--fct-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none transition-none hover:bg-[var(--fct-customer-dashboard-nav-active-bg-color)] hover:text-[var(--fct-customer-dashboard-nav-active-text-color)];
+    @apply no-underline flex items-center gap-2 text-[var(--fct-customer-dashboard-nav-text-color,#565865)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none transition-none hover:bg-[var(--fct-customer-dashboard-nav-active-bg-color,#F5F6F7)] hover:text-[var(--fct-customer-dashboard-nav-active-text-color,#253241)];
     .fct-customer-nav-link-icon {
       @apply flex-shrink-0 max-h-5 max-w-5;
     }
   }
 
   .fct-customer-nav-tooltip {
-    @apply absolute left-full z-[3] top-1/2 bg-white py-1 px-2.5 text-sm font-normal transition-all duration-200 leading-[20px] inline-block text-[var(--fct-customer-dashboard-nav-text-color)] border border-solid border-gray-outline rounded whitespace-nowrap opacity-0 invisible transition-all duration-200 ease-in-out hidden;
+    @apply absolute left-full z-[3] top-1/2 bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] py-1 px-2.5 text-sm font-normal transition-all duration-200 leading-[20px] inline-block text-[var(--fct-customer-dashboard-nav-text-color,#565865)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] whitespace-nowrap opacity-0 invisible transition-all duration-200 ease-in-out hidden;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     box-shadow: 0 12px 24px 0 rgba(14, 18, 27, 0.06), 0 1px 2px 0 rgba(14, 18, 27, 0.03);
     transform: translateY(-50%);
     &::before {
-      @apply absolute left-[-4px] top-1/2 w-1.5 h-1.5 bg-white border border-solid border-gray-outline border-t-0 border-r-0;
+      @apply absolute left-[-4px] top-1/2 w-1.5 h-1.5 bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 border-r-0;
       transform: translateY(-50%) rotate(45deg);
       content: "";
     }
@@ -94,14 +101,14 @@
     &:before {
       content: '';
       transform: translateY(-50%);
-      @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fct-customer-dashboard-nav-active-bar-color)] rounded-tr-xs rounded-br-xs;
+      @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fct-customer-dashboard-nav-active-bar-color,#253241)] rounded-tr-xs rounded-br-xs;
     }
     &.active_customer_menu {
       &:before {
         @apply w-1;
       }
       .fct-customer-nav-link {
-        @apply bg-[var(--fct-customer-dashboard-nav-active-bg-color)] text-[var(--fct-customer-dashboard-nav-active-text-color)];
+        @apply bg-[var(--fct-customer-dashboard-nav-active-bg-color,#F5F6F7)] text-[var(--fct-customer-dashboard-nav-active-text-color,#253241)];
       }
     }
 
@@ -120,7 +127,7 @@
 .fct-customer-page-title {
     @apply mb-6;
     h1 {
-        @apply text-[24px] font-semibold text-system-dark leading-[32px] m-0;
+        @apply text-[24px] font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] leading-[32px] m-0;
     }
 }
 .fct-customer-root-container{
@@ -132,20 +139,21 @@
 // customer menu toggle
 #fct-customer-menu-container {
   #fct-customer-menu-toggle {
-    @apply bg-gray-50 focus:bg-gray-50;
+    @apply bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)] focus:bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)];
   }
 }
 
 #fct-customer-menu-toggle {
-    @apply hidden w-9 h-9 justify-center items-center cursor-pointer transition duration-100 hover:bg-gray-50 rounded p-0 focus:outline-none focus:bg-gray-50;
+    @apply hidden w-9 h-9 justify-center items-center cursor-pointer transition duration-100 hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] rounded p-0 focus:outline-none focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)];
     svg{
-        @apply w-5 h-5 text-system-dark;
+        @apply w-5 h-5 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
     }
 }
 
 @media (max-width: 806px) {
     #fct-customer-menu-holder{
-        @apply absolute top-[42px] left-0 hidden bg-white rounded p-3 border border-solid border-gray-divider shadow-lg w-[210px] h-auto;
+        @apply absolute top-[42px] left-0 hidden bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] p-3 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] shadow-lg w-[210px] h-auto;
+        border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
         .fct-customer-navs-wrap {
             @apply pt-0;
         }

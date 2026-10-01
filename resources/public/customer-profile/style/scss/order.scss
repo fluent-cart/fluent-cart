@@ -1,7 +1,7 @@
 .order-content-only-mobile-item {
-  @apply grid gap-2 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  @apply grid gap-2 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
   .link{
-    @apply text-system-dark no-underline hover:underline !important;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline hover:underline !important;
   }
   .item-footer-content{
     @apply inline-flex gap-2 items-center justify-between;
@@ -16,7 +16,7 @@
 
 // subscription order
 .subscription-only-mobile-item {
-  @apply grid gap-3 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  @apply grid gap-3 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
   .fct-customer-payment-meta-info {
     @apply items-start mb-1 !important;
   }
@@ -26,16 +26,16 @@
   .item-header {
     @apply flex items-center justify-between;
     .text {
-      @apply text-[13px] text-system-light;
+      @apply text-[13px] text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
     }
     .fct-card-info {
       .text {
-        @apply text-system-mid;
+        @apply text-[var(--fct-customer-dashboard-text-color,#565865)];
       }
     }
   }
   .fct-customer-payment-info {
-    @apply text-system-light text-[13px];
+    @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] text-[13px];
   }
   .item-footer-content {
     @apply flex gap-2 items-center;
@@ -45,7 +45,7 @@
 
 // license
 .license-only-mobile-item {
-  @apply grid gap-3 p-3 border border-solid border-x-0 border-gray-outline border-t-0 last:border-b-0;
+  @apply grid gap-3 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
   .fct-customer-orders-items-title {
     @apply text-sm leading-[20px];
   }
@@ -53,15 +53,15 @@
     @apply inline-flex items-center gap-2;
   }
   .text-meta {
-    @apply text-[13px] leading-[20px] text-system-mid;
+    @apply text-[13px] leading-[20px] text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
   .fct-customer-payment-meta-info {
     @apply items-start !important;
   }
   .fct-expiration-info {
-    @apply text-system-light mb-2;
+    @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] mb-2;
     .text-meta {
-      @apply text-system-light;
+      @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
     }
   }
 }

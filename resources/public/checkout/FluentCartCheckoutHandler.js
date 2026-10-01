@@ -30,6 +30,7 @@ class FluentCartCheckoutHandler {
     #orderNotesWrapper;
     #isZeroPayment = false;
     #hasSubscriptions = false;
+    #isSubmitting = false;
     checkoutUiService;
     translate = window.fluentcart.$t;
     #errorConfig = {
@@ -320,8 +321,16 @@ class FluentCartCheckoutHandler {
         this.form.classList.add("fluent_cart_" + state);
     }
 
+    isSubmitting() {
+        return this.#isSubmitting;
+    }
+
+    endSubmission() {
+        this.#isSubmitting = false;
+    }
+
     async handleOrder(e) {
-        if (this.checkoutUiService.isCheckoutButtonDisabled()) {
+        if (this.isSubmitting() || this.checkoutUiService.isCheckoutButtonDisabled()) {
             return;
         }
         const errorMessages = document.querySelectorAll('.fct-error-message');
@@ -337,7 +346,25 @@ class FluentCartCheckoutHandler {
             return false;
         }
 
+        this.#isSubmitting = true;
         this.#paymentLoader.disableCheckoutButton(this.translate("Processing Order..."));
+
+        // Safari drops the user gesture across any await, so a wallet sheet has to
+        // start opening here — still inside the click — not after the order request.
+        const preparations = [];
+        window.dispatchEvent(new CustomEvent("fluent_cart_before_checkout_" + this.payMethod, {
+            detail: {
+                // A rejection vetoes too — collection state is unknown.
+                waitFor: (promise) => preparations.push(
+                    Promise.resolve(promise).catch(() => false)
+                )
+            }
+        }));
+
+        if (preparations.length && (await Promise.all(preparations)).includes(false)) {
+            this.cleanupAfterProcessing();
+            return false;
+        }
 
         const loaderElement = '<div class="fct-loader-spinner"></div>';
         let processingDiv = document.querySelector('.fct-order-processing');
@@ -354,13 +381,18 @@ class FluentCartCheckoutHandler {
 
         let proceed = true;
         if (Array.isArray(callbacks)) {
-            for (let callback of callbacks) {
-                if (typeof callback === "function") {
-                    let result = await callback({
-                        paymentLoader: this.#paymentLoader
-                    });
-                    proceed = proceed && result;
+            try {
+                for (let callback of callbacks) {
+                    if (typeof callback === "function") {
+                        let result = await callback({
+                            paymentLoader: this.#paymentLoader
+                        });
+                        proceed = proceed && result;
+                    }
                 }
+            } catch (error) {
+                this.cleanupAfterProcessing();
+                return false;
             }
         }
 
@@ -633,6 +665,7 @@ class FluentCartCheckoutHandler {
     }
 
     cleanupAfterProcessing() {
+        this.#isSubmitting = false;
         const processingDiv = document.querySelector('.fct-order-processing');
         if (processingDiv) {
             processingDiv.classList.add('fct-loader-hidden');

@@ -5,7 +5,6 @@ namespace FluentCart\App\Services\Renderer;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Cart;
 use FluentCart\Framework\Support\Arr;
-use FluentCart\App\Vite;
 
 class CartItemRenderer
 {
@@ -154,9 +153,8 @@ class CartItemRenderer
     public function renderImage()
     {
         $image = Arr::get($this->item, 'featured_media');
-        if (!$image) {
-            $image = Vite::getAssetUrl('images/placeholder.svg');
-        }
+        // Also maps the old generic icon a pre-existing cart row may still store.
+        $image = Helper::productImageOrPlaceholder($image);
         $href = Arr::get($this->item, 'view_url', '');
         $altText = sprintf(
                 /* translators: %s: product title */

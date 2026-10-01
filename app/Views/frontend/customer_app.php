@@ -14,39 +14,51 @@
          role="main"
          aria-label="<?php esc_attr_e('Customer profile', 'fluent-cart'); ?>"
     >
-        <div id="fct-customer-loader"
-             style="position: absolute; left: 0;top: 0;width: 100%;height: 100%;z-index: 4;background: #ffffff;display: flex;gap: 16px;"
-             aria-hidden="true">
-            <div class="fct-customer-loader-left" style="max-width: 272px;width: 100%;flex: none;">
-                <div class="el-skeleton is-animated">
-                    <div class="el-skeleton__item el-skeleton__p is-first"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph is-last"></div>
-                </div>
-            </div>
-            <div class="fct-customer-loader-right" style="flex: 1">
-                <div class="el-skeleton is-animated">
-                    <div class="el-skeleton__item el-skeleton__p is-first"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
-                    <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph is-last"></div>
-                </div>
-            </div>
-        </div>
-
         <div class="fct-customer-dashboard-app-container fluent-cart-customer-profile-app">
+            <?php
+            // Sits inside the app container, so the portal's own border and
+            // radius frame it; the columns, divider and header rule mirror the
+            // mounted menu and content (customer-profile-global.scss).
+            ?>
+            <div id="fct-customer-loader"
+                 style="position: absolute; left: 0;top: 0;width: 100%;height: 100%;z-index: 4;background: var(--fct-customer-dashboard-card-bg, #ffffff);display: flex;"
+                 aria-hidden="true">
+                <div class="fct-customer-loader-left">
+                    <div class="fct-customer-loader-head el-skeleton is-animated">
+                        <div class="el-skeleton__item el-skeleton__circle"></div>
+                        <div class="fct-customer-loader-head-lines">
+                            <div class="el-skeleton__item el-skeleton__p" style="width: 70%"></div>
+                            <div class="el-skeleton__item el-skeleton__p" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <div class="fct-customer-loader-menu el-skeleton is-animated">
+                        <div class="el-skeleton__item el-skeleton__p is-first"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph is-last"></div>
+                    </div>
+                </div>
+                <div class="fct-customer-loader-right">
+                    <div class="el-skeleton is-animated">
+                        <div class="el-skeleton__item el-skeleton__p is-first"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 50%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 80%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph" style="width: 70%"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph"></div>
+                        <div class="el-skeleton__item el-skeleton__p el-skeleton__paragraph is-last"></div>
+                    </div>
+                </div>
+            </div>
+
             <?php do_action('fluent_cart/customer_menu'); ?>
             <div class="fct-customer-dashboard-main-content">
                 <?php do_action('fluent_cart/customer_app'); ?>

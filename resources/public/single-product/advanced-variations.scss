@@ -3,7 +3,8 @@
 
 /* Advanced Variations - Attribute Selectors */
 .fct-advanced-variation-wrap {
-  @apply flex flex-col gap-4 mb-4;
+  @apply flex flex-col gap-4;
+  margin-bottom: var(--fct-section-spacing, theme('spacing.4'));
 }
 
 /* Shared selector styles */
@@ -27,7 +28,8 @@
 
 .fct-attribute-selector {
   .fct-swatch-item {
-    @apply text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] inline-flex items-center justify-center border border-solid border-[var(--fct-single-product-border-color,theme('colors.gray.outline'))] rounded cursor-pointer transition-all duration-150 bg-[var(--fct-card-bg-color,#ffffff)] p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
+    @apply text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] inline-flex items-center justify-center border border-solid border-[var(--fct-single-product-border-color,theme('colors.gray.outline'))] cursor-pointer transition-all duration-150 bg-[var(--fct-card-bg-color,#ffffff)] p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
+    border-radius: var(--fct-variant-radius, theme('borderRadius.DEFAULT'));
 
     &:hover:not(.disabled):not(.selected) {
       border-color: var(--fct-single-product-active-border-color);
@@ -52,7 +54,8 @@
 .fct-attribute-selector {
   .fct-swatch-color,
   .fct-swatch-image {
-    @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden gap-2 bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border-transparent hover:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] hover:border-[var(--fct-single-product-active-border-color,theme('colors.primary.500'))] focus:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] focus:shadow-none;
+    @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium overflow-hidden gap-2 bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border-transparent hover:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] hover:border-[var(--fct-single-product-active-border-color,theme('colors.primary.500'))] focus:text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] focus:shadow-none;
+    border-radius: var(--fct-variant-radius, theme('borderRadius.md'));
 
     &:hover:not(.selected):not(.disabled) {
       @apply bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))];
@@ -112,7 +115,7 @@
          variation pill must not crop the design the shopper is choosing.
          object-contain overrides the base thumb's object-cover; portrait /
          landscape shots are contained inside the square, never cropped. */
-      @apply w-[72px] h-[72px] rounded bg-[var(--fct-card-bg-color,#ffffff)];
+      @apply w-[72px] h-[72px] rounded;
 
       img {
         @apply object-contain;
@@ -122,7 +125,8 @@
 }
 
 .fct-attribute-selector .fct-swatch-label {
-  @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium rounded-md overflow-hidden bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border border-solid border-transparent text-[var(--fct-single-product-secondary-text-color)];
+  @apply min-w-[60px] h-[35px] px-3 py-2 text-sm font-medium overflow-hidden bg-[var(--fct-secondary-bg-color,theme('colors.gray.50'))] border border-solid border-transparent text-[var(--fct-single-product-secondary-text-color)];
+  border-radius: var(--fct-variant-radius, theme('borderRadius.md'));
 
   &:hover:not(.selected):not(.disabled) {
     /* Grey lift on hover — same pattern as color/image swatches. */
@@ -163,7 +167,12 @@
   }
 
   .fct-custom-select__trigger {
-    @apply flex items-center justify-between gap-2 min-h-[38px] py-2 px-3 border border-solid border-gray-outline rounded-md bg-white cursor-pointer transition-colors duration-150 leading-none hover:border-gray-500;
+    @apply flex items-center justify-between gap-2 min-h-[38px] border border-solid border-gray-outline bg-white cursor-pointer transition-colors duration-150 leading-none hover:border-gray-500;
+    padding-top: var(--fct-input-padding-y, theme('spacing.2'));
+    padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
+    padding-left: var(--fct-input-padding-x, theme('spacing.3'));
+    padding-right: var(--fct-input-padding-x, theme('spacing.3'));
+    border-radius: var(--fct-input-radius, theme('borderRadius.md'));
   }
 
   .fct-custom-select__value {
@@ -178,7 +187,8 @@
   }
 
   .fct-custom-select__options {
-    @apply absolute left-0 right-0 bg-white border border-gray-outline border-solid rounded z-[50] max-h-[220px] py-1 overflow-y-auto mt-1;
+    @apply absolute left-0 right-0 bg-white border border-gray-outline border-solid z-[50] max-h-[220px] py-1 overflow-y-auto mt-1;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: none;
   }

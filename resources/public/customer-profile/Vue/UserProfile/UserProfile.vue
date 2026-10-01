@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loading" aria-live="polite" aria-hidden="true" class="border border-solid border-gray-outline rounded fct-customer-dashboard-layout-width">
+  <div v-if="loading" aria-live="polite" aria-hidden="true" class="border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded fct-customer-dashboard-layout-width">
     <el-skeleton class="px-5 py-5" :loading="loading" :rows="2" animated>
       <template #template>
         <div class="fct-form-container">

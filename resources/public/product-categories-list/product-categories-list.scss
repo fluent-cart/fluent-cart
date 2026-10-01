@@ -1,3 +1,5 @@
+@config "../../styles/tailwind/scales.config.js";
+
 .fct-product-categories-list {
   .fct-categories-list {
     .fct-category-item {
@@ -24,7 +26,7 @@
       align-items: center;
       justify-content: center;
       padding: 0 0.6em;
-      border-radius: 0 4px 4px 0;
+      border-radius: 0 var(--fct-input-radius, theme('borderRadius.xs')) var(--fct-input-radius, theme('borderRadius.xs')) 0;
       background-color: #EAECF0;
       color: #2F3448;
       cursor: pointer;

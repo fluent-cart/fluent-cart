@@ -156,6 +156,16 @@ class OrderItem extends Model
         return $this->belongsTo(ProductDownload::class, 'post_id', 'post_id');
     }
 
+    /**
+     * All reviews of the product this line item points to — keyed on
+     * post_id, not on the item itself, so whereDoesntHave() over it
+     * expresses "the customer never reviewed this product".
+     */
+    public function product_reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'post_id', 'post_id');
+    }
+
     public function createItem($orderItems)
     {
         return $this->belongsTo(ProductVariation::class, 'variation_id', 'id');

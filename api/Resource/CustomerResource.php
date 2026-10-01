@@ -6,6 +6,7 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Collection;
@@ -424,20 +425,24 @@ class CustomerResource extends BaseResourceApi
 
         $currentUser = get_user_by('ID', get_current_user_id());
 
-        // Reading the current customer must not claim a record by email.
+        // With verification enabled, reading the current customer must not claim a record by email.
         $existingCustomer = Customer::query()->where('user_id', $currentUser->ID)
             ->orderBy('id', 'ASC')
             ->with(['billing_address', 'shipping_address'])
             ->first();
+
+        if (!$existingCustomer && !EmailVerificationService::isEnabled()) {
+            $existingCustomer = static::claimUnlinkedCustomerByEmail($currentUser);
+        }
 
         if ($existingCustomer) {
             static::$currentCustomerRuntimeCache = $existingCustomer;
             return $existingCustomer;
         }
 
-        if (!$createIfNotExists || Customer::query()->where('email', $currentUser->user_email)->exists()) {
-            // Do not create a duplicate or expose an unclaimed customer to a getter.
-            // Email confirmation links the existing row before dashboard access.
+        if (!$createIfNotExists || (EmailVerificationService::isEnabled() && Customer::query()->where('email', $currentUser->user_email)->exists())) {
+            // With verification enabled, confirmation links an existing guest row.
+            // Otherwise an explicitly requested profile is separate from guest history.
             return null;
         }
 
@@ -464,6 +469,30 @@ class CustomerResource extends BaseResourceApi
 
         return static::$currentCustomerRuntimeCache;
 
+    }
+
+    private static function claimUnlinkedCustomerByEmail(\WP_User $user): ?Customer
+    {
+        if (!$user->user_email) {
+            return null;
+        }
+
+        $unlinked = Customer::query()->where('email', $user->user_email)
+            ->unclaimed()
+            ->orderBy('id', 'ASC')
+            ->first();
+
+        if (!$unlinked) {
+            return null;
+        }
+
+        Customer::query()->where('id', $unlinked->id)->unclaimed()->update(['user_id' => $user->ID]);
+
+        // A concurrent request for the same account may have won the update.
+        return Customer::query()->where('user_id', $user->ID)
+            ->orderBy('id', 'ASC')
+            ->with(['billing_address', 'shipping_address'])
+            ->first();
     }
 
     private static function resolveCustomerName(array $data): array

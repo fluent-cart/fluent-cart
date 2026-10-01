@@ -52,10 +52,9 @@ class CustomerSubscriptionController extends BaseFrontendController
         // Query the Subscription model to retrieve subscriptions for the logged-in customer
         // Include associated order and product data using 'with' for eager loading
         // Sort the results by 'id' in descending order and fetch the data
-        $subscriptions = Subscription::query()
+        $subscriptions = Subscription::visibleToCustomer()
             ->where('customer_id', $customer->id)
             ->with(['product'])
-            ->whereNotIn('status', [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])
             ->orderBy('id', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -99,7 +98,7 @@ class CustomerSubscriptionController extends BaseFrontendController
             ->where('uuid', $subscription_uuid)
             ->first();
 
-        if (!$subscription || in_array($subscription->status, [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])) {
+        if (!$subscription || !$subscription->isVisibleToCustomer()) {
             return $this->sendError([
                 'message' => __('Subscription not found', 'fluent-cart')
             ]);

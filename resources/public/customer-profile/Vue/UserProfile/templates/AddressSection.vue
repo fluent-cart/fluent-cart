@@ -62,7 +62,7 @@
         </li>
       </ul>
 
-      <div v-else class="text-sm text-system-mid" role="status" aria-live="polite">
+      <div v-else class="text-sm text-[var(--fct-customer-dashboard-text-color,#565865)]" role="status" aria-live="polite">
         <!-- translators: 1: address type -->
         {{ translate(`No %1$s address found, please add a new address.`, addressType) }}
       </div>

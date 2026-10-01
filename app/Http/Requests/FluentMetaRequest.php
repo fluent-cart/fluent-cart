@@ -94,6 +94,9 @@ class FluentMetaRequest extends RequestGuard
             'additional_address_field'             => 'sanitize_text_field',
             'hide_coupon_field'                    => 'sanitize_text_field',
             'user_account_creation_mode'           => 'sanitize_text_field',
+            'require_customer_email_verification' => function ($value) {
+                return $value === 'no' ? 'no' : 'yes';
+            },
             'auto_login_after_account_creation'    => function ($value) {
                 return $value === 'yes' ? 'yes' : 'no';
             },
@@ -102,6 +105,7 @@ class FluentMetaRequest extends RequestGuard
             'custom_payment_page_id'               => 'intval',
             'cart_page_id'                         => 'intval',
             'receipt_page_id'                      => 'intval',
+            'order_review_page_id'                 => 'intval',
             'shop_page_id'                         => 'intval',
             'customer_profile_page_id'             => 'intval',
             'customer_profile_page_slug'           => 'sanitize_text_field',
@@ -119,6 +123,9 @@ class FluentMetaRequest extends RequestGuard
             'template_settings_checkout_page_mode' => 'sanitize_text_field',
             'show_relevant_product_in_single_page' => 'sanitize_text_field',
             'show_relevant_product_in_modal'       => 'sanitize_text_field',
+            'show_reviews_in_single_page'          => 'sanitize_text_field',
+            'show_rating_in_shop'                  => 'sanitize_text_field',
+            'show_rating_in_relevant'              => 'sanitize_text_field',
             'enable_early_payment_for_installment' => 'sanitize_text_field',
             'subscription_management_mode'         => function ($value) {
                 $value = sanitize_text_field($value);

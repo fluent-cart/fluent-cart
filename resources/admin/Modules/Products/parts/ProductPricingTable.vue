@@ -9,6 +9,7 @@ import { VueDraggableNext } from 'vue-draggable-next';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
+import Asset from "@/utils/support/Asset";
 import Clipboard from "@/utils/Clipboard";
 import VariantNavSummary from "@/Modules/Products/parts/VariantNavSummary.vue";
 import VariantNavList from "@/Modules/Products/parts/VariantNavList.vue";
@@ -455,7 +456,7 @@ const selectVariation = (item) => {
               />
               <img
                 v-else
-                :src="appVars.asset_url + 'images/empty-image.svg'"
+                :src="Asset.productPlaceholder()"
                 alt=""
                 class="fct-variant-thumb-readonly"
               />
@@ -571,7 +572,7 @@ const selectVariation = (item) => {
             />
             <img
               v-else
-              :src="appVars.asset_url + 'images/empty-image.svg'"
+              :src="Asset.productPlaceholder()"
               alt=""
               class="fct-variant-thumb-readonly"
             />

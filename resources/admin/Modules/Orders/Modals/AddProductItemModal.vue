@@ -47,7 +47,7 @@
                     </div>
                     <div class="content-img">
                       <img
-                          :src="product.featured_media != null ? product.featured_media : Asset.getUrl('images/placeholder-small.svg')"
+                          :src="product.featured_media != null ? product.featured_media : Asset.productPlaceholder()"
                           :alt="product.title"/>
                     </div>
                     <div class="content-title">
@@ -100,7 +100,7 @@
                             </div>
                             <div class="content-img">
                               <img
-                                  :src="productChildren.featured_media != null ? productChildren.featured_media : appVars.asset_url + 'images/placeholder-small.svg' "
+                                  :src="productChildren.featured_media != null ? productChildren.featured_media : Asset.productPlaceholder()"
                                   :alt="productChildren.title"/>
                             </div>
                           </div>

@@ -1,0 +1,1056 @@
+@config "./product-review-list-block-editor.config.js";
+@tailwind utilities;
+
+/* The review row, as the editor draws it.
+ *
+ * Editor-only. The page renders through ReviewThreadMarkup and wears the
+ * storefront's own review styles, which the editor never loads — so the row
+ * would otherwise appear unstyled while the list around it looks finished.
+ * These rules reproduce that row: the same class names the server emits, given
+ * the same shape, so what is laid out here is what ships.
+ *
+ * Not an import of the storefront sheet: that one is 1600 lines, carries a
+ * Tailwind config and a lightbox, and none of it belongs in the editor bundle.
+ *
+ * Every size here is reviews.css's own, read out of the compiled file rather
+ * than guessed. Sizes especially: an element the page sizes explicitly and the
+ * canvas does not inherits the theme's body size instead, which is how the
+ * review text came out bigger in the editor than on the page.
+ */
+
+.fct-review-list-block-editor {
+
+    /* The page gets this gap from .fct-reviews-list-header's own margin, which
+       is the list's markup and so does not exist in the canvas — without it
+       the first review's name line sits flush against the star chips.
+     *
+     * Put on the inner-blocks container rather than as a margin on the header
+     * group: a margin there is one editor rule away from being reset, and the
+     * gap belongs between the list's top-level blocks whichever ones an editor
+     * leaves in place. Scoped through .block-editor-inner-blocks, which only
+     * the list's own <InnerBlocks /> renders — the nested groups carry
+     * .block-editor-block-list__layout too, and a blanket rule would turn the
+     * header row into a column. */
+    .fct-reviews-block-skeleton-list > .block-editor-inner-blocks > .block-editor-block-list__layout {
+        display: flex;
+        flex-direction: column;
+        /* .fct-reviews-list-header's own margin on the page. */
+        gap: 16px;
+    }
+
+    /* The header blocks, given the storefront's own numbers — read out of the
+       compiled reviews.css rather than guessed, so the canvas header measures
+       what the page's does. The editor never loads that sheet, and the classes
+       on these blocks are the storefront's, so without this they arrive bare. */
+    .fct-reviews-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--fct-single-product-primary-text-color, #1f2937);
+    }
+
+    .fct-reviews-controls {
+        margin-bottom: 16px;
+    }
+
+    .fct-reviews-filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+
+        .fct-filter-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 10px;
+            border: 1px solid #d6dae1;
+            border-radius: 8px;
+            background: #fff;
+            color: #565865;
+            font-size: 13px;
+        }
+
+        .fct-filter-chip.active {
+            background: #eaecf0;
+        }
+    }
+
+    /* The pager, given the storefront's own numbers. Spans rather than
+       buttons in the canvas, so the sheet keys on the classes, not the tag. */
+    .fct-reviews-page-fraction {
+        padding: 0 6px;
+        font-size: 14px;
+        color: #374151;
+        white-space: nowrap;
+    }
+
+    /* The page's own hit area, mirrored so the canvas shows the real spacing:
+       a 24px box drawing a 10px dot. */
+    .fct-reviews-page-bullet {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 24px;
+        height: 24px;
+
+        &::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        &.active::before {
+            background: #1f2937;
+            border-color: #1f2937;
+        }
+    }
+
+    .fct-reviews-pagination-inner.is-bullets {
+        gap: 0;
+    }
+
+    .fct-reviews-pagination.is-justified-left > .fct-reviews-pagination-inner {
+        justify-content: flex-start;
+    }
+
+    .fct-reviews-pagination.is-justified-center > .fct-reviews-pagination-inner {
+        justify-content: center;
+    }
+
+    .fct-reviews-pagination.is-justified-right > .fct-reviews-pagination-inner {
+        justify-content: flex-end;
+    }
+
+    .fct-reviews-pagination-inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin: 20px 0;
+
+        .fct-reviews-page-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fff;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .fct-reviews-page-btn.active {
+            background: #1f2937;
+            border-color: #1f2937;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .fct-reviews-page-btn.is-disabled {
+            opacity: .35;
+        }
+    }
+
+    /* Grid view in the canvas. The preview draws one row, so this is what
+       shows its real width — a review in a 3-column grid is a third as wide,
+       and the header line wraps differently in it. */
+    .fct-reviews-block-skeleton-list.is-grid > .block-editor-inner-blocks > .block-editor-block-list__layout {
+        display: grid;
+        gap: 12px;
+        /* Exactly the columns asked for, filling the width. The auto-fit and
+           fixed-calc pair this replaced could not: its tracks were capped at
+           the calc, so any width they did not account for was left standing at
+           the right-hand edge, and the row of blocks spanning them stopped
+           short of the canvas. */
+        grid-template-columns: repeat(var(--fct-review-columns, 2), minmax(0, 1fr));
+        align-items: start;
+    }
+
+    /* Slider view in the canvas. Swiper never runs in the editor, so this
+       draws the arrangement rather than the widget: the slides side by side at
+       the width they will have. */
+    .fct-reviews-block-skeleton-list.is-slider {
+        position: relative;
+
+        > .block-editor-inner-blocks > .block-editor-block-list__layout {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(var(--fct-review-columns, 2), minmax(0, 1fr));
+            align-items: start;
+        }
+    }
+
+    /* Only the rows are cells.
+     *
+     * The header and the pager are siblings of the review row in the editor,
+     * so a grid laid over every top-level child puts all three in columns
+     * beside each other. The rendered page does not: the list element the
+     * grid belongs to holds the rows and nothing else, with the header above
+     * it and the pager below. Spanning them back across the full width is
+     * what makes the canvas show the arrangement an editor is configuring.
+     *
+     * Both laid-out modes, because the slider draws the same columns in the
+     * canvas: Swiper never runs there, so is-slider is is-grid with arrows.
+     *
+     * :has(), because either one can be placed bare or wrapped in a group —
+     * the template ships the header inside one — and it is the block
+     * somewhere inside that says which zone a child belongs to. The same
+     * question InnerBlocks::headerBlockSlugs() asks on the server, which also
+     * looks at a child's whole subtree rather than its own name. */
+    .fct-reviews-block-skeleton-list:is(.is-grid, .is-slider) > .block-editor-inner-blocks > .block-editor-block-list__layout > :is(
+        .wp-block-fluent-cart-review-list-count,
+        .wp-block-fluent-cart-review-list-filter,
+        .wp-block-fluent-cart-review-list-sorting,
+        .wp-block-fluent-cart-review-list-pagination,
+        .wp-block-fluent-cart-review-item,
+        :has(.wp-block-fluent-cart-review-list-count),
+        :has(.wp-block-fluent-cart-review-list-filter),
+        :has(.wp-block-fluent-cart-review-list-sorting),
+        :has(.wp-block-fluent-cart-review-list-pagination),
+        :has(.wp-block-fluent-cart-review-item)
+    ) {
+        grid-column: 1 / -1;
+    }
+
+    /* The rows element, as the Review Item block draws it.
+     *
+     * The block previews several reviews rather than one — a row's worth in
+     * the laid-out modes, a short column otherwise — so its own wrapper stands
+     * in for the element the server wraps the rows in, carrying the same
+     * classes and the same column count. That is why it spans the full width
+     * above: it is not one cell of the list's grid, it is the grid.
+     *
+     * reviews.scss's own numbers, so a card is previewed at the width it will
+     * have. */
+    .fct-reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Both laid-out modes draw the same columns in the canvas: Swiper never
+       runs here, so a slider preview is the grid with the slides side by side
+       at the width they will have.
+
+       The cards stretch to a shared height, which is what makes the ragged
+       case visible — the whole reason the preview draws more than one.
+
+       Exactly as many columns as were asked for, which is where this parts
+       company with the storefront. The page uses auto-fit against a 260px
+       floor, so a narrow screen quietly drops to fewer columns — right for a
+       shopper, wrong here: the block draws one card per column it was told
+       about, and a canvas that fits only three of four leaves the fourth
+       wrapped onto a row of its own beneath an empty cell. That reads as a
+       broken layout rather than as a narrow one.
+
+       minmax(0, 1fr) rather than 1fr alone: a grid track's automatic minimum
+       is its content, so a long unbroken word in a review would push its
+       column wider than its share and squeeze the rest. */
+    .fct-reviews-list--grid,
+    .fct-reviews-list--slider {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(var(--fct-review-columns, 2), minmax(0, 1fr));
+        align-items: stretch;
+
+        /* reviews.scss is loaded into this iframe too -- the canvas renders the
+           block's own markup, so it needs the stylesheet that markup is written
+           against -- and its ladder drops a grid to fewer columns once the
+           container is narrow. The canvas must not follow it. It draws exactly
+           one card per column it was told about, so a reduced count leaves the
+           last card wrapped onto a row of its own, and a slider previewing as
+           two rows is not a slider.
+           [class] is what lifts this over the ladder's two classes; the rule is
+           the same one above it, restated where it has the weight to hold. */
+        &[class] {
+            grid-template-columns: repeat(var(--fct-review-columns, 2), minmax(0, 1fr));
+        }
+
+        .fct-review-item-body {
+            height: 100%;
+        }
+    }
+
+    /* Masonry: columns, but CSS ones.
+     *
+     * A grid row is a row -- every card in it ends on the same line, which is
+     * the one thing masonry is not. Columns let each card stop at its own
+     * height and the next card start there, so the preview shows the stagger
+     * an editor picked the mode for. reviews.scss draws the same thing against
+     * .fct-review-item; the canvas card is .fct-review-item-body.
+     *
+     * display: block undoes the flex column the plain list sets, which would
+     * otherwise stop column-count taking effect at all. */
+    .fct-reviews-list--masonry {
+        display: block;
+        column-count: var(--fct-review-columns, 2);
+        column-gap: 12px;
+
+        .fct-review-item-body {
+            /* A card split across a column break is the layout failing in the
+               one place it is most visible. Safari needs the pair. */
+            break-inside: avoid;
+            -webkit-column-break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            /* The grid rule above stretches cards to a shared height. Here the
+               card's own height is the point. */
+            height: auto;
+        }
+    }
+
+    /* The slider's arrows hang over the slides, so the row they sit on is what
+       positions them. */
+    .fct-reviews-list--slider {
+        position: relative;
+    }
+
+    /* The slider's arrows, drawn rather than built — Swiper never runs in the
+       canvas. The storefront's own button: a circle, white, hairline border,
+       resting over the first and last card at the same 10px offsets. Sizes
+       come from .fct-arrows-{sm,md,lg} below, the class the storefront and the
+       product carousel both use.
+
+       Every theme-button property is reset rather than overridden: a bare
+       <button> otherwise inherits the admin's padding and min-width, which
+       turns these into wide pills. */
+    .fct-reviews-slider-nav {
+        appearance: none;
+        -webkit-appearance: none;
+        @apply flex items-center justify-center bg-white border border-solid border-gray-outline
+               rounded-full text-system-dark shadow-none;
+
+        box-sizing: border-box;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 20;
+        /* The circle's own size — reviews.scss's numbers, which the spacing
+           scale has no equivalents for. */
+        width: 38px;
+        height: 38px;
+        min-width: 0;
+        min-height: 0;
+        padding: 0;
+        margin: 0;
+        /* Inert here: it previews the control rather than being it. */
+        cursor: default;
+    }
+
+    .fct-reviews-slider-prev {
+        left: 10px;
+    }
+
+    .fct-reviews-slider-next {
+        right: 10px;
+    }
+
+    .fct-nav-arrow-svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    /* The two other sizes, to the storefront's numbers. 'md' is the circle
+       above and needs no block of its own. */
+    .fct-arrows-sm .fct-reviews-slider-nav {
+        width: 30px;
+        height: 30px;
+    }
+
+    .fct-arrows-sm .fct-nav-arrow-svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .fct-arrows-lg .fct-reviews-slider-nav {
+        width: 46px;
+        height: 46px;
+    }
+
+    .fct-arrows-lg .fct-nav-arrow-svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* The notice a second Review Item shows in place of a row. The page draws
+       the first and discards the rest, so this says so where an editor is
+       looking rather than leaving them to lay out something that never
+       appears. */
+    .fct-review-item-spare {
+        margin: 0;
+        padding: 12px 16px;
+        border: 1px dashed #d6dae1;
+        border-radius: 8px;
+        background: #f9fafb;
+        color: #565865;
+        font-size: 13px;
+    }
+
+    /* The card each review sits in.
+     *
+     * Keyed on the Review Item group, not on the whole inner-block area: the
+     * list header blocks are siblings of that group, and a card around
+     * everything would draw the count and the star chips inside a review. On
+     * the page the card comes from .fct-review-item, which the list wraps each
+     * row in and the editor never sees. */
+    .fct-review-item-body {
+        padding: 16px;
+        border: 1px solid #d6dae1;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    /* The photograph is the top of the card, so it comes back out through the
+       padding and turns the card's own corners. The page does this against
+       .fct-review-item at a 4px radius; the canvas card is 8px. */
+    /* The photograph as the card itself, drawn as the page draws it.
+       reviews.scss carries the same rule against .fct-review-item; the canvas
+       card is .fct-review-item-body, and its stand-in is a placeholder rather
+       than a photograph -- so the scrim sits over a grey box here, which is
+       the point: it shows where the words will be legible. */
+    .fct-review-item-body:has(.fct-review-media-gallery--backdrop) {
+        position: relative;
+        overflow: hidden;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+
+        > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(
+                to top,
+                rgba(17, 24, 39, 0.78) 0%,
+                rgba(17, 24, 39, 0.45) 30%,
+                rgba(17, 24, 39, 0) 62%
+            );
+        }
+
+        .fct-review-media-gallery--backdrop {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            margin: 0;
+            display: block;
+
+            .fct-review-media-thumb.is-editor-placeholder {
+                width: 100%;
+                height: 100%;
+                border: 0;
+                border-radius: 0;
+                aspect-ratio: auto;
+            }
+
+            /* One stand-in is the background; the rest are not a filmstrip
+               across it. */
+            > *:not(:first-child) {
+                display: none;
+            }
+        }
+
+        .fct-review-item-author,
+        .fct-review-item-date,
+        .fct-review-item-title,
+        .fct-review-item-content {
+            color: #fff;
+        }
+    }
+
+    /* The quote card beside them, as on the page. */
+    .fct-reviews-list:has(.fct-review-media-gallery--backdrop)
+        .fct-review-item-body:not(:has(.fct-review-media-gallery)) {
+        justify-content: center;
+        text-align: center;
+
+        .fct-review-item-stars,
+        .fct-review-item-name-line,
+        .fct-review-item-header-left {
+            justify-content: center;
+        }
+    }
+
+    .fct-review-item-body .fct-review-media-gallery--flush {
+        margin: -16px -16px 12px;
+        width: auto;
+        border-radius: 7px 7px 0 0;
+        overflow: hidden;
+    }
+
+    /* Avatar left, everything else in a column beside it. Spelled out rather
+       than left to the group's own layout: a core/group carries Gutenberg's
+       layout utilities, and if the block is ever saved without them the row
+       would stack — the avatar dropping under the name, which is precisely
+       what a missing rule here looks like. */
+    /* reviews.scss's own numbers, so the editor row sits exactly as the page
+       renders it: centred against the avatar, 10px apart. */
+    .fct-review-item-header-left {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        margin-bottom: 10px;
+    }
+
+    /* The column beside the avatar: name line, then the date under it.
+       min-width:0 lets a long name ellipsise instead of pushing the row. */
+    .fct-review-item-meta-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .fct-review-avatar-circle {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        overflow: hidden;
+        border-radius: 9999px;
+        background: #eaecf0;
+        color: #98a2b3;
+
+        /* A share of the circle, not a fixed size — the page sizes it this
+           way, so the glyph keeps its proportion if the circle ever changes. */
+        .fct-review-avatar-placeholder {
+            width: 50%;
+            height: 50%;
+        }
+    }
+
+    /* Name, stars, badge and variation on one line; the date under them. */
+    .fct-review-item-name-line {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        min-width: 0;
+    }
+
+    .fct-review-item-author {
+        font-size: 14px;
+        font-weight: 600;
+        /* The page's own custom property, so a theme that tints its product
+           text tints the canvas to match rather than only the storefront. */
+        color: var(--fct-single-product-primary-text-color, #1f2937);
+    }
+
+    .fct-review-item-stars {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 15px;
+        line-height: 1;
+
+        /* The custom property, so the block's own Star Color setting shows in
+           the canvas the way it renders on the page. */
+        .fct-star-filled {
+            color: var(--fct-star-color, var(--fct-review-star-color, #f59e0b));
+        }
+
+        .fct-star-empty {
+            color: #d1d5db;
+        }
+    }
+
+    .fct-review-verified {
+        display: inline-flex;
+        align-items: center;
+        /* Sizes to its text wherever it lands. inline-flex alone is not
+           enough: as a flex item -- which it is in any card laid out as a
+           column -- the display is blockified and the green pill stretches
+           the width of the card. reviews.scss carries the same guard. */
+        width: fit-content;
+        max-width: 100%;
+        padding: 4px 6px;
+        border-radius: 16px;
+        background: #e8f5f1;
+        color: #189877;
+        font-size: 12px;
+        line-height: 1;
+        font-weight: 500;
+    }
+
+    .fct-review-item-variant {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 6px;
+        border-radius: 16px;
+        background: #eaecf0;
+        color: #8e99aa;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    /* Gutenberg wraps each inner block in its own element. Left alone those
+       wrappers become the flex children and collapse the arrangement, so they
+       are told to carry no width of their own. */
+    .fct-review-item-header-left > .block-editor-block-list__block,
+    .fct-review-item-meta-text > .block-editor-block-list__block,
+    .fct-review-item-name-line > .block-editor-block-list__block {
+        margin: 0;
+    }
+
+    /* At the start of its column, never centred: a group laid out as
+       'constrained' gives its children auto side margins, which is what put
+       the date in the middle of the row. Pinned here so the layout attribute
+       cannot decide it. */
+    .fct-review-item-date {
+        margin: 2px auto 0 0;
+        color: #565865;
+        font-size: 12px;
+    }
+
+    .fct-review-item-title {
+        margin-top: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--fct-single-product-primary-text-color, #1f2937);
+    }
+
+    .fct-review-item-content {
+        margin-top: 6px;
+        font-size: 14px;
+        color: #565865;
+        line-height: 1.6;
+    }
+
+    /* Thumbnail-shaped stand-ins: the editor holds no copy of a review's
+       photos, and an empty gallery would give the row nothing to sit against. */
+    /* PRO's own numbers, so the canvas spaces the photos the way the page
+       does — gap 8, and room on both sides of the gallery. */
+    .fct-review-media-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 14px 0;
+
+        .fct-review-media-thumb.is-editor-placeholder {
+            display: block;
+            overflow: hidden;
+            /* The block prints these inline from its own settings, so the
+               canvas resizes with the control rather than after a save. */
+            width: var(--fct-review-thumb-w, 72px);
+            height: var(--fct-review-thumb-h, 72px);
+            flex: none;
+            /* PRO's own thumbnail: 72px at an 8px radius, on the border colour
+               a theme can retint. */
+            border-radius: 8px;
+            border: 1px solid var(--fct-border-color, #e5e7eb);
+            background: #f9fafb;
+
+            /* The stand-in is a square icon, not a photo. Contained rather
+               than covering: a full-width tile is a wide, short box, and
+               cover would scale that icon to the width and crop the rest of
+               it away. */
+            img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        }
+
+        /* A flush photograph at the head of a card, drawn as the page
+           draws it: out through the card's padding, square across the top,
+           and every tile the same shape so the row ends on one line.
+
+           reviews.scss carries the same rule against .fct-review-item; here
+           the card is .fct-review-item-body and its radius is 8px, so the
+           numbers differ while the result does not. */
+        &.fct-review-media-gallery--flush {
+            .fct-review-media-thumb.is-editor-placeholder {
+                border: 0;
+                border-radius: 0;
+                /* Height comes from the ratio, not from the setting: the
+                   block prints --fct-review-thumb-h: auto at full width. */
+                aspect-ratio: 4 / 3;
+            }
+
+            .fct-review-media-tile {
+                width: 100%;
+                height: auto;
+            }
+        }
+
+        /* The box holding a stand-in and the + badge over it, drawn the way
+           the page draws it: the box is the flex item, so it takes the tile
+           sizing and the stand-in fills it. */
+        .fct-review-media-tile {
+            position: relative;
+            display: block;
+            flex: none;
+            width: var(--fct-review-thumb-w, 72px);
+            height: var(--fct-review-thumb-h, 72px);
+            max-width: 100%;
+
+            .fct-review-media-thumb.is-editor-placeholder {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        /* The + as a badge in the corner, sized by its own label. The page's
+           own numbers — reviews.scss draws this same badge. */
+        .fct-review-media-more.is-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: auto;
+            height: auto;
+            min-height: 0;
+            gap: 6px;
+            padding: 5px 11px;
+            font-size: 13px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.85);
+            color: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .fct-review-media-more-icon {
+            flex: none;
+            opacity: 0.85;
+        }
+
+        /* The "+2" standing in for the attachments past the visible limit,
+           drawn the way the page draws it. After the rule above, not before:
+           the two selectors weigh the same, and that one sets display. */
+        .fct-review-media-more.is-editor-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1;
+        }
+    }
+
+    /* Reply left, votes right — reviews.scss's own footer, so the editor row
+       sits the way the page renders it. */
+    .fct-review-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+
+        .fct-review-votes {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            /* PRO draws this row on the page; the label and the two counters
+               are its numbers, so the canvas shows the space they will take
+               rather than a narrower guess. */
+            .fct-vote-label {
+                font-size: 13px;
+                color: #4b5563;
+                margin-right: 2px;
+            }
+
+            .fct-vote-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                background: #fff;
+                color: #1f2937;
+                font-size: 13px;
+                line-height: 1.4;
+            }
+        }
+
+        .fct-review-view-replies {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 8px;
+            border: 1px solid #d6dae1;
+            border-radius: 8px;
+            background: #fff;
+            color: #2f3448;
+            font-size: 14px;
+            line-height: 1;
+        }
+    }
+}
+
+.fct-review-list-block-editor .fct-review-view-replies {
+    appearance: none;
+    -webkit-appearance: none;
+    @apply flex items-center gap-1 bg-white border border-solid border-gray-outline leading-none py-1.5 px-2 rounded text-system-dark shadow-none text-sm;
+
+    box-sizing: border-box;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    /* Inherited, never named: the canvas sets its own body font, and a family
+       fixed here would print this button in a face nothing around it uses. */
+    font-family: inherit;
+    font-weight: 400;
+    text-transform: none;
+    cursor: pointer;
+}
+
+/* The arrow keeps its size when the label wraps. */
+.fct-review-list-block-editor .fct-review-view-replies .fct-review-reply-icon {
+    flex-shrink: 0;
+}
+
+/* The list header's block previews. The storefront's own classes carry the
+   chip and title styling; these fill in only what the editor lacks — a drawn
+   sort control standing in for the real select, which is not rendered here. */
+/* The sort control.
+ *
+ * A drawn stand-in, not a <select>: the real one is what the storefront script
+ * reads the current sort from, and a working select here would sort a preview
+ * with no rows in it. So it is a span wearing the select's box.
+ *
+ * Scoped to the block editor wrapper like the rest of this sheet — unscoped it
+ * matched anywhere the class appeared, including the storefront preview, where
+ * reviews.css already owns it.
+ *
+ * The utilities are the page's own for .fct-reviews-sort select, so the canvas
+ * measures what ships. Only the right padding differs: the page leaves room
+ * for the caret on the wrapper, and here the caret sits on this element. */
+.fct-review-list-block-editor .fct-reviews-sort-preview {
+    @apply inline-flex items-center gap-1.5 bg-white border border-solid border-gray-outline
+           leading-none py-2 rounded text-system-mid text-sm;
+
+    position: relative;
+    box-sizing: border-box;
+    /* The page's 10px, plus the caret's own column on the right. */
+    padding-right: 28px;
+    padding-left: 10px;
+    font-family: inherit;
+}
+
+/* The caret.
+ *
+ * Its own rule rather than a nested &::after: this sheet is plain CSS now, so
+ * nesting would be the browser's to resolve, and the arrow is the half that
+ * says "dropdown" — without it the preview is a bordered word.
+ *
+ * The same triangle .fct-reviews-sort::before draws on the page, at the same
+ * offset. Borders rather than a glyph, so it needs no font to render. */
+.fct-review-list-block-editor .fct-reviews-sort-preview::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    pointer-events: none;
+}
+
+
+/* Slider pagination in the canvas.
+
+   Swiper never runs in the editor, so this draws the indicator rather than
+   the widget, the same way the sort control above the rows is drawn. Three
+   dots, because how many pages a slider has is runtime data.
+
+   Same pill as the storefront and the two carousels: 16px of wrapper offset
+   plus 24px of its own, sized to its dots rather than to the column. */
+.fct-reviews-block-slider-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    min-width: 44px;
+    margin: 10px auto 0;
+    padding: 8px 14px;
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    /* The frontend pill blurs what sits behind it; the canvas should not look
+       flatter than the page it is previewing. */
+    backdrop-filter: blur(8px);
+}
+
+.fct-reviews-block-slider-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d1d5db;
+}
+
+.fct-reviews-block-slider-dot.is-active {
+    background: #111827;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
+}
+
+.fct-reviews-block-slider-fraction {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.fct-reviews-block-slider-progress {
+    display: block;
+    width: 180px;
+    height: 4px;
+    border-radius: 999px;
+    background: #e5e7eb;
+}
+
+.fct-reviews-block-slider-progress-fill {
+    display: block;
+    width: 33%;
+    height: 100%;
+    border-radius: 999px;
+    background: #111827;
+}
+
+/* The pill is sized to its dots, so the fraction and the bar keep the pill
+   from collapsing around a single child rather than stretching it. */
+.fct-reviews-block-slider-pagination.is-fraction {
+    min-width: 76px;
+}
+
+.fct-reviews-block-slider-pagination.is-progressbar {
+    padding: 8px 14px;
+}
+
+/* Segmented, drawn: three bars and a counter, the first active. Same
+   geometry and palette as the storefront and the two carousels. */
+.fct-reviews-block-slider-pagination.is-segmented {
+    gap: 6px;
+    min-width: 150px;
+    max-width: 90%;
+    padding: 10px 16px;
+}
+
+.fct-reviews-block-slider-segment {
+    flex: 1;
+    min-width: 40px;
+    max-width: 80px;
+    height: 4px;
+    border-radius: 8px;
+    background: #d1d5db;
+}
+
+.fct-reviews-block-slider-segment.is-active {
+    background: linear-gradient(90deg, #111827 0%, #1f2937 50%, #111827 100%);
+}
+
+.fct-reviews-block-slider-counter {
+    margin-left: 8px;
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+
+
+/* Where the drawn arrows sit, matching the page's three placements. The
+   canvas has no frame around the track, so beside and below are expressed on
+   the track itself: padding for the room, static flow for the row. */
+.fct-reviews-list.fct-arrows-at-outside {
+    padding-inline: 52px;
+}
+
+.fct-reviews-list.fct-arrows-at-outside .fct-reviews-slider-prev { left: 0; }
+.fct-reviews-list.fct-arrows-at-outside .fct-reviews-slider-next { right: 0; }
+
+.fct-reviews-list.fct-arrows-at-bottom .fct-reviews-slider-nav-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    /* Clear of the cards above. The canvas places this row inside the same
+       grid as the reviews, so it sits tight against them without it. */
+    margin-top: 24px;
+}
+
+.fct-reviews-list.fct-arrows-at-bottom .fct-reviews-slider-nav {
+    position: static;
+    transform: none;
+}
+
+/* On the reviews: centred on the track's edge, half over the first and last
+   review, as the page draws it. The canvas track does not clip, so the halves
+   are expressed as offsets rather than with a frame. */
+.fct-reviews-list.fct-arrows-at-overlap .fct-reviews-slider-prev { left: -19px; }
+.fct-reviews-list.fct-arrows-at-overlap .fct-reviews-slider-next { right: -19px; }
+
+.fct-reviews-list.fct-arrows-at-overlap.fct-arrows-sm .fct-reviews-slider-prev { left: -15px; }
+.fct-reviews-list.fct-arrows-at-overlap.fct-arrows-sm .fct-reviews-slider-next { right: -15px; }
+
+.fct-reviews-list.fct-arrows-at-overlap.fct-arrows-lg .fct-reviews-slider-prev { left: -23px; }
+.fct-reviews-list.fct-arrows-at-overlap.fct-arrows-lg .fct-reviews-slider-next { right: -23px; }
+
+/* The Pro notice under View Mode.
+ *
+ * Full width and flat against the control above it: the editor's own notice
+ * carries a margin meant for a page-level bar, which inside a sidebar panel
+ * reads as a gap rather than as a remark about the buttons it follows. */
+.fct-view-mode-notice {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.fct-view-mode-notice .components-notice {
+    margin: 0;
+}
+
+/* The Pro notice under the attachment style toggles. Same treatment as the
+   View Mode one: full width, flat against the control it follows, without the
+   page-level margin the editor's own notice carries. */
+.fct-photo-style-notice {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.fct-photo-style-notice .components-notice {
+    margin: 0;
+}

@@ -1,0 +1,1133 @@
+// Review single page layout
+.fct-single-review-layout {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+
+// Thread badges per the approved design. Wrapper id outranks el-tag's
+// own effect colors.
+#fct_admin_app_wrapper .el-tag.fct-admin-reply-badge {
+  @apply bg-success-50 text-success-700 border-success-100 dark:bg-success-alpha-16 dark:text-success-400 dark:border-success-alpha-16;
+}
+
+#fct_admin_app_wrapper .el-tag.fct-customer-review-badge {
+  @apply bg-information-lighter text-information-dark border-information-light dark:bg-information-lighter-dark dark:text-information-dark-dark dark:border-information-light-dark;
+}
+
+
+// Destructive dropdown item (e.g. Delete Permanently).
+// Stacked selector + focus/hover overrides el-dropdown-menu__item's
+// @apply text-system-dark / focus:text-system-dark cascade.
+.el-dropdown-menu__item.fct-dropdown-item--danger {
+  color: #ef4444;
+
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    color: #dc2626;
+  }
+}
+
+.fct-single-review-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fct-single-review-aside {
+  width: 380px;
+}
+
+// Tighter card spacing within this page
+.fct-single-review-main .fct-card,
+.fct-admin-sidebar .fct-card {
+  margin-bottom: 16px;
+}
+
+// Section divider within a card
+.fct-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fct-section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+// Review media inline
+.fct-review-media-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+// Review display
+.fct-review-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.fct-review-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  white-space: pre-wrap;
+}
+
+// Soft status action buttons in the page header (Trash / Spam).
+// Scoped to the admin wrapper id so these outrank el-button's own colors.
+#fct_admin_app_wrapper {
+  .el-button.fct-review-soft-btn {
+    @apply border-0;
+
+    &:disabled {
+      @apply opacity-60;
+    }
+
+    &:focus-visible {
+      @apply outline outline-2 outline-blue-500 outline-offset-2;
+    }
+  }
+
+  .el-button.fct-review-soft-btn--danger {
+    @apply bg-red-50 text-red-600 dark:bg-red-alpha-16 dark:text-red-400;
+
+    &:hover,
+    &:focus,
+    &:active {
+      @apply bg-red-100 text-red-700 dark:bg-red-alpha-16 dark:text-red-300;
+    }
+  }
+
+  .el-button.fct-review-soft-btn--warning {
+    @apply bg-warning-50 text-warning-dark dark:bg-warning-alpha-16 dark:text-warning-400;
+
+    &:hover,
+    &:focus,
+    &:active {
+      @apply bg-warning-100 text-warning-dark dark:bg-warning-alpha-16 dark:text-warning-300;
+    }
+  }
+}
+
+// Comment-thread style review conversation
+.fct-review-thread-container {
+  @apply flex flex-col bg-white rounded-b overflow-hidden dark:bg-dark-700;
+  max-height: calc(100dvh - 240px);
+}
+
+.fct-review-thread {
+  @apply flex-1 overflow-y-auto px-6 pt-5 pb-2;
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded;
+
+    &:hover {
+      @apply bg-gray-600;
+    }
+  }
+}
+
+.fct-thread-item {
+  @apply flex items-start gap-3.5 pt-1 pb-5;
+
+  & + & {
+    @apply border-0 border-t border-solid border-gray-divider pt-5 dark:border-gray-alpha-16;
+  }
+
+}
+
+.fct-thread-content {
+  @apply flex-1 min-w-0;
+}
+
+.fct-thread-name-row {
+  @apply flex items-center flex-wrap gap-1.5;
+}
+
+.fct-thread-name {
+  @apply text-sm font-semibold text-system-dark dark:text-gray-100;
+}
+
+.fct-thread-meta {
+  @apply flex items-center gap-1.5 mt-0.5 text-xs text-system-mid dark:text-gray-400;
+}
+
+.fct-thread-meta-dot {
+  @apply text-system-mid dark:text-gray-400;
+}
+
+.fct-thread-title {
+  @apply mt-2.5 text-sm font-semibold text-system-dark dark:text-gray-100;
+}
+
+.fct-thread-text {
+  @apply mt-2.5 text-sm leading-[22px] text-system-dark dark:text-gray-300;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.fct-thread-title + .fct-thread-text {
+  @apply mt-1;
+}
+
+.fct-thread-media {
+  @apply flex flex-wrap gap-2 mt-3;
+}
+
+.fct-thread-media-thumb {
+  // Button reset (rendered as <button>)
+  @apply p-0 border-0 w-[96px] h-[96px] rounded-[10px] overflow-hidden cursor-pointer bg-gray-100;
+  font: inherit;
+  transition: transform 0.15s, opacity 0.15s;
+
+  &:hover {
+    @apply opacity-90;
+    transform: scale(1.02);
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  img {
+    @apply block w-full h-full object-cover;
+  }
+}
+
+.fct-thread-media-video {
+  @apply flex items-center justify-center w-full h-full bg-primary-600 text-white;
+}
+
+.fct-thread-media-play {
+  @apply text-[24px];
+}
+
+// Store replies — tinted cards indented to the review's content column
+// (avatar 36px + 14px gap)
+.fct-thread-reply-group {
+  @apply pl-[50px] pb-5;
+}
+
+
+.fct-thread-reply-card {
+  @apply flex items-start gap-3.5 p-4 rounded-[10px] bg-gray-25 dark:bg-dark-600;
+
+  & + & {
+    @apply mt-2;
+  }
+}
+
+// Delete-reply button — always visible.
+// The wrapper id gives this rule enough specificity over el-button defaults.
+// A reply's status pill is the control that changes it. The badge carries
+// the caret inside itself, so there is one shape to read and one to click;
+// the caret turns while the menu is open, and a ring marks the open pill.
+.fct-thread-status-trigger {
+  @apply inline-flex p-0 bg-transparent border-0 cursor-pointer rounded-[6px];
+
+  &:focus-visible {
+    @apply outline-none;
+  }
+
+  &:focus-visible .badge,
+  &.is-open .badge {
+    @apply ring-2 ring-blue-300 dark:ring-blue-700;
+  }
+
+  &:disabled {
+    @apply cursor-default;
+  }
+
+  &.is-busy {
+    @apply opacity-60;
+  }
+}
+
+.fct-thread-status-pill {
+  @apply gap-1.5 pr-1.5 cursor-pointer;
+}
+
+.fct-thread-status-caret {
+  @apply w-3.5 h-3.5;
+  transition: transform 0.15s ease;
+
+  svg {
+    @apply w-3.5 h-3.5;
+    stroke-width: 2.5;
+  }
+}
+
+.fct-thread-status-trigger.is-open .fct-thread-status-caret {
+  transform: rotate(180deg);
+}
+
+// The menu: each status with its icon; the current one ticked, tinted in
+// its own badge colour, and left readable rather than greyed out.
+#fct_admin_app_wrapper .fct-thread-status-menu {
+  @apply p-1 min-w-[180px];
+}
+
+#fct_admin_app_wrapper .el-dropdown-menu__item.fct-thread-status-option {
+  @apply flex items-center gap-2.5 px-3 py-2 rounded-[6px] text-sm text-system-dark dark:text-gray-100;
+
+  .fct-thread-status-option-icon {
+    @apply w-4 h-4 flex-shrink-0;
+  }
+
+  &--spam,
+  &--trash {
+    @apply text-red-700 dark:text-red-400;
+  }
+
+  &.is-current.is-disabled {
+    @apply opacity-100 cursor-default;
+  }
+
+  &--approved.is-current {
+    @apply bg-success-100 text-success-800 dark:bg-success-alpha-16 dark:text-success-400;
+  }
+
+  &--pending.is-current {
+    @apply bg-warning-100 text-warning-800 dark:bg-warning-alpha-16 dark:text-warning-400;
+  }
+
+  &--spam.is-current,
+  &--trash.is-current {
+    @apply bg-red-100 text-red-800 dark:bg-red-alpha-16 dark:text-red-400;
+  }
+}
+
+#fct_admin_app_wrapper .el-button.fct-thread-delete-btn {
+  @apply p-1 h-auto text-system-mid;
+  min-height: auto;
+
+  &:hover {
+    @apply text-red-500;
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+}
+
+// Reply form — bordered box with the Reply button inside, bottom-right
+.fct-thread-form {
+  @apply flex-shrink-0 bg-white px-6 pb-5 pt-2 dark:bg-dark-700;
+}
+
+.fct-thread-form-box {
+  @apply border border-solid border-gray-outline rounded-[10px] bg-white px-2.5 pb-2.5 pt-1.5 transition-colors dark:bg-dark-700 dark:border-gray-alpha-16;
+
+  &:focus-within {
+    @apply border-blue-500;
+  }
+
+  // Strip el-input's own textarea chrome so only the outer box shows
+  .el-textarea__inner {
+    @apply border-0 shadow-none bg-transparent px-0.5 py-1.5;
+  }
+}
+
+.fct-thread-form-actions {
+  @apply flex justify-end mt-1;
+}
+
+// Dark solid Reply button, per design.
+#fct_admin_app_wrapper .el-button.fct-thread-reply-btn {
+  @apply bg-primary-500 border-primary-500 text-white;
+
+  &:hover,
+  &:focus,
+  &:active {
+    @apply bg-primary-600 border-primary-600 text-white;
+  }
+
+  &:disabled {
+    @apply opacity-50;
+  }
+
+  &:focus-visible {
+    @apply outline outline-2 outline-blue-500 outline-offset-2;
+  }
+}
+
+// Status list
+.fct-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fct-status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #4b5563;
+  transition: background 0.15s;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  &--active {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.fct-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &--approved { background: #10b981; }
+  &--pending { background: #3b82f6; }
+  &--spam { background: #f59e0b; }
+  &--trash { background: #ef4444; }
+}
+
+.fct-status-label {
+  flex: 1;
+}
+
+// Reviewer sidebar
+.fct-reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fct-reviewer-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.fct-reviewer-details {
+  min-width: 0;
+}
+
+.fct-reviewer-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.fct-reviewer-email {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 1px;
+  word-break: break-all;
+}
+
+.fct-reviewer-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Helpful votes — stacked tinted rows (thumbs up / down)
+.fct-vote-rows {
+  @apply flex gap-3;
+}
+
+.fct-vote-row {
+  @apply flex-1 flex items-center gap-2 px-4 py-2.5 rounded text-sm font-semibold border-0;
+
+  svg {
+    @apply flex-shrink-0 w-4 h-4;
+  }
+
+  &--helpful {
+    @apply bg-success-25 text-success-700 border-success-100 dark:bg-success-alpha-16 dark:text-success-400 dark:border-success-alpha-16;
+  }
+
+  &--not-helpful {
+    @apply bg-red-25 text-red-600 border-red-100 dark:bg-red-alpha-16 dark:text-red-400 dark:border-red-alpha-16;
+  }
+}
+
+.fct-vote-row-count {
+  @apply text-sm font-semibold;
+}
+
+// Review media (preview dialog)
+.fct-review-media-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fct-review-media-thumb {
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: #3b82f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.fct-review-media-video-thumb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  gap: 4px;
+}
+
+.fct-review-media-play-icon {
+  font-size: 24px;
+  color: #6b7280;
+}
+
+.fct-review-media-preview {
+  text-align: center;
+}
+
+.fct-review-media-preview-img,
+.fct-review-media-preview-video {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 6px;
+}
+
+.fct-review-media-preview-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1359px) {
+  .fct-single-review-layout {
+    display: grid;
+  }
+  .fct-single-review-main {
+    width: 100%;
+  }
+  .fct-single-review-aside {
+    width: 100%;
+  }
+}
+
+// Respect users who prefer reduced motion (vestibular accessibility)
+@media (prefers-reduced-motion: reduce) {
+  .fct-review-thread {
+    scroll-behavior: auto;
+  }
+  .fct-thread-media-thumb,
+  .fct-status-item,
+  .fct-review-media-thumb,
+  .fct-thread-form-box {
+    transition: none;
+  }
+  .fct-thread-media-thumb:hover {
+    transform: none;
+  }
+}
+
+// Product Reviews settings page (admin). The page is built from the shared
+// settings-form rows; its own additions are the stacked "who can review"
+// radios, laid out the way the tax page lays out its price-mode radios, and
+// a child row - a setting that only means something under the one above it
+// (Star Ratings Required under Enable Star Ratings, the photo limits under
+// Photo Reviews) - stepped in under it so the dependency reads.
+.fct-review-settings {
+  .fct-setting-form-row.is-child .fct-setting-form-content {
+    @apply pl-7;
+  }
+
+  // A row whose only control is a switch or a number box on the right edge
+  // has no field column to share with, so its label and tip take the whole
+  // line rather than wrapping inside the 300px column the other rows use -
+  // and every such control lines up on the same edge, whatever its kind.
+  .fct-setting-form-row:has(> .fct-setting-form-fields .el-switch),
+  .fct-setting-form-row:has(> .fct-setting-form-fields .el-input-number) {
+    .fct-setting-form-content {
+      @apply w-auto flex-1;
+    }
+    .fct-setting-form-fields {
+      @apply flex-none;
+    }
+  }
+}
+
+.fct-review-stacked-radios {
+  @apply flex flex-col gap-3 w-full items-start;
+  .el-radio {
+    @apply mr-0 items-start h-auto;
+  }
+  .el-radio__label {
+    @apply mt-[-3px];
+  }
+  .fct-review-radio-label {
+    @apply font-semibold;
+  }
+  .fct-review-radio-text {
+    @apply text-xs font-normal text-system-mid dark:text-gray-300;
+  }
+}
+
+// "Go to Customer" pill in the single review breadcrumb. The id prefix is
+// load-bearing: the pill is an <a> in the last crumb, so Element's
+// `.el-breadcrumb__item:last-child .el-breadcrumb__inner a` (0,3,1) outranks
+// any two-class rule and the pill would keep --el-text-color-regular in
+// both themes.
+#fct_admin_app_wrapper .fct-single-review-page .fct-goto-customer-pill {
+  @apply inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-gray-100 text-system-mid text-xs font-normal align-middle select-none transition-colors dark:bg-dark-400 dark:text-gray-300;
+
+  &:hover {
+    @apply bg-gray-200 text-system-dark dark:bg-dark-300 dark:text-gray-50;
+  }
+
+  &:focus,
+  &:focus-visible,
+  &:active {
+    @apply text-gray-700 dark:text-gray-50;
+    outline: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+
+/* Sidebar moderation actions — equal tiles in a row, one per state the
+   review is not already in, so the row keeps its shape as the status
+   changes. Outlined by default with the action's own colour carrying the
+   meaning; approve is the single filled tile. */
+.fct-review-action-buttons {
+  @apply flex gap-2;
+}
+
+.fct-review-action {
+  @apply flex-1 flex flex-col items-center gap-1 py-[11px] px-2 cursor-pointer;
+  @apply text-[13px] font-medium leading-[1.2] rounded border-[0.5px] border-solid;
+  @apply transition-[background-color] duration-150 ease-[ease];
+  @apply border-gray-divider bg-white dark:border-dark-500 dark:bg-dark-700;
+
+  .fct-review-action-icon svg {
+    @apply w-[17px] h-[17px];
+  }
+
+  &:hover:not(:disabled) {
+    @apply bg-black/[0.03];
+  }
+
+  .fluent_theme_dark &:hover:not(:disabled) {
+    @apply bg-white/[0.06];
+  }
+
+  &:active:not(:disabled) {
+    @apply scale-[0.98];
+  }
+
+  &:disabled {
+    @apply opacity-60 cursor-not-allowed;
+  }
+
+  &:focus-visible {
+    @apply outline-none ring-2 ring-offset-1 ring-primary-500;
+  }
+
+  &--approved {
+    @apply bg-[#1d9e75] border-0 text-white;
+
+    &:hover:not(:disabled) {
+      @apply bg-[#0f6e56];
+    }
+  }
+
+  &--spam {
+    @apply text-[#854f0b] dark:text-warning-400;
+
+    &:hover:not(:disabled) {
+      @apply bg-[#faeeda];
+    }
+
+    .fluent_theme_dark &:hover:not(:disabled) {
+      @apply bg-warning-alpha-16;
+    }
+  }
+
+  &--trash {
+    @apply text-[#a32d2d] dark:text-red-400;
+
+    &:hover:not(:disabled) {
+      @apply bg-[#fcebeb];
+    }
+
+    .fluent_theme_dark &:hover:not(:disabled) {
+      @apply bg-red-500/15;
+    }
+  }
+
+  &--pending {
+    @apply text-gray-600 dark:text-gray-300;
+  }
+}
+
+.fct-review-action-label {
+  @apply leading-[1.2];
+}
+
+/* Review context card — product, author and vote tally as one scannable
+   stack, each row separated by a hairline rather than boxed separately. */
+.fct-review-context {
+  @apply flex flex-col;
+
+  // Same inset rule the card header draws with border_bottom, applied only
+  // when the votes section follows.
+  &--divided {
+    @apply pb-5 border-0 border-b border-solid border-gray-divider dark:border-dark-500;
+  }
+}
+
+.fct-review-context-row {
+  @apply flex items-center gap-3 py-3;
+  @apply border-0 border-b border-solid border-gray-100 dark:border-gray-700;
+
+  &:first-child {
+    @apply pt-0;
+  }
+
+  // The verified-purchase row below draws its own rule above itself, so a
+  // border here too would stack two hairlines with a gap between them.
+  &:last-child {
+    @apply border-b-0;
+  }
+}
+
+// Product thumbnail — the same 40x42 rounded image the products table
+// draws, product placeholder illustration included.
+.fct-review-context-thumb {
+  @apply flex-shrink-0;
+
+  img {
+    @apply w-10 h-10.5 rounded-md object-cover;
+  }
+}
+
+// Shared avatar at the context row's size — photo for a customer, initials
+// for a guest; shape and fallback come from .fct-user-avatar.
+.fct-review-context-avatar {
+  @apply w-10 h-10;
+}
+
+.fct-review-actions-label {
+  @apply mt-4 mb-2.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500;
+}
+
+.fct-review-context-label {
+  @apply flex-1 min-w-0 truncate text-sm font-medium text-system-dark dark:text-gray-100;
+}
+
+.fct-review-context-link {
+  @apply inline-flex items-center justify-center w-8 h-8 rounded flex-shrink-0;
+  @apply text-system-dark hover:text-black dark:text-gray-50 dark:hover:text-white;
+  @apply focus:outline-none focus:shadow-none;
+
+  svg {
+    @apply w-4 h-4;
+  }
+
+  // Clicking should not leave a ring behind, but keyboard focus still has
+  // to be visible.
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+// Reviews list page. These live here rather than in AllReviews.vue's scoped
+// block, but bulk-actions-bar and bulk-right are also used by the products
+// table, so the page class stands in for the scoping that is being dropped.
+.fct-all-reviews-page {
+  .bulk-actions-bar {
+    @apply flex items-center justify-between py-0 px-4 mb-4;
+  }
+
+  .bulk-right {
+    @apply text-[13px] text-[#6b7280] dark:text-gray-300;
+  }
+
+  .fct-product-filter-banner {
+    @apply flex items-center justify-between px-4 py-2 mb-3 rounded-sm text-[13px];
+    @apply border border-solid bg-[#f0f9ff] border-[#bae6fd] text-[#0c4a6e];
+    @apply dark:bg-blue-alpha-16 dark:border-blue-alpha-16 dark:text-blue-200;
+  }
+}
+
+
+/* Editable star rating — the admin counterpart of the read-only
+   StarRating display. Buttons, not spans, so keyboard users can pick a
+   rating; the row is a radiogroup and arrow keys move the selection. */
+/* The same boxed stars the storefront form uses (.fct-star-select in
+   public/single-product/reviews.scss), so an admin writing a review on a
+   customer's behalf sees the control the customer would have. */
+.fct-star-rating-input {
+  @apply flex items-center gap-3 flex-wrap;
+}
+
+.fct-star-rating-input__stars {
+  @apply inline-flex gap-2;
+}
+
+.fct-star-rating-input__star {
+  @apply flex items-center justify-center p-2 w-10 h-10 rounded border border-solid border-gray-outline bg-white cursor-pointer leading-none transition-colors shadow-none;
+  @apply dark:bg-dark-700 dark:border-gray-alpha-16 dark:text-gray-400;
+  color: #6b7280;
+  font-size: 20px;
+
+  &.is-filled {
+    @apply dark:text-[#f59e0b];
+    color: #f59e0b;
+  }
+
+  &:hover:not(:disabled) {
+    @apply border-gray-400 dark:border-gray-500;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+.fct-star-rating-input-small .fct-star-rating-input__star {
+  @apply w-8 h-8 p-1.5;
+  font-size: 16px;
+}
+
+.fct-star-rating-input-large .fct-star-rating-input__star {
+  @apply w-12 h-12;
+  font-size: 24px;
+}
+
+/* The storefront form's rating word, as a pill beside the stars: coloured
+   by what the word says, in the flow rather than floating, so the row needs
+   no room below and the pill never covers the next field. */
+.fct-star-rating-input__badge {
+  @apply inline-flex items-center text-sm font-medium;
+  @apply bg-gray-50 text-system-mid border border-solid border-gray-outline;
+  @apply dark:bg-dark-600 dark:text-gray-300 dark:border-gray-alpha-16;
+  padding: 3px 10px;
+  border-radius: 999px;
+  line-height: 1.2;
+  white-space: nowrap;
+
+  &.is-danger {
+    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-alpha-16 dark:text-red-400 dark:border-red-alpha-16;
+  }
+
+  &.is-warning {
+    @apply bg-warning-100 text-warning-dark border-warning-200 dark:bg-warning-alpha-16 dark:text-warning-400 dark:border-warning-alpha-16;
+  }
+
+  &.is-info {
+    @apply bg-blue-100 text-blue-800 border-blue-200 dark:bg-information-lighter-dark dark:text-information-dark-dark dark:border-information-light-dark;
+  }
+
+  &.is-success {
+    @apply bg-success-100 text-success-800 border-success-200 dark:bg-success-alpha-16 dark:text-success-400 dark:border-success-alpha-16;
+  }
+}
+
+/* Add-review modal. Same field rhythm as the rest of the admin forms; the
+   two-up rows collapse on narrow viewports. */
+.fct-add-review-form {
+  @apply flex flex-col gap-4;
+}
+
+.fct-add-review-row {
+  @apply grid gap-4 grid-cols-1 sm:grid-cols-2;
+}
+
+/* A row left holding one control — the Status select once the store has
+   turned the Verified Owner badge off. It takes the full width rather than
+   half of a two-column grid whose other cell is empty. */
+.fct-add-review-row-single {
+  @apply sm:grid-cols-1;
+}
+
+.fct-add-review-field {
+  @apply flex flex-col gap-1.5;
+}
+
+.fct-add-review-label {
+  @apply text-[13px] font-medium text-system-dark dark:text-gray-200;
+}
+
+.fct-add-review-required {
+  @apply text-red-500;
+}
+
+/* A centred dialog taller than the viewport overflows equally at both ends
+   and neither end can be scrolled to: with every validation message showing,
+   the title and the buttons both go out of reach. Bounding it to the
+   viewport and scrolling the body keeps the title and the buttons in place
+   however long the form gets. The margin clears the WordPress admin bar,
+   which paints above the overlay. */
+.fct-add-review-modal {
+  @apply flex flex-col;
+  max-height: calc(100vh - 5rem);
+
+  .el-dialog__body {
+    /* min-height: a flex item does not shrink below its content without it,
+       so the body would grow instead of scrolling. */
+    @apply overflow-y-auto min-h-0;
+  }
+}
+
+/* The product/variation list.
+
+   Element Plus prints a group's title at 12px and 30% opacity — fine when a
+   group is a sorting aid over items that stand on their own, wrong here: the
+   product is the context that tells you WHICH "Version 1" you are choosing,
+   and it was reading as the least important line on screen while the
+   variations under it read as top-level. The product is the heading, the
+   variations are its children, and the type should say so.
+
+   The heading also sticks while its own group scrolls, so a long variation
+   list never leaves you looking at names with no idea whose they are. */
+.fct-add-review-product-options {
+  .el-select-group__title {
+    @apply text-[13px] font-semibold text-system-dark dark:text-gray-100
+           px-4 pt-3 pb-1.5 sticky top-0 z-10 bg-white dark:bg-dark-700;
+    /* Element Plus sets .3 inline on the class; nothing else lifts it. */
+    opacity: 1;
+  }
+
+  /* Indented and lighter than the heading above them: children of a product,
+     not a flat list that happens to have captions in it. */
+  .el-select-group .el-select-dropdown__item {
+    @apply pl-7 font-normal text-system-mid dark:text-gray-300;
+
+    &.is-selected {
+      @apply font-medium;
+    }
+  }
+
+  /* One rule between products, so the eye can find where a group ends. The
+     first group has no rule above it and the last none below. */
+  .el-select-group__wrap:not(:last-of-type) {
+    @apply pb-1;
+
+    &::after {
+      @apply bg-gray-divider dark:bg-dark-400;
+    }
+  }
+
+  /* A simple product sits at the top level with no heading of its own, so it
+     keeps the heading's weight — it IS the thing being chosen. Matched as a
+     direct child of the list, not of this class: the popper wraps the list in
+     a scrollbar, so a child selector rooted here matches nothing. */
+  .el-select-dropdown__list > .el-select-dropdown__item {
+    @apply font-medium text-system-dark dark:text-gray-100;
+  }
+}
+
+/* A field whose control carries its own text, so it has no label above it.
+   Pushed to the bottom of its grid row, the control lines up with the
+   labelled input beside it rather than floating at the top. */
+.fct-add-review-field-inline {
+  @apply justify-end;
+}
+
+.fct-add-review-switch {
+  @apply flex items-center gap-2 min-h-8;
+}
+
+.fct-add-review-hint {
+  @apply text-xs text-system-mid dark:text-gray-400;
+}
+
+/* Attachments without Pro: the affordance stays on screen so the capability
+   is discoverable, but it is inert and says why. The reason is text rather
+   than a tooltip — a disabled button cannot take focus, so a tooltip would
+   only ever reach pointer users. */
+.fct-add-review-locked {
+  @apply flex items-center flex-wrap gap-x-3 gap-y-1;
+}
+
+.fct-add-review-locked-btn {
+  @apply gap-1.5;
+}
+
+.fct-add-review-upgrade {
+  @apply ml-1 underline text-blue-500 dark:text-blue-300;
+}
+
+/* Verified-purchase toggle in the single-review sidebar. */
+.fct-review-verified-row {
+  @apply flex items-start justify-between gap-3 mt-4 pt-4;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.fct-review-verified-label {
+  @apply text-[13px] font-medium text-system-dark dark:text-gray-200;
+}
+
+.fct-review-verified-hint {
+  @apply text-xs text-system-mid dark:text-gray-400;
+}
+
+/* Attachment picker in the add-review modal, shown only when Pro declares
+   the capability. The file input is driven by the button, never clicked
+   directly. */
+.fct-add-review-file-input {
+  @apply hidden;
+}
+
+/* The product gallery's grid (.fmp-grid / .fmp-grid-item in
+   bulk-insert.scss): square tiles, remove control on hover, a dashed add
+   tile. Repeated here rather than shared so the review form does not lean
+   on the bulk-insert stylesheet. */
+.fct-add-review-media {
+  @apply grid grid-cols-5 gap-3 m-0 p-0 list-none;
+}
+
+.fct-add-review-media-item {
+  @apply relative aspect-square rounded overflow-hidden border border-solid border-gray-outline bg-white dark:bg-gray-800 dark:border-dark-500;
+
+  img {
+    @apply block w-full h-full object-cover;
+  }
+
+  &.is-add {
+    @apply border-0 overflow-visible bg-transparent dark:bg-transparent;
+  }
+}
+
+.fct-add-review-media-remove {
+  @apply absolute top-1 right-1 w-5.5 h-5.5 flex items-center justify-center p-0 cursor-pointer;
+  @apply rounded-full border-0 text-white text-sm leading-normal transition-opacity duration-100;
+  background: rgba(0, 0, 0, 0.6);
+
+  /* Tucked away until the tile is hovered, but only where a hover
+     exists: a touch screen has no pointer to rest on the tile, so there
+     the control stays in view rather than being an invisible target. */
+  @media (hover: hover) and (pointer: fine) {
+    @apply opacity-0;
+
+    .fct-add-review-media-item:hover &,
+    &:focus-visible {
+      @apply opacity-100;
+    }
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+}
+
+/* The dashed add tile, styled as the gallery's "Add Media" trigger. */
+.fct-add-review-media-add {
+  @apply flex items-center justify-center gap-1.5 w-full h-full bg-transparent cursor-pointer text-[13px] rounded-lg;
+  @apply dark:text-gray-300 dark:border-gray-alpha-16;
+  border: 1px dashed var(--fct-border-gray-divider, #EAECF0);
+  color: var(--fct-text-system-mid, #667085);
+  transition: border-color 0.15s, color 0.15s;
+
+  svg {
+    @apply w-5 h-5;
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--fct-primary-500, #7f56d9);
+    color: var(--fct-primary-500, #7f56d9);
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Empty state: a full-width drop-zone-sized box, icon over the label,
+     like the storefront's photo area. */
+  &.is-empty {
+    @apply flex-col w-full min-h-[112px] px-4 py-5;
+
+    svg {
+      @apply w-6 h-6;
+    }
+  }
+}
+
+// The rating beside the "Review Information" title on the single review page:
+// the stars and the number sat flush against each other and read as one glyph
+// run. A gap, and the number set quieter than the stars.
+.fct-review-rating-inline {
+  @apply inline-flex items-center gap-2;
+}
+
+.fct-review-rating-num {
+  @apply text-sm font-medium text-system-mid tabular-nums;
+}

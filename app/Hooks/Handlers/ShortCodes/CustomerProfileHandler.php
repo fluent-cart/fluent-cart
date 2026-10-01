@@ -15,6 +15,7 @@ use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\DateTime\DayjsFormatter;
@@ -96,12 +97,18 @@ class CustomerProfileHandler extends ShortCode
                 echo do_shortcode('[fluent_auth redirect_to="' . $attributeUrl . '"]');
                 echo '</div>';
             } else {
+                // The Login link wears the portal's button pair (see
+                // customer-profile-global.scss), not the theme's `.button`.
+                Vite::enqueueStyle(
+                    'fluent-cart-customer-profile-global',
+                    'public/customer-profile/style/customer-profile-global.scss'
+                );
                 ?>
                 <div class="fct_auth_wrap">
                     <div class="fct_auth_message">
                         <h2><?php echo esc_html__('Login', 'fluent-cart'); ?></h2>
                         <p><?php echo esc_html__('Please log in to access your customer portal.', 'fluent-cart'); ?></p>
-                        <a href="<?php echo esc_url(wp_login_url($redirectUrl ?? '')); ?>" class="button">
+                        <a href="<?php echo esc_url(wp_login_url($redirectUrl ?? '')); ?>" class="button fct-customer-login-btn">
                             <?php echo esc_html__('Login', 'fluent-cart'); ?>
                         </a>
                     </div>
@@ -153,6 +160,10 @@ class CustomerProfileHandler extends ShortCode
         if (EmailVerificationService::isRequired(get_current_user_id())) {
             echo $verificationNotice; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view
             return;
+        }
+
+        if (!EmailVerificationService::isEnabled()) {
+            CustomerResource::getCurrentCustomer(true);
         }
 
         $customEndpointContent = $this->maybeCustomEndpointContent();
@@ -299,6 +310,14 @@ class CustomerProfileHandler extends ShortCode
                   <path d="M10.75 8.5H14.5L10 13L5.5 8.5H9.25V3.25H10.75V8.5ZM4 15.25H16V10H17.5V16C17.5 16.1989 17.421 16.3897 17.2803 16.5303C17.1397 16.671 16.9489 16.75 16.75 16.75H3.25C3.05109 16.75 2.86032 16.671 2.71967 16.5303C2.57902 16.3897 2.5 16.1989 2.5 16V10H4V15.25Z" fill="currentColor"/>
                 </svg>'
             ],
+            'reviews'          => [
+                'label' => __('My Reviews', 'fluent-cart'),
+                'css_class' => 'fct_route',
+                'link'  => $baseUrl . 'reviews',
+                'icon_svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 1.875L12.4635 6.86713L17.9727 7.66771L13.9863 11.5533L14.9271 17.0398L10 14.4488L5.07295 17.0398L6.01368 11.5533L2.02734 7.66771L7.53647 6.86713L10 1.875ZM10 5.26443L8.53252 8.23787L5.25123 8.71472L7.62536 11.0289L7.06498 14.2963L10 12.7534L12.935 14.2963L12.3746 11.0289L14.7488 8.71472L11.4675 8.23787L10 5.26443Z" fill="currentColor"/>
+                </svg>'
+            ],
             'profile'          => [
                 'label' => __('Profile', 'fluent-cart'),
                 'css_class' => 'fct_route',
@@ -313,6 +332,10 @@ class CustomerProfileHandler extends ShortCode
 
         if (!ModuleSettings::isActive('license') || !App::isProActive()) {
             unset($menuItems['licenses']);
+        }
+
+        if (ProductReviewService::getReviewSettings()['reviews_enabled'] !== 'yes') {
+            unset($menuItems['reviews']);
         }
 
 
@@ -341,7 +364,7 @@ class CustomerProfileHandler extends ShortCode
             $profileData = [
                 'email'      => $user->user_email,
                 'full_name' => $user->display_name,
-                'photo'      => get_avatar_url($user->ID)
+                'photo'      => Helper::getUserAvatarUrl($user->ID, $user->user_email)
             ];
         }
 
@@ -417,7 +440,8 @@ class CustomerProfileHandler extends ShortCode
                 }, CurrenciesHelper::getCurrencySigns()),
                 'trans'             => TransStrings::getCustomerProfileString(),
                 'download_url_base' => site_url('fluent-cart/download-file/?fluent_cart_download=true'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
+                'reviews_enabled'   => ProductReviewService::getReviewSettings()['reviews_enabled'] === 'yes',
                 'stripe_pub_key'    => apply_filters('fluent_cart/payment_methods/stripe_pub_key', ''),
                 'paypal_client_id'  => apply_filters('fluent_cart/payment_methods/paypal_client_id', '', []),
                 'assets_path'       => Vite::getAssetUrl(),

@@ -32,6 +32,7 @@ use FluentCart\App\Services\Filter\CustomerFilter;
 use FluentCart\App\Services\Filter\CouponFilter;
 use FluentCart\App\Services\Filter\LogFilter;
 use FluentCart\App\Services\Filter\OrderBumpFilter;
+use FluentCart\App\Services\Filter\ReviewFilter;
 use FluentCart\App\Modules\Shipping\Services\Filter\ShippingClassFilter;
 use FluentCart\App\Modules\Shipping\Services\Filter\ShippingZoneFilter;
 use FluentCart\App\Modules\Integrations\AddOnModule;
@@ -89,6 +90,7 @@ class MenuHandler
             'checkout_page_id'         => __('Checkout Page', 'fluent-cart'),
             'cart_page_id'             => __('Cart Page', 'fluent-cart'),
             'receipt_page_id'          => __('Receipt Page', 'fluent-cart'),
+            'order_review_page_id'     => __('Order Review Page', 'fluent-cart'),
             'shop_page_id'             => __('Shop Page', 'fluent-cart'),
             'customer_profile_page_id' => __('Customer Profile Page', 'fluent-cart'),
         ];
@@ -481,6 +483,7 @@ class MenuHandler
             'license_filter_options'      => LicenseFilter::getTableFilterOptions(),
             'license_site_filter_options' => LicenseSiteFilter::getTableFilterOptions(),
             'tax_filter_options'          => TaxFilter::getTableFilterOptions(),
+            'review_filter_options'       => ReviewFilter::getTableFilterOptions(),
         ];
         $filterOptions = apply_filters('fluent_cart/admin_filter_options', $filterOptions, []);
 
@@ -494,6 +497,7 @@ class MenuHandler
             'taxes_table'         => ['filters' => Arr::get($filterOptions, 'tax_filter_options', [])],
             'subscriptions'       => ['filters' => Arr::get($filterOptions, 'subscription_filter_options', [])],
             'shipping_zone_table' => ['filters' => Arr::get($filterOptions, 'shipping_zone_filter_options', [])],
+            'review_table'        => ['filters' => Arr::get($filterOptions, 'review_filter_options', [])],
             // The Order Sources report filters orders, so its advanced-filter UI
             // reuses the Orders filter vocabulary rather than defining its own.
             'source_report'       => ['filters' => Arr::get($filterOptions, 'order_filter_options', [])],
@@ -593,6 +597,7 @@ class MenuHandler
             'eu_vat_county_options'            => TaxModule::euVatCountyOptions(),
             'country_tax_titles'               => TaxModule::taxTitleLists(),
             'site_url'                         => site_url(),
+            'store_logo'                       => (new \FluentCart\Api\StoreSettings())->get('store_logo.url', ''),
             'modules_settings'                 => ModuleSettings::getAllSettings(),
             'purchase_fluent_cart_link'        => 'https://fluentcart.com/',
             'admin_notices'                    => apply_filters('fluent_cart/admin_notices', []),

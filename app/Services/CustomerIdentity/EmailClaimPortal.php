@@ -56,7 +56,7 @@ class EmailClaimPortal
      */
     public static function render(): string
     {
-        if (!is_user_logged_in()) {
+        if (!is_user_logged_in() || !EmailVerificationService::isEnabled()) {
             return '';
         }
 
@@ -78,6 +78,12 @@ class EmailClaimPortal
         }
 
         $offer = $token ? null : EmailClaimService::getOffer();
+        if (!$offer && in_array($status, ['stale', 'expired'], true)) {
+            // Nothing can be requested, so never point at a send button that is not rendered.
+            $status = EmailVerificationService::isRequired(get_current_user_id())
+                ? (EmailClaimService::isEnabled() ? 'conflict' : 'disabled')
+                : 'link_used';
+        }
         $progress = CustomerRecoveryService::progress(get_current_user_id());
         if (!$token && !EmailVerificationService::isRequired(get_current_user_id())) {
             if (!$offer && in_array($status, ['sent', 'confirmed'], true)) {
@@ -115,6 +121,7 @@ class EmailClaimPortal
             'expired'       => __('This confirmation link has expired. Request a new one below.', 'fluent-cart'),
             'wrong_account' => __('Sign in to the account that requested this confirmation link.', 'fluent-cart'),
             'stale'         => __('Your account has changed since this link was sent. Request a new one below.', 'fluent-cart'),
+            'link_used'     => __('This confirmation link is no longer needed. Your email address is already confirmed.', 'fluent-cart'),
             'conflict'      => __('This address belongs to another customer account. Please contact the store.', 'fluent-cart'),
             'invalid'       => __('This confirmation link is not valid.', 'fluent-cart'),
             'disabled'      => __('Email confirmation is not available.', 'fluent-cart'),
@@ -125,7 +132,7 @@ class EmailClaimPortal
         return (string) App::make('view')->make('frontend.customer.email_claim', [
             'message'       => Arr::get($messages, $status, ''),
             'is_sent'       => $status === 'sent',
-            'is_error'      => $status && !in_array($status, ['sent', 'confirmed', 'recovering'], true),
+            'is_error'      => $status && !in_array($status, ['sent', 'confirmed', 'recovering', 'link_used'], true),
             'offer_email'   => $offer ? $offer['to'] : '',
             'offer_reason'  => $offer ? $offer['reason'] : '',
             'confirm_email' => $confirmEmail,

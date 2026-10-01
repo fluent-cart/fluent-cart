@@ -4,6 +4,8 @@
 :root {
   --fct-direct-btn-bg-color: var(--fct-btn-bg-color, #253241);
   --fct-direct-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-direct-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-direct-btn-bg-color));
+  --fct-direct-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-direct-btn-text-color));
 }
 
 .fluent-cart-direct-checkout-button {
@@ -11,7 +13,12 @@
   // block below, same as product-card.scss: a declaration carrying an
   // unresolvable var() still wins the cascade and computes to `unset`, so only
   // the absence of the declaration lets the theme's own button rules apply.
-  @apply relative border-0 py-3 px-5 text-sm font-medium rounded text-center cursor-pointer leading-none flex items-center justify-center gap-2 capitalize;
+  @apply relative border-0 text-sm font-medium text-center cursor-pointer leading-none flex items-center justify-center gap-2 capitalize;
+  padding-top: var(--fct-btn-padding-y, theme('spacing.3'));
+  padding-bottom: var(--fct-btn-padding-y, theme('spacing.3'));
+  padding-left: var(--fct-btn-padding-x, theme('spacing.5'));
+  padding-right: var(--fct-btn-padding-x, theme('spacing.5'));
+  border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
   @apply no-underline !important;
 
@@ -40,16 +47,18 @@ body:not(.fluent-cart-no-colors) {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-direct-btn-bg-color);
     box-shadow: inset 0 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
 
+    // The label and icon follow the button's own colour — resting and
+    // hovered — so a hover text measured dark for contrast reaches them too.
     * {
-      @apply text-white;
+      color: inherit;
     }
 
     @apply text-[var(--fct-direct-btn-text-color)];
 
     &:hover {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-direct-btn-bg-color);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-direct-btn-hover-bg-color);
       box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
-      color: var(--fct-direct-btn-text-color);
+      color: var(--fct-direct-btn-hover-text-color);
     }
   }
 }

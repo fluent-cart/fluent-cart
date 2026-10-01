@@ -166,7 +166,7 @@ export function useAppMixin(app) {
                 return AppConfig.get('shop.currency_sign');
             },
             getPlaceholderImage() {
-                return Asset.getUrl('images/placeholder.svg')
+                return Asset.productPlaceholder()
             },
             saveLocal(key, value) {
                 Storage.set(key, value);

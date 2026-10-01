@@ -13,7 +13,6 @@ use FluentCart\App\Services\Renderer\CartDrawerRenderer;
 use FluentCart\App\Services\Renderer\MiniCartRenderer;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
 class MiniCartBlockEditor extends BlockEditor
@@ -74,7 +73,7 @@ class MiniCartBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Mini Cart', 'fluent-cart'),
                 'description'       => __('Display a button for shoppers to quickly view their cart.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

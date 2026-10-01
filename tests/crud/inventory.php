@@ -39,7 +39,7 @@ return [
             'create',
             'POST',
             'orders/',
-            552,
+            553,
             'safety_exclusion',
             '',
             'OrderResource::updatedPlaceOrder() resolves the selected gateway and starts '
@@ -50,7 +50,7 @@ return [
             'read',
             'GET',
             'orders/{order_id}',
-            568,
+            569,
             'round_trip',
             'crud-order-safe-route-round-trip'
         ),
@@ -59,7 +59,7 @@ return [
             'update',
             'POST',
             'orders/{order_id}',
-            572,
+            573,
             'round_trip',
             'crud-order-safe-route-round-trip'
         ),
@@ -68,7 +68,7 @@ return [
             'delete',
             'DELETE',
             'orders/{order_id}',
-            598,
+            599,
             'round_trip',
             'crud-order-safe-route-round-trip'
         ),
@@ -77,7 +77,7 @@ return [
             'payment',
             'POST',
             'orders/{order}/mark-as-paid',
-            560,
+            561,
             'safety_exclusion',
             '',
             'Creates/changes payment state and is expressly outside Phase 9.'
@@ -87,7 +87,7 @@ return [
             'license_lifecycle',
             'POST',
             'orders/{order}/generate-missing-licenses',
-            564,
+            565,
             'safety_exclusion',
             '',
             'License lifecycle mutation is covered by Phase 8, not entity CRUD.'
@@ -97,7 +97,7 @@ return [
             'refund',
             'POST',
             'orders/{order_id}/refund',
-            584,
+            585,
             'safety_exclusion',
             '',
             'Resolves a gateway and creates a refund; invocation is prohibited.'
@@ -107,7 +107,7 @@ return [
             'dispute',
             'POST',
             'orders/{order}/transactions/{transaction_id}/accept-dispute/',
-            610,
+            611,
             'safety_exclusion',
             '',
             'Mutates a payment dispute/transaction rather than the Order CRUD row.'
@@ -117,7 +117,7 @@ return [
             'transaction_status',
             'PUT',
             'orders/{order}/transactions/{transaction}/status',
-            624,
+            625,
             'safety_exclusion',
             '',
             'Writes payment transaction state and can trigger payment lifecycle behavior.'
@@ -127,7 +127,7 @@ return [
             'gateway_sync',
             'POST',
             'orders/{order}/transactions/{transaction}/sync',
-            628,
+            629,
             'safety_exclusion',
             '',
             'Explicitly resolves a gateway to synchronize a live transaction.'
@@ -137,7 +137,7 @@ return [
             'payment_status_sync',
             'PUT',
             'orders/{order}/sync-statuses',
-            640,
+            641,
             'safety_exclusion',
             '',
             'Synchronizes payment/order lifecycle state and is not a one-field CRUD update.'
@@ -148,7 +148,7 @@ return [
             'create',
             'POST',
             'customers/',
-            681,
+            682,
             'round_trip',
             'crud-customer-route-round-trip'
         ),
@@ -157,7 +157,7 @@ return [
             'read',
             'GET',
             'customers/{customerId}',
-            701,
+            702,
             'round_trip',
             'crud-customer-route-round-trip'
         ),
@@ -166,7 +166,7 @@ return [
             'update',
             'PUT',
             'customers/{customerId}',
-            709,
+            710,
             'round_trip',
             'crud-customer-route-round-trip'
         ),
@@ -175,7 +175,7 @@ return [
             'delete',
             'POST',
             'customers/do-bulk-action',
-            717,
+            718,
             'round_trip',
             'crud-customer-route-round-trip',
             'The API exposes exact selected-customer deletion through its bulk-action route.'
@@ -186,7 +186,7 @@ return [
             'create',
             'POST',
             'products/',
-            117,
+            118,
             'safety_exclusion',
             '',
             'wp_insert_post() reaches WordPress future-post cron mutation hooks on this install; '
@@ -197,7 +197,7 @@ return [
             'read',
             'GET',
             'products/{productId}/pricing',
-            138,
+            139,
             'round_trip',
             'crud-product-safe-route-round-trip'
         ),
@@ -206,7 +206,7 @@ return [
             'update',
             'POST',
             'products/{postId}/update-long-desc-editor-mode',
-            166,
+            167,
             'round_trip',
             'crud-product-safe-route-round-trip',
             'This safe sub-resource route changes one ProductDetail JSON column without wp_update_post().'
@@ -216,7 +216,7 @@ return [
             'post_update',
             'POST',
             'products/{postId}/pricing',
-            162,
+            163,
             'safety_exclusion',
             '',
             'The post-field path calls wp_update_post(), which can mutate future-post cron state.'
@@ -226,7 +226,7 @@ return [
             'delete',
             'DELETE',
             'products/{product}',
-            218,
+            219,
             'round_trip',
             'crud-product-safe-route-round-trip'
         ),
@@ -236,7 +236,7 @@ return [
             'create',
             'POST',
             'products/variants',
-            241,
+            242,
             'round_trip',
             'crud-variant-route-round-trip'
         ),
@@ -245,7 +245,7 @@ return [
             'read',
             'GET',
             'products/variants',
-            66,
+            67,
             'round_trip',
             'crud-variant-route-round-trip'
         ),
@@ -254,7 +254,7 @@ return [
             'update',
             'POST',
             'products/variants/{variantId}',
-            258,
+            259,
             'round_trip',
             'crud-variant-route-round-trip'
         ),
@@ -263,7 +263,7 @@ return [
             'delete',
             'DELETE',
             'products/variants/{variantId}',
-            265,
+            266,
             'round_trip',
             'crud-variant-route-round-trip'
         ),
@@ -273,7 +273,7 @@ return [
             'create',
             'POST',
             'coupons/',
-            798,
+            799,
             'round_trip',
             'crud-coupon-route-round-trip'
         ),
@@ -282,7 +282,7 @@ return [
             'read',
             'GET',
             'coupons/{id}',
-            795,
+            796,
             'round_trip',
             'crud-coupon-route-round-trip'
         ),
@@ -291,7 +291,7 @@ return [
             'update',
             'PUT',
             'coupons/{id}',
-            801,
+            802,
             'round_trip',
             'crud-coupon-route-round-trip'
         ),
@@ -300,7 +300,7 @@ return [
             'delete',
             'DELETE',
             'coupons/{id}',
-            804,
+            805,
             'round_trip',
             'crud-coupon-route-round-trip'
         ),
@@ -309,7 +309,7 @@ return [
             'apply_to_order',
             'POST',
             'coupons/apply',
-            807,
+            808,
             'safety_exclusion',
             '',
             'Order calculation/application is not Coupon entity CRUD and can bind to an Order.'
@@ -319,7 +319,7 @@ return [
             'cancel_on_order',
             'POST',
             'coupons/cancel',
-            811,
+            812,
             'safety_exclusion',
             '',
             'Can delete an applied Coupon and decrement use_count on Order state.'
@@ -329,7 +329,7 @@ return [
             'reapply_to_order',
             'POST',
             'coupons/re-apply',
-            815,
+            816,
             'safety_exclusion',
             '',
             'Can rewrite applied-Coupon Order relationships; not entity CRUD.'
@@ -340,7 +340,7 @@ return [
             'create',
             'POST',
             'labels/',
-            668,
+            669,
             'round_trip',
             'crud-label-supported-routes'
         ),
@@ -349,7 +349,7 @@ return [
             'read',
             'GET',
             'labels/',
-            665,
+            666,
             'round_trip',
             'crud-label-supported-routes'
         ),
@@ -358,7 +358,7 @@ return [
             'update_relationship',
             'POST',
             'labels/update-label-selections',
-            671,
+            672,
             'round_trip',
             'crud-label-supported-routes',
             'The only Label mutation after create updates relationships, not the Label row.'

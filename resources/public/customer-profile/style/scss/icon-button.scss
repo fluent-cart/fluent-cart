@@ -1,6 +1,6 @@
 /*===== icon button ====*/
 .icon-button{
-    @apply p-0 w-10 h-10 bg-white flex relative items-center justify-center flex-shrink-0 rounded border border-solid border-gray-outline text-system-mid transition-none focus:shadow-none focus:bg-gray-25 focus:text-system-mid focus:border-gray-outline dark:border-dark-400 dark:bg-dark-600 dark:text-white dark:hover:bg-dark-600 dark:focus:border-dark-400 dark:focus:bg-dark-600 dark:focus:text-white;
+    @apply p-0 w-10 h-10 bg-[var(--fct-customer-dashboard-secondary-btn-bg,#ffffff)] flex relative items-center justify-center flex-shrink-0 rounded border border-solid border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] text-[var(--fct-customer-dashboard-text-color,#565865)] transition-none focus:shadow-none focus:bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] focus:text-[var(--fct-customer-dashboard-text-color,#565865)] focus:border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] dark:border-dark-400 dark:bg-dark-600 dark:text-white dark:hover:bg-dark-600 dark:focus:border-dark-400 dark:focus:bg-dark-600 dark:focus:text-white;
     .el-icon{
         @apply w-auto;
     }
@@ -88,24 +88,24 @@
     }
     &.info{
         &[soft]{
-            @apply bg-gray-50 text-system-mid border-gray-50;
+            @apply bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)] text-[var(--fct-customer-dashboard-text-color,#565865)] border-[color:var(--fct-customer-dashboard-surface-muted,#F5F6F7)];
         }
         &[outline]{
-            @apply bg-gray-neutral border-gray-outline text-system-mid dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
+            @apply bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] text-[var(--fct-customer-dashboard-text-color,#565865)] dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
         }
     }
     &.transparent{
         @apply bg-transparent dark:hover:bg-dark-600;
     }
     &.white{
-        @apply bg-white dark:bg-dark-600;
+        @apply bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] dark:bg-dark-600;
     }
     &.dark{
         @apply bg-dark-500 border-dark-500 text-white hover:border-dark-500 hover:bg-dark-500 hover:text-white;
     }
     &.hover{
         &-primary{
-            @apply hover:border-primary-500 hover:bg-primary-25 hover:text-primary-500 dark:hover:text-gray-50;
+            @apply hover:border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)] hover:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] hover:text-[var(--fct-customer-dashboard-link-color,#253241)] dark:hover:text-gray-50;
         }
         &-danger{
             @apply hover:border-red-500 hover:bg-red-25 hover:text-red-500;
@@ -132,7 +132,7 @@ button.icon-button {
 
 button.icon-button,
 a.icon-button {
-    @apply cursor-pointer hover:bg-gray-50 hover:text-primary-500 text-inherit dark:hover:bg-dark-600 dark:text-white;
+    @apply cursor-pointer hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] hover:text-[var(--fct-customer-dashboard-link-color,#253241)] text-inherit dark:hover:bg-dark-600 dark:text-white;
     &.danger{
         @apply dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white;
     }

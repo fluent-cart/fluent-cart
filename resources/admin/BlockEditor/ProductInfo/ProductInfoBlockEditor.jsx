@@ -139,7 +139,12 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                                     'fluent-cart/shopapp-product-title',
                                     'fluent-cart/excerpt',
                                     'fluent-cart/sale-badge',
-                                    'fluent-cart/product-package-description'
+                                    'fluent-cart/product-package-description',
+                                    'fluent-cart/product-rating',
+                                    'fluent-cart/product-reviews',
+                                    'fluent-cart/product-review-summary-group',
+                                    'fluent-cart/write-a-review-button',
+                                    'fluent-cart/product-review-list'
                                     // 'fluent-cart/shopapp-product-price'
                                 ]
                             }

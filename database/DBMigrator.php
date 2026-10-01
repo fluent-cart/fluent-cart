@@ -18,6 +18,7 @@ use FluentCart\Database\Migrations\OrderTransactionsMigrator;
 use FluentCart\Database\Migrations\ProductDetailsMigrator;
 use FluentCart\Database\Migrations\ProductDownloadsMigrator;
 use FluentCart\Database\Migrations\ProductMetaMigrator;
+use FluentCart\Database\Migrations\ProductReviewsMigrator;
 use FluentCart\Database\Migrations\ProductVariationMigrator;
 use FluentCart\Database\Migrations\ScheduledActionsMigrator;
 use FluentCart\Database\Migrations\ShippingClassesMigrator;
@@ -70,6 +71,7 @@ class DBMigrator
         ProductDetailsMigrator::class,
         ProductDownloadsMigrator::class,
         ProductMetaMigrator::class,
+        ProductReviewsMigrator::class,
         SubscriptionMetaMigrator::class,
         SubscriptionsMigrator::class,
         TaxClassesMigrator::class,
@@ -182,6 +184,10 @@ class DBMigrator
 
             // 2026-08-20
             ProductMetaMigrator::addObjectMetaIndex();
+
+            // 2026-09-07 — product reviews. A store updating from a release
+            // without the reviews table gets it created here.
+            ProductReviewsMigrator::migrate();
 
             // let's check the orders table sequence number
             global $wpdb;

@@ -13,24 +13,24 @@
         @apply flex-1;
     }
     .title{
-        @apply font-medium block text-sm text-[var(--fluent-cart-customer-dashboard-title-color)] no-underline leading-[22px] outline-none #{!important};
+        @apply font-medium block text-sm text-[var(--fluent-cart-customer-dashboard-title-color,var(--fct-primary-text-color))] no-underline leading-[22px] outline-none #{!important};
         a{
             @apply no-underline hover:underline;
             color: inherit;
         }
     }
     .variation-title{
-        @apply text-xs text-[var(--fluent-cart-customer-dashboard-text-color)] leading-[16px] mt-1 font-normal dark:text-gray-200 #{!important};
+        @apply text-xs text-[var(--fluent-cart-customer-dashboard-text-color,var(--fct-secondary-text-color))] leading-[16px] mt-1 font-normal dark:text-gray-200 #{!important};
     }
     .fct-unit-price-breakdown {
-        @apply flex items-center gap-1 mt-1 text-xs text-[var(--fluent-cart-customer-dashboard-text-color)] dark:text-gray-200;
+        @apply flex items-center gap-1 mt-1 text-xs text-[var(--fluent-cart-customer-dashboard-text-color,var(--fct-secondary-text-color))] dark:text-gray-200;
         .fct-unit-price-rounding-icon {
             @apply cursor-help opacity-75;
-            color: var(--fluent-cart-customer-dashboard-text-color);
+            color: var(--fluent-cart-customer-dashboard-text-color, var(--fct-secondary-text-color));
         }
     }
     .additional-info{
-        @apply mt-2.5 grid gap-1 text-xs text-system-dark font-normal #{!important};
+        @apply mt-2.5 grid gap-1 text-xs text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-normal #{!important};
         span{
             @apply leading-[16px];
         }
@@ -44,7 +44,8 @@
     @apply flex items-center justify-between gap-2 pl-[52px];
 
     .fct-tax-badge {
-        @apply text-[11px] px-[7px] py-0.5 rounded-[4px] font-medium leading-none flex-shrink-0;
+        @apply text-[11px] px-[7px] py-0.5 font-medium leading-none flex-shrink-0;
+        border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     }
 
     .fct-tax-amount {
@@ -86,5 +87,40 @@
         position: absolute;
         bottom: 16px;
         left: 12px;
+    }
+}
+
+/* "Write a Review" affordance under an order item — a small outlined
+   button linking to the product page's reviews section
+   (#fct-product-reviews marker hash). */
+.fct-order-item-review-btn {
+    // The storefront's Write a Review button (.fct-review-cta-btn), rule for
+    // rule: white with an outline, filled with the primary colour on hover
+    // and focus, one grey ring for keyboard focus only.
+    @apply inline-flex items-center justify-center gap-1 mt-2.5 bg-[var(--fct-customer-dashboard-secondary-btn-bg,#ffffff)] border border-solid border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] text-sm text-[var(--fct-customer-dashboard-secondary-btn-text,#2F3448)] font-medium no-underline shadow-none cursor-pointer transition-colors duration-200 whitespace-nowrap;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-top: var(--fct-btn-padding-y, theme('spacing.2'));
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.2'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
+    @apply hover:bg-[var(--fct-customer-dashboard-btn-hover-bg-color,#253241)] hover:text-[var(--fct-customer-dashboard-btn-hover-text-color,#ffffff)] hover:border-[color:var(--fct-customer-dashboard-btn-hover-bg-color,#253241)] focus:bg-[var(--fct-customer-dashboard-btn-hover-bg-color,#253241)] focus:text-[var(--fct-customer-dashboard-btn-hover-text-color,#ffffff)] focus:border-[color:var(--fct-customer-dashboard-btn-hover-bg-color,#253241)];
+    // The theme underlines links in content areas with a rule that outranks
+    // the utility; a button must not read as a link.
+    text-decoration: none !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+        text-decoration: none !important;
+    }
+
+    &:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #6b7280 !important;
+        outline-offset: 2px;
     }
 }

@@ -5,8 +5,10 @@ namespace FluentCart\App\Services\Email;
 use FluentCart\App\App;
 use FluentCart\App\Models\Model;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\ProductReview;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\Framework\Support\Arr;
 
@@ -148,6 +150,182 @@ class EmailNotificationMailer
             $this->mailEmailsOfEvent('subscription_trial_end_reminder', $data);
         }, 999, 1);
 
+        add_action('fluent_cart/review_created', function ($data) {
+            $review = Arr::get($data, 'review');
+            if ($review && empty($review->parent_id)) {
+                $this->mailEmailsOfEvent('review_created', $data);
+            }
+        }, 999, 1);
+
+        // To the reviewer, on the settled hook — the queued job has re-read
+        // the review and it is still approved. The job fires once per
+        // approval, and two requests can make the same approval; the author
+        // is told once — barring a worker killed in the one UPDATE between
+        // the transport accepting a message and the record of it, which
+        // repeats that one message after the lease timeout: at-least-once at
+        // that edge, once everywhere else. So the send is behind a lease on
+        // the review's
+        // other_info: one conditional UPDATE, handed to exactly one caller,
+        // taken before the send and settled after it — delivered closes the
+        // notice, anything else releases the lease so a retry can send. Taken
+        // only when a notification is switched on and there is someone to
+        // send to — a lease spent on either could never be told about later.
+        add_action('fluent_cart/review_approved_done', function ($data) {
+            $review = Arr::get($data, 'review');
+            if (!$review instanceof ProductReview || $review->parent_id) {
+                return;
+            }
+
+            $mailNames = EmailNotifications::activeNotificationNamesOfEvent('review_approved_done');
+            if (!$mailNames) {
+                return;
+            }
+
+            if (ProductReviewService::resolveNotificationRecipient($review) === '') {
+                // Nobody to send to. Not leased, so a corrected address and
+                // a fresh approval can still send.
+                return;
+            }
+
+            $leaseToken = ProductReviewService::claimApprovalNotice($review);
+            if (!$leaseToken) {
+                return;
+            }
+
+            $this->sendUnderNoticeLease(
+                $mailNames,
+                $data,
+                ProductReviewService::deliveredApprovalNotices((int) $review->id),
+                function (array $deliveredNames) use ($review, $leaseToken) {
+                    ProductReviewService::recordApprovalNoticeDeliveries((int) $review->id, $leaseToken, $deliveredNames);
+                },
+                function (bool $allDelivered, array $deliveredNames) use ($review, $leaseToken) {
+                    ProductReviewService::settleApprovalNotice((int) $review->id, $leaseToken, $allDelivered, $deliveredNames);
+                }
+            );
+        }, 999, 1);
+
+        // To the reviewer, when the store answers them. Same shape as the
+        // approval notice: on the settled hook, behind a once-per-reply
+        // lease, taken only when there is a notification switched on and
+        // someone to send to. One more reason not to send: the person who
+        // wrote the reply is the reviewer — a moderator answering their own
+        // review is not told about it.
+        add_action('fluent_cart/review_replied_done', function ($data) {
+            $reply = Arr::get($data, 'reply');
+            $review = Arr::get($data, 'review');
+            if (!$reply instanceof ProductReview || !$review instanceof ProductReview || $review->parent_id) {
+                return;
+            }
+
+            $mailNames = EmailNotifications::activeNotificationNamesOfEvent('review_replied_done');
+            if (!$mailNames) {
+                return;
+            }
+
+            $recipient = ProductReviewService::resolveNotificationRecipient($review);
+            if ($recipient === '') {
+                return;
+            }
+
+            // The reply's author, compared as who they are — the account the
+            // reply was written from, or failing that the address it
+            // carries — never as a role: a customer who happens to be an
+            // administrator still gets told about replies to their review.
+            $sameAccount = (int) $reply->user_id && (int) $reply->user_id === (int) $review->user_id;
+            $sameAddress = strcasecmp(trim((string) $reply->reviewer_email), $recipient) === 0;
+            if ($sameAccount || $sameAddress) {
+                return;
+            }
+
+            $leaseToken = ProductReviewService::claimReplyNotice($reply);
+            if (!$leaseToken) {
+                return;
+            }
+
+            $this->sendUnderNoticeLease(
+                $mailNames,
+                $data,
+                ProductReviewService::deliveredReplyNotices((int) $reply->id),
+                function (array $deliveredNames) use ($reply, $leaseToken) {
+                    ProductReviewService::recordReplyNoticeDeliveries((int) $reply->id, $leaseToken, $deliveredNames);
+                },
+                function (bool $allDelivered, array $deliveredNames) use ($reply, $leaseToken) {
+                    ProductReviewService::settleReplyNotice((int) $reply->id, $leaseToken, $allDelivered, $deliveredNames);
+                }
+            );
+        }, 999, 1);
+
+    }
+
+    /**
+     * Send a set of notifications under a once-only lease, and settle it.
+     *
+     * Delivery is the transport's own word. wp_mail() fires wp_mail_succeeded
+     * once the message is accepted and wp_mail_failed when it is not — and
+     * fires neither when something short-circuits it, a pre_wp_mail filter
+     * returning false, say, or a mailer filter that stripped every recipient.
+     * So a send counts as delivered only when the success action fired for
+     * it; silence is not success. (The action is WordPress 5.9's; the plugin
+     * requires 6.7.) Watched only for the duration of this send, so another
+     * email elsewhere in the request is not read as ours.
+     *
+     * One lease covers every notification switched on for the event — an
+     * add-on can register a second — so each is judged on its own: the ones
+     * already delivered under an earlier, released lease are skipped; each
+     * one that goes out is recorded at once, before the next is tried, so a
+     * worker killed after a delivery leaves at most that one delivery
+     * unrecorded; and the loop stops at the first failure to leave the rest
+     * for the retry. A throw anywhere in a send still reaches the settle on
+     * the way out, with what went out before it, and then the caller: the
+     * queued job records the failure and a re-run can send.
+     *
+     * @param string[] $mailNames notifications to send, in order
+     * @param array $data the event payload the templates read
+     * @param string[] $alreadyDelivered names delivered under an earlier lease
+     * @param callable $record fn(string[] $deliveredNames): records deliveries so far, lease still held
+     * @param callable $settle fn(bool $allDelivered, string[] $deliveredNames): settles the lease
+     */
+    protected function sendUnderNoticeLease(array $mailNames, array $data, array $alreadyDelivered, callable $record, callable $settle): void
+    {
+        $deliveredNow = [];
+        $allDelivered = false;
+        $deliveryFailed = false;
+        $deliverySucceeded = false;
+
+        $onMailFailed = function () use (&$deliveryFailed) {
+            $deliveryFailed = true;
+        };
+        $onMailSucceeded = function () use (&$deliverySucceeded) {
+            $deliverySucceeded = true;
+        };
+        add_action('wp_mail_failed', $onMailFailed);
+        add_action('wp_mail_succeeded', $onMailSucceeded);
+
+        try {
+            foreach ($mailNames as $mailName) {
+                if (in_array($mailName, $alreadyDelivered, true)) {
+                    continue;
+                }
+
+                $deliveryFailed = false;
+                $deliverySucceeded = false;
+                $this->mailByEmailName($mailName, $data);
+
+                if (!$deliverySucceeded || $deliveryFailed) {
+                    $deliveryFailed = true;
+                    break;
+                }
+
+                $deliveredNow[] = $mailName;
+                $record(array_merge($alreadyDelivered, $deliveredNow));
+            }
+            $allDelivered = !$deliveryFailed;
+        } finally {
+            remove_action('wp_mail_failed', $onMailFailed);
+            remove_action('wp_mail_succeeded', $onMailSucceeded);
+            $settle($allDelivered, array_merge($alreadyDelivered, $deliveredNow));
+        }
     }
 
     public function registerAsyncMails()

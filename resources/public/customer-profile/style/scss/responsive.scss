@@ -24,7 +24,8 @@
             .fct-material-input{
                 .el-input__wrapper,
                 .el-select__wrapper {
-                    @apply rounded-bl border-b-[1px] border-l-[1px] !important;
+                    @apply border-b-[1px] border-l-[1px] !important;
+                    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
                 }
             }
         }

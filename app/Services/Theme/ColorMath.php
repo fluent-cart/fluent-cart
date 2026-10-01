@@ -202,6 +202,80 @@ class ColorMath
     }
 
     /**
+     * A text colour that reads on a background (WCAG 4.5:1) wherever one can.
+     *
+     * readableOn()'s usual pair is kept whenever it reads, so every partner it
+     * already made readable is unchanged. On a mid-tone background neither
+     * half of that pair reaches 4.5:1 (#809400 peaks at 4.30:1 with #1f2937);
+     * pure black or white — whichever reads better — goes further, and is
+     * taken only when it does.
+     *
+     * @param string $background
+     * @return string
+     */
+    public static function readableText($background): string
+    {
+        $picked = self::readableOn($background);
+        $pickedContrast = self::contrast($background, $picked);
+
+        if ($pickedContrast >= 4.5) {
+            return $picked;
+        }
+
+        $extreme = self::contrast($background, '#ffffff') >= self::contrast($background, '#000000')
+            ? '#ffffff'
+            : '#000000';
+
+        return self::contrast($background, $extreme) > $pickedContrast ? $extreme : $picked;
+    }
+
+    /**
+     * Mix text into a surface, keeping as little of the text as still reads.
+     *
+     * Starts at $percent of the text and moves toward it in small steps until
+     * the mix reaches $minimum contrast on the surface — a mix that already
+     * reads is returned unchanged. Text that does not read on the surface
+     * itself comes back as the text: nothing between the two reads better.
+     *
+     * @param string $text
+     * @param string $surface
+     * @param int    $percent Starting share of the text, 0-100.
+     * @param float  $minimum
+     * @return string Hex, or '' when either colour is unreadable.
+     */
+    public static function readableMix($text, $surface, int $percent, float $minimum = 4.5): string
+    {
+        if (!self::parse($text) || !self::parse($surface)) {
+            return '';
+        }
+
+        for ($share = max(0, $percent); $share < 100; $share += 2) {
+            $mixed = self::mix($text, $surface, $share);
+
+            if (self::contrast($surface, $mixed) >= $minimum) {
+                return $mixed;
+            }
+        }
+
+        return self::hex($text);
+    }
+
+    /**
+     * Move a colour away from itself — lighter when it is dark, darker when it
+     * is light. How a hover is derived from a button that states none.
+     *
+     * @param string $color
+     * @param int    $percent
+     * @return string
+     */
+    public static function shiftFromItself($color, int $percent = 12): string
+    {
+        return self::isDark($color)
+            ? self::lighten($color, $percent)
+            : self::darken($color, $percent);
+    }
+
+    /**
      * Nudge a colour toward white.
      *
      * @param string $color

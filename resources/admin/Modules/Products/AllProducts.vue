@@ -1,8 +1,6 @@
 <script setup>
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import TableWrapper from "@/Bits/Components/TableNew/TableWrapper.vue";
-import Image from "@/utils/support/Image";
-import Arr from "@/utils/support/Arr";
 import useProductTable from "@/utils/table-new/ProductTable";
 import {formatNumber} from "@/Bits/productService";
 import translate from "@/utils/translator/Translator";
@@ -37,10 +35,6 @@ const isMobileView = ref(false);
 const checkMobileView = () => {
   isMobileView.value = window.innerWidth < 768;
 };
-
-const getImage = (detail, dark = false) => {
-  return Arr.get(detail, 'featured_media.url') ?? Image.emptyImage(dark);
-}
 
 const getPrice = (detail) => {
   if (detail.min_price === detail.max_price) {

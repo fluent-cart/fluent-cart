@@ -28,7 +28,7 @@
             >
                 <FeedHeader
                     :settings="settings"
-                    :integration_name="integration_name"
+                    :integration_title="integrationTitle"
                 />
 
                 <CardContainer>
@@ -332,6 +332,7 @@ import ErrorView from "./Templates/errorView.vue";
 import Notify from "@/utils/Notify";
 import RestSelector from "./Templates/_RestSelector.vue";
 import translate from "@/utils/translator/Translator";
+import Str from "@/utils/support/Str.js";
 
 export default {
     name: "FeedEditor",
@@ -373,6 +374,9 @@ export default {
         };
     },
     computed: {
+        integrationTitle() {
+            return this.settings_fields?.integration_title || Str.studly(this.integration_name, '_');
+        },
         getTitle() {
             let integrationName = this.settings_fields.integration_title || "";
             if (this.integration_id) {

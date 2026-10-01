@@ -64,10 +64,10 @@ class ProductCarouselBlockEditor extends BlockEditor
                 'trans'              => TransStrings::getShopAppBlockEditorString(),
                 'title'             => __('Product Carousel', 'fluent-cart'),
                 'description'       => __('This block will display the product carousel.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg')
+                'placeholder_image' => Helper::getProductPlaceholderUrl()
             ],
             'fluent_cart_block_editor_asset' => [
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation'  => TransStrings::blockStrings(),
             'fluentCartCarouselVars' => [

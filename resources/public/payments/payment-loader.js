@@ -247,9 +247,14 @@ export default class PaymentLoader {
     }
 
     enableCheckoutButton(message) {
+        this.checkoutHandler?.endSubmission?.();
         this.#form.classList.add('fluent-cart-checkout-order-processing');
         this.#checkoutUiService.enableCheckoutButton();
         this.#checkoutUiService.setCheckoutButtonText(message);
+    }
+
+    isSubmitting() {
+        return this.checkoutHandler?.isSubmitting?.() === true;
     }
 
 

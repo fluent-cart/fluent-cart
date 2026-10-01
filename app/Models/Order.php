@@ -1135,6 +1135,47 @@ class Order extends Model
         return add_query_arg(['download' => 1], $this->getReceiptViewUrl());
     }
 
+    /**
+     * The public "review your order" page for this order.
+     *
+     * Same shape as the receipt URL, and the same credential: the order uuid.
+     * That is what lets the link work in an email to a guest-checkout buyer,
+     * who has no account to log into — see
+     * ProductReviewService::resolveOrderGrant().
+     *
+     * @return string
+     */
+    public function getOrderReviewUrl()
+    {
+        return static::reviewUrlForHash((string) $this->uuid);
+    }
+
+    /**
+     * The order-review URL for an order hash, without loading the order —
+     * the email parsers already hold the hash.
+     *
+     * @param string $orderHash
+     * @return string
+     */
+    public static function reviewUrlForHash($orderHash)
+    {
+        // The store's chosen page wins when it has one: it carries the theme's
+        // header, footer and styling, which the query route deliberately does
+        // not. getOrderReviewPage() returns home_url() when nothing is picked,
+        // which is exactly when the route should answer instead.
+        $storeSettings = new \FluentCart\Api\StoreSettings();
+        $pageUrl = $storeSettings->getOrderReviewPage();
+
+        if ($pageUrl && $pageUrl !== home_url()) {
+            return add_query_arg(['order_hash' => $orderHash], $pageUrl);
+        }
+
+        return add_query_arg([
+            'fluent-cart' => 'order-review',
+            'order_hash'  => $orderHash,
+        ], home_url());
+    }
+
     public function addLog($title, $description = '', $type = 'info', $by = '')
     {
 

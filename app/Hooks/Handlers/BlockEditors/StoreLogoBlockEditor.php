@@ -2,9 +2,9 @@
 
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Services\Renderer\StoreLogoRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 
 class StoreLogoBlockEditor extends BlockEditor
 {
@@ -35,7 +35,7 @@ class StoreLogoBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Store Logo', 'fluent-cart'),
                 'description'       => __('Display your store logo.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
                 'store_logo'        => $renderer->getStoreLogo(),
                 'store_name'        => $renderer->getStoreName(),
                 'home_url'          => home_url('/')

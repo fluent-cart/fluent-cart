@@ -10,4 +10,9 @@ export default class Asset {
     static getUrl = (url, params = {}) => {
         return Url.join(Asset.url(), url, params)
     }
+
+    // The product placeholder illustration, shown wherever a product has no image.
+    static productPlaceholder = () => {
+        return Asset.getUrl('images/product-placeholder.webp')
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\Templating\BlockTemplates;
 
+
 /**
  * ProductCategoryTemplate class.
  *
@@ -88,6 +89,10 @@ class ProductPageTemplate
             <!-- /wp:group -->
 
             <!-- wp:post-content {"lock":{"move":false,"remove":true},"align":"wide","style":{"spacing":{"blockGap":"0","padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30"}}},"layout":{"type":"default"}} /-->
+
+            <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+            <div class="wp-block-group alignwide"><!-- wp:fluent-cart/product-reviews /--></div>
+            <!-- /wp:group -->
 
             <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
             <div class="wp-block-group alignwide"><!-- wp:shortcode -->

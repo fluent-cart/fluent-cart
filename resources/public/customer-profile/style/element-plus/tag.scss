@@ -1,5 +1,6 @@
 .el-tag{
-  @apply font-medium capitalize rounded-sm;
+  @apply font-medium capitalize;
+  border-radius: var(--fct-badge-radius, theme('borderRadius.sm'));
   .icon{
     @apply h-[13px];
     svg{

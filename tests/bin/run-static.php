@@ -215,11 +215,35 @@ $runCommand(
     'translation-map-integrity',
     $phpBinary . ' ' . escapeshellarg($pluginDir . '/tests/lint/translation-map-integrity.php')
 );
+$runCommand(
+    'state-translation-contexts',
+    $phpBinary . ' ' . escapeshellarg($pluginDir . '/tests/lint/state-translation-contexts.php')
+);
 $localizedDatesLint = escapeshellarg($pluginDir . '/tests/lint/localized-dates.php');
 $runCommand(
     'localized-dates',
     $phpBinary . ' ' . $localizedDatesLint
 );
+
+// This check needs the WordPress runtime because it compares the loaded core
+// preset class with the loaded Elementor adapter. Run it as a nested WP-CLI
+// command rather than as plain PHP, like the other source-only lints above.
+$reviewPresetContract = $pluginDir . '/tests/lint/review-layout-preset-contract.php';
+$hardAssertProtected('before review-layout-preset-contract');
+$reviewPresetResult = WP_CLI::runcommand(
+    'eval-file ' . escapeshellarg($reviewPresetContract),
+    ['return' => 'all']
+);
+$reviewPresetData = (array) $reviewPresetResult;
+$reviewPresetCode = (int) ($reviewPresetData['return_code'] ?? 1);
+if (!empty($reviewPresetData['stdout'])) {
+    WP_CLI::log(trim($reviewPresetData['stdout']));
+}
+if (!empty($reviewPresetData['stderr'])) {
+    WP_CLI::log(trim($reviewPresetData['stderr']));
+}
+$results['review-layout-preset-contract'] = $reviewPresetCode === 0 ? 0 : 1;
+$hardAssertProtected('after review-layout-preset-contract');
 
 $hardAssertProtected('before lint-self-test');
 $fixtureOutput = [];
@@ -354,7 +378,9 @@ $markerKeys = [
     'permission-inventory',
     'name-mode-forms',
     'translation-map-integrity',
+    'state-translation-contexts',
     'localized-dates',
+    'review-layout-preset-contract',
     'lint-self-test',
 ];
 foreach ($markerKeys as $markerKey) {

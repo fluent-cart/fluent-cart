@@ -4,7 +4,6 @@ namespace FluentCart\App\Services\Renderer;
 
 use FluentCart\App\App;
 use FluentCart\App\Services\FrontendView;
-use FluentCart\App\Vite;
 use FluentCart\Api\StoreSettings;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
@@ -374,13 +373,13 @@ class ProductRenderer
     {
         $thumbnails = [];
 
-        $featuredMedia = $this->product->thumbnail ?? Vite::getAssetUrl('images/placeholder.svg');
+        $featuredMedia = $this->product->thumbnail ?? Helper::getProductPlaceholderUrl();
 
         // thumbnail can be an empty string (not null), so ?? above doesn't catch
         // it — fall back to the placeholder so $featuredMedia is always a usable
         // image URL for both the main <img> and data-default-image-url.
         if (!$featuredMedia || !\is_string($featuredMedia)) {
-            $featuredMedia = Vite::getAssetUrl('images/placeholder.svg');
+            $featuredMedia = Helper::getProductPlaceholderUrl();
         }
 
         $galleryImage = get_post_meta($this->product->ID, 'fluent-products-gallery-image', true);
@@ -1990,7 +1989,7 @@ class ProductRenderer
     {
         $image = $variant->thumbnail;
         if (!$image) {
-            $image = Vite::getAssetUrl('images/placeholder.svg');
+            $image = Helper::getProductPlaceholderUrl();
         }
         ?>
         <div class="fct-product-variant-image">

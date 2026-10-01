@@ -7,6 +7,10 @@ import translate from "@/utils/translator/Translator";
 import Str from "../../../utils/support/Str";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import {getVariantLabel, getProductGroupOrder} from "@/utils/variantLabel";
+import AppConfig from "@/utils/Config/AppConfig";
+
+// The per-product switch only means something while the reviews module is on.
+const reviewsModuleActive = AppConfig.get('modules_settings.reviews.active') === 'yes';
 
 const props = defineProps({
   product: Object,
@@ -103,14 +107,24 @@ const getStatusTooltip = () => {
 const defaultOtherInfo = {
     use_pricing_table: 'no',
     group_pricing_by: 'payment_type',
-    sold_individually: 'no'
+    sold_individually: 'no',
+    reviews_enabled: 'yes'
 };
 
 watch(
     () => props.product.detail,
     (newDetail) => {
-        if (newDetail && (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0)) {
-            props.product.detail.other_info = { ...defaultOtherInfo };
+        if (newDetail) {
+            if (!newDetail.other_info || Object.keys(newDetail.other_info).length === 0) {
+                props.product.detail.other_info = { ...defaultOtherInfo };
+            } else {
+                // Fill in missing keys from defaults (e.g. reviews_enabled for existing products)
+                for (const [key, value] of Object.entries(defaultOtherInfo)) {
+                    if (!(key in newDetail.other_info)) {
+                        newDetail.other_info[key] = value;
+                    }
+                }
+            }
         }
     },
     { immediate: true }
@@ -272,9 +286,20 @@ onMounted(() => {
             </div>
           </li>
         </ul>
-          <div class="mt-4 pt-4" v-if="product.detail">
+          <div class="mt-4 pt-4 space-y-2" v-if="product.detail">
               <el-checkbox @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
                   {{ translate('Limit purchases to 1 item per order') }}
+              </el-checkbox>
+              <!-- One-way :model-value, not v-model: onChangeInputField() already writes
+                   product.detail.other_info.reviews_enabled itself, so binding v-model here
+                   would mutate the prop redundantly. The sibling above still uses v-model
+                   (pre-existing, baselined) and can be converted the same way. -->
+              <!-- Reviews are on by default, so the checkbox surfaces the exception:
+                   checked = disabled. Storage stays reviews_enabled yes/no — the
+                   inverted true-value/false-value pair does the mapping, so every
+                   backend consumer of the flag is untouched. -->
+              <el-checkbox v-if="reviewsModuleActive" @change="value => {productEditModel.onChangeInputField('reviews_enabled',value)}" :model-value="product.detail.other_info.reviews_enabled" true-value="no" false-value="yes">
+                  {{ translate('Disable reviews for this product') }}
               </el-checkbox>
           </div>
       </Card.Body>

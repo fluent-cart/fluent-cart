@@ -2,6 +2,7 @@
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
+import UserAvatar from "@/Bits/Components/UserAvatar.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
@@ -28,7 +29,7 @@ const props = defineProps({
       <div class="fct-customer-table-mobile-header">
         <div v-if="row?.id" class="fct-customer-table-customer-col fct-customer-card">
           <div class="fct-customer-avatar">
-            <img :src="row?.photo" alt="avatar"/>
+            <UserAvatar :url="row?.photo" :name="row?.full_name"/>
           </div>
 
           <div class="fct-customer-details">

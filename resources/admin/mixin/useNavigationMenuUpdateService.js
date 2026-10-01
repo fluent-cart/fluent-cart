@@ -3,7 +3,8 @@ export function useNavigationMenuUpdateService(router) {
     const groupedSubMenus = {
         'fluent_cart_products': [
             'fluent_cart_inventory',
-            'fluent_cart_attributes'
+            'fluent_cart_attributes',
+            'fluent_cart_reviews'
         ]
     };
 

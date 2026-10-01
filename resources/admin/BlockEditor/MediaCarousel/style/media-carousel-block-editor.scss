@@ -633,6 +633,20 @@
         margin-bottom: 10px;
     }
 
+    /* A segmented control needs more air under its label than a text field
+       does — it reads as a row of buttons, and at the shared 12px the label
+       looks like it belongs to the first segment rather than to the group.
+       Scoped to the group by what the field actually contains, because
+       .components-base-control__label is every control's label: the toggle
+       group is a sibling of its label inside the same field, and the field is
+       a plain block, so giving the group a top margin would only collapse
+       against the label's. */
+    .components-base-control__field:has(> .components-toggle-group-control) {
+        > .components-base-control__label {
+            margin-bottom: 8px;
+        }
+    }
+
     .components-base-control__label {
         margin-bottom: 12px;
     }
@@ -662,8 +676,17 @@
             color: #ffffff;
             font-weight: 600;
 
-            &:hover {
+            /* The component ships its own hover colour, written as
+               `:hover:not([disabled]):not([aria-disabled='true'])` and
+               injected into the head at runtime, after this stylesheet. A
+               plainer `&:hover` here ties it on specificity and therefore
+               loses on order, and the selected label turns dark on the dark
+               background. Matching its selector shape outranks it. Focus is
+               the same state reached from the keyboard. */
+            &:hover:not([disabled]):not([aria-disabled="true"]),
+            &:focus:not([disabled]):not([aria-disabled="true"]) {
                 background-color: #1f2937;
+                color: #ffffff;
             }
         }
     }

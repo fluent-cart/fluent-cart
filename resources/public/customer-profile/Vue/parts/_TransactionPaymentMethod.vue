@@ -4,7 +4,7 @@
       <template v-if="transaction.payment_method === 'paypal'">
         <div class="flex gap-2 items-center">
           <img :src="`${assetUrl}images/payment-methods/paypal-icon.svg`" :alt="$t('PayPal logo')" class="w-[22px]">
-          <span class="text-gray-700 text-sm" :aria-label="$t('Transaction ID:') + transaction.vendor_charge_id || ''">{{ transaction.vendor_charge_id || '' }}</span>
+          <span class="text-[var(--fct-customer-dashboard-hint-text-color,#808B9C)] text-sm" :aria-label="$t('Transaction ID:') + transaction.vendor_charge_id || ''">{{ transaction.vendor_charge_id || '' }}</span>
         </div>
       </template>
 

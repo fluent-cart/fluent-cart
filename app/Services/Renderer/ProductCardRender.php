@@ -6,7 +6,6 @@ use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\Templating\AssetLoader;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
 class ProductCardRender
@@ -87,6 +86,7 @@ class ProductCardRender
                  ?>">
             <?php $this->renderProductImage(); ?>
             <?php $this->renderTitle(); ?>
+            <?php $this->renderStarRating(); ?>
             <?php if (!Arr::get($this->config, 'hide_excerpt', false)) { $this->renderExcerpt(); } ?>
             <?php $this->renderPrices(); ?>
             <?php $this->showBuyButton(); ?>
@@ -133,6 +133,94 @@ class ProductCardRender
             $variant,
             $defaultVariant
         );
+    }
+
+    public function renderStarRating()
+    {
+        if (!ModuleSettings::isActive('reviews')) {
+            return;
+        }
+
+        // Store-level toggles: Settings → Store Settings → Product Page →
+        // Product Rating. Shop grid/carousels gate on show_rating_in_shop;
+        // relevant/related product sections gate on show_rating_in_relevant
+        // (callers tag those cards with config rating_context = 'relevant').
+        // The explicit product-rating block (renderStarRatingBlock) stays
+        // unaffected — it is user-placed.
+        $ratingContext = Arr::get($this->config, 'rating_context', 'shop');
+
+        $ratingVisibilitySettingKey = $ratingContext === 'relevant'
+            ? 'show_rating_in_relevant'
+            : 'show_rating_in_shop';
+
+        if ((new \FluentCart\Api\StoreSettings())->get($ratingVisibilitySettingKey, 'yes') !== 'yes') {
+            return;
+        }
+
+        $otherInfo = $this->product->detail->other_info ?: [];
+        $avgRating = Arr::get($otherInfo, 'average_rating', 0);
+        $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
+
+        if ($reviewCount < 1) {
+            return;
+        }
+
+        $fullStars = (int) floor($avgRating);
+        $halfStar = ($avgRating - $fullStars) >= 0.5;
+        $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+
+        ?>
+        <div class="fct-product-card-rating" role="img" aria-label="<?php echo esc_attr(sprintf(
+            /* translators: %1$s: average rating, %2$d: review count */
+            __('Rated %1$s out of 5 based on %2$d reviews', 'fluent-cart'), $avgRating, $reviewCount)); ?>">
+            <span class="fct-product-card-stars" aria-hidden="true">
+                <?php
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                }
+                if ($halfStar) {
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                }
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                }
+                ?>
+            </span>
+            <span class="fct-product-card-review-count">(<?php echo esc_html($reviewCount); ?>)</span>
+        </div>
+        <?php
+    }
+
+    public function renderStarRatingBlock($wrapperAttributes = '')
+    {
+        $otherInfo = $this->product->detail->other_info ?: [];
+        $avgRating = Arr::get($otherInfo, 'average_rating', 0);
+        $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
+
+        $fullStars = (int) floor($avgRating);
+        $halfStar = ($avgRating - $fullStars) >= 0.5;
+        $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+
+        ?>
+        <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> role="img" aria-label="<?php echo esc_attr(sprintf(
+            /* translators: %1$s: average rating, %2$d: review count */
+            __('Rated %1$s out of 5 based on %2$d reviews', 'fluent-cart'), $avgRating, $reviewCount)); ?>">
+            <span class="fct-product-card-stars" aria-hidden="true">
+                <?php
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                }
+                if ($halfStar) {
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                }
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                }
+                ?>
+            </span>
+            <span class="fct-product-card-review-count">(<?php echo esc_html($reviewCount); ?>)</span>
+        </div>
+        <?php
     }
 
     public function renderExcerpt($atts = '')
@@ -211,11 +299,14 @@ class ProductCardRender
             return;
         }
 
-        $image = $this->product->thumbnail;
+        // Product::$thumbnail already falls back to the placeholder, which
+        // hides whether this is one, so ask for the featured image directly.
+        $detail = $this->product->detail;
+        $image = $detail ? Arr::get((array) $detail->featured_media, 'url') : '';
         $isPlaceholder = false;
 
         if (!$image) {
-            $image = Vite::getAssetUrl('images/placeholder.svg');
+            $image = Helper::getProductPlaceholderUrl();
             $isPlaceholder = true;
         }
 
@@ -230,7 +321,7 @@ class ProductCardRender
                 'scope'         => 'product_card'
         ]));
         ?>
-        <a class="fct-product-card-image-wrap"
+        <a class="fct-product-card-image-wrap<?php echo $isPlaceholder ? ' is-placeholder' : ''; ?>"
            href="<?php echo esc_url($this->viewUrl); ?>"
            style="display: block;"
            aria-label="<?php echo esc_attr(sprintf(

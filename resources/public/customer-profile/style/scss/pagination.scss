@@ -4,6 +4,6 @@
 .pager-wrap{
   @apply flex gap-2.5 items-center;
   .text{
-    @apply text-sm font-normal text-[var(--fct-customer-dashboard-paginator-text-color)] #{!important};
+    @apply text-sm font-normal text-[var(--fct-customer-dashboard-paginator-text-color,#565865)] #{!important};
   }
 }

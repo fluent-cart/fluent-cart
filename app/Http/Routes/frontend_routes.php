@@ -10,6 +10,7 @@ use FluentCart\App\Http\Controllers\FrontendControllers\CustomerController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerOrderController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerProfileController;
 use FluentCart\App\Http\Controllers\FrontendControllers\CustomerSubscriptionController;
+use FluentCart\App\Http\Controllers\FrontendControllers\ProductReviewFrontendController;
 use FluentCart\App\Http\Controllers\ShopController;
 use FluentCart\App\Http\Controllers\UserController;
 use FluentCart\App\Modules\Shipping\Http\Controllers\Frontend\ShippingFrontendController;
@@ -97,4 +98,18 @@ $router->prefix('customer-profile')->withPolicy('CustomerFrontendPolicy')->group
     $router->post('subscriptions/{subscription_uuid}/pause', [CustomerSubscriptionController::class, 'pauseSubscription'])->alphaNumDash('subscription_uuid');
     $router->post('subscriptions/{subscription_uuid}/resume', [CustomerSubscriptionController::class, 'resumeSubscription'])->alphaNumDash('subscription_uuid');
 
+    // my reviews — type=pending returns the to-be-reviewed products
+    $router->get('reviews', [ProductReviewFrontendController::class, 'getReviewsByCustomer']);
+    $router->get('reviews/submission-form', [ProductReviewFrontendController::class, 'getReviewSubmissionForm']);
 });
+
+// Public product reviews routes
+$router->prefix('public/reviews')
+    ->withPolicy('PublicPolicy')->group(function (Router $router) {
+        $router->get('/{postId}', [ProductReviewFrontendController::class, 'getReviews'])->int('postId');
+        $router->get('/{postId}/summary', [ProductReviewFrontendController::class, 'getRatingSummary'])->int('postId');
+        $router->post('/{postId}', [ProductReviewFrontendController::class, 'submitReview'])->int('postId');
+        $router->put('/{postId}/{reviewId}', [ProductReviewFrontendController::class, 'updateReview'])->int('postId')->int('reviewId');
+        $router->get('/{postId}/{reviewId}/replies', [ProductReviewFrontendController::class, 'getReplies'])->int('postId')->int('reviewId');
+        $router->get('/{postId}/{reviewId}/modal', [ProductReviewFrontendController::class, 'getModalView'])->int('postId')->int('reviewId');
+    });

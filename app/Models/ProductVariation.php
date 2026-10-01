@@ -374,7 +374,13 @@ class ProductVariation extends Model
         return false;
     }
 
-    public function isStock(): bool
+    /**
+     * @param array|null $bundleChildren Bundle child rows keyed by id, from
+     *   loadBundleChildren(), when the caller has several bundle variations
+     *   to ask about and wants one query for all their children instead of
+     *   one per variation. Null queries this variation's own children.
+     */
+    public function isStock($bundleChildren = null): bool
     {
         // Check if variation is active
         if ($this->item_status !== 'active') {
@@ -388,7 +394,7 @@ class ProductVariation extends Model
         if (!$this->manage_stock) {
             // For bundle products, still check child items
             if ($isBundleProduct) {
-                return $this->isBundleChildrenInStock();
+                return $this->isBundleChildrenInStock($bundleChildren);
             }
             // For regular products without stock management, check status
             return $this->stock_status === Helper::IN_STOCK;
@@ -407,7 +413,43 @@ class ProductVariation extends Model
             return false;
         }
 
-        return $this->isBundleChildrenInStock();
+        return $this->isBundleChildrenInStock($bundleChildren);
+    }
+
+    /**
+     * The bundle children of several variations in one query, keyed by id,
+     * for isStock($bundleChildren). Only the columns the stock check reads.
+     *
+     * @param iterable $variations
+     * @return array<int, static>
+     */
+    public static function loadBundleChildren($variations): array
+    {
+        $childIds = [];
+        foreach ($variations as $variation) {
+            $ids = Arr::get($variation->other_info, 'bundle_child_ids', []);
+            if (is_array($ids)) {
+                foreach ($ids as $id) {
+                    $childIds[(int) $id] = true;
+                }
+            }
+        }
+        unset($childIds[0]);
+
+        if (!$childIds) {
+            return [];
+        }
+
+        $children = static::query()
+            ->whereIn('id', array_keys($childIds))
+            ->get(['id', 'manage_stock', 'available', 'stock_status', 'item_status', 'post_id', 'other_info']);
+
+        $byId = [];
+        foreach ($children as $child) {
+            $byId[(int) $child->id] = $child;
+        }
+
+        return $byId;
     }
 
     /**
@@ -415,7 +457,7 @@ class ProductVariation extends Model
      *
      * @return bool
      */
-    protected function isBundleChildrenInStock(): bool
+    protected function isBundleChildrenInStock($preloadedChildren = null): bool
     {
         $childIds = Arr::get($this->other_info, 'bundle_child_ids', []);
 
@@ -424,10 +466,31 @@ class ProductVariation extends Model
             return true;
         }
 
-        // Get all bundle children variations
-        $children = static::query()
-            ->whereIn('id', $childIds)
-            ->get(['id', 'manage_stock', 'available', 'stock_status', 'item_status', 'post_id', 'other_info']);
+        $childIds = array_values(array_unique(array_map('intval', $childIds)));
+
+        if (is_array($preloadedChildren)) {
+            // From loadBundleChildren().
+            $children = [];
+            foreach ($childIds as $childId) {
+                if (isset($preloadedChildren[$childId])) {
+                    $children[] = $preloadedChildren[$childId];
+                }
+            }
+        } else {
+            // Get all bundle children variations
+            $children = static::query()
+                ->whereIn('id', $childIds)
+                ->get(['id', 'manage_stock', 'available', 'stock_status', 'item_status', 'post_id', 'other_info'])
+                ->all();
+        }
+
+        // A child the bundle names but that no longer exists cannot be
+        // supplied, so the bundle is not in stock. Same rule on both paths:
+        // a row missing from the map and a row missing from the query are
+        // the same deleted variation.
+        if (count($children) !== count($childIds)) {
+            return false;
+        }
 
         // Check each child
         foreach ($children as $child) {

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\ProductCardRender;
 use FluentCart\App\Services\Translations\TransStrings;
@@ -70,7 +71,7 @@ class ProductImageBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Product Image', 'fluent-cart'),
                 'description'       => __('This block will display the product image.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg')
+                'placeholder_image' => Helper::getProductPlaceholderUrl()
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

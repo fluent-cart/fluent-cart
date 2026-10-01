@@ -1,5 +1,5 @@
 code{
-  @apply bg-gray-100 rounded-xs py-1.5 px-2 m-0 text-xs text-system-dark;
+  @apply bg-[var(--fct-customer-dashboard-chip-bg,#EAECF0)] rounded-xs py-1.5 px-2 m-0 text-xs text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
 }
 
 .copyable-content{
@@ -14,14 +14,19 @@ code{
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply py-0 border border-solid border-gray-outline rounded-tl rounded-bl rounded-tr-none rounded-br-none bg-white shadow-none outline-none px-3 m-0 text-sm truncate text-system-dark min-h-9.5 #{!important};
+    @apply py-0 border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-tr-none rounded-br-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 #{!important};
+    border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
+    padding-right: var(--fct-input-padding-x, theme('spacing.3')) !important;
     width: calc(100% - 70px);
     &::-webkit-input-placeholder{
-      @apply text-system-light text-sm opacity-50;
+      @apply text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] text-sm opacity-50;
     }
   }
   .copy-tooltip{
-    @apply absolute -top-[60%] left-1/2 z-[2] bg-success-500 block rounded text-white py-1.5 px-2 text-xs font-normal opacity-0 transition-all duration-200 leading-3;
+    @apply absolute -top-[60%] left-1/2 z-[2] bg-success-500 block text-white py-1.5 px-2 text-xs font-normal opacity-0 transition-all duration-200 leading-3;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     transform: translateX(-50%);
     &.active{
       @apply opacity-100 -top-[80%];
@@ -29,9 +34,11 @@ code{
     }
   }
   .fct-copy-btn{
-    @apply text-system-dark text-sm font-medium rounded-tl-none rounded-bl-none min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-gray-neutral border border-solid border-gray-outline border-l-0 rounded-tr rounded-br h-full hover:bg-gray-100 #{!important};
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] text-sm font-medium rounded-tl-none rounded-bl-none min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-l-0 h-full hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)] #{!important};
+    border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     &:disabled{
-      @apply pointer-events-none bg-gray-neutral text-system-light;
+      @apply pointer-events-none bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
     }
   }
 }

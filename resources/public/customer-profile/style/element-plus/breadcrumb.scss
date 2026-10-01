@@ -1,12 +1,12 @@
 .el-breadcrumb__inner{
-  @apply text-system-dark font-medium #{!important};
+  @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-medium #{!important};
 }
 .el-breadcrumb__inner a,
 .el-breadcrumb__inner.is-link{
-  @apply text-system-dark-light font-semibold #{!important};
+  @apply text-[var(--fct-customer-dashboard-meta-text-color,#696778)] font-semibold #{!important};
 }
 
 .el-breadcrumb__inner a:hover,
 .el-breadcrumb__inner.is-link:hover{
-  @apply text-primary-500 dark:hover:text-gray-50 #{!important};
+  @apply text-[var(--fct-customer-dashboard-link-color,#253241)] dark:hover:text-gray-50 #{!important};
 }

@@ -1,5 +1,6 @@
 <script setup>
 import Str from "@/utils/support/Str";
+import UserAvatar from "@/Bits/Components/UserAvatar.vue";
 import ProductInfo from "@/Bits/Components/Card/ProductInfo.vue";
 import {formatNumber} from "@/Bits/productService";
 import Badge from "@/Bits/Components/Badge.vue";
@@ -21,7 +22,7 @@ const props = defineProps({
   <div class="fct-global-search-customer-wrap">
     <div class="fct-customer-card">
       <div class="fct-customer-avatar">
-          <img :src="customer.photo" alt="avatar"/>
+          <UserAvatar :url="customer.photo" :name="customer.full_name"/>
       </div>
       <div class="fct-customer-details">
         <div class="fct-customer-name">

@@ -285,6 +285,7 @@ import translate from "../../admin/utils/translator/Translator";
 </script>
 
 <script type="text/babel">
+import Asset from "@/utils/support/Asset";
 export default {
   name: 'LicenseSettings',
   props: ['product_id'],
@@ -362,7 +363,7 @@ export default {
       if (media && media.meta_value?.length > 0) {
         return media.meta_value[0].url;
       }
-      return this.appVars.asset_url + 'images/empty-image.svg';
+      return Asset.productPlaceholder();
     },
     imageAlt(media) {
       if (media && media.meta_value?.length > 0) {

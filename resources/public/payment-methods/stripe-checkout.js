@@ -1,3 +1,8 @@
+// IIFE keeps top-level bindings out of the global scope — the minified build
+// renames them to short names (e.g. `_`) that collide with other classic
+// (non-module) payment scripts on the same page.
+(function () {
+
 // Checkout re-inits StripeCheckout on every payment-method switch AND every
 // fragment replacement (coupon apply, shipping change). Window listeners
 // registered per init would stack: each stale copy re-runs confirmPayment
@@ -5,7 +10,16 @@
 // "payment failed" toast on an otherwise successful payment. One delegating
 // listener + a reassignable handler keeps only the latest instance live.
 let stripeNextActionHandler = null;
+let stripeBeforeCheckoutHandler = null;
 let stripeValidateCheckoutHandler = null;
+// elements.submit() must run inside the click that opened checkout — Safari
+// revokes the user gesture across the order request, and Apple Pay then
+// refuses to display. The promise is parked here for the next-action handler,
+// tagged with the Elements instance it was collected against: a re-init
+// mid-flight mounts a new one, and the old collection can no longer be
+// confirmed.
+let stripePreparedSubmission = null;
+let stripePreparedElements = null;
 let stripeSaveCardConsentHandler = null;
 // Confirm re-inits (payment-method switch / fragments) must not leave a
 // MutationObserver from a previous confirm live — it would hide loaders on
@@ -16,6 +30,12 @@ let stripeChallengeWatch = null;
 window.addEventListener('fluent_cart_payment_next_action_stripe', (e) => {
     if (typeof stripeNextActionHandler === 'function') {
         stripeNextActionHandler(e);
+    }
+});
+
+window.addEventListener('fluent_cart_before_checkout_stripe', (e) => {
+    if (typeof stripeBeforeCheckoutHandler === 'function') {
+        stripeBeforeCheckoutHandler(e);
     }
 });
 
@@ -200,6 +220,11 @@ class StripeCheckout {
 
     async init() {
 
+        // A submission prepared against the Elements instance this init replaces
+        // can no longer be confirmed.
+        stripePreparedSubmission = null;
+        stripePreparedElements = null;
+
         const button = document.querySelector('[data-fluent-cart-checkout-page-checkout-button]');
 
         // Clear the container
@@ -383,6 +408,10 @@ class StripeCheckout {
             }
 
             const refreshSubmitState = function () {
+                if (that.paymentLoader?.isSubmitting?.()) {
+                    return;
+                }
+
                 const checkedMethod = that.form.querySelector('input[name="_fct_pay_method"]:checked');
                 if (checkedMethod && checkedMethod.value !== 'stripe') {
                     return;
@@ -413,6 +442,57 @@ class StripeCheckout {
                 refreshSubmitState();
             });
 
+            const displayErrorMessage = function (message, duration = 2000) {
+                new Toastify({
+                    text: message,
+                    className: "warning",
+                    duration: duration,
+                    escapeMarkup: false,
+                    close: true
+                }).showToast();
+            };
+
+            stripeBeforeCheckoutHandler = (e) => {
+                if (typeof e.detail?.waitFor !== 'function') {
+                    return;
+                }
+
+                // Called synchronously from the Place Order click. Awaiting anything
+                // before elements.submit() hands Apple Pay a revoked gesture.
+                stripePreparedSubmission = elements.submit();
+                stripePreparedElements = elements;
+
+                e.detail.waitFor(stripePreparedSubmission.then(result => {
+                    // A re-init while the wallet sheet was open replaced Elements.
+                    // This collection belongs to the old one, so it cannot be
+                    // confirmed — veto and let the buyer click again.
+                    if (stripePreparedElements !== elements) {
+                        displayErrorMessage(that.$t('The payment form was refreshed. Please place the order again.'));
+
+                        return false;
+                    }
+
+                    if (!result?.error) {
+                        return true;
+                    }
+
+                    // Wallet cancelled or a field is invalid — no order request yet.
+                    stripePreparedSubmission = null;
+                    stripePreparedElements = null;
+                    displayErrorMessage(result.error.message);
+
+                    return false;
+                }).catch(error => {
+                    if (stripePreparedElements === elements) {
+                        stripePreparedSubmission = null;
+                        stripePreparedElements = null;
+                    }
+                    displayErrorMessage(error?.message || that.$t('Payment failed. Please try again.'));
+
+                    return false;
+                }));
+            };
+
             stripeNextActionHandler = (e) => {
                 stopStripeChallengeWatch();
                 that.paymentLoader?.changeLoaderStatus('processing');
@@ -442,17 +522,46 @@ class StripeCheckout {
                     clientSecret = remoteResponse?.response?.client_secret;
                 }
 
-                const displayErrorMessage = function (message, duration = 2000) {
-                    new Toastify({
-                        text: message,
-                        className: "warning",
-                        duration: duration,
-                        escapeMarkup: false,
-                        close: true
-                    }).showToast();
-                }
+                // Stripe has taken the money by the time confirmation is reported.
+                // Losing that report must never re-offer payment — reconcile the same
+                // intent server-side, or tell the buyer to stop and contact the store.
+                const showUnconfirmedPayment = function () {
+                    loaderElement?.classList?.remove('active');
+                    that.paymentLoader?.hideLoader();
+                    displayErrorMessage(
+                        that.$t('We could not verify your payment status. Please do not pay again. Contact the store to check your order status.'),
+                        -1
+                    );
+                };
 
-                elements.submit().then(result => {
+                const redirectForReconciliation = function (intentId) {
+                    if (!remoteResponse?.payment_args?.gateway_return_url) {
+                        return false;
+                    }
+
+                    const returnUrl = new URL(gatewayReturnUrl, window.location.href);
+                    if (typeof intentId === 'string' && /^(pi|seti)_[a-zA-Z0-9_]+$/.test(intentId)) {
+                        returnUrl.searchParams.set(
+                            intentId.indexOf('seti_') === 0 ? 'setup_intent' : 'payment_intent',
+                            intentId
+                        );
+                    }
+
+                    that.paymentLoader?.changeLoaderStatus('redirecting');
+                    if (window.CheckoutHelper) {
+                        window.CheckoutHelper.handleCheckoutRedirect(returnUrl.toString());
+                    } else {
+                        window.location.href = returnUrl.toString();
+                    }
+
+                    return true;
+                };
+
+                const prepared = stripePreparedElements === elements ? stripePreparedSubmission : null;
+                stripePreparedSubmission = null;
+                stripePreparedElements = null;
+
+                (prepared || elements.submit()).then(result => {
                     // Wallet collection and validation errors resolve as {error}.
                     // No confirmation was attempted, so let the buyer correct and retry.
                     if (result?.error) {
@@ -597,47 +706,74 @@ class StripeCheckout {
                                 ...(trxHash ? { trx_hash: trxHash } : {})
                             }).toString();
 
+                            let confirmationHandled = false;
+
+                            // The confirmation reached the server or may still be
+                            // running there. Reconcile the same intent through the
+                            // return route instead of confirming a second time.
+                            const recoverConfirmation = function () {
+                                if (confirmationHandled) {
+                                    return;
+                                }
+                                confirmationHandled = true;
+
+                                if (redirectForReconciliation(intent.id)) {
+                                    return;
+                                }
+
+                                showUnconfirmedPayment();
+                            };
+
+                            // A dropped connection does not stop PHP, so the order may
+                            // already be complete. Never redirect on a guess here.
+                            const handleInterruptedConfirmation = function () {
+                                if (confirmationHandled) {
+                                    return;
+                                }
+                                confirmationHandled = true;
+
+                                showUnconfirmedPayment();
+                            };
+
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', window.fluentcart_checkout_vars.ajaxurl, true);
                             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                            xhr.timeout = 15000;
                             xhr.onreadystatechange = function () {
-                                if (xhr.readyState === 4) {
-                                    if (xhr.status >= 200 && xhr.status < 300) {
-                                        try {
-                                            let responseJSON = JSON.parse(xhr.responseText);
-                                            if (responseJSON) {
-                                                that.paymentLoader.triggerPaymentCompleteEvent(responseJSON);
-                                                if (responseJSON.redirect_url) {
-                                                    successUrl = responseJSON.redirect_url;
-                                                }
-                                            }
+                                if (xhr.readyState !== 4 || confirmationHandled) {
+                                    return;
+                                }
 
-                                            that.paymentLoader?.changeLoaderStatus('redirecting');
-                                            // Handle redirect based on checkout mode (modal or single page)
-                                            if (window.CheckoutHelper) {
-                                                window.CheckoutHelper.handleCheckoutRedirect(successUrl);
-                                            } else {
-                                                // Fallback if CheckoutHelper is not available
-                                                window.location.href = successUrl;
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    try {
+                                        let responseJSON = JSON.parse(xhr.responseText);
+                                        if (responseJSON) {
+                                            that.paymentLoader.triggerPaymentCompleteEvent(responseJSON);
+                                            if (responseJSON.redirect_url) {
+                                                successUrl = responseJSON.redirect_url;
                                             }
-                                        } catch (e) {
-                                            that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
-                                            setTimeout(function () {
-                                                that.paymentLoader?.hideLoader();
-                                                that.paymentLoader?.enableCheckoutButton(submitButton?.text);
-                                            }, 1000);
                                         }
-                                    } else {
-                                        that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
-                                        setTimeout(function () {
-                                            that.paymentLoader?.hideLoader();
-                                            that.paymentLoader?.enableCheckoutButton(submitButton?.text);
-                                        }, 1000);
+
+                                        confirmationHandled = true;
+                                        that.paymentLoader?.changeLoaderStatus('redirecting');
+                                        // Handle redirect based on checkout mode (modal or single page)
+                                        if (window.CheckoutHelper) {
+                                            window.CheckoutHelper.handleCheckoutRedirect(successUrl);
+                                        } else {
+                                            // Fallback if CheckoutHelper is not available
+                                            window.location.href = successUrl;
+                                        }
+                                    } catch (e) {
+                                        recoverConfirmation();
                                     }
+                                } else if ([0, 502, 503, 504].indexOf(xhr.status) !== -1) {
+                                    handleInterruptedConfirmation();
+                                } else {
+                                    recoverConfirmation();
                                 }
                             };
-                            xhr.onerror = function () {
-                            };
+                            xhr.onerror = handleInterruptedConfirmation;
+                            xhr.ontimeout = handleInterruptedConfirmation;
                             xhr.send(params);
                         } else if (intent?.status === 'requires_action' || intent?.status === 'requires_source_action') {
                             // window.location.href = `${customPaymentUrl}&status=failed&method=stripe&reason=requires_action_not_performed`;
@@ -646,73 +782,85 @@ class StripeCheckout {
                             return handleRequireAction(intent);
                         }
                     });
-                }).catch(error => {
+                }).catch(() => {
                     stopStripeChallengeWatch();
-                    loaderElement?.classList?.remove('active');
-                    that.paymentLoader?.changeLoaderStatus(that.$t('Payment confirmation failed'));
-                    that.paymentLoader?.hideLoader();
-                    // window.location.href = `${customPaymentUrl}&status=failed&method=stripe&reason=${error?.message}`;
+
+                    // The confirm call itself threw, so whether Stripe took the
+                    // payment is unknown here. Let the server settle it.
+                    const invoiceIntent = remoteResponse?.response?.latest_invoice?.payment_intent;
+                    const intentId = remoteResponse?.response?.pending_setup_intent?.id
+                        || (typeof invoiceIntent === 'string' ? invoiceIntent : invoiceIntent?.id)
+                        || remoteResponse?.response?.id;
+
+                    if (!redirectForReconciliation(intentId)) {
+                        showUnconfirmedPayment();
+                    }
                 });
             };
         });
 
+        const redirectForAction = (url) => {
+            if (!url) {
+                return;
+            }
+
+            that.paymentLoader?.changeLoaderStatus(that.$t('redirecting for action'));
+            window.location.href = url;
+        };
+
+        const releaseForRetry = () => {
+            document.querySelector('.fct-loader')?.classList?.remove('active');
+            that.paymentLoader?.hideLoader();
+            that.paymentLoader?.enableCheckoutButton(submitButton?.text);
+        };
+
         // require action fallback - sometime action/modal get closed after a while by browser before user complete the action.
         const handleRequireAction = (intent) => {
-            that.paymentLoader?.changeLoaderStatus(that.$t('redirecting for action'));
-            const type = intent.next_action?.type;
+            const nextAction = intent.next_action || {};
 
-            switch (type) {
+            switch (nextAction.type) {
                 case 'redirect_to_url':
-                    window.location.href = intent.next_action.redirect_to_url.url;
+                    redirectForAction(nextAction.redirect_to_url?.url);
                     break;
 
                 case 'cashapp_handle_redirect_or_display_qr_code':
-                    if (intent.next_action.cashapp_handle_redirect_or_display_qr_code.hosted_instructions_url) {
-                        window.location.href = intent.next_action.cashapp_handle_redirect_or_display_qr_code.hosted_instructions_url;
-                    } else {
-                    }
+                    redirectForAction(nextAction.cashapp_handle_redirect_or_display_qr_code?.hosted_instructions_url);
                     break;
 
                 case 'display_boleto':
-                    window.location.href = intent.next_action.boleto_display_details.hosted_voucher_url;
+                    redirectForAction(nextAction.boleto_display_details?.hosted_voucher_url);
                     break;
 
                 case 'oxxo_display_details':
-                    window.location.href = intent.next_action.oxxo_display_details.hosted_voucher_url;
+                    redirectForAction(nextAction.oxxo_display_details?.hosted_voucher_url);
                     break;
 
                 case 'alipay_handle_redirect':
-                    window.location.href = intent.next_action.alipay_handle_redirect.url;
+                    redirectForAction(nextAction.alipay_handle_redirect?.url);
                     break;
 
                 case 'konbini_display_details':
-                    window.location.href = intent.next_action.konbini_display_details.hosted_voucher_url;
+                    redirectForAction(nextAction.konbini_display_details?.hosted_voucher_url);
                     break;
 
                 case 'display_bank_transfer_instructions':
-                    window.location.href = intent.next_action.display_bank_transfer_instructions.hosted_instructions_url;
+                    redirectForAction(nextAction.display_bank_transfer_instructions?.hosted_instructions_url);
                     break;
 
                 case 'verify_with_microdeposits':
-                    window.location.href = intent.next_action.verify_with_microdeposits.hosted_verification_url;
+                    redirectForAction(nextAction.verify_with_microdeposits?.hosted_verification_url);
                     break;
 
                 case 'wechat_pay_display_qr_code':
-                    if (intent.next_action.wechat_pay_display_qr_code.hosted_instructions_url) {
-                        window.location.href = intent.next_action.wechat_pay_display_qr_code.hosted_instructions_url;
-                    } else {
-                    }
+                    releaseForRetry();
                     break;
 
                 case 'promptpay_display_qr_code':
-                    if (intent.next_action.promptpay_display_qr_code.hosted_instructions_url) {
-                        window.location.href = intent.next_action.promptpay_display_qr_code.hosted_instructions_url;
-                    } else {
-                    }
+                    releaseForRetry();
                     break;
 
                 default:
-                    // Handle unknown types (e.g., show error message to user)
+                    that.paymentLoader?.hideLoader();
                     break;
             }
         };
@@ -835,3 +983,5 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
         errorMessages.forEach(msg => msg.remove());
     }
 });
+
+})();

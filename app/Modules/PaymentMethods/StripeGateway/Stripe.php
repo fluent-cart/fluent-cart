@@ -92,6 +92,7 @@ class Stripe extends AbstractPaymentGateway
             'customer_email'      => $paymentInstance->order->email,
             'success_url'         => $paymentInstance->transaction->getSuccessUrl(),
             'gateway_return_url'  => Processor::getOnsiteGatewayReturnUrl($paymentInstance->transaction),
+            'trx_hash'            => $paymentInstance->transaction->uuid,
             'custom_payment_url'  => PaymentHelper::getCustomPaymentLink($paymentInstance->order->uuid)
         );
 
@@ -481,6 +482,9 @@ class Stripe extends AbstractPaymentGateway
                     'You will be redirected to Stripe to complete your payment securely.' => __('You will be redirected to Stripe to complete your payment securely.', 'fluent-cart'),
                     'Something went wrong' => __('Something went wrong', 'fluent-cart'),
                     'Payment confirmation failed' => __('Payment confirmation failed', 'fluent-cart'),
+                    'Payment failed. Please try again.' => __('Payment failed. Please try again.', 'fluent-cart'),
+                    'We could not record that failed attempt. Please reload the page before trying again.' => __('We could not record that failed attempt. Please reload the page before trying again.', 'fluent-cart'),
+                    'We could not verify your payment status. Please do not pay again. Contact the store to check your order status.' => __('We could not verify your payment status. Please do not pay again. Contact the store to check your order status.', 'fluent-cart'),
                 ]
             ]
         ];

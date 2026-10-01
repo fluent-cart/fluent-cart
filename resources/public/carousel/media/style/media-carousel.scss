@@ -1,37 +1,47 @@
+@config "../../../../styles/tailwind/scales.config.js";
+
 /* =====================================================
    CSS Custom Properties - Theme Support
 ===================================================== */
 :root {
+  /*
+   * Colours follow the storefront palette. Each fallback is the colour the
+   * carousel always had, so with no palette printed nothing moves. The
+   * carousel is FluentCart's own chrome, so it styles itself outside the
+   * no-colors gate.
+   */
+
   /* Colors - Primary Theme */
-  --fct-carousel-primary: #111827;
-  --fct-carousel-primary-light: #1f2937;
-  --fct-carousel-secondary: #374151;
-  --fct-carousel-border: #e5e7eb;
+  --fct-carousel-primary: var(--fct-btn-bg-color, #111827);
+  --fct-carousel-primary-light: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #1f2937));
+  --fct-carousel-text: var(--fct-primary-text-color, #111827);
+  --fct-carousel-secondary: var(--fct-secondary-text-color, #374151);
+  --fct-carousel-border: var(--fct-border-color, #e5e7eb);
   --fct-carousel-border-subtle: #f3f4f6;
-  --fct-carousel-border-emphasis: #d1d5db;
-  --fct-carousel-bg: #ffffff;
+  --fct-carousel-border-emphasis: var(--fct-divider-color, #d1d5db);
+  --fct-carousel-bg: var(--fct-card-bg-color, #ffffff);
   --fct-carousel-bg-gradient-start: #f9fafb;
   --fct-carousel-bg-gradient-end: #ffffff;
 
   /* Active/Hover States */
-  --fct-carousel-active-color: #111827;
-  --fct-carousel-hover-border: #111827;
+  --fct-carousel-active-color: var(--fct-active-border-color, #111827);
+  --fct-carousel-hover-border: var(--fct-active-border-color, #111827);
 
   /* Pagination */
-  --fct-carousel-dot-inactive: #d1d5db;
-  --fct-carousel-dot-hover: #9ca3af;
-  --fct-carousel-dot-active: #111827;
-  --fct-carousel-pagination-bg: rgba(255, 255, 255, 0.95);
-  --fct-carousel-pagination-border: rgba(229, 231, 235, 0.5);
+  --fct-carousel-dot-inactive: var(--fct-border-color, #d1d5db);
+  --fct-carousel-dot-hover: var(--fct-secondary-text-color, #9ca3af);
+  --fct-carousel-dot-active: var(--fct-btn-bg-color, #111827);
+  --fct-carousel-pagination-bg: var(--fct-card-bg-color, rgba(255, 255, 255, 0.95));
+  --fct-carousel-pagination-border: var(--fct-border-color, rgba(229, 231, 235, 0.5));
 
-  /* Arrows */
-  --fct-carousel-arrow-bg-start: #ffffff;
-  --fct-carousel-arrow-bg-end: #f9fafb;
-  --fct-carousel-arrow-border: #e5e7eb;
-  --fct-carousel-arrow-color: #111827;
-  --fct-carousel-arrow-hover-bg-start: #111827;
-  --fct-carousel-arrow-hover-bg-end: #1f2937;
-  --fct-carousel-arrow-hover-color: #ffffff;
+  /* Arrows - rest on the card like the shop's view switcher, hover in the button hover pair */
+  --fct-carousel-arrow-bg-start: var(--fct-card-bg-color, #ffffff);
+  --fct-carousel-arrow-bg-end: var(--fct-card-bg-color, #f9fafb);
+  --fct-carousel-arrow-border: var(--fct-border-color, #e5e7eb);
+  --fct-carousel-arrow-color: var(--fct-secondary-text-color, #111827);
+  --fct-carousel-arrow-hover-bg-start: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #111827));
+  --fct-carousel-arrow-hover-bg-end: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #1f2937));
+  --fct-carousel-arrow-hover-color: var(--fct-btn-hover-text-color, var(--fct-btn-text-color, #ffffff));
 
   /* Shadows */
   --fct-carousel-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -40,7 +50,7 @@
   --fct-carousel-arrow-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 
   /* Sizing */
-  --fct-carousel-border-radius: 12px;
+  --fct-carousel-border-radius: var(--fct-container-radius, theme('borderRadius[3]'));
   --fct-carousel-border-radius-sm: 6px;
   --fct-carousel-arrow-size-sm: 30px;
   --fct-carousel-arrow-size-md: 38px;
@@ -76,6 +86,9 @@
   overflow: hidden;
   box-sizing: border-box;
   padding: 8px 0 32px;
+  // Swiper's own accent (preloader, stock navigation). Set here, not on
+  // :root, so swiper-bundle's :root default cannot win on load order.
+  --swiper-theme-color: var(--fct-btn-bg-color, #007aff);
 }
 
 /* =====================================================
@@ -335,7 +348,7 @@
 .fct-product-carousel .swiper-pagination-bullet-active {
   background: var(--fct-carousel-dot-active);
   transform: scale(1.2);
-  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fct-carousel-dot-active) 20%, transparent);
 }
 
 /* =====================================================
@@ -379,7 +392,7 @@
 .fct-pagination-fraction .swiper-pagination {
   font-size: 12px;
   font-weight: 600;
-  color: var(--fct-carousel-primary);
+  color: var(--fct-carousel-text);
   letter-spacing: 0.5px;
 }
 
@@ -418,7 +431,7 @@
   );
   border-radius: 8px;
   transition: width var(--fct-carousel-transition-duration) cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 12px rgba(17, 24, 39, 0.5);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--fct-carousel-primary) 50%, transparent);
   overflow: hidden;
 }
 
@@ -511,7 +524,7 @@
 /* Completed segments */
 .fct-pagination-segmented .swiper-pagination-segment.is-completed {
   background: var(--fct-carousel-primary);
-  box-shadow: 0 0 6px rgba(17, 24, 39, 0.2);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--fct-carousel-primary) 20%, transparent);
 }
 
 /* Hover effect on segments */

@@ -478,8 +478,133 @@ export const Package = () => {
     </svg>
 }
 
+export const StarRating = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+    </svg>
+);
+
+// Rating Summary block — small star beside the distribution bars
+export const RatingSummary = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3.6L9.1 5.8L11.5 6.15L9.75 7.85L10.2 10.25L8 9.1L5.8 10.25L6.25 7.85L4.5 6.15L6.9 5.8L8 3.6Z" fill="currentColor" stroke="none"/>
+        <path d="M14.5 6h6"/>
+        <path d="M4 14h16"/>
+        <path d="M4 19h10"/>
+    </svg>
+);
+
+// Product Rating block — a row of stars, last one empty (a 4-of-5 look)
+export const ProductRatingStars = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 8.8L5.9 10.6L7.9 10.9L6.45 12.3L6.8 14.3L5 13.35L3.2 14.3L3.55 12.3L2.1 10.9L4.1 10.6L5 8.8Z"/>
+        <path d="M12 8.8L12.9 10.6L14.9 10.9L13.45 12.3L13.8 14.3L12 13.35L10.2 14.3L10.55 12.3L9.1 10.9L11.1 10.6L12 8.8Z"/>
+        <path d="M19 8.8L19.9 10.6L21.9 10.9L20.45 12.3L20.8 14.3L19 13.35L17.2 14.3L17.55 12.3L16.1 10.9L18.1 10.6L19 8.8Z" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+    </svg>
+);
+
+// Rating Summary card block — distribution bars with counts
+export const RatingBars = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 6h13"/>
+        <path d="M21 6h.01" strokeWidth="2.5"/>
+        <path d="M4 12h9"/>
+        <path d="M21 12h.01" strokeWidth="2.5"/>
+        <path d="M4 18h5"/>
+        <path d="M21 18h.01" strokeWidth="2.5"/>
+    </svg>
+);
+
+// Review List block — review rows: star bullet + text lines
+export const ReviewList = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.7 3.2L5.5 4.8L7.2 5.05L6 6.3L6.3 8L4.7 7.2L3.1 8L3.4 6.3L2.2 5.05L3.9 4.8L4.7 3.2Z" fill="currentColor" stroke="none"/>
+        <path d="M10.5 5.5H21"/>
+        <path d="M10.5 9.5H17"/>
+        <path d="M4.7 14.2L5.5 15.8L7.2 16.05L6 17.3L6.3 19L4.7 18.2L3.1 19L3.4 17.3L2.2 16.05L3.9 15.8L4.7 14.2Z" fill="currentColor" stroke="none"/>
+        <path d="M10.5 16.5H21"/>
+        <path d="M10.5 20.5H17"/>
+    </svg>
+);
+
+export const AddReview = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor">
+        <path d="M19.431 1.648a1.12 1.12 0 0 0-1.53.416l-.001.002l-3.972 6.88l-.48-.209a5.42 5.42 0 0 0-6.752 2.05l-.007.011l-.007.012l-.002-.001l-5.2 8.68l-.005.007v.008h-.002a3.506 3.506 0 0 0 1.279 4.78a3.44 3.44 0 0 0 2.05.464l-.058.102l-.001.001a2.8 2.8 0 0 0-.366 1.162l-.38 3.443v.008c-.063.813.848 1.326 1.511.87l.01-.006l2.752-2.082c.286-.202.535-.46.725-.754v.01a3.5 3.5 0 0 0 6.322 2.07q.19.18.405.34c1.04.768 2.399 1.09 3.783 1.09h9.24a2.24 2.24 0 0 0 2.226-1.99h.024V27.06h.002V18.2a2.82 2.82 0 0 0-1.704-2.585l-10.75-4.666l3.685-6.387l.002-.003a1.12 1.12 0 0 0-.416-1.53l-.003-.001l-2.375-1.378zm-6.508 9.038l-2.656 4.6a2.85 2.85 0 0 0-1.246 1.169l-3.208 5.551a1.52 1.52 0 0 1-1.308.757a1.45 1.45 0 0 1-.742-.2l-.004-.002A1.5 1.5 0 0 1 3.2 20.5l5.18-8.646a3.42 3.42 0 0 1 4.261-1.289h.004zm2.173 6.238l2.443-4.234L28.5 17.45l-.003-.004a.81.81 0 0 1 .5.753v.794h-.002v8.02h-5.81q-.382-.001-.748-.056l-.643-.141a4.57 4.57 0 0 1-2.421-1.693c-.8-1.094-2.27-1.37-3.414-.735l-.001.001c-.69.385-1.506.84-2.148 1.2l-1.113.62l-.011.007a2.005 2.005 0 0 1-2.735-.734a2.006 2.006 0 0 1 .736-2.735l4.225-2.44a1 1 0 0 0 .663-.857a4.3 4.3 0 0 0-.479-2.526m-9.567 8.58l2.585 1.506a1.8 1.8 0 0 1-.427.424l-.007.005l-1.515 1.146l-1.001-.583l.208-1.884v-.011c.02-.214.073-.418.157-.603M19.392 7.477l-2.6-1.492l.976-1.692l2.595 1.5z"/>
+    </svg>
+);
+
+export const EditReview = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+    </svg>
+);
+
+export const WriteAReviewButton = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M4.4 15.4 15.4 4.4 19.6 8.6 8.6 19.6Z"/>
+        <path d="M4 16.2 7.8 20 2.3 21.7Z"/>
+        <path d="M16.2 3.6 20.4 7.8 21.4 6.8a2.97 2.97 0 0 0-4.2-4.2Z"/>
+    </svg>
+);
+
+export const ReviewForm = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" />
+    </svg>
+);
+
 export const BillingAddress = () => {
     return <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 5.5V14.5C18 14.9028 17.8531 15.2535 17.5594 15.5521C17.2656 15.8507 16.9125 16 16.5 16H3.5C3.09722 16 2.74653 15.8507 2.44792 15.5521C2.14931 15.2535 2 14.9028 2 14.5V5.5C2 5.09722 2.14931 4.74653 2.44792 4.44792C2.74653 4.14931 3.09722 4 3.5 4H16.5C16.9125 4 17.2656 4.14931 17.5594 4.44792C17.8531 4.74653 18 5.09722 18 5.5ZM3.5 7H16.5V5.5H3.5V7ZM3.5 10V14.5H16.5V10H3.5Z" fill="currentColor"/>
         <script xmlns=""/></svg>
 }
+
+/* ── Review blocks ───────────────────────────────────────────────
+ * These mirror the SVG the server emits for the same thing, so the canvas
+ * draws the icon the page will: the star from ReviewThreadMarkup::starSvg(),
+ * the avatar placeholder from its avatarHtml(), the arrow from
+ * replyIconSvg(), and the pager chevrons from
+ * ReviewListRenderer::chevronSvg(). Changing one of these without the other
+ * is how an editor preview starts lying about the page.
+ */
+
+export const ReviewStar = () => (
+    <svg className="fct-star-svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M12 2.25l2.955 6.377 6.98.638-5.268 4.62 1.558 6.865L12 17.155 5.775 20.75l1.558-6.865-5.268-4.62 6.98-.638L12 2.25z"/>
+    </svg>
+);
+
+/* The glyph on the + badge over a review's last visible attachment. Mirrors
+   ReviewThreadMarkup::mediaMoreIconSvg(), which draws it on the page. */
+export const ReviewMediaMore = () => (
+    <svg className="fct-review-media-more-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+    </svg>
+);
+
+export const ReviewAvatarPlaceholder = () => (
+    <svg className="fct-review-avatar-placeholder" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M16.6667 17.5V15.8333C16.6667 14.9493 16.3155 14.1014 15.6904 13.4763C15.0653 12.8512 14.2174 12.5 13.3334 12.5H6.66671C5.78265 12.5 4.93481 12.8512 4.30968 13.4763C3.68456 14.1014 3.33337 14.9493 3.33337 15.8333V17.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M10 9.16667C11.8410 9.16667 13.3334 7.67428 13.3334 5.83333C13.3334 3.99238 11.8410 2.5 10 2.5C8.15909 2.5 6.66671 3.99238 6.66671 5.83333C6.66671 7.67428 8.15909 9.16667 10 9.16667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+export const ReviewReplyArrow = () => (
+    <svg className="fct-review-reply-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points="9 17 4 12 9 7"/>
+        <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+    </svg>
+);
+
+const ReviewPagerChevron = ({d}) => (
+    <svg className="fct-nav-arrow-svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+        <path d={d}/>
+    </svg>
+);
+
+export const ReviewPagerPrevious = () => <ReviewPagerChevron d="m15 18-6-6 6-6"/>;
+export const ReviewPagerNext = () => <ReviewPagerChevron d="m9 18 6-6-6-6"/>;

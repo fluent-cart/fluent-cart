@@ -1,0 +1,21 @@
+// Shared avatar for admin screens: an image when the user has one, the
+// person icon when they do not. Context styles may resize the circle; the
+// shape and fallback are the same everywhere.
+.fct-user-avatar {
+  @apply flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold overflow-hidden;
+  @apply bg-gray-100 text-system-mid dark:bg-dark-400 dark:text-gray-300;
+
+  .fct-user-avatar-img {
+    @apply w-full h-full object-cover;
+  }
+
+  // DynamicIcon wraps its svg in an auto-sized .icon div, so the wrapper has
+  // to fill the circle for the percentage size on the svg to mean anything.
+  .icon {
+    @apply w-full h-full flex items-center justify-center;
+  }
+
+  svg {
+    @apply w-1/2 h-1/2 text-gray-500 dark:text-gray-300;
+  }
+}

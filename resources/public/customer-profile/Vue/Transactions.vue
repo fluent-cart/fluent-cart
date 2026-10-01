@@ -13,7 +13,7 @@
           <template v-for="(transaction, index) in transactions" :key="index">
             <li v-if="transaction.transaction_type !== 'refund' && transaction.meta.reason !== 'renewal'" class="flex items-center gap-1 text-sm" role="listitem">
 
-              <span :aria-label="$t('Transaction amount') + ': ' + formatNumber(transaction.total, true, false, transaction.currency)" class="font-semibold text-system-dark">
+              <span :aria-label="$t('Transaction amount') + ': ' + formatNumber(transaction.total, true, false, transaction.currency)" class="font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]">
                 {{ formatNumber(transaction.total, true, false, transaction.currency) }}
               </span>
 
@@ -53,7 +53,7 @@
               <a 
                 :href="receiptUrl(order?.uuid)" 
                 target="_blank" 
-                class="print-order-receipt text-primary-500 text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-system-dark"
+                class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
                 rel="noopener noreferrer"
                 :aria-label="$t('Download receipt for transaction on') + ' ' + dateTimeI18(transaction.created_at)"
               >
@@ -111,7 +111,7 @@
 
                 <a 
                     :href="receiptUrl(transaction?.uuid)" target="_blank"
-                    class="print-order-receipt text-primary-500 text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-system-dark"
+                    class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
                     rel="noopener noreferrer"
                     :aria-label="$t('Download receipt for transaction on') + ' ' + dateTimeI18(firstTxn.created_at)"
                 >

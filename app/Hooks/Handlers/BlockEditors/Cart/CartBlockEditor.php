@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Hooks\Handlers\BlockEditors\Cart;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Hooks\Cart\CartLoader;
 use FluentCart\App\Hooks\Handlers\BlockEditors\BlockEditor;
@@ -9,7 +10,6 @@ use FluentCart\App\Hooks\Handlers\BlockEditors\Cart\InnerBlocks\InnerBlocks;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\CartRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 
 /**
  * Container block for the cart page.
@@ -83,7 +83,7 @@ class CartBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Cart', 'fluent-cart'),
                 'description'       => __('This block will display the shopping cart.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

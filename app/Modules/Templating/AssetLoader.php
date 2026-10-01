@@ -79,6 +79,23 @@ class AssetLoader
     public static function register()
     {
         add_action('wp_enqueue_scripts', [self::class, 'enqueueAssets']);
+        add_action('template_redirect', [self::class, 'markOrderReviewPageNoIndex']);
+    }
+
+    /**
+     * The store's chosen order-review page is reached from an email with a
+     * bearer credential in its URL and must not be indexed. The shortcode
+     * renders inside the page body, after wp_head() has already printed the
+     * robots tag, so the page has to be flagged before the head — here, once
+     * the main query knows which page it is.
+     *
+     * @return void
+     */
+    public static function markOrderReviewPageNoIndex()
+    {
+        if (TemplateService::getCurrentFcPageType() === 'order_review') {
+            add_filter('wp_robots', 'wp_robots_no_robots');
+        }
     }
 
     public static function enqueueAssets()
@@ -102,9 +119,137 @@ class AssetLoader
             case 'checkout':
                 self::loadCheckoutAssets();
                 break;
+            case 'order_review':
+                // The store's chosen review page: enqueued here, in the head,
+                // rather than mid-body by the shortcode, so the form and the
+                // page do not paint unstyled first.
+                self::loadReviewSubmissionFormAssets();
+                Vite::enqueueStyle('fluent-cart-order-review', 'public/order-review/order-review.scss');
+                break;
             default:
                 return;
         }
+    }
+
+    // Shared between the full single-product bundle and the review-form-only
+    // one, so a form rendered either way is enqueued under one handle and
+    // localized with one array.
+    const REVIEW_FORM_SCRIPT_HANDLE = 'fluent-cart-review-form';
+    const REVIEW_FORM_STYLE_HANDLE = 'fluent-cart-reviews';
+
+    /**
+     * Just enough to run a review form: the form script, the review
+     * stylesheet, and the strings the script reads.
+     *
+     * A review page is not a product page. loadSingleProductAssets() also
+     * carries gallery zoom, the single-product behaviour, the review list,
+     * the product-card assets and the add-to-cart and direct-checkout
+     * styles — none of which a standalone form uses, and all of which every
+     * visitor to that page would download and execute.
+     *
+     * Idempotent, and idempotent against the full bundle too: both enqueue
+     * the same file under REVIEW_FORM_SCRIPT_HANDLE, so whichever runs
+     * second is dropped by WordPress rather than loading the script twice
+     * and giving every form two controllers.
+     */
+    public static function loadReviewSubmissionFormAssets()
+    {
+        self::markFrontendAssetsRequired();
+
+        if (wp_script_is(self::REVIEW_FORM_SCRIPT_HANDLE, 'enqueued')) {
+            return;
+        }
+
+        // Through the same helper the full bundle uses, so the version and
+        // the localization are stamped on identically.
+        Vite::enqueueAllScripts(
+            [
+                [
+                    'source'       => 'public/single-product/ReviewForm.js',
+                    'dependencies' => [],
+                    'inFooter'     => true,
+                    'handle'       => self::REVIEW_FORM_SCRIPT_HANDLE,
+                ],
+            ],
+            self::REVIEW_FORM_SCRIPT_HANDLE,
+            [
+                'fluentcart_review_vars' => static::reviewJsVars(),
+            ]
+        );
+
+        Vite::enqueueStyle(
+            self::REVIEW_FORM_STYLE_HANDLE,
+            'public/single-product/reviews.scss'
+        );
+
+        /**
+         * The review form's assets are on this page. An add-on that extends
+         * the form (Pro's photo upload) enqueues its own script and styles
+         * here, so a surface that loads the form without being a product
+         * page — the customer dashboard, the order-review page — gets them
+         * too. Fired once per request, when the assets are first enqueued.
+         *
+         * @param array $context empty for now; the single payload every
+         *                       action carries, so listeners keep one
+         *                       signature as context is added
+         */
+        do_action('fluent_cart/review/submission_form_assets_loaded', []);
+    }
+
+    /**
+     * @return array
+     */
+    public static function reviewJsVars(): array
+    {
+        $reviewVars = [
+            // Threaded replies (customer replies + multiple store replies)
+            // are a Pro capability, off by default. The frontend uses this to
+            // decide whether to render the reviewer reply form in the modal.
+            'trans' => [
+                'no_reviews'        => __('No reviews yet. Be the first to write a review!', 'fluent-cart'),
+                'verified_purchase' => __('Verified Purchase', 'fluent-cart'),
+                'rating_required'   => __('Please select a rating', 'fluent-cart'),
+                'photo_preview'     => __('Photo preview', 'fluent-cart'),
+                /* translators: %s: number of attachments still behind the + */
+                'view_more_attachments' => __('View %s more attachments', 'fluent-cart'),
+                'content_required'  => __('Please write a review', 'fluent-cart'),
+                'name_required'     => __('Please enter your name', 'fluent-cart'),
+                'email_required'    => __('Please enter your email', 'fluent-cart'),
+                'submitting'        => __('Submitting...', 'fluent-cart'),
+                'submit_review'     => __('Submit Review', 'fluent-cart'),
+                'store_reply'       => __('Store Reply', 'fluent-cart'),
+                'reviewer'          => __('Reviewer', 'fluent-cart'),
+                'reply'             => __('Reply', 'fluent-cart'),
+                'view_reply'        => __('View Reply', 'fluent-cart'),
+                'review_thread'     => __('Review Thread', 'fluent-cart'),
+                'no_replies'        => __('No replies yet.', 'fluent-cart'),
+                'close'             => __('Close', 'fluent-cart'),
+                'all'               => __('All', 'fluent-cart'),
+                'prev'              => __('Prev', 'fluent-cart'),
+                'next'              => __('Next', 'fluent-cart'),
+                'prev_page'         => __('Previous page', 'fluent-cart'),
+                'next_page'         => __('Next page', 'fluent-cart'),
+                /* translators: 1: the page this segment goes to, 2: how many there are. */
+                'slider_page_of'    => __('Page %1$s of %2$s', 'fluent-cart'),
+                'read_more'         => __('Read more', 'fluent-cart'),
+                'show_less'         => __('Show less', 'fluent-cart'),
+                'load_error'        => __('Unable to load reviews. Please try again later.', 'fluent-cart'),
+                'edit_review'       => __('Edit your review', 'fluent-cart'),
+                'rated_out_of'      => __('Rated %d out of 5', 'fluent-cart'),
+                /* translators: 1: current step, 2: total steps */
+                'step_x_of_y'       => __('Step %1$s of %2$s', 'fluent-cart'),
+                'rating_poor'       => __('Poor', 'fluent-cart'),
+                'rating_average'    => __('Average', 'fluent-cart'),
+                'rating_good'       => __('Good', 'fluent-cart'),
+                'rating_very_good'  => __('Very Good', 'fluent-cart'),
+                'rating_excellent'  => __('Excellent', 'fluent-cart'),
+                'rating_step_hint'  => __('Rate this product', 'fluent-cart'),
+                'details_step_hint' => __('Tell us more', 'fluent-cart'),
+                'photos_step_hint'  => __('Photos are optional', 'fluent-cart'),
+            ],
+        ];
+
+        return apply_filters('fluent_cart/review/js_vars', $reviewVars);
     }
 
     public static function loadSingleProductAssets()
@@ -126,9 +271,24 @@ class AssetLoader
                 'source'       => 'public/single-product/SingleProduct.js',
                 'dependencies' => [],
                 'inFooter'     => true
+            ],
+            [
+                'source'       => 'public/single-product/Reviews.js',
+                'dependencies' => [],
+                'inFooter'     => true
+            ],
+            [
+                'source'       => 'public/single-product/ReviewForm.js',
+                'dependencies' => [],
+                'inFooter'     => true,
+                // Named, not numbered, so loadReviewSubmissionFormAssets() enqueueing
+                // the same file lands on the same handle and WordPress drops
+                // the second one.
+                'handle'       => self::REVIEW_FORM_SCRIPT_HANDLE,
             ]
         ];
         $localizeData = [
+            'fluentcart_review_vars' => static::reviewJsVars(),
             'fluentcart_single_product_vars' => [
                 'trans'                      => TransStrings::singleProductPageString(),
                 'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
@@ -147,6 +307,7 @@ class AssetLoader
         $singlePageStyles = [
             'public/single-product/single-product.scss',
             'public/single-product/similar-product.scss',
+            'public/single-product/reviews.scss',
             'public/product-card/style/product-card.scss',
             'public/single-product/xzoom/xzoom.css',
             'public/buttons/add-to-cart/style/style.scss',
@@ -343,6 +504,13 @@ class AssetLoader
             'public/customer-profile/style/customer-profile.scss'
         );
 
+        // My Reviews opens the storefront review form in a modal, fetched
+        // per product; the form's own script and stylesheet have to be on
+        // the page before that markup arrives.
+        if (\FluentCart\Api\ModuleSettings::isActive('reviews')) {
+            self::loadReviewSubmissionFormAssets();
+        }
+
         // wp-i18n: this bundle pulls in the admin translator transitively
         // (Start.js -> @/Bits/common.js -> @/utils/translator/Translator.js),
         // which resolves strings through window.wp.i18n.
@@ -412,7 +580,7 @@ class AssetLoader
                 'ajaxurl' => admin_url('admin-ajax.php'),
             ],
             'fluentcart_drawer_vars' => [
-                'placeholder_image'    => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image'    => Helper::getProductPlaceholderUrl(),
                 'cart_item_layout'     => $cartItemLayout,
                 'empty_cart_layout'    => $emptyCartLayout,
                 'cart_driver'          => Helper::getCartDriver(),

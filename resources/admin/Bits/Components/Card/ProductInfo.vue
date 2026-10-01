@@ -3,14 +3,7 @@
     <div v-if="!hideImage" class="fct-product-info-media">
         <span>
           <img
-              class="block dark:hidden"
               :src="getImage(product?.detail)"
-              :alt="product?.post_title"
-          />
-
-          <img
-              class="hidden dark:block"
-              :src="getImage(product?.detail,true)"
               :alt="product?.post_title"
           />
         </span>
@@ -41,7 +34,7 @@
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Arr from "@/utils/support/Arr";
-import Image from "@/utils/support/Image";
+import Asset from "@/utils/support/Asset";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 
 export default {
@@ -71,8 +64,8 @@ export default {
   methods: {
     translate,
     translateNumber,
-    getImage(detail, dark = false) {
-      return Arr.get(detail, 'featured_media.url') ?? Image.emptyImage(dark);
+    getImage(detail) {
+      return Arr.get(detail, 'featured_media.url') ?? Asset.productPlaceholder();
     }
   }
 }

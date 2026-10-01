@@ -1,7 +1,7 @@
 .fct-material-input {
   @apply relative w-full;
   &-label {
-    @apply antialiased text-gray-500 pointer-events-none absolute top-[14px] left-4 z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    @apply antialiased text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)] pointer-events-none absolute top-[14px] left-4 z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
     &.is-focus {
       @apply top-[3px] text-xs;
     }
@@ -31,7 +31,7 @@
 .fct-material-select {
   @apply relative;
   &-label {
-    @apply antialiased text-gray-500 pointer-events-none absolute top-2.5 left-4 z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    @apply antialiased text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)] pointer-events-none absolute top-2.5 left-4 z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
     &.is-focus {
       @apply top-[3px] text-xs;
     }
@@ -41,7 +41,7 @@
   }
   .el-select {
     .el-select__wrapper {
-      @apply max-h-10 !min-h-10 shadow-none border border-solid border-gray-outline pl-4;
+      @apply max-h-10 !min-h-10 shadow-none border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] pl-4;
       input {
         @apply m-0 bg-transparent shadow-none;
       }
@@ -65,13 +65,17 @@
     &:first-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-t-[1px] rounded-tl rounded-tr !important;
+        @apply border-t-[1px] !important;
+        border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+        border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
     &:last-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-b-[1px] rounded-bl rounded-br !important;
+        @apply border-b-[1px] !important;
+        border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+        border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
   }
@@ -91,7 +95,8 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-r-[0.5px] border-b-[1px] border-t-[0.5px] rounded-bl rounded-tr-none rounded-tl-none rounded-br-none !important;
+        @apply border-r-[0.5px] border-b-[1px] border-t-[0.5px] rounded-tr-none rounded-tl-none rounded-br-none !important;
+        border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
   }
@@ -99,7 +104,8 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-l-[0.5px] border-b-[1px] border-t-[0.5px] rounded-br rounded-tr-none rounded-tl-none rounded-bl-none !important;
+        @apply border-l-[0.5px] border-b-[1px] border-t-[0.5px] rounded-tr-none rounded-tl-none rounded-bl-none !important;
+        border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
   }
@@ -120,18 +126,20 @@
 .fct-customer-address-business-details {
     @apply mt-5;
     .fct-customer-address-business-details-title {
-        @apply text-system-dark text-sm mt-0 mb-4 font-medium;
+        @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] text-sm mt-0 mb-4 font-medium;
     }
     
     .fct-material-input:first-of-type {
         .el-input__wrapper {
-            @apply rounded-tl rounded-tr !important;
+            border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+            border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         }
     }
 
     .fct-material-input:last-of-type {
         .el-input__wrapper {
-            @apply rounded-bl rounded-br !important;
+            border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+            border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         }
     }
 }
@@ -158,12 +166,13 @@
 
 .fct-customer-address{
   &-list{
-    @apply bg-white border border-solid border-gray-outline p-4 pr-1 rounded max-h-[412px] overflow-y-scroll;
+    @apply bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] p-4 pr-1 max-h-[412px] overflow-y-scroll;
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     &::-webkit-scrollbar-thumb {
-      @apply bg-gray-200 rounded-[6px] invisible;
+      @apply bg-[var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded-[6px] invisible;
     }
     &::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-200 dark:bg-dark-500;
+      @apply bg-[var(--fct-customer-dashboard-border-color,#D6DAE1)] dark:bg-dark-500;
     }
     &::-webkit-scrollbar {
       @apply h-1 w-1;
@@ -183,24 +192,24 @@
 
     @media (prefers-color-scheme: light) {
       & {
-        --thumb-bg: #e5e7eb; /* bg-gray-200 */
-        --track-bg: #ffffff; /* Light background color */
+        --thumb-bg: var(--fct-customer-dashboard-scrollbar-thumb, #e5e7eb);
+        --track-bg: var(--fct-customer-dashboard-card-bg, #ffffff);
       }
     }
   }
   &-block{
-    @apply relative pr-[120px] border border-solid border-x-0 border-t-0 border-gray-divider pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0;
+    @apply relative pr-[120px] border border-solid border-x-0 border-t-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0;
     @media (max-width: 645px) {
       @apply pr-5;
     }
     .title{
-      @apply mb-1 flex items-center gap-2 text-[13px] font-semibold text-[var(--fct-customer-dashboard-title-color)] leading-[20px];
+      @apply mb-1 flex items-center gap-2 text-[13px] font-semibold text-[var(--fct-customer-dashboard-title-color,#2F3448)] leading-[20px];
     }
     .text{
-      @apply m-0 text-[var(--fct-customer-dashboard-text-color)] text-sm leading-[24px];
+      @apply m-0 text-[var(--fct-customer-dashboard-text-color,#565865)] text-sm leading-[24px];
     }
     .badge.is-high-contrast{
-      @apply bg-gray-100;
+      @apply bg-[var(--fct-customer-dashboard-chip-bg,#EAECF0)];
     }
     .fct-address-action{
       @apply absolute top-0.5 right-0;
@@ -210,9 +219,9 @@
 
 .fct-customer-dashboard-address {
   .title {
-    @apply text-sm font-semibold leading-[22px] text-[var(--fct-customer-dashboard-title-color)] mb-1;
+    @apply text-sm font-semibold leading-[22px] text-[var(--fct-customer-dashboard-title-color,#2F3448)] mb-1;
   }
   .text {
-    @apply text-sm text-[var(--fct-customer-dashboard-text-color)] font-normal leading-[20px] m-0;
+    @apply text-sm text-[var(--fct-customer-dashboard-text-color,#565865)] font-normal leading-[20px] m-0;
   }
 }

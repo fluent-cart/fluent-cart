@@ -88,7 +88,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
             <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="link text-sm" :aria-label="$t('View order') + ' #' + order.invoice_no">
               <span class="block truncate max-w-[100px]">#{{ order.invoice_no }}</span>
             </component>
-            <span class="text-system-light text-sm">{{ dateTimeI18(order.created_at, 'date') }}</span>
+            <span class="text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] text-sm">{{ dateTimeI18(order.created_at, 'date') }}</span>
           </div><!-- item-header -->
 
           <div class="item-body">
@@ -98,7 +98,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                   {{ filteredOrderItems(order)[0]?.post_title }}
                   <span
                       v-if="filteredOrderItems(order)[0]?.title && filteredOrderItems(order)[0]?.title !== filteredOrderItems(order)[0]?.post_title"
-                      class="text-gray-800 text-sm"
+                      class="text-[var(--fct-customer-dashboard-note-text-color,#758195)] text-sm"
                   >
                        &#8211; {{ filteredOrderItems(order)[0]?.variation_display_title || filteredOrderItems(order)[0]?.title }}
                   </span>

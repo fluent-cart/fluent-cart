@@ -161,26 +161,14 @@ class Customer extends Model
     }
 
     /**
-     * Accessor method to get the user's avatar URL using their email,
-     * with a size of 100x100 pixels.
-     *
-     * @return string
+     * The customer's avatar URL: their uploaded photo when one is set,
+     * otherwise the WordPress avatar by user id or email. Empty when the
+     * customer has no avatar of their own — every display site falls back
+     * to a placeholder icon rather than Gravatar's stock image.
      */
-    public function getPhotoAttribute()
+    public function getPhotoAttribute(): string
     {
-        // Get the custom photo URL from user meta using the user_id of this instance
-        $customPhotoUrl = get_user_meta($this->user_id, 'fc_customer_photo_url', true);
-
-        // Sanitize the customer photo URL
-        $customPhotoUrl = esc_url($customPhotoUrl ?? '');
-
-        // Return the custom photo URL if it exists, otherwise fallback to Gravatar
-        if (!empty($customPhotoUrl)) {
-            return $customPhotoUrl;
-        }
-
-        // Fallback to Gravatar if no customer avatar is set and sanitize the Gravatar URL
-        return esc_url(get_avatar_url($this->email, ['size' => 100]));
+        return Helper::getUserAvatarUrl($this->user_id, $this->email);
     }
 
     /**

@@ -64,10 +64,10 @@ class MediaCarouselBlockEditor extends BlockEditor
                 'trans'              => TransStrings::getShopAppBlockEditorString(),
                 'title'             => __('Media Carousel', 'fluent-cart'),
                 'description'       => __('This block will display the media carousel.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg')
+                'placeholder_image' => Helper::getProductPlaceholderUrl()
             ],
             'fluent_cart_block_editor_asset' => [
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg'),
+                'placeholder_image' => Helper::getProductPlaceholderUrl(),
             ],
             'fluent_cart_block_translation'  => TransStrings::blockStrings(),
             'fluentCartCarouselVars' => [

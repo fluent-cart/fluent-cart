@@ -1,15 +1,17 @@
+@config "../../../styles/tailwind/scales.config.js";
+
 /* payment-receipt shortCodes styles */
 
 .fluent-cart-checkout-order-receipt {
     max-width: 800px;
     margin: 20px auto;
-    padding: 20px;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
     background-color: #ffffff;
-    border-radius: 8px;
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       .header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: var(--fct-section-spacing, theme('spacing.5'));
         h4 {
           color: #929292;
         }
@@ -21,7 +23,7 @@
         color: #666666;
         font-size: 14px;
         .payment_status {
-            border-radius: 7px;
+            border-radius: var(--fct-badge-radius, theme('borderRadius[1.75]'));
             padding: 1px 10px;
             text-transform: capitalize;
             font-weight: 700;
@@ -43,7 +45,7 @@
         }
       }
       .customer-info {
-        margin-top: 20px;
+        margin-top: var(--fct-section-spacing, theme('spacing.5'));
         border-top: 1px solid #ccc;
         padding-top: 10px;
         color: #555555;

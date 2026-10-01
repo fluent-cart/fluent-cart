@@ -39,7 +39,8 @@ class EmailClaimService
          *
          * @param bool $enabled
          */
-        return (bool) apply_filters('fluent_cart/customer/enable_email_claim', true);
+        $enabled = (bool) apply_filters('fluent_cart/customer/enable_email_claim', true);
+        return EmailVerificationService::isEnabled() && $enabled;
     }
 
     /**

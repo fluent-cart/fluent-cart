@@ -94,7 +94,7 @@ export default {
 
   data() {
     return {
-      currentPage: 1,
+      currentPage: this.pagination.current_page || 1,
       pickerObserver: null,
       paginationUpdating: false,
     };
@@ -141,14 +141,38 @@ export default {
           this.paginationUpdating = true;
           this.$nextTick(() => {
             this.paginationUpdating = false;
+            // The page buttons were just re-rendered for a new page count;
+            // stamp the fresh ones, and re-stamp any the pager reused for
+            // a different number.
+            this.translatePickerElements();
           });
         }
       },
       flush: 'sync'
+    },
+    // The table moves the page on its own - a tab change resets it to 1,
+    // a page restored from storage lands past 1 - and none of that goes
+    // through a click, so the label's copy follows the table here.
+    'pagination.current_page'(page) {
+      this.currentPage = page;
     }
   },
   mounted() {
     this.translatePickerElements();
+    // The pager re-renders whenever its page count changes - a new
+    // per-page size, a new total after a tab change - and reuses buttons
+    // when it does. Watching the DOM catches every such re-render at the
+    // moment it lands, whichever prop drove it.
+    if (typeof MutationObserver === 'function' && this.$el && this.$el.nodeType === 1) {
+      this.pickerObserver = new MutationObserver(() => this.translatePickerElements());
+      this.pickerObserver.observe(this.$el, {childList: true, subtree: true, characterData: true});
+    }
+  },
+  beforeUnmount() {
+    if (this.pickerObserver) {
+      this.pickerObserver.disconnect();
+      this.pickerObserver = null;
+    }
   },
 
   methods: {
@@ -187,19 +211,21 @@ export default {
 
     translatePickerElements() {
 
-      const pickerPanel = document.querySelector('.el-pagination.is-background');
-
-      if (!pickerPanel) {
-        return;
-      }
-      const panel = pickerPanel;
-      const elements = panel.querySelectorAll('li.number');
+      // This footer's own page buttons - the page can hold more than one
+      // footer, and this one also has a div.el-pagination round its
+      // page-size select, so ask for the pager list itself.
+      const elements = this.$el && this.$el.querySelectorAll
+          ? this.$el.querySelectorAll('.el-pager li.number')
+          : [];
       elements.forEach(elem => {
         const original = elem.textContent.trim();
-        if (original && /\d/.test(original) && !elem.dataset.translated) {
+        // Stamped once per number, not once per element: the pager reuses a
+        // button when the page count changes, and a button stamped "2" that
+        // now holds "4" kept painting "2" over it.
+        if (original && /\d/.test(original) && elem.dataset.translatedFrom !== original) {
           const translated = translateNumber(original);
           elem.style.setProperty('--translated-number', `"${translated}"`);
-          elem.dataset.translated = '1';
+          elem.dataset.translatedFrom = original;
         }
       });
     }

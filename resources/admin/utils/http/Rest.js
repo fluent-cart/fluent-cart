@@ -129,8 +129,8 @@ const request = function (baseURL = null, method, route, data = {}, options = {}
 };
 
 export default {
-    get(route, data = {}, baseURL = null) {
-        return request(baseURL, 'GET', route, data);
+    get(route, data = {}, baseURL = null, options = {}) {
+        return request(baseURL, 'GET', route, data, options);
     },
     post(route, data = {}, baseURL = null, options = {}) {
         return request(baseURL, 'POST', route, data, options);

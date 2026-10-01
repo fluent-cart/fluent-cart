@@ -14,6 +14,20 @@
             @apply text-success-500 dark:text-white;
         }
     }
+    // warning and danger were the two variants with no dark rule, so they
+    // kept Element's cream/pink light fills on the dark surface.
+    &.el-tag--warning {
+        @apply dark:bg-warning-alpha-16 dark:text-warning-400;
+        .el-tag__content {
+            @apply dark:text-warning-400;
+        }
+    }
+    &.el-tag--danger {
+        @apply dark:bg-red-alpha-16 dark:text-red-400;
+        .el-tag__content {
+            @apply dark:text-red-400;
+        }
+    }
     .el-tag__content {
         @apply leading-[1.2];
     }

@@ -1,5 +1,6 @@
 .fct-badge{
-    @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-[1.1] font-medium py-1 px-2 rounded-[6px] whitespace-nowrap relative;
+    @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-[1.1] font-medium py-1 px-2 whitespace-nowrap relative;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.sm'));
     &.fct-success{
         @apply bg-success-100 text-success-800;
     }

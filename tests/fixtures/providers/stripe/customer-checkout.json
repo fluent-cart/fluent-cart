@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "message": "OK",
+  "body": {
+    "id": "cus_phase30_checkout",
+    "object": "customer",
+    "email": "phase30-checkout@example.test",
+    "name": "Phase Thirty Checkout"
+  }
+}

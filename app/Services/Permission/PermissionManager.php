@@ -56,7 +56,8 @@ class PermissionManager
                     'reports/export',
                     'integrations/view',
                     'integrations/manage',
-                    'integrations/delete'
+                    'integrations/delete',
+                    'reviews/manage'
                 ]
             ],
             'worker'      => [
@@ -221,6 +222,7 @@ class PermissionManager
             'labels/view'            => __('View Labels', 'fluent-cart'),
             'labels/manage'          => __('Manage Labels', 'fluent-cart'),
             'labels/delete'          => __('Delete Labels', 'fluent-cart'),
+            'reviews/manage'         => __('Manage Reviews', 'fluent-cart'),
             'dashboard_stats/view'   => __('View Dashboard Stats', 'fluent-cart')
         ];
     }

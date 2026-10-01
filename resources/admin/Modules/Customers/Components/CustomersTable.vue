@@ -3,6 +3,7 @@
 import {translateNumber} from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
+import UserAvatar from "@/Bits/Components/UserAvatar.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import translate from "@/utils/translator/Translator";
@@ -40,9 +41,7 @@ const handleSelectionChange = (selectedRows) => {
         >
           <div class="fct-customer-card" v-if="scope.row?.id">
             <div class="fct-customer-avatar">
-              <span>
-                <img :src="scope.row?.photo" alt="avatar"/>
-              </span>
+              <UserAvatar :url="scope.row?.photo" :name="scope.row?.full_name"/>
             </div>
             <div class="fct-customer-details">
               <div class="fct-customer-name">

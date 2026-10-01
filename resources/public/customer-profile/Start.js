@@ -8,6 +8,7 @@ import Subscriptions from "./Vue/subcriptions/Subscriptions.vue";
 import SingleSubscription from "./Vue/subcriptions/SingleSubscription.vue";
 import PurchaseHistoryRoute from "./Vue/PurchaseHistoryRoute.vue";
 import UserProfile from "./Vue/UserProfile/UserProfile.vue";
+import MyReviews from "./Vue/MyReviews.vue";
 
 import SingleOrder from "./Vue/SingleOrder.vue";
 import App from "./Vue/App.vue";
@@ -99,6 +100,24 @@ const routes = [
         meta: {
             active_menu: 'licenses',
             title: translate('Manage License')
+        }
+    },
+    {
+        name: 'reviews',
+        path: '/reviews',
+        component: MyReviews,
+        meta: {
+            active_menu: 'reviews',
+            title: translate('My Reviews')
+        },
+        // With the reviews module off the menu item is hidden, but the URL
+        // still resolves — send it back to the dashboard. The endpoint 404s
+        // server-side as well; this guard just keeps the UI coherent.
+        beforeEnter: () => {
+            if (!window.fluentcart_customer_profile_vars?.reviews_enabled) {
+                return {path: '/'};
+            }
+            return true;
         }
     },
     {

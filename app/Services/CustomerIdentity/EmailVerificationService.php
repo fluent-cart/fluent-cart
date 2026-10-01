@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\CustomerIdentity;
 
 use FluentCart\Api\Resource\CustomerResource;
+use FluentCart\Api\StoreSettings;
 use FluentCart\App\Models\Customer;
 use FluentCart\Framework\Support\Arr;
 
@@ -18,7 +19,7 @@ class EmailVerificationService
 
     public static function capturePasswordResetProof($user): void
     {
-        unset(static::$passwordResetProof[$user->ID]);
+        unset(self::$passwordResetProof[$user->ID]);
         $cookie = Arr::get($_COOKIE, 'wp-resetpass-' . COOKIEHASH, '');
         $postedKey = Arr::get($_POST, 'rp_key', '');
         if (!is_string($cookie) || !is_string($postedKey) || !$postedKey) {
@@ -33,7 +34,7 @@ class EmailVerificationService
         if (is_wp_error($validated) || (int) $validated->ID !== (int) $user->ID) {
             return;
         }
-        static::$passwordResetProof[$user->ID] = [
+        self::$passwordResetProof[$user->ID] = [
             'email' => $validated->user_email,
             'password_hash' => $validated->user_pass,
         ];
@@ -41,8 +42,8 @@ class EmailVerificationService
 
     public static function verifyAfterPasswordReset($user): void
     {
-        $proof = static::$passwordResetProof[$user->ID] ?? null;
-        unset(static::$passwordResetProof[$user->ID]);
+        $proof = self::$passwordResetProof[$user->ID] ?? null;
+        unset(self::$passwordResetProof[$user->ID]);
         if (!$proof) {
             return;
         }
@@ -76,11 +77,28 @@ class EmailVerificationService
         CustomerResource::resetCurrentCustomerRuntimeCache();
     }
 
+    public static function isEnabled(): bool
+    {
+        return (new StoreSettings())->get('require_customer_email_verification', 'no') !== 'no';
+    }
+
     public static function isRequired(int $userId): bool
     {
         $user = $userId ? get_userdata($userId) : false;
         if (!$user) {
             return true;
+        }
+
+        if (!static::isEnabled()) {
+            return false;
+        }
+
+        // Registration and email changes always record state, so an account
+        // without it predates email verification and keeps its existing access.
+        if (!metadata_exists('user', $userId, static::META_KEY)) {
+            if (apply_filters('fluent_cart/customer/trust_legacy_accounts', true, ['user' => $user])) {
+                return false;
+            }
         }
 
         $state = get_user_meta($userId, static::META_KEY, true);

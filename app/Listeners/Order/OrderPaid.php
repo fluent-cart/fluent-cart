@@ -46,8 +46,8 @@ class OrderPaid
             return;
         }
 
-        // The guest record can contain earlier purchases. Claim it only after
-        // the new account proves this inbox, even when auto-login is enabled.
+        // AuthService links the source customer when verification is disabled.
+        // Otherwise inbox proof is still required, even with auto-login enabled.
 
         /* translators: %1$s: newly created WordPress user ID. */
         $message = sprintf(__('User account has been created automatically on payment success. Created User ID: %1$s', 'fluent-cart'), $createdUserId);

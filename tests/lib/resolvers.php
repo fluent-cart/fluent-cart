@@ -114,6 +114,7 @@ return function ($needs) use ($resolveCustomerContext) {
                 'product'    => $row->ID,
                 'productId'  => $row->ID,
                 'product_id' => $row->ID,
+                'postId'     => $row->ID,
             ] : null;
 
         case 'variation':
@@ -218,6 +219,20 @@ return function ($needs) use ($resolveCustomerContext) {
                 'user_id'    => $context['user_id'],
             ];
 
+        case 'customer_product':
+            // A signed-in customer asking about any product — the My Reviews
+            // page fetching the review form for a product to review.
+            $context = $resolveCustomerContext();
+            $row = \FluentCart\App\Models\Product::query()->first();
+            if (!$context || !$row) {
+                return null;
+            }
+            return [
+                'customerId' => $context['customer']->id,
+                'product_id' => $row->ID,
+                'user_id'    => $context['user_id'],
+            ];
+
         case 'customer_order':
             $context = $resolveCustomerContext();
             if (!$context) {
@@ -270,6 +285,21 @@ return function ($needs) use ($resolveCustomerContext) {
                 'transaction_uuid' => $row->uuid,
                 'user_id'          => $context['user_id'],
             ];
+
+        case 'review':
+            $row = \FluentCart\App\Models\ProductReview::query()
+                ->topLevel()
+                ->approved()
+                ->whereHas('product', function ($query) {
+                    $query->where('post_status', 'publish');
+                })
+                ->first();
+            return $row ? [
+                'id'       => $row->id,
+                'reviewId' => $row->id,
+                'postId'   => $row->post_id,
+                'post_id'  => $row->post_id,
+            ] : null;
 
         case 'customer_address':
             $context = $resolveCustomerContext();

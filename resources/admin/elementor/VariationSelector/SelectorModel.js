@@ -83,11 +83,11 @@ class SelectorModel extends Model {
     }
 
     getProductThumbnail(product) {
-        return product.detail.featured_media?.url || Asset.getUrl('images/placeholder-small.svg');
+        return product.detail.featured_media?.url || Asset.productPlaceholder();
     }
 
     getVariantThumbnail(variant) {
-        return variant.thumbnail || Asset.getUrl('images/placeholder-small.svg');
+        return variant.thumbnail || Asset.productPlaceholder();
     }
 
     onVariationSelected(variant, checked) {

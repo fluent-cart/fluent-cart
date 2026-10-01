@@ -16,22 +16,27 @@
   // button
   --fct-shop-btn-bg-color: var(--fct-btn-bg-color, var(--fct-shop-primary-bg-color));
   --fct-shop-btn-text-color: var(--fct-btn-text-color);
+  --fct-shop-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-shop-btn-bg-color));
+  --fct-shop-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-shop-btn-text-color));
   --fct-btn-border-color: var(--fct-btn-border-color, var(--fct-shop-btn-bg-color));
 
-  // checkbox
+  // checkbox — active states follow the button, which is always a strong
+  // colour; primary_bg_color is often a pale tint and washed them out.
   --fct-shop-checkmark-border-color: var(--fct-shop-border-color);
-  --fct-shop-checkmark-active-bg: var(--fct-shop-primary-bg-color);
+  --fct-shop-checkmark-active-bg: var(--fct-btn-bg-color, #253241);
   --fct-shop-checkmark-active-border-color: var(--fct-shop-checkmark-active-bg);
 
-  // view — the active pill is a soft tint of the primary over transparent,
-  // so it reads correctly on light and dark surfaces alike.
+  // view — with a palette printed, the active pill is a filled button (the
+  // button pair, readable on itself even where the button colour matches the
+  // page, as Twenty Twenty-Five's dark variation does). With none, it keeps
+  // its soft navy tint and navy icon.
   --fct-shop-view-switcher-color: var(--fct-shop-secondary-text-color, #565865);
-  --fct-shop-view-switcher-active-bg: color-mix(in srgb, var(--fct-shop-primary-bg-color, #253241) 12%, transparent);
-  --fct-shop-view-switcher-active-color: var(--fct-shop-primary-bg-color, #253241);
+  --fct-shop-view-switcher-active-bg: var(--fct-btn-bg-color, color-mix(in srgb, #253241 12%, transparent));
+  --fct-shop-view-switcher-active-color: var(--fct-btn-text-color, #253241);
 
   // paginator
   --fct-shop-paginator-border-color: var(--fct-shop-border-color);
-  --fct-shop-paginator-items-active-bg: var(--fct-shop-primary-bg-color);
+  --fct-shop-paginator-items-active-bg: var(--fct-btn-bg-color, #253241);
   --fct-shop-paginator-items-color: var(--fct-shop-secondary-text-color);
 
   // input
@@ -41,7 +46,7 @@
   --fct-shop-dropdown-bg: var(--fct-card-bg-color, #ffffff);
 
   // radio
-  --fct-shop-radio-active-bg: var(--fct-shop-primary-bg-color);
+  --fct-shop-radio-active-bg: var(--fct-btn-bg-color, #253241);
   --fct-shop-radio-active-border-color: var(--fct-shop-radio-active-bg);
 
   // no ui slider
@@ -74,7 +79,8 @@
   }
 
   .fluent-cart-shop-app-product-skeleton-loader {
-    @apply rounded p-4 m-0 absolute w-full h-full top-0 left-0;
+    @apply p-4 m-0 absolute w-full h-full top-0 left-0;
+    border-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
     animation: shimmer 2s infinite;
     background: linear-gradient(90deg, #f1f1f1 25%, #e1e1e1 50%, #f1f1f1 75%);
     background-size: 200% 100%;
@@ -159,6 +165,7 @@
           .fct-product-card {
             grid-template-areas:
             "image title"
+            "image rating"
             "image excerpt"
             "image price"
             "image button";
@@ -170,7 +177,8 @@
               grid-area: image;
               @apply relative max-w-[250px] aspect-square;
               img {
-                @apply rounded-bl rounded-tr-none;
+                @apply rounded-tr-none;
+                border-bottom-left-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
               }
             }
             .fct-product-image-wrap {
@@ -185,6 +193,14 @@
                 overflow: inherit !important;
                 white-space: pre-wrap !important;
               }
+            }
+            // Placed like the title and the price: without an area of its own
+            // the rating is auto-placed into whichever cell is free, which put
+            // it in the image column. A card with no rating leaves the row
+            // empty, and an empty auto row is zero high.
+            .fct-product-card-rating {
+              grid-area: rating;
+              @apply px-0 mr-auto;
             }
             .fct-product-card-prices,
             .fct-dynamic-product-price {
@@ -320,7 +336,8 @@
 
 .fct-products-container {
   --grid-columns: 0;
-  @apply grid gap-6 w-full h-max;
+  @apply grid w-full h-max;
+  gap: var(--fct-grid-gap, theme('spacing.6'));
   grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
 
   &.auto-adjust-grid {
@@ -341,7 +358,11 @@
 .fct-shop-product-search {
   @apply relative mb-4;
   input {
-    @apply pl-9 w-full py-2 text-sm pr-3 border border-solid rounded focus:outline-none focus:shadow-none leading-[1.5];
+    @apply pl-9 w-full text-sm border border-solid focus:outline-none focus:shadow-none leading-[1.5];
+    padding-top: var(--fct-input-padding-y, theme('spacing.2'));
+    padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
+    padding-right: var(--fct-input-padding-x, theme('spacing.3'));
+    border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
   }
   .fct-search-icon {
     @apply absolute top-1/2 left-3 mt-[1px];
@@ -373,7 +394,8 @@
 }
 
 .fct-shop-apply-filter-button {
-  @apply leading-none border-0 rounded cursor-pointer text-sm font-medium h-9 flex-shrink-0 p-2 text-center;
+  @apply leading-none border-0 cursor-pointer text-sm font-medium h-9 flex-shrink-0 p-2 text-center;
+  border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 }
 
 .fct-shop-view-switcher-wrap {
@@ -452,7 +474,10 @@
     @apply w-[400px] h-[250px] object-cover;
   }
   .fct-shop-reset-filter-button{
-    @apply px-4 w-auto rounded h-9;
+    @apply w-auto h-9;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
   }
 }
 
@@ -499,7 +524,7 @@
   }
 
   .noUi-handle {
-    @apply w-4 h-4 -right-2.5 -top-[5px] rounded-full shadow-[0_3px_6px_0px_rgba(221,221,221,0.8)] #{!important};
+    @apply w-4 h-4 -right-2.5 -top-[5px] rounded-full shadow-none #{!important};
     &::before,
     &::after {
       @apply hidden;
@@ -625,7 +650,8 @@
     @apply bg-system-dark opacity-50 absolute top-0 left-0 w-full h-full;
   }
   &-body{
-    @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 rounded overflow-x-hidden;
+    @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     &:active::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
     &:hover::-webkit-scrollbar-thumb {
@@ -641,7 +667,7 @@
       @apply gap-8;
     }
     .fluent-cart-similar-product-list{
-      @apply gap-5;
+      gap: var(--fct-grid-gap, theme('spacing.5'));
     }
     .fluent-cart-single-product-page-product-variant-title{
       @apply max-w-[200px];
@@ -704,7 +730,9 @@
   }
 }
 .fc_price_range_input{
-  @apply border-0 pointer-events-none rounded-none p-0 min-h-[10px] text-[15px] font-medium  #{!important};
+  // Display-only (pointer-events-none): no field background or shadow, so a
+  // theme's input styles never paint them as editable boxes.
+  @apply border-0 bg-transparent shadow-none pointer-events-none rounded-none p-0 min-h-[10px] text-[15px] font-medium  #{!important};
 }
 
 .fct-shop-checkbox-child-group {
@@ -735,7 +763,8 @@
   }
 }
 .fct-shop-sorting-dropdown {
-  @apply absolute top-full right-0 z-[99999] min-w-[220px] rounded p-2 border border-solid mt-2.5;
+  @apply absolute top-full right-0 z-[99999] min-w-[220px] p-2 border border-solid mt-2.5;
+  border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
   box-shadow: 0px -4px 16px -12px rgba(14, 18, 27, 0.10), 0px 16px 32px 0px rgba(14, 18, 27, 0.10);
   transform: scale(0.95);
   opacity: 0;
@@ -763,7 +792,8 @@
       width: 7.5px;
       height: 7.5px;
       border-radius: 50%;
-      background-color: #fff;
+      // The dot is the button text on the button-coloured fill.
+      background-color: var(--fct-btn-text-color, #fff);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0);
@@ -854,41 +884,47 @@ body:not(.fluent-cart-no-colors) {
     // button
     --fct-shop-btn-bg-color: var(--fct-btn-bg-color, var(--fct-shop-primary-bg-color));
     --fct-shop-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-shop-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-shop-btn-bg-color));
+    --fct-shop-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-shop-btn-text-color));
     --fct-btn-border-color: var(--fct-btn-border-color, var(--fct-shop-btn-bg-color));
 
     // checkbox
     --fct-shop-checkmark-border-color: var(--fct-shop-border-color, theme('colors.gray.outline'));
-    --fct-shop-checkmark-bg: #fff;
-    --fct-shop-checkmark-active-bg: var(--fct-shop-primary-bg-color, theme('colors.primary.500'));
+    --fct-shop-checkmark-bg: var(--fct-input-bg-color, #ffffff);
+    // Checked fill and tick are the button pair (fallbacks: today's navy and
+    // white), so they read on each other whatever the accent is.
+    --fct-shop-checkmark-active-bg: var(--fct-btn-bg-color, #253241);
     --fct-shop-checkmark-active-border-color: var(--fct-shop-checkmark-active-bg);
-    --fct-shop-checkmark-check-border-color: #fff;
+    --fct-shop-checkmark-check-border-color: var(--fct-btn-text-color, #ffffff);
 
     // view
-    --fct-shop-view-switcher-active-bg: color-mix(in srgb, var(--fct-shop-primary-bg-color) 12%, transparent);
-    --fct-shop-view-switcher-active-color: var(--fct-shop-primary-bg-color);
+    --fct-shop-view-switcher-active-bg: var(--fct-btn-bg-color, color-mix(in srgb, #253241 12%, transparent));
+    --fct-shop-view-switcher-active-color: var(--fct-btn-text-color, #253241);
     --fct-shop-view-switcher-color: var(--fct-shop-secondary-text-color);
 
-    // paginator
+    // paginator — the box is the card surface, the current page wears the
+    // button pair, and the hover is the palette's soft surface. Each falls
+    // back to the literal it had.
     --fct-shop-paginator-border-color: var(--fct-shop-border-color);
-    --fct-shop-paginator-bg: #fff;
-    --fct-shop-paginator-items-active-bg: var(--fct-shop-primary-bg-color);
-    --fct-shop-paginator-items-active-color: #fff;
+    --fct-shop-paginator-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-shop-paginator-items-active-bg: var(--fct-btn-bg-color, #253241);
+    --fct-shop-paginator-items-active-color: var(--fct-btn-text-color, #ffffff);
     --fct-shop-paginator-items-color: var(--fct-shop-secondary-text-color);
-    --fct-shop-paginator-items-hover-bg: #F5F6F7;
+    --fct-shop-paginator-items-hover-bg: var(--fct-secondary-btn-hover-bg-color, #F5F6F7);
 
     // input
-    --fct-shop-input-bg: #ffffff;
+    --fct-shop-input-bg: var(--fct-input-bg-color, #ffffff);
     --fct-shop-input-border: var(--fct-shop-border-color);
 
     // sorting dropdown
     --fct-shop-dropdown-bg: var(--fct-card-bg-color, #ffffff);
 
     // radio
-    --fct-shop-radio-active-bg: var(--fct-shop-primary-bg-color, theme('colors.primary.500'));
+    --fct-shop-radio-active-bg: var(--fct-btn-bg-color, #253241);
     --fct-shop-radio-active-border-color: var(--fct-shop-radio-active-bg);
     
     // no ui slider
-    --fct-shop-no-ui-target-bg: var(--fct-shop-secondary-bg-color, theme('colors.gray.100'));
+    --fct-shop-no-ui-target-bg: var(--fct-shop-divider-color);
 
     // Button text pairs white with a button colour that was supplied as a
     // reference and so could not be contrast-measured — both supported vendors
@@ -896,19 +932,36 @@ body:not(.fluent-cart-no-colors) {
     // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
     --fct-shop-btn-bg-color: var(--fct-btn-bg-color, #253241);
     --fct-shop-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-shop-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-shop-btn-bg-color));
+    --fct-shop-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-shop-btn-text-color));
     .fct-shop-apply-filter-button {
-        @apply text-[var(--fct-shop-btn-text-color)] hover:text-[var(--fct-shop-btn-text-color)];
+        @apply text-[var(--fct-shop-btn-text-color)] hover:text-[var(--fct-shop-btn-hover-text-color)];
 
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-shop-btn-bg-color);
         box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
 
         &:hover {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-shop-btn-bg-color);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-shop-btn-hover-bg-color);
         }
     }
 
+    // The selected range wears the button colour: primary_bg_color is a pale
+    // surface behind active states, and the line vanished on it.
     .fct-shop-range-slider .noUi-connect {
-        @apply bg-[var(--fct-shop-primary-bg-color)];
+        @apply bg-[var(--fct-shop-btn-bg-color)];
+    }
+
+    // Raw palette variables with noUiSlider's own colours as fallbacks, so a
+    // colour left unset keeps the slider's default look.
+    .fct-shop-range-slider .noUi-handle {
+        background: var(--fct-btn-bg-color, #ffffff);
+        border-color: var(--fct-card-bg-color, #d9d9d9);
+    }
+
+    .fct-shop-range-slider .noUi-tooltip {
+        background: var(--fct-card-bg-color, #ffffff);
+        color: var(--fct-primary-text-color, #000000);
+        border-color: var(--fct-border-color, #d9d9d9);
     }
 
     // FluentCart's own literals and fallbacks live under the gate, so takeover
@@ -916,21 +969,24 @@ body:not(.fluent-cart-no-colors) {
     // mode keeps exactly the values it had.
     --fct-shop-active-text-color: var(--fct-primary-active-text-color, theme('colors.blue.500'));
     --fct-shop-checkmark-border-color: var(--fct-shop-border-color, theme('colors.gray.outline'));
-    --fct-shop-checkmark-active-bg: var(--fct-shop-primary-bg-color, theme('colors.primary.500'));
-    --fct-shop-no-ui-target-bg: var(--fct-shop-secondary-bg-color, theme('colors.gray.100'));
-    --fct-shop-checkmark-bg: #fff;
-    --fct-shop-checkmark-check-border-color: #fff;
-    --fct-shop-paginator-bg: #fff;
-    --fct-shop-paginator-items-active-color: #fff;
-    --fct-shop-paginator-items-hover-bg: #F5F6F7;
-    --fct-shop-input-bg: #ffffff;
+    --fct-shop-checkmark-active-bg: var(--fct-btn-bg-color, #253241);
+    --fct-shop-no-ui-target-bg: var(--fct-shop-divider-color);
+    --fct-shop-checkmark-bg: var(--fct-input-bg-color, #ffffff);
+    --fct-shop-checkmark-check-border-color: var(--fct-btn-text-color, #ffffff);
+    --fct-shop-paginator-bg: var(--fct-card-bg-color, #ffffff);
+    --fct-shop-paginator-items-active-color: var(--fct-btn-text-color, #ffffff);
+    --fct-shop-paginator-items-hover-bg: var(--fct-secondary-btn-hover-bg-color, #F5F6F7);
+    --fct-shop-input-bg: var(--fct-input-bg-color, #ffffff);
 
+    // The icon is the palette's text on the palette's secondary surface
+    // (fallback #2F3448 — text-system-dark's own value), so it reads on dark
+    // palettes too.
     .fct-shop-reset-filter-button {
-        @apply bg-[var(--fct-shop-secondary-bg-color)] border-[var(--fct-shop-border-color)] text-system-dark hover:bg-[var(--fct-shop-secondary-bg-color)] hover:border-[var(--fct-shop-border-color)] hover:text-system-dark;
+        @apply bg-[var(--fct-shop-secondary-bg-color)] border-[var(--fct-shop-border-color)] text-[var(--fct-shop-primary-text-color)] hover:bg-[var(--fct-shop-secondary-bg-color)] hover:border-[var(--fct-shop-border-color)] hover:text-[var(--fct-shop-primary-text-color)];
     }
 
     .fct-shop-product-search input {
-        @apply border-[var(--fct-shop-input-border)] bg-[var(--fct-shop-input-bg)] focus:border-[var(--fct-shop-input-border)];
+        @apply border-[var(--fct-shop-input-border)] bg-[var(--fct-shop-input-bg)] text-[var(--fct-input-text-color,var(--fct-shop-primary-text-color))] focus:border-[var(--fct-shop-input-border)];
     }
 
     .fct-shop-paginator-result-wrapper {

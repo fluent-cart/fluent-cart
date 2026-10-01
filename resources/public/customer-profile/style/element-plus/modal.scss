@@ -10,7 +10,8 @@
     @apply flex items-center;
   }
   .el-dialog{
-    @apply w-[560px] rounded p-0;
+    @apply w-[560px] p-0;
+    border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     &.fct-upgrade-plan-dialog{
       @apply w-[700px];
       .el-dialog__body {
@@ -18,23 +19,23 @@
       }
     }
     &__header{
-      @apply py-3.5 px-5 flex justify-between items-center mr-0 border border-solid border-gray-divider border-t-0 border-x-0;
+      @apply py-3.5 px-5 flex justify-between items-center mr-0 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-t-0 border-x-0;
       .el-dialog__title {
-        @apply text-base text-system-dark font-semibold;
+        @apply text-base text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-semibold;
       }
     }
     &__body{
       @apply p-5;
     }
     &__footer{
-      @apply p-5 border border-solid border-gray-divider border-b-0 border-x-0;
+      @apply p-5 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-b-0 border-x-0;
     }
     .fct-table-style-two{
       @apply mx-[-20px] mt-[-21px] mb-[-20px];
     }
   }
   .el-dialog__headerbtn{
-    @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5 hover:bg-white hover:text-system-dark;
+    @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5 hover:bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
     i{
       @apply w-5 h-5;
       svg{
@@ -43,7 +44,7 @@
     }
     &:hover{
       .el-dialog__close{
-        @apply text-dark-500;
+        @apply text-[var(--fct-customer-dashboard-link-color,#253241)];
       }
     }
   }

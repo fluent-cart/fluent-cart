@@ -11,13 +11,22 @@
   // button
   --fct-card-btn-bg-color: var(--fct-btn-bg-color);
   --fct-card-btn-text-color: var(--fct-btn-text-color);
+  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+  --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
 
   --fct-heading-color: var(--fct-primary-text-color);
+
+  // rating — the count is palette text; the stars are not palette colours,
+  // they keep the reviews' gold (reviews.scss declares the same two values).
+  --fct-card-rating-count-color: var(--fct-secondary-text-color);
+  --fct-review-star-color: #f59e0b;
+  --fct-review-star-empty-color: #d1d5db;
 }
 
 /* ==== fct-product-card ==== */
 .fct-product-card {
-  @apply relative h-full p-1 grid grid-cols-1 border border-solid rounded transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
+  @apply relative h-full p-1 grid grid-cols-1 border border-solid transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
+  border-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
   *{
     box-sizing: border-box;
   }
@@ -27,7 +36,9 @@
   }
 
   h1,h2,h3,h4,h5,h6 {
-    @apply mt-0 px-3 pt-3 text-base font-medium mb-1;
+    @apply mt-0 pt-3 text-base font-medium mb-1;
+    padding-left: var(--fct-card-padding, theme('spacing.3'));
+    padding-right: var(--fct-card-padding, theme('spacing.3'));
 
     a {
       @apply no-underline hover:underline focus:underline;
@@ -36,6 +47,11 @@
 
   .fct-product-card-image-wrap {
     @apply -mx-1 -mt-1 aspect-square relative;
+  }
+  // The placeholder illustration has no backdrop of its own, so a thin rule
+  // separates it from the card details below.
+  .fct-product-card-image-wrap.is-placeholder {
+    border-bottom: 1px solid var(--fct-card-border-color, #d6dae1);
   }
   .fct-dynamic-product-image {
      @apply -mx-1 -mt-1 aspect-square relative;
@@ -50,7 +66,9 @@
   }
 
   img {
-    @apply rounded-tl-[7px] rounded-tr-[7px] object-cover aspect-square w-full h-full @[390px]/product-grid:group-[.list]:aspect-square group-[.list]:block group-[.list]:h-full;
+    @apply object-cover aspect-square w-full h-full @[390px]/product-grid:group-[.list]:aspect-square group-[.list]:block group-[.list]:h-full;
+    border-top-left-radius: calc(var(--fct-card-radius, theme('borderRadius.DEFAULT')) - 1px);
+    border-top-right-radius: calc(var(--fct-card-radius, theme('borderRadius.DEFAULT')) - 1px);
     &:hover {
       opacity: 0.9;
     }
@@ -62,7 +80,9 @@
   }
 
   .fct-product-sku {
-    @apply px-3 pb-1 text-sm;
+    @apply pb-1 text-sm;
+    padding-left: var(--fct-card-padding, theme('spacing.3'));
+    padding-right: var(--fct-card-padding, theme('spacing.3'));
 
     .fct-product-sku__label {
       @apply font-semibold;
@@ -74,17 +94,25 @@
   }
 
   .fct-product-card-prices {
-    @apply px-3 pb-3 text-base;
+    @apply pb-3 text-base;
+    padding-left: var(--fct-card-padding, theme('spacing.3'));
+    padding-right: var(--fct-card-padding, theme('spacing.3'));
     + p {
         @apply mt-auto !important;
     }
   }
 
   button {
-    @apply w-full cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px] capitalize;
+    @apply w-full cursor-pointer text-sm text-center leading-none mt-auto min-h-10 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px] capitalize;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.3'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.3'));
+    padding-top: var(--fct-btn-padding-y, theme('spacing.3'));
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.3'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
     .fluent-cart-loader {
-      @apply duration-300 pointer-events-none justify-center items-center rounded absolute inset-0 w-full h-full hidden;
+      @apply duration-300 pointer-events-none justify-center items-center absolute inset-0 w-full h-full hidden;
+      border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
       svg {
         @apply w-5 h-5 mr-2 text-gray-200 animate-spin fill-blue-600;
@@ -92,7 +120,7 @@
     }
 
     &.out-of-stock {
-      @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color)];
+      @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color,#d6dae1)];
     }
   }
 
@@ -102,9 +130,47 @@
   p:not(.fct-product-card-excerpt) {
     @apply m-0;
   }
+  .fct-product-card-rating {
+    @apply flex items-center gap-1;
+    padding-left: var(--fct-card-padding, theme('spacing.3'));
+    padding-right: var(--fct-card-padding, theme('spacing.3'));
+    .fct-product-card-stars {
+      @apply flex items-center leading-none;
+      .fct-star {
+        font-size: 14px;
+        color: var(--fct-review-star-empty-color, #d1d5db);
+        line-height: 1;
+      }
+      .fct-star-filled {
+        color: var(--fct-review-star-color, #f59e0b);
+      }
+      .fct-star-half {
+        position: relative;
+        display: inline-block;
+        line-height: 1;
+      }
+      .fct-star-half-empty {
+        color: var(--fct-review-star-empty-color, #d1d5db);
+      }
+      .fct-star-half-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        overflow: hidden;
+        width: 50%;
+        color: var(--fct-review-star-color, #f59e0b);
+      }
+    }
+    .fct-product-card-review-count {
+      // Colour in the body:not(.fluent-cart-no-colors) block below.
+      @apply text-xs;
+    }
+  }
   .fct-product-card-excerpt,
   p.dynamic {
-    @apply px-3 mb-2 text-sm hidden;
+    @apply mb-2 text-sm hidden;
+    padding-left: var(--fct-card-padding, theme('spacing.3'));
+    padding-right: var(--fct-card-padding, theme('spacing.3'));
   }
 
 
@@ -117,7 +183,12 @@
 a.fct-product-view-button,
 button.fct-product-view-button {
   // Layout only — colours in the body:not(.fluent-cart-no-colors) block below.
-  @apply flex items-center justify-center cursor-pointer px-3 text-sm text-center leading-none rounded mt-auto min-h-10 py-3 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
+  @apply flex items-center justify-center cursor-pointer text-sm text-center leading-none mt-auto min-h-10 border-0 @[390px]/product-grid:group-[.list]:transition-none @[390px]/product-grid:group-[.list]:max-w-[178px];
+  padding-left: var(--fct-btn-padding-x, theme('spacing.3'));
+  padding-right: var(--fct-btn-padding-x, theme('spacing.3'));
+  padding-top: var(--fct-btn-padding-y, theme('spacing.3'));
+  padding-bottom: var(--fct-btn-padding-y, theme('spacing.3'));
+  border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
   &.group.loading {
     .fluent-cart-loader {
@@ -126,7 +197,7 @@ button.fct-product-view-button {
   }
 
   &.out-of-stock {
-    @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color)];
+    @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color,#d6dae1)];
   }
 }
 
@@ -150,8 +221,19 @@ body:not(.fluent-cart-no-colors) {
     // button
     --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
     --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+    --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+    --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
 
     --fct-heading-color: var(--fct-primary-text-color, #2F3448);
+
+    // The review count keeps its Default grey (#ADB5C2, 2.07:1 on white —
+    // under AA, and a known gap: raising it would move Default, 07 G16). With
+    // a palette printed it is the palette's secondary text, which reads.
+    --fct-card-rating-count-color: var(--fct-secondary-text-color, #ADB5C2);
+
+    .fct-product-card-review-count {
+      color: var(--fct-card-rating-count-color);
+    }
 
   // FluentCart's fallbacks live under the gate: unreachable in takeover mode,
   // identical everywhere else.
@@ -161,12 +243,16 @@ body:not(.fluent-cart-no-colors) {
   // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
   --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
   --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+  --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
   --fct-card-bg: var(--fct-card-bg-color);
   --fct-card-border-color: var(--fct-border-color, #d6dae1);
 
   .fct-product-card {
-    // No background on purpose: the card sits on whatever the page paints,
-    // so it works on dark themes too. The border is the card's only surface.
+    // No background here: under Default the card sits on whatever the page
+    // paints, so it works on dark themes too, and the border is its only
+    // surface. While FluentCart prints colours it wears the card surface —
+    // see the fluent-cart-custom rule below.
     @apply border-[var(--fct-card-border-color)];
 
     h1,h2,h3,h4,h5,h6 {
@@ -198,7 +284,7 @@ body:not(.fluent-cart-no-colors) {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
     box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
 
-    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)] focus:text-[var(--fct-card-btn-text-color)];
+    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-hover-bg-color)] hover:text-[var(--fct-card-btn-hover-text-color)] focus:text-[var(--fct-card-btn-text-color)];
 
     .fluent-cart-loader {
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
@@ -209,8 +295,19 @@ body:not(.fluent-cart-no-colors) {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fct-card-btn-bg-color);
     box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
 
-    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-bg-color)] hover:text-[var(--fct-card-btn-text-color)];
+    @apply text-[var(--fct-card-btn-text-color)] hover:bg-[var(--fct-card-btn-hover-bg-color)] hover:text-[var(--fct-card-btn-hover-text-color)];
   }
+}
+
+/*
+ * While FluentCart prints colours, the card's text is palette text, chosen to
+ * read on the palette's card surface — not on whatever the theme paints the
+ * page (a dark Customize palette on a light Astra page put #f3f4f6 on white,
+ * 1.1:1). So the card wears that surface. Default (`fluent-cart-theme`) has no
+ * such rule and stays transparent; an unset card colour stays transparent too.
+ */
+body.fluent-cart-custom:not(.fluent-cart-no-colors) .fct-product-card {
+  background-color: var(--fct-card-bg-color, transparent);
 }
 
 /* ==== end fct-product-card ==== */
@@ -221,7 +318,8 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct-product-list {
-  @apply grid gap-6;
+  @apply grid;
+  gap: var(--fct-grid-gap, theme('spacing.6'));
   --fct-product-list-columns: 4;
   grid-template-columns: repeat(var(--fct-product-list-columns), 1fr);
 

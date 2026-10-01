@@ -2,12 +2,12 @@
 
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\ProductCardRender;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Translations\TransStrings;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Models\Product;
 
@@ -90,7 +90,7 @@ class PriceRangeBlockEditor extends BlockEditor
                 'name'              => static::getEditorName(),
                 'title'             => __('Price Range', 'fluent-cart'),
                 'description'       => __('This block will display the price range.', 'fluent-cart'),
-                'placeholder_image' => Vite::getAssetUrl('images/placeholder.svg')
+                'placeholder_image' => Helper::getProductPlaceholderUrl()
             ],
             'fluent_cart_block_translation' => TransStrings::blockStrings(),
         ];

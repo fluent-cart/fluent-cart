@@ -84,6 +84,7 @@ const DEFAULT_TEMPLATE = [
                 [
                     ['fluent-cart/product-image'],
                     ['fluent-cart/product-title'],
+                    ['fluent-cart/product-rating'],
                     ['fluent-cart/price-range'],
                     ['fluent-cart/shopapp-product-buttons'],
                 ],

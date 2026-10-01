@@ -6,7 +6,7 @@
                     {{ $t("Integrations") }}
                 </el-breadcrumb-item>
                 <el-breadcrumb-item>
-                    <span class="capitalize">{{ integration_name }}</span>
+                    <span>{{ integration_title }}</span>
                 </el-breadcrumb-item>
             </el-breadcrumb>
             <el-switch
@@ -25,7 +25,7 @@ import {ArrowRight} from "@element-plus/icons-vue";
 export default {
     name: 'FeedHeader',
     props: {
-        integration_name: String,
+        integration_title: String,
         settings: Object
     },
     computed: {

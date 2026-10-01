@@ -64,7 +64,7 @@
                     {{ translate('please add a new address from') }} 
 
                     <span
-                        class="cursor-pointer text-system-dark underline font-medium"
+                        class="cursor-pointer text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] underline font-medium"
                         @click="$router.push({ name: 'profile' })"
                         role="link"
                         tabindex="0"

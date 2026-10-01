@@ -17,10 +17,16 @@ button.fluent-cart-add-to-cart-button {
   // block below, same as product-card.scss: a declaration carrying an
   // unresolvable var() still wins the cascade and computes to `unset`, so only
   // the absence of the declaration lets the theme's own button rules apply.
-  @apply border border-solid relative py-3 px-5 text-sm font-medium rounded no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 transition duration-150 ease-in-out capitalize;
+  @apply border border-solid relative text-sm font-medium no-underline text-center cursor-pointer leading-none flex items-center justify-center gap-2 transition duration-150 ease-in-out capitalize;
+  padding-top: var(--fct-btn-padding-y, theme('spacing.3'));
+  padding-bottom: var(--fct-btn-padding-y, theme('spacing.3'));
+  padding-left: var(--fct-btn-padding-x, theme('spacing.5'));
+  padding-right: var(--fct-btn-padding-x, theme('spacing.5'));
+  border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
   .fluent-cart-loader {
-    @apply duration-300 pointer-events-none justify-center items-center bg-gray-100 rounded absolute inset-0 w-full h-full hidden;
+    @apply duration-300 pointer-events-none justify-center items-center bg-gray-100 absolute inset-0 w-full h-full hidden;
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
     svg {
       @apply w-5 h-5 mr-2 text-gray-200 animate-spin fill-blue-600;
     }

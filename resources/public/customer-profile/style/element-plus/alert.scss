@@ -1,5 +1,6 @@
 .el-alert{
-  @apply rounded text-system-dark #{!important};
+  @apply text-system-dark #{!important};
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT')) !important;
   .el-alert__icon{
     @apply self-start w-auto mr-2 relative #{!important};
     svg{

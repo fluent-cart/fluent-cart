@@ -35,6 +35,63 @@
 
 @config "./customer-profile.config.js";
 
+/* Element Plus paints the portal's tables, fields, dialogs, poppers and pager
+   from its own globals. While FluentCart prints colours they read the palette;
+   each falls back to Element Plus' own default, so Default is untouched, and
+   under fluent-cart-no-colors this block does not exist. Declared on body, so
+   teleported dialogs and poppers inherit it too. See dev-docs/appearance/04. */
+body:not(.fluent-cart-no-colors) {
+  --el-bg-color: var(--fct-card-bg-color, #ffffff);
+  --el-bg-color-overlay: var(--fct-card-bg-color, #ffffff);
+  --el-fill-color-blank: var(--fct-card-bg-color, #ffffff);
+  --el-fill-color: var(--fct-secondary-btn-hover-bg-color, #f0f2f5);
+  --el-fill-color-light: var(--fct-secondary-bg-color, #f5f7fa);
+  --el-fill-color-lighter: var(--fct-secondary-bg-color, #fafafa);
+  // The skeleton shimmer's far stop; unbound, it streaked light across dark.
+  --el-fill-color-darker: var(--fct-border-color, #e6e8eb);
+  --el-text-color-primary: var(--fct-primary-text-color, #303133);
+  --el-text-color-regular: var(--fct-primary-text-color, #606266);
+  --el-text-color-secondary: var(--fct-secondary-text-color, #909399);
+  --el-text-color-placeholder: var(--fct-input-placeholder-text-color, #a8abb2);
+  --el-border-color: var(--fct-border-color, #dcdfe6);
+  --el-border-color-light: var(--fct-border-color, #e4e7ed);
+  --el-border-color-lighter: var(--fct-divider-color, #ebeef5);
+  --el-border-color-extra-light: var(--fct-divider-color, #f2f6fc);
+}
+
+/* Only while FluentCart prints colours. */
+body.fluent-cart-custom:not(.fluent-cart-no-colors) {
+  // The portal holds palette text but paints no surface in Default, so it sat
+  // on the theme's page: a dark inherited palette put the customer name at
+  // 1.18:1. While colours print it wears the card surface, as product cards
+  // and the review summary do (04, rule 8). Default stays transparent, and
+  // so does a palette with no card colour: the raw global, not the token.
+  .fluent-cart-customer-profile-app:not(.el-dialog):not(.el-popper):not(.el-popover) {
+    background-color: var(--fct-card-bg-color, transparent);
+  }
+
+  // Pairs are owned together (01, rule 3): where the palette paints a field
+  // it also sets the text on it. Theme dark modes force field text with
+  // !important (Astra: .astra-dark-mode-enable input[type=text]), which put
+  // white text on the white field — matched with !important here, and only here.
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-textarea__inner {
+    background-color: var(--fct-customer-dashboard-input-bg, #ffffff);
+  }
+
+  .el-input__inner,
+  .el-textarea__inner {
+    color: var(--fct-customer-dashboard-el-input-text, #606266) !important;
+  }
+
+  .fct-copy-advanced input,
+  .form-input-group input,
+  .form-input-group select {
+    color: var(--fct-customer-dashboard-input-text, #2F3448) !important;
+  }
+}
+
 
 div[data-fluent-cart-customer-profile-app] {
   @apply max-w-full antialiased @container/customer-profile-page #{!important};
@@ -70,7 +127,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-customer-single-download-table {
   thead {
     th {
-      @apply bg-gray-25 text-system-dark text-sm font-semibold py-3 px-3 #{!important};
+      @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] text-sm font-semibold py-3 px-3 #{!important};
     }
   }
 
@@ -86,7 +143,7 @@ div[data-fluent-cart-customer-profile-app] {
     }
 
     td {
-      @apply text-sm text-system-dark font-normal p-0 border-0 #{!important};
+      @apply text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-normal p-0 border-0 #{!important};
       &:first-child {
         @apply pl-5 #{!important};
       }
@@ -98,17 +155,17 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .link {
-    @apply text-sm font-medium no-underline text-system-dark hover:text-system-dark hover:underline #{!important};
+    @apply text-sm font-medium no-underline text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] hover:underline #{!important};
   }
 
   .variation-title {
-    @apply text-[13px] text-system-dark leading-[16px] font-normal mt-1;
+    @apply text-[13px] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] leading-[16px] font-normal mt-1;
   }
 
   table {
     tr {
       th {
-        @apply border border-solid border-x-0 border-gray-divider #{!important};
+        @apply border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] #{!important};
         &:first-child {
           @apply rounded-none;
         }
@@ -121,7 +178,7 @@ div[data-fluent-cart-customer-profile-app] {
 
     tbody {
       td {
-        @apply py-2.5 px-3 border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 #{!important};
+        @apply py-2.5 px-3 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-t-0 border-l-0 border-r-0 #{!important};
         &:last-child {
           @apply pr-5 #{!important};
         }
@@ -140,20 +197,22 @@ div[data-fluent-cart-customer-profile-app] {
 
 // email confirmation
 .fct-email-verification {
-  @apply relative bg-gray-50 rounded p-4 mt-7;
+  @apply relative bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)] mt-7;
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+  padding: var(--fct-container-padding-y, theme('spacing.4')) var(--fct-container-padding-x, theme('spacing.4'));
   .message-title {
-    @apply flex items-center gap-2.5 text-system-dark font-semibold text-[15px] mb-2.5;
+    @apply flex items-center gap-2.5 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-semibold text-[15px] mb-2.5;
     .icon {
       @apply relative top-0.5 text-success-500;
     }
 
     .email {
-      @apply text-sm opacity-[0.7] text-system-mid;
+      @apply text-sm opacity-[0.7] text-[var(--fct-customer-dashboard-text-color,#565865)];
     }
   }
 
   .message-text {
-    @apply text-sm block text-system-mid leading-[20px] m-0;
+    @apply text-sm block text-[var(--fct-customer-dashboard-text-color,#565865)] leading-[20px] m-0;
   }
 
   .expired-message {
@@ -161,11 +220,16 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center cursor-pointer text-[13px] no-underline text-gray-50 leading-none py-2 px-3 rounded bg-success-500 font-semibold transition duration-100 hover:bg-success-600 #{!important};
+    @apply inline-flex items-center justify-center cursor-pointer text-[13px] no-underline text-gray-50 leading-none bg-success-500 font-semibold transition duration-100 hover:bg-success-600 #{!important};
+    padding-top: var(--fct-btn-padding-y, theme('spacing.2')) !important;
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.2')) !important;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.3')) !important;
+    padding-right: var(--fct-btn-padding-x, theme('spacing.3')) !important;
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT')) !important;
   }
 
   .btn-close {
-    @apply text-system-dark absolute -top-3.5 right-[-10px] w-7 h-7 bg-white shadow rounded-full flex items-center justify-center cursor-pointer transition duration-100 hover:bg-red-500 hover:text-white;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] absolute -top-3.5 right-[-10px] w-7 h-7 bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] shadow rounded-full flex items-center justify-center cursor-pointer transition duration-100 hover:bg-red-500 hover:text-white;
   }
 
   .verification-message + .btn {
@@ -177,7 +241,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-empty-text {
   @apply p-10 text-center;
   p {
-    @apply my-0 text-system-dark-light text-sm;
+    @apply my-0 text-[var(--fct-customer-dashboard-meta-text-color,#696778)] text-sm;
   }
 
   .icon {
@@ -191,15 +255,16 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .fct-customer-dashboard {
-  @apply flex flex-col gap-7.5 overflow-hidden relative;
+  @apply flex flex-col overflow-hidden relative;
+  gap: var(--fct-section-spacing, theme('spacing[7.5]'));
   &-header {
     @apply flex items-center justify-between mb-4;
     .fct-customer-dashboard-title {
-      @apply leading-none text-base font-semibold text-[var(--fct-customer-dashboard-title-color)] my-0;
+      @apply leading-none text-base font-semibold text-[var(--fct-customer-dashboard-title-color,#2F3448)] my-0;
     }
 
     .is-link {
-      @apply font-medium underline text-sm text-[var(--fct-customer-dashboard-title-color)] focus:bg-transparent focus:shadow-none #{!important};
+      @apply font-medium underline text-sm text-[var(--fct-customer-dashboard-title-color,#2F3448)] focus:bg-transparent focus:shadow-none #{!important};
     }
   }
 
@@ -213,22 +278,22 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-customer-orders-items {
   @apply inline-flex items-start gap-1;
   a {
-    @apply no-underline text-[var(--fct-customer-dashboard-title-color)] focus:outline-none hover:underline #{!important};
+    @apply no-underline text-[var(--fct-customer-dashboard-title-color,#2F3448)] focus:outline-none hover:underline #{!important};
   }
 
   &-title {
-    @apply inline-block text-[var(--fct-customer-dashboard-title-color)];
+    @apply inline-block text-[var(--fct-customer-dashboard-title-color,#2F3448)];
     span {
-      @apply text-[var(--fct-customer-dashboard-sub-title-color)] text-sm;
+      @apply text-[var(--fct-customer-dashboard-sub-title-color,#565865)] text-sm;
     }
   }
 
   &-sub-title {
-    @apply text-[var(--fct-customer-dashboard-sub-title-color)] text-[13px];
+    @apply text-[var(--fct-customer-dashboard-sub-title-color,#565865)] text-[13px];
   }
 
   .fct-action-link-btn {
-    @apply relative top-[3px] block w-5 h-5 rounded-xs bg-gray-25 flex-shrink-0 text-center cursor-pointer;
+    @apply relative top-[3px] block w-5 h-5 rounded-xs bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] flex-shrink-0 text-center cursor-pointer;
     svg {
       @apply w-2.5 h-2.5;
     }
@@ -239,7 +304,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .text-meta {
-    @apply text-[13px] leading-[20px] text-[var(--fct-customer-dashboard-text-color)];
+    @apply text-[13px] leading-[20px] text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
 }
 
@@ -255,7 +320,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-card-info {
   @apply flex items-center gap-2;
   .text {
-    @apply text-sm text-[var(--fct-customer-dashboard-text-color)];
+    @apply text-sm text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
 
   img {
@@ -264,12 +329,12 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .fct-customer-payment-info {
-  @apply text-sm leading-[20px] text-[var(--fct-customer-dashboard-text-color)];
+  @apply text-sm leading-[20px] text-[var(--fct-customer-dashboard-text-color,#565865)];
 }
 
 .fct-customer-payment-meta-info {
   .text-meta {
-    @apply font-medium text-[var(--fct-customer-dashboard-text-color)];
+    @apply font-medium text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
 }
 
@@ -282,7 +347,7 @@ div[data-fluent-cart-customer-profile-app] {
 
 .fct-product-orders-items {
   p {
-    @apply border border-solid border-x-0 border-t-0 border-gray-divider m-0 mb-3 pb-3 last:mb-0 last:border-b-0 last:pb-0 dark:border-dark-400;
+    @apply border border-solid border-x-0 border-t-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] m-0 mb-3 pb-3 last:mb-0 last:border-b-0 last:pb-0 dark:border-dark-400;
   }
 
   span {
@@ -290,24 +355,25 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .title {
-    @apply mb-0.5 inline-block text-sm text-system-dark no-underline hover:underline focus:shadow-none focus:outline-none;
+    @apply mb-0.5 inline-block text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline hover:underline focus:shadow-none focus:outline-none;
   }
 
   .variation-title {
-    @apply text-[12px] text-system-mid leading-[16px] font-normal;
+    @apply text-[12px] text-[var(--fct-customer-dashboard-text-color,#565865)] leading-[16px] font-normal;
   }
 }
 
 // fct-single-order-box
 .fct-single-order {
   &-box {
-    @apply mb-6 last:mb-0;
+    @apply last:mb-0;
+    margin-bottom: var(--fct-section-spacing, theme('spacing.6'));
   }
 
   &-header {
     @apply mb-3;
     .title {
-      @apply gap-2 flex items-center text-sm leading-5 font-semibold text-[var(--fct-customer-dashboard-title-color)];
+      @apply gap-2 flex items-center text-sm leading-5 font-semibold text-[var(--fct-customer-dashboard-title-color,#2F3448)];
       .icon {
         @apply h-4.5;
         svg {
@@ -318,9 +384,10 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   &-body {
-    @apply border border-solid border-[var(--fct-customer-dashboard-border-color)] rounded overflow-hidden;
+    @apply border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] overflow-hidden;
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     .fct-single-order-box-inner {
-      @apply p-5;
+      padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
     }
   }
 }
@@ -335,9 +402,9 @@ div[data-fluent-cart-customer-profile-app] {
 
 // fct-customer-dashboard-content-table-item
 .fct-customer-dashboard-content-table-item {
-  @apply flex justify-between items-center gap-12.5 border-[1px] border-solid border-gray-divider pb-3 mb-3 border-x-0 border-t-0 last:border-0 last:mb-0 last:pb-0;
+  @apply flex justify-between items-center gap-12.5 border-[1px] border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] pb-3 mb-3 border-x-0 border-t-0 last:border-0 last:mb-0 last:pb-0;
   .title {
-    @apply block text-sm font-medium text-[var(--fct-customer-dashboard-title-color)] mb-1;
+    @apply block text-sm font-medium text-[var(--fct-customer-dashboard-title-color,#2F3448)] mb-1;
     &-status {
       @apply font-semibold uppercase;
       &.active {
@@ -360,7 +427,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .text {
-    @apply block text-sm text-[var(--fct-customer-dashboard-text-color)] leading-[21px];
+    @apply block text-sm text-[var(--fct-customer-dashboard-text-color,#565865)] leading-[21px];
   }
 
   .right-content {
@@ -385,7 +452,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .el-table td.el-table__cell, .el-table th.el-table__cell.is-leaf {
-    @apply border-gray-divider !important;
+    @apply border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] !important;
   }
 
   .upgrade-title {
@@ -398,7 +465,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-license-key-wrap {
   @apply flex items-center gap-2;
   .license-key {
-    @apply bg-[#f1f2f3] rounded leading-5 text-system-dark py-2 px-2.5 flex items-center text-[13px] leading-[14px];
+    @apply bg-[var(--fct-customer-dashboard-code-bg,#f1f2f3)] rounded leading-5 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] py-2 px-2.5 flex items-center text-[13px] leading-[14px];
   }
 
   .icon-button {
@@ -409,7 +476,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-list {
   @apply grid gap-1;
   li {
-    @apply text-system-mid text-[13px];
+    @apply text-[var(--fct-customer-dashboard-text-color,#565865)] text-[13px];
   }
 }
 
@@ -422,12 +489,12 @@ div[data-fluent-cart-customer-profile-app] {
     }
 
     &.is-bordered.is-checked {
-      @apply border-primary-500;
+      @apply border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)];
     }
   }
 
   .el-radio__input.is-checked + .el-radio__label {
-    @apply text-system-dark;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
   }
 
   .el-radio__input {
@@ -446,7 +513,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-update-payment-method-form {
   @apply grid gap-5 pt-5;
   .form-heading {
-    @apply text-[15px] font-semibold leading-[22px] text-system-dark mb-3;
+    @apply text-[15px] font-semibold leading-[22px] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] mb-3;
   }
 }
 
@@ -474,17 +541,17 @@ div[data-fluent-cart-customer-profile-app] {
 
 .fct-customer-downloads-file-info {
   .text {
-    @apply text-[13px] leading-5 font-normal text-[var(--fct-customer-dashboard-text-color)] opacity-70;
+    @apply text-[13px] leading-5 font-normal text-[var(--fct-customer-dashboard-text-color,#565865)] opacity-70;
   }
 
   .filename {
-    @apply font-medium leading-5 text-sm text-[var(--fct-customer-dashboard-title-color)] mb-1;
+    @apply font-medium leading-5 text-sm text-[var(--fct-customer-dashboard-title-color,#2F3448)] mb-1;
   }
 }
 
 //fct-plain-order-box
 .fct-plain-order-box {
-  @apply border-0 border-b-[1px] border-solid border-[var(--fct-customer-dashboard-border-color)] rounded-none py-6 m-0;
+  @apply border-0 border-b-[1px] border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded-none py-6 m-0;
   .fct-single-order-body {
     overflow: inherit;
     @apply border-0 rounded-none;
@@ -495,7 +562,7 @@ div[data-fluent-cart-customer-profile-app] {
     .transaction-lists {
       @apply pl-0;
       li {
-        @apply m-0 text-system-mid text-sm leading-5 font-medium;
+        @apply m-0 text-[var(--fct-customer-dashboard-text-color,#565865)] text-sm leading-5 font-medium;
         + li {
           @apply mt-3;
         }
@@ -522,7 +589,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .fct-single-download-item {
-  @apply no-underline text-primary-500;
+  @apply no-underline text-[var(--fct-customer-dashboard-link-color,#253241)];
   + a {
     @apply mt-[5px];
   }
@@ -546,15 +613,15 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .fct-order-summary-header {
-    @apply flex items-center justify-between py-2.5 px-5 border-0 border-b-[1px] border-solid border-[var(--fct-customer-dashboard-border-color)];
+    @apply flex items-center justify-between py-2.5 px-5 border-0 border-b-[1px] border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
   }
 
   .fct-order-summary-header-title {
-    @apply m-0 text-[15px] text-[var(--fct-customer-dashboard-title-color)] font-semibold leading-6;
+    @apply m-0 text-[15px] text-[var(--fct-customer-dashboard-title-color,#2F3448)] font-semibold leading-6;
   }
 
   .fct-order-summary-header-action {
-    @apply text-[13px] leading-5 text-system-mid flex items-center gap-[6px] cursor-pointer;
+    @apply text-[13px] leading-5 text-[var(--fct-customer-dashboard-text-color,#565865)] flex items-center gap-[6px] cursor-pointer;
     .icon {
       svg {
         @apply block;
@@ -572,10 +639,15 @@ div[data-fluent-cart-customer-profile-app] {
     }
 
     .fct-order-summary-order-calculation {
-      @apply pt-4 mt-5 border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)];
+      @apply pt-4 mt-5 border-0 border-t border-solid border-[color:var(--fct-customer-dashboard-divider-color,#D6DAE1)];
 
       .fct-customer-tax-box {
-        @apply w-full max-w-[400px] ml-auto mt-4 mb-1 py-5 px-5 rounded bg-gray-25 dark:bg-dark-600;
+        @apply w-full max-w-[400px] ml-auto mt-4 mb-1 bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] dark:bg-dark-600;
+        padding-top: var(--fct-container-padding-y, theme('spacing.5'));
+        padding-bottom: var(--fct-container-padding-y, theme('spacing.5'));
+        padding-left: var(--fct-container-padding-x, theme('spacing.5'));
+        padding-right: var(--fct-container-padding-x, theme('spacing.5'));
+        border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
         .tr + .tr {
           @apply mt-1.5;
@@ -592,10 +664,10 @@ div[data-fluent-cart-customer-profile-app] {
 
       .tr {
 
-        @apply font-normal text-sm leading-7 text-system-mid;
+        @apply font-normal text-sm leading-7 text-[var(--fct-customer-dashboard-text-color,#565865)];
 
         .fct-shipping-method-name {
-          @apply block text-xs leading-4 text-system-light;
+          @apply block text-xs leading-4 text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
         }
 
         &.fct-customer-tax-row--muted {
@@ -605,18 +677,18 @@ div[data-fluent-cart-customer-profile-app] {
           @apply pl-3;
         }
         &.fct-customer-tax-row--divider {
-          @apply border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)] pt-2 mt-1.5;
+          @apply border-0 border-t border-solid border-[color:var(--fct-customer-dashboard-divider-color,#D6DAE1)] pt-2 mt-1.5;
           border-color: rgba(148, 163, 184, 0.26);
         }
 
         &.fct-customer-tax-breakdown-heading {
-          @apply text-[12px] font-semibold uppercase tracking-wide text-system-mid border-0 mb-3 leading-5;
+          @apply text-[12px] font-semibold uppercase tracking-wide text-[var(--fct-customer-dashboard-text-color,#565865)] border-0 mb-3 leading-5;
         }
         .fct-customer-tax-see-details {
-          @apply text-[11px] text-blue-600 cursor-pointer dark:text-blue-300;
+          @apply text-[11px] text-[var(--fct-customer-dashboard-info-link-color,#0171DB)] cursor-pointer dark:text-blue-300;
         }
         .fct-customer-tax-breakdown-info {
-          @apply w-4 h-4 text-system-light flex-shrink-0;
+          @apply w-4 h-4 text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] flex-shrink-0;
         }
         &.fct-customer-tax-breakdown-col-headers,
         &.fct-customer-tax-breakdown-row {
@@ -626,7 +698,7 @@ div[data-fluent-cart-customer-profile-app] {
           gap: 16px;
         }
         &.fct-customer-tax-breakdown-col-headers {
-          @apply text-[11px] uppercase tracking-wide text-system-light border-0 leading-5 mb-1;
+          @apply text-[11px] uppercase tracking-wide text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] border-0 leading-5 mb-1;
         }
         .fct-customer-tax-breakdown-col-rate {
           @apply min-w-0;
@@ -642,7 +714,7 @@ div[data-fluent-cart-customer-profile-app] {
   .fct-order-summary-footer {
     @apply px-5;
     .tr {
-      @apply font-semibold text-lg leading-7 text-[var(--fct-customer-dashboard-title-color)] w-full max-w-[400px] ml-auto py-5 border-0 border-t border-solid border-[var(--fct-customer-dashboard-divider-color)];
+      @apply font-semibold text-lg leading-7 text-[var(--fct-customer-dashboard-title-color,#2F3448)] w-full max-w-[400px] ml-auto py-5 border-0 border-t border-solid border-[color:var(--fct-customer-dashboard-divider-color,#D6DAE1)];
     }
 
     &-inner {
@@ -654,10 +726,15 @@ div[data-fluent-cart-customer-profile-app] {
 // Teleport-safe styles for the tax breakdown card when rendered inside an
 // el-popover (teleported to body, outside the .fct-order-summary-wrap scope).
 .fct-customer-tax-box {
-  @apply w-full py-5 px-5 rounded bg-gray-25;
+  @apply w-full bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)];
+  padding-top: var(--fct-container-padding-y, theme('spacing.5'));
+  padding-bottom: var(--fct-container-padding-y, theme('spacing.5'));
+  padding-left: var(--fct-container-padding-x, theme('spacing.5'));
+  padding-right: var(--fct-container-padding-x, theme('spacing.5'));
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
   .tr {
-    @apply flex items-center justify-between font-normal text-sm leading-7 text-system-mid;
+    @apply flex items-center justify-between font-normal text-sm leading-7 text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
   .tr + .tr {
     @apply mt-1.5;
@@ -670,10 +747,10 @@ div[data-fluent-cart-customer-profile-app] {
     border-color: rgba(148, 163, 184, 0.26);
   }
   .fct-customer-tax-breakdown-heading {
-    @apply text-[12px] font-semibold uppercase tracking-wide text-system-mid border-0 mb-3 leading-5;
+    @apply text-[12px] font-semibold uppercase tracking-wide text-[var(--fct-customer-dashboard-text-color,#565865)] border-0 mb-3 leading-5;
   }
   .fct-customer-tax-breakdown-info {
-    @apply w-4 h-4 text-system-light flex-shrink-0;
+    @apply w-4 h-4 text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] flex-shrink-0;
   }
   .fct-customer-tax-breakdown-col-headers,
   .fct-customer-tax-breakdown-row {
@@ -683,7 +760,7 @@ div[data-fluent-cart-customer-profile-app] {
     gap: 16px;
   }
   .fct-customer-tax-breakdown-col-headers {
-    @apply text-[11px] uppercase tracking-wide text-system-light leading-5 mb-1;
+    @apply text-[11px] uppercase tracking-wide text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] leading-5 mb-1;
   }
   .fct-customer-tax-breakdown-col-base,
   .fct-customer-tax-breakdown-col-tax {
@@ -721,7 +798,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .simple-link-btn {
-  @apply transition duration-100 text-xs text-system-mid hover:text-system-dark hover:underline;
+  @apply transition duration-100 text-xs text-[var(--fct-customer-dashboard-text-color,#565865)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] hover:underline;
 }
 
 .simple-icon-btn {
@@ -770,7 +847,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   li:hover {
-    @apply bg-gray-50;
+    @apply bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)];
     .print-order-receipt {
       @apply opacity-100;
     }
@@ -778,11 +855,11 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .fct-customer-dashboard-single-order-item {
-  @apply mb-6 pb-6 border border-solid border-x-0 border-t-0 border-gray-divider last:mb-0 last:pb-0 last:border-b-0;
+  @apply mb-6 pb-6 border border-solid border-x-0 border-t-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] last:mb-0 last:pb-0 last:border-b-0;
 }
 
 .underline-link-button {
-  @apply p-0 text-sm shadow-none font-medium leading-[24px] inline-flex items-center gap-1.5 text-primary-500 underline focus:outline-none focus:shadow-none hover:text-primary-300 !important;
+  @apply p-0 text-sm shadow-none font-medium leading-[24px] inline-flex items-center gap-1.5 text-[var(--fct-customer-dashboard-link-color,#253241)] underline focus:outline-none focus:shadow-none hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)] !important;
   .icon {
     @apply w-4 h-4;
   }
@@ -792,12 +869,12 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .el-button.is-text.underline-link-button {
-  @apply p-0 m-0 underline text-sm shadow-none hover:text-primary-300 !important;
+  @apply p-0 m-0 underline text-sm shadow-none hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)] !important;
 }
 
 .invoice-id-date {
   .text {
-    @apply text-[var(--fct-customer-dashboard-sub-title-color)] text-sm;
+    @apply text-[var(--fct-customer-dashboard-sub-title-color,#565865)] text-sm;
   }
 }
 
@@ -810,14 +887,14 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-customer-dashboard-empty-state {
   @apply text-center p-10;
   .fct-empty-icon-box {
-    @apply w-[72px] h-[72px] flex items-center justify-center mx-auto bg-gray-50 rounded-[12px] mb-4;
+    @apply w-[72px] h-[72px] flex items-center justify-center mx-auto bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)] rounded-[12px] mb-4;
   }
 
   h4 {
-    @apply text-[22px] leading-[32px] font-semibold mb-1 text-system-dark;
+    @apply text-[22px] leading-[32px] font-semibold mb-1 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
   }
 
   p {
-    @apply text-base leading-[24px] text-system-mid mb-4;
+    @apply text-base leading-[24px] text-[var(--fct-customer-dashboard-text-color,#565865)] mb-4;
   }
 }

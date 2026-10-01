@@ -26,6 +26,7 @@ use FluentCart\App\Http\Routes\WebRoutes;
 (new \FluentCart\App\Hooks\Handlers\ReminderHandler)->register();
 
 (new \FluentCart\App\Hooks\Handlers\ShortCodes\ShopAppHandler)->register();
+(new \FluentCart\App\Hooks\Handlers\ShortCodes\OrderReviewShortCode)->register();
 
 (new FluentCart\App\Hooks\Handlers\CustomCheckout\CustomCheckout())->register();
 
@@ -36,6 +37,9 @@ add_action('init', function () {
 
 // Turnstile Module Init
 (new \FluentCart\App\Modules\Turnstile\TurnstileInit())->register(\FluentCart\App\App::getInstance());
+
+// Reviews Module Init
+(new \FluentCart\App\Modules\Reviews\ReviewModule())->register();
 
 (new \FluentCart\App\Modules\FluentPlayer\FluentPlayerAdminAssets())->register();
 
@@ -102,6 +106,24 @@ add_action('init', function () {
 if (\FluentCart\Api\ModuleSettings::isActive('stock_management')) {
     \FluentCart\App\Hooks\Handlers\BlockEditors\StockBlock::register();
     \FluentCart\App\Hooks\Handlers\BlockEditors\SoldOutBadgeBlockEditor::register();
+}
+
+// Registered whether or not the reviews module is active: the block ships
+// inside the Shop App, Product Info and Related Products card templates, so
+// an unregistered block would greet the editor with "your site doesn't
+// include support for this block" on every card. With the module off it
+// stays out of the inserter and renders nothing, in the editor and on the
+// page — see ProductRatingBlockEditor.
+\FluentCart\App\Hooks\Handlers\BlockEditors\ProductRatingBlockEditor::register();
+
+if (\FluentCart\Api\ModuleSettings::isActive('reviews') && class_exists(\FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::class)) {
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewsBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\WriteAReviewButtonBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewFormBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewList\ProductReviewListBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\BlockEditors\ProductReviewSummaryGroupBlockEditor::register();
+    \FluentCart\App\Hooks\Handlers\ShortCodes\ProductReviewsShortCode::register();
 }
 
 (new \FluentCart\App\Hooks\Cart\CartLoader)->register();
@@ -173,6 +195,61 @@ $orderPaidAsyncHandler = function ($data) {
 
 };
 add_action('fluent_cart/order_paid_async_private_handle', $orderPaidAsyncHandler, 1, 1);
+
+// The settled half of a review approval — see ReviewApproved::afterDispatch().
+// Runs off the request, so it trusts nothing it was told: the review is
+// re-read, and only one that is still an approved top-level review is
+// announced. Deleted or held back since, nothing fires.
+$reviewApprovedAsyncHandler = function ($data) {
+    $reviewId = (int) \FluentCart\Framework\Support\Arr::get($data, 'review_id');
+
+    if (!$reviewId) {
+        return;
+    }
+
+    $review = \FluentCart\App\Models\ProductReview::query()->with('product')->find($reviewId);
+
+    if (!$review || $review->parent_id || $review->status !== \FluentCart\App\Helpers\Status::REVIEW_APPROVED) {
+        return;
+    }
+
+    do_action('fluent_cart/review_approved_done', [
+        'review'  => $review,
+        'product' => $review->product,
+    ]);
+};
+add_action('fluent_cart/review_approved_async_private_handle', $reviewApprovedAsyncHandler, 1, 1);
+
+// The settled half of a store reply — see ReviewReplied::afterDispatch().
+// Announced only while both halves are published: the reply itself, and the
+// review it answers. A reply to a review nobody can see is not a
+// conversation the reviewer can be pointed at.
+$reviewRepliedAsyncHandler = function ($data) {
+    $replyId = (int) \FluentCart\Framework\Support\Arr::get($data, 'reply_id');
+
+    if (!$replyId) {
+        return;
+    }
+
+    $reply = \FluentCart\App\Models\ProductReview::query()->with('product')->find($replyId);
+
+    if (!$reply || !$reply->parent_id || !$reply->is_admin_reply || $reply->status !== \FluentCart\App\Helpers\Status::REVIEW_APPROVED) {
+        return;
+    }
+
+    $review = \FluentCart\App\Models\ProductReview::query()->find((int) $reply->parent_id);
+
+    if (!$review || $review->parent_id || $review->status !== \FluentCart\App\Helpers\Status::REVIEW_APPROVED) {
+        return;
+    }
+
+    do_action('fluent_cart/review_replied_done', [
+        'reply'   => $reply,
+        'review'  => $review,
+        'product' => $reply->product,
+    ]);
+};
+add_action('fluent_cart/review_replied_async_private_handle', $reviewRepliedAsyncHandler, 1, 1);
 
 
 //

@@ -3,38 +3,163 @@
 
 @tailwind utilities;
 
+/* ─── Colour tokens ─────────────────────────────────────────
+   The portal follows the storefront palette through its own scope, the same
+   shape as reviews' --fct-review-*: each token aliases a palette global on
+   :root, and the gate below re-declares it with the literal the portal's rules
+   had before it was bound, so a Default store renders as it always did.
+
+   The rules sit outside the gate — the portal is FluentCart's own chrome and
+   no theme styles it — so every use repeats that literal as its own fallback:
+   with the store standing aside (fluent-cart-no-colors) the :root alias is
+   unresolved and the use-site literal applies.
+
+   Several tokens share a global and differ only in their fallback. Each is the
+   literal a group of rules already had; merging them would move Default.
+   Status colours (badges, tags, alerts, errors) and logout stay fixed.
+   See dev-docs/appearance/04. */
 :root {
-  --fct-customer-dashboard-primary-text-color: theme('colors.system.dark');
-  --fct-customer-dashboard-secondary-text-color: theme('colors.system.mid');
+  // text
+  --fct-customer-dashboard-primary-text-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-title-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-secondary-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-sub-title-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-meta-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-faint-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-label-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-caption-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-hint-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-note-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-link-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-link-hover-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-info-link-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-blue-link-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-nav-text-color: var(--fct-secondary-text-color);
+  --fct-customer-dashboard-nav-active-text-color: var(--fct-primary-text-color);
+  --fct-customer-dashboard-paginator-text-color: var(--fct-secondary-text-color);
 
-  // text colors
-  --fct-customer-dashboard-title-color: var(--fct-customer-dashboard-primary-text-color);
-  --fct-customer-dashboard-sub-title-color: var(--fct-customer-dashboard-secondary-text-color);
-  --fct-customer-dashboard-text-color: var(--fct-customer-dashboard-secondary-text-color);
+  // surfaces
+  --fct-customer-dashboard-card-bg: var(--fct-card-bg-color);
+  --fct-customer-dashboard-surface-alt: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-surface-muted: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-surface-neutral: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-surface-light: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-code-bg: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-chip-bg: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-info-panel-bg: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-nav-active-bg-color: var(--fct-secondary-bg-color);
+  --fct-customer-dashboard-hover-bg: var(--fct-secondary-btn-hover-bg-color);
+  --fct-customer-dashboard-hover-strong-bg: var(--fct-secondary-btn-hover-bg-color);
+  --fct-customer-dashboard-soft-hover-bg: var(--fct-secondary-btn-hover-bg-color);
 
-  // border colors
-  --fct-customer-dashboard-border-color: theme('colors.gray.outline');
-  --fct-customer-dashboard-divider-color: theme('colors.gray.outline');
+  // borders and dividers
+  --fct-customer-dashboard-border-color: var(--fct-border-color);
+  --fct-customer-dashboard-divider-color: var(--fct-divider-color);
+  --fct-customer-dashboard-row-divider-color: var(--fct-divider-color);
+  --fct-customer-dashboard-rule-color: var(--fct-border-color);
+  --fct-customer-dashboard-scrollbar-thumb: var(--fct-border-color);
 
+  // primary button pair and its hover; the nav bar and checked controls
+  --fct-customer-dashboard-btn-bg-color: var(--fct-btn-bg-color);
+  --fct-customer-dashboard-btn-border-color: var(--fct-btn-bg-color);
+  --fct-customer-dashboard-btn-text-color: var(--fct-btn-text-color);
+  --fct-customer-dashboard-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color));
+  --fct-customer-dashboard-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-btn-text-color));
+  --fct-customer-dashboard-nav-active-bar-color: var(--fct-btn-bg-color);
+  --fct-customer-dashboard-check-bg: var(--fct-btn-bg-color);
+  --fct-customer-dashboard-check-icon: var(--fct-btn-text-color);
+  --fct-customer-dashboard-focus-border-color: var(--fct-active-border-color);
 
-  // button
-  --fct-customer-dashboard-btn-bg-color: theme('colors.primary.500');
-  --fct-customer-dashboard-btn-border-color: var(--fct-customer-dashboard-btn-bg-color);
-  --fct-customer-dashboard-btn-text-color: theme('colors.white');
+  // secondary (outline) buttons
+  --fct-customer-dashboard-secondary-btn-bg: var(--fct-secondary-btn-bg-color);
+  --fct-customer-dashboard-secondary-btn-text: var(--fct-secondary-btn-text-color);
+  --fct-customer-dashboard-secondary-btn-border: var(--fct-secondary-btn-border-color);
 
-  // nav
-  --fct-customer-dashboard-nav-text-color: theme('colors.system.mid');
-  --fct-customer-dashboard-nav-active-text-color: theme('colors.primary.500');
-  --fct-customer-dashboard-nav-active-bg-color: theme('colors.gray.50');
-  --fct-customer-dashboard-nav-active-bar-color: theme('colors.primary.500');
+  // fields
+  --fct-customer-dashboard-input-bg: var(--fct-input-bg-color);
+  --fct-customer-dashboard-input-text: var(--fct-input-text-color);
+  --fct-customer-dashboard-input-border: var(--fct-border-color);
+  --fct-customer-dashboard-input-placeholder: var(--fct-input-placeholder-text-color);
+  --fct-customer-dashboard-el-input-text: var(--fct-input-text-color);
 
-  // paginator
-  --fct-customer-dashboard-paginator-text-color: var(--fct-customer-dashboard-text-color);
+  // Palette only. The current page's colours were never declared, so it
+  // computed to unset; while a palette prints it wears the button pair
+  // (04, rule 7), and without one it stays exactly as it was.
+  --fct-customer-dashboard-paginator-items-active-color: var(--fct-btn-text-color);
+  --fct-customer-dashboard-paginator-items-active-bg: var(--fct-btn-bg-color);
+  --fct-customer-dashboard-paginator-items-active-border: var(--fct-btn-bg-color);
 
-  // logout button bg
+  // Fixed: logout is the portal's one destructive action.
   --fct-customer-dashboard-logout-btn-bg-color: theme('colors.red.50');
   --fct-customer-dashboard-logout-btn-text-color: theme('colors.red.500');
   --fct-customer-dashboard-logout-btn-hover-bg-color: theme('colors.red.100');
+}
+
+body:not(.fluent-cart-no-colors) {
+  // text
+  --fct-customer-dashboard-primary-text-color: var(--fct-primary-text-color, #2F3448);
+  --fct-customer-dashboard-title-color: var(--fct-primary-text-color, #2F3448);
+  --fct-customer-dashboard-secondary-text-color: var(--fct-secondary-text-color, #565865);
+  --fct-customer-dashboard-sub-title-color: var(--fct-secondary-text-color, #565865);
+  --fct-customer-dashboard-text-color: var(--fct-secondary-text-color, #565865);
+  --fct-customer-dashboard-meta-text-color: var(--fct-secondary-text-color, #696778);
+  --fct-customer-dashboard-faint-text-color: var(--fct-secondary-text-color, #9D9FAC);
+  --fct-customer-dashboard-label-text-color: var(--fct-secondary-text-color, #98A2B3);
+  --fct-customer-dashboard-caption-text-color: var(--fct-secondary-text-color, #8E99AA);
+  --fct-customer-dashboard-hint-text-color: var(--fct-secondary-text-color, #808B9C);
+  --fct-customer-dashboard-note-text-color: var(--fct-secondary-text-color, #758195);
+  --fct-customer-dashboard-link-color: var(--fct-primary-text-color, #253241);
+  --fct-customer-dashboard-link-hover-color: var(--fct-secondary-text-color, #5A5F66);
+  --fct-customer-dashboard-info-link-color: var(--fct-primary-text-color, #0171DB);
+  --fct-customer-dashboard-blue-link-color: var(--fct-primary-text-color, #017EF3);
+  --fct-customer-dashboard-nav-text-color: var(--fct-secondary-text-color, #565865);
+  --fct-customer-dashboard-nav-active-text-color: var(--fct-primary-text-color, #253241);
+  --fct-customer-dashboard-paginator-text-color: var(--fct-secondary-text-color, #565865);
+
+  // surfaces
+  --fct-customer-dashboard-card-bg: var(--fct-card-bg-color, #ffffff);
+  --fct-customer-dashboard-surface-alt: var(--fct-secondary-bg-color, #F9FAFB);
+  --fct-customer-dashboard-surface-muted: var(--fct-secondary-bg-color, #F5F6F7);
+  --fct-customer-dashboard-surface-neutral: var(--fct-secondary-bg-color, #FAFAFA);
+  --fct-customer-dashboard-surface-light: var(--fct-secondary-bg-color, #f5f7fa);
+  --fct-customer-dashboard-code-bg: var(--fct-secondary-bg-color, #f1f2f3);
+  --fct-customer-dashboard-chip-bg: var(--fct-secondary-bg-color, #EAECF0);
+  --fct-customer-dashboard-info-panel-bg: var(--fct-secondary-bg-color, #E6F2FE);
+  --fct-customer-dashboard-nav-active-bg-color: var(--fct-secondary-bg-color, #F5F6F7);
+  --fct-customer-dashboard-hover-bg: var(--fct-secondary-btn-hover-bg-color, #F5F6F7);
+  --fct-customer-dashboard-hover-strong-bg: var(--fct-secondary-btn-hover-bg-color, #EAECF0);
+  --fct-customer-dashboard-soft-hover-bg: var(--fct-secondary-btn-hover-bg-color, #F0F0F1);
+
+  // borders and dividers
+  --fct-customer-dashboard-border-color: var(--fct-border-color, #D6DAE1);
+  --fct-customer-dashboard-divider-color: var(--fct-divider-color, #D6DAE1);
+  --fct-customer-dashboard-row-divider-color: var(--fct-divider-color, #EAECF0);
+  --fct-customer-dashboard-rule-color: var(--fct-border-color, #C1C7D1);
+  --fct-customer-dashboard-scrollbar-thumb: var(--fct-border-color, #e5e7eb);
+
+  // primary button pair and its hover; the nav bar and checked controls
+  --fct-customer-dashboard-btn-bg-color: var(--fct-btn-bg-color, #253241);
+  --fct-customer-dashboard-btn-border-color: var(--fct-btn-bg-color, #253241);
+  --fct-customer-dashboard-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-customer-dashboard-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-btn-bg-color, #253241));
+  --fct-customer-dashboard-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-btn-text-color, #ffffff));
+  --fct-customer-dashboard-nav-active-bar-color: var(--fct-btn-bg-color, #253241);
+  --fct-customer-dashboard-check-bg: var(--fct-btn-bg-color, #253241);
+  --fct-customer-dashboard-check-icon: var(--fct-btn-text-color, #ffffff);
+  --fct-customer-dashboard-focus-border-color: var(--fct-active-border-color, #253241);
+
+  // secondary (outline) buttons
+  --fct-customer-dashboard-secondary-btn-bg: var(--fct-secondary-btn-bg-color, #ffffff);
+  --fct-customer-dashboard-secondary-btn-text: var(--fct-secondary-btn-text-color, #2F3448);
+  --fct-customer-dashboard-secondary-btn-border: var(--fct-secondary-btn-border-color, #D6DAE1);
+
+  // fields
+  --fct-customer-dashboard-input-bg: var(--fct-input-bg-color, #ffffff);
+  --fct-customer-dashboard-input-text: var(--fct-input-text-color, #2F3448);
+  --fct-customer-dashboard-input-border: var(--fct-border-color, #D6DAE1);
+  --fct-customer-dashboard-input-placeholder: var(--fct-input-placeholder-text-color, #9D9FAC);
+  --fct-customer-dashboard-el-input-text: var(--fct-input-text-color, #606266);
 }
 .sr-only {
   position: absolute;
@@ -72,7 +197,7 @@
   .fct-license-key-wrap {
     .fct-copy-wrap {
       .el-button {
-        @apply bg-gray-25 rounded text-gray-25 text-system-mid text-xs leading-4 py-[5px] px-2.5 #{!important};
+        @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] rounded text-[var(--fct-customer-dashboard-text-color,#565865)] text-xs leading-4 py-[5px] px-2.5 #{!important};
         &:hover {
           @apply shadow-none;
         }
@@ -90,7 +215,8 @@
   &:not(.el-dialog) {
     &:not(.el-popper) {
       &:not(.el-popover) {
-        @apply flex border-[1px] border-solid border-[var(--fct-customer-dashboard-border-color)] rounded;
+        @apply flex border-[1px] border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
+        border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
         @media (max-width: 1159px) {
           .grid-cols-5 {
             grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -130,19 +256,28 @@
 
 // .fct-customer-dashboard-customer-info
 .fct-customer-dashboard-customer-info {
-  @apply relative flex gap-3 py-3 pl-5 pr-3 border-0 border-b-[1px] border-solid border-gray-divider;
+  @apply relative flex gap-3 py-3 pl-5 pr-3 border-0 border-b-[1px] border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
   @media (max-width: 806px) {
     @apply hidden;
   }
-  img {
-    @apply block object-cover w-10 h-10 rounded-full flex-none !important;
+  .fct-customer-dashboard-avatar {
+    @apply relative flex items-center justify-center w-10 h-10 rounded-full flex-none overflow-hidden;
+    @apply bg-[var(--fct-customer-dashboard-chip-bg,#EAECF0)] text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)];
+
+    img {
+      @apply absolute inset-0 block object-cover w-full h-full !important;
+    }
+
+    .fct-customer-dashboard-avatar-placeholder {
+      @apply w-1/2 h-1/2;
+    }
   }
   &-content {
     h3 {
-      @apply m-0 mb-1 text-sm leading-5 font-medium text-[var(--fct-customer-dashboard-title-color)] !important;
+      @apply m-0 mb-1 text-sm leading-5 font-medium text-[var(--fct-customer-dashboard-title-color,#2F3448)] !important;
     }
     p {
-      @apply m-0 text-xs leading-4 text-[var(--fct-customer-dashboard-text-color)] !important;
+      @apply m-0 text-xs leading-4 text-[var(--fct-customer-dashboard-secondary-text-color,#565865)] !important;
     }
 
   }
@@ -151,7 +286,8 @@
 .fct-customer-dashboard-app-container {
   .fct-customer-dashboard-main-content {
     min-height: 600px;
-    @apply relative overflow-hidden p-5 w-full;
+    @apply relative overflow-hidden w-full;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
     @media (max-width: 806px) {
       @apply p-0;
     }
@@ -159,6 +295,58 @@
   .el-pagination {
     .el-pager {
       @apply m-0 p-0;
+    }
+  }
+}
+
+/* The loading skeleton sits inside the app container, so the portal's own
+   border and radius frame it. It mirrors the mounted layout on the same
+   tokens: the 272px menu column and its divider, the customer-info header
+   and its rule, the 20px content padding — nothing moves when the app mounts. */
+.fct-customer-root-container > .fct-customer-dashboard-app-container {
+  position: relative;
+}
+
+#fct-customer-loader {
+  border-radius: inherit;
+
+  .fct-customer-loader-left {
+    @apply box-border flex-none w-[272px] border-0 border-r border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
+  }
+
+  .fct-customer-loader-head {
+    @apply box-border flex items-center gap-3 h-[65px] py-3 pl-5 pr-3 border-0 border-b border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+
+    .el-skeleton__circle {
+      @apply flex-none w-10 h-10;
+    }
+
+    .el-skeleton__p {
+      @apply block h-3 mt-0 mb-2;
+    }
+  }
+
+  .fct-customer-loader-head-lines {
+    @apply flex-1 min-w-0;
+  }
+
+  .fct-customer-loader-menu {
+    @apply box-border p-5;
+  }
+
+  .fct-customer-loader-right {
+    @apply box-border flex-1 min-w-0;
+    padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+  }
+
+  // The mounted portal drops its frame and stacks its menu here.
+  @media (max-width: 806px) {
+    .fct-customer-loader-left {
+      @apply hidden;
+    }
+
+    .fct-customer-loader-right {
+      @apply p-0;
     }
   }
 }
@@ -178,10 +366,219 @@
 }
 
 
+/* My Reviews page: the to-be-reviewed and history lists share one row shape —
+   the dashboard's product info card plus a trailing action (Write a Review
+   button or status tag). Thumbnail sizing comes from .fct-media. */
+.fct-customer-my-reviews {
+  .fct-my-reviews-list {
+    @apply list-none p-0 m-0;
+  }
+
+  /* A reviewed row reads top to bottom: a head carrying what was reviewed,
+     how it was rated, when, and where it stands — with the one thing the
+     customer can do about it on the same line, hard right — then the review
+     itself underneath. */
+  .fct-my-reviews-item {
+    @apply py-5 border-0 border-b border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
+
+    &:first-child {
+      @apply pt-1;
+    }
+
+    &:last-child {
+      @apply border-b-0 pb-1;
+    }
+  }
+
+  /* The shared product card sizes itself to its content. Here it is a row of
+     its own, so it and its inner line take the full width — without that,
+     .product-info-content's flex-1 has no slack to take and the action ends up
+     against the product title instead of at the right edge. */
+  .fct-product-info-card,
+  .fct-product-info-card .fct-product-info-card-inner {
+    @apply w-full;
+  }
+
+  /* To Be Reviewed's action cell, inside the product card's own flex row.
+     The content column beside it is flex-1, so this needs no width of its
+     own — it is simply what is left, kept whole and centred against the
+     product it belongs to. The card's inner row is items-start, which would
+     otherwise pin the button to the top of a three-line block. */
+  .fct-my-reviews-item-action {
+    @apply flex-shrink-0 self-center ml-auto;
+
+    /* The tab locks every trigger while a form is being fetched, and the
+       shared button carries no disabled state of its own. */
+    .fct-order-item-review-btn {
+      @apply mt-0;
+
+      &:disabled {
+        @apply opacity-60 cursor-not-allowed;
+      }
+    }
+  }
+
+  .fct-my-reviews-head {
+    @apply flex items-center gap-3;
+  }
+
+  /* Takes the space between the thumbnail and the edit link, and may shrink:
+     min-w-0 is what lets a long product title truncate instead of pushing the
+     link off the row. */
+  .fct-my-reviews-head-text {
+    @apply flex-1 min-w-0;
+  }
+
+  /* The product thumbnail the rest of the dashboard uses — .fct-media's look:
+     the image fills a softly rounded square, no frame around it. A border and
+     a fill were making it read as a placeholder box rather than a photo, which
+     is not how Purchase History shows the same product. Slightly larger than
+     .fct-media's 40px because this row is taller than an order line. */
+  .fct-my-reviews-thumb {
+    @apply flex-shrink-0 block overflow-hidden rounded-md no-underline;
+    width: 48px;
+    height: 48px;
+
+    img {
+      @apply block w-full h-full;
+      object-fit: cover;
+    }
+  }
+
+  /* Product and variation on one line, aligned on their baselines so the
+     smaller label sits with the title rather than under it. min-w-0 is what
+     lets the title truncate instead of pushing the label out of the row. */
+  .fct-my-reviews-title-line {
+    @apply flex items-baseline gap-2 min-w-0;
+  }
+
+  .fct-my-reviews-product {
+    @apply block truncate text-[15px] font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline;
+
+    &:hover {
+      @apply underline;
+    }
+  }
+
+  .fct-my-reviews-head-meta {
+    @apply flex items-center flex-wrap gap-x-2.5 gap-y-1 mt-0.5;
+  }
+
+  .fct-my-reviews-reviewed-on {
+    @apply text-[13px] text-[var(--fct-customer-dashboard-text-color,#565865)];
+  }
+
+  /* Never the first thing to be cut: the title beside it truncates, and a
+     variation name is what tells two rows of the same product apart. */
+  .fct-my-reviews-item-label {
+    @apply flex-shrink-0 text-[13px] text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
+  }
+
+  .fct-my-reviews-stars {
+    @apply flex items-center gap-0.5 text-base leading-none;
+  }
+
+  .fct-my-reviews-star {
+    @apply text-gray-300;
+
+    &.is-filled {
+      @apply text-amber-500;
+    }
+  }
+
+  /* Sits in the meta line beside the stars and the date — the row's three
+     facts about the review itself, together. */
+  .fct-my-reviews-status {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold;
+    border-radius: var(--fct-badge-radius, theme('borderRadius.full'));
+
+    &.is-approved {
+      @apply bg-green-50 text-green-700;
+    }
+
+    &.is-pending {
+      @apply bg-amber-50 text-amber-700;
+    }
+  }
+
+  /* Placement only. The border, hover fill and focus ring come from the
+     shared .fct-order-item-review-btn, so this control and Write a Review
+     cannot drift apart — its own top margin is for a stacked row and is
+     dropped here. flex-shrink-0 keeps it whole when the title beside it is
+     long. */
+  .fct-my-reviews-edit {
+    @apply flex-shrink-0 mt-0;
+
+    /* The tab locks every trigger while a form is being fetched. */
+    &:disabled {
+      @apply opacity-60 cursor-not-allowed;
+    }
+  }
+
+  .fct-my-reviews-review-title {
+    @apply block mt-4 text-[15px] font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+  }
+
+  .fct-my-reviews-review-text {
+    @apply mt-1.5 mb-0 text-sm leading-6 text-[var(--fct-customer-dashboard-text-color,#565865)];
+  }
+
+  /* Its own line, so it is never mistaken for the end of the review. */
+  .fct-my-reviews-readmore {
+    @apply inline-block mt-2 bg-transparent border-0 p-0 shadow-none
+           text-sm font-semibold text-[var(--fct-customer-dashboard-link-color,#253241)] cursor-pointer;
+    text-decoration: none !important;
+
+    &:hover {
+      @apply underline;
+    }
+
+    &:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #6b7280 !important;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+  }
+
+  .fct-my-reviews-photo-count {
+    @apply block mt-4 text-[13px] text-[var(--fct-customer-dashboard-text-color,#565865)];
+  }
+
+  .fct-my-reviews-media {
+    @apply flex flex-wrap gap-2.5 mt-2 mb-0 p-0;
+    list-style: none;
+  }
+
+  .fct-my-reviews-media-thumb {
+    @apply block rounded-lg overflow-hidden cursor-pointer
+           border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)];
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+  }
+
+  /* The error slot's stand-in. Fills the thumbnail box the el-image root
+     already sizes, and is contained rather than cropped — the placeholder is
+     a glyph, and cropping it to a square would cut it. */
+  .fct-my-reviews-media-fallback {
+    @apply block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
 .fct-email-claim {
-  @apply box-border w-full mb-5 p-5 border border-solid rounded;
-  border-color: var(--fct-customer-dashboard-border-color);
-  color: var(--fct-customer-dashboard-title-color);
+  @apply box-border w-full mb-5 border border-solid;
+  padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
+  border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+  border-color: var(--fct-customer-dashboard-border-color, #D6DAE1);
+  color: var(--fct-customer-dashboard-title-color, #2F3448);
   overflow-wrap: anywhere;
 
   h2 {
@@ -197,14 +594,52 @@
   }
 
   .fct-email-claim-button {
-    @apply inline-flex justify-center max-w-full px-4 py-2 border border-solid rounded text-base leading-6 cursor-pointer whitespace-normal;
-    background: var(--fct-customer-dashboard-btn-bg-color);
-    border-color: var(--fct-customer-dashboard-btn-border-color);
-    color: var(--fct-customer-dashboard-btn-text-color);
+    @apply inline-flex justify-center max-w-full border border-solid text-base leading-6 cursor-pointer whitespace-normal;
+    padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
+    padding-top: var(--fct-btn-padding-y, theme('spacing.2'));
+    padding-bottom: var(--fct-btn-padding-y, theme('spacing.2'));
+    border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
+    background: var(--fct-customer-dashboard-btn-bg-color, #253241);
+    border-color: var(--fct-customer-dashboard-btn-border-color, #253241);
+    color: var(--fct-customer-dashboard-btn-text-color, #ffffff);
 
     &:focus-visible {
-      outline: 2px solid var(--fct-customer-dashboard-primary-text-color);
+      outline: 2px solid var(--fct-customer-dashboard-primary-text-color, #2F3448);
       outline-offset: 3px;
     }
+  }
+}
+
+/* The logged-out view's Login link. It used to be a bare `.button`, so the
+   theme painted it; a theme that states a transparent button text (Astra's
+   dynamic `.button { color: transparent }` when its button colour is unset)
+   left the label invisible on the theme's grey fill. It is the portal's own
+   call to action, so it wears the portal's button pair, outside the gate:
+   with the store standing aside the use-site pair (dark fill, white text)
+   still reads, and the two halves always fall back together (04, rule 2). */
+.fct_auth_wrap a.fct-customer-login-btn {
+  display: inline-block;
+  padding: var(--fct-btn-padding-y, theme('spacing[2.5]')) var(--fct-btn-padding-x, theme('spacing.5'));
+  border: 1px solid var(--fct-customer-dashboard-btn-border-color, #253241);
+  border-radius: var(--fct-btn-radius, theme('borderRadius.xs'));
+  background-color: var(--fct-customer-dashboard-btn-bg-color, #253241);
+  color: var(--fct-customer-dashboard-btn-text-color, #ffffff);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    border-color: var(--fct-customer-dashboard-btn-hover-bg-color, #253241);
+    background-color: var(--fct-customer-dashboard-btn-hover-bg-color, #253241);
+    color: var(--fct-customer-dashboard-btn-hover-text-color, #ffffff);
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #6b7280;
+    outline-offset: 2px;
   }
 }

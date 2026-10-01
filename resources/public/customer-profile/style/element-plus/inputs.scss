@@ -2,9 +2,12 @@
 .el-select {
     @apply w-full;
     &__wrapper{
-        @apply min-h-[38px] py-[3px] px-3 rounded border-gray-outline;
+        @apply min-h-[38px] py-[3px] border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
+        padding-left: var(--fct-input-padding-x, theme('spacing.3'));
+        padding-right: var(--fct-input-padding-x, theme('spacing.3'));
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
         &.is-focused{
-            @apply border border-solid border-gray-outline shadow-none;
+            @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none;
         }
     }
     &__selection{
@@ -16,7 +19,7 @@
     &-dropdown__item {
         @apply flex items-center px-3;
         &.selected{
-            @apply text-primary-500 dark:text-gray-200;
+            @apply text-[var(--fct-customer-dashboard-link-color,#253241)] dark:text-gray-200;
         }
     }
     &.is-focus .el-input__wrapper {
@@ -38,8 +41,10 @@
 
 /*===== checkbox =====*/
 .el-checkbox {
+    // The tick on the checked fill: the button pair's text (04, rule 7).
+    --el-checkbox-checked-icon-color: var(--fct-customer-dashboard-check-icon, #ffffff);
     .el-checkbox__inner{
-        @apply border-gray-outline rounded-xs w-4 h-4;
+        @apply border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-xs w-4 h-4;
         &::after{
             @apply border-[1.5px];
         }
@@ -48,7 +53,7 @@
         &.is-checked,
         &.is-indeterminate {
             .el-checkbox__inner{
-                @apply bg-primary-500 border-primary-500;
+                @apply bg-[var(--fct-customer-dashboard-check-bg,#253241)] border-[color:var(--fct-customer-dashboard-check-bg,#253241)];
             }
         }
         &.is-indeterminate .el-checkbox__inner{
@@ -59,16 +64,21 @@
     }
 
     .el-checkbox__input.is-checked + .el-checkbox__label {
-         @apply text-primary-500;
+         @apply text-[var(--fct-customer-dashboard-link-color,#253241)];
     }
 }
 
 // input
 .el-input{
     &__wrapper{
-        @apply py-1 px-4 rounded border border-solid border-gray-outline shadow-none #{!important};
+        @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none #{!important};
+        padding-top: var(--fct-input-padding-y, theme('spacing.1')) !important;
+        padding-bottom: var(--fct-input-padding-y, theme('spacing.1')) !important;
+        padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
+        padding-right: var(--fct-input-padding-x, theme('spacing.4')) !important;
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         &.is-focus{
-            @apply shadow-none border-primary-500 #{!important};
+            @apply shadow-none border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)] #{!important};
         }
         .icon{
             @apply inline-flex items-center;
@@ -89,7 +99,7 @@
 
 // label
 .el-form-item__label{
-    @apply text-system-dark font-medium;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-medium;
 }
 .el-form-item.is-error .el-input__wrapper{
     @apply border-red-500 #{!important};

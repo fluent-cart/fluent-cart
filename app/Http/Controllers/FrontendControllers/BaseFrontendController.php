@@ -4,6 +4,7 @@ namespace FluentCart\App\Http\Controllers\FrontendControllers;
 
 use FluentCart\Api\Resource\CustomerResource;
 use FluentCart\App\Http\Controllers\Controller;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 
 class BaseFrontendController extends Controller
 {
@@ -14,7 +15,7 @@ class BaseFrontendController extends Controller
      */
     protected function checkUserLoggedIn(): ?\WP_REST_Response
     {
-        $customer = CustomerResource::getCurrentCustomer();
+        $customer = CustomerResource::getCurrentCustomer(!EmailVerificationService::isEnabled());
         // Check if the user is logged in, return an error if not
         if (empty($customer)) {
             return $this->sendError([

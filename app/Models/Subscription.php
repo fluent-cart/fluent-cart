@@ -1000,11 +1000,41 @@ class Subscription extends Model
             Status::SUBSCRIPTION_EXPIRED,
             Status::SUBSCRIPTION_EXPIRING,
             Status::SUBSCRIPTION_PAST_DUE,
-        ]);
+        ]) || (
+            in_array($this->status, [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED], true)
+            && $this->hasReactivationAttempt()
+            && ((int) $this->bill_times === 0 || (int) $this->bill_count < (int) $this->bill_times)
+        );
 
         return (bool) apply_filters('fluent_cart/subscription/can_reactivate', $canReactivate, [
             'subscription' => $this
         ]);
+    }
+
+    /**
+     * Pro records `reactivation_order_id` before a reactivation checkout is paid. A first
+     * purchase awaiting gateway activation is also pending/intended and can already be
+     * billed, so only this marker separates a retryable reactivation from it.
+     */
+    public function hasReactivationAttempt(): bool
+    {
+        return (int) Arr::get($this->config, 'reactivation_order_id', 0) > 0;
+    }
+
+    public function isVisibleToCustomer(): bool
+    {
+        return !in_array($this->status, [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED], true)
+            || (int) $this->bill_count > 0
+            || $this->hasReactivationAttempt();
+    }
+
+    public function scopeVisibleToCustomer($query)
+    {
+        return $query->where(function ($query) {
+            $query->whereNotIn('status', [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])
+                ->orWhere('bill_count', '>', 0)
+                ->orWhere('config', 'LIKE', '%"reactivation_order_id":%');
+        });
     }
 
     /**
@@ -1414,11 +1444,11 @@ class Subscription extends Model
 
         $invalidStatuses = [
             Status::SUBSCRIPTION_EXPIRED,
-            Status::SUBSCRIPTION_INTENDED,
-            Status::SUBSCRIPTION_PENDING
         ];
 
-        if (in_array($this->status, $invalidStatuses)) {
+        if (in_array($this->status, $invalidStatuses)
+            || (in_array($this->status, [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED], true)
+                && !$this->hasReactivationAttempt())) {
             return false;
         }
 

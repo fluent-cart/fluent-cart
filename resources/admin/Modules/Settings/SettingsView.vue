@@ -64,6 +64,7 @@
               <ul class="fct-settings-nav-child-list">
                 <li
                     v-for="(child, i) in route.child"
+                    v-show="!child.permission || Permission.hasAny(child.permission)"
                     :key="i"
                     class="fct-settings-nav-item"
                     :class="{ 'fct-settings-nav-item-active': isChildActive(child, i, route) }"
@@ -150,6 +151,12 @@ const routes = ref([
       }
 
     ]
+  },
+  {
+    name: translate('Product Reviews'),
+    icon: "ReviewCard",
+    permission: ['reviews/manage'],
+    url: '/settings/product-reviews'
   },
   {
     name: translate("Payment Settings"),
@@ -275,6 +282,13 @@ routes.value.push({
 },);
 
 
+routes.value.push({
+  name: translate('Compliance'),
+  icon: 'ShieldCheck',
+  permission: ['store/settings'],
+  url: '/settings/compliance'
+});
+
 const hasPro = AppConfig.get('app_config.isProActive');
 if (hasPro) {
   routes.value.push({
@@ -287,12 +301,6 @@ if (hasPro) {
 
 AppConfig.get('addon_settings_sidebar', []).forEach(item => routes.value.push(item));
 
-routes.value.push({
-  name: translate('Compliance'),
-  icon: 'ShieldCheck',
-  permission: ['store/settings'],
-  url: '/settings/compliance'
-});
 
 /*
 |--------------------------------------------------------------------------
