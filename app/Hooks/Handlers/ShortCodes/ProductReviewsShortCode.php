@@ -135,16 +135,7 @@ class ProductReviewsShortCode extends ShortCode
             // which reads as "photos are welcome here" rather than "only
             // these", and is what a list shows anyway.
             'hasMedia'          => strtolower(trim((string) Arr::get($data, 'photos', ''))) === 'only',
-            // No min_rating here. The block has one and the refresh endpoint
-            // resolves it from that block's composition token rather than
-            // from the query string, because a floor is the shop's setting
-            // and not the reader's - sent by the client, anyone could ask for
-            // the one-star reviews a shop had chosen not to publish. A
-            // shortcode has no such token, so it could only filter the first
-            // paint: the first sort, filter or page change would bring the
-            // excluded reviews back, and the count and the pager with them.
-            // Better absent than a filter that stops filtering.
-            //
+            'minRating'        => max(0, min(5, (int) Arr::get($data, 'min_rating', 0))),
             // summary="side|top|cta" — where the rating summary goes, which is
             // a separate question from whether it appears at all. Anything else
             // typed reads as the default rather than removing it.

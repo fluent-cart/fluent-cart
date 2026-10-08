@@ -220,10 +220,14 @@ class DashBoardReportService extends ReportService
 
         $other = __('Uncategorized', 'fluent-cart');
         $transformedData = $results->map(function ($item) use ($countryLists, $other) {
-            $countryName = Arr::get($countryLists, $item->country, $other);
+            $countryCode = strtoupper((string)$item->country);
+            $isKnown = isset($countryLists[$countryCode]);
+
+            // `name` is the translated label; the map matches on the locale-stable `country_code`.
             return [
-                'name'  => $countryName,
-                'value' => (int)$item->value,
+                'country_code' => $isKnown ? $countryCode : null,
+                'name'         => $isKnown ? $countryLists[$countryCode] : $other,
+                'value'        => (int)$item->value,
             ];
         })->toArray();
 

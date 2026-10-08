@@ -80,6 +80,35 @@
     @apply grid grid-cols-2 gap-x-4 gap-y-3 items-end;
 }
 
+.fct-appearance-radius-note {
+    @apply m-0 mb-3 text-xs text-system-mid dark:text-gray-300;
+}
+
+.fct-appearance-radius-group .fct-appearance-color-fields {
+    @apply items-start;
+}
+
+.fct-appearance-radius-field {
+    @apply flex flex-col gap-1.5;
+
+    &__note {
+        @apply text-xs text-system-light dark:text-gray-400;
+    }
+}
+
+.fct-appearance-radius-input {
+    @apply w-full;
+
+    // Element Plus only draws its error ring inside a form item.
+    &.is-error .el-input__wrapper {
+        box-shadow: 0 0 0 1px var(--el-color-danger) inset;
+    }
+}
+
+.fct-appearance-radius-field__error {
+    @apply text-xs text-red-500 dark:text-red-400;
+}
+
 /*====== storefront preview ========*/
 .fct-appearance-preview {
     @apply border border-solid border-gray-divider border-y-0 border-r-0 rounded-tr rounded-br flex-1 flex flex-col overflow-hidden dark:border-dark-400;
@@ -119,6 +148,9 @@
 .fct-preview-card {
     @apply w-full p-4 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
     background: var(--fct-pv-surface, #ffffff);
+    // Radius variables mirror the storefront tokens; undeclared, the mock
+    // keeps its own rounding.
+    border-radius: var(--fct-pv-card-radius, theme('borderRadius.DEFAULT'));
 
     &__media {
         @apply flex items-center justify-center h-[140px] rounded-lg mb-3 border border-solid;
@@ -182,6 +214,7 @@
         @apply mt-3 py-2.5 rounded text-center text-sm font-semibold;
         background: var(--fct-pv-button-bg, #253241);
         color: var(--fct-pv-button-text, #ffffff);
+        border-radius: var(--fct-pv-btn-radius, theme('borderRadius.DEFAULT'));
 
         // The hover colour is the one button global with no resting state to
         // show, so the mock reacts to the pointer to make it visible.
@@ -267,6 +300,7 @@
         @apply mt-1 py-3 rounded text-center text-sm font-semibold;
         background: var(--fct-pv-button-bg, #253241);
         color: var(--fct-pv-button-text, #ffffff);
+        border-radius: var(--fct-pv-btn-radius, theme('borderRadius.DEFAULT'));
     }
 }
 
@@ -291,6 +325,7 @@
     &__input {
         @apply py-2.5 px-3 rounded text-sm border border-solid;
         background: var(--fct-pv-input-bg, #ffffff);
+        border-radius: var(--fct-pv-input-radius, theme('borderRadius.DEFAULT'));
         color: var(--fct-pv-input-text, #2f3448);
         border-color: var(--fct-pv-border, #d6dae1);
 
@@ -318,6 +353,7 @@
         @apply py-3 rounded text-center text-sm font-semibold;
         background: var(--fct-pv-button-bg, #253241);
         color: var(--fct-pv-button-text, #ffffff);
+        border-radius: var(--fct-pv-btn-radius, theme('borderRadius.DEFAULT'));
     }
 }
 

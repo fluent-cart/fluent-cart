@@ -26,9 +26,14 @@ use FluentCart\Framework\Support\Arr;
  * Kadence has no border setting (its borders use the static
  * `--global-gray-400`), so no border is stated and FluentCart keeps deriving it.
  *
+ * Its Buttons → Border Radius (`buttons_border_radius`) is the button radius
+ * (see radii()). Kadence has no form-field radius setting (its stylesheet's
+ * inputs are a fixed 3px) and its product-archive radii are WooCommerce
+ * settings, so neither is read.
+ *
  * Verified against Kadence 1.5.0.
  */
-class KadenceSettingsReader implements ThemeSettingsReader
+class KadenceSettingsReader implements ThemeSettingsReader, ThemeRadiusReader
 {
     /**
      * Kadence's defaults per setting and sub-key
@@ -260,5 +265,40 @@ class KadenceSettingsReader implements ThemeSettingsReader
         }
 
         return is_object($kadence) ? $kadence : null;
+    }
+
+    /**
+     * The button radius.
+     *
+     * `buttons_border_radius` is a responsive range (`size` / `unit` per
+     * device) Kadence prints through `render_range()` on its button selector
+     * (inc/components/styles/component.php); the desktop rule is the
+     * unprefixed one that speaks for all. A desktop size that is not a number
+     * prints nothing, and Kadence's stylesheet paints its buttons 3px
+     * (assets/css/global.min.css), which is what is stated then.
+     *
+     * @return array Role => length, as Kadence prints it.
+     */
+    public static function radii(): array
+    {
+        if (!self::applies()) {
+            return [];
+        }
+
+        try {
+            $range = self::api()->option('buttons_border_radius');
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $size = is_array($range) ? Arr::get($range, 'size.desktop', '') : '';
+
+        if (!is_numeric($size)) {
+            return ['btn' => '3px'];
+        }
+
+        $unit = is_array($range) ? (string)Arr::get($range, 'unit.desktop', '') : '';
+
+        return ['btn' => $size . ($unit !== '' ? $unit : 'px')];
     }
 }

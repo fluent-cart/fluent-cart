@@ -17,6 +17,62 @@ use FluentCart\Framework\Support\Arr;
 
 class CartHelper
 {
+    const MAX_QUANTITY = 100000;
+
+    const QUANTITY_HARD_LIMIT = 10000000;
+
+    /**
+     * The ceiling is what keeps `unit_price * quantity` inside PHP's integer range —
+     * without one the product overflows to a float and casts back to a wrapped total.
+     * Cart updates send a signed delta, so those allow the negative side too.
+     */
+    public static function validateQuantity($quantity, $isDelta = false)
+    {
+        if (!is_numeric($quantity)) {
+            return static::invalidQuantityError();
+        }
+
+        $max = static::maxQuantity();
+        $value = (float)$quantity;
+        $min = $isDelta ? -$max : 1;
+
+        if ($value != floor($value) || $value < $min || $value > $max) {
+            return static::invalidQuantityError();
+        }
+
+        return null;
+    }
+
+    public static function maxQuantity()
+    {
+        /**
+         * Filter the highest quantity a single cart line accepts.
+         *
+         * Return a whole number of one or more. The value is a safety ceiling, not just
+         * a storefront preference: it is what keeps a line's price multiplication inside
+         * PHP's integer range. A value that cannot serve that purpose is ignored — a
+         * non-numeric or fractional value falls back to the default, and anything above
+         * QUANTITY_HARD_LIMIT is capped there.
+         *
+         * @param int $maxQuantity Highest accepted quantity for one cart line.
+         */
+        $max = apply_filters('fluent_cart/cart/max_quantity', self::MAX_QUANTITY);
+
+        if (!is_numeric($max) || (float)$max != floor((float)$max) || $max < 1) {
+            return self::MAX_QUANTITY;
+        }
+
+        return (int)min($max, self::QUANTITY_HARD_LIMIT);
+    }
+
+    private static function invalidQuantityError()
+    {
+        /* translators: %d: the highest quantity a single cart line accepts. */
+        $message = __('Please enter a product quantity between 1 and %d.', 'fluent-cart');
+
+        return new \WP_Error('invalid_cart_quantity', sprintf($message, static::maxQuantity()));
+    }
+
     public static function getCart($hash = null, $create = false)
     {
         return CartResource::get([

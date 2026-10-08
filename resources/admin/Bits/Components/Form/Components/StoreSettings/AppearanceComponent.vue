@@ -1,10 +1,11 @@
 <script setup>
-import {computed, onMounted} from "vue";
+import {computed, onMounted, watch} from "vue";
 import ColorPicker from "@/Bits/Components/Form/Components/Base/Inputs/ColorPicker.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import AppearancePreview from "@/Bits/Components/Form/Components/StoreSettings/AppearancePreview.vue";
 import translate from "@/utils/translator/Translator";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
+import {radiusFieldError, syncRadiusErrors} from "@/Bits/Components/Form/Components/StoreSettings/radiusLength";
 
 const props = defineProps({
   name: {
@@ -50,6 +51,7 @@ const heading = computed(() => props.field?.heading || {});
 const sourceOptions = computed(() => props.field?.source_options || []);
 const colorGroups = computed(() => props.field?.color_groups || []);
 const customSource = computed(() => props.field?.custom_source);
+const radiusSection = computed(() => props.field?.radius_section || {});
 
 // The form object is the shared state container every field component writes
 // into — the contract VueForm sets, not something this component invents.
@@ -57,6 +59,26 @@ const customSource = computed(() => props.field?.custom_source);
 // and re-reads on each access so a re-initialised form is never held onto by
 // a stale reference.
 const values = computed(() => props.form.data.values);
+
+// Radius errors live in the form's own validation state, under the same keys
+// the server's 422 uses, so Save and the fields read one source of truth.
+// Editing a field drops its old error and re-checks the new value.
+const radiusRoles = computed(() => (radiusSection.value.fields || []).map((radiusField) => radiusField.key));
+
+watch(
+    () => ({...(values.value.appearance_radius || {})}),
+    (radii, previous) => {
+      props.form.setValidationErrors(syncRadiusErrors(
+          props.form.data.validationErrors,
+          radii,
+          previous || {},
+          radiusRoles.value,
+          radiusSection.value.invalid
+      ));
+    }
+);
+
+const radiusError = (role) => radiusFieldError(props.form.data.validationErrors, role);
 
 const isSelected = (option) => values.value.appearance_source === option.value;
 
@@ -109,12 +131,18 @@ const resetColors = () => {
   values.value.appearance_colors = {};
 };
 
-// appearance_colors arrives as {} when nothing has been saved yet — the
-// pickers write straight into it, so it has to be an object before render.
+const isPlainObject = (value) => !!value && !Array.isArray(value) && typeof value === 'object';
+
+// appearance_colors and appearance_radius arrive as {} — or as [] from PHP's
+// empty array — when nothing has been saved yet. The inputs write straight
+// into them, so both have to be objects before render.
 onMounted(() => {
-  const colors = values.value.appearance_colors;
-  if (!colors || Array.isArray(colors) || typeof colors !== 'object') {
+  if (!isPlainObject(values.value.appearance_colors)) {
     values.value.appearance_colors = {};
+  }
+
+  if (!isPlainObject(values.value.appearance_radius)) {
+    values.value.appearance_radius = {};
   }
 })
 </script>
@@ -130,7 +158,7 @@ onMounted(() => {
       <div
           class="fct-appearance-source"
           role="radiogroup"
-          :aria-label="translate('Where colors come from')"
+          :aria-label="translate('Where colors and corner rounding come from')"
       >
         <div
             v-for="(option, index) in sourceOptions"
@@ -204,6 +232,59 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <!-- Border radius: an emptied input stores '', which the
+                 sanitiser drops, so the stylesheet's own fallback applies. -->
+            <div
+                v-if="radiusSection.fields?.length"
+                class="fct-appearance-color-group fct-appearance-radius-group"
+            >
+              <span class="fct-appearance-color-group__label">
+                {{ radiusSection.label }}
+              </span>
+
+              <p v-if="radiusSection.note" class="fct-appearance-radius-note">
+                {{ radiusSection.note }}
+              </p>
+
+              <div class="fct-appearance-color-fields">
+                <div
+                    v-for="radiusField in radiusSection.fields"
+                    :key="radiusField.key"
+                    class="fct-appearance-color-field fct-appearance-radius-field"
+                >
+                  <label
+                      class="setting-label"
+                      :for="`fct-appearance-radius-${radiusField.key}`"
+                  >{{ radiusField.label }}</label>
+
+                  <el-input
+                      v-model="values.appearance_radius[radiusField.key]"
+                      :id="`fct-appearance-radius-${radiusField.key}`"
+                      :placeholder="translate('Default')"
+                      :class="{'is-error': !!radiusError(radiusField.key)}"
+                      :aria-invalid="!!radiusError(radiusField.key)"
+                      :aria-describedby="`fct-appearance-radius-${radiusField.key}-note`"
+                      clearable
+                      class="fct-appearance-radius-input"
+                  />
+
+                  <span
+                      v-if="radiusError(radiusField.key)"
+                      class="fct-appearance-radius-field__error"
+                      role="alert"
+                  >{{ radiusError(radiusField.key) }}</span>
+
+                  <span
+                      v-if="radiusField.note"
+                      :id="`fct-appearance-radius-${radiusField.key}-note`"
+                      class="fct-appearance-radius-field__note"
+                  >
+                    {{ radiusField.note }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -214,6 +295,7 @@ onMounted(() => {
         :preview="field?.preview || {}"
         :source="values.appearance_source"
         :colors="values.appearance_colors || {}"
+        :radii="values.appearance_radius || {}"
         :custom-source="customSource"
     />
   </div>

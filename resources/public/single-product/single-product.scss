@@ -279,7 +279,7 @@ body:not(.fluent-cart-no-colors) {
 .fct-product-tab-nav {
   @apply flex gap-5 mb-5 border border-solid border-[var(--fct-single-product-divider-color)] border-x-0 border-t-0 relative;
   .tab-active-bar {
-    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-dark-500;
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--fct-single-product-active-border-color,theme('colors.dark.500'))];
     transition: left 300ms ease, width 300ms ease;
   }
 }
@@ -568,30 +568,32 @@ body:not(.fluent-cart-no-colors) {
   }
 }
 
-.fct-product-quantity {
-  @apply inline-flex items-center bg-[var(--fct-single-product-qty-bg)] overflow-hidden;
-  border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-  .fct-quantity-decrease-button,
-  .fct-quantity-increase-button {
-    @apply flex items-center justify-center m-0 w-7.5 h-9 flex-shrink-0 max-h-[inherit] p-0 shadow-none border-0 rounded-none bg-[var(--fct-single-product-qty-bg)] text-[var(--fct-single-product-qty-text-color)] cursor-pointer;
-    svg{
-      @apply w-3.5 h-3.5;
-    }
-    &:focus{
-      outline-width: 0;
-      outline-style: none;
-    }
-    &:disabled{
-      @apply opacity-50 cursor-not-allowed;
-    }
-  }
+.fct-product-quantity-container {
+    .fct-product-quantity {
+        @apply inline-flex items-center bg-[var(--fct-single-product-qty-bg)] overflow-hidden;
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        .fct-quantity-decrease-button,
+        .fct-quantity-increase-button {
+            @apply flex items-center justify-center m-0 w-7.5 h-9 flex-shrink-0 max-h-[inherit] p-0 shadow-none border-0 rounded-none bg-[var(--fct-single-product-qty-bg)] text-[var(--fct-single-product-qty-text-color)] cursor-pointer;
+            svg{
+                @apply w-3.5 h-3.5;
+            }
+            &:focus{
+                outline-width: 0;
+                outline-style: none;
+            }
+            &:disabled{
+                @apply opacity-50 cursor-not-allowed;
+            }
+        }
 
-  .fct-quantity-input{
-      @apply font-semibold text-[var(--fct-single-product-qty-text-color)] bg-transparent max-w-9 max-h-9 text-center p-0 m-0 border-0 outline-none shadow-none focus:shadow-none focus:outline-none;
-      &:disabled{
-        @apply opacity-50 cursor-not-allowed;
-      }
-  }
+        .fct-quantity-input{
+            @apply font-semibold text-[var(--fct-single-product-qty-text-color)] bg-transparent max-w-9 max-h-9 text-center p-0 m-0 border-0 outline-none shadow-none focus:shadow-none focus:outline-none focus-visible:outline-none rounded-none;
+            &:disabled{
+                @apply opacity-50 cursor-not-allowed;
+            }
+        }
+    }
 }
 
 /*=== buttons ===*/

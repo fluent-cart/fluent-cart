@@ -81,6 +81,14 @@ class CartResource extends BaseResourceApi
             'product'   => !$isCustom ? $variation->product : []
         ]);
 
+        // After the filter, not before: this path takes its quantity straight from a
+        // public URL param, and the filter above can replace it with anything.
+        $error = CartHelper::validateQuantity($quantity);
+        if ($error) {
+            return $error;
+        }
+        $quantity = (int)$quantity;
+
         if ($variation->payment_type === 'subscription') {
             $quantity = 1;
         }
@@ -216,9 +224,11 @@ class CartResource extends BaseResourceApi
         $itemId = Arr::get($data, 'id');
         $quantity = Arr::get($data, 'quantity', 1);
 
-        if ($quantity <= 0) {
+        // This path writes cart_data directly instead of going through Cart::addItem().
+        $error = CartHelper::validateQuantity($quantity);
+        if ($error) {
             return static::makeErrorResponse([
-                ['code' => 403, 'message' => __('Quantity can not be negative.', 'fluent-cart')]
+                ['code' => 403, 'message' => $error->get_error_message()]
             ]);
         }
 
@@ -582,6 +592,13 @@ class CartResource extends BaseResourceApi
             $updatedQuantity = 0;
         }
 
+        if ($updatedQuantity > 0 && ($error = CartHelper::validateQuantity($updatedQuantity))) {
+            return [
+                'code'    => 'failed',
+                'message' => $error->get_error_message()
+            ];
+        }
+
         if (!$isFilteredItem) {
 
             if (!CartHelper::shouldAddItemToCart($productVariation, $updatedQuantity)) {
@@ -612,6 +629,14 @@ class CartResource extends BaseResourceApi
         if ($quantity < 1) {
             $quantity = 1;
         }
+
+        if ($error = CartHelper::validateQuantity($quantity)) {
+            return [
+                'code'    => 'failed',
+                'message' => $error->get_error_message()
+            ];
+        }
+
         if (!$isFilteredItem) {
             if (!CartHelper::shouldAddItemToCart($productVariation, $quantity)) {
                 return [

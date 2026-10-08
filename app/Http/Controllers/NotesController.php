@@ -14,7 +14,7 @@ class NotesController extends Controller
             sanitize_text_field($request->get('order_id'))
         );
 
-        $order->note = sanitize_text_field($request->get('note'));
+        $order->note = sanitize_textarea_field($request->get('note'));
 
 
         if ($order->update()) {

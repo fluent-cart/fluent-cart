@@ -423,8 +423,6 @@ const saveDrafts = () => {
         <div class="fct-attr-panel-header">
             <div class="fct-attr-panel-header-top">
                 <div class="fct-attr-panel-breadcrumb">
-                    <span class="fct-attr-panel-breadcrumb-root">{{ translate('Attributes') }}</span>
-                    <span class="fct-attr-panel-breadcrumb-sep">›</span>
                     <span class="fct-attr-panel-breadcrumb-current">{{ group.title }}</span>
                     <button
                         type="button"

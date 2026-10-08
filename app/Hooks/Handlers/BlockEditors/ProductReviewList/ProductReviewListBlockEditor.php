@@ -451,20 +451,25 @@ class ProductReviewListBlockEditor extends BlockEditor
      * is already there — and reading it from the store rather than the query
      * string is what keeps it the editor's setting: a floor sent by the caller
      * could be lowered by the caller.
+     * Other builders can resolve authenticated tokens through the service's
+     * list_min_rating filter without replacing the standard row renderer.
      *
      * @param string $token the composition token the page printed
      * @return int 1-5, or 0 for no floor
      */
-    public static function minRatingOfComposition($token): int
+    public static function minRatingOfComposition($token, int $postId = 0, string $ratingToken = ''): int
     {
+        $signedMinimum = ProductReviewService::minRatingFromToken($postId, $ratingToken);
+        if ($signedMinimum !== null) {
+            return $signedMinimum;
+        }
+        $token = is_string($token) ? $token : '';
         $stored = InnerBlocks::composition((string) $token);
         $markup = (string) Arr::get($stored, 'markup', '');
 
-        if ($markup === '') {
-            return 0;
-        }
+        $minimum = $markup === '' ? 0 : static::minRatingOf(parse_blocks($markup));
 
-        return static::minRatingOf(parse_blocks($markup));
+        return ProductReviewService::resolveListMinRating($token, $minimum, $postId);
     }
 
     protected static function paginationSettingsOf(array $childBlocks): array

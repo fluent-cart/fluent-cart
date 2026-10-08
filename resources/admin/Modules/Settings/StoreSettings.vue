@@ -96,6 +96,7 @@ import SettingsHeader from "./Parts/SettingsHeader.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {radiusBlockingSave, radiusErrorKey, radiusFieldError} from "@/Bits/Components/Form/Components/StoreSettings/radiusLength";
 
 const settingsModel = useSettingsModel();
 const {form} = settingsModel.data;
@@ -123,6 +124,30 @@ const getSettingsEndpoint = () => isRemindersSettingsRoute() ? 'email-notificati
 
 
 const saveSettings = () => {
+  // The server refuses a radius outside the grammar; stop here and point at
+  // the field rather than posting a save that can only fail.
+  if (isAppearanceRoute.value) {
+    const appearance = fields.value?.appearance?.schema?.appearance_component;
+    const customSource = appearance?.custom_source;
+    const invalidRole = radiusBlockingSave(form.values, customSource, form.data.validationErrors);
+
+    if (invalidRole) {
+      // Held in the form's validation state, so the field shows it too.
+      if (!radiusFieldError(form.data.validationErrors, invalidRole)) {
+        form.setValidationErrors({
+          ...form.data.validationErrors,
+          [radiusErrorKey(invalidRole)]: [appearance?.radius_section?.invalid || translate('Fix the highlighted border radius before saving.')]
+        });
+      }
+
+      Notify.error(translate('Fix the highlighted border radius before saving.'));
+      const field = document.getElementById(`fct-appearance-radius-${invalidRole}`);
+      field?.scrollIntoView({block: 'center', behavior: 'smooth'});
+      field?.focus();
+      return;
+    }
+  }
+
   saving.value = true;
 
 

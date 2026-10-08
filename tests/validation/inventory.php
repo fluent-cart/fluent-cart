@@ -61,9 +61,11 @@ return [
             // 125/136 → 204/215: PR #2531 (193cb5590) added hasSubscription()
             // and getPaymentTypeConflict() above updateOrder(). Wiring
             // re-verified unchanged: OrderRequest guard + getSafe(sanitize()).
+            // 215 → 216: getSafe() result now keyed to the sent fields via
+            // array_intersect_key(), so unsent columns are left unchanged.
             'method_line'    => 204,
             'method_needle'  => 'function updateOrder(OrderRequest $request',
-            'sanitize_line'  => 215,
+            'sanitize_line'  => 216,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -259,12 +261,12 @@ return [
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 303,
+            'source_line' => 308,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 306,
+            'source_line' => 311,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [

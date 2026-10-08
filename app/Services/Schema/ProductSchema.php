@@ -41,6 +41,7 @@ class ProductSchema
     /** Ceiling on the variations read for offers. */
     public const MAX_OFFERS = 100;
 
+    /** Legacy hook name retained for existing integrations. */
     public const FILTER_HOOK = 'fluent_cart/review/json_ld';
 
     /**
@@ -56,6 +57,19 @@ class ProductSchema
     public static function get($postId): array
     {
         $postId = (int) $postId;
+
+        /**
+         * Enable Product JSON-LD generation. Return false to skip the entire
+         * node before loading product, offer or review data. For example:
+         * add_filter('fluent_cart/product/schema_enabled', '__return_false');
+         *
+         * @param bool $enabled Whether to generate schema. Defaults to true.
+         * @param array $context Product post_id.
+         */
+        if (!apply_filters('fluent_cart/product/schema_enabled', true, ['post_id' => $postId])) {
+            return [];
+        }
+
         $product = $postId ? get_post($postId) : null;
 
         // Only what a visitor can see. A draft or pending product is a
@@ -92,6 +106,11 @@ class ProductSchema
             'name'     => static::text($product->post_title),
             'url'      => $url,
         ];
+
+        $brands = static::brandNodes($postId);
+        if ($brands) {
+            $schema['brand'] = count($brands) === 1 ? $brands[0] : $brands;
+        }
 
         $image = static::featuredImageUrl($postId, $variations);
         if ($image !== '') {
@@ -132,10 +151,42 @@ class ProductSchema
             }
         }
 
-        return apply_filters(static::FILTER_HOOK, $schema, [
+        $context = [
             'post_id' => $postId,
             'summary' => $summary,
-        ]);
+        ];
+
+        /**
+         * Filter the entire Product JSON-LD node, including offers and reviews.
+         * Return an empty array to suppress output. For example:
+         * add_filter('fluent_cart/product/json_ld', '__return_empty_array');
+         *
+         * @param array $schema Product node.
+         * @param array $context Product post_id and visible review summary.
+         */
+        $schema = apply_filters('fluent_cart/product/json_ld', $schema, $context);
+
+        // Keep the original hook last so existing customizations still apply.
+        return apply_filters(static::FILTER_HOOK, $schema, $context);
+    }
+
+    /** Only brands assigned to this product, never the store name as a fallback. */
+    protected static function brandNodes(int $postId): array
+    {
+        $terms = get_the_terms($postId, 'product-brands');
+        if (!$terms || is_wp_error($terms)) {
+            return [];
+        }
+
+        $brands = [];
+        foreach ($terms as $term) {
+            $name = static::text($term->name);
+            if ($name !== '') {
+                $brands[] = ['@type' => 'Brand', 'name' => $name];
+            }
+        }
+
+        return $brands;
     }
 
     /**
@@ -254,6 +305,12 @@ class ProductSchema
             ? ProductVariation::loadBundleChildren($variations)
             : [];
 
+        // Only pricing flags are needed here. TaxModule::getSettings() also
+        // loads every EU VAT registration, which schema never uses.
+        $taxSettings = wp_parse_args(get_option('fluent_cart_tax_configuration_settings', []), [
+            'enable_tax' => 'no',
+            'tax_inclusion' => 'included',
+        ]);
         $offers = [];
 
         foreach ($variations as $variation) {
@@ -269,6 +326,11 @@ class ProductSchema
                     ? 'https://schema.org/InStock'
                     : 'https://schema.org/OutOfStock',
             ];
+
+            $priceSpecification = static::priceSpecification($variation, $offer, $taxSettings);
+            if ($priceSpecification) {
+                $offer['priceSpecification'] = $priceSpecification;
+            }
 
             $title = static::text($variation->variation_title);
             if ($bounds['count'] > 1 && $title !== '') {
@@ -296,6 +358,70 @@ class ProductSchema
             'offerCount'    => (int) $bounds['count'],
             'offers'        => $offers,
         ];
+    }
+
+    /**
+     * Describe the stored offer price without applying visitor-specific taxes.
+     * Variation tax overrides follow the same precedence as TaxCalculator.
+     * Recurring prices use referenceQuantity for the period they purchase;
+     * billingDuration is reserved for a known, finite payment term.
+     */
+    protected static function priceSpecification(ProductVariation $variation, array $offer, array $taxSettings): array
+    {
+        $subscription = $variation->payment_type === 'subscription';
+        $taxEnabled = Arr::get($taxSettings, 'enable_tax', 'no') === 'yes';
+        if (!$subscription && !$taxEnabled) {
+            return [];
+        }
+
+        $specification = [
+            '@type' => $subscription ? 'UnitPriceSpecification' : 'PriceSpecification',
+            'price' => $offer['price'],
+            'priceCurrency' => $offer['priceCurrency'],
+        ];
+        $otherInfo = $variation->other_info;
+
+        if ($taxEnabled) {
+            $inclusion = Arr::get($otherInfo, 'tax_inclusion');
+            if (!in_array($inclusion, ['included', 'excluded'], true)) {
+                $inclusion = Arr::get($taxSettings, 'tax_inclusion');
+            }
+            $specification['valueAddedTaxIncluded'] = $inclusion === 'included';
+        }
+
+        if ($subscription) {
+            // Resolve the billing unit through the same filtered map as frontend terms.
+            $intervalMaps = Helper::getAvailableSubscriptionIntervalMaps();
+            $interval = Arr::get($otherInfo, 'repeat_interval');
+            $billingUnit = Arr::get($intervalMaps, $interval, '');
+
+            // Convert frontend units to UN/CEFACT units without localized labels.
+            $periods = [
+                'day' => [1, 'DAY'],
+                'week' => [1, 'WEE'],
+                'month' => [1, 'MON'],
+                'quarter' => [3, 'MON'],
+                'half_year' => [6, 'MON'],
+                'year' => [1, 'ANN'],
+            ];
+            // Custom intervals with unknown units have no inferred duration.
+            if (isset($periods[$billingUnit])) {
+                list($quantity, $unit) = $periods[$billingUnit];
+                $specification['unitCode'] = $unit;
+                $specification['billingIncrement'] = $quantity;
+                $specification['referenceQuantity'] = [
+                    '@type' => 'QuantitativeValue',
+                    'value' => $quantity,
+                    'unitCode' => $unit,
+                ];
+                $times = (int) Arr::get($otherInfo, 'times', 0);
+                if ($times > 0) {
+                    $specification['billingDuration'] = $quantity * $times;
+                }
+            }
+        }
+
+        return $specification;
     }
 
     /**

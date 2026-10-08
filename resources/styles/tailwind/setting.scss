@@ -1147,3 +1147,45 @@
         @apply text-yellow-900 dark:text-yellow-200;
     }
 }
+
+
+.fct-settings-nav-expanded {
+    #wpfooter {
+        margin-left: 430px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
+.fct-settings-nav-collapsed {
+    #wpfooter {
+        margin-left: 240px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
+// WordPress's folded menu is 124px narrower (160px -> 36px) than the open one.
+// Scoped to the settings states and desktop widths, so other screens and the
+// responsive rules below are untouched.
+@media (min-width: 1025px) {
+    .folded.fct-settings-nav-expanded #wpfooter {
+        margin-left: 306px;
+    }
+
+    .folded.fct-settings-nav-collapsed #wpfooter {
+        margin-left: 115px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .fct-settings-nav-expanded #wpfooter {
+        margin-left: 170px;
+    }
+}
+
+@media (max-width: 960px) {
+    .fct-settings-nav-expanded #wpfooter {
+        margin-left: 46px;
+    }
+}

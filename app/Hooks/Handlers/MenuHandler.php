@@ -189,6 +189,20 @@ class MenuHandler
 
         add_action('admin_menu', array($this, 'addAdminMenu'));
 
+        // The "↳" children under Products stay visible on every page so the
+        // sidebar never changes shape. Pro's "↳ Inventory" still hides itself
+        // with inline CSS (it relied on the admin app to reveal it), so keep
+        // that row visible whichever Pro version is installed.
+        add_action('admin_enqueue_scripts', function () {
+            wp_register_style('fluent-cart-admin-submenu', false);
+            wp_enqueue_style('fluent-cart-admin-submenu');
+            wp_add_inline_style('fluent-cart-admin-submenu', '
+                #adminmenu .toplevel_page_fluent-cart li.fluent_cart_inventory {
+                    display: list-item;
+                }
+            ');
+        });
+
         /*
          * Disable Gutenberg for Products
          */

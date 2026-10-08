@@ -2,8 +2,10 @@
 
 namespace FluentCart\App\Services\Filter;
 
+use FluentCart\Api\ModuleSettings;
 use FluentCart\Api\Taxonomy;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -420,7 +422,7 @@ class ProductFilter extends BaseFilter
                 ];
         }
 
-        return [
+        $options = [
             'pricing' => [
                 'label'    => __('Pricing', 'fluent-cart'),
                 'value'    => 'pricing',
@@ -540,6 +542,144 @@ class ProductFilter extends BaseFilter
                 'children' => $taxonomyFilters
             ]
         ];
+
+        if (ModuleSettings::isActive('reviews')) {
+            $options['reviews'] = self::reviewFilterOptions();
+        }
+
+        return $options;
+    }
+
+    private static function reviewFilterOptions(): array
+    {
+        $hasOperators = [
+            '='  => __('Has', 'fluent-cart'),
+            '!=' => __('Has no', 'fluent-cart'),
+        ];
+
+        $statusOptions = [
+            'approved'     => __('Approved', 'fluent-cart'),
+            'not_approved' => __('Not approved', 'fluent-cart'),
+            'any'          => __('Any status', 'fluent-cart'),
+        ];
+
+        $starOptions = [];
+        foreach (range(1, 5) as $stars) {
+            /* translators: %d: number of stars */
+            $starOptions[(string) $stars] = sprintf(_n('%d star', '%d stars', $stars, 'fluent-cart'), $stars);
+        }
+
+        return [
+            'label'    => __('Reviews', 'fluent-cart'),
+            'value'    => 'reviews',
+            'children' => [
+                [
+                    'filter_type'   => 'custom',
+                    'label'         => __('Reviews', 'fluent-cart'),
+                    'value'         => 'review_status',
+                    'type'          => 'selections',
+                    'operators'     => $hasOperators,
+                    'options'       => $statusOptions,
+                    'default_value' => 'approved',
+                    'is_multiple'   => false,
+                    'callback'      => static function ($query, $item) {
+                        self::filterByReviews($query, $item, false);
+                    },
+                ],
+                [
+                    'filter_type'   => 'custom',
+                    'label'         => __('Written Reviews', 'fluent-cart'),
+                    'value'         => 'written_review',
+                    'type'          => 'selections',
+                    'operators'     => $hasOperators,
+                    'options'       => $statusOptions,
+                    'default_value' => 'approved',
+                    'is_multiple'   => false,
+                    'callback'      => static function ($query, $item) {
+                        self::filterByReviews($query, $item, true);
+                    },
+                ],
+                [
+                    'filter_type'   => 'custom',
+                    'label'         => __('Average Rating', 'fluent-cart'),
+                    'value'         => 'average_rating',
+                    'type'          => 'selections',
+                    'operators'     => [
+                        '>=' => __('Same or higher than', 'fluent-cart'),
+                        '<=' => __('Same or lower than', 'fluent-cart'),
+                    ],
+                    'options'       => $starOptions,
+                    'default_value' => '1',
+                    'is_multiple'   => false,
+                    'callback'      => static function ($query, $item) {
+                        self::filterByAverageRating($query, $item);
+                    },
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Products that have (or have no) top-level reviews in the chosen status.
+     * Replies are never reviews. "Not approved" is every other status.
+     */
+    private static function filterByReviews($query, $item, bool $writtenOnly)
+    {
+        $operator = Arr::get($item, 'operator');
+        $status = Arr::get($item, 'value');
+
+        if (!in_array($operator, ['=', '!='], true) || !in_array($status, ['approved', 'not_approved', 'any'], true)) {
+            return;
+        }
+
+        $reviews = function ($subQuery) use ($status, $writtenOnly) {
+            $subQuery->selectRaw('1')
+                ->from('fct_product_reviews')
+                ->whereColumn('fct_product_reviews.post_id', 'posts.ID')
+                ->whereNull('fct_product_reviews.parent_id');
+
+            if ($status === 'approved') {
+                $subQuery->where('fct_product_reviews.status', Status::REVIEW_APPROVED);
+            } elseif ($status === 'not_approved') {
+                $subQuery->where('fct_product_reviews.status', '!=', Status::REVIEW_APPROVED);
+            }
+
+            if ($writtenOnly) {
+                $subQuery->whereNotNull('fct_product_reviews.review')
+                    ->where('fct_product_reviews.review', '!=', '');
+            }
+        };
+
+        if ($operator === '=') {
+            $query->whereExists($reviews);
+        } else {
+            $query->whereNotExists($reviews);
+        }
+    }
+
+    /**
+     * Same average as ProductReviewResource::recalculateProductRatings():
+     * approved top-level reviews rated 1-5, rounded to two places. A product
+     * with no rated review has no average and never matches.
+     */
+    private static function filterByAverageRating($query, $item)
+    {
+        $operator = Arr::get($item, 'operator');
+        $stars = (int) Arr::get($item, 'value');
+
+        if (!in_array($operator, ['>=', '<='], true) || $stars < 1 || $stars > 5) {
+            return;
+        }
+
+        $query->whereExists(function ($subQuery) use ($operator, $stars) {
+            $subQuery->selectRaw('1')
+                ->from('fct_product_reviews')
+                ->whereColumn('fct_product_reviews.post_id', 'posts.ID')
+                ->whereNull('fct_product_reviews.parent_id')
+                ->where('fct_product_reviews.status', Status::REVIEW_APPROVED)
+                ->whereBetween('fct_product_reviews.rating', [1, 5])
+                ->havingRaw('ROUND(AVG(rating), 2) ' . $operator . ' ?', [$stars]);
+        });
     }
 
     /**

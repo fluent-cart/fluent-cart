@@ -105,8 +105,50 @@ $resolveCustomerContext = static function () {
     return null;
 };
 
-return function ($needs) use ($resolveCustomerContext) {
+$resolveReviewProduct = static function () {
+    static $resolved = false;
+    static $productId = null;
+
+    if ($resolved) {
+        return $productId;
+    }
+    $resolved = true;
+
+    if (\FluentCart\App\Services\ProductReviewService::getReviewSettings()['reviews_enabled'] !== 'yes') {
+        return null;
+    }
+
+    // Read published IDs in bounded batches. Use the service's toggle rules
+    // (including missing detail rows), without changing any store product.
+    $lastId = 0;
+    do {
+        $ids = \FluentCart\App\Models\Product::query()
+            ->where('post_status', 'publish')
+            ->where('ID', '>', $lastId)
+            ->orderBy('ID', 'ASC')
+            ->limit(100)
+            ->pluck('ID')
+            ->all();
+
+        \FluentCart\App\Services\ProductReviewService::primeReviewsEnabled($ids);
+        foreach ($ids as $id) {
+            $lastId = (int) $id;
+            if (\FluentCart\App\Services\ProductReviewService::isReviewEnabledForProduct($lastId)) {
+                $productId = $lastId;
+                return $productId;
+            }
+        }
+    } while (count($ids) === 100);
+
+    return null;
+};
+
+return function ($needs) use ($resolveCustomerContext, $resolveReviewProduct) {
     switch ($needs) {
+        case 'review_product':
+            $productId = $resolveReviewProduct();
+            return $productId ? ['postId' => $productId] : null;
+
         case 'product':
             $row = \FluentCart\App\Models\Product::query()->first();
             return $row ? [
@@ -220,16 +262,15 @@ return function ($needs) use ($resolveCustomerContext) {
             ];
 
         case 'customer_product':
-            // A signed-in customer asking about any product — the My Reviews
-            // page fetching the review form for a product to review.
+            // The review form also requires a published, review-enabled product.
             $context = $resolveCustomerContext();
-            $row = \FluentCart\App\Models\Product::query()->first();
-            if (!$context || !$row) {
+            $productId = $resolveReviewProduct();
+            if (!$context || !$productId) {
                 return null;
             }
             return [
                 'customerId' => $context['customer']->id,
-                'product_id' => $row->ID,
+                'product_id' => $productId,
                 'user_id'    => $context['user_id'],
             ];
 

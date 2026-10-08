@@ -137,6 +137,9 @@ class PermissionGate
 
         ModuleSettings::saveSettings($settings);
 
+        // Refresh the request-level cache so isEnabled() reports the new state.
+        ModuleSettings::getAllSettings(false);
+
         return (bool) $enabled;
     }
 }

@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, ref, computed} from "vue";
+import {onMounted, onUnmounted, ref, computed, watch} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {useRouter, useRoute} from 'vue-router';
 import translate from "@/utils/translator/Translator";
@@ -375,6 +375,15 @@ const updateViewportMode = () => {
   }
 };
 
+// Mirror the sidebar state on <body> so global styles can react to it.
+const NAV_COLLAPSED_CLASS = 'fct-settings-nav-collapsed';
+const NAV_EXPANDED_CLASS = 'fct-settings-nav-expanded';
+
+watch(isMenuCollapsed, (collapsed) => {
+  document.body.classList.toggle(NAV_COLLAPSED_CLASS, collapsed);
+  document.body.classList.toggle(NAV_EXPANDED_CLASS, !collapsed);
+}, {immediate: true});
+
 onMounted(() => {
   pluginAppWrap.value = document.getElementById('fluent_cart_plugin_app');
 
@@ -391,6 +400,7 @@ onUnmounted(() => {
     pluginAppWrap.value.classList.remove('fct_settings_page_plugin_app_wrap');
   }
   window.removeEventListener('resize', updateViewportMode);
+  document.body.classList.remove(NAV_COLLAPSED_CLASS, NAV_EXPANDED_CLASS);
 });
 
 /*

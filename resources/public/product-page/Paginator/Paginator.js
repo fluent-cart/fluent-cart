@@ -376,7 +376,10 @@ export default class Paginator {
         const noResultElement = this.container.querySelector('[data-fluent-cart-shop-no-result-found]');
 
         // check if 'fct-empty-el' class found in views
-        if (views.includes('fluent-cart-shop-no-result-found')) {
+        const hasNoResult = views.includes('fluent-cart-shop-no-result-found');
+        this.productList.classList.toggle('product-list-empty', hasNoResult);
+
+        if (hasNoResult) {
             if (noResultElement) {
                 noResultElement.outerHTML = views;
                 setTimeout(() => {

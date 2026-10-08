@@ -23,6 +23,7 @@ class CheckoutProcessor
     // Raw Data
     private $cartItems = [];
     private $args = [];
+    private $validationError;
 
     // Order Related Data
     private $formattedIOrderItems = [];
@@ -63,12 +64,41 @@ class CheckoutProcessor
     private function prepareData()
     {
         $this->prepareOrderItems();
+        if ($this->validationError) {
+            return;
+        }
+
         $this->prepareOrderData();
+        if ($this->validationError) {
+            return;
+        }
+
         $this->prepareSubscriptionData();
+    }
+
+    /**
+     * (int) on an out-of-range float wraps, and the max(0, ...) clamps downstream turn a
+     * wrapped amount into a free but payable order. Refuse the checkout instead.
+     */
+    private function isSafeAmount($value)
+    {
+        return is_numeric($value) && is_finite((float)$value) && abs((float)$value) < (float)PHP_INT_MAX;
+    }
+
+    private function unsafeAmountError()
+    {
+        return new \WP_Error(
+            'invalid_order_total',
+            __('The order total is too large to process. Please reduce the quantity.', 'fluent-cart')
+        );
     }
 
     public function createDraftOrder($prevOrder = null)
     {
+        if ($this->validationError) {
+            return $this->validationError;
+        }
+
         if ($prevOrder) {
             return $this->getAdjustedOrder($prevOrder);
         }
@@ -623,7 +653,14 @@ class CheckoutProcessor
             $discountTotal = (int)Arr::get($cartItem, 'manual_discount', 0) + (int)Arr::get($cartItem, 'coupon_discount', 0);
             $shippingCharge = (int)Arr::get($cartItem, 'shipping_charge', 0);
 
-            $subtotal = (int) Arr::get($cartItem, 'subtotal', $unitPrice * $quantity);
+            $rawSubtotal = Arr::get($cartItem, 'subtotal', $unitPrice * $quantity);
+            if (!$this->isSafeAmount($rawSubtotal)) {
+                $this->validationError = $this->unsafeAmountError();
+
+                return;
+            }
+
+            $subtotal = (int) $rawSubtotal;
             $args = Arr::get($cartItem, 'other_info', []);
             $paymentType = Arr::get($args, 'payment_type', 'default');
 
@@ -1126,6 +1163,12 @@ class CheckoutProcessor
             'items' => $this->formattedIOrderItems,
             'args'  => $this->args,
         ]);
+
+        if (!$this->isSafeAmount(Arr::get($orderData, 'total_amount', 0))) {
+            $this->validationError = $this->unsafeAmountError();
+
+            return;
+        }
 
         $this->orderData = $orderData;
     }

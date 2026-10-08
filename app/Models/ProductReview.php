@@ -166,8 +166,23 @@ class ProductReview extends Model
         return $postId ? $query->where('post_id', (int) $postId) : $query;
     }
 
+    /**
+     * Reviews with exactly this star rating, or any of a list of them (the
+     * storefront's star chips can be combined).
+     *
+     * @param \FluentCart\Framework\Database\Orm\Builder $query
+     * @param int|int[]|null $rating
+     */
     public function scopeOfRating($query, $rating)
     {
+        if (is_array($rating)) {
+            $ratings = array_values(array_filter(array_map('intval', array_slice($rating, 0, 5)), function ($value) {
+                return $value >= 1 && $value <= 5;
+            }));
+
+            return $ratings ? $query->whereIn('rating', $ratings) : $query;
+        }
+
         if (!$rating || !is_numeric($rating)) {
             return $query;
         }

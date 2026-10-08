@@ -1116,12 +1116,12 @@ $declare($frontend, 103, 'customer-profile/reviews/submission-form', [
 
 $declare($frontend, 109, 'public/reviews/{postId}', [
     'auth'  => 'anonymous',
-    'needs' => 'product',
+    'needs' => 'review_product',
     'params' => ['page' => 1],
 ]);
 $declare($frontend, 110, 'public/reviews/{postId}/summary', [
     'auth'  => 'anonymous',
-    'needs' => 'product',
+    'needs' => 'review_product',
 ]);
 $declare($frontend, 113, 'public/reviews/{postId}/{reviewId}/replies', [
     'auth'  => 'anonymous',

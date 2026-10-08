@@ -122,20 +122,6 @@ class ProductDetail extends Model
         return $this->hasMany(ProductVariation::class, 'post_id', 'post_id')->orderBy('serial_index', 'asc');
     }
 
-    public function attrMap(): HasMany
-    {
-        return $this->hasMany(AttributeRelation::class, 'object_id', 'id');
-    }
-
-
-    public static function boot()
-    {
-        parent::boot();
-        static::deleting(function ($model) {
-            $model->attrMap()->delete();
-        });
-    }
-
     public function setDefaultMediaAttribute($value)
     {
         if (is_array($value) || is_object($value)) {

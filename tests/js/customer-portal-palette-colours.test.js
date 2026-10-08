@@ -127,6 +127,10 @@ const FIXED_TOKENS = {
 
 // Element Plus globals → [palette global, Element Plus' own default]
 const EL_TOKENS = {
+    // Tabs, links and other primary accents (My Reviews' tabs were left on
+    // Element Plus' blue). The palette's button colour, which the shop's
+    // active states wear too; spec case 270.
+    '--el-color-primary': ['--fct-btn-bg-color', '#409eff'],
     '--el-bg-color': ['--fct-card-bg-color', '#ffffff'],
     '--el-bg-color-overlay': ['--fct-card-bg-color', '#ffffff'],
     '--el-fill-color-blank': ['--fct-card-bg-color', '#ffffff'],
@@ -326,6 +330,27 @@ describe('Element Plus follows the palette inside the portal, and keeps its own 
     it.each(Object.entries(EL_TOKENS))('%s reads its global and falls back to Element Plus\' default', (token, [global, fallback]) => {
         expect(declarations(EL_GATE, token), `${token} under the gate`).toEqual([`var(${global}, ${fallback})`]);
         expect(EL_BASE.toLowerCase(), `${token} default is ${fallback}`).toContain(`${token}:${fallback}`.toLowerCase());
+    });
+});
+
+describe('Element Plus primary shades follow the palette primary while colours print', () => {
+    // Element Plus tints its primary toward white (light-N = N0% white) and
+    // shades it toward black (dark-2); hovers and focus rings use them. While
+    // a palette prints they mix the palette primary toward the portal surface,
+    // so a dark palette tints toward its dark card. Default keeps Element
+    // Plus' own literals: these live only in the palette-only block. Spec case 270.
+    const shades = {
+        '--el-color-primary-light-3': 'color-mix(in srgb, var(--el-color-primary) 70%, var(--el-bg-color))',
+        '--el-color-primary-light-5': 'color-mix(in srgb, var(--el-color-primary) 50%, var(--el-bg-color))',
+        '--el-color-primary-light-7': 'color-mix(in srgb, var(--el-color-primary) 30%, var(--el-bg-color))',
+        '--el-color-primary-light-8': 'color-mix(in srgb, var(--el-color-primary) 20%, var(--el-bg-color))',
+        '--el-color-primary-light-9': 'color-mix(in srgb, var(--el-color-primary) 10%, var(--el-bg-color))',
+        '--el-color-primary-dark-2': 'color-mix(in srgb, var(--el-color-primary) 80%, #000000)',
+    };
+
+    it.each(Object.entries(shades))('%s mixes the palette primary only while colours print', (token, value) => {
+        expect(declarations(CUSTOM, token), `${token} in the palette-only block`).toEqual([value]);
+        expect(declarations(EL_GATE, token), `${token} not under the plain gate`).toEqual([]);
     });
 });
 

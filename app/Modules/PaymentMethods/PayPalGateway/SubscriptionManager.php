@@ -134,6 +134,10 @@ class SubscriptionManager
             'status'  => 'success',
             'message' => __('Plan created successfully', 'fluent-cart'),
             'plan'    => $plan,
+            'brand_name' => (new PayPalSettingsBase())->getBrandName([
+                'order'        => $order,
+                'subscription' => $subscriptionModel,
+            ]),
         ], 200);
     }
 

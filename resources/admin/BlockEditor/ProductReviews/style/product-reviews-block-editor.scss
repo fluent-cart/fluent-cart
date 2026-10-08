@@ -114,6 +114,10 @@
 
     .fct-reviews-block-real-stars {
         @apply flex gap-0.5 text-base leading-none;
+
+        .fct-star-svg {
+            @apply block;
+        }
     }
 
     .fct-reviews-block-real-total {
@@ -129,7 +133,7 @@
     }
 
     .fct-reviews-block-real-bar-label {
-        @apply text-xs text-gray-500 w-6 shrink-0 whitespace-nowrap;
+        @apply inline-flex items-center gap-0.5 text-xs text-gray-500 w-6 shrink-0 whitespace-nowrap;
     }
 
     .fct-reviews-block-real-bar-fill {
@@ -159,7 +163,7 @@
     }
 
     .fct-reviews-block-real-chip {
-        @apply inline-flex items-center h-6 px-3 rounded-full text-xs;
+        @apply inline-flex items-center gap-1 h-6 px-3 rounded-full text-xs;
         @apply border border-solid border-gray-outline text-gray-500 bg-white;
 
         &.is-active {

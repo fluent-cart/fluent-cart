@@ -34,6 +34,7 @@
                             v-model="settings[sectionKey].enabled"
                             active-value="yes"
                             inactive-value="no"
+                            @change="clearRequiredWhenDisabled(settings[sectionKey])"
                         >
                         </el-switch>
 
@@ -99,6 +100,7 @@
                               v-model="settings[sectionKey][fieldKey].enabled"
                               active-value="yes"
                               inactive-value="no"
+                              @change="clearRequiredWhenDisabled(settings[sectionKey][fieldKey])"
                               :disabled="isFirstNameDisabled(sectionKey, fieldKey) || isB2BOnlyModeDisabled(sectionKey, fieldKey)"
                           >
                           </el-switch>
@@ -116,7 +118,7 @@
                           <div class="fct-checkout-field-tags" v-if="isVisible(field, fieldKey)">
                             <el-tag
                                 size="small"
-                                v-if="field.can_alter !== 'yes' && settings[sectionKey][fieldKey].enabled === 'yes'"
+                                v-if="(field.can_alter !== 'yes' || fieldKey === 'first_name') && settings[sectionKey][fieldKey].enabled === 'yes'"
                             >
                               {{ translate('System') }}
                             </el-tag>
@@ -218,6 +220,11 @@ export default {
 
   methods: {
     translate,
+    clearRequiredWhenDisabled(field) {
+      if (field && field.enabled !== 'yes' && field.required === 'yes') {
+        field.required = 'no';
+      }
+    },
     isFirstNameDisabled(sectionKey, fieldKey) {
       return sectionKey === 'basic_info' && fieldKey === 'first_name' && this.settings.basic_info?.last_name?.enabled === 'yes';
     },

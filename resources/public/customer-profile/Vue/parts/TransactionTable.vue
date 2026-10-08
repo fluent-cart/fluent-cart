@@ -119,7 +119,7 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="info" soft @click="handleCloseModal">
+          <el-button @click="handleCloseModal">
             {{ translate('Cancel') }}
           </el-button>
           <el-button type="primary" :loading="updatingAddress" @click="updateBillingAddress">

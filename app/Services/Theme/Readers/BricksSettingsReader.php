@@ -43,9 +43,13 @@ use FluentCart\Framework\Support\Arr;
  * measured — a translucent rgba(), dynamic data, a gradient, a var() nothing
  * resolves — is not stated.
  *
+ * Radii (see radii()) come from the same theme style: the button's border
+ * radius (`button.primaryBorder`, else `button.border`) and the Form element's
+ * field border radius (`form.fieldBorder`). Bricks has no product-card style.
+ *
  * Verified against Bricks 2.1.3.
  */
-class BricksSettingsReader implements ThemeSettingsReader
+class BricksSettingsReader implements ThemeSettingsReader, ThemeRadiusReader
 {
     /**
      * Bricks' stylesheet: `body{background-color:#fff}` (frontend.min.css).
@@ -584,5 +588,92 @@ class BricksSettingsReader implements ThemeSettingsReader
         }
 
         return $entries;
+    }
+
+    /**
+     * The button and form-field radii of the theme style Bricks applies.
+     *
+     * Button: the primary button's border (`:root .bricks-button[class*="primary"]`,
+     * the style a new Button element gets) over every button's
+     * (`.bricks-button`). Input: the Form element's field border
+     * (`.brxe-form` inputs, selects and textareas) — the only field radius a
+     * theme style holds. A style that sets neither states none; Bricks'
+     * stylesheet is not read for one.
+     *
+     * @return array Role => length, as Bricks prints it.
+     */
+    public static function radii(): array
+    {
+        if (!self::applies()) {
+            return [];
+        }
+
+        $styles = self::activeStyles();
+
+        if (!$styles) {
+            return [];
+        }
+
+        $radii = [];
+
+        foreach (['primaryBorder', 'border'] as $key) {
+            $radius = self::setting($styles, 'button', $key, 'radius');
+
+            if ($radius !== null) {
+                $radii['btn'] = self::radiusLength($radius);
+                break;
+            }
+        }
+
+        $field = self::setting($styles, 'form', 'fieldBorder', 'radius');
+
+        if ($field !== null) {
+            $radii['input'] = self::radiusLength($field);
+        }
+
+        return array_filter($radii, function ($value) {
+            return $value !== '';
+        });
+    }
+
+    /**
+     * A border control's radius as one length, built the way
+     * Assets::generate_css_rules_from_setting() builds it: per corner, a
+     * non-zero bare number takes px, otherwise the corner's unit is appended
+     * unless the value already carries it. Only four set, equal corners are
+     * one length.
+     *
+     * @param mixed $radius
+     * @return string
+     */
+    protected static function radiusLength($radius): string
+    {
+        if (!is_array($radius)) {
+            return '';
+        }
+
+        $units = isset($radius['unit']) && is_array($radius['unit']) ? $radius['unit'] : [];
+        $corners = [];
+
+        foreach (['top', 'right', 'bottom', 'left'] as $direction) {
+            $number = isset($radius[$direction]) && is_scalar($radius[$direction]) ? (string)$radius[$direction] : '';
+            $unit = !empty($units[$direction]) && is_string($units[$direction]) ? $units[$direction] : '';
+
+            if ($number === '') {
+                return '';
+            }
+
+            if (is_numeric($number) && (float)$number != 0) {
+                $unit = 'px';
+            }
+
+            if ($unit === '-' || $unit === 'none') {
+                $unit = '';
+            }
+
+            $corners[] = $unit !== '' && strpos($number, $unit) === false ? $number . $unit : $number;
+        }
+
+        return count(array_unique($corners)) === 1 ? $corners[0] : '';
     }
 }

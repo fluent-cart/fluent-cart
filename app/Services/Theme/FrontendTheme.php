@@ -6,7 +6,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\Framework\Support\Arr;
 
 /**
- * Writes the storefront's global colour custom properties.
+ * Writes the storefront's global colour and border-radius custom properties.
  *
  * FluentCart's stylesheets declare every scoped colour as
  * `var(--fct-<global>, <fallback>)`, so the globals printed here cascade to the
@@ -312,9 +312,11 @@ class FrontendTheme
 
         /*
          * Not escaped on output because it cannot carry anything to escape:
-         * every property name comes from the ColorPalette registry and every
-         * value has been through sanitize_hex_color(), so the string is only
-         * ever `--fct-name: #rrggbb;`.
+         * every property name comes from the ColorPalette or RadiusPalette
+         * registry, every colour value is a hex or a bare var() reference
+         * (sanitizeDeclarationValue()), and every radius value is one plain
+         * length (RadiusPalette::sanitizeLength()), so the string is only ever
+         * `--fct-name:#rrggbb;`, `--fct-name:var(--x);` or `--fct-name:8px;`.
          */
         echo '<style id="' . esc_attr(self::STYLE_ID) . '">' . $css . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
@@ -527,11 +529,145 @@ class FrontendTheme
     }
 
     /**
-     * Build the `:root` declaration block.
+     * The radii the store owner set by hand, role => length.
+     *
+     * Stored as typed lengths (a bare number is pixels); re-checked here the
+     * same way the sanitiser checks them on save, so a stale or hand-edited
+     * option never reaches the page.
+     *
+     * @return array Role key => length (`12px`, `0.5rem`, `1em`).
+     */
+    public static function getCustomRadii(): array
+    {
+        $stored = (new StoreSettings())->get('appearance_radius', []);
+
+        return RadiusPalette::sanitizeOwnerMap($stored);
+    }
+
+    /**
+     * The radii the active theme states, role => length.
+     *
+     * @return array
+     */
+    protected static function getThemeRadii(): array
+    {
+        $radii = ThemePalette::radii();
+
+        return is_array($radii) ? $radii : [];
+    }
+
+    /**
+     * Every radius that will actually be written, role => normalised length.
+     *
+     * Same three sources as the colours: the owner's own radii under
+     * `customize`, the theme's under `inherit_from_theme`, and none under
+     * `default` — FluentCart's look must not move.
+     *
+     * @return array
+     */
+    public static function getEffectiveRadii(): array
+    {
+        return self::radiiFor(self::getSource());
+    }
+
+    /**
+     * The radii a given source would write, after the storefront filter.
+     *
+     * The settings preview asks for the inherited radii while another source
+     * is saved, so it shows exactly what choosing that source would print.
+     *
+     * @param string $source One of the ColorPalette::SOURCE_* constants.
+     * @return array Role key => normalised length.
+     */
+    public static function radiiFor(string $source): array
+    {
+        if ($source === ColorPalette::SOURCE_CUSTOM) {
+            $radii = self::getCustomRadii();
+        } elseif ($source === ColorPalette::SOURCE_THEME) {
+            $radii = self::getThemeRadii();
+        } else {
+            $radii = [];
+        }
+
+        /**
+         * Filter the storefront border radii before they are written to the page.
+         *
+         * @param array $radii   Role key (card|btn|input) => length (`0`, `8px`, `0.5rem`).
+         * @param array $context Read-only context: ['source' => appearance source].
+         */
+        $filtered = apply_filters('fluent_cart/theme/storefront_radii', $radii, [
+            'source' => $source,
+        ]);
+
+        if (!is_array($filtered)) {
+            $filtered = $radii;
+        }
+
+        // Re-checked after the filter: registry roles only, one plain length
+        // each, in registry order.
+        $effective = [];
+
+        foreach (array_keys(RadiusPalette::roles()) as $role) {
+            if (!isset($filtered[$role])) {
+                continue;
+            }
+
+            $length = RadiusPalette::sanitizeLength($filtered[$role]);
+
+            if ($length !== '') {
+                $effective[$role] = $length;
+            }
+        }
+
+        return $effective;
+    }
+
+    /**
+     * Build the `:root` declaration block: colours first, then radii.
+     *
+     * Either half prints without the other — a store can set radii and keep
+     * FluentCart's colours, or the reverse.
      *
      * @return string CSS, or '' when there is nothing to write.
      */
     public static function buildCss(): string
+    {
+        $declarations = self::buildColorDeclarations() . self::buildRadiusDeclarations();
+
+        return $declarations === '' ? '' : ':root{' . $declarations . '}';
+    }
+
+    /**
+     * The radius declarations, without the surrounding block.
+     *
+     * @return string
+     */
+    protected static function buildRadiusDeclarations(): string
+    {
+        $roles = RadiusPalette::roles();
+        $declarations = '';
+
+        foreach (self::getEffectiveRadii() as $role => $length) {
+            if (!isset($roles[$role])) {
+                continue;
+            }
+
+            $safe = RadiusPalette::sanitizeLength($length);
+
+            if ($safe !== '') {
+                $declarations .= $roles[$role]['var'] . ':' . $safe . ';';
+            }
+        }
+
+        return $declarations;
+    }
+
+    /**
+     * The colour declarations, without the surrounding block.
+     *
+     * @return string
+     */
+    protected static function buildColorDeclarations(): string
     {
         $colors = self::getEffectiveColors();
 
@@ -560,6 +696,6 @@ class FrontendTheme
             }
         }
 
-        return $declarations === '' ? '' : ':root{' . $declarations . '}';
+        return $declarations;
     }
 }

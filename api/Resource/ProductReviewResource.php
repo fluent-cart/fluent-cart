@@ -25,7 +25,8 @@ class ProductReviewResource extends BaseResourceApi
 
         $status = Arr::get($params, 'status', 'all');
         $postId = Arr::get($params, 'post_id');
-        $rating = Arr::get($params, 'rating');
+        // A list of stars from the storefront's chips wins over a single rating.
+        $rating = Arr::get($params, 'ratings') ?: Arr::get($params, 'rating');
         $search = Arr::get($params, 'search');
         $sortBy = Arr::get($params, 'sort_by', 'id');
         $sortOrder = Arr::get($params, 'sort_order', 'DESC');

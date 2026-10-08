@@ -30,9 +30,7 @@
           @keydown.up.prevent="move(1)"
           @keydown.down.prevent="move(-1)"
       >
-        <svg class="fct-star-rating-input__svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
-          <path d="M12 2.25l2.955 6.377 6.98.638-5.268 4.62 1.558 6.865L12 17.155 5.775 20.75l1.558-6.865-5.268-4.62 6.98-.638L12 2.25z"/>
-        </svg>
+        <ReviewStar class="fct-star-rating-input__svg"/>
       </button>
     </div>
 
@@ -52,6 +50,7 @@
 <script setup>
 import {nextTick, ref} from "vue";
 import translate from "@/utils/translator/Translator";
+import ReviewStar from "@/Bits/Components/Icons/ReviewStar.vue";
 
 const props = defineProps({
   modelValue: {

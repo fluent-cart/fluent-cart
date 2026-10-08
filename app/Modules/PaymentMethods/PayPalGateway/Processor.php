@@ -245,6 +245,19 @@ class Processor
             ];
         }
 
+        $brandName = (new PayPalSettingsBase())->getBrandName([
+            'order'        => $order,
+            'subscription' => $paymentInstance->subscription,
+        ]);
+
+        if ($brandName !== '') {
+            if (isset($extraBody['payment_source'])) {
+                $extraBody['payment_source']['paypal']['experience_context']['brand_name'] = $brandName;
+            } else {
+                $extraBody['application_context'] = ['shipping_preference' => 'NO_SHIPPING', 'brand_name' => $brandName];
+            }
+        }
+
         $paypalOrder = API::createOrder($purchaseUnits, $extraBody);
 
         // Vaulting is a convenience; the purchase is the point. A merchant account
@@ -314,16 +327,27 @@ class Processor
         $order = $paymentInstance->order;
         $transaction = $paymentInstance->transaction;
 
+        $experienceContext = [
+            'return_url'          => PaymentHelper::getCustomPaymentLink($order->uuid),
+            'cancel_url'          => \FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway::getCancelUrl(),
+            'shipping_preference' => 'NO_SHIPPING',
+        ];
+
+        $brandName = (new PayPalSettingsBase())->getBrandName([
+            'order'        => $order,
+            'subscription' => $paymentInstance->subscription,
+        ]);
+
+        if ($brandName !== '') {
+            $experienceContext['brand_name'] = $brandName;
+        }
+
         $setupToken = API::makeRequest('vault/setup-tokens', 'v3', 'POST', [
             'payment_source' => [
                 'paypal' => [
                     'usage_type'         => 'MERCHANT',
                     'customer_type'      => 'CONSUMER',
-                    'experience_context' => [
-                        'return_url'          => PaymentHelper::getCustomPaymentLink($order->uuid),
-                        'cancel_url'          => \FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway::getCancelUrl(),
-                        'shipping_preference' => 'NO_SHIPPING',
-                    ],
+                    'experience_context' => $experienceContext,
                 ],
             ],
         ]);
@@ -561,7 +585,11 @@ class Processor
                 ]
             ],
             'response'   => [
-                'planId' => Arr::get($paypalPlan, 'id')
+                'planId'    => Arr::get($paypalPlan, 'id'),
+                'brandName' => (new PayPalSettingsBase())->getBrandName([
+                    'order'        => $paymentInstance->order,
+                    'subscription' => $subscription,
+                ]),
             ]
         ];
     }
@@ -779,6 +807,8 @@ class Processor
             if ($subscriptionModel->trial_days > 0) {
                 $subscriptionUpdateData['status'] = Status::SUBSCRIPTION_TRIALING;
             }
+
+            $subscriptionUpdateData['bill_count'] = $subscriptionModel->calculateBillCount();
 
             // Atomic conditional update: only the caller that actually flips status out of a
             // pre-active state wins the transition, so concurrent AJAX-return + webhook calls

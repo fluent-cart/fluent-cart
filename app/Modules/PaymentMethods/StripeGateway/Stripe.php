@@ -844,9 +844,11 @@ class Stripe extends AbstractPaymentGateway
             // required checkbox: without a saved card the trial can never bill.
             $payableNow = \FluentCart\App\Services\OrderService::getItemsAmountTotal($cart->cart_data ?? [], false, false);
             if ($payableNow <= 0) {
+                // Match the SetupIntent usage even when the optional save-card flag is set.
                 $intentData = [
-                    'mode'     => 'setup',
-                    'currency' => strtolower($storeCurrency),
+                    'mode'               => 'setup',
+                    'currency'           => strtolower($storeCurrency),
+                    'setup_future_usage' => 'off_session',
                 ];
                 $consentRequired = true;
             }
@@ -859,20 +861,18 @@ class Stripe extends AbstractPaymentGateway
             $intentData['setup_future_usage'] = 'on_session';
         }
 
-        // The browser cannot pass setup_future_usage per-request (this endpoint
-        // receives no body), so extensions that vault cards (e.g. saved payment
-        // methods) resolve it here, server-side. Must be matched on the actual
-        // PaymentIntent at place-order (fluent_cart/payments/stripe_onetime_intent_args)
-        // or Stripe rejects the confirmation for a setup_future_usage mismatch.
-        $setupFutureUsage = apply_filters(
-            'fluent_cart/stripe/client_setup_future_usage',
-            Arr::get($intentData, 'setup_future_usage'),
-            ['data' => $data, 'has_subscription' => $hasSubscription]
-        );
-        if ($setupFutureUsage) {
-            $intentData['setup_future_usage'] = $setupFutureUsage;
-        } else {
-            unset($intentData['setup_future_usage']);
+        // a one-time payment may be changed here.
+        if ($intentData['mode'] === 'payment') {
+            $setupFutureUsage = apply_filters(
+                'fluent_cart/stripe/client_setup_future_usage',
+                Arr::get($intentData, 'setup_future_usage'),
+                ['data' => $data, 'has_subscription' => $hasSubscription]
+            );
+            if ($setupFutureUsage) {
+                $intentData['setup_future_usage'] = $setupFutureUsage;
+            } else {
+                unset($intentData['setup_future_usage']);
+            }
         }
 
         wp_send_json(

@@ -232,7 +232,8 @@ class CouponResource extends BaseResourceApi
 
         if (!empty($getAppliedCouponLists)) {
             $getAppliedCouponLists = Coupon::query()->whereIn('id', $getAppliedCouponLists)->get()->keyBy('code')->toArray();
-            $previouslyAppliedCouponCodes = $previouslyAppliedCouponCodes->merge($getAppliedCouponLists);
+            // Union keeps the coupon-code keys: the ORM merge() needs models, and array_merge renumbers numeric codes.
+            $previouslyAppliedCouponCodes = new Collection($previouslyAppliedCouponCodes->all() + $getAppliedCouponLists);
         }
 
         $couponService = new CouponServiceAdmin($lineItems, null, $previouslyAppliedCouponCodes->keys()->toArray(), $customerEmail);
@@ -359,6 +360,60 @@ class CouponResource extends BaseResourceApi
         }
 
         return new WP_Error(__('Something went wrong while updating the cart.', 'fluent-cart'));
+    }
+
+    /**
+     * Re-run the coupon rules on an admin order payload before it is saved.
+     * The payload's coupon discounts come from the client, so they are replaced with calculated ones.
+     *
+     * @param array $items Order line items.
+     * @param array $appliedCoupons Applied-coupon map keyed by coupon code.
+     * @param string $customerEmail
+     * @return array|WP_Error ['applied_coupons' => array, 'items' => array]
+     */
+    public static function validateOrderCoupons(array $items, array $appliedCoupons, $customerEmail = '')
+    {
+        $codes = array_map('strval', array_keys(Arr::except($appliedCoupons, ['*'])));
+
+        if (!$codes) {
+            return [
+                'applied_coupons' => $appliedCoupons,
+                'items'           => $items,
+            ];
+        }
+
+        $couponService = new CouponServiceAdmin($items, null, $codes, (string) $customerEmail);
+        $couponService->reapplyCoupons();
+
+        $discountData = $couponService->getDiscountData();
+        $error = $couponService->getCouponErrors()->first();
+
+        if (!$error) {
+            foreach ($codes as $code) {
+                if (!isset($discountData[$code])) {
+                    $error = new WP_Error('coupon_not_found', __('Coupon Not Found', 'fluent-cart'));
+                    break;
+                }
+            }
+        }
+
+        if ($error) {
+            return static::makeErrorResponse([
+                ['code' => 'invalid_coupon', 'message' => $error->get_error_message()]
+            ], 422);
+        }
+
+        // Calculated items are keyed by line item id.
+        $calculatedItems = $couponService->getCalculatedLineItems();
+        foreach ($items as $index => $item) {
+            $calculated = Arr::get($calculatedItems, (string) Arr::get($item, 'id', ''));
+            $items[$index]['discount_total'] = $calculated ? $calculated['discount_total'] : 0;
+        }
+
+        return [
+            'applied_coupons' => $discountData,
+            'items'           => $items,
+        ];
     }
 
     /**

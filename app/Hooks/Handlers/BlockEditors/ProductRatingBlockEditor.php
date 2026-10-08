@@ -122,37 +122,12 @@ class ProductRatingBlockEditor extends BlockEditor
             return '';
         }
 
-        // An average over one or two reviews says very little, and five empty
-        // stars on a new product reads as a bad rating rather than as no
-        // rating. This is where a store draws that line.
-        //
-        // Counted from detail->other_info, the canonical aggregate the
-        // renderer itself displays — recounting the rows here could disagree
-        // with the number printed beside the stars.
-        $minReviewCount = max(0, (int) Arr::get($shortCodeAttribute, 'minReviewCount', 0));
-
-        if ($minReviewCount > 0 && $this->reviewCount($product) < $minReviewCount) {
-            return '';
-        }
-
-        // The second half of the same question: how good the rating has to be
-        // before it is worth printing. A store showing ratings as a selling
-        // point can keep the two-star ones off the shelf edge.
-        //
-        // Clamped to the five the stars can draw — a threshold above 5 would
-        // hide every product, which is a setting no one means to choose.
-        $minAverageRating = min(5.0, max(0.0, (float) Arr::get($shortCodeAttribute, 'minAverageRating', 0)));
-
-        if ($minAverageRating > 0 && $this->averageRating($product) < $minAverageRating) {
-            return '';
-        }
-
         $wrapper_attributes = get_block_wrapper_attributes([
             'class' => 'fct-product-card-rating',
         ]);
 
         ob_start();
-        (new ProductCardRender($product))->renderStarRatingBlock($wrapper_attributes);
+        (new ProductCardRender($product))->renderStarRatingBlock($wrapper_attributes, $shortCodeAttribute, $block);
         return ob_get_clean();
     }
 

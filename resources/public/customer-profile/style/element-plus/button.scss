@@ -1,6 +1,6 @@
 /*===== button =====*/
 .el-button{
-    @apply text-[var(--fct-customer-dashboard-secondary-btn-text,#2F3448)] no-underline min-h-9 h-auto text-sm font-medium border border-solid border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] inline-flex outline-none items-center gap-2 focus-visible:outline-none focus:shadow-none focus-visible:shadow-none focus:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] focus:border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] focus:text-[var(--fct-customer-dashboard-secondary-btn-text,#2F3448)] hover:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] hover:shadow-none dark:bg-primary-500 dark:text-gray-200 dark:border-primary-500;
+    @apply bg-[var(--fct-customer-dashboard-secondary-btn-bg,#ffffff)] text-[var(--fct-customer-dashboard-secondary-btn-text,#2F3448)] no-underline min-h-9 h-auto text-sm font-medium border border-solid border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] inline-flex outline-none items-center gap-2 focus-visible:outline-none focus:shadow-none focus-visible:shadow-none focus:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] focus:border-[color:var(--fct-customer-dashboard-secondary-btn-border,#D6DAE1)] focus:text-[var(--fct-customer-dashboard-secondary-btn-text,#2F3448)] hover:bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] hover:shadow-none dark:bg-primary-500 dark:text-gray-200 dark:border-primary-500;
     border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
     padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
     padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
@@ -32,7 +32,8 @@
         }
     }
     &--x-small{
-        @apply min-h-7 text-xs rounded-md px-2.5 py-1 h-auto;
+        @apply min-h-7 text-xs px-2.5 py-1 h-auto;
+        border-radius: var(--fct-btn-radius, theme('borderRadius.md'));
         .icon svg{
             @apply w-3 h-3;
         }
@@ -64,6 +65,25 @@
         }
     }
 
+}
+
+// A link styled as a button (Download, Pay Now) is still an <a>: themes style
+// links in every state (Astra: `.ast-single-post .entry-content a` underlines
+// it), and one more specific than the bare .el-button rule wins. State each
+// state here so the button's own text colour and no underline always hold.
+a.el-button:is(:link, :visited, :hover, :focus, :active) {
+    text-decoration: none;
+    color: var(--fct-customer-dashboard-secondary-btn-text, #2F3448);
+}
+
+// Primary link-buttons (renew a licence, reactivate a subscription) keep the
+// primary pair: resting text at rest, hover text on hover and focus.
+a.el-button--primary:is(:link, :visited) {
+    color: var(--fct-customer-dashboard-btn-text-color, #ffffff);
+}
+
+a.el-button--primary:is(:hover, :focus, :active) {
+    color: var(--fct-customer-dashboard-btn-hover-text-color, #ffffff);
 }
 
 .el-button--info.is-link, 

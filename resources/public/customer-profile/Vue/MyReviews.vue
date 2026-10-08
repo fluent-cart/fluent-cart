@@ -102,14 +102,11 @@
                                             role="img"
                                             :aria-label="$t('Rated %1$s out of 5', review.rating)"
                                         >
-                                            <svg
+                                            <ReviewStar
                                                 v-for="star in 5"
                                                 :key="star"
                                                 :class="['fct-my-reviews-star', { 'is-filled': star <= review.rating }]"
-                                                width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-                                            >
-                                                <path d="M12 2.25l2.955 6.377 6.98.638-5.268 4.62 1.558 6.865L12 17.155 5.775 20.75l1.558-6.865-5.268-4.62 6.98-.638L12 2.25z"/>
-                                            </svg>
+                                            />
                                         </span>
                                         <span class="fct-my-reviews-reviewed-on">
                                             {{ $t('Reviewed %1$s', formatDate(review.created_at)) }}
@@ -253,12 +250,14 @@
 import {markRaw} from 'vue';
 import EmptyState from './EmptyState.vue';
 import Pagination from "./parts/Pagination.vue";
+import ReviewStar from "@/Bits/Components/Icons/ReviewStar.vue";
 
 export default {
     name: 'MyReviews',
     components: {
         EmptyState,
-        Pagination
+        Pagination,
+        ReviewStar
     },
     data() {
         return {

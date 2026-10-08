@@ -74,6 +74,17 @@ class CheckoutApi
         $cart = $cart->reValidateCoupons();
 
         $cartData = $cart->cart_data;
+
+        // Carts stored before the quantity ceiling existed can still hold an overflowing line.
+        foreach ($cartData as $cartItem) {
+            $quantityError = CartHelper::validateQuantity(Arr::get($cartItem, 'quantity', 1));
+            if ($quantityError) {
+                wp_send_json([
+                    'status'  => 'failed',
+                    'message' => $quantityError->get_error_message(),
+                ], 422);
+            }
+        }
         $prevOrder = $cart->order;
         if ($prevOrder) {
             $prevOrder->load('order_items');
@@ -121,6 +132,10 @@ class CheckoutApi
             ], 403);
         }
 
+        // order_id unlocks another order's addresses in prepareAddressData(), so it
+        // may only come from this cart's own order, never from the request.
+        unset($data['order_id']);
+
         if (empty($data['billing_address_id'])) {
             if ($prevOrder instanceof Order) {
                 $oldCustomer = $prevOrder->customer;
@@ -151,16 +166,10 @@ class CheckoutApi
         }
 
         if (!CheckoutFieldsSchema::isFullNameRequired()) {
-            if (!empty($validatedData['billing_full_name']) && empty($validatedData['billing_first_name'])) {
-                // Modal checkout sends billing_full_name — split into first/last name
-                $nameParts = explode(' ', $validatedData['billing_full_name'], 2);
-                $validatedData['billing_first_name'] = $nameParts[0];
-                $validatedData['billing_last_name'] = $nameParts[1] ?? '';
-            } else {
-                $validatedData['billing_full_name'] = trim(
-                    Arr::get($validatedData, 'billing_first_name') . ' ' . Arr::get($validatedData, 'billing_last_name')
-                );
-            }
+            // First/Last name mode: the form posts those fields; the full name is derived from them.
+            $validatedData['billing_full_name'] = trim(
+                Arr::get($validatedData, 'billing_first_name') . ' ' . Arr::get($validatedData, 'billing_last_name')
+            );
         }
 
         $orderData = OrderService::groupSanitizedData($validatedData);
@@ -971,8 +980,7 @@ class CheckoutApi
             $errors['billing_email']['invalid'] = __('Email must be a valid email address.', 'fluent-cart');
         }
 
-        if (CheckoutFieldsSchema::isFullNameRequired() || !empty($data['billing_full_name'])) {
-            // Modal checkout always sends billing_full_name regardless of store name field settings
+        if (CheckoutFieldsSchema::isFullNameRequired()) {
             if (empty($data['billing_full_name'])) {
                 $errors['billing_full_name']['required'] = __('Full name is required.', 'fluent-cart');
             }

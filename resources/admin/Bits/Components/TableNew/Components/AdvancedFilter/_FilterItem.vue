@@ -244,6 +244,14 @@ export default {
       const objectKeys = Object.keys(this.operatorOptions);
       if (objectKeys.length) {
         this.item.operator = objectKeys[0];
+
+        // A row that arrives with its option's default value is a complete
+        // condition, so run it now; the table must show what the row says.
+        if (this.item.value !== '' && this.item.value !== null && this.item.value !== undefined) {
+          this.applyFilter();
+          return;
+        }
+
         jQuery(this.$el).find('.fct-filter-value input').focus();
         jQuery(this.$el).find('.fct-filter-operator .el-select').trigger('click');
       }

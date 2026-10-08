@@ -32,8 +32,25 @@ class AttributeRelation extends Model
 		return $this->belongsTo(AttributeTerm::class, 'term_id', 'id');
 	}
 
+	public function variation()
+	{
+		return $this->belongsTo(ProductVariation::class, 'object_id', 'id');
+	}
+
+	/**
+	 * The ProductDetail of the product this link's variation belongs to.
+	 * object_id holds a ProductVariation id, never a ProductDetail id, so the
+	 * detail is resolved through the variation's post_id.
+	 */
 	public function productDetails()
 	{
-		return $this->belongsTo(ProductDetail::class, 'object_id', 'id');
+		return $this->hasOneThrough(
+			ProductDetail::class,
+			ProductVariation::class,
+			'id',
+			'post_id',
+			'object_id',
+			'post_id'
+		);
 	}
 }

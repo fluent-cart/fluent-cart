@@ -162,6 +162,63 @@ class Taxonomy
         return $termIds;
     }
 
+    /**
+     * Parse a shortcode taxonomy attribute: "product-tags:1,2|product-brands:67".
+     *
+     * Returns [taxonomy => term ids]. A taxonomy is accepted only when it is
+     * registered on products (the same list the AJAX pager re-parses), and a
+     * term only when it belongs to that taxonomy, because the product query
+     * matches term ids without checking their taxonomy. A segment that resolves
+     * to no term is kept as an empty list so the caller can refuse to widen it.
+     */
+    public static function parseShortcodeTaxonomies(string $raw): array
+    {
+        $taxonomies = static::getTaxonomies();
+
+        // Group the raw values first so a taxonomy repeated across segments
+        // still costs a single query.
+        $rawValues = [];
+        foreach (explode('|', $raw) as $segment) {
+            $parts = explode(':', $segment, 2);
+            $taxonomy = sanitize_key(trim($parts[0]));
+            if ($taxonomy === '') {
+                continue;
+            }
+            $rawValues[$taxonomy][] = isset($parts[1]) ? $parts[1] : '';
+        }
+
+        $parsed = [];
+        foreach ($rawValues as $taxonomy => $values) {
+            $parsed[$taxonomy] = isset($taxonomies[$taxonomy])
+                ? static::resolveTermIds(implode(',', $values), $taxonomy)
+                : [];
+        }
+
+        return $parsed;
+    }
+
+    private static function resolveTermIds(string $values, string $taxonomy): array
+    {
+        $ids = array_values(array_unique(array_map('intval', array_filter(
+            array_map('trim', explode(',', $values)),
+            'ctype_digit'
+        ))));
+
+        if (!$ids) {
+            return [];
+        }
+
+        // One query per taxonomy; `include` only returns terms of $taxonomy.
+        $termIds = get_terms([
+            'taxonomy'   => $taxonomy,
+            'include'    => $ids,
+            'fields'     => 'ids',
+            'hide_empty' => false,
+        ]);
+
+        return is_wp_error($termIds) ? [] : array_map('intval', $termIds);
+    }
+
     public static function addTaxonomyTerms(string $taxonomy, array $terms, array $args = [])
     {
         $taxonomies = static::getTaxonomies();

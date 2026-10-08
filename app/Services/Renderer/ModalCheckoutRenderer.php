@@ -4,17 +4,10 @@ namespace FluentCart\App\Services\Renderer;
 
 use FluentCart\Api\PaymentMethods;
 use FluentCart\Api\Resource\CustomerResource;
-use FluentCart\Api\Resource\FrontendResource\CustomerAddressResource;
 use FluentCart\Api\StoreSettings;
-use FluentCart\App\App;
-use FluentCart\App\Helpers\AddressHelper;
-use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Cart;
-use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\URL;
-use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Models\ProductMeta;
 
@@ -538,6 +531,56 @@ class ModalCheckoutRenderer
     }
 
 
+    /**
+     * First/Last name inputs for the modal. Enabling either in Checkout Fields
+     * replaces the single Full name input. The field definitions come from
+     * CheckoutFieldsSchema, shared with the regular checkout; the modal only
+     * moves the label out of the placeholder.
+     *
+     * First name is always rendered and required, because checkout validation
+     * always asks for it in this mode. That keeps an older saved configuration
+     * with only Last name enabled working.
+     *
+     * @return array[] field configs for FormFieldRenderer::renderField()
+     */
+    private function getFirstLastNameFields(): array
+    {
+        $schema = CheckoutFieldsSchema::getNameEmailFieldsSchema($this->cart);
+        $fields = [];
+
+        foreach (['billing_first_name', 'billing_last_name'] as $name) {
+            $field = Arr::get($schema, 'fields.' . $name);
+            if ($name === 'billing_first_name') {
+                $field = wp_parse_args($field ?: [], [
+                    'name'         => $name,
+                    'id'           => $name,
+                    'type'         => 'text',
+                    'data-type'    => 'text',
+                    'aria-label'   => __('First Name', 'fluent-cart'),
+                    'autocomplete' => 'given-name',
+                    'value'        => '',
+                ]);
+                $field['required'] = 'yes';
+            }
+
+            if (!$field) {
+                continue;
+            }
+
+            $field['label'] = Arr::get($field, 'aria-label') . (Arr::get($field, 'required') ? ' *' : '');
+            $field['placeholder'] = $name === 'billing_first_name' ? __('Jon', 'fluent-cart') : __('Doe', 'fluent-cart');
+
+            $customerValue = $this->customer->{str_replace('billing_', '', $name)} ?? '';
+            if ($customerValue) {
+                $field['value'] = $customerValue;
+            }
+
+            $fields[] = $field;
+        }
+
+        return $fields;
+    }
+
     public function renderCheckoutBilling() {
         $user = wp_get_current_user();
         $formRender = new FormFieldRenderer();
@@ -556,27 +599,40 @@ class ModalCheckoutRenderer
         $isRequiredFullName = Arr::get($fullNameField, 'required', 'no') === 'yes' ? 'yes' : '';
         $isRequiredEmail = Arr::get($emailField, 'required', 'no') === 'yes' ? 'yes' : '';
 
+        $isFullName = CheckoutFieldsSchema::isFullNameRequired();
+        $firstLastNameFields = $isFullName ? [] : $this->getFirstLastNameFields();
+        // First and last name share one row, so email gets the next row to itself.
+        $emailColClass = count($firstLastNameFields) === 2 ? 'col-12' : 'col-6';
+
         ?>
         <div class="fct-modal-checkout-billing-wrap">
             <!-- Account Details -->
             <div class="fct-modal-account-details" data-fct-checkout-form-section>
                 <div class="fct-modal-form-info">
-                    <div class="fct-modal-form-field col-6">
-                        <?php
-                        $formRender->renderField([
-                                'label' => esc_attr__('Full name', 'fluent-cart') . ($isRequiredFullName ? ' *' : ''),
-                                'id'             => 'billing_full_name',
-                                'type'           => 'text',
-                                'placeholder'    => __('Jon Doe', 'fluent-cart'),
-                                'name'           => 'billing_full_name',
-                                'autocomplete'   => 'given-name',
-                                'aria-label' => esc_attr__('Full name', 'fluent-cart'),
-                                'required'       => $isRequiredFullName,
-                                'value'          => $fullName
-                        ]);
-                        ?>
-                    </div>
-                    <div class="fct-modal-form-field col-6">
+                    <?php if ($isFullName) : ?>
+                        <div class="fct-modal-form-field col-6">
+                            <?php
+                            $formRender->renderField([
+                                    'label' => esc_attr__('Full name', 'fluent-cart') . ($isRequiredFullName ? ' *' : ''),
+                                    'id'             => 'billing_full_name',
+                                    'type'           => 'text',
+                                    'placeholder'    => __('Jon Doe', 'fluent-cart'),
+                                    'name'           => 'billing_full_name',
+                                    'autocomplete'   => 'given-name',
+                                    'aria-label' => esc_attr__('Full name', 'fluent-cart'),
+                                    'required'       => $isRequiredFullName,
+                                    'value'          => $fullName
+                            ]);
+                            ?>
+                        </div>
+                    <?php else : ?>
+                        <?php foreach ($firstLastNameFields as $nameField) : ?>
+                            <div class="fct-modal-form-field col-6">
+                                <?php $formRender->renderField($nameField); ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    <div class="fct-modal-form-field <?php echo esc_attr($emailColClass); ?>">
                         <?php
                         $formRender->renderField([
                                 'label' => esc_attr__('Email address', 'fluent-cart') . ($isRequiredEmail ? ' *' : ''),
@@ -592,21 +648,6 @@ class ModalCheckoutRenderer
                         ]);
                         ?>
                     </div>
-
-<!--                    <div class="fct-modal-form-field col-3">-->
-<!--                        --><?php
-//                        $formRender->renderField([
-//                                'label'          => __('Last name', 'fluent-cart'),
-//                                'id'             => 'billing_last_name',
-//                                'type'           => 'text',
-//                                'placeholder'    => __('Doe', 'fluent-cart'),
-//                                'name'           => 'billing_last_name',
-//                                'autocomplete'   => 'given-name',
-//                                'required'       => true,
-//                                'value'          => $this->customer->last_name ?? ''
-//                        ]);
-//                        ?>
-<!--                    </div>-->
                 </div>
 
                 <?php $this->checkoutRenderer->renderCreateAccountField(); ?>

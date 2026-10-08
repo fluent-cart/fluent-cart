@@ -3,7 +3,6 @@
 namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\App\App;
-use FluentCart\App\Modules\PaymentMethods\AirwallexGateway\Airwallex;
 use FluentCart\App\Modules\PaymentMethods\Cod\Cod;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\PayPal;
@@ -27,7 +26,6 @@ class GlobalPaymentHandler
             $gateway->register('stripe', new Stripe());
             $gateway->register('paypal', new PayPal());
             $gateway->register('offline_payment', new Cod());
-            $gateway->register('airwallex', new Airwallex());
 
             $this->verifyStripeConnect();
 

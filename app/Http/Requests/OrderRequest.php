@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Http\Requests;
 
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
@@ -52,7 +53,7 @@ class OrderRequest extends RequestGuard
             "order_items.*.object_id"       => 'numeric|min:1',
             "order_items.*.fulfillment_type" => 'nullable|sanitizeText',
             "order_items.*.payment_type"    => 'nullable|sanitizeText|maxLength:100',
-            "order_items.*.quantity"        => 'numeric|min:1',
+            "order_items.*.quantity"        => 'numeric|min:1|max:' . CartHelper::maxQuantity(),
             "order_items.*.post_title"      => 'nullable|sanitizeText|maxLength:255',
             "order_items.*.title"           => 'nullable|sanitizeText|maxLength:255',
             "order_items.*.price"           => 'numeric',
@@ -189,7 +190,7 @@ class OrderRequest extends RequestGuard
             'tax_behavior'          => 'intval',
             'total_amount'          => 'floatval',
             'rate'                  => 'sanitize_text_field',
-            'note'                  => 'sanitize_text_field',
+            'note'                  => 'sanitize_textarea_field',
             'uuid'                  => 'sanitize_text_field',
             'ip_address'            => 'sanitize_text_field',
             'billing_address_id'    => 'intval',

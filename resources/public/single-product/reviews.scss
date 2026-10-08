@@ -263,6 +263,12 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     }
 }
 
+// Full width of its parent. In a flex column that aligns items to the start, as
+// Bricks' page wrapper does, the section would shrink and leave the list track 0px.
+.fct-product-reviews-section {
+    width: 100%;
+}
+
 /* 2-column layout: summary left, list right */
 .fct-reviews-layout {
     display: grid;
@@ -1281,7 +1287,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 .fct-reviews-filter-chips {
     @apply flex items-center gap-1.5 flex-wrap;
     .fct-filter-chip {
-        @apply px-2.5 py-2 flex items-center gap-1 border border-solid text-[13px] shadow-none transition-colors duration-200;
+        @apply px-2.5 py-2 flex items-center gap-1 border border-solid text-[13px] shadow-none transition-colors duration-200 cursor-pointer;
         border-radius: var(--fct-badge-radius, theme('borderRadius.DEFAULT'));
         border-color: var(--fct-review-chip-border, #D6DAE1);
         background-color: var(--fct-review-chip-bg, #ffffff);
@@ -1329,6 +1335,8 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     select {
         appearance: none;
         -webkit-appearance: none;
+        // Themes such as Bricks draw their own arrow as a background image on every select.
+        background-image: none;
         /* The caret is drawn by ::before at right:10px and is 8px wide, so
            the text needs to stop clear of it. A symmetric px-2.5 let the
            longest option — Highest Rating — run underneath the arrow. */
@@ -1680,14 +1688,17 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     }
 }
 
-/* Helpful votes (Pro-injected) — "Helpful?" label + outlined thumb chips */
-.fct-review-footer .fct-vote-label {
+/* Helpful votes (Pro-injected) — "Helpful?" label + outlined thumb chips
+ * Every placement is inside .fct-review-item: the injector finds rows by that
+ * class, so it cannot put the buttons anywhere else.
+ */
+.fct-review-item .fct-vote-label {
     font-size: 13px;
     color: var(--fct-review-subtle-text-color, #4b5563);
     margin-right: 2px;
 }
 
-.fct-review-footer .fct-vote-btn {
+.fct-review-item .fct-vote-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1721,7 +1732,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     }
 }
 
-.fct-review-footer .fct-vote-count {
+.fct-review-item .fct-vote-count {
     font-size: 13px;
     font-weight: 600;
 }
@@ -2080,7 +2091,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     // focus-visible, not focus: a mouse click would otherwise leave the
     // button filled dark long after it was pressed — and a link keeps that
     // state when the visitor comes back to the page.
-    @apply inline-flex items-center justify-center gap-1 border border-solid text-sm font-medium no-underline shadow-none transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-1 border border-solid text-sm font-medium no-underline shadow-none transition-colors duration-200 cursor-pointer;
     padding-left: var(--fct-btn-padding-x, theme('spacing.4'));
     padding-right: var(--fct-btn-padding-x, theme('spacing.4'));
     padding-top: var(--fct-btn-padding-y, theme('spacing.2'));
@@ -2151,6 +2162,27 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     transform: translateX(100%);
     transition: transform 0.3s ease;
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+
+    /* Same flag, same reason as .fct-cart-drawer.admin_bar_enabled: the
+       admin bar is also position:fixed; top:0, at a higher z-index than
+       this overlay, and this panel is now a direct child of <body> (see
+       ReviewForm.js's getDrawer()), so without this its header paints
+       under the bar.
+       Not the same fix, though: the cart drawer is independently
+       position:fixed; bottom:0, so shrinking its height alone moves its
+       top edge down. This one is a flex item stretched by the overlay
+       (justify-content:flex-end, default align-items:stretch) with no
+       anchor of its own — an explicit height on a stretched item is
+       positioned from the cross-start (top) of the line, not the bottom,
+       so height alone just made it shorter at the SAME top edge, still
+       under the bar (confirmed live: panel top stayed 0). margin-top is
+       what actually moves it; the height reduction keeps the bottom
+       where the overlay already ends. */
+    &.admin_bar_enabled {
+        margin-top: 32px;
+        height: calc(100vh - 32px);
+        height: calc(100dvh - 32px);
+    }
 
     .fct-review-drawer-close {
         @apply w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
@@ -2253,7 +2285,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 // Same type as the form-field labels below it — both are labels for a
 // control, so they read at one size, weight and colour.
 .fct-review-step-question {
-    @apply block text-sm font-medium;
+    @apply block text-sm font-medium mb-2.5;
     color: var(--fct-review-label-color, #2F3448);
     .required {
         color: #ef4444;
@@ -2498,7 +2530,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
         // Positioning context for this star's own tooltip.
         position: relative;
         // The star svg is sized in em, so the button's font-size is the star's size.
-        @apply border border-solid rounded p-2 w-10 h-10 flex items-center justify-center shadow-none;
+        @apply border border-solid rounded p-2 w-10 h-10 flex items-center justify-center shadow-none cursor-pointer;
         border-color: var(--fct-review-control-border-color, #D6DAE1);
         background-color: var(--fct-review-control-bg, #ffffff);
         color: var(--fct-review-star-picker-color, #98A2B3);
@@ -2608,6 +2640,16 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 
     .fct-reviews-layout-left {
         position: static;
+    }
+
+    /* Matches .fct-cart-drawer.admin_bar_enabled's own mobile override:
+       WP's core admin-bar CSS takes it out of fixed positioning below
+       this same width, so it no longer sits over the drawer and the
+       offset is not needed here either. */
+    .fct-review-drawer.admin_bar_enabled {
+        margin-top: 0;
+        height: 100vh;
+        height: 100dvh;
     }
 }
 
@@ -2796,13 +2838,6 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 [data-layout="steps"] .fct-review-standalone-footer {
     padding-top: 16px;
     border-top: 1px solid var(--fct-review-soft-divider-color, #f3f4f6);
-}
-
-// A step's question needs air before its control, the way it had before the
-// margin came off the shared label. The inline groups space themselves and
-// keep the tighter label.
-.fct-review-step .fct-review-step-question {
-    @apply mb-2.5;
 }
 
 .fct-review-standalone-footer {

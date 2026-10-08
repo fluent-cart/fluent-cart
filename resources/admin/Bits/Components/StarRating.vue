@@ -2,10 +2,10 @@
   <div class="fct-star-rating" :class="sizeClass" role="img" :aria-label="ariaText">
     <template v-for="star in 5" :key="star">
       <span v-if="getStarClass(star) === 'fct-star-half'" class="fct-star fct-star-half" aria-hidden="true">
-        <span class="fct-star-half-empty">&#9733;</span>
-        <span class="fct-star-half-fill">&#9733;</span>
+        <span class="fct-star-half-empty"><ReviewStar/></span>
+        <span class="fct-star-half-fill"><ReviewStar/></span>
       </span>
-      <span v-else class="fct-star" :class="getStarClass(star)" aria-hidden="true">&#9733;</span>
+      <span v-else class="fct-star" :class="getStarClass(star)" aria-hidden="true"><ReviewStar/></span>
     </template>
   </div>
 </template>
@@ -13,6 +13,7 @@
 <script setup>
 import {computed} from "vue";
 import translate from "@/utils/translator/Translator";
+import ReviewStar from "@/Bits/Components/Icons/ReviewStar.vue";
 
 const props = defineProps({
   rating: {
@@ -46,8 +47,14 @@ const ariaText = computed(() => translate('%s out of 5 stars', props.rating));
 }
 
 .fct-star {
+  display: inline-flex;
   color: #d1d5db;
   line-height: 1;
+}
+
+.fct-star-svg,
+.fct-star-half-empty {
+  display: block;
 }
 
 .fct-star-filled {

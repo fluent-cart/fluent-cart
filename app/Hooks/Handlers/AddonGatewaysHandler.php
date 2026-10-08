@@ -8,6 +8,7 @@ use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\RazorpayAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\MercadoPagoAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\FlutterwaveAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\SquareAddon;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\AirwallexAddon;
 use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\SslcommerzAddon;
 
 class AddonGatewaysHandler
@@ -22,6 +23,7 @@ class AddonGatewaysHandler
         'mercado_pago' => MercadoPagoAddon::class,
         'flutterwave' => FlutterwaveAddon::class,
         'square'      => SquareAddon::class,
+        'airwallex'   => AirwallexAddon::class,
         'sslcommerz'  => SslcommerzAddon::class,
     ];
     

@@ -1,7 +1,7 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/ProductRating/Components/InspectorSettings";
 import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
-import {ProductRatingStars} from "@/BlockEditor/Icons";
+import {ProductRatingStars, ReviewStar} from "@/BlockEditor/Icons";
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -72,7 +72,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                 let cls = 'fct-star fct-star-empty';
                 if (isFull) cls = 'fct-star fct-star-filled';
                 else if (isHalf) cls = 'fct-star fct-star-half';
-                stars.push(<span key={i} className={cls}>★</span>);
+                stars.push(<span key={i} className={cls}><ReviewStar/></span>);
             }
             return stars;
         };

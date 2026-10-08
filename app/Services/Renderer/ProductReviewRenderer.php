@@ -190,6 +190,7 @@ class ProductReviewRenderer
             // its own rows, which is what the shortcode and the product page
             // get.
             'rows_renderer'     => null,
+            'listClientId'      => '',
             // The lowest rating the list shows, lifted off the Review Item
             // block. 0 is every review.
             'minRating'         => 0,
@@ -243,6 +244,11 @@ class ProductReviewRenderer
             // again. Set only by the Review List block, and only when it has
             // children to compose.
         ]), $this->postId);
+        $this->renderOptions['minRating'] = ProductReviewService::resolveListMinRating(
+            (string) Arr::get($this->renderOptions, 'listClientId', ''),
+            (int) Arr::get($this->renderOptions, 'minRating', 0),
+            (int) $this->postId
+        );
     }
 
     /**
@@ -577,6 +583,7 @@ class ProductReviewRenderer
              data-rest-nonce="<?php echo esc_attr($restInfo['nonce']); ?>"
              data-per-page="<?php echo esc_attr($perPage); ?>"
              data-min-rating="<?php echo esc_attr($minRating); ?>"
+             data-rating-token="<?php echo esc_attr(ProductReviewService::listRatingToken((int) $this->postId, $minRating)); ?>"
              data-default-sort="<?php echo esc_attr($defaultSort); ?>"
              data-show-verified="<?php echo $showVerifiedBadge ? '1' : '0'; ?>"
              data-show-date="<?php echo $showReviewDate ? '1' : '0'; ?>"
@@ -692,6 +699,9 @@ class ProductReviewRenderer
                          <?php if ($isSlider) : ?>
                              data-reviews-slider="<?php echo (int) $gridColumns; ?>"
                              data-slider-settings="<?php echo esc_attr(wp_json_encode($sliderSettings)); ?>"
+                         <?php endif; ?>
+                         <?php if (Arr::get($this->renderOptions, 'listClientId', '') !== '') : ?>
+                             data-client-id="<?php echo esc_attr((string) Arr::get($this->renderOptions, 'listClientId', '')); ?>"
                          <?php endif; ?>
                          data-reviews-list>
                         <?php echo $initialRows; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -995,8 +1005,18 @@ class ProductReviewRenderer
         // this overlay animates on. Sharing the name made the thread modal
         // inherit this one's hidden state and render transparent.
         ?>
+        <?php
+        // Same flag, same class name, same reason as CartDrawerRenderer:
+        // the admin bar is also position:fixed; top:0, at a higher
+        // z-index than this overlay, and both this panel and the cart
+        // drawer are now direct children of <body> (see ReviewForm.js's
+        // getDrawer()), so the bar paints over whichever one assumes it
+        // owns the full viewport height. admin_bar_enabled's CSS trims
+        // that height back the same way for both.
+        $isAdminBarEnabled = is_admin_bar_showing();
+        ?>
         <div class="<?php echo $isModal ? 'fct-review-form-modal-overlay' : 'fct-review-drawer-overlay'; ?>" data-review-drawer style="display:none;">
-            <div class="<?php echo $isModal ? 'fct-review-form-modal' : 'fct-review-drawer'; ?>" data-review-drawer-panel role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($titleId); ?>" tabindex="-1">
+            <div class="<?php echo $isModal ? 'fct-review-form-modal' : 'fct-review-drawer'; ?><?php echo $isAdminBarEnabled ? ' admin_bar_enabled' : ''; ?>" data-review-drawer-panel role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($titleId); ?>" tabindex="-1">
                 <div class="fct-review-drawer-header">
                     <h4 class="fct-review-drawer-title" data-review-drawer-title id="<?php echo esc_attr($titleId); ?>"><?php esc_html_e('Write a review', 'fluent-cart'); ?></h4>
                     <button type="button" class="fct-review-drawer-close" data-close-review-drawer aria-label="<?php esc_attr_e('Close', 'fluent-cart'); ?>"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false"><path d="M12.8337 1.16663L1.16699 12.8333M1.16699 1.16663L12.8337 12.8333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>

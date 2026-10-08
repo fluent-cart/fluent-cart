@@ -1,25 +1,10 @@
 /**
- * The "Read more" control on a clamped review.
- *
- * In grid and slider views the content is cut to a few lines so that cards in a
- * row end level. Cutting it is only acceptable if the rest is reachable, so
- * every clamped review gets a control that reveals it — and only those that are
- * actually cut get one, since a two-line review has nothing to reveal.
- *
- * The clamp is applied here rather than in the stylesheet on purpose. With CSS
- * alone, a reader without JavaScript would get the cut text and no control to
- * undo it: content reachable in one browser and gone in another. Applied here,
- * the two arrive together or neither does, and the fallback is a ragged row
- * rather than a truncated review.
+ * Clamp in JS, not CSS, so a reader without JavaScript sees the whole review
+ * instead of cut text with no way to open it. Show the control only when text is hidden.
  */
 
 /**
- * Whether a clamped element is actually hiding anything.
- *
- * Measured rather than guessed: four lines of a two-line review is not a clamp,
- * and offering to expand it is a control that does nothing. The tolerance is
- * there because sub-pixel line heights make these differ by a fraction on
- * plenty of perfectly unclamped text.
+ * Whether the clamp hides text. The 1px tolerance ignores sub-pixel differences.
  *
  * @param {number} scrollHeight the content's full height
  * @param {number} clientHeight the height it is being shown at
@@ -30,18 +15,7 @@ export function isTruncated(scrollHeight, clientHeight) {
 }
 
 /**
- * What the toggle should read and announce in a given state.
- *
- * @param {boolean} expanded
- * @param {Object} trans
- * @return {{label: string, expanded: boolean}}
- */
-/**
- * The first `limit` words of a review, or all of it when there are fewer.
- *
- * Returns null when nothing would be cut, which is how the caller knows not to
- * offer a control that opens nothing — the same question isTruncated() answers
- * for the line clamp.
+ * Return the first `limit` words, or null for an invalid limit or uncut text.
  *
  * @param {string} text
  * @param {number} limit
@@ -59,6 +33,13 @@ export function trimToWords(text, limit) {
     return words.length <= max ? null : words.slice(0, max).join(' ') + '…';
 }
 
+/**
+ * What the toggle should read and announce in a given state.
+ *
+ * @param {boolean} expanded
+ * @param {Object} trans
+ * @return {{label: string, expanded: boolean}}
+ */
 export function expandToggleState(expanded, trans = {}) {
     const isExpanded = !!expanded;
 
@@ -71,13 +52,7 @@ export function expandToggleState(expanded, trans = {}) {
 }
 
 /**
- * What to do with one review, given what it looks like right now.
- *
- * Separated out because the answer changes with the width. A review measured
- * across the full list fits in four lines; the same review in a third of that
- * width does not. Whichever way that goes, the control has to follow — a clamp
- * with no control hides the rest of the review, and a control on a review that
- * is not clamped opens nothing.
+ * Keep the toggle in sync with truncation as the review's width changes.
  *
  * @param {Object} state
  * @param {boolean} state.expanded  the reader has already opened this one
@@ -86,8 +61,7 @@ export function expandToggleState(expanded, trans = {}) {
  * @return {'leave'|'add'|'remove'|'none'}
  */
 export function clampDecision({expanded = false, truncated = false, hasToggle = false} = {}) {
-    // Opened by the reader. Re-clamping it because the window moved would take
-    // away what they just asked to see.
+    // Resizing must not collapse text the reader has expanded.
     if (expanded) {
         return 'leave';
     }
@@ -117,15 +91,8 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
         const existing = sibling && sibling.classList.contains('fct-review-readmore') ? sibling : null;
         const expanded = !!existing && existing.getAttribute('aria-expanded') === 'true';
 
-        // A word limit set on the Review Content block. It replaces the line
-        // clamp rather than joining it: the editor asked for a number of
-        // words, and a line clamp on top would cut at whichever came first —
-        // a limit that changes with the column width.
-        //
-        // The full review is kept on the element, because the text in the DOM
-        // is about to be replaced by the short version and the toggle has to
-        // put it back. Read once: after the first pass textContent is already
-        // the trimmed copy.
+        // Word limits replace line clamps so the cut is independent of width.
+        // Cache the full text before replacing it; later passes see trimmed text.
         const wordLimit = parseInt(content.getAttribute('data-max-words'), 10) || 0;
 
         if (wordLimit) {
@@ -135,8 +102,7 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
 
             const short = trimToWords(content.dataset.fullText, wordLimit);
 
-            // Nothing to cut, so nothing to open. Any control left over from a
-            // wider layout goes with it.
+            // Remove any stale toggle when no truncation is needed.
             if (short === null) {
                 content.textContent = content.dataset.fullText;
                 content.classList.remove('is-clamped');
@@ -148,11 +114,7 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
                 return;
             }
 
-            // The line clamp stays off wherever a word limit is in charge, so
-            // the cut is the editor's number and not whichever of the two
-            // lands first. Nothing below reaches this element — the branch
-            // returns before the clamp is applied — and this says so where it
-            // would otherwise have to be inferred.
+            // Clear any line clamp left by an earlier pass.
             content.classList.remove('is-clamped');
 
             const paintWords = (isOpen) => {
@@ -163,8 +125,7 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
             };
 
             if (existing) {
-                // Re-running after a layout change: the toggle is already
-                // there and knows which state it is in.
+                // Preserve the toggle's state after a layout change.
                 paintWords(expanded);
 
                 return;
@@ -200,8 +161,7 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
             return;
         }
 
-        // Measured with the clamp on, at whatever width the element is now —
-        // which is the point of running this again after a layout change.
+        // Measure truncation with the clamp applied at the current width.
         if (!expanded) {
             content.classList.add('is-clamped');
         }
@@ -217,8 +177,7 @@ export function applyReviewClamps(listContainer, trans = {}, onToggle = null) {
         }
 
         if (decision === 'remove') {
-            // It fits at this width. The clamp stays on and does nothing; the
-            // control would be a button that opens nothing, so it goes.
+            // The text fits; the toggle would have nothing to reveal.
             existing.remove();
 
             return;

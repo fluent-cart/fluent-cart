@@ -24,20 +24,6 @@ class AttributesHandler
             Vite::enqueueScript('fluent_cart_attributes', 'attributes/attributes.js');
         });
 
-        // Hide the Attributes submenu item by default on FluentCart admin
-        // pages. useNavigationMenuUpdateService toggles it back on whenever the
-        // active route's active_menu is 'products', matching the behavior of
-        // the existing "↳ Inventory" child.
-        add_action('admin_enqueue_scripts', function () {
-            wp_register_style('fluent-cart-admin', false);
-            wp_enqueue_style('fluent-cart-admin');
-            wp_add_inline_style('fluent-cart-admin', '
-                .toplevel_page_fluent-cart li.fluent_cart_attributes {
-                    display: none;
-                }
-            ');
-        });
-
         // Show Attributes under Products in the WP admin left sidebar.
         add_action('fluent_cart/admin_submenu_added', function () {
             global $submenu;
@@ -53,7 +39,7 @@ class AttributesHandler
             $entry = [
                 __('↳ Attributes', 'fluent-cart'),
                 $capability,
-                'admin.php?page=fluent-cart#/attributes',
+                'admin.php?page=fluent-cart#/products/attributes',
                 '',
                 'fluent_cart_attributes',
             ];

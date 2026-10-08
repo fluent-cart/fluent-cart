@@ -55,6 +55,8 @@ export default class FluentCartReviewForm {
     // The 300ms transition-out of the overlay, cleared on reopen so a
     // drawer reopened mid-transition is not hidden by its own close.
     #hideTimeout = null;
+    // The drawer overlay, once moved out to the body — see #getDrawer().
+    #drawerEl = null;
     #detailsStep = 2;
     // Two independent axes, mirroring the renderer. Layout paces the fields:
     // 'inline' means one step, so the whole form validates together.
@@ -99,7 +101,11 @@ export default class FluentCartReviewForm {
     // ─── Drawer open/close ───────────────────────────────────
 
     #initDrawer() {
-        const drawer = this.#container.querySelector('[data-review-drawer]');
+        // Eagerly, not on first open: every other lookup in this file goes
+        // through #root(), which depends on the move having already
+        // happened — see #root() and #getDrawer(). The drawer starts
+        // display:none, so moving it now is invisible either way.
+        const drawer = this.#getDrawer();
         if (!drawer) return;
 
         if (this.#formId) {
@@ -227,17 +233,92 @@ export default class FluentCartReviewForm {
             primaryControllers.delete(this.#postId);
         }
 
-        const drawer = this.#container.querySelector('[data-review-drawer]');
+        // getDrawer(), not a container-scoped lookup: by the time a
+        // container is torn down the drawer may already have been moved
+        // out to the body (see getDrawer()), and a stray node left behind
+        // there would outlive this controller entirely.
+        const drawer = this.#getDrawer();
         if (drawer) {
             drawer.classList.remove('fct-drawer-open');
             drawer.style.display = 'none';
+            if (drawer.parentNode) {
+                drawer.parentNode.removeChild(drawer);
+            }
         }
+        this.#drawerEl = null;
         this.#triggerElement = null;
+    }
+
+    /**
+     * The drawer overlay element, moved to a direct child of <body> the
+     * first time anything asks for it.
+     *
+     * Server HTML prints the overlay inline, wherever the review section
+     * sits on the page. A page builder gives most rows/columns their own
+     * position:relative + a small z-index (Divi: every column gets
+     * z-index:2) for its own stacking purposes. position:fixed escapes
+     * normal document FLOW — inset:0 still spans the real viewport — but
+     * it does NOT escape an ancestor's STACKING CONTEXT: the overlay's own
+     * z-index:99999 only wins against siblings within whichever column it
+     * is nested in. A sibling column later in the page markup (e.g. a
+     * Related Products block below the reviews) shares that same
+     * default z-index, ties are broken by DOM order, and the later column
+     * painted over the whole open drawer, 99999 and all.
+     *
+     * The cart drawer never has this problem: CartLoader prints it on
+     * wp_footer, so it is never nested inside a row/column in the first
+     * place. The review drawer is part of the review section's own
+     * markup, wherever that is placed, so it has to get itself out — the
+     * same fix ImageGallery.js's lightbox overlay already uses.
+     *
+     * @return {HTMLElement|null}
+     */
+    #getDrawer() {
+        if (this.#drawerEl && this.#drawerEl.isConnected) {
+            return this.#drawerEl;
+        }
+
+        const drawer = this.#container.querySelector('[data-review-drawer]');
+        if (!drawer) return null;
+
+        document.body.appendChild(drawer);
+        this.#drawerEl = drawer;
+        return drawer;
+    }
+
+    /**
+     * Where the form's own fields actually live right now — every lookup
+     * for anything inside the form (stepper nav, rating stars, title and
+     * content inputs, char counters, the submit button, the message area)
+     * has to go through this, not this.#container directly.
+     *
+     * #container is the server-rendered outer wrapper
+     * (data-fluent-cart-review-form). With an overlay (drawer or modal),
+     * every one of those fields is a descendant of the drawer panel, not
+     * of #container itself — the panel is one child of it. #getDrawer()
+     * moves that whole child, fields and all, out to <body> (see
+     * #initDrawer(), which triggers the move at init rather than waiting
+     * for the first open). After that, #container has nothing left in it:
+     * this.#container.querySelector(...) for a form field finds nothing,
+     * silently, which is exactly what made the submit button stop
+     * responding — #initStepper() bound its click handler correctly, but
+     * every lookup #submitReview() itself made for the rating, title and
+     * content fields came back null.
+     *
+     * Without an overlay (container="none", the standalone embed), the
+     * fields never move, so #container is still correct.
+     */
+    #root() {
+        if (!this.#hasOverlay) {
+            return this.#container;
+        }
+
+        return this.#getDrawer() || this.#container;
     }
 
     #openDrawer() {
         if (this.#submitted) return;
-        const drawer = this.#container.querySelector('[data-review-drawer]');
+        const drawer = this.#getDrawer();
         if (!drawer) return;
 
         // Private methods are reachable on any instance from inside the class,
@@ -273,7 +354,7 @@ export default class FluentCartReviewForm {
     }
 
     #closeDrawer({ replaced = false } = {}) {
-        const drawer = this.#container.querySelector('[data-review-drawer]');
+        const drawer = this.#getDrawer();
         if (!drawer) return;
 
         if (openOverlayController === this) {
@@ -298,7 +379,7 @@ export default class FluentCartReviewForm {
         }
         // Whatever the panel was saying goes with it; the next open starts
         // clean.
-        const messageEl = this.#container.querySelector('[data-review-form-message]');
+        const messageEl = this.#root().querySelector('[data-review-form-message]');
         if (messageEl) messageEl.style.display = 'none';
         drawer.classList.remove('fct-drawer-open');
         if (this.#hideTimeout) {
@@ -334,9 +415,9 @@ export default class FluentCartReviewForm {
     // ─── Multi-step wizard ───────────────────────────────────
 
     #initStepper() {
-        const nextBtn = this.#container.querySelector('[data-review-next]');
-        const backBtn = this.#container.querySelector('[data-review-back]');
-        const submitBtn = this.#container.querySelector('[data-review-submit]');
+        const nextBtn = this.#root().querySelector('[data-review-next]');
+        const backBtn = this.#root().querySelector('[data-review-back]');
+        const submitBtn = this.#root().querySelector('[data-review-submit]');
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.#goToStep(this.#currentStep + 1));
@@ -358,8 +439,8 @@ export default class FluentCartReviewForm {
         if (step < 1 || step > this.#totalSteps) return;
 
         // Hide current step, show target step
-        const currentEl = this.#container.querySelector(`[data-review-step="${this.#currentStep}"]`);
-        const targetEl = this.#container.querySelector(`[data-review-step="${step}"]`);
+        const currentEl = this.#root().querySelector(`[data-review-step="${this.#currentStep}"]`);
+        const targetEl = this.#root().querySelector(`[data-review-step="${step}"]`);
         if (currentEl) currentEl.style.display = 'none';
         if (targetEl) targetEl.style.display = '';
 
@@ -368,16 +449,16 @@ export default class FluentCartReviewForm {
         this.#updateFooterButtons();
 
         // Hide any visible error message when changing steps
-        const messageEl = this.#container.querySelector('[data-review-form-message]');
+        const messageEl = this.#root().querySelector('[data-review-form-message]');
         if (messageEl) messageEl.style.display = 'none';
     }
 
     #validateStep(step) {
         const trans = window.fluentcart_review_vars?.trans || {};
-        const messageEl = this.#container.querySelector('[data-review-form-message]');
+        const messageEl = this.#root().querySelector('[data-review-form-message]');
 
         if (this.#starEnabled && step === 1) {
-            const rating = this.#container.querySelector('[data-review-rating]');
+            const rating = this.#root().querySelector('[data-review-rating]');
             if (this.#starRequired && (!rating || !rating.value)) {
                 this.#showMessage(messageEl, trans.rating_required || 'Please select a rating', 'error');
                 return false;
@@ -385,7 +466,7 @@ export default class FluentCartReviewForm {
         }
 
         if (step === this.#detailsStep) {
-            const form = this.#container.querySelector('[data-review-form]');
+            const form = this.#root().querySelector('[data-review-form]');
             const content = form?.querySelector('textarea[name="content"]');
             if (!content || !content.value.trim()) {
                 this.#showMessage(messageEl, trans.content_required || 'Please write a review', 'error');
@@ -409,7 +490,7 @@ export default class FluentCartReviewForm {
     }
 
     #updateStepperUI() {
-        const indicators = this.#container.querySelectorAll('[data-step-indicator]');
+        const indicators = this.#root().querySelectorAll('[data-step-indicator]');
         indicators.forEach(ind => {
             const num = parseInt(ind.getAttribute('data-step-indicator'));
             ind.classList.toggle('active', num === this.#currentStep);
@@ -418,10 +499,10 @@ export default class FluentCartReviewForm {
     }
 
     #updateFooterButtons() {
-        const nextBtn = this.#container.querySelector('[data-review-next]');
-        const backBtn = this.#container.querySelector('[data-review-back]');
-        const submitBtn = this.#container.querySelector('[data-review-submit]');
-        const stepInfo = this.#container.querySelector('[data-review-step-info]');
+        const nextBtn = this.#root().querySelector('[data-review-next]');
+        const backBtn = this.#root().querySelector('[data-review-back]');
+        const submitBtn = this.#root().querySelector('[data-review-submit]');
+        const stepInfo = this.#root().querySelector('[data-review-step-info]');
 
         const isLast = this.#currentStep === this.#totalSteps;
         const isFirst = this.#currentStep === 1;
@@ -457,11 +538,11 @@ export default class FluentCartReviewForm {
     // ─── Star selector ───────────────────────────────────────
 
     #initStarSelector() {
-        const selector = this.#container.querySelector('[data-star-selector]');
+        const selector = this.#root().querySelector('[data-star-selector]');
         if (!selector) return;
 
         const stars = selector.querySelectorAll('[data-star-value]');
-        const ratingInput = this.#container.querySelector('[data-review-rating]');
+        const ratingInput = this.#root().querySelector('[data-review-rating]');
 
         // 0 clears: no star selected, the hidden field empty again.
         const selectStar = (value) => {
@@ -528,8 +609,8 @@ export default class FluentCartReviewForm {
 
         // Pre-select stars
         if (rating > 0) {
-            const ratingInput = this.#container.querySelector('[data-review-rating]');
-            const stars = this.#container.querySelectorAll('[data-star-value]');
+            const ratingInput = this.#root().querySelector('[data-review-rating]');
+            const stars = this.#root().querySelectorAll('[data-star-value]');
             if (ratingInput) ratingInput.value = rating;
             stars.forEach(s => {
                 const v = parseInt(s.dataset.starValue);
@@ -539,23 +620,23 @@ export default class FluentCartReviewForm {
         }
 
         // Pre-fill text fields
-        const titleInput = this.#container.querySelector('input[name="title"]');
+        const titleInput = this.#root().querySelector('input[name="title"]');
         if (titleInput) titleInput.value = title;
 
-        const contentInput = this.#container.querySelector('textarea[name="content"]');
+        const contentInput = this.#root().querySelector('textarea[name="content"]');
         if (contentInput) contentInput.value = content;
 
         // Update char counters
-        this.#container.querySelectorAll('[data-char-count]').forEach(counter => {
+        this.#root().querySelectorAll('[data-char-count]').forEach(counter => {
             const inputId = counter.getAttribute('data-char-count');
-            const input = this.#container.querySelector('#' + inputId);
+            const input = this.#root().querySelector('#' + inputId);
             if (!input) return;
             const max = parseInt(input.getAttribute('maxlength')) || 0;
             counter.textContent = `${input.value.length} / ${max}`;
         });
 
         // Update drawer title
-        const drawerTitle = this.#container.querySelector('[data-review-drawer-title]');
+        const drawerTitle = this.#getDrawer()?.querySelector('[data-review-drawer-title]');
         if (drawerTitle) {
             drawerTitle.textContent = window.fluentcart_review_vars?.trans?.edit_review || 'Edit your review';
         }
@@ -564,10 +645,10 @@ export default class FluentCartReviewForm {
     // ─── Character counters ──────────────────────────────────
 
     #initCharCounters() {
-        const counters = this.#container.querySelectorAll('[data-char-count]');
+        const counters = this.#root().querySelectorAll('[data-char-count]');
         counters.forEach(counter => {
             const inputId = counter.getAttribute('data-char-count');
-            const input = this.#container.querySelector('#' + inputId);
+            const input = this.#root().querySelector('#' + inputId);
             if (!input) return;
 
             const max = parseInt(input.getAttribute('maxlength')) || 0;
@@ -587,9 +668,9 @@ export default class FluentCartReviewForm {
         // Validate current step first
         if (!this.#validateStep(this.#currentStep)) return;
 
-        const form = this.#container.querySelector('[data-review-form]');
-        const submitBtn = this.#container.querySelector('[data-review-submit]');
-        const messageEl = this.#container.querySelector('[data-review-form-message]');
+        const form = this.#root().querySelector('[data-review-form]');
+        const submitBtn = this.#root().querySelector('[data-review-submit]');
+        const messageEl = this.#root().querySelector('[data-review-form-message]');
         if (!form) return;
 
         const formData = new FormData(form);
@@ -783,7 +864,7 @@ export default class FluentCartReviewForm {
         this.#container.setAttribute('data-existing-title', String(data.title || ''));
         this.#container.setAttribute('data-existing-content', String(data.content || ''));
 
-        const drawerTitle = this.#container.querySelector('[data-review-drawer-title]');
+        const drawerTitle = this.#getDrawer()?.querySelector('[data-review-drawer-title]');
         if (drawerTitle) {
             drawerTitle.textContent = window.fluentcart_review_vars?.trans?.edit_review || 'Edit your review';
         }
@@ -808,9 +889,9 @@ export default class FluentCartReviewForm {
     // becomes the receipt: the fields go away and the success line stays.
     #markStandaloneSubmitted() {
         this.#container.classList.add('fct-review-form-submitted');
-        const form = this.#container.querySelector('[data-review-form]');
-        const footer = this.#container.querySelector('.fct-review-standalone-footer');
-        const stepper = this.#container.querySelector('[data-review-stepper]');
+        const form = this.#root().querySelector('[data-review-form]');
+        const footer = this.#root().querySelector('.fct-review-standalone-footer');
+        const stepper = this.#root().querySelector('[data-review-stepper]');
         if (form) form.style.display = 'none';
         if (footer) footer.style.display = 'none';
         if (stepper) stepper.style.display = 'none';

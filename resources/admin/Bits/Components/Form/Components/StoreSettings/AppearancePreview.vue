@@ -2,6 +2,7 @@
 import {computed} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
+import {normalizeRadius} from "@/Bits/Components/Form/Components/StoreSettings/radiusLength";
 
 const props = defineProps({
   // Built by StoreSettings::getAppearancePreviewData() — the colour slots and
@@ -23,6 +24,11 @@ const props = defineProps({
   customSource: {
     type: String,
     default: ''
+  },
+  // The radii set by hand, role => typed length ('' when unset).
+  radii: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -55,6 +61,26 @@ const slotColor = (slot) => {
   return '';
 };
 
+// Role => CSS length for the selected source. Customize reads the inputs
+// (a bare number is px); inheriting reads the radii the server resolved from the theme.
+const radiusFor = () => {
+  const lengths = {};
+
+  if (isCustom.value) {
+    Object.entries(props.radii || {}).forEach(([role, typed]) => {
+      const length = normalizeRadius(typed);
+
+      if (length) {
+        lengths[role] = length;
+      }
+    });
+  } else if (props.source === props.preview.theme_source) {
+    Object.assign(lengths, props.preview.theme_radii || {});
+  }
+
+  return lengths;
+};
+
 const paletteStyle = computed(() => {
   const style = {};
 
@@ -67,6 +93,12 @@ const paletteStyle = computed(() => {
     if (color) {
       style[`--fct-pv-${slot.var}`] = color;
     }
+  });
+
+  // Radii follow the same rule: only a role with a value is declared, and
+  // appearance.scss falls back to the mock's own rounding otherwise.
+  Object.entries(radiusFor()).forEach(([role, length]) => {
+    style[`--fct-pv-${role}-radius`] = length;
   });
 
   return style;

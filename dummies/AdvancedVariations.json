@@ -26,14 +26,14 @@
     },
     "attribute_options": [
       {
-        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "group": {"slug": "material", "title": "Material", "type": "options"},
         "terms": [
           {"slug": "cotton",    "title": "Cotton"},
           {"slug": "polyester", "title": "Polyester"}
         ]
       },
       {
-        "group": {"slug": "tshirt-color", "title": "T-Shirt Color", "type": "text"},
+        "group": {"slug": "tshirt-color", "title": "T-Shirt Color", "type": "options"},
         "terms": [
           {"slug": "clay-cream",  "title": "Clay Cream"},
           {"slug": "mocha-taupe", "title": "Mocha Taupe"},
@@ -43,7 +43,7 @@
         ]
       },
       {
-        "group": {"slug": "size", "title": "Size", "type": "text"},
+        "group": {"slug": "size", "title": "Size", "type": "options"},
         "terms": [
           {"slug": "s",  "title": "S"},
           {"slug": "m",  "title": "M"},
@@ -93,7 +93,7 @@
     },
     "attribute_options": [
       {
-        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "group": {"slug": "material", "title": "Material", "type": "options"},
         "terms": [
           {"slug": "leather", "title": "Leather"},
           {"slug": "nylon",   "title": "Nylon"},
@@ -155,7 +155,7 @@
     },
     "attribute_options": [
       {
-        "group": {"slug": "material", "title": "Material", "type": "text"},
+        "group": {"slug": "material", "title": "Material", "type": "options"},
         "terms": [
           {"slug": "metal",   "title": "Metal"},
           {"slug": "plastic", "title": "Plastic"}
@@ -169,7 +169,7 @@
         ]
       },
       {
-        "group": {"slug": "size", "title": "Size", "type": "text"},
+        "group": {"slug": "size", "title": "Size", "type": "options"},
         "terms": [
           {"slug": "xl", "title": "XL"},
           {"slug": "m",  "title": "M"},

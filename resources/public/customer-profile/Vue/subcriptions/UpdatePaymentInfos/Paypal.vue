@@ -133,6 +133,7 @@ export default {
       let planId = null;
       let newVendorSubscriptionId = null;
       let vendorOrderId = null;
+      let brandName = '';
       container.innerHTML = '';
       let that = this;
       try {
@@ -145,10 +146,14 @@ export default {
             disableMaxWidth: true
           },
           createSubscription: async function (data, actions) {
-            return actions.subscription.create({
+            const payload = {
               'plan_id': planId,
               'custom_id': that.subscription.uuid
-            });
+            };
+            if (brandName) {
+              payload.application_context = {brand_name: brandName};
+            }
+            return actions.subscription.create(payload);
           },
           // update payment method
           onApprove: function (data, actions) {
@@ -170,6 +175,7 @@ export default {
                 return actions.reject();
               }
               planId = response.plan.id;
+              brandName = response.brand_name || '';
             } catch (error) {
               return actions.reject();
             }

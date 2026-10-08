@@ -605,7 +605,7 @@ html, body {
 
 .fct-modal-form-info {
   display: grid;
-  gap: 15px;
+  gap: 10px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   label {
     font-size: 14px;
@@ -614,6 +614,9 @@ html, body {
     color: var(--fct-modal-checkout-primary-text-color);
     margin-bottom: 10px;
     display: block;
+  }
+  .col-12 {
+    grid-column: 1 / -1;
   }
   .col-6 {
     grid-column: auto / span 6;

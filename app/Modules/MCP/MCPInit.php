@@ -284,6 +284,8 @@ class MCPInit
 
         echo '<div class="notice notice-warning"><p>';
         echo esc_html__('FluentCart MCP is enabled but no MCP adapter was found. Install FluentHub (recommended) or the MCP Adapter plugin, on WordPress 6.9+.', 'fluent-cart');
-        echo '</p></div>';
+        echo '</p><p><a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fluent-cart#/settings/addons')) . '">';
+        echo esc_html__('Disable MCP', 'fluent-cart');
+        echo '</a></p></div>';
     }
 }

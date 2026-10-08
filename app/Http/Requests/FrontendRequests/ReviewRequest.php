@@ -17,6 +17,8 @@ class ReviewRequest extends RequestGuard
     {
         return [
             'rating'         => 'nullable|numeric|min:1|max:5',
+            // Star chips, comma separated ("5,4"). Five stars and four commas at most.
+            'ratings'        => 'nullable|sanitizeText|maxLength:9',
             'title'          => 'nullable|sanitizeText|maxLength:192',
             'content'        => 'nullable|maxLength:5000',
             'reviewer_name'  => 'nullable|sanitizeText|maxLength:100',
@@ -44,6 +46,7 @@ class ReviewRequest extends RequestGuard
             'show_variation' => 'nullable|numeric|min:0|max:1',
             'page'           => 'nullable|numeric|min:1',
             'client_id'      => 'nullable|sanitizeText|maxLength:64',
+            'rating_token'   => 'nullable|sanitizeText|maxLength:64',
             'max_words'      => 'nullable|numeric|min:0|max:500',
             'pagination_type'=> 'nullable|sanitizeText|maxLength:20',
             'media_visible'  => 'nullable|numeric|min:0|max:100',
@@ -77,6 +80,7 @@ class ReviewRequest extends RequestGuard
     {
         return [
             'rating'         => 'intval',
+            'ratings'        => 'sanitize_text_field',
             'title'          => 'sanitize_text_field',
             'content'        => 'sanitize_textarea_field',
             'reviewer_name'  => 'sanitize_text_field',
@@ -96,6 +100,7 @@ class ReviewRequest extends RequestGuard
             'show_variation' => 'intval',
             'page'           => 'intval',
             'client_id'      => 'sanitize_text_field',
+            'rating_token'   => 'sanitize_text_field',
             'max_words'      => 'intval',
             'pagination_type'=> 'sanitize_text_field',
             'media_visible'  => 'intval',

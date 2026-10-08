@@ -657,6 +657,7 @@ class PayPalSubscriptions extends AbstractSubscriptionModule
                     ]
                 ]
             );
+
             return;
         }
 

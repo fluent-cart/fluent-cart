@@ -8,6 +8,7 @@ use FluentCart\App\Services\Theme\Readers\BricksSettingsReader;
 use FluentCart\App\Services\Theme\Readers\DiviSettingsReader;
 use FluentCart\App\Services\Theme\Readers\GeneratePressSettingsReader;
 use FluentCart\App\Services\Theme\Readers\KadenceSettingsReader;
+use FluentCart\App\Services\Theme\Readers\ThemeRadiusReader;
 use FluentCart\Framework\Support\Arr;
 
 /**
@@ -96,6 +97,20 @@ class ThemePalette
     protected static $cachedSettingsRoles = null;
 
     /**
+     * @var array|null
+     */
+    protected static $cachedRadii = null;
+
+    /**
+     * Whether the site switched the theme's settings reader off: a reader
+     * stated colours and `fluent_cart/theme/settings_roles` returned none.
+     * Set by settingsRoles().
+     *
+     * @var bool
+     */
+    protected static $settingsReaderOff = false;
+
+    /**
      * Theme settings readers, keyed by the theme name passed to the
      * `fluent_cart/theme/settings_roles` filter. The first that applies wins.
      *
@@ -146,6 +161,8 @@ class ThemePalette
         self::$cachedRoles = null;
         self::$cachedVendorValues = null;
         self::$cachedSettingsRoles = null;
+        self::$cachedRadii = null;
+        self::$settingsReaderOff = false;
     }
 
     /**
@@ -526,6 +543,8 @@ class ThemePalette
             }
         }
 
+        $stated = $roles;
+
         /**
          * Filter the colours the active theme's settings state, by role.
          *
@@ -559,7 +578,326 @@ class ThemePalette
             }
         }
 
+        // Returning [] for a reader that stated something is the documented
+        // way to switch it off; radii() honours that for the same reader.
+        self::$settingsReaderOff = !empty($stated) && is_array($roles) && $roles === [];
+
         return self::$cachedSettingsRoles = $clean;
+    }
+
+    /**
+     * The border radii the active theme states, by role.
+     *
+     * theme.json speaks first, as it does for the button colours
+     * (buttonGlobals()): the button element, else the Button block, and the
+     * text-input element, else select, else the Search block — the owner's
+     * site editor and picked style variation over the theme's own, see
+     * radiusGlobals(). Then the first applying settings reader that
+     * implements Readers\ThemeRadiusReader fills the roles the site editor
+     * left unstated — unless the site switched that reader off by returning
+     * [] from `fluent_cart/theme/settings_roles`, which turns off its radii
+     * too. A role nothing states is absent, and FluentCart prints nothing
+     * for it.
+     *
+     * Roles: card, btn, input (RadiusPalette::roles()). Every value is one
+     * length in RadiusPalette::sanitizeLength()'s grammar; anything else is
+     * dropped rather than guessed.
+     *
+     * @return array Role => length (`0`, `8px`, `0.5rem`, `1em`).
+     */
+    public static function radii(): array
+    {
+        if (self::$cachedRadii !== null) {
+            return self::$cachedRadii;
+        }
+
+        $radii = self::radiusGlobals();
+        $readerName = '';
+
+        // A reader the site switched off through `fluent_cart/theme/settings_roles`
+        // states no radius either. The site editor is not a reader and still counts.
+        self::settingsRoles();
+        $readers = self::$settingsReaderOff ? [] : self::$settingsReaders;
+
+        foreach ($readers as $name => $reader) {
+            if (!$reader::applies() || !is_subclass_of($reader, ThemeRadiusReader::class)) {
+                continue;
+            }
+
+            $readerName = $name;
+
+            foreach ((array)$reader::radii() as $role => $value) {
+                if (!isset($radii[$role])) {
+                    $radii[$role] = $value;
+                }
+            }
+
+            break;
+        }
+
+        /**
+         * Filter the border radii the active theme states, by role.
+         *
+         * Runs whether or not a built-in reader applied, so a theme FluentCart
+         * does not read can be supplied here; return [] to state none. Every
+         * value is normalised again: only `card`, `btn` and `input` survive,
+         * each as one length (`0`, or a number in px, rem or em).
+         *
+         * @param array $radii   Role => length. Keys: card, btn, input.
+         * @param array $context ['theme' => the active template's slug,
+         *                       'reader' => the reader that applied ('blocksy', 'kadence',
+         *                       'divi', 'bricks', 'astra'), or '' when none did].
+         */
+        $radii = apply_filters('fluent_cart/theme/radius_roles', $radii, [
+            'theme'  => get_template(),
+            'reader' => $readerName,
+        ]);
+
+        $clean = [];
+
+        if (is_array($radii)) {
+            foreach (array_keys(RadiusPalette::roles()) as $role) {
+                $value = RadiusPalette::sanitizeLength(Arr::get($radii, $role, ''));
+
+                if ($value !== '') {
+                    $clean[$role] = $value;
+                }
+            }
+        }
+
+        return self::$cachedRadii = $clean;
+    }
+
+    /**
+     * The radii theme.json states, from the `theme` and `user` origins — the
+     * owner's (the site editor, or a style variation they picked, both saved
+     * in the user origin) over the theme's. Core's origin is left out, as in
+     * buttonGlobals().
+     *
+     * Within one origin each role reads a chain, the closest match first:
+     *  - btn:   the button element (`styles.elements.button`, what a plain
+     *           `<button class="wp-element-button">` wears — FluentCart's
+     *           buttons are plain buttons), then the Button block
+     *           (`styles.blocks.core/button`);
+     *  - input: the text-input element, the select element, then the Search
+     *           block (`styles.blocks.core/search`, whose border styles its
+     *           input).
+     * No path is read as the product-card radius: no theme.json path names a
+     * product card, and a featured-image or group radius is not one.
+     *
+     * @return array Role => length, normalised; only stated roles.
+     */
+    protected static function radiusGlobals(): array
+    {
+        $radii = [];
+
+        if (!class_exists('WP_Theme_JSON_Resolver')) {
+            return $radii;
+        }
+
+        $paths = [
+            'btn'   => [
+                'styles.elements.button.border.radius',
+                'styles.blocks.core/button.border.radius',
+            ],
+            'input' => [
+                'styles.elements.textInput.border.radius',
+                'styles.elements.select.border.radius',
+                'styles.blocks.core/search.border.radius',
+            ],
+        ];
+
+        foreach (['get_theme_data', 'get_user_data'] as $origin) {
+            if (!method_exists('WP_Theme_JSON_Resolver', $origin)) {
+                continue;
+            }
+
+            $data = \WP_Theme_JSON_Resolver::$origin();
+
+            if (!is_object($data) || !method_exists($data, 'get_raw_data')) {
+                continue;
+            }
+
+            $raw = (array)$data->get_raw_data();
+
+            foreach ($paths as $role => $candidates) {
+                foreach ($candidates as $path) {
+                    $stated = Arr::get($raw, $path);
+
+                    if ($stated === null || $stated === '' || $stated === []) {
+                        continue;
+                    }
+
+                    // The first stated path ends the chain, writable or not:
+                    // a later path only stands in when the earlier is unset.
+                    // An unwritable one leaves the role to the theme's reader.
+                    $value = self::radiusValue($stated);
+
+                    if ($value !== '') {
+                        $radii[$role] = $value;
+                    } else {
+                        unset($radii[$role]);
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return $radii;
+    }
+
+    /**
+     * One theme.json radius as a single length.
+     *
+     *  - `{"ref": "styles.…"}` points at another value in the merged
+     *    theme.json data and is followed (at most three hops);
+     *  - a four-corner object is one length only when every corner is;
+     *  - preset references resolve to the preset's size:
+     *    `var:preset|border-radius|slug` / `var(--wp--preset--border-radius--slug)`
+     *    through `settings.border.radiusSizes`, and
+     *    `var:preset|spacing|slug` / `var(--wp--preset--spacing--slug)`
+     *    through `settings.spacing.spacingSizes` (a fluid `min()`/`clamp()`
+     *    size fails the grammar and is dropped);
+     *  - `var(--wp--custom--…)` resolves to the custom value it names.
+     *
+     * @param mixed $value
+     * @param int   $hops  Ref hops left.
+     * @return string Normalised length, or ''.
+     */
+    protected static function radiusValue($value, int $hops = 3): string
+    {
+        if (is_array($value)) {
+            if (isset($value['ref'])) {
+                if ($hops <= 0 || !is_string($value['ref']) || $value['ref'] === '') {
+                    return '';
+                }
+
+                return self::radiusValue(Arr::get(self::mergedThemeJson(), $value['ref']), $hops - 1);
+            }
+
+            $corners = [];
+
+            foreach (['topLeft', 'topRight', 'bottomRight', 'bottomLeft'] as $corner) {
+                $corners[] = self::radiusValue(Arr::get($value, $corner, ''), $hops);
+            }
+
+            $corners = array_unique($corners);
+
+            return count($corners) === 1 ? (string)reset($corners) : '';
+        }
+
+        if (!is_string($value)) {
+            return RadiusPalette::sanitizeLength($value);
+        }
+
+        $value = trim($value);
+
+        if (preg_match('/^var:preset\|(border-radius|spacing)\|([\w-]+)$/', $value, $matches)
+            || preg_match('/^var\(\s*--wp--preset--(border-radius|spacing)--([\w-]+)\s*\)$/', $value, $matches)) {
+            $setting = $matches[1] === 'spacing' ? ['spacing', 'spacingSizes'] : ['border', 'radiusSizes'];
+
+            return RadiusPalette::sanitizeLength(self::presetSize($setting, $matches[2]));
+        }
+
+        if (preg_match('/^var\(\s*--wp--custom--([\w-]+)\s*\)$/', $value, $matches)) {
+            return RadiusPalette::sanitizeLength(self::customSetting($matches[1]));
+        }
+
+        return RadiusPalette::sanitizeLength($value);
+    }
+
+    /**
+     * The merged theme.json data (core, theme, user) a `ref` resolves
+     * against — the same data WordPress resolves refs against when it prints.
+     *
+     * @return array
+     */
+    protected static function mergedThemeJson(): array
+    {
+        if (!class_exists('WP_Theme_JSON_Resolver') || !method_exists('WP_Theme_JSON_Resolver', 'get_merged_data')) {
+            return [];
+        }
+
+        $data = \WP_Theme_JSON_Resolver::get_merged_data();
+
+        return is_object($data) && method_exists($data, 'get_raw_data') ? (array)$data->get_raw_data() : [];
+    }
+
+    /**
+     * The size of a preset (`settings.border.radiusSizes` or
+     * `settings.spacing.spacingSizes`), the owner's over the theme's over
+     * core's.
+     *
+     * @param array  $setting Settings path, e.g. ['spacing', 'spacingSizes'].
+     * @param string $slug
+     * @return string
+     */
+    protected static function presetSize(array $setting, string $slug): string
+    {
+        if (!function_exists('wp_get_global_settings')) {
+            return '';
+        }
+
+        $sizes = wp_get_global_settings($setting);
+
+        if (!is_array($sizes)) {
+            return '';
+        }
+
+        // Merged settings are keyed by origin; a single origin is a list.
+        $lists = isset($sizes[0]) ? [$sizes] : array_values(array_intersect_key(
+            $sizes,
+            array_flip(['default', 'theme', 'custom'])
+        ));
+
+        $size = '';
+
+        foreach ($lists as $list) {
+            foreach ((array)$list as $preset) {
+                if (is_array($preset) && (string)Arr::get($preset, 'slug') === $slug && is_string(Arr::get($preset, 'size'))) {
+                    $size = $preset['size'];
+                }
+            }
+        }
+
+        return $size;
+    }
+
+    /**
+     * The `settings.custom` value a `--wp--custom--a--b` property is printed
+     * from. WordPress names each level by its key in kebab case, joined by
+     * `--`, so the property is walked one level at a time.
+     *
+     * @param string $property The part after `--wp--custom--`.
+     * @return string
+     */
+    protected static function customSetting(string $property): string
+    {
+        if (!function_exists('wp_get_global_settings')) {
+            return '';
+        }
+
+        $node = wp_get_global_settings(['custom']);
+
+        foreach (explode('--', $property) as $segment) {
+            if (!is_array($node)) {
+                return '';
+            }
+
+            $next = null;
+
+            foreach ($node as $key => $child) {
+                if (_wp_to_kebab_case((string)$key) === $segment) {
+                    $next = $child;
+                    break;
+                }
+            }
+
+            $node = $next;
+        }
+
+        return is_string($node) || is_int($node) || is_float($node) ? (string)$node : '';
     }
 
     /**

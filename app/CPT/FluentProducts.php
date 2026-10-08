@@ -111,8 +111,67 @@ class FluentProducts
             );
         });
 
+        $this->handleClassicEditorModalSave();
+
         add_action('update_post_meta', [$this, 'handleThumbChange'], 10, 4);
         add_action('added_post_meta', [$this, 'handleThumbChange'], 10, 4);
+    }
+
+    /**
+     * When Gutenberg is disabled (e.g. "Disable Gutenberg" plugin) the modal iframe
+     * shows the classic edit screen, whose Update button is a full form POST to
+     * post.php followed by a redirect. Carry `custom-editor` through both so the
+     * iframe stays chrome-less, then tell the parent modal the save finished.
+     */
+    private function handleClassicEditorModalSave()
+    {
+        $isCustomEditor = function () {
+            return App::request()->get('custom-editor') === 'true'
+                || (isset($_POST['custom-editor']) && $_POST['custom-editor'] === 'true'); // phpcs:ignore WordPress.Security.NonceVerification
+        };
+
+        add_action('edit_form_top', function ($post) use ($isCustomEditor) {
+            if ($post->post_type === self::CPT_NAME && $isCustomEditor()) {
+                echo '<input type="hidden" name="custom-editor" value="true" />';
+            }
+        });
+
+        add_filter('redirect_post_location', function ($location, $postId) use ($isCustomEditor) {
+            if (get_post_type($postId) === self::CPT_NAME && $isCustomEditor()) {
+                // WP builds $location from get_edit_post_link(), which this class
+                // filters to the SPA dashboard URL; send the iframe back to the
+                // real edit screen instead.
+                wp_parse_str((string)wp_parse_url($location, PHP_URL_QUERY), $query);
+
+                return add_query_arg([
+                    'post'          => $postId,
+                    'action'        => 'edit',
+                    'message'       => (int)($query['message'] ?? 1) ?: 1,
+                    'custom-editor' => 'true',
+                ], admin_url('post.php'));
+            }
+            return $location;
+        }, 10, 2);
+
+        add_action('admin_footer', function () {
+            $screen = get_current_screen();
+            if (!$screen || $screen->post_type !== self::CPT_NAME || $screen->base !== 'post') {
+                return;
+            }
+
+            $request = App::request();
+            if ($request->get('custom-editor') !== 'true' || !$request->get('message') || $request->get('is-preview-mode')) {
+                return;
+            }
+
+            // Notify once, then drop `message` from the URL so a later reload of
+            // this iframe doesn't re-send the save signal and close the modal.
+            echo '<script>if (window.parent !== window) {'
+                . 'window.parent.postMessage({type: "classicEditorSaved"}, "*");'
+                . 'var u = new URL(window.location.href); u.searchParams.delete("message");'
+                . 'window.history.replaceState(null, "", u.toString());'
+                . '}</script>';
+        });
     }
 
     public function registerElementorScript()
@@ -311,9 +370,9 @@ class FluentProducts
         ]);
 
         // product-tags is deliberately NOT registered: FluentCart ships
-        // categories and brands only (product decision 2026-08-06). The former
-        // dead consumers (Product tag getters, shop shortcode tag= filter)
-        // were removed with that decision.
+        // categories and brands only (product decision 2026-08-06). Stores that
+        // register it themselves can still filter the shop shortcode with
+        // taxonomies="product-tags:…".
     }
 
     private function enqueueCustomEditorStyles()

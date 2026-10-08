@@ -208,22 +208,11 @@ class ReviewModule
 
     /**
      * Show Reviews as a "↳" child under Products in the WP admin left
-     * sidebar, mirroring the Attributes and Inventory children. Hidden by
-     * default via inline CSS; useNavigationMenuUpdateService toggles it
-     * visible whenever the active route's active_menu is 'products'.
+     * sidebar, mirroring the Attributes and Inventory children. Always
+     * visible, so the sidebar keeps the same shape on every page.
      */
     protected function registerSidebarMenu()
     {
-        add_action('admin_enqueue_scripts', function () {
-            wp_register_style('fluent-cart-reviews-admin', false);
-            wp_enqueue_style('fluent-cart-reviews-admin');
-            wp_add_inline_style('fluent-cart-reviews-admin', '
-                .toplevel_page_fluent-cart li.fluent_cart_reviews {
-                    display: none;
-                }
-            ');
-        });
-
         add_action('fluent_cart/admin_submenu_added', function () {
             global $submenu;
             if (!isset($submenu['fluent-cart'])) {

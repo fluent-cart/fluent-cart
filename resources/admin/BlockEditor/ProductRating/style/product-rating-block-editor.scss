@@ -10,6 +10,7 @@
     }
 
     .fct-star {
+        @apply inline-flex;
         font-size: 14px;
         color: #d1d5db;
         line-height: 1;
@@ -22,6 +23,10 @@
     .fct-star-half {
         color: #f59e0b;
         opacity: 0.6;
+    }
+
+    .fct-star-svg {
+        @apply block;
     }
 
     .fct-product-card-review-count {

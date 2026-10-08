@@ -576,19 +576,14 @@
    ============================================================ */
 
 .fct-attr-split-page {
-    @apply py-4;
-}
-
-.fct-attr-split-page-title {
-    @apply text-[20px] font-semibold text-system-dark dark:text-gray-50 mb-4;
-    margin-top: 0;
+    @apply pb-4;
 }
 
 /* Card height must stay inside the viewport so the body scroll bar (not
    the page) handles overflow. The 200px offset budgets for WP admin bar
-   (~32px), FluentCart top nav (~60px), this page's py-4 (32px), the h1
-   line + mb-4 (≈50px), and card borders/buffer. Use 100dvh so mobile
-   browsers shrink the card when chrome appears/disappears. */
+   (~32px), FluentCart top nav (~60px), this page's pb-4 (16px), the page
+   heading + its margin (48px), and card borders/buffer. Use 100dvh so
+   mobile browsers shrink the card when chrome appears/disappears. */
 .fct-attr-split-card {
     @apply flex bg-white dark:bg-dark-700 overflow-hidden border border-solid border-gray-outline dark:border-dark-400 rounded;
     height: calc(100vh - 200px);
@@ -895,14 +890,6 @@
 
 .fct-attr-panel-breadcrumb {
     @apply flex items-center gap-1.5 text-[14px];
-}
-
-.fct-attr-panel-breadcrumb-root {
-    @apply text-system-mid dark:text-gray-400;
-}
-
-.fct-attr-panel-breadcrumb-sep {
-    @apply text-gray-400 dark:text-gray-500 font-normal text-[18px] leading-none;
 }
 
 .fct-attr-panel-breadcrumb-current {

@@ -71,7 +71,7 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button type="info" soft @click="addNewAddressModalVisible = false" :aria-label="translate('Cancel')">
+        <el-button @click="addNewAddressModalVisible = false" :aria-label="translate('Cancel')">
           {{ translate('Cancel') }}
         </el-button>
         <el-button v-if="localIsEditAddress" type="primary" :loading="addAddressLoading" @click="editAddress" :aria-label="translate('Update Address')">

@@ -124,7 +124,7 @@ const selectFilterOption = (value) => {
         source: [...newItem.value],
         filter_type: child.filter_type,
         operator: '',
-        value: '',
+        value: child.default_value ?? '',
         column: child.column,
         relation: child.relation,
       });

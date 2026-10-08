@@ -286,6 +286,13 @@ class OrderResource extends BaseResourceApi
             static::distributeManualDiscount($items, Helper::toCent(Arr::get($discount, 'value', 0)));
         }
 
+        $couponCheck = CouponResource::validateOrderCoupons($items, (array) Arr::get($data, 'applied_coupon', []), Arr::get($customer, 'email', ''));
+        if (is_wp_error($couponCheck)) {
+            return $couponCheck;
+        }
+        $items = $couponCheck['items'];
+        $data['applied_coupon'] = $couponCheck['applied_coupons'];
+
         // admin order processor
         $adminOrderProcessor = new AdminOrderProcessor($items, [
             'customer_id'               => $customer->id,
@@ -1361,6 +1368,33 @@ class OrderResource extends BaseResourceApi
         $subscription->save();
     }
 
+    /**
+     * Whether the submitted coupon and item discounts match the calculated ones, within a cent of rounding.
+     *
+     * @param array $submittedItems
+     * @param array $submittedCoupons Applied-coupon map keyed by coupon code.
+     * @param array $couponCheck Result of CouponResource::validateOrderCoupons().
+     * @return bool
+     */
+    private static function couponDiscountsMatch(array $submittedItems, array $submittedCoupons, array $couponCheck): bool
+    {
+        foreach ($couponCheck['applied_coupons'] as $code => $calculated) {
+            $submitted = isset($submittedCoupons[$code]['discount']) ? (float) $submittedCoupons[$code]['discount'] : 0;
+            if (abs($submitted - (float) $calculated['discount']) > 1) {
+                return false;
+            }
+        }
+
+        foreach ($couponCheck['items'] as $index => $calculatedItem) {
+            $submitted = (float) Arr::get($submittedItems, $index . '.discount_total', 0);
+            if (abs($submitted - (float) Arr::get($calculatedItem, 'discount_total', 0)) > 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static function distributeManualDiscount(&$items, $manualDiscountTotal)
     {
         $totalSubtotal = array_reduce($items, function ($carry, $item) {
@@ -1608,6 +1642,25 @@ class OrderResource extends BaseResourceApi
         $appliedCoupons = Arr::get($orderData, 'applied_coupon');
         $discount = $data['discount'];
         $shipping = $data['shipping'];
+
+        if (!empty($appliedCoupons)) {
+            $submittedItems = Arr::except((array) Arr::get($orderData, 'order_items', []), ['*']);
+            $couponCheck = CouponResource::validateOrderCoupons(
+                $submittedItems,
+                (array) $appliedCoupons,
+                $order->customer ? $order->customer->email : ''
+            );
+            if (is_wp_error($couponCheck)) {
+                return $couponCheck;
+            }
+            // Update saves the submitted items and totals, so they must already carry the calculated discounts.
+            if (!static::couponDiscountsMatch($submittedItems, (array) $appliedCoupons, $couponCheck)) {
+                return static::makeErrorResponse([
+                    ['code' => 'coupon_discount_changed', 'message' => __('Coupon discounts have changed. Please re-apply the coupons and save again.', 'fluent-cart')]
+                ], 422);
+            }
+            $appliedCoupons = $couponCheck['applied_coupons'];
+        }
 
         $orderId = $order->id;
 

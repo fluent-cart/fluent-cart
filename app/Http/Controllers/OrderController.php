@@ -212,7 +212,10 @@ class OrderController extends Controller
         }
 
 
-        $requestData = $request->getSafe($request->sanitize());
+        $requestData = array_intersect_key(
+            $request->getSafe($request->sanitize()),
+            $request->all()
+        );
 
         $totalPaid = Arr::get($request->all(), 'total_paid');
         $updatedTotal = Arr::get($requestData, 'total_amount');
@@ -235,7 +238,7 @@ class OrderController extends Controller
         // ToDo: adjust changed shipping total in total amount prior to this
         $shippingTotal = Arr::get($requestData, 'shipping_total', 0);
         $oldShippingTotal = Arr::get($order, 'shipping_total', 0);
-        if ($shippingTotal != $oldShippingTotal) {
+        if (array_key_exists('shipping_total', $requestData) && $shippingTotal != $oldShippingTotal) {
             $diff = $shippingTotal - $oldShippingTotal;
             if ($diff < 0) {
                 $requestData['total_amount'] = $updatedTotal - abs($diff);
@@ -908,10 +911,6 @@ class OrderController extends Controller
                 ->whereIn('status', Status::getTransactionSuccessStatuses())
                 ->sum('total');
 
-            $note = sanitize_text_field($request->get('mark_paid_note', ''));
-            if ($note) {
-                $locked->note = $note;
-            }
             $locked->save();
 
             $db->commit();
@@ -921,6 +920,16 @@ class OrderController extends Controller
         }
 
         (new StatusHelper($locked))->syncOrderStatuses($transaction);
+
+        $paymentNote = sanitize_textarea_field($request->get('mark_paid_note', ''));
+        if ($paymentNote) {
+            $locked->addLog(
+                __('Payment note', 'fluent-cart'),
+                nl2br(esc_html($paymentNote)),
+                'info',
+                wp_get_current_user()->display_name
+            );
+        }
 
         return $this->response->sendSuccess([
             'message' => __('Order has been marked as paid', 'fluent-cart')

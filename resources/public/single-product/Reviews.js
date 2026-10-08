@@ -1,6 +1,7 @@
 import Lightbox from "./lightbox/lightbox";
 import {buildReviewSlider} from "./review-slider";
 import {applyReviewClamps} from "./review-clamp";
+import {emptyChipState, isChipActive, toggleChip} from "./review-filter-chips";
 import {reviewTrans} from "./review-slider/reviewTrans";
 
 /**
@@ -225,13 +226,11 @@ export default class FluentCartProductReviews {
     #currentPage = 1;
     #sortBy = 'created_at';
     #sortOrder = 'DESC';
-    #filterRating = null;
+    #chips = emptyChipState();
     #minRating = 0;
-    #filterHasMedia = false;
-    #filterVerified = false;
     // A list the page asked to narrow to reviews with photos. Not a chip: the
-    // chips are the reader's choice and clear each other, this one is the
-    // block's or the shortcode's and every request carries it.
+    // chips are the reader's choice, this one is the block's or the
+    // shortcode's and every request carries it.
     #onlyWithPhotos = false;
     #showVerified = true;
     #showDate = true;
@@ -267,6 +266,7 @@ export default class FluentCartProductReviews {
     // The Review List block's own id, so a sort, filter or page is rendered
     // with the same blocks the page was built from rather than the fixed row.
     #blockClientId = '';
+    #ratingToken = '';
     #abortController = null;
     #modalShellMarkup = null;
 
@@ -308,10 +308,10 @@ export default class FluentCartProductReviews {
         this.#itemClass = container.getAttribute('data-item-class') || '';
         this.#mediaMore = container.getAttribute('data-media-more') || 'overlay';
         this.#onlyWithPhotos = container.getAttribute('data-only-with-photos') === '1';
-        this.#filterHasMedia = this.#onlyWithPhotos;
         // On the rows element: the block that composed the row owns the id
         // and draws that element, which the script refills rather than
         // replaces.
+        this.#ratingToken = container.getAttribute('data-rating-token') || '';
         this.#blockClientId = container.querySelector('[data-reviews-list]')?.getAttribute('data-client-id') || '';
 
         // Read default sort from the pre-selected dropdown or data attr
@@ -456,16 +456,19 @@ export default class FluentCartProductReviews {
             media_more: this.#mediaMore,
         });
 
+        if (this.#ratingToken) {
+            params.set('rating_token', this.#ratingToken);
+        }
         if (this.#blockClientId) {
             params.set('client_id', this.#blockClientId);
         }
-        if (this.#filterRating) {
-            params.set('rating', this.#filterRating);
+        if (this.#chips.ratings.length) {
+            params.set('ratings', this.#chips.ratings.join(','));
         }
-        if (this.#filterHasMedia) {
+        if (this.#chips.hasMedia || this.#onlyWithPhotos) {
             params.set('has_media', '1');
         }
-        if (this.#filterVerified) {
+        if (this.#chips.verified) {
             params.set('verified_only', '1');
         }
 
@@ -1005,31 +1008,15 @@ export default class FluentCartProductReviews {
     }
 
     #onChipClick(value) {
-        // Ignore stale or extension-added filters outside this list's range.
-        const rating = Number(value);
-        if (Number.isInteger(rating) && rating >= 1 && rating < this.#minRating) return;
+        const next = toggleChip(this.#chips, value, this.#minRating);
 
-        // Reset all special filters
-        this.#filterRating = null;
-        // Back to what the page asked for, not to nothing — clearing a chip on
-        // a photos-only list must not hand back the reviews it excluded.
-        this.#filterHasMedia = this.#onlyWithPhotos;
-        this.#filterVerified = false;
+        // A chip below the list's floor, or one this script doesn't know, changes nothing.
+        if (next === this.#chips) return;
 
-        if (value === 'all') {
-            // no filters
-        } else if (value === 'has_media') {
-            this.#filterHasMedia = true;
-        } else if (value === 'verified') {
-            this.#filterVerified = true;
-        } else {
-            // Numeric rating
-            this.#filterRating = parseInt(value);
-        }
+        this.#chips = next;
 
-        // Update chip active states and ARIA
         this.#container.querySelectorAll('[data-filter-chip]').forEach(chip => {
-            const isActive = chip.dataset.filterChip === value;
+            const isActive = isChipActive(this.#chips, chip.dataset.filterChip);
             chip.classList.toggle('active', isActive);
             chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });

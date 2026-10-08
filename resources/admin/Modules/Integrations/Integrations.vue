@@ -1,6 +1,6 @@
 <template>
     <div class="fct-integration-container fct-layout-width">
-        <PageHeading :title="$t('Integrations & Addons')"/>
+        <PageHeading :title="$t('Integrations')"/>
 
         <GlobalIntegrationFeeds/>
 

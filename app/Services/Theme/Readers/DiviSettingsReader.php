@@ -33,9 +33,12 @@ use FluentCart\App\Services\Theme\ThemePalette;
  * value FluentCart cannot write (rgb(), rgba(), Divi 5's `hsl(from var(--gcid…))`
  * or a `$variable(…)$` reference) is not stated.
  *
+ * Its Buttons → Border Radius (`all_buttons_border_radius`) is the button
+ * radius (see radii()). Divi has no form-field or product-card radius setting.
+ *
  * Verified against Divi 5.0.1.
  */
-class DiviSettingsReader implements ThemeSettingsReader
+class DiviSettingsReader implements ThemeSettingsReader, ThemeRadiusReader
 {
     /**
      * Divi's defaults (GlobalData::$customizer_colors, the Customizer settings
@@ -191,5 +194,25 @@ class DiviSettingsReader implements ThemeSettingsReader
         $raw = trim($raw);
 
         return preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $raw) ? strtolower(ColorMath::hex($raw)) : '';
+    }
+
+    /**
+     * The button radius.
+     *
+     * `all_buttons_border_radius` is a whole number of px (sanitised with
+     * `absint`, range 0–100), read exactly as Divi's customizer CSS reads it:
+     * `absint( et_get_option( 'all_buttons_border_radius', '3' ) )`
+     * (functions.php). Divi prints it when it is not 3; at 3 its stylesheet
+     * paints the same 3px.
+     *
+     * @return array Role => length.
+     */
+    public static function radii(): array
+    {
+        if (!self::applies()) {
+            return [];
+        }
+
+        return ['btn' => absint(et_get_option('all_buttons_border_radius', '3')) . 'px'];
     }
 }

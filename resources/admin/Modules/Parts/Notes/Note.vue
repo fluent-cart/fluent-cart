@@ -27,7 +27,7 @@
             </template>
           </el-skeleton>
           <template v-else>
-            <span>{{
+            <span class="whitespace-pre-line">{{
                 noteCopy ? noteTextToDisplay : $t("No notes")
               }}</span>
             <el-button

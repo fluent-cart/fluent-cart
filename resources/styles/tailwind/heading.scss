@@ -11,8 +11,10 @@
 }
 
 // page heading 
+// min-h matches the action buttons (36px), so a heading without buttons
+// lines up with one that has them instead of sitting 4px higher.
 .page-heading-wrap{
-    @apply mb-5 gap-2 flex items-center justify-between;
+    @apply mb-5 gap-2 flex items-center justify-between min-h-9;
     .page-title{
         @apply text-[20px] leading-[28px] flex items-center gap-2 my-0 text-system-dark dark:text-gray-50;
         a{

@@ -260,17 +260,16 @@
         a {
             @apply text-primary-500 dark:text-gray-50 #{!important};
         }
-        span {
-            word-break: break-word;
+        &,
+        * {
+            word-break: normal;
+            overflow-wrap: break-word;
         }
         .el-popper__arrow {
             &:before {
                 @apply bg-gray-25 border-gray-100 dark:bg-primary-500 border-l-0 border-t-0 dark:border-primary-400 #{!important};
             }
         }
-      div {
-        word-break: break-word;
-      }
     }
     &.fct-label-hint-popover {
         &.is-dark {

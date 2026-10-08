@@ -1,6 +1,24 @@
 @config "./thank_you.js";
 @tailwind utilities;
 
+:root {
+  // button
+  --fct-thank-you-btn-bg-color: var(--fct-btn-bg-color);
+  --fct-thank-you-btn-text-color: var(--fct-btn-text-color);
+  --fct-thank-you-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-thank-you-btn-bg-color));
+  --fct-thank-you-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-thank-you-btn-text-color));
+}
+
+// FluentCart's own fallbacks, gated on NOT stand-aside: any colour left unset
+// keeps FluentCart's default, and the stand-aside state inherits nothing.
+body:not(.fluent-cart-no-colors) {
+  // button
+  --fct-thank-you-btn-bg-color: var(--fct-btn-bg-color, #253241);
+  --fct-thank-you-btn-text-color: var(--fct-btn-text-color, #ffffff);
+  --fct-thank-you-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-thank-you-btn-bg-color));
+  --fct-thank-you-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-thank-you-btn-text-color));
+}
+
 
 .fct-thank-you-page {
   &-inner {
@@ -27,7 +45,7 @@
   }
 
   &-body {
-    @apply bg-white border-[1px] border-solid border-[#e7eaee];
+    @apply bg-[var(--fct-card-bg-color,#ffffff)] border-[1px] border-solid border-[color:var(--fct-border-color,#e7eaee)] text-[var(--fct-primary-text-color,theme('colors.system.dark'))];
     border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     &-inner {
       padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
@@ -35,14 +53,14 @@
     &-content {
       @apply overflow-x-hidden;
       &-inner {
-        @apply bg-white p-0;
+        @apply bg-[var(--fct-card-bg-color,#ffffff)] p-0;
         .no-print {
           @apply mb-4 text-left p-0;
           &-title {
-            @apply text-[24px] font-semibold leading-[1.2] m-0 mb-[4px] text-system-dark;
+            @apply text-[24px] font-semibold leading-[1.2] m-0 mb-[4px] text-[var(--fct-primary-text-color,theme('colors.system.dark'))];
           }
           p {
-            @apply text-sm m-0 text-system-mid;
+            @apply text-sm m-0 text-[var(--fct-secondary-text-color,theme('colors.system.mid'))];
           }
         }
         .fct_invoice_tax_content {
@@ -56,9 +74,9 @@
   }
   &-order-items {
     &-header {
-      @apply flex justify-between bg-[rgb(249,250,251)] py-0 px-4;
+      @apply flex justify-between bg-[var(--fct-secondary-bg-color,#f9fafb)] py-0 px-4;
       &-row {
-        @apply text-xs font-semibold text-[rgb(55,65,81)] uppercase leading-[24px] m-0 text-left;
+        @apply text-xs font-semibold text-[var(--fct-secondary-text-color,#374151)] uppercase leading-[24px] m-0 text-left;
         &:last-child {
           @apply text-right w-[200px];
         }
@@ -69,21 +87,21 @@
         &-list {
           @apply flex items-start justify-between py-2 px-4;
           &-quantity {
-            @apply text-sm text-[#2F3448] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
+            @apply text-sm text-[var(--fct-primary-text-color,#2F3448)] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
             span {
-              @apply text-xs font-normal text-[rgb(75,85,99)];
+              @apply text-xs font-normal text-[var(--fct-secondary-text-color,#4b5563)];
             }
           }
           &-variant-title {
-            @apply m-0 text-[13px] text-gray-800 font-normal leading-[15px];
+            @apply m-0 text-[13px] text-[var(--fct-secondary-text-color,theme('colors.gray.800'))] font-normal leading-[15px];
           }
           &-payment-info {
-            @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 my-[3px];
+            @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 my-[3px];
           }
           &-price {
             @apply w-[200px] text-right;
             &-inner {
-              @apply text-sm font-bold text-[rgb(17,24,39)] m-0 leading-[24px];
+              @apply text-sm font-bold text-[var(--fct-primary-text-color,#111827)] m-0 leading-[24px];
             }
           }
           .fct-bundle-products {
@@ -105,7 +123,7 @@
         }
 
         &-total {
-          @apply m-0 w-full mt-4 pt-3 border-0 border-t border-solid border-[#e5e7eb];
+          @apply m-0 w-full mt-4 pt-3 border-0 border-t border-solid border-[color:var(--fct-divider-color,#e5e7eb)];
           > .fct-meta-line {
             @apply w-full max-w-[400px] ml-auto;
           }
@@ -115,7 +133,7 @@
           }
 
           &-total {
-            @apply border-0 border-t border-solid border-[#e5e7eb] pt-3 mt-1;
+            @apply border-0 border-t border-solid border-[color:var(--fct-divider-color,#e5e7eb)] pt-3 mt-1;
             .fct-thank-you-page-order-items-total-label {
               @apply text-base font-bold;
             }
@@ -131,14 +149,14 @@
       @apply flex items-center justify-between;
       margin-bottom: 5px;
       &-label {
-        @apply text-sm text-[rgb(55,65,81)] leading-[24px] m-0;
+        @apply text-sm text-[var(--fct-secondary-text-color,#374151)] leading-[24px] m-0;
 
         .fct-shipping-method-name {
-          @apply block text-xs text-[rgb(107,114,128)] leading-[18px];
+          @apply block text-xs text-[var(--fct-secondary-text-color,#6b7280)] leading-[18px];
         }
       }
       &-value {
-        @apply text-[13px] text-[rgb(55,65,81)] m-0 leading-[24px] text-right;
+        @apply text-[13px] text-[var(--fct-primary-text-color,#374151)] m-0 leading-[24px] text-right;
       }
     }
 
@@ -150,7 +168,7 @@
         &-addresses-bill-to {
           @apply text-sm rounded-[5px];
           h5 {
-            @apply font-bold text-sm m-0 mb-2.5 text-[#495057] border-x-0 border-t-0 border-[1px] border-solid border-[#dee2e6] pb-[5px];
+            @apply font-bold text-sm m-0 mb-2.5 text-[var(--fct-primary-text-color,#495057)] border-x-0 border-t-0 border-[1px] border-solid border-[color:var(--fct-divider-color,#dee2e6)] pb-[5px];
           }
           &-address {
             @apply mb-[3px];
@@ -193,14 +211,14 @@
                     overflow-wrap: anywhere;
                     @apply m-0 text-sm;
                     span {
-                      @apply text-[#666] text-xs;
+                      @apply text-[var(--fct-secondary-text-color,#666666)] text-xs;
                     }
                   }
                 }
                 &-button {
                   @apply w-[20%] text-right border-0 py-[1px] px-0 align-middle;
                   a {
-                    @apply inline-block text-sm text-system-dark leading-none;
+                    @apply inline-block text-sm text-[var(--fct-primary-text-color,theme('colors.system.dark'))] leading-none;
                   }
                 }
               }
@@ -212,7 +230,7 @@
         &-subscriptions-heading,
         &-licenses-heading,
         &-downloads-heading {
-          @apply text-base font-semibold text-[rgb(44,62,80)] m-0 mt-4 leading-[24px];
+          @apply text-base font-semibold text-[var(--fct-primary-text-color,#2c3e50)] m-0 mt-4 leading-[24px];
         }
       }
     }
@@ -226,7 +244,7 @@
       &-billing-infos {
         @apply text-right text-sm;
         &-next-billing {
-          @apply text-xs text-[rgb(75,85,99)] leading-5 m-0 !mt-[3px];
+          @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 !mt-[3px];
         }
       }
     }
@@ -246,7 +264,7 @@
     @apply text-center flex items-center justify-center gap-2.5;
     margin-top: var(--fct-section-spacing, theme('spacing[2.5]'));
     .fct-thank-you-page-view-order-button {
-      @apply bg-[var(--fluent-cart-primary-color,#253241)] text-white border-0 text-base font-medium inline-block no-underline;
+      @apply bg-[var(--fct-thank-you-btn-bg-color)] text-[var(--fct-thank-you-btn-text-color)] hover:bg-[var(--fct-thank-you-btn-hover-bg-color)] hover:text-[var(--fct-thank-you-btn-hover-text-color)] focus:text-[var(--fct-thank-you-btn-text-color)] border-0 text-base font-medium inline-block no-underline;
       padding-top: var(--fct-btn-padding-y, theme('spacing[1.75]'));
       padding-bottom: var(--fct-btn-padding-y, theme('spacing[1.75]'));
       padding-left: var(--fct-btn-padding-x, theme('spacing.5'));
@@ -254,13 +272,13 @@
       border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
     }
     .fct-thank-you-page-download-receipt-button {
-      @apply bg-[var(--fluent-cart-primary-color,#253241)] text-sm text-system-dark bg-transparent font-semibold inline-block;
+      @apply text-sm text-[var(--fct-primary-text-color,currentColor)] bg-transparent font-semibold inline-block;
     }
   }
 }
 
 .fct-thank-you-tax-summary {
-  @apply bg-[rgb(249,250,251)] w-full max-w-[400px] ml-auto my-3;
+  @apply bg-[var(--fct-secondary-bg-color,#f9fafb)] w-full max-w-[400px] ml-auto my-3;
   padding: var(--fct-container-padding-y, theme('spacing.4')) var(--fct-container-padding-x, theme('spacing.4'));
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
@@ -269,18 +287,18 @@
   }
 
   &-title {
-    @apply text-[10px] font-semibold uppercase tracking-[0.06em] text-[#64748b];
+    @apply text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--fct-secondary-text-color,#64748b)];
   }
 
   &-row {
-    @apply flex items-center justify-between text-xs text-[#1e293b] mb-1;
+    @apply flex items-center justify-between text-xs text-[var(--fct-primary-text-color,#1e293b)] mb-1;
 
     &--muted {
-      @apply text-[#94a3b8];
+      @apply text-[var(--fct-secondary-text-color,#94a3b8)];
     }
 
     &--total {
-      @apply font-semibold border-0 border-t border-solid border-[#e2e8f0] pt-1.5 mt-0.5;
+      @apply font-semibold border-0 border-t border-solid border-[color:var(--fct-divider-color,#e2e8f0)] pt-1.5 mt-0.5;
     }
   }
 }
@@ -299,7 +317,7 @@
   > summary {
     list-style: none;
     cursor: pointer;
-    color: #2563eb;
+    color: var(--fct-primary-active-text-color, #2563eb);
     font-size: 11px;
 
     &::-webkit-details-marker {
@@ -332,7 +350,7 @@
   @apply relative inline-flex items-center cursor-pointer;
 
   &-icon {
-    @apply w-[14px] h-[14px] rounded-full border border-[#94a3b8] text-[10px] italic inline-flex items-center justify-center text-[#94a3b8];
+    @apply w-[14px] h-[14px] rounded-full border border-[color:var(--fct-secondary-text-color,#94a3b8)] text-[10px] italic inline-flex items-center justify-center text-[var(--fct-secondary-text-color,#94a3b8)];
   }
 
   &-tooltip {
@@ -352,7 +370,7 @@
   margin-bottom: 16px;
 }
 .fct-thank-you-page-order-items-setup-fee {
-  @apply flex items-center justify-between font-medium text-system-dark my-1 text-xs;
+  @apply flex items-center justify-between font-medium text-[var(--fct-primary-text-color,theme('colors.system.dark'))] my-1 text-xs;
   .setup-fee {
     @apply flex-1;
   }

@@ -6,6 +6,7 @@ import GroupTermsPanel from "./GroupTermsPanel.vue";
 import AddGroupModal from "./AddGroupModal.vue";
 import EditGroupModal from "./EditGroupModal.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import Confirmation from "@/utils/Confirmation";
 import Notify from "@/utils/Notify";
 import Rest from "@/utils/http/Rest";
@@ -348,7 +349,7 @@ const groupEditingDone = () => {
 
 <template>
     <div class="fct-attr-split-page fct-layout-width">
-        <h1 class="fct-attr-split-page-title">{{ translate('Attributes & Terms') }}</h1>
+        <PageHeading :title="translate('Attributes')"/>
         <div class="fct-attr-split-card">
 
             <!-- Left sidebar -->

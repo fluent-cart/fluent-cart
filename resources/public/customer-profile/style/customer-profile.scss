@@ -41,6 +41,9 @@
    under fluent-cart-no-colors this block does not exist. Declared on body, so
    teleported dialogs and poppers inherit it too. See dev-docs/appearance/04. */
 body:not(.fluent-cart-no-colors) {
+  // Tabs, links and other primary accents: the palette's button colour, the
+  // one the shop's active states wear (primary_bg_color is often set pale).
+  --el-color-primary: var(--fct-btn-bg-color, #409eff);
   --el-bg-color: var(--fct-card-bg-color, #ffffff);
   --el-bg-color-overlay: var(--fct-card-bg-color, #ffffff);
   --el-fill-color-blank: var(--fct-card-bg-color, #ffffff);
@@ -61,6 +64,16 @@ body:not(.fluent-cart-no-colors) {
 
 /* Only while FluentCart prints colours. */
 body.fluent-cart-custom:not(.fluent-cart-no-colors) {
+  // Element Plus tints its primary toward white and shades it toward black for
+  // hovers and focus rings. Here the tints mix toward the portal's surface, so
+  // a dark palette tints toward its dark card. Default keeps Element Plus' own.
+  --el-color-primary-light-3: color-mix(in srgb, var(--el-color-primary) 70%, var(--el-bg-color));
+  --el-color-primary-light-5: color-mix(in srgb, var(--el-color-primary) 50%, var(--el-bg-color));
+  --el-color-primary-light-7: color-mix(in srgb, var(--el-color-primary) 30%, var(--el-bg-color));
+  --el-color-primary-light-8: color-mix(in srgb, var(--el-color-primary) 20%, var(--el-bg-color));
+  --el-color-primary-light-9: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-bg-color));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--el-color-primary) 80%, #000000);
+
   // The portal holds palette text but paints no surface in Default, so it sat
   // on the theme's page: a dark inherited palette put the customer name at
   // 1.18:1. While colours print it wears the card surface, as product cards

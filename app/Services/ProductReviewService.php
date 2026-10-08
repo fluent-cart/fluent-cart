@@ -1140,6 +1140,36 @@ class ProductReviewService
     }
 
     /**
+     * The star ratings a review list is filtered to, from "5,4" or [5, 4].
+     *
+     * Only whole stars 1-5 survive, each once, so the list is never longer than five.
+     *
+     * @param string|array $value
+     * @return int[]
+     */
+    public static function ratingList($value): array
+    {
+        $parts = is_array($value) ? $value : explode(',', (string) $value);
+        $ratings = [];
+
+        foreach (array_slice($parts, 0, 5) as $part) {
+            $part = is_scalar($part) ? trim((string) $part) : '';
+
+            if (!ctype_digit($part)) {
+                continue;
+            }
+
+            $rating = (int) $part;
+
+            if ($rating >= 1 && $rating <= 5) {
+                $ratings[$rating] = $rating;
+            }
+        }
+
+        return array_values($ratings);
+    }
+
+    /**
      * Whether the store collects star ratings at all.
      *
      * Defaults to on, so a store that has never touched the setting shows the
@@ -1384,6 +1414,65 @@ class ProductReviewService
         ];
 
         return apply_filters('fluent_cart/review/public_response', $responseData, $postId);
+    }
+
+    /**
+     * Resolve an editorial floor before rendering, or for legacy refreshes.
+     * A client id is context only; integrations authenticating their own tokens
+     * must verify them before overriding the trusted default.
+     */
+    public static function resolveListMinRating(string $clientId, int $default = 0, int $postId = 0): int
+    {
+        $rating = apply_filters('fluent_cart/review/list_min_rating', $default, [
+            'client_id' => $clientId,
+            'post_id' => $postId,
+        ]);
+
+        return is_numeric($rating) && (int) $rating >= 1 && (int) $rating <= 5
+            ? (int) $rating : 0;
+    }
+
+    /** Product-bound, cache-safe list setting; does not grant access to reviews. */
+    public static function listRatingToken(int $postId, int $minimum): string
+    {
+        $minimum = max(0, min(5, $minimum));
+        $payload = 'fcr1-' . $postId . '-' . $minimum;
+        $signature = rtrim(strtr(base64_encode(hash_hmac('sha256', $payload, wp_salt('auth'), true)), '+/', '-_'), '=');
+        return 'fcr1-' . $minimum . '-' . $signature;
+    }
+
+    /** Null means absent, modified, or issued for a different product. */
+    public static function minRatingFromToken(int $postId, string $token): ?int
+    {
+        if (!preg_match('/^fcr1-([0-5])-[A-Za-z0-9_-]{43}$/D', $token, $matches)) {
+            return null;
+        }
+        $minimum = (int) $matches[1];
+        return hash_equals(static::listRatingToken($postId, $minimum), $token) ? $minimum : null;
+    }
+
+    /** Shared rating visibility for blocks, shortcodes and addon renderers. */
+    public static function ratingMeetsThresholds($product, array $attributes = [], $block = null): bool
+    {
+        $context = [
+            'product' => $product,
+            'post_id' => (int) $product->ID,
+            'attributes' => $attributes,
+            'block' => $block,
+        ];
+        $minimumCount = max(0, (int) apply_filters(
+            'fluent_cart/review/min_review_count',
+            max(0, (int) Arr::get($attributes, 'minReviewCount', 0)),
+            $context
+        ));
+        $minimumAverage = min(5.0, max(0.0, (float) apply_filters(
+            'fluent_cart/review/min_average_rating',
+            min(5.0, max(0.0, (float) Arr::get($attributes, 'minAverageRating', 0))),
+            $context
+        )));
+        $info = $product->detail ? ($product->detail->other_info ?: []) : [];
+        return (int) Arr::get($info, 'review_count', 0) >= $minimumCount
+            && (float) Arr::get($info, 'average_rating', 0) >= $minimumAverage;
     }
 
     /**

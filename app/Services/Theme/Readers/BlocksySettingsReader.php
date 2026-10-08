@@ -27,9 +27,14 @@ use FluentCart\Framework\Support\Arr;
  * properties under `:root[data-color-mode*="dark"]`, which a bare hex would
  * never follow.
  *
+ * Radii (see radii()): Buttons → Border Radius (`buttonRadius`) and Form
+ * Elements → Border Radius (`formFieldBorderRadius`). The product card radius
+ * (`cardProductRadius`) is a WooCommerce setting Blocksy only prints with
+ * WooCommerce, so it is not read.
+ *
  * Verified against Blocksy 2.1.57.
  */
-class BlocksySettingsReader implements ThemeSettingsReader
+class BlocksySettingsReader implements ThemeSettingsReader, ThemeRadiusReader
 {
     /**
      * Blocksy's defaults per mod and sub-key (inc/dynamic-styles/global/all.php
@@ -219,5 +224,171 @@ class BlocksySettingsReader implements ThemeSettingsReader
         }
 
         return ThemePalette::settingValue($raw);
+    }
+
+    /**
+     * Blocksy's stylesheet fallback for both radii
+     * (`var(--theme-button-border-radius, 3px)`,
+     * `var(--theme-form-field-border-radius, 3px)`, static/bundle/main.min.css),
+     * and the `empty_value` its dynamic CSS skips printing at.
+     *
+     * @var int
+     */
+    protected static $defaultRadius = 3;
+
+    /**
+     * The button and form-field radii.
+     *
+     * Button: `buttonRadius`, a ct-spacing value printed as
+     * `--theme-button-border-radius` (inc/dynamic-styles/global/all.php). Its
+     * desktop value speaks for all; an empty one is Blocksy's 3px.
+     *
+     * Form field: `formFieldBorderRadius`, a number of px (default 3) printed
+     * as `--theme-form-field-border-radius` (global/forms.php). It is only
+     * worn by classic forms: modern forms paint
+     * `var(--has-classic-forms, …)` with `--false`, which leaves the field
+     * square, so they state 0.
+     *
+     * @return array Role => length, as Blocksy prints it.
+     */
+    public static function radii(): array
+    {
+        if (!self::applies()) {
+            return [];
+        }
+
+        $radii = [];
+
+        $button = blocksy_get_theme_mod('buttonRadius', null);
+
+        if (is_array($button) && isset($button['desktop'])) {
+            $button = $button['desktop'];
+        }
+
+        $buttonRadius = self::spacingLength($button);
+
+        if ($buttonRadius !== '') {
+            $radii['btn'] = $buttonRadius;
+        }
+
+        if (blocksy_get_theme_mod('forms_type', 'classic-forms') !== 'classic-forms') {
+            $radii['input'] = '0';
+        } else {
+            $field = blocksy_get_theme_mod('formFieldBorderRadius', self::$defaultRadius);
+
+            if (is_numeric($field)) {
+                $radii['input'] = $field . 'px';
+            }
+        }
+
+        return $radii;
+    }
+
+    /**
+     * A ct-spacing value as the one length Blocksy prints, the way
+     * blocksy_spacing_prepare_for_device() writes it (inc/css/spacing.php):
+     *
+     *  - unset, or every side empty: Blocksy prints nothing and its
+     *    stylesheet's 3px applies;
+     *  - custom (state 3): the custom string as typed;
+     *  - otherwise each side's value and unit, an empty side taking 3 when
+     *    the sides are linked (0 when not), a side without a unit taking the
+     *    others'. Only four equal sides are one length.
+     *
+     * The pre-`values` format (`top`/`right`/`bottom`/`left` strings) is read
+     * the same way.
+     *
+     * @param mixed $value
+     * @return string
+     */
+    protected static function spacingLength($value): string
+    {
+        $fallback = self::$defaultRadius . 'px';
+
+        if (!is_array($value)) {
+            return $fallback;
+        }
+
+        if (!isset($value['values'])) {
+            return self::legacySpacingLength($value);
+        }
+
+        $state = (int)Arr::get($value, 'state', 1);
+
+        if ($state === 3) {
+            $custom = trim((string)Arr::get($value, 'custom', ''));
+
+            return $custom === '' ? $fallback : $custom;
+        }
+
+        $sides = [];
+        $unit = '';
+        $allEmpty = true;
+
+        foreach (array_slice(array_values((array)$value['values']), 0, 4) as $side) {
+            $number = is_array($side) ? Arr::get($side, 'value', '') : '';
+            $sideUnit = is_array($side) ? (string)Arr::get($side, 'unit', '') : '';
+
+            if ($number === '' || $number === 'auto' || $number === null) {
+                $number = $state === 1 ? self::$defaultRadius : 0;
+            } else {
+                $allEmpty = false;
+            }
+
+            if ($sideUnit !== '') {
+                $unit = $sideUnit;
+            }
+
+            $sides[] = ['value' => (string)$number, 'unit' => $sideUnit];
+        }
+
+        if (count($sides) !== 4 || $allEmpty) {
+            return $fallback;
+        }
+
+        $lengths = [];
+
+        foreach ($sides as $side) {
+            $lengths[] = $side['value'] . ($side['unit'] !== '' ? $side['unit'] : $unit);
+        }
+
+        return count(array_unique($lengths)) === 1 ? $lengths[0] : '';
+    }
+
+    /**
+     * The pre-`values` spacing format: four strings carrying their unit.
+     * Blocksy writes an empty, `auto` or `0` side as its empty value.
+     *
+     * @param array $value
+     * @return string
+     */
+    protected static function legacySpacingLength(array $value): string
+    {
+        $sides = [];
+
+        foreach (['top', 'right', 'bottom', 'left'] as $key) {
+            $side = trim((string)Arr::get($value, $key, ''));
+            $sides[] = ($side === '' || $side === 'auto' || $side === '0') ? '' : $side;
+        }
+
+        if (implode('', $sides) === '') {
+            return self::$defaultRadius . 'px';
+        }
+
+        $unit = 'px';
+
+        foreach ($sides as $side) {
+            if ($side !== '' && preg_match('/^[\d.]+([a-z%]+)$/i', $side, $matches)) {
+                $unit = $matches[1];
+            }
+        }
+
+        foreach ($sides as $index => $side) {
+            if ($side === '') {
+                $sides[$index] = self::$defaultRadius . $unit;
+            }
+        }
+
+        return count(array_unique($sides)) === 1 ? $sides[0] : '';
     }
 }

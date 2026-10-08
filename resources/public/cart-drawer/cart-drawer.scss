@@ -324,41 +324,44 @@ body:not(.fluent-cart-no-colors) {
 }
 
 /*== qty ==*/
-.fct-cart-item-quantity {
-  @apply mt-1 inline-flex items-center border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] bg-[var(--fct-cart-drawer-quantity-bg-color)];
-  border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-  .qty-btn {
-    @apply shadow-none m-0 outline-0 w-8 h-8 p-0 flex justify-center items-center transition-all bg-[var(--fct-cart-drawer-quantity-btn-bg)] text-[var(--fct-cart-drawer-quantity-btn-color)];
-    cursor: pointer;
-    svg{
-      // The button declares its foreground above; the glyph follows it, so a
-      // dark palette's derived text colour reaches the ± icons too.
-      @apply w-3 h-3 fill-current;
+.fct-cart-drawer,
+.fct-cart-page {
+    .fct-cart-item-quantity {
+        @apply mt-1 inline-flex items-center border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] bg-[var(--fct-cart-drawer-quantity-bg-color)];
+        border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        .qty-btn {
+            @apply shadow-none m-0 outline-0 w-8 h-8 p-0 flex justify-center items-center transition-all bg-[var(--fct-cart-drawer-quantity-btn-bg)] text-[var(--fct-cart-drawer-quantity-btn-color)];
+            cursor: pointer;
+            svg{
+                // The button declares its foreground above; the glyph follows it, so a
+                // dark palette's derived text colour reaches the ± icons too.
+                @apply w-3 h-3 fill-current;
+            }
+            &:hover{
+                @apply bg-[var(--fct-cart-drawer-quantity-btn-hover-bg)];
+            }
+        }
+
+        .decrease-btn{
+            @apply border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-l-0 border-b-0 rounded-tr-none rounded-br-none;
+            border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+            border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        }
+
+        .increase-btn{
+            @apply border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-r-0 border-b-0 rounded-tl-none rounded-bl-none;
+            border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+            border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+        }
+
+        .qty-value {
+            @apply bg-transparent flex items-center justify-center h-8 w-10 font-medium text-[13px] text-[var(--fct-cart-drawer-quantity-color)] px-1 py-0 text-center shadow-none border-0;
+        }
+
+        &.is-subscription-product{
+            @apply hidden;
+        }
     }
-    &:hover{
-      @apply bg-[var(--fct-cart-drawer-quantity-btn-hover-bg)];
-    }
-  }
-
-  .decrease-btn{
-    @apply border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-l-0 border-b-0 rounded-tr-none rounded-br-none;
-    border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-  }
-
-  .increase-btn{
-    @apply border border-solid border-[var(--fct-cart-drawer-quantity-border-color)] border-t-0 border-r-0 border-b-0 rounded-tl-none rounded-bl-none;
-    border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-    border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-  }
-
-  .qty-value {
-    @apply bg-transparent flex items-center justify-center h-8 w-10 font-medium text-[13px] text-[var(--fct-cart-drawer-quantity-color)] px-1 py-0 text-center shadow-none border-0;
-  }
-
-  &.is-subscription-product{
-    @apply hidden;
-  }
 }
 /*== total wrapper ==*/
 .fct-cart-total-wrapper {

@@ -441,7 +441,7 @@ class ThankYouRender
         if (!empty($thankYouPageInstructions)) : ?>
 
             <div style="max-width: 620px; margin: 15px auto 0; font-family: Arial, Helvetica, sans-serif;">
-                <div style="font-size: 14px; color: #2F3448; padding: 12px 0; border-top: 1px solid #e7eaee;">
+                <div style="font-size: 14px; color: var(--fct-primary-text-color, currentColor); padding: 12px 0; border-top: 1px solid var(--fct-divider-color, #e7eaee);">
                     <?php echo wp_kses_post($thankYouPageInstructions); ?>
                 </div>
             </div>
@@ -510,20 +510,20 @@ class ThankYouRender
         </div>
         <?php if ($prorateCredit > 0 && $upgradeDiscount > 0): ?>
         <div class="fct-meta-line" style="padding-left:12px;">
-            <div class="fct-meta-line-label" style="font-size:12px;color:rgb(107,114,128);">
+            <div class="fct-meta-line-label" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html__('Upgrade Discount', 'fluent-cart'); ?>
             </div>
-            <div class="fct-meta-line-value" style="font-size:12px;color:rgb(107,114,128);">
+            <div class="fct-meta-line-value" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html(Helper::toDecimal($upgradeDiscount)); ?>
             </div>
         </div>
         <?php endif; ?>
         <?php if ($prorateCredit > 0 && !$onlyProrateCredit): ?>
         <div class="fct-meta-line" style="padding-left:12px;">
-            <div class="fct-meta-line-label" style="font-size:12px;color:rgb(107,114,128);">
+            <div class="fct-meta-line-label" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html__('Prorate Credit', 'fluent-cart'); ?>
             </div>
-            <div class="fct-meta-line-value" style="font-size:12px;color:rgb(107,114,128);">
+            <div class="fct-meta-line-value" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html(Helper::toDecimal($prorateCredit)); ?>
             </div>
         </div>

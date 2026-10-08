@@ -6,6 +6,7 @@ use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\Permission\PermissionManager;
 use FluentCart\App\Services\Theme\ColorPalette;
+use FluentCart\App\Services\Theme\RadiusPalette;
 
 class FluentMetaRequest extends RequestGuard
 {
@@ -27,6 +28,12 @@ class FluentMetaRequest extends RequestGuard
         ];
 
         $rules = Arr::get($rulesMap, $this->get('settings_name'), []);
+
+        // The radius fields only show under Customize; a value hidden under
+        // another source is dropped by the sanitiser rather than blocking the save.
+        if ($this->get('settings_name') === 'appearance' && $this->get('appearance_source') === ColorPalette::SOURCE_CUSTOM) {
+            $rules = array_merge($rules, RadiusPalette::validationRules());
+        }
 //        $rules = [
 //            'object_id'   => 'integer|min:1',
 //            'object_type' => 'nullable|sanitizeText|max:50',
@@ -207,6 +214,13 @@ class FluentMetaRequest extends RequestGuard
                 }
 
                 return $colors;
+            },
+            'appearance_radius'                    => function ($value) {
+                // Registry-driven like the colours: only the known roles, each
+                // one length. A bare number means pixels; px, rem and em are
+                // kept as typed. An empty field means "not set", so the
+                // stylesheet's own fallback applies; 0 is a real value.
+                return RadiusPalette::sanitizeOwnerMap($value);
             },
             'theme_setup'                          => function ($value) {
                 if (!is_array($value)) {

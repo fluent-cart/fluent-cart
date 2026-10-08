@@ -296,12 +296,16 @@ class PaypalCheckout {
                 disableMaxWidth: true
             },
             createSubscription: function (data, actions) {
+                const applicationContext = {
+                    'shipping_preference': 'NO_SHIPPING'
+                };
+                if (orderData.response.brandName) {
+                    applicationContext.brand_name = orderData.response.brandName;
+                }
                 return actions.subscription.create({
                     'plan_id': orderData.response.planId,
                     'custom_id': orderData.data.subscription.uuid,
-                    'application_context': {
-                        'shipping_preference': 'NO_SHIPPING'
-                    }
+                    'application_context': applicationContext
                 });
             },
             onApprove: function (data, actions) {

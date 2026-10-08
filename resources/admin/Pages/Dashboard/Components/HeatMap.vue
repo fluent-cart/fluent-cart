@@ -70,12 +70,23 @@ const getChartE = () => {
 
 const baseColorRgb = hexToRgb(baseColor['500']);
 
+// Regions are matched by ISO-2 code (`iso_a2`), never by the translated country name.
+// Regions without an ISO-2 code (e.g. Somaliland) fall back to their own name.
+const regionNames = {};
+
 const loadWorldMap = async () => {
   const url = Asset.getUrl("world.geo.json");
   const response = await fetch(url);
   const worldGeo = await response.json();
+  worldGeo.features.forEach((feature) => {
+    const properties = feature.properties;
+    properties.iso_a2 = properties.iso_a2 || properties.name;
+    regionNames[properties.iso_a2] = properties.name;
+  });
   echarts.registerMap("world", worldGeo);
 };
+
+const regionLabel = (params) => params.data?.label || regionNames[params.name] || params.name;
 
 const getColor = (value) => {
   if (!value || isNaN(value)) {
@@ -150,8 +161,10 @@ const setupModalBarChartListeners = () => {
 };
 
 const coloredData = computed(() =>
-    (props.data || []).map((item) => ({
+    (props.data || []).filter((item) => item.country_code).map((item) => ({
       ...item,
+      name: item.country_code,
+      label: item.name,
       value: item.value || 0,
       itemStyle: { color: getColor(item.value || 0) },
       emphasis: {
@@ -166,7 +179,7 @@ const getMapOption = () => ({
     trigger: "item",
     formatter: (params) =>
         /* translators: %1$s - country name, %2$s - line break, %3$s - number of orders */
-        translate("%1$s%2$s Orders: %3$s", params.name, "<br>", params.value || 0),
+        translate("%1$s%2$s Orders: %3$s", echarts.format.encodeHTML(regionLabel(params)), "<br>", params.value || 0),
     borderRadius: 8,
     backgroundColor: Theme.isDark() ? "#38485a" : "#ffffff",
     borderColor: Theme.isDark() ? "#4a5a6b" : "#c0c4ca",
@@ -195,10 +208,12 @@ const getMapOption = () => ({
       name: "Orders",
       type: "map",
       map: "world",
+      nameProperty: "iso_a2",
       roam: mapRoam.value,
       zoom: zoomLevel.value,
       label: {
         show: false,
+        formatter: regionLabel,
         emphasis: {
           show: true,
           color: colors.gray["1000"],

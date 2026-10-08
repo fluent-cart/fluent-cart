@@ -9,6 +9,8 @@ use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\Theme\ColorPalette;
+use FluentCart\App\Services\Theme\FrontendTheme;
+use FluentCart\App\Services\Theme\RadiusPalette;
 use FluentCart\App\Services\Theme\ThemePalette;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
@@ -121,6 +123,7 @@ class StoreSettings implements ArrayableInterface
             'dimension_unit'                       => 'cm',
             'appearance_source'                    => ColorPalette::SOURCE_DEFAULT,
             'appearance_colors'                    => [],
+            'appearance_radius'                    => [],
             // 'wordpress', not 'fluent_cart': the FluentCart patterns are
             // literals ('M j, Y'), and a literal renders a half-translated date
             // on a localized store -- a German month in English field order,
@@ -1760,6 +1763,26 @@ class StoreSettings implements ArrayableInterface
         return empty($data) ? $default : $data;
     }
 
+    /**
+     * All store settings, as the settings form should edit them.
+     *
+     * A stored radius the grammar refuses (hand-edited, or written by an older
+     * build) never printed on the storefront; dropped here too, so the form
+     * never holds a value it would refuse to save.
+     *
+     * @return array
+     */
+    public function getForEditing(): array
+    {
+        $settings = (array)$this->get();
+
+        if (array_key_exists('appearance_radius', $settings)) {
+            $settings['appearance_radius'] = RadiusPalette::sanitizeOwnerMap($settings['appearance_radius']);
+        }
+
+        return $settings;
+    }
+
     public function moduleSettings(): array
     {
         $settings = $this->get('modules_settings', []);
@@ -2104,28 +2127,28 @@ class StoreSettings implements ArrayableInterface
         // and no escaping here or the entities would show up verbatim.
         $sourceOptions = [
             [
-                'label' => __("FluentCart's own colors", 'fluent-cart'),
+                'label' => __("FluentCart's own style", 'fluent-cart'),
                 'value' => ColorPalette::SOURCE_DEFAULT,
                 'icon'  => 'PaletteLine',
-                'note'  => __('The storefront keeps the colors it ships with.', 'fluent-cart'),
+                'note'  => __('The storefront keeps the colors and corner rounding it ships with.', 'fluent-cart'),
             ],
             [
                 'label' => __('Inherit from the active theme', 'fluent-cart'),
                 'value' => ColorPalette::SOURCE_THEME,
                 'icon'  => 'PaintLine',
-                'note'  => __('FluentCart uses your active theme\'s colors for the storefront. If they don\'t come through as expected, choose Customize to set them yourself.', 'fluent-cart'),
+                'note'  => __('FluentCart uses your active theme\'s colors, and its button and form field corner rounding, for the storefront. Product cards keep FluentCart\'s corners. If something doesn\'t come through as expected, choose Customize to set it yourself.', 'fluent-cart'),
             ],
             [
                 'label' => __('Customize', 'fluent-cart'),
                 'value' => ColorPalette::SOURCE_CUSTOM,
                 'icon'  => 'PaletteLine',
-                'note'  => __('Pick the colors yourself. Only the ones you set are written to the storefront.', 'fluent-cart'),
+                'note'  => __('Pick the colors and corner rounding yourself. Only what you set is written to the storefront.', 'fluent-cart'),
             ],
         ];
 
         $sourceHeading = [
-            'label' => __('Where colors come from', 'fluent-cart'),
-            'note'  => __('Storefront colors cascade from a small set of globals, so changing one here updates every page that uses it.', 'fluent-cart'),
+            'label' => __('Where colors and corner rounding come from', 'fluent-cart'),
+            'note'  => __('Storefront colors and corner rounding cascade from a small set of globals, so changing one here updates every page that uses it.', 'fluent-cart'),
         ];
 
         return [
@@ -2151,6 +2174,7 @@ class StoreSettings implements ArrayableInterface
                     'source_options' => $sourceOptions,
                     'custom_source'  => ColorPalette::SOURCE_CUSTOM,
                     'color_groups'   => $this->getAppearanceColorGroups(),
+                    'radius_section' => $this->getAppearanceRadiusSection(),
                     'preview'        => $this->getAppearancePreviewData(),
                 ],
                 'appearance_source'    => [
@@ -2158,6 +2182,10 @@ class StoreSettings implements ArrayableInterface
                     'value' => ColorPalette::SOURCE_DEFAULT,
                 ],
                 'appearance_colors'    => [
+                    'type'  => 'hidden',
+                    'value' => (object)[],
+                ],
+                'appearance_radius'    => [
                     'type'  => 'hidden',
                     'value' => (object)[],
                 ],
@@ -2187,6 +2215,7 @@ class StoreSettings implements ArrayableInterface
             'slots'        => $this->getAppearancePreviewSlots(),
             'theme_source' => ColorPalette::SOURCE_THEME,
             'theme_roles'  => $this->getAppearanceThemeRoles(),
+            'theme_radii'  => $this->getAppearanceThemeRadii(),
             'notes'        => [
                 ColorPalette::SOURCE_THEME  => $this->getAppearanceThemeNote(),
                 ColorPalette::SOURCE_CUSTOM => __('Set only the colors you want to change — anything you leave unset keeps FluentCart\'s own default.', 'fluent-cart'),
@@ -2251,7 +2280,7 @@ class StoreSettings implements ArrayableInterface
     protected function getAppearanceThemeNote(): string
     {
         if (!ThemePalette::hasUsableSource()) {
-            return __('The active theme publishes nothing to inherit, so the storefront keeps FluentCart\'s own colors.', 'fluent-cart');
+            return __('The active theme publishes no colors to inherit, so the storefront keeps FluentCart\'s own colors.', 'fluent-cart');
         }
 
         // Only a colour with no hex anywhere is unpreviewable. A live
@@ -2303,6 +2332,19 @@ class StoreSettings implements ArrayableInterface
     }
 
     /**
+     * The theme's border radii for the preview, role => length.
+     *
+     * Exactly what inheriting would print, storefront filter included, so the
+     * preview never promises a radius the storefront won't write.
+     *
+     * @return array Role key => length (`8px`, `0.5rem`).
+     */
+    protected function getAppearanceThemeRadii(): array
+    {
+        return FrontendTheme::radiiFor(ColorPalette::SOURCE_THEME);
+    }
+
+    /**
      * The colour knobs, grouped the way the registry groups them, as data the
      * appearance component renders its pickers from.
      *
@@ -2338,6 +2380,36 @@ class StoreSettings implements ArrayableInterface
         }
 
         return $groups;
+    }
+
+    /**
+     * The border-radius controls, as data the appearance component renders
+     * its number inputs from.
+     *
+     * Driven off RadiusPalette::roles(), the same registry the sanitiser and
+     * the storefront CSS read, so a control can never write a role the page
+     * would not print.
+     *
+     * @return array
+     */
+    protected function getAppearanceRadiusSection(): array
+    {
+        $fields = [];
+
+        foreach (RadiusPalette::roles() as $key => $definition) {
+            $fields[] = [
+                'key'   => $key,
+                'label' => (string)Arr::get($definition, 'label', $key),
+                'note'  => (string)Arr::get($definition, 'note', ''),
+            ];
+        }
+
+        return [
+            'label'   => __('Border radius', 'fluent-cart'),
+            'note'    => __('A number is read as pixels, or add a unit: 8, 8px, 0.5rem, 1em. Leave a field empty to keep FluentCart\'s default.', 'fluent-cart'),
+            'invalid' => __('Use a number, optionally with px, rem or em.', 'fluent-cart'),
+            'fields'  => $fields,
+        ];
     }
 
     /**

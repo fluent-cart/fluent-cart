@@ -433,8 +433,25 @@ class ReviewThreadMarkup
         return '<svg class="fct-review-reply-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
     }
 
+    /**
+     * The star every rating on the storefront is drawn with.
+     *
+     * The shape lives in app/Views/icons/review-star.svg, which the admin,
+     * block editor and customer portal import too, so there is one star to
+     * change. A replacement passed through the filter should keep the
+     * fct-star-svg class, fill="currentColor" and the 1em size: the star
+     * colours, half-star clipping and sizing all hang off those.
+     *
+     * @return string
+     */
     public static function starSvg(): string
     {
-        return '<svg class="fct-star-svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2.25l2.955 6.377 6.98.638-5.268 4.62 1.558 6.865L12 17.155 5.775 20.75l1.558-6.865-5.268-4.62 6.98-.638L12 2.25z"/></svg>';
+        static $svg = null;
+
+        if ($svg === null) {
+            $svg = trim((string) file_get_contents(FLUENTCART_PLUGIN_PATH . 'app/Views/icons/review-star.svg'));
+        }
+
+        return (string) apply_filters('fluent_cart/reviews/star_svg', $svg);
     }
 }

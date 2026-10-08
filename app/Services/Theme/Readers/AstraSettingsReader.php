@@ -21,9 +21,12 @@ use FluentCart\Framework\Support\Arr;
  * (`link-h-color`), and each text partner → the colour that reads on its
  * background.
  *
+ * Its Buttons → Border Radius (`button-radius-fields`) is the button radius
+ * (see radii()). Astra has no form-field or product-card radius setting.
+ *
  * Verified against Astra 4.13.11.
  */
-class AstraSettingsReader implements ThemeSettingsReader
+class AstraSettingsReader implements ThemeSettingsReader, ThemeRadiusReader
 {
     /**
      * Astra's outline button presets: a transparent background with a border.
@@ -156,5 +159,47 @@ class AstraSettingsReader implements ThemeSettingsReader
         }
 
         return ThemePalette::settingValue(Arr::get($value, 'desktop.background-color', ''));
+    }
+
+    /**
+     * The primary button's Border Radius.
+     *
+     * `button-radius-fields` is a responsive four-corner control; Astra prints
+     * each desktop corner as `<value><desktop-unit>` (astra_responsive_spacing()
+     * in inc/class-astra-dynamic-css.php) and tablet/mobile only override it,
+     * so desktop speaks for all. Only four equal corners are one length. An
+     * empty corner prints nothing — Astra's stylesheet then paints `button`
+     * 2px but `.button` 0, no single answer — so an empty radius states none.
+     *
+     * @return array Role => length, as Astra prints it.
+     */
+    public static function radii(): array
+    {
+        if (!self::applies()) {
+            return [];
+        }
+
+        $fields = astra_get_option('button-radius-fields');
+
+        if (!is_array($fields) || !isset($fields['desktop']) || !is_array($fields['desktop'])) {
+            return [];
+        }
+
+        $unit = isset($fields['desktop-unit']) && is_string($fields['desktop-unit']) && $fields['desktop-unit'] !== ''
+            ? $fields['desktop-unit']
+            : 'px';
+        $corners = [];
+
+        foreach (['top', 'right', 'bottom', 'left'] as $side) {
+            $value = isset($fields['desktop'][$side]) ? $fields['desktop'][$side] : '';
+
+            if (!is_numeric($value)) {
+                return [];
+            }
+
+            $corners[] = $value . $unit;
+        }
+
+        return count(array_unique($corners)) === 1 ? ['btn' => $corners[0]] : [];
     }
 }

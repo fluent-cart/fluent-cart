@@ -22,4 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (menuCloseButton) menuCloseButton.addEventListener('click', closeMenu);
     if (overlay) overlay.addEventListener('click', closeMenu);
+
+    // Menu links are SPA hash routes, so tapping one never reloads the page.
+    window.addEventListener('hashchange', closeMenu);
 });

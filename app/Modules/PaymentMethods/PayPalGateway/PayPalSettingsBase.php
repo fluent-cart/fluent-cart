@@ -78,6 +78,7 @@ class PayPalSettingsBase extends BaseGatewaySettings
             'live_webhook_events' => [],
 
             'disable_ipn_verification' => 'no',
+            'brand_name'          => '',
         ];
     }
 
@@ -157,6 +158,15 @@ class PayPalSettingsBase extends BaseGatewaySettings
 
         return defined('FCT_PAYPAL_LIVE_PUBLIC_KEY') ? FCT_PAYPAL_LIVE_PUBLIC_KEY : $this->get()['live_client_id'];
 
+    }
+
+    public function getBrandName(array $context = []): string
+    {
+        $brandName = trim((string) $this->get('brand_name'));
+
+        $brandName = (string) apply_filters('fluent_cart/paypal/brand_name', $brandName, $context);
+
+        return mb_substr(trim(wp_strip_all_tags($brandName)), 0, 127);
     }
 
     public function getMerchantId()

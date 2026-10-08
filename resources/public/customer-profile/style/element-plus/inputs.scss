@@ -2,16 +2,42 @@
 .el-select {
     @apply w-full;
     &__wrapper{
-        @apply min-h-[38px] py-[3px] border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
-        padding-left: var(--fct-input-padding-x, theme('spacing.3'));
-        padding-right: var(--fct-input-padding-x, theme('spacing.3'));
+        // Padding as variables so the typed input below can mirror it.
+        --fct-select-pt: 3px;
+        --fct-select-pb: 3px;
+        --fct-select-pl: var(--fct-input-padding-x, theme('spacing.3'));
+        --fct-select-pr: var(--fct-input-padding-x, theme('spacing.3'));
+        --fct-select-text-offset: 3px;
+        @apply min-h-[38px] border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
+        padding: var(--fct-select-pt) var(--fct-select-pr) var(--fct-select-pb) var(--fct-select-pl);
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
         &.is-focused{
             @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none;
         }
     }
+    // Same rule as .el-input: the typed input spans the whole field, so a
+    // theme that paints input:focus fills the field, not a strip inside it.
+    // The value and caret sit above it (Element Plus puts the value at z-index -1).
     &__selection{
-        @apply pl-[3px];
+        @apply static;
+        padding-left: var(--fct-select-text-offset);
+        border-radius: inherit;
+    }
+    &__input-wrapper:not(.is-hidden){
+        @apply absolute inset-0 m-0;
+        border-radius: inherit;
+        .el-select__input{
+            @apply h-full w-full #{!important};
+            padding: var(--fct-select-pt) calc(var(--fct-select-pr) + 20px) var(--fct-select-pb) calc(var(--fct-select-pl) + var(--fct-select-text-offset)) !important;
+            border-radius: inherit !important;
+        }
+    }
+    &__placeholder{
+        @apply relative top-auto z-[1] pointer-events-none;
+        transform: none;
+    }
+    &__suffix{
+        @apply relative z-[1];
     }
     input {
         @apply bg-transparent;
@@ -71,11 +97,7 @@
 // input
 .el-input{
     &__wrapper{
-        @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none #{!important};
-        padding-top: var(--fct-input-padding-y, theme('spacing.1')) !important;
-        padding-bottom: var(--fct-input-padding-y, theme('spacing.1')) !important;
-        padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
-        padding-right: var(--fct-input-padding-x, theme('spacing.4')) !important;
+        @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none p-0 #{!important};
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         &.is-focus{
             @apply shadow-none border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)] #{!important};
@@ -87,8 +109,28 @@
             @apply outline-none shadow-none h-auto #{!important};
         }
     }
+    // The field's padding lives on the input, not the wrapper: a theme that
+    // paints input:focus then fills the whole field instead of a box inset in it.
     &__inner{
-        @apply p-0 border-0 bg-transparent #{!important};
+        @apply self-stretch border-0 bg-transparent #{!important};
+        padding-top: var(--fct-input-padding-y, theme('spacing.1')) !important;
+        padding-bottom: var(--fct-input-padding-y, theme('spacing.1')) !important;
+        padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
+        padding-right: var(--fct-input-padding-x, theme('spacing.4')) !important;
+        border-radius: inherit !important;
+    }
+    // Icons take the edge padding the input gives up beside them.
+    &__prefix{
+        padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+        & ~ .el-input__inner{
+            @apply pl-0 #{!important};
+        }
+    }
+    &__suffix{
+        padding-right: var(--fct-input-padding-x, theme('spacing.4'));
+    }
+    &__inner:has(~ .el-input__suffix){
+        @apply pr-0 #{!important};
     }
     &--medium{
         .el-input__wrapper{

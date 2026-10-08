@@ -16,7 +16,7 @@
         <template #default="scope">
           <a
               target="_blank"
-              class="el-button el-button--info is-plain el-button--x-small"
+              class="el-button el-button--x-small"
               :href="scope.row.download_url"
               :aria-label="`Download ${scope.row?.title || 'file'}`"
               rel="noopener noreferrer"

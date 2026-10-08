@@ -1,4 +1,5 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import {ReviewStar} from "@/BlockEditor/Icons";
 
 /**
  * Canvas preview of the rating summary card. With real product data it
@@ -29,7 +30,7 @@ const SummaryPreview = ({hasProductData, avgRating, reviewCount, ratingBreakdown
             </div>
             <div className="fct-reviews-block-real-stars">
                 {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} style={{color: star <= Math.round(avgRating) ? starColor : '#d1d5db'}}>★</span>
+                    <span key={star} style={{color: star <= Math.round(avgRating) ? starColor : '#d1d5db'}}><ReviewStar/></span>
                 ))}
             </div>
             <div className="fct-reviews-block-real-total">
@@ -41,7 +42,7 @@ const SummaryPreview = ({hasProductData, avgRating, reviewCount, ratingBreakdown
                     const barWidth = reviewCount > 0 ? Math.round((barCount / reviewCount) * 100) : 0;
                     return (
                         <div key={star} className="fct-reviews-block-real-bar-row">
-                            <span className="fct-reviews-block-real-bar-label">{star} ★</span>
+                            <span className="fct-reviews-block-real-bar-label">{star} <ReviewStar/></span>
                             <div className="fct-reviews-block-skeleton-bar-track">
                                 <div className="fct-reviews-block-real-bar-fill" style={{width: `${barWidth}%`, background: starColor}}/>
                             </div>

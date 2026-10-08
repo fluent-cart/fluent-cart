@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Http\Requests\FrontendRequests;
 
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\Framework\Foundation\RequestGuard;
 
 class CouponRequest extends RequestGuard
@@ -22,7 +23,7 @@ class CouponRequest extends RequestGuard
             "order_items.*.post_id"   => 'numeric|min:1',
             "order_items.*.variation_id"   => 'numeric|min:1',
             "order_items.*.type" => 'nullable|sanitizeText|maxLength:100',
-            "order_items.*.quantity"    => 'numeric|min:1',
+            "order_items.*.quantity"    => 'numeric|min:1|max:' . CartHelper::maxQuantity(),
             "order_items.*.title"   => 'nullable|sanitizeText|maxLength:100',
             "order_items.*.price"  => 'numeric',
             "order_items.*.unit_price"  => 'numeric',

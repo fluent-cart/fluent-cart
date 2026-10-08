@@ -370,6 +370,11 @@ class WebRoutes
 
         $cart = CartResource::generateCartForInstantCheckout($variationId, $quantity);
 
+        // A WP_Error is truthy, so without this it reached the renderer as a cart.
+        if (is_wp_error($cart)) {
+            return false;
+        }
+
         if ($cart) {
             $modalCheckoutRenderer = new ModalCheckoutRenderer($cart);
             ob_start();

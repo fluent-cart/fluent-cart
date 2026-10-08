@@ -1,4 +1,5 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import {ReviewStar} from "@/BlockEditor/Icons";
 
 /**
  * Canvas preview of the review list column: count line, filter chips / sort
@@ -61,7 +62,7 @@ const ListPreview = ({hasProductData, reviewCount, showHeader = true, showSortCo
                     <div className="fct-reviews-block-real-chips">
                         <span className="fct-reviews-block-real-chip is-active">{blocktranslate('All')}</span>
                         {[5, 4, 3, 2, 1].map((star) => (
-                            <span key={star} className="fct-reviews-block-real-chip">{star} ★</span>
+                            <span key={star} className="fct-reviews-block-real-chip">{star} <ReviewStar/></span>
                         ))}
                     </div>
                     <span className="fct-reviews-block-real-sort">{blocktranslate('Newest')} ▾</span>

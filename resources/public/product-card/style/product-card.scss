@@ -137,9 +137,14 @@
     .fct-product-card-stars {
       @apply flex items-center leading-none;
       .fct-star {
+        @apply inline-flex;
         font-size: 14px;
         color: var(--fct-review-star-empty-color, #d1d5db);
         line-height: 1;
+      }
+      .fct-star-svg,
+      .fct-star-half-empty {
+        @apply block;
       }
       .fct-star-filled {
         color: var(--fct-review-star-color, #f59e0b);

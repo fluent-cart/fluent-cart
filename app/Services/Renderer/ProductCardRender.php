@@ -5,6 +5,7 @@ namespace FluentCart\App\Services\Renderer;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\Framework\Support\Arr;
 
@@ -157,6 +158,10 @@ class ProductCardRender
             return;
         }
 
+        if (!ProductReviewService::ratingMeetsThresholds($this->product, $this->config)) {
+            return;
+        }
+
         $otherInfo = $this->product->detail->other_info ?: [];
         $avgRating = Arr::get($otherInfo, 'average_rating', 0);
         $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
@@ -176,13 +181,13 @@ class ProductCardRender
             <span class="fct-product-card-stars" aria-hidden="true">
                 <?php
                 for ($i = 0; $i < $fullStars; $i++) {
-                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                    echo '<span class="fct-star fct-star-filled">' . ReviewThreadMarkup::starSvg() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 if ($halfStar) {
-                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">' . ReviewThreadMarkup::starSvg() . '</span><span class="fct-star-half-fill">' . ReviewThreadMarkup::starSvg() . '</span></span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 for ($i = 0; $i < $emptyStars; $i++) {
-                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                    echo '<span class="fct-star fct-star-empty">' . ReviewThreadMarkup::starSvg() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 ?>
             </span>
@@ -191,8 +196,12 @@ class ProductCardRender
         <?php
     }
 
-    public function renderStarRatingBlock($wrapperAttributes = '')
+    public function renderStarRatingBlock($wrapperAttributes = '', array $attributes = [], $block = null)
     {
+        if (!ProductReviewService::ratingMeetsThresholds($this->product, $attributes, $block)) {
+            return;
+        }
+
         $otherInfo = $this->product->detail->other_info ?: [];
         $avgRating = Arr::get($otherInfo, 'average_rating', 0);
         $reviewCount = (int) Arr::get($otherInfo, 'review_count', 0);
@@ -208,13 +217,13 @@ class ProductCardRender
             <span class="fct-product-card-stars" aria-hidden="true">
                 <?php
                 for ($i = 0; $i < $fullStars; $i++) {
-                    echo '<span class="fct-star fct-star-filled">&#9733;</span>';
+                    echo '<span class="fct-star fct-star-filled">' . ReviewThreadMarkup::starSvg() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 if ($halfStar) {
-                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">&#9733;</span><span class="fct-star-half-fill">&#9733;</span></span>';
+                    echo '<span class="fct-star fct-star-half"><span class="fct-star-half-empty">' . ReviewThreadMarkup::starSvg() . '</span><span class="fct-star-half-fill">' . ReviewThreadMarkup::starSvg() . '</span></span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 for ($i = 0; $i < $emptyStars; $i++) {
-                    echo '<span class="fct-star fct-star-empty">&#9733;</span>';
+                    echo '<span class="fct-star fct-star-empty">' . ReviewThreadMarkup::starSvg() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
                 ?>
             </span>

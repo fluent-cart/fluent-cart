@@ -412,7 +412,12 @@ class Cart extends Model
 
     public function addByVariation(ProductVariation $variation, $config = [])
     {
-        $quantity = (int)Arr::get($config, 'quantity', 1);
+        $quantity = Arr::get($config, 'quantity', 1);
+        $error = CartHelper::validateQuantity($quantity, true);
+        if ($error) {
+            return $error;
+        }
+        $quantity = (int)$quantity;
         $byInput = Arr::get($config, 'by_input', false);
 
         if ($quantity == 0) {
@@ -456,6 +461,12 @@ class Cart extends Model
         if ($quantity <= 0) {
             // remove the item if quantity is zero or negative after adjustment
             return $this->removeItem($variation->id);
+        }
+
+        // Repeated increments accumulate onto the stored quantity, so re-check the sum.
+        $error = CartHelper::validateQuantity($quantity);
+        if ($error) {
+            return $error;
         }
 
         if ($validate) {
@@ -507,7 +518,12 @@ class Cart extends Model
             );
         }
 
-        $quantity = (int)Arr::get($config, 'quantity', 1);
+        $quantity = Arr::get($config, 'quantity', 1);
+        $error = CartHelper::validateQuantity($quantity, true);
+        if ($error) {
+            return $error;
+        }
+        $quantity = (int)$quantity;
         $variationId = Arr::get($variation, 'id');
 
         if ($quantity == 0) {

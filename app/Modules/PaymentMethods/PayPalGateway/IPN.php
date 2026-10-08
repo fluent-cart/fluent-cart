@@ -821,6 +821,8 @@ class IPN
                     DateTime::anyTimeToGmt(Arr::get($earliestSale, 'time'))->format('Y-m-d H:i:s')
                 );
 
+                $subscriptionModel->update(['bill_count' => $subscriptionModel->calculateBillCount()]);
+
                 return true;
             }
 

@@ -113,6 +113,7 @@ class ShopAppHandler
             'exclude_ids'                      => '',
             'category'                         => '',
             'category_id'                      => '',
+            'taxonomies'                       => '',
             'fulfillment_type'                 => '',
             'product_type'                     => '',
             'on_sale'                          => '',
@@ -364,10 +365,16 @@ class ShopAppHandler
             $mergedTerms['product-categories'] = array_unique(array_merge($existing, $categoryTermIds));
         }
 
-        // The former tag= / tag_id= attributes filtered on the product-tags
-        // taxonomy, which FluentCart does not register (won't-ship decision
-        // 2026-08-06). They never matched anything — worse, tag_id= filtered
-        // every product out. Unknown attributes are now simply ignored.
+        // --- Shortcode attribute: taxonomies="product-tags:1,2|product-brands:67" ---
+        // Any taxonomy registered on products, including store-registered ones.
+        foreach (Taxonomy::parseShortcodeTaxonomies($this->shortcodeAttributes['taxonomies']) as $taxonomy => $termIds) {
+            // A segment that resolved to nothing (unknown taxonomy, foreign or
+            // missing term) must match nothing — dropping it would widen the
+            // list to products the shortcode never asked for.
+            $termIds = $termIds ?: [0];
+            $existing = Arr::get($mergedTerms, $taxonomy, []);
+            $mergedTerms[$taxonomy] = array_values(array_unique(array_merge($existing, $termIds)));
+        }
 
         // --- Shortcode attribute: sort_by ---
         if (!empty($this->shortcodeAttributes['sort_by'])) {

@@ -1,3 +1,4 @@
+import {REVIEW_STAR_PATH} from "@/Bits/Components/Icons/reviewStar";
 export const Cart = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
         <path fillRule="evenodd" clipRule="evenodd"
@@ -496,7 +497,7 @@ export const RatingSummary = () => (
 
 // Product Rating block — a row of stars, last one empty (a 4-of-5 look)
 export const ProductRatingStars = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round">
         <path d="M5 8.8L5.9 10.6L7.9 10.9L6.45 12.3L6.8 14.3L5 13.35L3.2 14.3L3.55 12.3L2.1 10.9L4.1 10.6L5 8.8Z"/>
         <path d="M12 8.8L12.9 10.6L14.9 10.9L13.45 12.3L13.8 14.3L12 13.35L10.2 14.3L10.55 12.3L9.1 10.9L11.1 10.6L12 8.8Z"/>
         <path d="M19 8.8L19.9 10.6L21.9 10.9L20.45 12.3L20.8 14.3L19 13.35L17.2 14.3L17.55 12.3L16.1 10.9L18.1 10.6L19 8.8Z" fill="none" stroke="currentColor" strokeWidth="1.3"/>
@@ -572,7 +573,7 @@ export const BillingAddress = () => {
 
 export const ReviewStar = () => (
     <svg className="fct-star-svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
-        <path d="M12 2.25l2.955 6.377 6.98.638-5.268 4.62 1.558 6.865L12 17.155 5.775 20.75l1.558-6.865-5.268-4.62 6.98-.638L12 2.25z"/>
+        <path d={REVIEW_STAR_PATH}/>
     </svg>
 );
 

@@ -244,10 +244,9 @@ onMounted(() => {
             <el-button v-if="!adapterReady || isEnabled" size="small" @click="openDrawer">
                 {{ translate('Configure') }}
             </el-button>
-            <!-- No adapter → no toggle; flipping it on would have no effect. The
-                 Configure button drives the install instead. -->
+            <!-- Always shown, adapter or not: the "no adapter" admin notice links
+                 here so MCP can be switched off without installing anything. -->
             <el-switch
-                v-if="adapterReady"
                 active-value="yes"
                 inactive-value="no"
                 v-model="mcpEnabled"

@@ -116,6 +116,11 @@ const contentChanged = (event) => {
     reloadPreview();
   }
 
+  // Classic editor (Gutenberg disabled) finished its Update form submit.
+  if (type === 'classicEditorSaved') {
+    closeDialog();
+  }
+
   if (type === 'navigateTo') {
     closeDialog();
     window.location.href = content;

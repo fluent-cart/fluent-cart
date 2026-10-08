@@ -169,14 +169,14 @@ $darkLogoSvg  = file_get_contents($logoDir . 'logo-full.svg');
                             <?php foreach ($menu_items as $itemSlug => $menu_item): ?>
                                 <?php if (!empty($menu_item['children'])): ?>
                                     <?php foreach ($menu_item['children'] as $childSlug => $childItem): ?>
-                                        <div class="fct-offcanvas-menu-item">
+                                        <div class="fct-offcanvas-menu-item fct-offcanvas-menu-item_<?php echo esc_attr($childSlug); ?>">
                                             <div class="fct-offcanvas-menu-label">
                                                 <a href="<?php echo esc_url($childItem['link']); ?>"><?php echo esc_html($childItem['label']); ?></a>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <div class="fct-offcanvas-menu-item">
+                                    <div class="fct-offcanvas-menu-item fct-offcanvas-menu-item_<?php echo esc_attr($itemSlug); ?>">
                                         <div class="fct-offcanvas-menu-label">
                                             <a href="<?php echo esc_url($menu_item['link']); ?>"><?php echo esc_html($menu_item['label']); ?></a>
                                         </div>

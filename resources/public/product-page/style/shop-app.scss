@@ -169,21 +169,57 @@
             "image excerpt"
             "image price"
             "image button";
-            @apply grid grid-cols-[250px_1fr] grid-rows-[auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pr-2.5;
+            // A square thumbnail about as tall as the title, price and button,
+            // so the image no longer makes the card taller than its text. A
+            // fixed column, not an auto one sized from the row height: Chrome
+            // re-sizes such a column once the rows are known, other engines
+            // collapse it to nothing. The content stacks from the top and the
+            // last row takes the slack.
+            @apply grid grid-cols-[140px_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pr-2.5;
+            // The image column runs the card's full height, so a divider
+            // drawn on it reaches the bottom however long the text is; the
+            // photo itself stays a square at the top of the column.
+            .fct-product-image-block,
+            .fct-dynamic-product-image {
+              grid-area: image;
+              @apply relative self-stretch h-auto min-h-[140px] w-[140px] max-w-none aspect-auto;
+              .fct-product-card-image-wrap,
+              .fct-product-image-link {
+                @apply relative h-auto w-full aspect-square;
+              }
+            }
+            .fct-product-image-wrap {
+              grid-area: image;
+              @apply relative self-start h-auto w-[140px] max-w-none aspect-square;
+            }
             .fct-product-image-block,
             .fct-product-card-image-wrap,
             .fct-product-image-link,
             .fct-dynamic-product-image {
-              grid-area: image;
-              @apply relative max-w-[250px] aspect-square;
               img {
                 @apply rounded-tr-none;
                 border-bottom-left-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
               }
             }
-            .fct-product-image-wrap {
-              grid-area: image;
-              @apply relative max-w-[250px] aspect-square;
+            // Only the product's own image is taken out of flow to fill the
+            // square. The image block can also hold overlay inner blocks and
+            // add-on output, whose images must keep their own layout.
+            .fct-product-card-image-wrap > .fct-product-card-image {
+              @apply absolute inset-0 aspect-auto;
+            }
+            // The placeholder illustration is shown whole rather than cropped,
+            // and it fills the column so its divider sits beside the content,
+            // top to bottom, instead of below it.
+            .fct-product-image-block .fct-product-card-image-wrap.is-placeholder,
+            .fct-dynamic-product-image .fct-product-card-image-wrap.is-placeholder {
+              @apply h-full aspect-auto;
+            }
+            .fct-product-card-image-wrap.is-placeholder {
+              border-bottom: 0;
+              border-right: 1px solid var(--fct-card-border-color, #d6dae1);
+              > .fct-product-card-image {
+                @apply object-contain;
+              }
             }
             .fct-product-card-title,
             .fct-dynamic-product-title {
@@ -211,7 +247,7 @@
             .fct-product-view-button,
             .fct-dynamic-product-button {
               grid-area: button;
-              @apply mt-auto self-start justify-self-start mr-auto mb-2.5 min-w-[160px] w-auto;
+              @apply mt-3 self-start justify-self-start mr-auto mb-2.5 min-w-[160px] w-auto;
             }
             .wp-block-group {
                  grid-area: button;
@@ -302,9 +338,13 @@
   }
   .fluent-cart-shop-no-result-found {
     grid-column: span 4 / span 4;
+    align-content: center;
     &.hide,
     &.not-found-hide {
       @apply hidden;
+    }
+    p {
+        @apply mb-0;
     }
   }
   .fluent-cart-product-loader {
@@ -348,7 +388,8 @@
       @apply no-underline;
     }
   }
-  &.product-list-hide {
+  &.product-list-hide,
+  &.product-list-empty {
     @apply hidden;
   }
 }

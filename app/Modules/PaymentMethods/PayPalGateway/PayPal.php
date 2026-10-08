@@ -1061,6 +1061,13 @@ class PayPal extends AbstractPaymentGateway
                     ]
                 ]
             ],
+            'brand_name'        => [
+                'value'       => '',
+                'label'       => __('Brand name', 'fluent-cart'),
+                'placeholder' => __('Shown on the PayPal checkout instead of your business name', 'fluent-cart'),
+                'tooltip'     => __('Optional. Up to 127 characters. Leave empty to show the name on your PayPal business account.', 'fluent-cart'),
+                'type'        => 'text',
+            ],
             'provider'          => array(
                 'value' => $this->settings->getProviderType(),
                 'label' => __('Provider', 'fluent-cart'),

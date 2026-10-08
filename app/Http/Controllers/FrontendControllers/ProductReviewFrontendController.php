@@ -79,17 +79,22 @@ class ProductReviewFrontendController extends BaseFrontendController
             'sort_by'    => $data['sort_by'] ?? 'created_at',
             'sort_order' => $data['sort_order'] ?? 'DESC',
             'per_page'   => $perPage,
-            // The list's floor, read out of the composition this request names
-            // rather than off the query string. It is the editor's setting,
-            // not the reader's: taken from the request, anyone could ask for
-            // the one-star reviews a shop had chosen not to publish here.
+            // A signed per-instance floor takes precedence over the legacy
+            // composition default. Neither changes public-review permissions.
             'min_rating' => ProductReviewListBlockEditor::minRatingOfComposition(
-                $request->get('client_id', '')
+                $request->get('client_id', ''),
+                (int) $postId,
+                (string) $request->get('rating_token', '')
             ),
         ];
 
+        // ratings=5,4 from the star chips; the single rating param still works.
+        $ratings = ProductReviewService::ratingList($request->get('ratings', ''));
         $rating = !empty($data['rating']) ? (int) $data['rating'] : null;
-        if ($rating && $rating >= 1 && $rating <= 5) {
+
+        if ($ratings) {
+            $params['ratings'] = $ratings;
+        } elseif ($rating && $rating >= 1 && $rating <= 5) {
             $params['rating'] = $rating;
         }
 

@@ -17,6 +17,7 @@ use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\Payments\PaymentHelper;
+use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Support\Arr;
 
 class OrderService
@@ -82,11 +83,22 @@ class OrderService
     {
         $fullName = Arr::get($address, 'full_name', '');
         $name = Arr::get($address, 'name', '');
+        $explicitFirstName = trim((string) Arr::get($address, 'first_name', ''));
+        $explicitLastName = trim((string) Arr::get($address, 'last_name', ''));
         $address['full_name'] = $fullName ?? $name;
         $address['first_name'] = AddressHelper::guessFirstNameAndLastName($address['full_name']);
         $address['type'] = $type;
         $name = $fullName ?? $name;
-        $address = array_merge($address, AddressHelper::guessFirstNameAndLastName($name));
+
+        // In First/Last mode the customer typed both names, so keep them as
+        // typed. Guessing from the joined name would turn "Alex" + "de Silva"
+        // into "Alex de" + "Silva". Full-name-only addresses are still guessed.
+        if (!CheckoutFieldsSchema::isFullNameRequired() && $explicitFirstName !== '') {
+            $address['first_name'] = $explicitFirstName;
+            $address['last_name'] = $explicitLastName;
+        } else {
+            $address = array_merge($address, AddressHelper::guessFirstNameAndLastName($name));
+        }
         $address['name'] = Arr::get($address, 'first_name', '') . ' ' . Arr::get($address, 'last_name', '');
         return $address;
     }

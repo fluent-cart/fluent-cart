@@ -15,7 +15,7 @@ class SettingsController extends Controller
 {
     public function getStore(Request $request, StoreSettings $storeSettings)
     {
-        $data = $storeSettings->get();
+        $data = $storeSettings->getForEditing();
 
         if (empty($data['company_name'])) {
             $data['company_name'] = Arr::get($data, 'store_name', '');
