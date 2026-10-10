@@ -101,6 +101,21 @@ class Product extends Model
         return $query->where('post_status', 'publish');
     }
 
+    public function getPostTitleAttribute($value)
+    {
+        return apply_filters('fluent_cart/product/display_field', $value, 'post_title', $this);
+    }
+
+    public function getPostExcerptAttribute($value)
+    {
+        return apply_filters('fluent_cart/product/display_field', $value, 'post_excerpt', $this);
+    }
+
+    public function getPostContentAttribute($value)
+    {
+        return apply_filters('fluent_cart/product/display_field', $value, 'post_content', $this);
+    }
+
     public function scopeStatusOf($query, $status)
     {
         return $query->where('post_status', $status);
