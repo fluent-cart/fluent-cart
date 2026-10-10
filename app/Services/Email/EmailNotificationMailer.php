@@ -402,7 +402,7 @@ class EmailNotificationMailer
         $order = Arr::get($data, 'order');
 
         // Pass original Model data for template rendering (templates use $order->method())
-        $notifications = EmailNotifications::getNotificationsOfEvent($event, $data);
+        $notifications = EmailNotifications::getNotificationsOfEvent($event, $data, false);
 
         foreach ($notifications as $mailName => $notification) {
             if ($order instanceof Order && !apply_filters('fluent_cart/should_send_email_notification', true, [
@@ -418,21 +418,16 @@ class EmailNotificationMailer
                 $asyncData['mailName'] = $mailName;
                 as_enqueue_async_action($asyncHook, $asyncData);
             } else {
-                list($body, $subject, $to) = $this->parseEmailContent($notification, $data);
+                list($body, $subject, $to, $pdfPath, $notification) = $this->prepareEmailNotification(
+                    $notification,
+                    $data,
+                    ['event' => $event, 'mail_name' => $mailName, 'recipient' => Arr::get($notification, 'recipient'), 'data' => $data]
+                );
 
                 $mailer = Mailer::make()->to($to)->subject($subject)->body($body);
 
-                $pdfPath = null;
-                $templateId = Arr::get($notification, 'settings.attach_pdf_template', '');
-                // Backward compat: old attach_pdf='yes' maps to order_receipt
-                if (empty($templateId) && Arr::get($notification, 'settings.attach_pdf', 'no') === 'yes') {
-                    $templateId = 'order_receipt';
-                }
-                if (!empty($templateId) && defined('FLUENT_PDF')) {
-                    $pdfPath = $this->generateOrderPdf($data, $templateId);
-                    if ($pdfPath) {
-                        $mailer->addAttachment($pdfPath);
-                    }
+                if ($pdfPath) {
+                    $mailer->addAttachment($pdfPath);
                 }
 
                 $mailer = $this->applyMailerFilter($mailer, [
@@ -462,21 +457,18 @@ class EmailNotificationMailer
         $orderModel = Arr::get($data, 'order');
 
         $notification = EmailNotifications::getNotification($emailName);
-        $notification = EmailNotifications::formatNotification($notification, $data);
-        list($body, $subject, $to) = $this->parseEmailContent($notification, $data);
+        list($body, $subject, $to, $pdfPath, $notification) = $this->prepareEmailNotification(
+            $notification,
+            $data,
+            ['event' => Arr::get($notification, 'event', ''), 'mail_name' => $emailName,
+                'recipient' => Arr::get($notification, 'recipient'), 'data' => $data],
+            ['order' => $orderModel]
+        );
 
         $mailer = Mailer::make()->to($to)->subject($subject)->body($body);
 
-        $pdfPath = null;
-        $templateId = Arr::get($notification, 'settings.attach_pdf_template', '');
-        if (empty($templateId) && Arr::get($notification, 'settings.attach_pdf', 'no') === 'yes') {
-            $templateId = 'order_receipt';
-        }
-        if (!empty($templateId) && defined('FLUENT_PDF')) {
-            $pdfPath = $this->generateOrderPdf(['order' => $orderModel], $templateId);
-            if ($pdfPath) {
-                $mailer->addAttachment($pdfPath);
-            }
+        if ($pdfPath) {
+            $mailer->addAttachment($pdfPath);
         }
 
         $mailer = $this->applyMailerFilter($mailer, [
@@ -492,6 +484,40 @@ class EmailNotificationMailer
         if ($pdfPath && file_exists($pdfPath)) {
             @unlink($pdfPath);
         }
+    }
+
+    /**
+     * Prepare one notification before native mail transport begins.
+     *
+     * Extensions can wrap the callable to scope template, subject and PDF
+     * rendering together, restoring their context before it returns.
+     *
+     * @return array [body, subject, to, pdfPath, formatted notification]
+     */
+    protected function prepareEmailNotification(array $notification, array $data, array $context, ?array $pdfData = null): array
+    {
+        $prepare = function () use ($notification, $data, $pdfData) {
+            $formatted = EmailNotifications::formatNotification($notification, $data);
+            list($body, $subject, $to) = $this->parseEmailContent($formatted, $data);
+            $pdfPath = null;
+            $templateId = Arr::get($formatted, 'settings.attach_pdf_template', '');
+            if (empty($templateId) && Arr::get($formatted, 'settings.attach_pdf', 'no') === 'yes') {
+                $templateId = 'order_receipt';
+            }
+            if (!empty($templateId) && defined('FLUENT_PDF')) {
+                $pdfPath = $this->generateOrderPdf($pdfData ?? $data, $templateId);
+            }
+            return [$body, $subject, $to, $pdfPath, $formatted];
+        };
+        $prepare = apply_filters('fluent_cart/email_notification/prepare_callback', $prepare, $context);
+        if (!is_callable($prepare)) {
+            throw new \UnexpectedValueException('Email preparation filter must return a callable.');
+        }
+        $result = $prepare();
+        if (!is_array($result) || array_keys($result) !== [0, 1, 2, 3, 4] || !is_array($result[4])) {
+            throw new \UnexpectedValueException('Email preparation callback must return [body, subject, to, pdfPath, notification].');
+        }
+        return $result;
     }
 
     /**
@@ -515,6 +541,7 @@ class EmailNotificationMailer
         $footer = "";
         $settings = EmailNotifications::getSettings();
         $emailFooter = Arr::get($settings, 'email_footer', '');
+        $emailFooter = apply_filters('fluent_cart/email_notification/footer', $emailFooter);
         if (!empty($emailFooter)) {
             $footer .= ShortcodeTemplateBuilder::make($emailFooter, []);
         }

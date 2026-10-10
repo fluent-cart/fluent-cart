@@ -1555,4 +1555,5 @@ return [
             );
         },
     ],
+    ...require __DIR__ . '/email-preparation-hooks.php',
 ];

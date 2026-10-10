@@ -766,7 +766,7 @@ class EmailNotifications
         return $names;
     }
 
-    public static function getNotificationsOfEvent($event, $viewData): array
+    public static function getNotificationsOfEvent($event, $viewData, $format = true): array
     {
         $notifications = static::getNotifications();
         $notifications = array_filter($notifications, function ($notification) use ($event) {
@@ -805,7 +805,7 @@ class EmailNotifications
                 continue;
             }
 
-            $emails[$key] = static::formatNotification($notification, $viewData);
+            $emails[$key] = $format ? static::formatNotification($notification, $viewData) : $notification;
         }
 
         return $emails;
@@ -813,6 +813,7 @@ class EmailNotifications
 
     public static function formatNotification($notification, $viewData): array
     {
+        $notification = apply_filters('fluent_cart/email_notification/localize_notification', $notification, $viewData);
         $settings = Arr::get($notification, 'settings');
         $mailingSettings = static::getSettings();
 

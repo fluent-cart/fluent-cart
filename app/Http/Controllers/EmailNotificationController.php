@@ -164,20 +164,31 @@ class EmailNotificationController extends Controller
         // is an array so more keys can be added later without changing the signature.
         $data = apply_filters('fluent_cart/email/preview_data', $data, ['template' => $template]);
 
-        $body = TemplateService::getTemplateByPathName($template, $data);
+        $prepare = function () use ($template, $data) {
+            $body = TemplateService::getTemplateByPathName($template, $data);
 
-        // Wrap in the same outer email template used by actual emails
-        $header = (string) App::make('view')->make('emails.parts.order_header', $data);
-        $mailer = new EmailNotificationMailer();
-        $view = (string) App::make('view')->make('emails.general_template', [
-            'emailBody'   => $body,
-            'preheader'   => '',
-            'header'      => $header,
-            'emailFooter' => $mailer->getEmailFooter(),
+            // Wrap in the same outer email template used by actual emails
+            $header = (string) App::make('view')->make('emails.parts.order_header', $data);
+            $mailer = new EmailNotificationMailer();
+            $view = (string) App::make('view')->make('emails.general_template', [
+                'emailBody'   => $body,
+                'preheader'   => '',
+                'header'      => $header,
+                'emailFooter' => $mailer->getEmailFooter(),
+            ]);
+
+            return ShortcodeTemplateBuilder::make($view, $data);
+        };
+        $prepare = apply_filters('fluent_cart/email_notification/preview_callback', $prepare, [
+            'template' => $template, 'data' => $data,
         ]);
-
-        // Resolve shortcodes (e.g., {{ settings.store_brand }}, {{order.created_at}})
-        $view = ShortcodeTemplateBuilder::make($view, $data);
+        if (!is_callable($prepare)) {
+            throw new \UnexpectedValueException('Email preview filter must return a callable.');
+        }
+        $view = $prepare();
+        if (!is_string($view)) {
+            throw new \UnexpectedValueException('Email preview callback must return a string.');
+        }
 
         // Disable all links/buttons in the preview so they are not clickable
         $view .= '<style>a, button, [role="button"] { pointer-events: none !important; cursor: default !important; }</style>';

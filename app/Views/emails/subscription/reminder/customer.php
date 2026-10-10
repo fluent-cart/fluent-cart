@@ -44,7 +44,7 @@ $billingInterval = $subscription->billing_interval ?? '';
                 <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:right;">
                     <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); ?>
                     <?php if ($billingInterval): ?>
-                        <span style="font-size:12px;font-weight:400;color:#6b7280;">(<?php echo esc_html($billingInterval); ?>)</span>
+                        <span style="font-size:12px;font-weight:400;color:#6b7280;">(<?php echo esc_html(apply_filters('fluent_cart/email_notification/billing_interval', $billingInterval)); ?>)</span>
                     <?php endif; ?>
                 </td>
             </tr>
