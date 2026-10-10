@@ -58,6 +58,16 @@ class OrderItem extends Model
     ];
     protected $appends = ['payment_info', 'setup_info', 'is_custom', 'variation_display_title'];
 
+    public function getPostTitleAttribute($value)
+    {
+        return apply_filters('fluent_cart/order_item/display_field', $value, 'post_title', $this);
+    }
+
+    public function getTitleAttribute($value)
+    {
+        return apply_filters('fluent_cart/order_item/display_field', $value, 'title', $this);
+    }
+
     protected $casts = [
         'unit_price'      => 'double',
         'cost'            => 'double',

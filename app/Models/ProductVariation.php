@@ -83,6 +83,11 @@ class ProductVariation extends Model
 
     protected $appends = ['thumbnail'];
 
+    public function getVariationTitleAttribute($value)
+    {
+        return apply_filters('fluent_cart/variation/display_title', $value, $this);
+    }
+
 
     public function getOtherInfoAttribute($value)
     {
