@@ -15,6 +15,7 @@ use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
+use FluentCart\Framework\Database\Orm\Model;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 use FluentCartPro\App\Modules\Licensing\Models\License;
@@ -243,7 +244,16 @@ class OrderParser extends BaseParser
             return Arr::get($formatted, $accessor) ?: '';
         }
 
-        return Arr::get($address, $accessor) ?: '';
+        // Read the address only: its order() relation would let a code walk the
+        // whole order graph, up to the customer's WP user and password hash.
+        $field = strtok((string) $accessor, '.');
+        if ($address instanceof Model && $address->isRelation($field)) {
+            return '';
+        }
+
+        $value = Arr::get($address, $accessor);
+
+        return is_scalar($value) && $value ? (string) $value : '';
     }
 
     public function getPaymentSummary()

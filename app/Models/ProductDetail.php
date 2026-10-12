@@ -86,6 +86,19 @@ class ProductDetail extends Model
 
 
     /**
+     * Products whose own reviews switch is off; a missing key counts as on.
+     * Raw because the connection turns the double quotes of JSON selectors
+     * (other_info->reviews_enabled) into backticks. Table-qualified so it holds
+     * inside correlated subqueries on this table.
+     */
+    public function scopeReviewsDisabled($query)
+    {
+        $otherInfo = $query->getQuery()->getGrammar()->wrap($this->getTable() . '.other_info');
+
+        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT({$otherInfo}, '$.reviews_enabled')) = 'no'");
+    }
+
+    /**
      * One2One: Product Details belongs to one Product
      *
      * @return BelongsTo

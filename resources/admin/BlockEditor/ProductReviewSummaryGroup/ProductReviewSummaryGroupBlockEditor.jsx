@@ -1,5 +1,6 @@
 import InspectorSettings from "@/BlockEditor/ProductReviewSummaryGroup/Components/InspectorSettings";
-import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {isMultiProductQuery, useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {fitSummaryGroupToSource} from "@/BlockEditor/ProductReviews/Components/reviewPresets";
 import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext.jsx";
 import {RatingSummary} from "@/BlockEditor/Icons";
 
@@ -33,6 +34,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             type: ['string', 'number'],
             default: '',
         },
+        product_ids: {
+            type: 'array',
+            default: [],
+        },
     },
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps({
@@ -51,11 +56,26 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             }
         }, [insideParent, attributes.query_type]);
 
+        // Several products: the summary combines them and Write a Review goes;
+        // back to one product, it returns.
+        const setProductAttributes = (nextAttributes) => {
+            const wasMultiProduct = isMultiProductQuery(attributes.query_type);
+            const nextQueryType = Object.prototype.hasOwnProperty.call(nextAttributes, 'query_type')
+                ? nextAttributes.query_type
+                : attributes.query_type;
+
+            setAttributes(nextAttributes);
+
+            if (wasMultiProduct !== isMultiProductQuery(nextQueryType)) {
+                fitSummaryGroupToSource(clientId, isMultiProductQuery(nextQueryType));
+            }
+        };
+
         return (
             <div {...blockProps}>
                 <InspectorSettings
                     attributes={attributes}
-                    setAttributes={setAttributes}
+                    setAttributes={setProductAttributes}
                     selectedProduct={selectedProduct}
                     setSelectedProduct={setSelectedProduct}
                     insideParent={insideParent}

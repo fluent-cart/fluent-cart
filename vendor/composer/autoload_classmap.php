@@ -734,7 +734,6 @@ return array(
     'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\TransactionParser' => $baseDir . '/app/Services/ShortCodeParser/Parsers/TransactionParser.php',
     'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\UserParser' => $baseDir . '/app/Services/ShortCodeParser/Parsers/UserParser.php',
     'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\WPParser' => $baseDir . '/app/Services/ShortCodeParser/Parsers/WPParser.php',
-    'FluentCart\\App\\Services\\ShortCodeParser\\ShortcodeParser' => $baseDir . '/app/Services/ShortCodeParser/ShortcodeParser.php',
     'FluentCart\\App\\Services\\ShortCodeParser\\ShortcodeTemplateBuilder' => $baseDir . '/app/Services/ShortCodeParser/ShortcodeTemplateBuilder.php',
     'FluentCart\\App\\Services\\ShortCodeParser\\SmartCodeParser' => $baseDir . '/app/Services/ShortCodeParser/SmartCodeParser.php',
     'FluentCart\\App\\Services\\ShortCodeParser\\ValueTransformer' => $baseDir . '/app/Services/ShortCodeParser/ValueTransformer.php',

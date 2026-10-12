@@ -51,10 +51,16 @@ class CartItemRenderer
             $promoPriceOriginal = '';
         }
 
-        $couponDiscount    = (int) Arr::get($this->item, 'coupon_discount', 0);
-        $lineTotal         = (int) Arr::get($this->item, 'line_total', 0);
-        $subtotal          = (int) Arr::get($this->item, 'subtotal', 0);
-        $hasCouponDiscount = $couponDiscount > 0 && $lineTotal < $subtotal;
+        $couponDiscount = (int) Arr::get($this->item, 'coupon_discount', 0);
+        $ruleDiscount   = (int) Arr::get($this->item, 'manual_discount', 0);
+        $lineTotal      = (int) Arr::get($this->item, 'line_total', 0);
+        $subtotal       = (int) Arr::get($this->item, 'subtotal', 0);
+
+        // Both kinds read the same on the line, so both draw the struck
+        // original beside the price paid: a coupon, and manual_discount —
+        // where a pricing rule and a renewal credit land.
+        $hasDiscount = $subtotal > 0 && $lineTotal < $subtotal
+            && ($couponDiscount > 0 || $ruleDiscount > 0);
         ?>
         <div class="<?php $this->renderCssAtts($wrapperClassAttributes); ?>" role="listitem">
             <div class="fct_line_item_body">
@@ -74,12 +80,13 @@ class CartItemRenderer
                         </div>
                     <?php endif; ?>
                     <div class="fct_item_price_wrapper">
+                        <?php // fct_coupon_* are the former names of these two, kept so store CSS written against them keeps working. ?>
                         <?php do_action('fluent_cart/cart/line_item/before_total', $this->getEventInfo()); ?>
-                        <span class="fct_line_item_total<?php echo $hasCouponDiscount ? ' fct_coupon_original_price' : ''; ?>" aria-label="<?php esc_attr_e('Total price', 'fluent-cart'); ?>">
+                        <span class="fct_line_item_total<?php echo $hasDiscount ? ' fct_line_item_original_price fct_coupon_original_price' : ''; ?>" aria-label="<?php esc_attr_e('Total price', 'fluent-cart'); ?>">
                             <?php echo esc_html(Helper::toDecimal($subtotal)); ?>
                         </span>
-                        <?php if ($hasCouponDiscount) : ?>
-                            <span class="fct_line_item_total fct_coupon_discounted_price" aria-label="<?php esc_attr_e('Discounted price', 'fluent-cart'); ?>">
+                        <?php if ($hasDiscount) : ?>
+                            <span class="fct_line_item_total fct_line_item_discounted_price fct_coupon_discounted_price" aria-label="<?php esc_attr_e('Discounted price', 'fluent-cart'); ?>">
                                 <?php echo esc_html(Helper::toDecimal($lineTotal)); ?>
                             </span>
                         <?php endif; ?>

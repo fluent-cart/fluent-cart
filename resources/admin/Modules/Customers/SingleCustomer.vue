@@ -264,6 +264,7 @@ export default {
           });
     },
     discardChanges() {
+      this.changes_made = 0;
       return window.location.reload();
     },
     fetch() {

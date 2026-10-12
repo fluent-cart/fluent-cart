@@ -973,6 +973,22 @@ class CheckoutProcessor
             'total_discount'      => $discountTotal
         ]);
 
+        // A shipping pricing rule discounts this order's postage only; renewals bill the full charge.
+        $shippingDiscount = $isPhysicalProduct ? (int)Arr::get($this->args, 'shipping_discount', 0) : 0;
+        if ($shippingDiscount > 0) {
+            $renewalTotal = $recurringTotal + $shippingDiscount;
+            // A fully discounted charge left its shipping tax out above as well.
+            if ($shippingCharge <= 0) {
+                $storeTaxBehavior = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
+                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1)) {
+                    $renewalTotal += (int)Arr::get($this->args, 'shipping_tax', 0);
+                }
+            }
+
+            $subscriptionPricing = $this->billRenewalsFullShipping($subscriptionPricing, $recurringTotal, $renewalTotal, $shippingDiscount);
+            $recurringTotal = $renewalTotal;
+        }
+
         // removable upon discussion
         $subscriptionItem = [
             'product_id'             => $item['post_id'],
@@ -1018,6 +1034,42 @@ class CheckoutProcessor
         }
 
         $this->subscriptionData = $subscriptionData;
+    }
+
+    /**
+     * Raise the per-cycle price to the full postage while keeping the first payment.
+     *
+     * A gateway takes the signup fee alone during a trial, otherwise one cycle plus the
+     * signup fee. So without a trial the fee absorbs the difference, or the first cycle
+     * becomes a simulated trial, the same way a first-cycle coupon is expressed.
+     *
+     * @param array $pricing From convertToSubscriptionFormat(), built on the discounted postage.
+     * @param int $firstCycleTotal Recurring total on the discounted postage, in cents.
+     * @param int $renewalTotal Recurring total on the full postage, in cents.
+     * @param int $shippingDiscount In cents.
+     * @return array
+     */
+    private function billRenewalsFullShipping(array $pricing, $firstCycleTotal, $renewalTotal, $shippingDiscount)
+    {
+        $pricing['recurring_amount'] = (int)$pricing['recurring_amount'] + $shippingDiscount;
+
+        if ((int)$pricing['trial_days'] > 0) {
+            return $pricing;
+        }
+
+        $extra = $renewalTotal - $firstCycleTotal;
+        $signupFee = (int)$pricing['signup_fee'];
+
+        if ($signupFee >= $extra) {
+            $pricing['signup_fee'] = $signupFee - $extra;
+            return $pricing;
+        }
+
+        $pricing['trial_days'] = Helper::calculateAdjustedTrialDaysForInterval(0, $pricing['billing_interval']);
+        $pricing['is_trial_days_simulated'] = 'yes';
+        $pricing['signup_fee'] = $firstCycleTotal + $signupFee;
+
+        return $pricing;
     }
 
     private function determineCollectionMethod(): string
@@ -1108,6 +1160,7 @@ class CheckoutProcessor
                 'create_account_after_paid' => Arr::get($this->args, 'create_account_after_paid', 'no'),
                 'shipping_method_id'        => Arr::get($this->args, 'shipping_method_id', 0),
                 'shipping_method_title'     => Arr::get($this->args, 'shipping_method_title', ''),
+                'shipping_discount'         => (int) Arr::get($this->args, 'shipping_discount', 0),
                 'prorate_credit'            => $this->prorateCreditTotal,
                 'upgrade_discount'          => $this->upgradeDiscountTotal,
             ],

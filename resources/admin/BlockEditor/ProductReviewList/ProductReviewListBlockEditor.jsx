@@ -1,7 +1,13 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/ProductReviewList/Components/InspectorSettings";
 import ListPreview from "@/BlockEditor/ProductReviews/Components/ListPreview";
-import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {
+    isMultiProductQuery,
+    useInsideProductReviews,
+    useMultiProductReviewCount,
+    useReviewBlockProduct,
+    useReviewContainerQuery,
+} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
 import {ReviewList} from "@/BlockEditor/Icons";
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
@@ -215,6 +221,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             type: ['string', 'number'],
             default: '',
         },
+        product_ids: {
+            type: 'array',
+            default: [],
+        },
         viewMode: {
             type: 'string',
             default: 'list',
@@ -263,8 +273,20 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         });
 
         const insideParent = useInsideProductReviews(clientId);
+        // Inside Product Reviews the container's query wins, as it does on the page.
+        const containerQuery = useReviewContainerQuery(clientId);
+        const effectiveQueryType = containerQuery
+            ? containerQuery.queryType
+            : (insideParent ? 'default' : attributes.query_type);
+        const effectiveProductIds = containerQuery ? containerQuery.productIds : (attributes.product_ids || []);
+        const isMultiProduct = isMultiProductQuery(effectiveQueryType);
+
         const {selectedProduct, setSelectedProduct, reviewSummary, effectiveProductId} =
-            useReviewBlockProduct(attributes, insideParent, true);
+            useReviewBlockProduct(attributes, insideParent, !isMultiProduct);
+        const multiProductCount = useMultiProductReviewCount(
+            isMultiProduct ? effectiveQueryType : '',
+            effectiveProductIds
+        );
 
         // Inside the container the parent owns the product: pin the child to
         // the default query so resolveProduct() follows the parent's setup
@@ -293,8 +315,27 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         }, [clientId]);
 
         const otherInfo = selectedProduct?.detail?.other_info || {};
-        const reviewCount = parseInt(reviewSummary?.total ?? otherInfo.review_count, 10) || 0;
-        const hasProductData = !!effectiveProductId && !!selectedProduct?.ID;
+        const reviewCount = isMultiProduct
+            ? multiProductCount.total
+            : (parseInt(reviewSummary?.total ?? otherInfo.review_count, 10) || 0);
+        const hasProductData = isMultiProduct
+            ? multiProductCount.status === 'ready'
+            : (!!effectiveProductId && !!selectedProduct?.ID);
+
+        let multiProductCaption = '';
+        if (isMultiProduct) {
+            if (effectiveQueryType === 'multiple' && !effectiveProductIds.length) {
+                multiProductCaption = blocktranslate('Select products to show their reviews. Nothing is shown until you do.');
+            } else if (multiProductCount.status === 'unavailable') {
+                multiProductCaption = blocktranslate('Reviews are switched off in the store settings, so nothing is shown.');
+            } else if (multiProductCount.status === 'error') {
+                multiProductCaption = blocktranslate('Could not load the review count.');
+            } else if (effectiveQueryType === 'all') {
+                multiProductCaption = blocktranslate('Showing reviews from all products');
+            } else {
+                multiProductCaption = blocktranslate('Showing reviews from the selected products');
+            }
+        }
 
         return (
             <div {...blockProps}>
@@ -346,11 +387,15 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                             )}
                         />
                     </div>
-                    {!hasProductData && !insideParent && (
+                    {isMultiProduct ? (
+                        <div className="fct-reviews-block-skeleton-caption" role="status">
+                            {multiProductCaption}
+                        </div>
+                    ) : (!hasProductData && !insideParent && (
                         <div className="fct-reviews-block-skeleton-caption">
                             {blocktranslate('Reviews will be displayed for the current product')}
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
         );

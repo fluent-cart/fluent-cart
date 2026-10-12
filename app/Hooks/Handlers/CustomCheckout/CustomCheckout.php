@@ -107,7 +107,7 @@ class CustomCheckout
         $instantCart->first_name = $order->customer->first_name;
         $instantCart->last_name = $order->customer->last_name;
         $instantCart->email = $order->customer->email;
-        $instantCart->customer_id = $order->customer->customer_id;
+        $instantCart->customer_id = $order->customer->id;
         $instantCart->user_id = $order->customer->user_id;
         $instantCart->order_id = $order->id;
         $instantCart->cart_hash = md5('custom_payment_cart_' . wp_generate_uuid4() . time());

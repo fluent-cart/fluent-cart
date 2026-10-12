@@ -105,6 +105,7 @@ const InspectorSettings = ({attributes, setAttributes, selectedProduct, setSelec
                                 setAttributes={setAttributes}
                                 selectedProduct={selectedProduct}
                                 setSelectedProduct={setSelectedProduct}
+                                allowMultiProduct={true}
                             />
                         )}
 

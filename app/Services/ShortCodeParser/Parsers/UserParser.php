@@ -28,6 +28,12 @@ class UserParser extends BaseParser
         'site_name' => 'getSiteName',
     ];
 
+    // Anything unlisted would fall through to Arr::get() on the whole parser data
+    // and could walk into the order, its customer and their WP user.
+    protected array $allowedAccessors = [
+        'ID', 'id', 'first_name', 'last_name', 'display_name', 'email', 'user_email', 'user_login',
+    ];
+
     protected function setUser()
     {
         $this->user = get_user_by('ID', $this->userId) ?: null;
@@ -35,7 +41,11 @@ class UserParser extends BaseParser
 
     public function parse($accessor = null, $code = null): ?string
     {
-        return $this->get($accessor,$code);
+        if (!in_array($accessor, $this->allowedAccessors, true)) {
+            return '';
+        }
+
+        return $this->get($accessor, $code);
     }
 
     public function getID()
@@ -65,6 +75,12 @@ class UserParser extends BaseParser
     public function getUserEmail()
     {
         return $this->getDataFromUser('user_email');
+    }
+
+    // Half of the login credentials: admin previews only, never customer-facing renders.
+    public function getUserLogin()
+    {
+        return current_user_can('manage_options') ? $this->getDataFromUser('user_login') : '';
     }
 
     private function getDataFromUser(string $key)

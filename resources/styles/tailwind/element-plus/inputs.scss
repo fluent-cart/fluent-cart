@@ -328,6 +328,12 @@
                 @apply h-auto py-[13px] rounded px-4;
             }
         }
+        &.is-disabled {
+            @apply bg-gray-50 dark:border-dark-400 dark:bg-dark-600;
+            .el-radio__inner{
+                @apply dark:bg-dark-600 dark:border-dark-400;
+            }
+        }
     }
     &__inner{
         @apply border-[1.5px] w-4 h-4 border-gray-outline dark:bg-transparent dark:border-dark-300;

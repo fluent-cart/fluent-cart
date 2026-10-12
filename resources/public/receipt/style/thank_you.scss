@@ -103,6 +103,10 @@ body:not(.fluent-cart-no-colors) {
             &-inner {
               @apply text-sm font-bold text-[var(--fct-primary-text-color,#111827)] m-0 leading-[24px];
             }
+            .fct-thank-you-page-order-items-list-price-original {
+                @apply text-[13px] text-system-mid font-normal mr-1;
+                text-decoration: line-through;
+            }
           }
           .fct-bundle-products {
             @apply mt-2.5;
@@ -149,10 +153,10 @@ body:not(.fluent-cart-no-colors) {
       @apply flex items-center justify-between;
       margin-bottom: 5px;
       &-label {
-        @apply text-sm text-[var(--fct-secondary-text-color,#374151)] leading-[24px] m-0;
+        @apply text-sm text-[var(--fct-secondary-text-color,#374151)] leading-[24px] m-0 inline-flex items-center gap-1;
 
         .fct-shipping-method-name {
-          @apply block text-xs text-[var(--fct-secondary-text-color,#6b7280)] leading-[18px];
+          @apply block text-[13px] text-[var(--fct-secondary-text-color,#6b7280)] leading-[18px];
         }
       }
       &-value {

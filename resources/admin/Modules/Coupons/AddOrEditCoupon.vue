@@ -1087,6 +1087,7 @@ export default {
       return [];
     },
     reloadPage(){
+      this.changes_made = 0;
       return window.location.reload();
     },
     validateAndFormatDate(date){

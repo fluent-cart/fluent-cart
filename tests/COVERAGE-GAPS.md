@@ -197,7 +197,6 @@ Recommended routes use these labels:
 | `app/Modules/Templating/Bricks/Elements/ProductContent.php` | 113 | Bricks product-content element | Optional builder is absent | **Browser:** sanitized rich content |
 | `app/Modules/Templating/Bricks/Elements/ProductShortDescription.php` | 112 | Bricks short-description element | Optional builder is absent | **Browser:** empty and sanitized content |
 | `app/Services/ShortCodeParser/Parsers/OrderParser.php` | 965 | Resolves order smartcodes | No email/receipt smartcode success fixture enters it | **Fixture:** exhaustive field, null, and privacy matrix |
-| `app/Services/ShortCodeParser/ShortcodeParser.php` | 417 | Dispatches shortcode/smartcode parsing | Email/template render flow is absent | **Now/Fixture:** parser grammar and unknown-token behavior |
 | `app/Services/ShortCodeParser/SmartCodeParser.php` | 265 | Parses modern smartcode expressions | Template rendering does not invoke it | **Now:** malformed, nested, and escaping cases |
 | `app/Services/ShortCodeParser/Parsers/ItemParser.php` | 180 | Resolves order-item smartcodes | Needs owned item fixtures and template context | **Fixture:** item money/product/variation fields |
 | `app/Services/ShortCodeParser/Parsers/BaseParser.php` | 154 | Shared smartcode parser behavior | Only reached through untested template flows | **Now:** probe subclass for fallback/formatting |

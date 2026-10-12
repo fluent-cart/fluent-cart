@@ -72,6 +72,11 @@ import AllReviews from "@/Modules/Reviews/AllReviews.vue";
 import SingleReview from "@/Modules/Reviews/SingleReview.vue";
 
 import ReviewSettings from "@/Modules/Settings/ReviewSettings.vue";
+
+import AllPricingRules from "@/Modules/DynamicPricing/AllPricingRules.vue";
+import CreateNewPricingRule from "@/Modules/DynamicPricing/CreateNewPricingRule.vue";
+import EditPricingRule from "@/Modules/DynamicPricing/EditPricingRule.vue";
+
 import CheckoutFields from "@/Modules/Settings/CheckoutFields.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
@@ -877,6 +882,39 @@ export var routes = {
                 }
             }
         ]
+    },
+
+    dynamic_pricing: {
+        name: 'dynamic_pricing',
+        path: '/dynamic_pricing',
+        component: AllPricingRules,
+        meta: {
+            active_menu: 'dynamic_pricing',
+            title: translate('Dynamic Pricing'),
+            permission: 'dynamic_pricing/view',
+        }
+    },
+
+    dynamic_pricing_create: {
+        name: 'dynamic_pricing_create',
+        path: '/dynamic_pricing/create',
+        component: CreateNewPricingRule,
+        meta: {
+            active_menu: 'dynamic_pricing',
+            title: translate('New Pricing Rule'),
+            permission: 'dynamic_pricing/manage',
+        }
+    },
+
+    dynamic_pricing_edit: {
+        name: 'dynamic_pricing_edit',
+        path: '/dynamic_pricing/:id/edit',
+        component: EditPricingRule,
+        meta: {
+            active_menu: 'dynamic_pricing',
+            title: translate('Edit Pricing Rule'),
+            permission: 'dynamic_pricing/manage',
+        }
     },
 
     logs: {

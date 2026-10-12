@@ -1,7 +1,12 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/ProductReviewSummary/Components/InspectorSettings";
 import SummaryPreview from "@/BlockEditor/ProductReviews/Components/SummaryPreview";
-import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {
+    isMultiProductQuery,
+    useInsideProductReviews,
+    useReviewBlockProduct,
+    useReviewContainerQuery,
+} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
 import {RatingBars} from "@/BlockEditor/Icons";
 
 const {useBlockProps} = wp.blockEditor;
@@ -38,8 +43,14 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         });
 
         const insideParent = useInsideProductReviews(clientId);
+        // The Summary Group (or the Product Reviews block around it) owns the query.
+        const containerQuery = useReviewContainerQuery(clientId);
+        const effectiveQueryType = containerQuery ? containerQuery.queryType : 'default';
+        const effectiveProductIds = containerQuery ? containerQuery.productIds : [];
+        const isCombined = isMultiProductQuery(effectiveQueryType);
+
         const {selectedProduct, setSelectedProduct, reviewSummary, effectiveProductId} =
-            useReviewBlockProduct(attributes, insideParent, true);
+            useReviewBlockProduct(attributes, insideParent, !isCombined);
 
         // Inside the container the parent owns the product: pin the child to
         // the default query so resolveProduct() follows the parent's setup
@@ -55,7 +66,18 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const reviewCount = parseInt(reviewSummary?.total ?? otherInfo.review_count, 10) || 0;
         const ratingBreakdown = reviewSummary?.breakdown || otherInfo.rating_breakdown || {};
         const starColor = attributes.starColor || '#f59e0b';
-        const hasProductData = !!effectiveProductId && !!selectedProduct?.ID;
+        const hasProductData = !isCombined && !!effectiveProductId && !!selectedProduct?.ID;
+
+        let combinedCaption = '';
+        if (isCombined) {
+            if (effectiveQueryType === 'all') {
+                combinedCaption = blocktranslate('Combined rating for all products');
+            } else if (effectiveProductIds.length) {
+                combinedCaption = blocktranslate('Combined rating for the selected products');
+            } else {
+                combinedCaption = blocktranslate('Select products to show their combined rating.');
+            }
+        }
 
         return (
             <div {...blockProps}>
@@ -75,11 +97,15 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                         ratingBreakdown={ratingBreakdown}
                         starColor={starColor}
                     />
-                    {!hasProductData && !insideParent && (
+                    {isCombined ? (
+                        <div className="fct-reviews-block-skeleton-caption" role="status">
+                            {combinedCaption}
+                        </div>
+                    ) : (!hasProductData && !insideParent && (
                         <div className="fct-reviews-block-skeleton-caption">
                             {blocktranslate('Reviews will be displayed for the current product')}
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
         );

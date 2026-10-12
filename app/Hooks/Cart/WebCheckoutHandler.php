@@ -146,8 +146,11 @@ class WebCheckoutHandler
 
         $charge = 0;
         if (!empty($shippingMethod)) {
-            $shippingCountry = Arr::get($cart->checkout_data, 'form_data.shipping_country');
-            $shippingState = Arr::get($cart->checkout_data, 'form_data.shipping_state');
+            // The address the order ships to: the shipping fields only with ship-to-different on,
+            // otherwise billing, the same rule place-order validates the method against.
+            $shippingAddress = $cart->getShippingAddress();
+            $shippingCountry = Arr::get($shippingAddress, 'country');
+            $shippingState = Arr::get($shippingAddress, 'state');
 
             $lists = AddressHelper::getAvailableShippingMethodLists(['country_code' => $shippingCountry, 'state' => $shippingState]);
 
@@ -160,12 +163,11 @@ class WebCheckoutHandler
                     if (!empty($shippingMethod)) {
                         $charge = CartHelper::calculateShippingMethodCharge($shippingMethod);
                     }
-                } else {
-                    CartHelper::resetShippingCharge();
                 }
-            } else {
-                CartHelper::resetShippingCharge();
             }
+            // Read-only: gateways call this on load to size their payment amount. A method this
+            // address can't use adds no shipping, but the cart is left alone. Resetting it here
+            // wiped valid selections, and place-order then taxed shipping from the emptied cart.
         }
 
         return [
@@ -780,6 +782,8 @@ class WebCheckoutHandler
         $validKeys = [
             'ship_to_different' => 'form_data.ship_to_different',
             'billing_email' => 'form_data.billing_email',
+            'billing_first_name' => 'form_data.billing_first_name',
+            'billing_last_name' => 'form_data.billing_last_name',
             'billing_address_id' => 'form_data.billing_address_id',
             'shipping_address_id' => 'form_data.shipping_address_id',
             'billing_company' => 'form_data.billing_company',
@@ -885,6 +889,14 @@ class WebCheckoutHandler
             $nameParts = explode(' ', $fullName);
             $cart->first_name = array_shift($nameParts);
             $cart->last_name = implode(' ', $nameParts);
+        }
+
+        if (isset($normalizeData['billing_first_name'])) {
+            $cart->first_name = $normalizeData['billing_first_name'];
+        }
+
+        if (isset($normalizeData['billing_last_name'])) {
+            $cart->last_name = $normalizeData['billing_last_name'];
         }
 
         $cart->fill($fillData);

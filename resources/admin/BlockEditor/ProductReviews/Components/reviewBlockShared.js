@@ -121,3 +121,95 @@ export const useReviewBlockProduct = (attributes, insideParent, withSummary = fa
 
     return {selectedProduct, setSelectedProduct, reviewSummary, effectiveProductId};
 };
+
+export const isMultiProductQuery = (queryType) => queryType === 'all' || queryType === 'multiple';
+
+/**
+ * The query of the block that owns this one's product: the nearest Product
+ * Reviews container, else a standalone Summary Group; null outside both. Read
+ * from attributes: a Summary Group inside a container provides its own query
+ * context, which would hide the container's mode from its children.
+ */
+export const useReviewContainerQuery = (clientId) => {
+    const containerId = useSelect((select) => {
+        const {getBlockParents, getBlockName} = select(blockEditorStore);
+        const parents = getBlockParents(clientId, true);
+
+        return parents.find((parentId) => getBlockName(parentId) === 'fluent-cart/product-reviews')
+            || parents.find((parentId) => getBlockName(parentId) === 'fluent-cart/product-review-summary-group')
+            || '';
+    }, [clientId]);
+
+    const containerAttributes = useSelect(
+        (select) => (containerId ? select(blockEditorStore).getBlockAttributes(containerId) : null),
+        [containerId]
+    );
+
+    if (!containerAttributes) {
+        return null;
+    }
+
+    return {
+        queryType: containerAttributes.query_type || 'default',
+        productIds: Array.isArray(containerAttributes.product_ids) ? containerAttributes.product_ids : [],
+    };
+};
+
+/**
+ * Whether Write a Review or the form sits in an All or Selected products (two or
+ * more) container, which renders it as nothing on the page.
+ */
+export const useHiddenByReviewContainer = (clientId) => {
+    const containerQuery = useReviewContainerQuery(clientId);
+    const hidden = !!containerQuery && isMultiProductQuery(containerQuery.queryType);
+
+    return {hidden, showNotice: hidden};
+};
+
+/**
+ * Review count for the All or Multiple products preview, from the same endpoint
+ * the page pages through. An empty Multiple selection is not fetched: it lists nothing.
+ *
+ * @returns {{status: 'idle'|'loading'|'ready'|'unavailable'|'error', total: number}}
+ */
+export const useMultiProductReviewCount = (queryType, productIds) => {
+    const [countState, setCountState] = useState({status: 'idle', total: 0});
+    const productIdsKey = (Array.isArray(productIds) ? productIds : []).join(',');
+    const shouldFetch = queryType === 'all' || (queryType === 'multiple' && productIdsKey !== '');
+
+    useEffect(() => {
+        if (!shouldFetch || !rest.url) {
+            setCountState({status: 'idle', total: 0});
+            return undefined;
+        }
+
+        let stale = false;
+        setCountState((previous) => ({...previous, status: 'loading'}));
+
+        // parse: false keeps the HTTP status: a 404 means reviews are switched off.
+        apiFetch({
+            path: addQueryArgs(rest.url + '/public/reviews/all', {
+                per_page: 1,
+                product_ids: queryType === 'multiple' ? productIdsKey : '',
+            }),
+            headers: {
+                'X-WP-Nonce': rest.nonce
+            },
+            parse: false,
+        }).then((response) => response.json()).then((body) => {
+            if (!stale) {
+                setCountState({status: 'ready', total: parseInt(body?.reviews?.total, 10) || 0});
+            }
+        }).catch((error) => {
+            if (!stale) {
+                setCountState({status: error?.status === 404 ? 'unavailable' : 'error', total: 0});
+            }
+        });
+
+        return () => {
+            stale = true;
+        };
+    }, [shouldFetch, queryType, productIdsKey]);
+
+    return countState;
+};

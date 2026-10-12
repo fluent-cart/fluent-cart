@@ -8,7 +8,7 @@
 
         <div class="fct-save-bar-right">
           <div class="fct-btn-group">
-            <el-button @click="discardEmitEvent" type="info" soft> {{ discardButtonText}}</el-button>
+            <el-button @click="discardEmitEvent" type="info" soft :disabled="loading"> {{ discardButtonText}}</el-button>
             <el-button type="primary" @click="saveEmitEvent" :loading="loading">
               <span v-if="showCmndIcon" class="cmd">⌘s</span>
               {{ saveButtonText }}
@@ -59,12 +59,10 @@ watch(() => props.isActive, (newVal, oldVal) => {
 const emit = defineEmits(['discard', 'save']);
 
 const discardEmitEvent = () => {
-  isChangeActive.value = '';
   emit('discard');
 };
 
 const saveEmitEvent = () => {
-  isChangeActive.value = '';
   emit('save');
 };
 

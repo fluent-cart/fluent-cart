@@ -3,6 +3,7 @@
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Renderer\ProductReviewRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
@@ -101,7 +102,7 @@ class ProductReviewSummaryBlockEditor extends BlockEditor
 
     public function useContext()
     {
-        return ['fluent-cart/review_container_query'];
+        return ['fluent-cart/review_container_query', 'fluent-cart/review_container_product_ids'];
     }
 
     public function render(array $shortCodeAttribute, $block = null)
@@ -112,6 +113,17 @@ class ProductReviewSummaryBlockEditor extends BlockEditor
         // its own query.
         $insideContainer = $block instanceof \WP_Block
             && isset($block->context['fluent-cart/review_container_query']);
+
+        $queryType = $insideContainer
+            ? $block->context['fluent-cart/review_container_query']
+            : Arr::get($shortCodeAttribute, 'query_type', 'default');
+
+        // Checked before resolveProduct(), which reads any mode but custom as the current product.
+        if (ProductReviewService::isMultiProductQuery($queryType)) {
+            return $this->renderCombinedSummary($shortCodeAttribute, $queryType, $insideContainer
+                ? Arr::get($block->context, 'fluent-cart/review_container_product_ids', [])
+                : Arr::get($shortCodeAttribute, 'product_ids', []));
+        }
 
         $product = $insideContainer ? fluent_cart_get_current_product() : $this->resolveProduct($shortCodeAttribute);
 
@@ -128,6 +140,33 @@ class ProductReviewSummaryBlockEditor extends BlockEditor
         ob_start();
         (new ProductReviewRenderer($product->ID, [
             'starColor' => Arr::get($shortCodeAttribute, 'starColor', '#f59e0b'),
+        ]))->renderSummarySection();
+        $inner = ob_get_clean();
+
+        return static::wrapUnlessEmpty($wrapper_attributes, $inner);
+    }
+
+    /**
+     * All products or Selected products (two or more): one card added up across them.
+     */
+    protected function renderCombinedSummary(array $shortCodeAttribute, string $queryType, $productIds)
+    {
+        $productFilters = ProductReviewService::blockProductFilters($queryType, $productIds);
+
+        if ($productFilters === null) {
+            return '';
+        }
+
+        AssetLoader::loadSingleProductAssets();
+
+        $wrapper_attributes = get_block_wrapper_attributes([
+            'class' => 'fct-review-summary-block',
+        ]);
+
+        ob_start();
+        (new ProductReviewRenderer(0, [
+            'starColor'      => Arr::get($shortCodeAttribute, 'starColor', '#f59e0b'),
+            'productFilters' => $productFilters,
         ]))->renderSummarySection();
         $inner = ob_get_clean();
 

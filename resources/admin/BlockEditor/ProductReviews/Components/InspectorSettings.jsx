@@ -5,8 +5,9 @@ const {useEffect, useRef, useState} = wp.element;
 
 import ReviewProductPanel from "@/BlockEditor/ProductReviews/Components/ReviewProductPanel";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
-import {applyPreset, defaultPreset, presetCategory, presetForBlocks, presetHelp, presetIsPro, presetOptions} from "@/BlockEditor/ProductReviews/Components/reviewPresets";
+import {applyPreset, defaultPreset, fitCustomSectionToSource, fitPresetToSource, presetCategory, presetForBlocks, presetHelp, presetIsPro, presetOptions} from "@/BlockEditor/ProductReviews/Components/reviewPresets";
 import PresetThumb from "@/BlockEditor/ProductReviews/Components/PresetThumb";
+import {isMultiProductQuery} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
 
 // How many cards to a row, matching `grid-cols-2` on .fct-review-preset-grid in
 // the stylesheet. Up and down move by a row, so this has to agree with the CSS;
@@ -20,7 +21,7 @@ const PRESET_COLUMNS = 2;
 const InspectorSettings = ({attributes, setAttributes, selectedProduct, setSelectedProduct, insideParent, clientId}) => {
     const childBlocks = useSelect((select) => select('core/block-editor').getBlocks(clientId), [clientId]);
     const [activeCategory, setActiveCategory] = useState('all');
-    const detectedPreset = presetForBlocks(childBlocks);
+    const detectedPreset = presetForBlocks(childBlocks, isMultiProductQuery(attributes.query_type));
     const preset = !childBlocks.length
         ? (attributes.preset || defaultPreset())
         : (detectedPreset === 'custom' ? 'custom' : detectedPreset);
@@ -53,7 +54,29 @@ const InspectorSettings = ({attributes, setAttributes, selectedProduct, setSelec
         }
 
         setAttributes({preset: value});
-        applyPreset(value, clientId);
+        applyPreset(value, clientId, {multiProduct: isMultiProductQuery(attributes.query_type)});
+    };
+
+    // Crossing between one product and several removes or restores Write a
+    // Review and the form; the rating summary stays and combines the products.
+    const setProductAttributes = (nextAttributes) => {
+        const wasMultiProduct = isMultiProductQuery(attributes.query_type);
+        const nextQueryType = Object.prototype.hasOwnProperty.call(nextAttributes, 'query_type')
+            ? nextAttributes.query_type
+            : attributes.query_type;
+        const willBeMultiProduct = isMultiProductQuery(nextQueryType);
+
+        setAttributes(nextAttributes);
+
+        if (wasMultiProduct === willBeMultiProduct) {
+            return;
+        }
+
+        if (preset === 'custom') {
+            fitCustomSectionToSource(clientId, willBeMultiProduct);
+        } else {
+            fitPresetToSource(preset, clientId, willBeMultiProduct);
+        }
     };
 
     // Roving tabindex. Every card used to be a tab stop, so reaching the panel
@@ -145,9 +168,11 @@ const InspectorSettings = ({attributes, setAttributes, selectedProduct, setSelec
                         {!insideParent && (
                             <ReviewProductPanel
                                 attributes={attributes}
-                                setAttributes={setAttributes}
+                                setAttributes={setProductAttributes}
                                 selectedProduct={selectedProduct}
                                 setSelectedProduct={setSelectedProduct}
+                                allowMultiProduct={true}
+                                hasSingleProductChildren={true}
                             />
                         )}
                         
@@ -230,6 +255,11 @@ const InspectorSettings = ({attributes, setAttributes, selectedProduct, setSelec
                             <p className="fct-preset-note">
                                 {blocktranslate('Builds the section from these blocks. Anything arranged inside it is replaced.')}
                             </p>
+                            {isMultiProductQuery(attributes.query_type) && (
+                                <p className="fct-preset-note">
+                                    {blocktranslate('Showing several products, so layouts are built without the Write a Review button.')}
+                                </p>
+                            )}
                         </PanelBody>
 
                     </div>

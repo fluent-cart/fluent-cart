@@ -3,6 +3,7 @@
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
 
@@ -51,13 +52,14 @@ class ProductReviewSummaryGroupBlockEditor extends BlockEditor
     public function provideContext()
     {
         return [
-            'fluent-cart/review_container_query' => 'query_type',
+            'fluent-cart/review_container_query'       => 'query_type',
+            'fluent-cart/review_container_product_ids' => 'product_ids',
         ];
     }
 
     public function useContext()
     {
-        return ['fluent-cart/review_container_query'];
+        return ['fluent-cart/review_container_query', 'fluent-cart/review_container_product_ids'];
     }
 
     public function blockAttributes(): array
@@ -68,6 +70,7 @@ class ProductReviewSummaryGroupBlockEditor extends BlockEditor
             // attribute missing here never reaches the render callback.
             'query_type' => ['type' => 'string', 'default' => 'default'],
             'product_id' => ['type' => ['string', 'number'], 'default' => ''],
+            'product_ids' => ['type' => 'array', 'default' => []],
         ];
     }
 
@@ -113,6 +116,21 @@ class ProductReviewSummaryGroupBlockEditor extends BlockEditor
         $insideContainer = $block instanceof \WP_Block
             && isset($block->context['fluent-cart/review_container_query']);
 
+        if ($insideContainer && ProductReviewService::isMultiProductQuery($block->context['fluent-cart/review_container_query'])) {
+            return $this->renderForSeveralProducts($block, true);
+        }
+
+        // Standalone, its own All products or Selected products query; checked before
+        // resolveProduct(), which reads any mode but custom as the current product.
+        $queryType = Arr::get($shortCodeAttribute, 'query_type', 'default');
+        if (!$insideContainer && ProductReviewService::isMultiProductQuery($queryType)) {
+            if (ProductReviewService::blockProductFilters($queryType, Arr::get($shortCodeAttribute, 'product_ids', [])) === null) {
+                return '';
+            }
+
+            return $this->renderForSeveralProducts($block, false);
+        }
+
         $product = $insideContainer ? fluent_cart_get_current_product() : $this->resolveProduct($shortCodeAttribute);
 
         if (!$product) {
@@ -147,6 +165,38 @@ class ProductReviewSummaryGroupBlockEditor extends BlockEditor
             } else {
                 wp_reset_postdata();
             }
+        }
+
+        $wrapper_attributes = get_block_wrapper_attributes([
+            'class' => 'fct-review-summary-group',
+        ]);
+
+        return static::wrapUnlessEmpty($wrapper_attributes, $innerContent);
+    }
+
+    /**
+     * All products or Selected products: the Rating Summary inside combines the
+     * products and Write a Review hides. Inside a container the group's own query
+     * context would hide the container's, so the children are rebuilt with the
+     * context the group read from it.
+     */
+    protected function renderForSeveralProducts($block, bool $useContainerContext)
+    {
+        if (!($block instanceof \WP_Block)) {
+            return '';
+        }
+
+        AssetLoader::loadSingleProductAssets();
+
+        $innerContent = '';
+        foreach ($block->inner_blocks as $innerBlock) {
+            if (!isset($innerBlock->parsed_block)) {
+                continue;
+            }
+
+            $innerContent .= $useContainerContext
+                ? (new \WP_Block($innerBlock->parsed_block, $block->context))->render()
+                : $innerBlock->render();
         }
 
         $wrapper_attributes = get_block_wrapper_attributes([

@@ -107,6 +107,29 @@ class RenewalService
         // would make the checkout total drop the included tax (e.g. $100 renders as $90.91).
         $unitPriceBase = ($parentOrder->tax_behavior == 2) ? $total : $subtotal;
 
+        // A pricing rule may discount this invoice. The engine lives in pro; it
+        // is handed the figures and hands back what it took, so the invoice,
+        // its line and its pending charge all carry the same amount.
+        // The lock is held from here on, so a listener that throws must not
+        // escape: release it and report the failure like any other.
+        try {
+            $pricing = self::requestedPricing($subtotal, $taxTotal, $total, $subscription, $parentOrder, $parentOrderItem);
+        } catch (\Throwable $e) {
+            $wpdb->query($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lockName));
+            return new WP_Error('invoice_creation_failed', $e->getMessage());
+        }
+
+
+        $discountTotal = max(0, min((int) Arr::get($pricing, 'discount_total', 0), $subtotal));
+        $originalTax   = $taxTotal;
+
+        if ($discountTotal > 0) {
+            $taxTotal = max(0, min((int) Arr::get($pricing, 'tax_total', $originalTax), $originalTax));
+            $total    = max(0, $total - $discountTotal - ($originalTax - $taxTotal));
+        }
+
+        $pricing = self::persistedPricing($pricing, $subtotal, $taxTotal, $total, $discountTotal);
+
         $fulfillmentType = $parentOrderItem->fulfillment_type;
 
         // System (auto-charged) subscriptions: the invoice waits in payment_scheduled
@@ -130,6 +153,7 @@ class RenewalService
             'tax_behavior'     => $parentOrder->tax_behavior,
             'subtotal'         => $subtotal,
             'tax_total'        => $taxTotal,
+            'manual_discount_total' => $discountTotal,
             'total_amount'     => $total,
             'total_paid'       => 0,
             'config'           => [
@@ -151,14 +175,39 @@ class RenewalService
 
             self::copyParentOrderSnapshot($parentOrder, $childOrder);
 
-            // Copy tax-rate rows from parent so invoice rendering has the breakdown
-            foreach ($parentOrder->orderTaxRates as $taxRate) {
+       
+            $taxRates   = $parentOrder->orderTaxRates->values();
+            $parentTax  = (int) $taxRates->sum('total_tax');
+            $splitTax   = $taxTotal < $originalTax && $parentTax > 0;
+            $lastIndex  = $taxRates->count() - 1;
+            $distributed = 0;
+
+            foreach ($taxRates as $index => $taxRate) {
+                $rowTotal    = (int) $taxRate->total_tax;
+                $rowShipping = (int) $taxRate->shipping_tax;
+                $rowOrder    = (int) $taxRate->order_tax;
+
+                if ($splitTax) {
+                    // Capped at what is left, so rounding up the earlier rates can
+                    // never push the last one below zero.
+                    $newTotal = ($index === $lastIndex)
+                        ? $taxTotal - $distributed
+                        : min((int) round($taxTotal * ($rowTotal / $parentTax)), $taxTotal - $distributed);
+
+                    $distributed += $newTotal;
+
+                    // Keep the row's own order/shipping split.
+                    $rowShipping = $rowTotal > 0 ? (int) round($newTotal * ($rowShipping / $rowTotal)) : 0;
+                    $rowOrder    = $newTotal - $rowShipping;
+                    $rowTotal    = $newTotal;
+                }
+
                 OrderTaxRate::query()->create([
                     'order_id'    => $childOrder->id,
                     'tax_rate_id' => $taxRate->tax_rate_id,
-                    'shipping_tax' => $taxRate->shipping_tax,
-                    'order_tax'   => $taxRate->order_tax,
-                    'total_tax'   => $taxRate->total_tax,
+                    'shipping_tax' => $rowShipping,
+                    'order_tax'   => $rowOrder,
+                    'total_tax'   => $rowTotal,
                     'meta'        => $taxRate->meta,
                 ]);
             }
@@ -175,6 +224,7 @@ class RenewalService
                 'fulfillment_type' => $fulfillmentType,
                 'unit_price' => $subscription->quantity > 1 ? (int)round($unitPriceBase / $subscription->quantity) : $unitPriceBase,
                 'subtotal' => $subtotal,
+                'discount_total' => $discountTotal,
                 'tax_amount' => $taxTotal,
                 'line_total' => $total,
                 'line_meta' => [],
@@ -204,6 +254,16 @@ class RenewalService
             if (!$transaction) {
                 throw new \RuntimeException(__('Failed to create transaction record for renewal order.', 'fluent-cart'));
             }
+
+            // Inside the transaction: whatever must be written with the order —
+            // the record of the pricing that discounted it — is written here, and
+            // a listener that throws rolls the whole order back.
+            do_action('fluent_cart/renewal/before_commit_order', [
+                'order'        => $childOrder,
+                'subscription' => $subscription,
+                'transaction'  => $transaction,
+                'pricing'      => $pricing,
+            ]);
 
             $wpdb->query('COMMIT');
         } catch (\Throwable $e) {
@@ -255,6 +315,74 @@ class RenewalService
         $wpdb->query($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lockName));
 
         return [$childOrder];
+    }
+
+    /**
+     * The renewal order's pricing, as the before_create_order listeners leave
+     * it. Starts from the order's own figures with no discount, and falls back
+     * to them when a listener returns something that is not an array.
+     *
+     * @param int          $subtotal
+     * @param int          $taxTotal
+     * @param int          $total
+     * @param Subscription $subscription
+     * @param Order        $parentOrder
+     * @param OrderItem    $parentOrderItem
+     * @return array
+     */
+    private static function requestedPricing(int $subtotal, int $taxTotal, int $total, Subscription $subscription, Order $parentOrder, OrderItem $parentOrderItem): array
+    {
+        $defaultPricing = [
+            'subtotal'       => $subtotal,
+            'tax_total'      => $taxTotal,
+            'total'          => $total,
+            'discount_total' => 0,
+            'applied_rules'  => [],
+        ];
+
+        $pricing = apply_filters('fluent_cart/renewal/before_create_order', $defaultPricing, [
+            'subscription'      => $subscription,
+            'parent_order'      => $parentOrder,
+            'parent_order_item' => $parentOrderItem,
+        ]);
+
+        return is_array($pricing) ? $pricing : $defaultPricing;
+    }
+
+    /**
+     * The pricing as it was written to the renewal order, for
+     * before_commit_order to report: the clamped figures, and the applied rules filled in order up
+     * to the discount actually taken. A rule without an amount is passed
+     * through as the listener sent it.
+     *
+     * @param array $pricing       What the before_create_order listener returned.
+     * @param int   $subtotal
+     * @param int   $taxTotal
+     * @param int   $total
+     * @param int   $discountTotal
+     * @return array
+     */
+    private static function persistedPricing(array $pricing, int $subtotal, int $taxTotal, int $total, int $discountTotal): array
+    {
+        $appliedRules = [];
+        $remaining    = $discountTotal;
+
+        foreach ((array) Arr::get($pricing, 'applied_rules', []) as $rule) {
+            if (is_array($rule) && array_key_exists('adjustment_amount', $rule)) {
+                $rule['adjustment_amount'] = max(0, min((int) $rule['adjustment_amount'], $remaining));
+                $remaining -= $rule['adjustment_amount'];
+            }
+
+            $appliedRules[] = $rule;
+        }
+
+        return [
+            'subtotal'       => $subtotal,
+            'tax_total'      => $taxTotal,
+            'total'          => $total,
+            'discount_total' => $discountTotal,
+            'applied_rules'  => $appliedRules,
+        ];
     }
 
     private static function copyParentOrderSnapshot(Order $parentOrder, Order $childOrder): void

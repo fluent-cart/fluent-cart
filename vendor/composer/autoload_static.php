@@ -770,7 +770,6 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\TransactionParser' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/Parsers/TransactionParser.php',
         'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\UserParser' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/Parsers/UserParser.php',
         'FluentCart\\App\\Services\\ShortCodeParser\\Parsers\\WPParser' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/Parsers/WPParser.php',
-        'FluentCart\\App\\Services\\ShortCodeParser\\ShortcodeParser' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/ShortcodeParser.php',
         'FluentCart\\App\\Services\\ShortCodeParser\\ShortcodeTemplateBuilder' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/ShortcodeTemplateBuilder.php',
         'FluentCart\\App\\Services\\ShortCodeParser\\SmartCodeParser' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/SmartCodeParser.php',
         'FluentCart\\App\\Services\\ShortCodeParser\\ValueTransformer' => __DIR__ . '/../..' . '/app/Services/ShortCodeParser/ValueTransformer.php',

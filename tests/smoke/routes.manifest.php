@@ -1131,6 +1131,10 @@ $declare($frontend, 114, 'public/reviews/{postId}/{reviewId}/modal', [
     'auth'  => 'anonymous',
     'needs' => 'review',
 ]);
+$declare($frontend, 115, 'public/reviews/all', [
+    'auth'   => 'anonymous',
+    'params' => ['page' => 1, 'per_page' => 5],
+]);
 
 $web = 'app/Http/Routes/WebRoutes.php';
 $declare($web, 87, '?fluent-cart=instant_checkout', [

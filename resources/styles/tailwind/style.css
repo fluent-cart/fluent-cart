@@ -89,6 +89,7 @@
 @import "attributes.scss";
 @import "mcp.scss";
 @import "appearance.scss";
+@import "pricing-rule.scss";
 
 @import "responsive.scss";
 

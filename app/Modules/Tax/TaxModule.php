@@ -290,7 +290,7 @@ class TaxModule
         $fillData = $this->calculateCartTax([
             'cart_data'     => $cart->cart_data,
             'checkout_data' => $checkoutData
-        ]);
+        ], $cart);
 
         $cart->fill($fillData);
         $cart->save();
@@ -344,7 +344,7 @@ class TaxModule
             ]
         );
 
-        return $this->calculateCartTax($fillData);
+        return $this->calculateCartTax($fillData, $cart);
     }
 
     public function maybeInvalidateVatValidationForCountryChange($checkoutData, $previousFormData = [])
@@ -456,7 +456,13 @@ class TaxModule
         return Arr::get($settings, 'enable_tax', 'no') === 'yes';
     }
 
-    public function calculateCartTax($fillData)
+    /**
+     * @param array $fillData ['cart_data' => array, 'checkout_data' => array]
+     * @param Cart|null $cart Pass it while cart_data holds no rule discounts yet, so tax
+     *                        is worked out on the price after dynamic pricing rules.
+     * @return array
+     */
+    public function calculateCartTax($fillData, $cart = null)
     {
         $lineItems = Arr::get($fillData, 'cart_data', []);
         $checkoutData = Arr::get($fillData, 'checkout_data', []);
@@ -545,6 +551,11 @@ class TaxModule
                     }
                 }
             }
+        }
+
+        $unpricedLineItems = $lineItems;
+        if ($cart instanceof Cart) {
+            $lineItems = $this->applyPricingRules($lineItems, $checkoutData, $cart);
         }
 
         $country = '';
@@ -798,6 +809,10 @@ class TaxModule
         $checkoutData['tax_data']['tax_lines'] = $taxLines;
         $fillData['checkout_data'] = $checkoutData;
 
+        if ($cart instanceof Cart) {
+            $productLines = $this->restoreUnpricedValues($productLines, $unpricedLineItems);
+        }
+
         // Only product lines go back into cart_data
         $fillData['cart_data'] = $productLines;
 
@@ -806,6 +821,115 @@ class TaxModule
         }
 
         return $fillData;
+    }
+
+    /**
+     * The lines as the checkout prices them: rule discounts on the items and on each
+     * line's shipping share. Uses the same hooks as the summary and placeOrder(), so
+     * tax is charged on the amount the customer pays.
+     *
+     * @param array $lineItems
+     * @param array $checkoutData
+     * @param Cart $cart
+     * @return array
+     */
+    private function applyPricingRules(array $lineItems, array $checkoutData, Cart $cart): array
+    {
+        // A copy, so rule conditions read the address being patched without touching the cart.
+        $pricedCart = clone $cart;
+        $pricedCart->cart_data = $lineItems;
+        $pricedCart->checkout_data = $checkoutData;
+
+        $priced = apply_filters('fluent_cart/cart/item_dynamic_discount', $lineItems, [
+            'cart' => $pricedCart,
+        ]);
+        $lineItems = is_array($priced) ? $priced : $lineItems;
+
+        $shipping = 0;
+        foreach ($lineItems as $lineItem) {
+            $shipping += (int) Arr::get($lineItem, 'shipping_charge', 0)
+                + (int) Arr::get($lineItem, 'itemwise_shipping_charge', 0);
+        }
+
+        if ($shipping <= 0) {
+            return $lineItems;
+        }
+
+        $discounted = (int) apply_filters('fluent_cart/checkout/order_shipping_charge', $shipping, [
+            'cart' => $pricedCart,
+        ]);
+        $discounted = max(0, min($discounted, $shipping));
+
+        if ($discounted === $shipping) {
+            return $lineItems;
+        }
+
+        // Floor each share, then give the leftover cents to the largest remainders, so the
+        // shares add up to exactly the discounted charge and none goes below zero.
+        $left = $discounted;
+        $remainders = [];
+        foreach ($lineItems as $key => $lineItem) {
+            foreach (['shipping_charge', 'itemwise_shipping_charge'] as $field) {
+                $share = (int) Arr::get($lineItem, $field, 0);
+                if ($share <= 0) {
+                    continue;
+                }
+                $scaled = intdiv($share * $discounted, $shipping);
+                $lineItems[$key][$field] = $scaled;
+                $left -= $scaled;
+                $remainders[] = [$key, $field, ($share * $discounted) % $shipping];
+            }
+        }
+
+        usort($remainders, function ($first, $second) {
+            return $second[2] <=> $first[2];
+        });
+
+        foreach ($remainders as $remainder) {
+            if ($left <= 0) {
+                break;
+            }
+            $lineItems[$remainder[0]][$remainder[1]]++;
+            $left--;
+        }
+
+        return $lineItems;
+    }
+
+    /**
+     * Put back what applyPricingRules() changed, keeping the tax worked out on it.
+     * cart_data must stay free of rule discounts: the summary applies them on every
+     * render, and the order writes them in at before_order_processing.
+     *
+     * @param array $productLines Taxed lines, in the order of $unpricedLineItems.
+     * @param array $unpricedLineItems
+     * @return array
+     */
+    private function restoreUnpricedValues(array $productLines, array $unpricedLineItems): array
+    {
+        $unpricedLineItems = array_values($unpricedLineItems);
+
+        foreach ($productLines as $index => $line) {
+            if (!isset($unpricedLineItems[$index])) {
+                continue;
+            }
+            $unpriced = $unpricedLineItems[$index];
+
+            foreach (['manual_discount', 'discount_total', 'shipping_charge', 'itemwise_shipping_charge'] as $field) {
+                if (array_key_exists($field, $unpriced)) {
+                    $line[$field] = $unpriced[$field];
+                } else {
+                    unset($line[$field]);
+                }
+            }
+
+            // From the taxed subtotal: dynamic reverse charge may have lowered it.
+            $line['line_total'] = max(0, (int) Arr::get($line, 'subtotal', 0) - (int) Arr::get($line, 'discount_total', 0));
+
+            $productLines[$index] = $line;
+        }
+
+        return $productLines;
     }
 
     protected function shouldApplyReverseCharge($checkoutData, $taxApplicableCountry, $lineItems = [])
@@ -1309,7 +1433,7 @@ class TaxModule
         $fillData = $this->calculateCartTax([
             'cart_data'     => $cart->cart_data,
             'checkout_data' => $cart->checkout_data,
-        ]);
+        ], $cart);
         $cart->fill($fillData);
         $cart->save();
 
@@ -1381,7 +1505,7 @@ class TaxModule
         $fillData = $this->calculateCartTax([
             'cart_data'     => $cart->cart_data,
             'checkout_data' => $cart->checkout_data,
-        ]);
+        ], $cart);
         $cart->fill($fillData);
         $cart->save();
 

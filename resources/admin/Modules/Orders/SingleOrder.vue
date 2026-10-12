@@ -1732,6 +1732,7 @@ export default {
     },
 
     reloadOrder() {
+      this.changes_made = 0;
       return window.location.reload();
     },
     addProduct() {

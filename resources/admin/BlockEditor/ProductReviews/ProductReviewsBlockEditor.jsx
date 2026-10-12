@@ -2,6 +2,7 @@ import InspectorSettings from "@/BlockEditor/ProductReviews/Components/Inspector
 import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
 import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext.jsx";
 import {StarRating} from "@/BlockEditor/Icons";
+import {summarySectionTemplate} from "@/BlockEditor/ProductReviews/Components/reviewSectionShape";
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -12,19 +13,7 @@ const blockEditorData = window.fluent_cart_product_reviews_data;
 // Children inherit the container's product. Start with the summary and
 // review button beside the list; merchants can rearrange these blocks.
 
-const buildTemplate = () => [
-    ['core/columns', {style: {spacing: {blockGap: '24px'}}}, [
-        ['core/column', {width: '320px'}, [
-            ['fluent-cart/product-review-summary-group', {}, [
-                ['fluent-cart/product-review-summary', {}],
-                ['fluent-cart/write-a-review-button', {}],
-            ]],
-        ]],
-        ['core/column', {}, [
-            ['fluent-cart/product-review-list', {}],
-        ]],
-    ]],
-];
+const buildTemplate = () => summarySectionTemplate();
 
 const ALLOWED_BLOCKS = [
     'fluent-cart/product-review-summary-group',
@@ -55,6 +44,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         product_id: {
             type: ['string', 'number'],
             default: '',
+        },
+        product_ids: {
+            type: 'array',
+            default: [],
         },
         // Picker state only; child blocks define the layout.
         preset: {

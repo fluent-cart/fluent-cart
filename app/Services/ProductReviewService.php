@@ -65,6 +65,15 @@ class ProductReviewService
      */
     const NOTICE_LEASE_SECONDS = 15 * MINUTE_IN_SECONDS;
 
+    /** Most ids a store-wide list (scope="all") accepts per narrowing list. */
+    const MAX_PRODUCT_FILTER_IDS = 100;
+
+    /** A store-wide list's page ceiling, for the first render and the endpoint alike. */
+    const MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE = 50;
+
+    /** Most product caches one combined-summary request repairs; later requests do the rest. */
+    const MAX_SUMMARY_CACHE_REPAIRS = 50;
+
     /**
      * Drop the per-request memos: the grant cache above and the settings
      * cache getReviewSettings() keeps.
@@ -1414,6 +1423,170 @@ class ProductReviewService
         ];
 
         return apply_filters('fluent_cart/review/public_response', $responseData, $postId);
+    }
+
+    /**
+     * The product and category filters of an all-products list, as unique positive
+     * ints capped at MAX_PRODUCT_FILTER_IDS.
+     *
+     * @param array $filters product_ids and category_ids, as arrays or comma-separated strings
+     * @return array{product_ids: int[], category_ids: int[]}
+     */
+    public static function sanitizeProductFilters(array $filters): array
+    {
+        $sanitizedFilters = [];
+
+        foreach (['product_ids', 'category_ids'] as $filterKey) {
+            $rawIds = Arr::get($filters, $filterKey, []);
+            $rawIds = is_array($rawIds) ? $rawIds : explode(',', (string) $rawIds);
+            $rawIds = array_slice($rawIds, 0, static::MAX_PRODUCT_FILTER_IDS);
+
+            $sanitizedFilters[$filterKey] = array_values(array_unique(array_filter(array_map('intval', $rawIds), function ($id) {
+                return $id > 0;
+            })));
+        }
+
+        return $sanitizedFilters;
+    }
+
+    /**
+     * One rating summary across several products, added up from each product's
+     * cached figures (see getProductRatingSummary()). Same products as the
+     * all-products list: published, reviews not switched off, optionally only
+     * product_ids and category_ids. The average is weighted by review, from the
+     * summed breakdown.
+     *
+     * @param array $productFilters product_ids, category_ids; empty means every product
+     * @return array{breakdown: array<int, int>, total: int, average: float}
+     */
+    public static function getProductsRatingSummary(array $productFilters): array
+    {
+        $filters = static::sanitizeProductFilters($productFilters);
+        $productIds = $filters['product_ids'];
+        $categoryIds = $filters['category_ids'];
+
+        $sums = "SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(other_info, '$.review_count')) AS UNSIGNED), 0)) AS total";
+        foreach ([5, 4, 3, 2, 1] as $star) {
+            // Breakdown keys are numeric, so the path quotes them; CHAR(34) because the
+            // query builder rewrites a literal double quote into a backtick.
+            $starPath = "CONCAT('$.rating_breakdown.', CHAR(34 USING utf8mb4), '{$star}', CHAR(34 USING utf8mb4))";
+            $sums .= ", SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(other_info, {$starPath})) AS UNSIGNED), 0)) AS star_{$star}";
+        }
+
+        $query = ProductDetail::query()
+            // JSON_VALID first: one malformed other_info would otherwise fail the whole query.
+            ->whereRaw('JSON_VALID(other_info)')
+            // The same products the list shows (ProductReviewResource::scopeToReviewableProducts()).
+            // Product's global scope limits this to fluent-products.
+            ->whereHas('product', function ($productQuery) use ($categoryIds) {
+                $productQuery->published()
+                    ->whereDoesntHave('detail', function ($detailQuery) {
+                        $detailQuery->reviewsDisabled();
+                    });
+
+                if ($categoryIds) {
+                    $productQuery->whereHas('wpTerms', function ($termQuery) use ($categoryIds) {
+                        $termQuery->search([
+                            'taxonomy' => ['operator' => '=', 'value' => 'product-categories'],
+                            'term_id'  => ['operator' => 'in', 'value' => $categoryIds],
+                        ]);
+                    });
+                }
+            });
+
+        // search() skips an empty value, so no product_ids means every product.
+        $query->search([
+            'post_id' => ['operator' => 'in', 'value' => $productIds],
+        ]);
+
+        // Repair reviewed products whose cache has no breakdown, a bounded batch per
+        // request so a page view never rewrites the catalog. A product never
+        // reviewed counts as zero anyway, so it is left alone rather than rewritten.
+        $staleProductIds = (clone $query)
+            ->whereRaw("JSON_EXTRACT(other_info, '$.rating_breakdown') IS NULL")
+            ->whereHas('product.reviews')
+            ->orderBy('id')
+            ->limit(static::MAX_SUMMARY_CACHE_REPAIRS)
+            ->pluck('post_id')
+            ->all();
+
+        if ($staleProductIds) {
+            ProductReviewResource::recalculateProductRatings($staleProductIds);
+        }
+
+        $totals = $query->selectRaw($sums)->first();
+        $totals = $totals ? $totals->getAttributes() : [];
+
+        $breakdown = [];
+        $ratedCount = 0;
+        $weightedSum = 0;
+        foreach ([5, 4, 3, 2, 1] as $star) {
+            $breakdown[$star] = (int) Arr::get($totals, 'star_' . $star, 0);
+            $ratedCount += $breakdown[$star];
+            $weightedSum += $star * $breakdown[$star];
+        }
+
+        return [
+            'breakdown' => $breakdown,
+            'total'     => (int) Arr::get($totals, 'total', 0),
+            'average'   => $ratedCount > 0 ? round($weightedSum / $ratedCount, 2) : 0,
+        ];
+    }
+
+    /**
+     * Whether a review block's query_type lists more than one product.
+     *
+     * @param mixed $queryType
+     * @return bool
+     */
+    public static function isMultiProductQuery($queryType): bool
+    {
+        return in_array($queryType, ['all', 'multiple'], true);
+    }
+
+    /**
+     * Product filters for a review block in All products or Multiple products mode.
+     *
+     * Null means render nothing: Multiple products with no valid selection must not
+     * fall through to the unfiltered list of every review.
+     *
+     * @param mixed $queryType
+     * @param mixed $productIds the block's product_ids, ignored in All products mode
+     * @return array{product_ids: int[], category_ids: int[]}|null
+     */
+    public static function blockProductFilters($queryType, $productIds): ?array
+    {
+        if ($queryType === 'all') {
+            return static::sanitizeProductFilters([]);
+        }
+
+        if ($queryType !== 'multiple') {
+            return null;
+        }
+
+        $productFilters = static::sanitizeProductFilters([
+            'product_ids' => is_array($productIds) ? $productIds : [],
+        ]);
+
+        return $productFilters['product_ids'] ? $productFilters : null;
+    }
+
+    /**
+     * One page of approved reviews across the store. Extensions see post id 0 on the
+     * public_response filter.
+     *
+     * @param array $params ProductReviewResource::get() params plus the narrowing id lists,
+     *                      which are cleaned and capped here.
+     * @return array
+     */
+    public static function getAllProductsReviewsPayload(array $params): array
+    {
+        $params = array_merge($params, static::sanitizeProductFilters($params));
+        $params['status'] = 'approved';
+        $params['all_products'] = true;
+        unset($params['post_id']);
+
+        return static::getPublicReviewsPayload($params, 0);
     }
 
     /**

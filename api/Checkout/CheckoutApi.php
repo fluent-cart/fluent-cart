@@ -212,13 +212,40 @@ class CheckoutApi
 
         $shouldCreateUser = static::shouldCreateUser($orderData, Arr::get($orderData, 'billing_address', []));
 
-        // Ensure cart has the current payment method before recalculating fees
-        $checkoutData = $cart->checkout_data ?? [];
-        $checkoutData['payment_method'] = $paymentMethod;
-        $cart->checkout_data = $checkoutData;
+        // Ensure cart has the current payment method, the order's email and the
+        // submitted checkout fields before recalculating fees. The page saves
+        // each of them separately, and that save can lag or be sent on its own,
+        // so anything that prices this order reads what the order is placed under.
+        static::setPaymentMethod($cart, $paymentMethod);
+        static::setFormFields($cart, $validatedData);
+        $cart->email = $customer->email;
+
+        // The helper's instance prices the order shipping charge below, so it
+        // carries the same method, fields and email from here on.
+        $helperCart = $cartCheckoutHelper->getCart();
+        if ($helperCart && $helperCart !== $cart) {
+            static::setPaymentMethod($helperCart, $paymentMethod);
+            static::setFormFields($helperCart, $validatedData);
+            $helperCart->email = $customer->email;
+        }
 
         $cart->clearFeeCache();
         $fees = $cart->getFees();
+
+        // A pricing rule can make this order's postage cheaper. The cart holds the
+        // cheaper figure during the tax recalculation, then gets the real price back.
+        // Shipping tax itself comes from each line's share, which TaxModule discounts
+        // through this same filter. Its own hook keeps fluent_cart/cart/shipping_total,
+        // and the Shipping row it draws, untouched.
+        $preDiscountShippingCharge = (int)$shippingCharge;
+        $shippingCharge = apply_filters('fluent_cart/checkout/order_shipping_charge', $shippingCharge, [
+            'cart' => $cartCheckoutHelper->getCart(),
+        ]);
+        $shippingDiscount = max(0, $preDiscountShippingCharge - (int)$shippingCharge);
+
+        if ($shippingDiscount > 0) {
+            static::setCartShippingCharge($cart, (int)$shippingCharge);
+        }
 
         // Recompute cart tax data so fee_tax/fee_tax_lines reflect fees for the current
         // payment method. The scope prevents ShippingModule from running unnecessarily.
@@ -236,9 +263,40 @@ class CheckoutApi
         $feeTax = (int)Arr::get($cart->checkout_data, 'tax_data.fee_tax', 0);
         $feeTaxLines = (array)Arr::get($cart->checkout_data, 'tax_data.fee_tax_lines', []);
 
+        // Tax is done, so the cart gets its real postage price back. The rule runs
+        // fresh on every place-order, and a customer returning after a failed payment
+        // must never be discounted from an already discounted charge. Saved here
+        // because nothing after this writes the cart.
+        if ($shippingDiscount > 0) {
+            static::setCartShippingCharge($cart, $preDiscountShippingCharge);
+            $cart->save();
+        }
+
         // For dynamic RC + inclusive pricing, reduce the shipping charge to net before storing.
         // The fluent_cart/cart/shipping_total filter (registered by TaxModule) handles the logic.
         $shippingCharge = apply_filters('fluent_cart/cart/shipping_total', $shippingCharge, ['cart' => $cart]);
+
+        // The discount has to be counted in the same money as the charge it is
+        // stored beside, or a receipt adding the two back together names a price
+        // the order never had. The filter above can turn both into net amounts,
+        // and it stops at zero, so the full price goes through it as well.
+        if ($shippingDiscount > 0) {
+            $preDiscountShippingCharge = (int)apply_filters(
+                'fluent_cart/cart/shipping_total',
+                $preDiscountShippingCharge,
+                ['cart' => $cart]
+            );
+            $shippingDiscount = max(0, $preDiscountShippingCharge - (int)$shippingCharge);
+        }
+
+        // Last chance to write into cart_data before the order is built from it.
+        // The helper's copy was read before $cart was recalculated; build the order
+        // from $cart so a discount withdrawn on a retry can't be counted twice.
+        $cartCheckoutHelper->setCart($cart);
+
+        do_action('fluent_cart/checkout/before_order_processing', [
+            'cart' => $cart,
+        ]);
 
         $checkoutProcessor = new CheckoutProcessor($cartCheckoutHelper->getItems(), [
             'customer_id'               => $customer->id,
@@ -247,6 +305,7 @@ class CheckoutApi
             'shipping_charge'           => $shippingCharge,
             'shipping_method_id'        => $shippingMethod ? (int)$shippingMethod->id : 0,
             'shipping_method_title'     => $shippingMethod ? $shippingMethod->title : '',
+            'shipping_discount'         => $shippingDiscount,
             'tax_total'                 => $taxTotal,
             'tax_behavior'              => $taxBehavior,
             'store_tax_behavior'        => $storeTaxBehavior,
@@ -303,6 +362,78 @@ class CheckoutApi
             'from_checkout'    => true,
             'prev_order'       => $prevOrder
         ]);
+    }
+
+    /**
+     * Set the postage the cart advertises.
+     *
+     * The tax pipeline reads the charge from here rather than from any local
+     * amount, so this is how a shipping discount is made visible to it. Does not
+     * persist — the caller decides, because during a tax recalculation the
+     * recalculation saves the cart itself.
+     *
+     * @param Cart $cart
+     * @param int $charge In cents.
+     * @return void
+     */
+    private static function setCartShippingCharge(Cart $cart, $charge)
+    {
+        $checkoutData = $cart->checkout_data ?? [];
+        Arr::set($checkoutData, 'shipping_data.shipping_charge', (int)$charge);
+        $cart->checkout_data = $checkoutData;
+    }
+
+    /**
+     * Record the method this order is paid with as both the cart's payment
+     * method and the form's choice, so nothing that prices the order reads an
+     * earlier click instead — the page saves the radio separately, and that
+     * save can lag, name a method no longer offered, or be sent on its own.
+     *
+     * @param Cart $cart
+     * @param string $paymentMethod
+     * @return void
+     */
+    private static function setPaymentMethod(Cart $cart, $paymentMethod)
+    {
+        $checkoutData = $cart->checkout_data ?? [];
+        $checkoutData['payment_method'] = $paymentMethod;
+        Arr::set($checkoutData, 'form_data._fct_pay_method', $paymentMethod);
+        $cart->checkout_data = $checkoutData;
+    }
+
+    /**
+     * Record the submitted checkout fields as the cart's form, so nothing that
+     * prices the order reads an earlier save instead. A field the form did not
+     * send keeps its saved value.
+     *
+     * Country, state, city, postcode, the ship-elsewhere and business toggles
+     * are left as saved: tax is worked out from them, and the page refreshes
+     * the summary each time one of them is saved, so the saved values are the
+     * ones the shopper saw the order priced for.
+     *
+     * @param Cart $cart
+     * @param array $data
+     * @return void
+     */
+    private static function setFormFields(Cart $cart, array $data)
+    {
+        $checkoutData = $cart->checkout_data ?? [];
+
+        $fields = [
+            'full_name', 'first_name', 'last_name', 'address_1', 'address_2',
+            'phone', 'company_name', 'legal_registration_id'
+        ];
+
+        foreach ($fields as $field) {
+            foreach (['billing_', 'shipping_'] as $prefix) {
+                $value = Arr::get($data, $prefix . $field);
+                if (is_scalar($value)) {
+                    Arr::set($checkoutData, 'form_data.' . $prefix . $field, sanitize_text_field((string)$value));
+                }
+            }
+        }
+
+        $cart->checkout_data = $checkoutData;
     }
 
     private static function getOrCreateCustomer(CartCheckoutHelper $cartCheckoutHelper, $orderData)

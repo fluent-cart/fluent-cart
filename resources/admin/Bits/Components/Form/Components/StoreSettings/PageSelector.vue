@@ -1,9 +1,7 @@
 <script setup>
-import {defineModel, nextTick, onMounted, ref} from "vue";
+import {defineModel, onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Badge from "@/Bits/Components/Badge.vue";
-import FieldNote from "@/Bits/Components/Form/Components/Base/Inputs/FieldNote.vue";
 import Arr from "@/utils/support/Arr";
 import CreatePageButton from "./CreatePageButton.vue";
 

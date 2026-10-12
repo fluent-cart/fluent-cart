@@ -417,11 +417,33 @@
   .fc-checkout-name-fields-block {
     select,
     input:not([type=checkbox],[type=radio]) {
-      @apply border-[1px] border-solid border-gray-200 border-b-0 block w-full rounded-none py-2.5 px-4 leading-none w-full max-w-full m-0;
+      // Preview fields are disabled; override the browser's grey disabled background.
+      @apply border-[1px] border-solid border-gray-200 border-b-0 block w-full box-border rounded-none py-2.5 px-4 leading-none max-w-full m-0 bg-white;
       &:last-child {
         @apply border-b-[1px] rounded-none;
       }
     }
+  }
+  // The "Create an Account?" label follows Email, so Email is never :last-child.
+  .fc-checkout-name-fields-block {
+    input:not([type=checkbox],[type=radio]):first-of-type {
+      @apply rounded-tl rounded-tr;
+    }
+    input:not([type=checkbox],[type=radio]):last-of-type {
+      @apply border-b-[1px] rounded-bl rounded-br;
+    }
+  }
+  .fc-checkout-name-fields-block > label,
+  .fc-checkout-create-account-block > label {
+    @apply flex items-center gap-1.5 mt-3;
+  }
+  // Same 24px section gap the Billing heading gets.
+  .wp-block-fluent-cart-checkout-shipping-address-field {
+    @apply mt-6;
+  }
+  // Matches the first select's top corners; must follow the rounded-none reset above.
+  .fc-checkout-address-fields-block .fc-checkout-address-fields-block-row > :is(input, select):last-child {
+    @apply rounded-bl rounded-br;
   }
   .fc-checkout-shipping-methods-block {
     .fc-checkout-shipping-methods-list {

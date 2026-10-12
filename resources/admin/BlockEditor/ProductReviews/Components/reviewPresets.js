@@ -15,6 +15,16 @@
  * the shape wp.blocks.createBlocksFromInnerBlocksTemplate() takes.
  */
 
+import {
+    blockToTemplate,
+    hasReviewWritingBlocks,
+    isBareReviewList,
+    summarySectionTemplate,
+    withoutReviewWritingBlocks,
+    withRetainedAttributes,
+    withWriteReviewButton,
+} from "@/BlockEditor/ProductReviews/Components/reviewSectionShape";
+
 /**
  * Read per call rather than captured at import: the localized payload is
  * printed before this script runs, but a missing global must leave the picker
@@ -228,10 +238,18 @@ const blockMatchesTemplate = (block, template) => {
 };
 
 /**
+ * A preset as built for All products and Selected products (two or more):
+ * without Write a Review or the form, since a review needs one product.
+ */
+const presetTemplate = (preset, multiProduct = false) => (
+    multiProduct ? withoutReviewWritingBlocks(preset.template) : preset.template
+);
+
+/**
  * Return the matching preset for the current child blocks, or `custom` when
  * a merchant has edited the generated layout.
  */
-export const presetForBlocks = (blocks) => {
+export const presetForBlocks = (blocks, multiProduct = false) => {
     // The container's original scaffold intentionally leaves the Review List
     // empty. Only that complete scaffold is the default. Looking for any empty
     // review list nested in columns would relabel a merchant's custom layout
@@ -240,10 +258,14 @@ export const presetForBlocks = (blocks) => {
         return defaultPreset();
     }
 
-    for (const [name, preset] of Object.entries(presets)) {
-        const template = preset.template;
-        if (blocks.length === template.length && template.every((block, index) => blockMatchesTemplate(blocks[index], block))) {
-            return name;
+    // The forms without Write a Review only count for several products, so an
+    // existing single-product layout that happens to match one stays Custom.
+    for (const withoutWriting of (multiProduct ? [false, true] : [false])) {
+        for (const [name, preset] of Object.entries(presets)) {
+            const template = presetTemplate(preset, withoutWriting);
+            if (blocks.length === template.length && template.every((block, index) => blockMatchesTemplate(blocks[index], block))) {
+                return name;
+            }
         }
     }
 
@@ -290,9 +312,12 @@ const isUntouchedDefaultScaffold = (blocks) => {
  * different layout means different blocks. Whatever was arranged inside the
  * section goes with it, which is why the control says so before it is used.
  *
+ * @param {string} name
+ * @param {string} rootClientId
+ * @param {{multiProduct?: boolean}} options multiProduct builds it without Write a Review or the form
  * @returns {boolean} whether a preset by that name existed.
  */
-export const applyPreset = (name, rootClientId) => {
+export const applyPreset = (name, rootClientId, {multiProduct = false} = {}) => {
     const preset = presets[name];
 
     if (!preset || !rootClientId) {
@@ -303,7 +328,7 @@ export const applyPreset = (name, rootClientId) => {
     const tuning = tunedAttributes(current);
 
     // Data now, not a function: PHP hands the template over already built.
-    const blocks = wp.blocks.createBlocksFromInnerBlocksTemplate(preset.template);
+    const blocks = wp.blocks.createBlocksFromInnerBlocksTemplate(presetTemplate(preset, multiProduct));
 
     // The settings a merchant changed follow them to the new layout. Matching
     // already ignores these six, so a list tuned to four columns still reads as
@@ -322,6 +347,102 @@ export const applyPreset = (name, rootClientId) => {
     }
 
     wp.data.dispatch('core/block-editor').replaceInnerBlocks(rootClientId, blocks, false);
+
+    return true;
+};
+
+/**
+ * Fit a section that is not a preset to its product source: several products
+ * drop Write a Review and the form; one product puts the button back in the
+ * summary group, or a bare list back beside a summary.
+ *
+ * @param {string} rootClientId
+ * @param {boolean} multiProduct
+ * @returns {boolean} whether the section changed
+ */
+export const fitCustomSectionToSource = (rootClientId, multiProduct) => {
+    const templates = wp.data.select('core/block-editor').getBlocks(rootClientId).map(blockToTemplate);
+    let nextTemplates = null;
+
+    if (multiProduct) {
+        nextTemplates = hasReviewWritingBlocks(templates) ? withoutReviewWritingBlocks(templates) : null;
+    } else if (isBareReviewList(templates)) {
+        nextTemplates = summarySectionTemplate(templates[0]);
+    } else {
+        nextTemplates = withWriteReviewButton(templates);
+    }
+
+    if (!nextTemplates) {
+        return false;
+    }
+
+    wp.data.dispatch('core/block-editor').replaceInnerBlocks(
+        rootClientId,
+        wp.blocks.createBlocksFromInnerBlocksTemplate(nextTemplates),
+        false
+    );
+
+    return true;
+};
+
+/**
+ * Switching a preset layout between one product and several. Going to several
+ * products changes the section in place; going back rebuilds the preset so a
+ * column dropped on the way returns, with each remaining block's settings kept.
+ *
+ * @param {string} name
+ * @param {string} rootClientId
+ * @param {boolean} multiProduct
+ * @returns {boolean} whether the section changed
+ */
+export const fitPresetToSource = (name, rootClientId, multiProduct) => {
+    const preset = presets[name];
+
+    if (multiProduct || !preset) {
+        return fitCustomSectionToSource(rootClientId, multiProduct);
+    }
+
+    const current = wp.data.select('core/block-editor').getBlocks(rootClientId).map(blockToTemplate);
+
+    wp.data.dispatch('core/block-editor').replaceInnerBlocks(
+        rootClientId,
+        wp.blocks.createBlocksFromInnerBlocksTemplate(withRetainedAttributes(presetTemplate(preset, false), current)),
+        false
+    );
+
+    return true;
+};
+
+/**
+ * The same fit for a standalone Summary Group, whose own children are the summary
+ * and the button.
+ *
+ * @param {string} groupClientId
+ * @param {boolean} multiProduct
+ * @returns {boolean} whether the group changed
+ */
+export const fitSummaryGroupToSource = (groupClientId, multiProduct) => {
+    const children = wp.data.select('core/block-editor').getBlocks(groupClientId).map(blockToTemplate);
+    const group = [['fluent-cart/product-review-summary-group', {}, children]];
+    let nextGroup = null;
+
+    if (multiProduct) {
+        nextGroup = hasReviewWritingBlocks(children) ? withoutReviewWritingBlocks(group) : null;
+    } else {
+        nextGroup = withWriteReviewButton(group);
+    }
+
+    if (!nextGroup) {
+        return false;
+    }
+
+    const nextChildren = nextGroup.length ? (nextGroup[0][2] || []) : [];
+
+    wp.data.dispatch('core/block-editor').replaceInnerBlocks(
+        groupClientId,
+        wp.blocks.createBlocksFromInnerBlocksTemplate(nextChildren),
+        false
+    );
 
     return true;
 };

@@ -53,6 +53,10 @@ class ProductReviewResource extends BaseResourceApi
             $query->where('is_verified', 1);
         }
 
+        if (Arr::get($params, 'all_products')) {
+            static::scopeToReviewableProducts($query, $params);
+        }
+
         // Allow extensions to apply advanced filters (e.g. saved views from Pro)
         $filterType = Arr::get($params, 'filter_type', 'simple');
         if ($filterType === 'advanced') {
@@ -108,6 +112,48 @@ class ProductReviewResource extends BaseResourceApi
         // Null page falls through to the paginator's own request resolution,
         // the same shape every sibling resource uses.
         return $query->paginate($perPage, ['*'], 'page', Arr::get($params, 'page'));
+    }
+
+    /**
+     * A store-wide list: reviews of published products that take reviews, narrowed
+     * to the products and categories the caller named. Callers cap the id lists.
+     *
+     * @param Builder $query
+     * @param array $params product_ids, category_ids
+     * @return void
+     */
+    protected static function scopeToReviewableProducts($query, array $params)
+    {
+        $productIds = array_values(array_filter(array_map('intval', (array) Arr::get($params, 'product_ids', []))));
+        $categoryIds = array_values(array_filter(array_map('intval', (array) Arr::get($params, 'category_ids', []))));
+
+        // search() skips an empty value, so no product_ids means every product.
+        $query->search([
+            'post_id' => ['operator' => 'in', 'value' => $productIds],
+        ]);
+
+        // Product's global scope already limits this to fluent-products.
+        $query->whereHas('product', function ($productQuery) use ($categoryIds) {
+            $productQuery->search([
+                'post_status' => ['operator' => '=', 'value' => 'publish'],
+            ]);
+
+            // The product's own reviews switch, the same flag
+            // ProductReviewService::primeReviewsEnabled() reads. A missing detail
+            // row or key counts as on.
+            $productQuery->whereDoesntHave('detail', function ($detailQuery) {
+                $detailQuery->reviewsDisabled();
+            });
+
+            if ($categoryIds) {
+                $productQuery->whereHas('wpTerms', function ($termQuery) use ($categoryIds) {
+                    $termQuery->search([
+                        'taxonomy' => ['operator' => '=', 'value' => 'product-categories'],
+                        'term_id'  => ['operator' => 'in', 'value' => $categoryIds],
+                    ]);
+                });
+            }
+        });
     }
 
     public static function find($id, $params = [])

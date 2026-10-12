@@ -606,10 +606,10 @@ class FluentCRMDeepIntegration
      * mode -- so both branches defer to Helper::formatDateTime() and neither
      * falls through to DateFormatter for a reachable Helper.
      *
-     * DateFormatter::format($datetime, false, wp_timezone()) remains only as
-     * the defensive fallback for when FluentCrm\App\Services\Helper can't be
-     * resolved at all (this plugin's own test suite doesn't load the
-     * FluentCRM plugin; see FluentCRMDeepIntegrationTest). Pinned to
+     * DateFormatter::format($datetime, false, wp_timezone()) is the fallback
+     * when FluentCRM's Helper has no formatDateTime(): FluentCRM older than
+     * 3.2.0, or this plugin's own test suite, which doesn't load FluentCRM
+     * (see FluentCRMDeepIntegrationTest). Pinned to
      * wp_timezone() so a store on FluentCart's 'fluent_cart' timezone source
      * (no order context here) doesn't fall back to UTC.
      *
@@ -625,8 +625,10 @@ class FluentCRMDeepIntegration
             return '';
         }
 
-        if (class_exists(Helper::class)) {
-            return Helper::formatDateTime($datetime);
+        // Helper::formatDateTime() arrived in FluentCRM 3.2.0 and reads its
+        // input as site time; FluentCart stores GMT.
+        if (method_exists(Helper::class, 'formatDateTime')) {
+            return Helper::formatDateTime(get_date_from_gmt($datetime));
         }
 
         return DateFormatter::format($datetime, false, wp_timezone());

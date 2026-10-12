@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
@@ -383,6 +384,11 @@ class ThankYouRender
                     </div>
                     <div class="fct-thank-you-page-order-items-list-price">
                         <div class="fct-thank-you-page-order-items-list-price-inner">
+                            <?php if ((int)Arr::get($item, 'discount_total', 0) > 0): ?>
+                                <span class="fct-thank-you-page-order-items-list-price-original">
+                                    <?php echo esc_html(Helper::toDecimal(Arr::get($item, 'subtotal', 0))); ?>
+                                </span>
+                            <?php endif; ?>
                             <?php echo esc_html($item['formatted_total']); ?>
                         </div>
                     </div>
@@ -442,7 +448,7 @@ class ThankYouRender
 
             <div style="max-width: 620px; margin: 15px auto 0; font-family: Arial, Helvetica, sans-serif;">
                 <div style="font-size: 14px; color: var(--fct-primary-text-color, currentColor); padding: 12px 0; border-top: 1px solid var(--fct-divider-color, #e7eaee);">
-                    <?php echo wp_kses_post($thankYouPageInstructions); ?>
+                    <?php echo wp_kses_post(ShortcodeTemplateBuilder::make($thankYouPageInstructions, ['order' => $order])); ?>
                 </div>
             </div>
         <?php endif;
@@ -551,15 +557,47 @@ class ThankYouRender
             }
         }
         $shippingMethodTitle = (string) Arr::get($order->config, 'shipping_method_title', '');
+        $shippingDiscount = (int) Arr::get($order->config, 'shipping_discount', 0);
         ?>
         <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping">
             <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
                 <?php echo esc_html__('Shipping', 'fluent-cart'); ?>
                 <?php if ($shippingMethodTitle): ?>
-                    <span class="fct-shipping-method-name"><?php echo esc_html($shippingMethodTitle); ?></span>
+                    <span class="fct-shipping-method-name">
+                       &#40;<?php echo esc_html($shippingMethodTitle); ?>&#41;
+                    </span>
                 <?php endif; ?>
             </div>
-            <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($displayShipping)); ?></div>
+            <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value"><?php echo esc_html(Helper::toDecimal($displayShipping + $shippingDiscount)); ?></div>
+        </div>
+        
+        <?php $this->renderShippingDiscountRows($shippingDiscount, $displayShipping); ?>
+
+        <?php
+    }
+
+
+    public function renderShippingDiscountRows($shippingDiscount, $displayShipping)
+    {
+        if ($shippingDiscount <= 0) {
+            return;
+        }
+        ?>
+        <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping-discount">
+            <div class="fct-meta-line-label fct-thank-you-page-order-items-total-label">
+                <?php echo esc_html__('Shipping Discount', 'fluent-cart'); ?>
+            </div>
+            <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
+                - <?php echo esc_html(Helper::toDecimal($shippingDiscount)); ?>
+            </div>
+        </div>
+        <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping-after-discount">
+            <div class="fct-meta-line-label">
+                <?php echo esc_html__('Shipping after discount', 'fluent-cart'); ?>
+            </div>
+            <div class="fct-meta-line-value">
+                <?php echo esc_html(Helper::toDecimal($displayShipping)); ?>
+            </div>
         </div>
         <?php
     }

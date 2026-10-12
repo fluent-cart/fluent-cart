@@ -243,6 +243,9 @@ class ProductReviewRenderer
             // Where the reviews endpoint can find the same composed row
             // again. Set only by the Review List block, and only when it has
             // children to compose.
+            // An array turns this into a store-wide list (post id 0), narrowed by
+            // product_ids and category_ids. Null is a product's list.
+            'productFilters'        => null,
         ]), $this->postId);
         $this->renderOptions['minRating'] = ProductReviewService::resolveListMinRating(
             (string) Arr::get($this->renderOptions, 'listClientId', ''),
@@ -328,7 +331,26 @@ class ProductReviewRenderer
      */
     protected function shouldRenderReviews(): bool
     {
+        if ($this->isAllProductsScope()) {
+            return Arr::get($this->settings, 'reviews_enabled') === 'yes';
+        }
+
         return static::isVisibleFor($this->postId);
+    }
+
+    protected function isAllProductsScope(): bool
+    {
+        return is_array(Arr::get($this->renderOptions, 'productFilters'));
+    }
+
+    /**
+     * The store-wide narrowing, capped, in the shape the endpoint reads back.
+     *
+     * @return array<string, int[]>
+     */
+    protected function sanitizedProductFilters(): array
+    {
+        return ProductReviewService::sanitizeProductFilters((array) Arr::get($this->renderOptions, 'productFilters', []));
     }
 
     /**
@@ -360,11 +382,19 @@ class ProductReviewRenderer
             return;
         }
 
-        $summary = ProductReviewService::getProductRatingSummary($this->postId);
+        $isAllProducts = $this->isAllProductsScope();
+        // Several products: one summary added up across them, and nothing to review.
+        $summary = $isAllProducts
+            ? ProductReviewService::getProductsRatingSummary($this->sanitizedProductFilters())
+            : ProductReviewService::getProductRatingSummary($this->postId);
         $restInfo = Helper::getRestInfo();
 
         $perPageOption = (int) Arr::get($this->renderOptions, 'perPage', 0);
         $perPage = $perPageOption > 0 ? $perPageOption : $this->settings['reviews_per_page'];
+        // The store setting has no ceiling, but the endpoint serving page two does.
+        if ($isAllProducts) {
+            $perPage = min((int) $perPage, ProductReviewService::MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE);
+        }
         $starColor = sanitize_hex_color(Arr::get($this->renderOptions, 'starColor')) ?: self::DEFAULT_STAR_COLOR;
         $defaultSort = Arr::get($this->renderOptions, 'defaultSortBy', 'created_at') . '-' . Arr::get($this->renderOptions, 'defaultSortOrder', 'DESC');
 
@@ -379,6 +409,10 @@ class ProductReviewRenderer
         );
         $summaryMode = Arr::get($this->renderOptions, 'summaryMode', 'side');
         $summaryMode = in_array($summaryMode, ['side', 'top', 'cta'], true) ? $summaryMode : 'side';
+        // The cta mode is Write a Review alone, which several products have nothing to show for.
+        if ($isAllProducts && $summaryMode === 'cta') {
+            $showSummary = false;
+        }
         $showSortControls = (bool) Arr::get($this->renderOptions, 'showSortControls', true);
         $showFilterChips = (bool) Arr::get($this->renderOptions, 'showFilterChips', true);
         $hasMedia = (bool) Arr::get($this->renderOptions, 'hasMedia', false);
@@ -465,7 +499,7 @@ class ProductReviewRenderer
         // with scripting disabled and the script only takes over for sort,
         // filters and pagination. Same payload pipeline as the REST endpoint.
         $sortParts = explode('-', (string) $defaultSort);
-        $initialPayload = ProductReviewService::getPublicReviewsPayload([
+        $firstPageParams = [
             'post_id'    => $this->postId,
             'status'     => 'approved',
             'sort_by'    => $sortParts[0] ?: 'created_at',
@@ -477,7 +511,11 @@ class ProductReviewRenderer
             // from the ambient request, so a stray ?page=2 on the product URL
             // would render a later review page while the script starts at 1.
             'page'       => 1,
-        ], $this->postId);
+        ];
+        $productFilters = $isAllProducts ? $this->sanitizedProductFilters() : [];
+        $initialPayload = $isAllProducts
+            ? ProductReviewService::getAllProductsReviewsPayload(array_merge($firstPageParams, $productFilters))
+            : ProductReviewService::getPublicReviewsPayload($firstPageParams, $this->postId);
 
         // What the count says, matching what the list is showing. The summary's
         // own total is the product's and stays that way for the breakdown
@@ -485,7 +523,7 @@ class ProductReviewRenderer
         // has to follow it. Reviews.js sets the same number from the list
         // response on every sort, filter and page, so the two agree from the
         // first render onward.
-        $displayTotal = $minRating || $hasMedia
+        $displayTotal = $minRating || $hasMedia || $isAllProducts
             ? (int) Arr::get($initialPayload, 'reviews.total', 0)
             : (int) Arr::get((array) $summary, 'total', 0);
 
@@ -578,7 +616,11 @@ class ProductReviewRenderer
         <div class="fct-product-reviews-section"
              data-fluent-cart-reviews
              data-post-id="<?php echo esc_attr($this->postId); ?>"
-             data-product-name="<?php echo esc_attr(get_post_field('post_title', $this->postId, 'raw')); ?>"
+             data-product-name="<?php echo $isAllProducts ? '' : esc_attr(get_post_field('post_title', $this->postId, 'raw')); ?>"
+            <?php if ($isAllProducts) : ?>
+             data-scope="all"
+             data-product-filters="<?php echo esc_attr(wp_json_encode($productFilters)); ?>"
+            <?php endif; ?>
              data-rest-url="<?php echo esc_url($restInfo['url']); ?>"
              data-rest-nonce="<?php echo esc_attr($restInfo['nonce']); ?>"
              data-per-page="<?php echo esc_attr($perPage); ?>"
@@ -637,7 +679,7 @@ class ProductReviewRenderer
                                 <?php $this->renderWriteReviewCta(); ?>
                             </div>
                         <?php else : ?>
-                            <?php $this->renderRatingSummary($summary); ?>
+                            <?php $this->renderRatingSummary($summary, !$isAllProducts); ?>
                         <?php endif; ?>
                     </aside>
                 <?php endif; ?>
@@ -720,7 +762,7 @@ class ProductReviewRenderer
                 </div>
             </div>
 
-            <?php if ($showSummary) : ?>
+            <?php if ($showSummary && !$isAllProducts) : ?>
                 <?php
                 // The summary rendered its Write a Review CTA, so this block
                 // must also supply the drawer that CTA opens — a standalone
@@ -1459,13 +1501,20 @@ class ProductReviewRenderer
             return;
         }
 
-        $summary = ProductReviewService::getProductRatingSummary($this->postId);
+        // Several products: one card added up across them (post id 0).
+        $summary = $this->isAllProductsScope()
+            ? ProductReviewService::getProductsRatingSummary($this->sanitizedProductFilters())
+            : ProductReviewService::getProductRatingSummary($this->postId);
         $restInfo = Helper::getRestInfo();
         $starColor = sanitize_hex_color(Arr::get($this->renderOptions, 'starColor')) ?: self::DEFAULT_STAR_COLOR;
         ?>
         <div class="fct-product-reviews-section fct-reviews-summary-only"
              data-fluent-cart-review-summary
              data-post-id="<?php echo esc_attr($this->postId); ?>"
+            <?php if ($this->isAllProductsScope()) : ?>
+             data-scope="all"
+             data-product-filters="<?php echo esc_attr(wp_json_encode($this->sanitizedProductFilters())); ?>"
+            <?php endif; ?>
              data-rest-url="<?php echo esc_url($restInfo['url']); ?>"
              data-rest-nonce="<?php echo esc_attr($restInfo['nonce']); ?>"
             <?php if (!$this->isDefaultStarColor($starColor)) : ?>

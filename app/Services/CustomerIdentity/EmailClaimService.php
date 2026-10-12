@@ -242,7 +242,31 @@ class EmailClaimService
     /** Called only after a successful password reset with validated inbox proof. */
     public static function confirmPasswordReset(int $userId, string $email): string
     {
-        if (!static::isEnabled() || !CustomerMerger::supportsTransactions()) {
+        if (!static::isEnabled()) {
+            return 'unavailable';
+        }
+
+        return static::applyWithoutLink($userId, $email);
+    }
+
+    /**
+     * Apply an email change made by staff with authority over the account.
+     *
+     * Staff authority stands in for inbox proof here: whoever set the address
+     * can read the portal anyway, so a confirmation link would only lock the
+     * customer out of their own records until they answered it.
+     *
+     * @return string 'confirmed', 'recovering', 'incomplete', or unavailable|stale|conflict|failed
+     */
+    public static function confirmAdminChange(int $userId, string $email): string
+    {
+        return static::applyWithoutLink($userId, $email);
+    }
+
+    /** Shared body for the paths that carry their own proof instead of a mailed link. */
+    protected static function applyWithoutLink(int $userId, string $email): string
+    {
+        if (!CustomerMerger::supportsTransactions()) {
             return 'unavailable';
         }
         try {

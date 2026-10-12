@@ -185,6 +185,11 @@ class AdminHelper
                 'label' => __('Order Bump', 'fluent-cart'),
                 'link'  => $baseUrl . 'order_bump',
             ] : false,
+            'dynamic_pricing' => App::isProActive() && ModuleSettings::isActive('dynamic_pricing') ? [
+                'label'      => __('Dynamic Pricing', 'fluent-cart'),
+                'link'       => $baseUrl . 'dynamic_pricing',
+                'permission' => ['dynamic_pricing/view'],
+            ] : false,
             'coupons'      => [
                 'label' => __('Coupons', 'fluent-cart'),
                 'link'  => $baseUrl . 'coupons',

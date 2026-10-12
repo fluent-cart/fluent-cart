@@ -23,6 +23,10 @@ use FluentCart\Framework\Support\Arr;
  *
  * On a product page it needs no attributes at all. Anywhere else it wants an
  * id, because there is no current product to read.
+ *
+ * scope="all" lists approved reviews from every product instead, optionally only
+ * product_ids="10,22" or categories="shoes,8". There is no summary or Write a
+ * Review button: there is no single product.
  */
 class ProductReviewsShortCode extends ShortCode
 {
@@ -42,6 +46,11 @@ class ProductReviewsShortCode extends ShortCode
     {
         $data = $viewData ?? $this->shortCodeAttributes ?? [];
 
+        if ($this->isAllProductsScope($data)) {
+            $this->renderAllProductsReviews($data);
+            return;
+        }
+
         $product = $this->resolveProduct($data);
 
         if (!$product) {
@@ -55,6 +64,71 @@ class ProductReviewsShortCode extends ShortCode
         AssetLoader::loadSingleProductAssets();
 
         (new ProductReviewRenderer($product->ID, $this->renderOptions($data)))->render();
+    }
+
+    protected function isAllProductsScope(array $data): bool
+    {
+        return strtolower(trim((string) Arr::get($data, 'scope', ''))) === 'all';
+    }
+
+    protected function renderAllProductsReviews(array $data)
+    {
+        $productFilters = ProductReviewService::sanitizeProductFilters([
+            'product_ids'  => Arr::get($data, 'product_ids', ''),
+            'category_ids' => $this->resolveCategoryTermIds((string) Arr::get($data, 'categories', '')),
+        ]);
+
+        // A mistyped list must not widen to every review in the store; it draws
+        // nothing, as an unknown id does for one product.
+        $filterKeyByAttribute = ['product_ids' => 'product_ids', 'categories' => 'category_ids'];
+        foreach ($filterKeyByAttribute as $attributeName => $filterKey) {
+            if (trim((string) Arr::get($data, $attributeName, '')) !== '' && !$productFilters[$filterKey]) {
+                return;
+            }
+        }
+
+        AssetLoader::loadSingleProductAssets();
+
+        $options = $this->renderOptions($data);
+        $options['productFilters'] = $productFilters;
+
+        (new ProductReviewRenderer(0, $options))->render();
+    }
+
+    /**
+     * @return int[] Term ids of the named product categories (slugs or ids); unknown
+     *               names are dropped. One query for the ids and one for the slugs.
+     */
+    protected function resolveCategoryTermIds(string $categoriesAttribute): array
+    {
+        $categoryNames = array_slice(
+            array_filter(array_map('trim', explode(',', $categoriesAttribute))),
+            0,
+            ProductReviewService::MAX_PRODUCT_FILTER_IDS
+        );
+
+        $requestedTermIds = array_values(array_filter(array_map('intval', array_filter($categoryNames, 'is_numeric'))));
+        $requestedSlugs = array_values(array_map('sanitize_title', array_filter($categoryNames, function ($categoryName) {
+            return !is_numeric($categoryName);
+        })));
+
+        $matchedTermIds = [];
+        $lookupsByField = array_filter(['include' => $requestedTermIds, 'slug' => $requestedSlugs]);
+
+        foreach ($lookupsByField as $termField => $termValues) {
+            $existingTermIds = get_terms([
+                'taxonomy'   => 'product-categories',
+                'hide_empty' => false,
+                'fields'     => 'ids',
+                $termField   => $termValues,
+            ]);
+
+            if (!is_wp_error($existingTermIds)) {
+                $matchedTermIds = array_merge($matchedTermIds, array_map('intval', $existingTermIds));
+            }
+        }
+
+        return array_values(array_unique($matchedTermIds));
     }
 
     /**
@@ -217,7 +291,11 @@ class ProductReviewsShortCode extends ShortCode
         // Capped at the endpoint's own ceiling rather than a number of our
         // own: every page after the first is fetched through it, so a larger
         // first page would silently shrink on the first click.
-        return min(ProductReviewFrontendController::MAX_REVIEWS_PER_PAGE, $perPage);
+        $maxPerPage = $this->isAllProductsScope($data)
+            ? ProductReviewFrontendController::MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE
+            : ProductReviewFrontendController::MAX_REVIEWS_PER_PAGE;
+
+        return min($maxPerPage, $perPage);
     }
 
     /**

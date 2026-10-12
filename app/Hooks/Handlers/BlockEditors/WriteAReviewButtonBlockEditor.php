@@ -3,6 +3,7 @@
 namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Renderer\ProductReviewRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
@@ -109,6 +110,11 @@ class WriteAReviewButtonBlockEditor extends BlockEditor
         // its own query.
         $insideContainer = $block instanceof \WP_Block
             && isset($block->context['fluent-cart/review_container_query']);
+
+        // An All products or Multiple products container has no single product to show.
+        if ($insideContainer && ProductReviewService::isMultiProductQuery($block->context['fluent-cart/review_container_query'])) {
+            return '';
+        }
 
         $product = $insideContainer ? fluent_cart_get_current_product() : $this->resolveProduct($shortCodeAttribute);
 

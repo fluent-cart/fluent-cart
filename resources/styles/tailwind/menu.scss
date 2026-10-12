@@ -33,7 +33,7 @@
   }
   .fct_menu_child {
     box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
-    @apply z-10 absolute left-0 w-[150px] bg-white dark:bg-dark-500 p-2 rounded opacity-0 invisible transition-all duration-300 ease-in-out;
+    @apply z-10 absolute left-0 w-[150px] bg-white dark:bg-dark-500 p-1 rounded opacity-0 invisible transition-all duration-300 ease-in-out;
     &_item {
       @apply mb-0;
       a {

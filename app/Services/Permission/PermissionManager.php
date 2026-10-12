@@ -57,7 +57,9 @@ class PermissionManager
                     'integrations/view',
                     'integrations/manage',
                     'integrations/delete',
-                    'reviews/manage'
+                    'reviews/manage',
+                    'dynamic_pricing/view',
+                    'dynamic_pricing/manage'
                 ]
             ],
             'worker'      => [
@@ -72,7 +74,8 @@ class PermissionManager
                     'licenses/view',
                     'coupons/view',
                     'coupons/manage',
-                    'integrations/view'
+                    'integrations/view',
+                    'dynamic_pricing/view'
                 ]
             ],
             'accountant'  => [
@@ -223,7 +226,9 @@ class PermissionManager
             'labels/manage'          => __('Manage Labels', 'fluent-cart'),
             'labels/delete'          => __('Delete Labels', 'fluent-cart'),
             'reviews/manage'         => __('Manage Reviews', 'fluent-cart'),
-            'dashboard_stats/view'   => __('View Dashboard Stats', 'fluent-cart')
+            'dashboard_stats/view'   => __('View Dashboard Stats', 'fluent-cart'),
+            'dynamic_pricing/view'   => __('View Dynamic Pricing', 'fluent-cart'),
+            'dynamic_pricing/manage' => __('Manage Dynamic Pricing', 'fluent-cart'),
         ];
     }
 

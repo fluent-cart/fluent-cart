@@ -4,6 +4,7 @@ namespace FluentCart\App\Hooks\Handlers\BlockEditors;
 
 use FluentCart\App\App;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Renderer\ProductReviewRenderer;
 use FluentCart\App\Services\Reviews\LayoutPresets;
 use FluentCart\App\Services\Translations\TransStrings;
@@ -60,7 +61,8 @@ class ProductReviewsBlockEditor extends BlockEditor
     public function provideContext()
     {
         return [
-            'fluent-cart/review_container_query' => 'query_type',
+            'fluent-cart/review_container_query'       => 'query_type',
+            'fluent-cart/review_container_product_ids' => 'product_ids',
         ];
     }
 
@@ -70,6 +72,7 @@ class ProductReviewsBlockEditor extends BlockEditor
             // Mirror the JS registration: WordPress drops attributes missing here before render.
             'query_type'         => ['type' => 'string', 'default' => 'default'],
             'product_id'         => ['type' => ['string', 'number'], 'default' => ''],
+            'product_ids'        => ['type' => 'array', 'default' => []],
             // Picker state only; the saved child blocks define the rendered layout.
             'preset'             => ['type' => 'string', 'default' => 'classic'],
         ];
@@ -111,6 +114,13 @@ class ProductReviewsBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
+        $queryType = Arr::get($shortCodeAttribute, 'query_type', 'default');
+
+        // Checked before resolveProduct(), which reads any mode but custom as the current product.
+        if (ProductReviewService::isMultiProductQuery($queryType)) {
+            return $this->renderMultiProduct($shortCodeAttribute, $block, $queryType);
+        }
+
         $product = $this->resolveProduct($shortCodeAttribute);
 
         if (!$product) {
@@ -131,6 +141,47 @@ class ProductReviewsBlockEditor extends BlockEditor
 
         ob_start();
         (new ProductReviewRenderer($product->ID, []))->render();
+        $inner = ob_get_clean();
+
+        return static::wrapUnlessEmpty($wrapper_attributes, $inner);
+    }
+
+    /**
+     * All products or Multiple products: no current product is set up, and the
+     * single-product children skip themselves based on the provided context.
+     */
+    protected function renderMultiProduct(array $shortCodeAttribute, $block, string $queryType)
+    {
+        $productFilters = ProductReviewService::blockProductFilters(
+            $queryType,
+            Arr::get($shortCodeAttribute, 'product_ids', [])
+        );
+
+        if ($productFilters === null) {
+            return '';
+        }
+
+        AssetLoader::loadSingleProductAssets();
+
+        if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+            $innerContent = '';
+            foreach ($block->inner_blocks as $innerBlock) {
+                $innerContent .= $innerBlock->render();
+            }
+
+            $wrapper_attributes = get_block_wrapper_attributes([
+                'class' => 'fct-product-reviews-block fct-product-reviews-container',
+            ]);
+
+            return static::wrapUnlessEmpty($wrapper_attributes, $innerContent);
+        }
+
+        $wrapper_attributes = get_block_wrapper_attributes([
+            'class' => 'fct-product-reviews-block',
+        ]);
+
+        ob_start();
+        (new ProductReviewRenderer(0, ['productFilters' => $productFilters]))->render();
         $inner = ob_get_clean();
 
         return static::wrapUnlessEmpty($wrapper_attributes, $inner);

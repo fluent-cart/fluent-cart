@@ -2,7 +2,8 @@ import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/WriteAReviewButton/Components/InspectorSettings";
-import {useInsideProductReviews} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {useHiddenByReviewContainer, useInsideProductReviews} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import SingleProductOnlyNotice from "@/BlockEditor/ProductReviews/Components/SingleProductOnlyNotice";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {WriteAReviewButton, AddReview} from "@/BlockEditor/Icons";
 
@@ -58,6 +59,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const singleProductData = useSingleProductData();
         const [selectedProduct, setSelectedProduct] = useState({});
         const insideParent = useInsideProductReviews(clientId);
+        const {showNotice: showSingleProductNotice} = useHiddenByReviewContainer(clientId);
 
         // The wrapper hugs the button so the selection outline matches what
         // is clickable, the way Add to Cart does. Inside a review container
@@ -128,6 +130,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
         return (
             <div {...blockProps}>
+                {showSingleProductNotice && <SingleProductOnlyNotice/>}
                 <InspectorSettings
                     attributes={attributes}
                     setAttributes={setAttributes}

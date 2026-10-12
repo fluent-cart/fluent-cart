@@ -13,7 +13,6 @@ use FluentCart\App\Services\Email\EmailNotifications;
 use FluentCart\App\Services\FrontendView;
 use FluentCart\App\Services\Renderer\Receipt\ReceiptRenderer;
 use FluentCart\App\Services\Renderer\Receipt\ThankYouRender;
-use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
@@ -159,12 +158,9 @@ class ReceiptHandler
             (new ThankYouRender($config))->render();
         }
 
-        $slipView = ob_get_clean();
-
-
-        $parsedContent = ShortcodeTemplateBuilder::make($slipView, [
-            'order' => $order,
-        ]);
+        // Not smartcode-parsed: the page holds customer-typed text, and a {{…}} in it
+        // must not resolve. Admin-authored parts are parsed before they are rendered.
+        $parsedContent = ob_get_clean();
 
         $app = fluentCart();
         $slug = $app->config->get('app.slug');

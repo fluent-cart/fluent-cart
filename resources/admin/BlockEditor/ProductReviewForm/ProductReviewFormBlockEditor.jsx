@@ -1,6 +1,7 @@
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/ProductReviewForm/Components/InspectorSettings";
-import {useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {useHiddenByReviewContainer, useInsideProductReviews, useReviewBlockProduct} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import SingleProductOnlyNotice from "@/BlockEditor/ProductReviews/Components/SingleProductOnlyNotice";
 import {ReviewForm} from "@/BlockEditor/Icons";
 
 const {useBlockProps} = wp.blockEditor;
@@ -44,6 +45,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         });
 
         const insideParent = useInsideProductReviews(clientId);
+        const {showNotice: showSingleProductNotice} = useHiddenByReviewContainer(clientId);
         const {selectedProduct, setSelectedProduct} = useReviewBlockProduct(attributes, insideParent);
 
         // The preview renders in its own REST request, with no parent block
@@ -68,6 +70,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
         return (
             <div {...blockProps}>
+                {showSingleProductNotice && <SingleProductOnlyNotice/>}
                 <InspectorSettings
                     attributes={attributes}
                     setAttributes={setAttributes}

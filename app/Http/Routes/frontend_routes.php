@@ -112,4 +112,5 @@ $router->prefix('public/reviews')
         $router->put('/{postId}/{reviewId}', [ProductReviewFrontendController::class, 'updateReview'])->int('postId')->int('reviewId');
         $router->get('/{postId}/{reviewId}/replies', [ProductReviewFrontendController::class, 'getReplies'])->int('postId')->int('reviewId');
         $router->get('/{postId}/{reviewId}/modal', [ProductReviewFrontendController::class, 'getModalView'])->int('postId')->int('reviewId');
+        $router->get('/all', [ProductReviewFrontendController::class, 'getAllProductsReviews']);
     });

@@ -880,7 +880,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct_item_price_wrapper {
-    @apply flex flex-wrap items-start justify-end gap-x-1.5 gap-y-1 leading-none;
+    @apply flex flex-wrap items-center justify-end gap-x-1.5 gap-y-1 leading-none;
   }
 
   .fct_line_item_price {
@@ -891,12 +891,9 @@ body:not(.fluent-cart-no-colors) {
     @apply text-[var(--fct-checkout-secondary-text-color)] text-sm font-medium leading-[1.1];
   }
 
-  .fct_coupon_original_price {
+  .fct_line_item_original_price {
     text-decoration: line-through;
-    @apply text-xs font-normal leading-[1.1] opacity-60;
-  }
-
-  .fct_coupon_discounted_price {
+    @apply text-xs font-normal leading-[1.1] text-system-mid;
   }
 
   .fct_item_tax_badges {

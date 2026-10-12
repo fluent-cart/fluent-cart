@@ -267,6 +267,10 @@ export default class FluentCartProductReviews {
     // with the same blocks the page was built from rather than the fixed row.
     #blockClientId = '';
     #ratingToken = '';
+    // [fluent_cart_product_reviews scope="all"]: reviews from every product,
+    // optionally narrowed to some products or categories.
+    #isAllProducts = false;
+    #productFilters = {};
     #abortController = null;
     #modalShellMarkup = null;
 
@@ -312,6 +316,14 @@ export default class FluentCartProductReviews {
         // and draws that element, which the script refills rather than
         // replaces.
         this.#ratingToken = container.getAttribute('data-rating-token') || '';
+        this.#isAllProducts = container.getAttribute('data-scope') === 'all';
+        if (this.#isAllProducts) {
+            try {
+                this.#productFilters = JSON.parse(container.getAttribute('data-product-filters') || '{}') || {};
+            } catch (e) {
+                this.#productFilters = {};
+            }
+        }
         this.#blockClientId = container.querySelector('[data-reviews-list]')?.getAttribute('data-client-id') || '';
 
         // Read default sort from the pre-selected dropdown or data attr
@@ -326,7 +338,7 @@ export default class FluentCartProductReviews {
     init() {
         if (this.#container.hasAttribute('data-fluent-cart-review-summary')) {
             document.addEventListener('fct-review-submitted', (event) => {
-                if (String(event.detail?.postId) === String(this.#postId)) this.#refreshSummary();
+                if (this.#isAllProducts || String(event.detail?.postId) === String(this.#postId)) this.#refreshSummary();
             }, {signal: this.#eventAbort.signal});
             return;
         }
@@ -367,8 +379,9 @@ export default class FluentCartProductReviews {
 
         // Listen for review submissions from the separate Review Form block (removable via AbortController)
         document.addEventListener('fct-review-submitted', (e) => {
-            if (String(e.detail?.postId) === String(this.#postId)) {
+            if (this.#isAllProducts || String(e.detail?.postId) === String(this.#postId)) {
                 this.#loadReviews(1);
+                // Several products refresh from the combined endpoint (see #refreshSummary).
                 this.#refreshSummary();
             }
         }, { signal: this.#eventAbort.signal });
@@ -471,8 +484,15 @@ export default class FluentCartProductReviews {
         if (this.#chips.verified) {
             params.set('verified_only', '1');
         }
+        if (this.#isAllProducts) {
+            ['product_ids', 'category_ids'].forEach((filterKey) => {
+                const filterIds = Array.isArray(this.#productFilters[filterKey]) ? this.#productFilters[filterKey] : [];
+                if (filterIds.length) params.set(filterKey, filterIds.join(','));
+            });
+        }
 
-        fetch(`${this.#restUrl}/public/reviews/${this.#postId}${this.#restUrl.includes('?') ? '&' : '?'}${params}`, {
+        const listEndpoint = this.#isAllProducts ? 'all' : this.#postId;
+        fetch(`${this.#restUrl}/public/reviews/${listEndpoint}${this.#restUrl.includes('?') ? '&' : '?'}${params}`, {
             method: 'GET',
             headers: {
                 'X-WP-Nonce': this.#restNonce,
@@ -754,7 +774,8 @@ export default class FluentCartProductReviews {
         }
         this.#repliesAbortController = new AbortController();
 
-        fetch(`${this.#restUrl}/public/reviews/${this.#postId}/${reviewId}/modal`, {
+        const postId = this.#productIdOfReview(reviewId);
+        fetch(`${this.#restUrl}/public/reviews/${postId}/${reviewId}/modal`, {
             method: 'GET',
             headers: { 'X-WP-Nonce': this.#restNonce },
             signal: this.#repliesAbortController.signal,
@@ -783,7 +804,7 @@ export default class FluentCartProductReviews {
                 // rides along so listeners target the right product on pages
                 // holding several review widgets.
                 document.dispatchEvent(new CustomEvent('fct-review-modal-opened', {
-                    detail: { overlay, review: this.#reviewsCache[reviewId], reviewId, container: this.#container },
+                    detail: { overlay, review: this.#reviewsCache[reviewId], reviewId, postId, container: this.#container },
                 }));
             })
             .catch((err) => {
@@ -795,6 +816,16 @@ export default class FluentCartProductReviews {
                     body.querySelector('[data-modal-close]')?.addEventListener('click', closeModal);
                 }
             });
+    }
+
+    /**
+     * The product a review belongs to. An all-products list spans products, so its
+     * rows carry their own; a product's list is all the container's.
+     */
+    #productIdOfReview(reviewId) {
+        if (!this.#isAllProducts) return this.#postId;
+        const reviewRow = this.#container.querySelector(`[data-review-id="${CSS.escape(String(reviewId))}"][data-review-post-id]`);
+        return reviewRow ? reviewRow.getAttribute('data-review-post-id') : this.#postId;
     }
 
     #renderPagination(paginationHtml) {
@@ -1025,7 +1056,16 @@ export default class FluentCartProductReviews {
     }
 
     #refreshSummary(isRetry = false) {
-        fetch(`${this.#restUrl}/public/reviews/${this.#postId}/summary`, {
+        let url = `${this.#restUrl}/public/reviews/${this.#postId}/summary`;
+        if (this.#isAllProducts) {
+            const params = new URLSearchParams({include_summary: '1', per_page: '1'});
+            ['product_ids', 'category_ids'].forEach((key) => {
+                const ids = this.#productFilters[key];
+                if (Array.isArray(ids) && ids.length) params.set(key, ids.join(','));
+            });
+            url = `${this.#restUrl}/public/reviews/all${this.#restUrl.includes('?') ? '&' : '?'}${params}`;
+        }
+        fetch(url, {
             method: 'GET',
             headers: { 'X-WP-Nonce': this.#restNonce },
         })

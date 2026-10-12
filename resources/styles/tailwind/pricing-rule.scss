@@ -1,0 +1,281 @@
+/*
+ * Template cards on the create rule page: icon, title and description in a
+ * row, with a check mark on the right of the chosen one.
+ */
+.fct-pricing-rule-template {
+    // el-radio-group centres its items; stretch them and size every row alike so all cards match.
+    @apply w-full gap-4 grid grid-cols-1 sm:grid-cols-2 items-stretch auto-rows-fr;
+    .el-radio {
+        @apply w-full h-auto items-start bg-white border border-solid border-gray-outline rounded py-3.5 px-4 m-0 whitespace-normal dark:bg-dark-500 dark:border-dark-400;
+        transition: .14s;
+        &:hover {
+            @apply shadow-sm;
+        }
+        &.is-checked {
+            @apply border-primary-500 dark:border-gray-400;
+            .fct-rule-template-recipe-check {
+                @apply opacity-100;
+                transform: scale(1);
+            }
+        }
+    }
+    .el-radio__label {
+        @apply flex items-start gap-3 w-full pl-0;
+    }
+    .el-radio__input {
+        @apply hidden;
+    }
+    .fct-rule-template-icon {
+        @apply inline-flex flex-shrink-0 mt-0.5 text-system-mid dark:text-gray-400;
+        svg {
+            @apply w-4 h-4;
+        }
+    }
+    .fct-rule-template-content {
+        @apply flex flex-col gap-1 flex-1 min-w-0;
+    }
+    .fct-rule-template-recipe-check {
+        @apply inline-flex items-center justify-center w-4.5 h-4.5 flex-shrink-0 rounded-full bg-primary-500 text-white opacity-0;
+        transition: .14s;
+        transform: scale(0.8);
+        svg {
+            @apply w-3.5 h-3.5;
+        }
+    }
+    .fct-rule-template-title {
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+    .fct-rule-template-text {
+        @apply text-xs font-normal text-system-mid dark:text-gray-400;
+    }
+}
+
+.fct-pricing-rule-form {
+    .fct-form-group {
+        @apply mb-4 last:mb-0;
+    }
+
+    // A divider above a new part of the form, as on the create rule page.
+    .fct-pricing-rule-form-section {
+        @apply border-0 border-t border-solid border-gray-divider pt-5 mt-5 dark:border-dark-400;
+    }
+}
+
+.fct-conditions-wrapper {
+    .cond-empty {
+        p {
+            @apply text-sm my-2.5;
+        }
+        .empty-icon {
+            @apply inline-flex text-gray-400;
+        }
+    }
+}
+
+/*
+ * The conditions builder mirrors the table's advanced filter visually but keeps
+ * its own class names, so restyling one cannot silently change the other.
+ */
+.fct-conditions-container {
+    @apply overflow-hidden;
+
+    // One group: the bordered box holding its condition rows.
+    .fct-conditions-group {
+        @apply bg-gray-25 border border-solid border-gray-divider rounded-xs mb-5 p-2 dark:bg-dark-500 dark:border-dark-400;
+
+        table {
+            @apply mb-5 border-collapse border-spacing-0 border-0;
+
+            tr td {
+                @apply p-[5px];
+            }
+        }
+    }
+
+    // Between two groups the pill is a label, not a control.
+    .fct-conditions-item {
+        .fct-conditions-or-wrap .fct-conditions-or {
+            @apply text-system-light cursor-auto font-normal dark:text-gray-700;
+        }
+    }
+
+    // Below the last group the same pill is the button that appends one.
+    .fct-conditions-or-wrap {
+        @apply border-[1px] border-dashed border-gray-divider text-system-light text-center relative leading-[100%] my-4 dark:border-dark-400;
+
+        .fct-conditions-or {
+            @apply flex items-center gap-1 cursor-pointer text-primary-500 font-semibold bg-white text-[15px] uppercase px-3 top-1/2 left-1/2 absolute dark:bg-dark-700 dark:text-gray-50;
+            transform: translate(-50%, -50%);
+
+            // The clickable one is a native button; preflight is not part of
+            // this build, so its browser chrome has to be cleared here.
+            @apply border-0 shadow-none;
+            appearance: none;
+
+            svg {
+                @apply w-3;
+            }
+        }
+    }
+}
+
+/*
+ * The accordion picker reuses the shared .fct-cascader-* styles from filter.scss.
+ * Only the show/hide behaviour is ours, scoped to this popover: both pickers are
+ * rendered and CSS decides which one shows, since the element-plus cascader needs
+ * the width of a desktop viewport and the accordion does not.
+ */
+.fct-conditions-popover {
+    // Sized by its content, so a third column (Checkout Fields → Billing
+    // Address → City) opens inside the box instead of running past it. Same
+    // selector weight as element-plus's own min-width, which would win otherwise.
+    &.el-popover.el-popper {
+        @apply min-w-[450px];
+    }
+
+    .fct-cascader-panel {
+        @apply hidden;
+    }
+
+    /*
+     * The picker's rows are native buttons so they are keyboard reachable, but
+     * Tailwind's preflight is not part of this build — without a reset they keep
+     * their browser chrome. Done here rather than with utility classes, which
+     * lose to more specific selectors.
+     */
+    .fct-cascader-button,
+    .fct-cascader-item {
+        @apply w-full text-left border-0 shadow-none;
+        appearance: none;
+        background-color: transparent;
+    }
+
+    // Re-declared: the reset above is later in the cascade than filter.scss.
+    .fct-cascader-item:hover {
+        @apply bg-gray-25;
+    }
+
+    // A group nested in a group (Checkout Fields → Billing Address) sits indented.
+    .fct-cascader-content .fct-cascader-panel {
+        @apply ps-3;
+    }
+}
+
+.fct-resource-selector-popper {
+    .el-select-dropdown__item {
+        @apply h-auto leading-normal py-1.5 block;
+    }
+
+    .fct-resource-option-label {
+        @apply block truncate max-w-[255px];
+    }
+
+    .fct-resource-option-description {
+        @apply block truncate text-xs text-system-light dark:text-gray-400;
+    }
+}
+
+@media (max-width: 768px) {
+    .fct-conditions-group {
+        tr {
+            @apply grid grid-cols-1;
+        }
+
+        .fct-conditions-label,
+        .fct-conditions-operator {
+            @apply w-full #{!important};
+        }
+
+        .fct-conditions-action {
+            @apply ml-auto;
+        }
+    }
+
+    .fct-conditions-popover {
+        @apply w-[220px] min-w-0 #{!important};
+
+        .fct-cascader-panel {
+            @apply grid;
+        }
+
+        .el-cascader-panel {
+            @apply hidden;
+        }
+    }
+}
+
+/*
+ * Edit rule page: the summary bar under the breadcrumb. Both rule pages: the
+ * Applies To tiles and the When to Apply radio list.
+ */
+.fct-pricing-rule-summary {
+    @apply flex items-center justify-between gap-4 bg-white rounded px-5 py-3 mb-5 dark:bg-dark-700;
+
+    .fct-pricing-rule-summary-text {
+        @apply flex items-center flex-wrap gap-1.5 m-0 text-sm text-system-mid dark:text-gray-400;
+    }
+
+    .fct-pricing-rule-summary-status {
+        @apply flex items-center gap-2 flex-shrink-0 text-sm text-system-dark dark:text-gray-50;
+    }
+}
+
+.fct-pricing-rule-applies-to-options {
+    @apply grid grid-cols-3 gap-2;
+}
+
+.fct-pricing-rule-applies-to-option {
+    @apply flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded bg-white border border-solid border-gray-outline text-sm text-system-mid cursor-pointer dark:bg-dark-500 dark:border-dark-400 dark:text-gray-400;
+    appearance: none;
+    transition: .14s;
+
+    svg {
+        @apply w-5 h-5;
+    }
+
+    &:hover:not(:disabled) {
+        @apply bg-gray-25 dark:bg-dark-400;
+    }
+
+    &:focus-visible {
+        @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-400;
+    }
+
+    &.is-selected {
+        @apply bg-gray-50 border-primary-500 text-system-dark font-medium dark:bg-dark-400 dark:border-gray-400 dark:text-gray-50;
+    }
+
+    &:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+}
+
+.fct-pricing-rule-when-options {
+    @apply flex flex-col items-start gap-3 w-full;
+
+    // An el-radio is a <label>, so inside a .fct-form-group the form's label
+    // style (inline-block, max-content width, medium weight) reaches it too:
+    // the text drops under the circle and never wraps. Restated here, where
+    // the list is styled.
+    .el-radio {
+        @apply flex w-full h-auto m-0 items-start whitespace-normal font-normal;
+    }
+
+    .el-radio__input {
+        @apply mt-0.5;
+    }
+
+    .el-radio__label {
+        @apply flex flex-col flex-1 min-w-0;
+    }
+
+    .fct-pricing-rule-when-title {
+        @apply text-sm text-system-dark dark:text-gray-50;
+    }
+
+    // Padding, not a gap: the accordion animates to the hint's measured
+    // height, and a gap outside it would make the text jump at the end.
+    .fct-pricing-rule-when-hint {
+        @apply block pt-1 text-xs font-normal text-system-mid dark:text-gray-400;
+    }
+}

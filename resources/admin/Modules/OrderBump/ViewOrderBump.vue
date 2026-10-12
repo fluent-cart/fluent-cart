@@ -105,8 +105,8 @@ const updateBump = () => {
 }
 
 const reloadPage = () => {
-    window.location.reload();
     changes_made.value = 0;
+    window.location.reload();
 }
 
 

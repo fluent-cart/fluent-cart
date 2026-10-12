@@ -1675,6 +1675,7 @@ class InnerBlocks
     {
         return '<div ' . $cardAttributes . ' data-composed-row'
             . ' data-review-id="' . esc_attr((string) Arr::get($review, 'id', '')) . '"'
+            . ' data-review-post-id="' . (int) Arr::get($review, 'post_id', 0) . '"'
             . ' data-user-vote="' . (int) Arr::get($review, 'user_vote', 0) . '"'
             . ' data-helpful-count="' . (int) Arr::get($review, 'helpful_count', 0) . '"'
             . ' data-not-helpful-count="' . (int) Arr::get($review, 'not_helpful_count', 0) . '"'

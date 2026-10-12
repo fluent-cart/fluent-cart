@@ -57,6 +57,7 @@ class ProductReviewListBlockEditor extends BlockEditor
             // attribute missing here never reaches the render callback.
             'query_type'             => ['type' => 'string', 'default' => 'default'],
             'product_id'             => ['type' => ['string', 'number'], 'default' => ''],
+            'product_ids'            => ['type' => 'array', 'default' => []],
             'viewMode'               => ['type' => 'string', 'default' => 'list'],
             'gridColumns'            => ['type' => 'number', 'default' => 2],
             'hasMedia'               => ['type' => 'boolean', 'default' => false],
@@ -166,7 +167,7 @@ class ProductReviewListBlockEditor extends BlockEditor
 
     public function useContext()
     {
-        return ['fluent-cart/review_container_query'];
+        return ['fluent-cart/review_container_query', 'fluent-cart/review_container_product_ids'];
     }
 
     /**
@@ -232,10 +233,33 @@ class ProductReviewListBlockEditor extends BlockEditor
         $insideContainer = $block instanceof \WP_Block
             && isset($block->context['fluent-cart/review_container_query']);
 
-        $product = $insideContainer ? fluent_cart_get_current_product() : $this->resolveProduct($shortCodeAttribute);
+        $queryType = $insideContainer
+            ? $block->context['fluent-cart/review_container_query']
+            : Arr::get($shortCodeAttribute, 'query_type', 'default');
 
-        if (!$product) {
-            return '';
+        // Checked before resolveProduct(), which reads any mode but custom as the current product.
+        $productFilters = null;
+        if (ProductReviewService::isMultiProductQuery($queryType)) {
+            $productFilters = ProductReviewService::blockProductFilters(
+                $queryType,
+                $insideContainer
+                    ? Arr::get($block->context, 'fluent-cart/review_container_product_ids', [])
+                    : Arr::get($shortCodeAttribute, 'product_ids', [])
+            );
+
+            if ($productFilters === null) {
+                return '';
+            }
+
+            $reviewsPostId = 0;
+        } else {
+            $product = $insideContainer ? fluent_cart_get_current_product() : $this->resolveProduct($shortCodeAttribute);
+
+            if (!$product) {
+                return '';
+            }
+
+            $reviewsPostId = $product->ID;
         }
 
         AssetLoader::loadSingleProductAssets();
@@ -264,6 +288,7 @@ class ProductReviewListBlockEditor extends BlockEditor
             'defaultSortOrder'  => Arr::get($shortCodeAttribute, 'defaultSortOrder', 'DESC'),
             'showSortControls'  => Arr::get($shortCodeAttribute, 'showSortControls', true),
             'perPage'           => (int) Arr::get($shortCodeAttribute, 'perPage', 0),
+            'productFilters'    => $productFilters,
         ];
 
         // The rows, when an editor has put blocks inside this one. The list
@@ -325,7 +350,7 @@ class ProductReviewListBlockEditor extends BlockEditor
         ]);
 
         ob_start();
-        (new ProductReviewRenderer($product->ID, $options))->render();
+        (new ProductReviewRenderer($reviewsPostId, $options))->render();
         $inner = ob_get_clean();
 
         return static::wrapUnlessEmpty($wrapper_attributes, $inner);

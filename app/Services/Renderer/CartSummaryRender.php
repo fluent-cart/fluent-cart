@@ -89,6 +89,13 @@ class CartSummaryRender
         if (!$items) {
             return '';
         }
+
+        // The same filter getEstimatedTotal() runs before summing. A rule
+        // discount lives only in the filtered copy — reading cart_data here
+        // would price the lines above the total shown underneath them.
+        $items = apply_filters('fluent_cart/cart/item_dynamic_discount', $items, [
+            'cart' => $this->cart,
+        ]);
         ?>
         <div class="fct_line_items">
             <?php foreach ($items as $item) {
@@ -138,6 +145,9 @@ class CartSummaryRender
                         <span class="fct_summary_value"><?php echo esc_html(Helper::toDecimal($extraLine['amount'])); ?></span>
                     </li>
                 <?php endforeach; ?>
+
+                <?php do_action('fluent_cart/checkout/before_summary_coupon', [ 'cart' => $this->cart ]);
+                ?>
 
                 <li data-fluent-cart-checkout-page-applied-coupon>
                     <?php $this->showCouponApplied(); ?>

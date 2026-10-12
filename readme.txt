@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,15 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.8.0 (Oct 12, 2026) =
+- Adds Dynamic Pricing
+- Adds Named discounts in checkout summaries, original price strikethroughs at checkout, on thank-you pages, and in order emails, plus pricing permissions.
+- Adds Review sources for selected or all products in review blocks, combined ratings, and shortcode filtering by product or category.
+- Fixes Missing shipping tax when saved billing addresses fill checkout.
+- Fixes Paddle resync treating payment method changes as renewals.
+- Fixes Duplicate VAT in tax-inclusive ZUGFeRD e-invoices and the Seller VAT ID in PDF receipts.
+- Fixes Refunded licenses reactivating after subscription updates.
 
 = 1.7.1 (Oct 8, 2026) =
 - Adds Airwallex Payment Gateway Addon

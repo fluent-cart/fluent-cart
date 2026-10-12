@@ -319,6 +319,60 @@
     @apply text-xs text-gray-500 mt-3 mb-0;
 }
 
+/* Inspector: Show reviews from, and the Selected products list. */
+.fct-review-source-select {
+    @apply w-full;
+
+    .components-input-control__container,
+    select {
+        @apply w-full;
+    }
+}
+
+.fct-review-selected-products {
+    @apply list-none m-0 mt-2 p-0 flex flex-col gap-1.5;
+}
+
+.fct-review-selected-product {
+    @apply flex items-center gap-2 m-0 py-1.5 px-2.5 bg-white border border-solid border-gray-200 rounded-md text-[13px] text-gray-900;
+
+    &__title {
+        @apply flex-1 min-w-0 truncate;
+    }
+
+    &__id {
+        @apply shrink-0 text-xs text-gray-600 tabular-nums;
+    }
+
+    &__remove {
+        @apply shrink-0 inline-flex items-center justify-center w-5 h-5 p-0 border-0 rounded bg-transparent text-gray-600 cursor-pointer;
+
+        &:hover {
+            @apply bg-gray-100 text-gray-900;
+        }
+
+        &:focus-visible {
+            @apply outline outline-2 outline-offset-1 outline-blue-600;
+        }
+
+        svg {
+            @apply w-[9px] h-[9px];
+        }
+    }
+}
+
+/* The default focus ring is a thick box around Select Product once the picker
+   closes and hands focus back; keyboard focus keeps a thin outline. */
+.fct-review-product-picker .fct-button {
+    &:focus {
+        @apply outline-none shadow-none;
+    }
+
+    &:focus-visible {
+        @apply outline outline-1 outline-offset-1 outline-blue-600 shadow-none;
+    }
+}
+
 /* The note under the help text. It had no rule at all, so it rendered at the
    inspector's default paragraph size beside a 12px help line. Not gray-400:
    that is 2.54:1 on white and fails AA. */

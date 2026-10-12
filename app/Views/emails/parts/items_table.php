@@ -89,6 +89,11 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
             </td>
             <td style="padding-right: 16px;text-align:right">
                 <p style="font-size:14px;font-weight:700;color:rgb(17,24,39);margin:0;line-height:24px;">
+                    <?php if ((int) Arr::get($item, 'discount_total', 0) > 0): ?>
+                        <span style="text-decoration:line-through;color:rgb(107,114,128);font-weight:400;margin-right:4px;">
+                            <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal(Arr::get($item, 'subtotal', 0))); ?>
+                        </span>
+                    <?php endif; ?>
                     <?php echo esc_html($item['formatted_total']); ?>
                 </p>
             </td>
@@ -308,24 +313,52 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php if ($order->shipping_total > 0):
                     $emailDisplayShipping = max(0, (int) $order->shipping_total - $emailRcShippingAdj);
                     $emailShippingMethodTitle = (string) \FluentCart\Framework\Support\Arr::get($order->config, 'shipping_method_title', '');
+                    $emailShippingDiscount = (int) \FluentCart\Framework\Support\Arr::get($order->config, 'shipping_discount', 0);
                 ?>
                     <tr style="width:100%">
                         <td style="width:70%">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html__('Shipping', 'fluent-cart'); ?>
+
+                                <?php if ($emailShippingMethodTitle): ?>
+                                    <span style="font-size:13px;color:rgb(107,114,128);line-height:18px;margin:0;">
+                                        &#40;<?php echo esc_html($emailShippingMethodTitle); ?>&#41;
+                                    </span>
+                                <?php endif; ?>
                             </p>
-                            <?php if ($emailShippingMethodTitle): ?>
-                                <p style="font-size:12px;color:rgb(107,114,128);line-height:18px;margin:0;">
-                                    <?php echo esc_html($emailShippingMethodTitle); ?>
-                                </p>
-                            <?php endif; ?>
                         </td>
                         <td style="width:30%;text-align:right">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping)); ?>
+                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping + $emailShippingDiscount)); ?>
                             </p>
                         </td>
                     </tr>
+                    <?php if ($emailShippingDiscount > 0): ?>
+                        <tr style="width:100%">
+                            <td style="width:70%">
+                                <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
+                                    <?php echo esc_html__('Shipping Discount', 'fluent-cart'); ?>
+                                </p>
+                            </td>
+                            <td style="width:30%;text-align:right">
+                                <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
+                                    - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailShippingDiscount)); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr style="width:100%">
+                            <td style="width:70%">
+                                <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
+                                    <?php echo esc_html__('Shipping after discount', 'fluent-cart'); ?>
+                                </p>
+                            </td>
+                            <td style="width:30%;text-align:right">
+                                <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
+                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping)); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <?php foreach ($feeItems as $feeItem): ?>
                     <tr style="width:100%">

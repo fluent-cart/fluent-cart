@@ -38,6 +38,8 @@ class ProductReviewFrontendController extends BaseFrontendController
      */
     const MAX_REVIEW_WORDS = 500;
 
+    const MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE = ProductReviewService::MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE;
+
     public function getReviews(ReviewRequest $request, $postId)
     {
         $postId = intval($postId);
@@ -112,7 +114,33 @@ class ProductReviewFrontendController extends BaseFrontendController
         // vote fields are part of them; the JS swaps this markup in. Display
         // flags travel with the request since they are block attributes the
         // server cannot otherwise know.
-        $listRenderer = new ReviewListRenderer([
+        $listRenderer = $this->buildListRendererFromRequest($request, [
+            // The composed row again, rebuilt from the post the block is saved
+            // in. Without this the first sort, filter or page swaps the
+            // editor's row for the fixed one and never gives it back — the
+            // saved composition lasting exactly one page load.
+            'rows_renderer' => ProductReviewListBlockEditor::savedRowRenderer(
+                $request->get('client_id', '')
+            ),
+        ]);
+
+        $responseData['reviews_html'] = $listRenderer->renderReviewItems(Arr::get($responseData, 'reviews.data', []));
+        $responseData['pagination_html'] = $listRenderer->paginationHtml(Arr::get($responseData, 'reviews', []));
+
+        return $this->sendSuccess($responseData);
+    }
+
+    /**
+     * Rows and pager for a list request. Display flags are block attributes the server
+     * cannot otherwise know, so they travel with the request and are bounded here.
+     *
+     * @param Request $request
+     * @param array $extraOptions Options the caller adds or overrides.
+     * @return ReviewListRenderer
+     */
+    protected function buildListRendererFromRequest($request, array $extraOptions = []): ReviewListRenderer
+    {
+        return new ReviewListRenderer(array_merge([
             'show_reviewer'   => $request->get('show_reviewer', '1') !== '0',
             'show_date'       => $request->get('show_date', '1') !== '0',
             'show_verified'   => $request->get('show_verified', '1') !== '0',
@@ -149,13 +177,70 @@ class ProductReviewFrontendController extends BaseFrontendController
                 ReviewListRenderer::paginationTypes(),
                 true
             ) ? $request->get('pagination_type', 'numbers') : 'numbers',
-            // The composed row again, rebuilt from the post the block is saved
-            // in. Without this the first sort, filter or page swaps the
-            // editor's row for the fixed one and never gives it back — the
-            // saved composition lasting exactly one page load.
-            'rows_renderer'   => ProductReviewListBlockEditor::savedRowRenderer(
-                $request->get('client_id', '')
-            ),
+        ], $extraOptions));
+    }
+
+    /**
+     * Approved reviews across the store, for [fluent_cart_product_reviews scope="all"].
+     * Same list contract as getReviews(), narrowed by product and category ids.
+     */
+    public function getAllProductsReviews(Request $request)
+    {
+        $settings = ProductReviewService::getReviewSettings();
+
+        if (Arr::get($settings, 'reviews_enabled') !== 'yes') {
+            return $this->sendError([
+                'message' => __('Reviews are not available', 'fluent-cart'),
+            ], 404);
+        }
+
+        $perPage = (int) $request->get('per_page', 0);
+        $perPage = $perPage > 0 ? $perPage : (int) Arr::get($settings, 'reviews_per_page', 10);
+        $perPage = max(1, min($perPage, static::MAX_ALL_PRODUCTS_REVIEWS_PER_PAGE));
+
+        $params = array_merge(ProductReviewService::sanitizeProductFilters([
+            'product_ids'  => $request->get('product_ids', ''),
+            'category_ids' => $request->get('category_ids', ''),
+        ]), [
+            'page'       => max(1, intval($request->get('page', 1))),
+            'sort_by'    => sanitize_text_field($request->get('sort_by', 'created_at')),
+            'sort_order' => sanitize_text_field($request->get('sort_order', 'DESC')),
+            'per_page'   => $perPage,
+            // A floor the renderer signed for post id 0. Without a valid token there is
+            // no floor; every approved review is public, so that only widens the list.
+            'min_rating' => (int) ProductReviewService::minRatingFromToken(0, (string) $request->get('rating_token', '')),
+        ]);
+
+        $ratings = ProductReviewService::ratingList($request->get('ratings', ''));
+        $rating = intval($request->get('rating', 0));
+
+        if ($ratings) {
+            $params['ratings'] = $ratings;
+        } elseif ($rating >= 1 && $rating <= 5) {
+            $params['rating'] = $rating;
+        }
+
+        if (intval($request->get('has_media', 0))) {
+            $params['has_media'] = true;
+        }
+
+        if (intval($request->get('verified_only', 0))) {
+            $params['verified_only'] = true;
+        }
+
+        $responseData = ProductReviewService::getAllProductsReviewsPayload($params);
+
+        if ($request->get('include_summary', '0') === '1') {
+            $summary = ProductReviewService::getProductsRatingSummary($params);
+            $responseData['summary'] = $summary;
+            $responseData['stars_html'] = (new ProductReviewRenderer(0))->starsHtml(Arr::get($summary, 'average', 0));
+            /* translators: 1: the average star rating, e.g. "Rated 4.5 out of 5" */
+            $responseData['stars_label'] = sprintf(__('Rated %1$s out of 5', 'fluent-cart'), Arr::get($summary, 'average', 0));
+        }
+
+        $listRenderer = $this->buildListRendererFromRequest($request, [
+            // A Review List block's custom row; an unknown token keeps the fixed row.
+            'rows_renderer' => ProductReviewListBlockEditor::savedRowRenderer($request->get('client_id', '')),
         ]);
 
         $responseData['reviews_html'] = $listRenderer->renderReviewItems(Arr::get($responseData, 'reviews.data', []));
