@@ -293,7 +293,14 @@ class TaxModule
         ], $cart);
 
         $cart->fill($fillData);
-        $cart->save();
+
+        // See the matching guard in ShippingModule: a `cart_data_items_updated`
+        // listener must not be the thing that first writes a cart row. Every
+        // core dispatch site saves before firing, so `exists` is already true
+        // there; `fill()` still runs, so in-memory totals are correct either way.
+        if ($cart->exists) {
+            $cart->save();
+        }
     }
 
     public function maybeRecalculateTaxAmount($fillData, $data)

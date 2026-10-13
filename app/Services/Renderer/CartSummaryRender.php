@@ -23,6 +23,12 @@ class CartSummaryRender
         if (!$this->cart) {
             return '';
         }
+
+        $replacement = $this->replacementHtml($withWrapper, 'summary');
+        if ($replacement !== null) {
+            echo $replacement; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- listener owns escaping, see replacementHtml()
+            return;
+        }
         ?>
         <?php if($withWrapper): ?>
             <div class="fct_summary_box" data-fluent-cart-checkout-page-cart-items-wrapper>
@@ -46,8 +52,22 @@ class CartSummaryRender
         <?php
     }
 
-    public function renderOrderSummarySectionHeading()
+    /**
+     * @param string $label Heading text; defaults to "Order summary".
+     *                      An add-on that replaces the summary but keeps this
+     *                      chrome — the toggle, its aria-controls wiring, the
+     *                      collapsed total — needs to name the section for what
+     *                      it is actually showing. Without it a "choose your
+     *                      plan" list is headed "Order summary".
+     */
+    public function renderOrderSummarySectionHeading($label = '')
     {
+        $label = trim((string)$label);
+
+        if ($label === '') {
+            $label = __('Order summary', 'fluent-cart');
+        }
+
         ?>
         <div class="fct_form_section_header" role="heading" aria-level="2">
             <div
@@ -56,7 +76,7 @@ class CartSummaryRender
                 aria-expanded="true"
                 aria-controls="order_summary_panel"
             >
-                <h4 id="order_summary_label"><?php echo __('Order summary', 'fluent-cart'); ?></h4>
+                <h4 id="order_summary_label"><?php echo esc_html($label); ?></h4>
                 <div class="fct_toggle_icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"
                             fill="none">
@@ -83,8 +103,46 @@ class CartSummaryRender
         <?php
     }
 
+    /**
+     * Ask an add-on whether it wants to draw this summary instead.
+     *
+     * Returns MARKUP rather than a renderer object on purpose. A replacement
+     * that wants core's heading or footer composes a CartSummaryRender of its
+     * own, so handing back an object would recurse; a string cannot. The
+     * listener owns escaping what it returns — it is generating markup, and
+     * core has no way to escape arbitrary HTML without destroying it.
+     *
+     * @param bool $withWrapper
+     * @param string $context 'summary' (the whole box) | 'items' (the line-item list alone)
+     * @return string|null
+     */
+    protected function replacementHtml($withWrapper, $context)
+    {
+        /**
+         * @param string|null $html Markup to render instead, or null for core's.
+         * @param array $args ['cart' => Cart, 'with_wrapper' => bool, 'context' => string]
+         */
+        $html = apply_filters('fluent_cart/checkout/cart_summary_html', null, [
+            'cart'         => $this->cart,
+            'with_wrapper' => (bool)$withWrapper,
+            'context'      => $context,
+        ]);
+
+        return is_string($html) ? $html : null;
+    }
+
     public function renderItemsLists()
     {
+        // Fired separately from render() because InnerBlocks draws the line-item
+        // list on its own, without going through render() first. The two cannot
+        // double-fire: a listener that takes over render() returns before this
+        // method is ever reached.
+        $replacement = $this->replacementHtml(false, 'items');
+        if ($replacement !== null) {
+            echo $replacement; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- listener owns escaping, see replacementHtml()
+            return;
+        }
+
         $items = $this->cart->cart_data;
         if (!$items) {
             return '';

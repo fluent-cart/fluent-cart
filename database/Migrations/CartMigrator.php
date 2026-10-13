@@ -39,6 +39,22 @@ class CartMigrator extends Migrator
     public static function migrated()
     {
         static::addCustomerRecoveryIndex();
+        static::addLookupIndexes();
+    }
+
+    // Declared here, not in getSqlSchema(), so fresh installs and upgrades both get them.
+    // Speeds up cart_group lookups and DailyScheduler::deleteOldCarts()'s updated_at sweep.
+    public static function addLookupIndexes(): void
+    {
+        static::addIndexIfNotExists(
+            static::getDbPrefix() . 'fct_carts__group_stage_user',
+            ['cart_group', 'stage', 'user_id']
+        );
+
+        static::addIndexIfNotExists(
+            static::getDbPrefix() . 'fct_carts__updated_at',
+            'updated_at'
+        );
     }
 
     public static function addCustomerRecoveryIndex(): void

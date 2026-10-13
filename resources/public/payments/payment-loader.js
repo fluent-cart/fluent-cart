@@ -328,6 +328,52 @@ export default class PaymentLoader {
 
         this.payMethod = paymentMethod;
 
+        /**
+         * Let an extension hold a gateway back until its own precondition is
+         * met — a cart that is minted lazily, for one. Asking a gateway to
+         * prepare a payment before there is anything to pay for makes the
+         * server quote a zero total, and the shopper sees "add some items to
+         * cart" against a summary that visibly shows a price.
+         *
+         * A gate returns truthy to defer, and is then responsible for calling
+         * `loader.load(paymentMethod)` again once it is ready. It gets `ui` and
+         * `submitButton` in the payload because both are private fields here,
+         * and a gate that defers normally wants to disable the submit button
+         * while the shopper waits.
+         *
+         *     (window.fluentCartPaymentLoadGates ||= []).push(({loader, paymentMethod, ui, submitButton}) => { ... });
+         *
+         * The readiness flag is cleared BEFORE the gates run and only set once
+         * they all allow the load. Clearing matters as much as setting: the
+         * flag is sticky, so a method that loaded earlier would still read
+         * ready while a gate is holding the CURRENT load back, and the form
+         * could submit into a gateway that was never prepared for this cart.
+         * Disabling the submit button is a gate's own affordance for telling
+         * the shopper why they are waiting — it is not what makes this safe.
+         *
+         * A throwing gate is skipped rather than allowed to make checkout
+         * unpayable.
+         */
+        window['is_' + paymentMethod + '_ready'] = false;
+
+        for (const gate of (window.fluentCartPaymentLoadGates || [])) {
+            try {
+                const deferred = gate({
+                    loader: this,
+                    paymentMethod,
+                    form: this.#form,
+                    ui: this.#checkoutUiService,
+                    submitButton: this.#submitButton,
+                });
+
+                if (deferred) {
+                    return;
+                }
+            } catch (e) {
+                // Deliberately swallowed — see above.
+            }
+        }
+
         window['is_' + paymentMethod + '_ready'] = true;
 
         let searchParams = new URLSearchParams(window.location.search);

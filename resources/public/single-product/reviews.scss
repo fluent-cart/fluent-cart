@@ -1020,15 +1020,20 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
    width above them, and only the element knows which. A media query reads the
    window and would hand the narrow column the wide arrangement.
    The container is the wrapper, not the summary — a container query styles a
-   container's descendants, never the container itself. */
-.fct-review-summary-block {
-    container-type: inline-size;
+   container's descendants, never the container itself. Named, because an
+   unnamed query measures the nearest container: on a product page that is the
+   whole .fct-single-product-page, which gave the 320px column the wide row.
+   Two wrappers own a summary: the Rating Summary block, and the review
+   section's summary column (320px beside the list, full width across the top). */
+.fct-review-summary-block,
+.fct-reviews-layout-left {
+    container: fct-review-summary / inline-size;
 }
 
 /* Wide enough to read across: the score, the bars and the CTA side by side,
    which is the arrangement a shopper meets on the large marketplaces. Below
    this the parts stack, which is what a side column wants. */
-@container (min-width: 600px) {
+@container fct-review-summary (min-width: 600px) {
     .fct-reviews-summary {
         display: flex;
         align-items: flex-start;
@@ -1057,6 +1062,13 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     .fct-reviews-summary-write-btn {
         flex: 0 0 auto;
         align-self: center;
+    }
+
+    /* The section stretches its button down the narrow column (see the
+       w-full rule further down); in a row that width would squeeze the bars
+       to nothing. One class more, so this wins over that later rule. */
+    .fct-reviews-layout .fct-reviews-summary .fct-reviews-summary-write-btn {
+        width: auto;
     }
 }
 

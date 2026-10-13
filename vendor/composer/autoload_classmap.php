@@ -668,6 +668,7 @@ return array(
     'FluentCart\\App\\Services\\Renderer\\CartRenderer' => $baseDir . '/app/Services/Renderer/CartRenderer.php',
     'FluentCart\\App\\Services\\Renderer\\CartSummaryRender' => $baseDir . '/app/Services/Renderer/CartSummaryRender.php',
     'FluentCart\\App\\Services\\Renderer\\CheckoutFieldsSchema' => $baseDir . '/app/Services/Renderer/CheckoutFieldsSchema.php',
+    'FluentCart\\App\\Services\\Renderer\\CheckoutRenderContext' => $baseDir . '/app/Services/Renderer/CheckoutRenderContext.php',
     'FluentCart\\App\\Services\\Renderer\\CheckoutRenderer' => $baseDir . '/app/Services/Renderer/CheckoutRenderer.php',
     'FluentCart\\App\\Services\\Renderer\\CustomerDashboardButtonRenderer' => $baseDir . '/app/Services/Renderer/CustomerDashboardButtonRenderer.php',
     'FluentCart\\App\\Services\\Renderer\\FormFieldRenderer' => $baseDir . '/app/Services/Renderer/FormFieldRenderer.php',

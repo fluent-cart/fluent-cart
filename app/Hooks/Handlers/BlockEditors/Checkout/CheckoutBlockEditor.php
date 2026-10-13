@@ -4,12 +4,14 @@ namespace FluentCart\App\Hooks\Handlers\BlockEditors\Checkout;
 
 use FluentCart\App\Helpers\Helper;
 use FluentCart\Api\CurrencySettings;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Hooks\Handlers\BlockEditors\BlockEditor;
 use FluentCart\App\Hooks\Handlers\BlockEditors\Checkout\InnerBlocks\InnerBlocks;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Renderer\CartRenderer;
+use FluentCart\App\Services\Renderer\CheckoutRenderContext;
 use FluentCart\App\Services\Renderer\CheckoutRenderer;
 use FluentCart\App\Services\Renderer\RenderHelper;
 use FluentCart\App\Services\Translations\TransStrings;
@@ -60,6 +62,14 @@ class CheckoutBlockEditor extends BlockEditor
                         'title'             => __('Checkout Page', 'fluent-cart'),
                         'description'       => __('This block will display the checkout page.', 'fluent-cart'),
                         'placeholder_image' => Helper::getProductPlaceholderUrl(),
+
+                        // Whether the add-on that supplies the product-selector
+                        // panel is present. When it is not, this block shows a
+                        // short description of what the panel would do instead
+                        // of silently offering nothing — the checkout is where
+                        // an author goes looking for it.
+                        'is_pro_active'     => App::isProActive(),
+                        'upgrade_url'       => 'https://fluentcart.com/pricing/',
                 ],
                 'fluent_cart_block_translation' => TransStrings::blockStrings()
         ];
@@ -72,17 +82,45 @@ class CheckoutBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null, $content = null): string
     {
-        AssetLoader::loadCheckoutAssets();
+        /**
+         * Let an add-on supply the cart this checkout renders from — an offer
+         * page with its own basket, a one-click upsell, anything that is not
+         * the device's cart. Returning null keeps the shipped behaviour.
+         *
+         * Resolved BEFORE loadCheckoutAssets() on purpose: the asset loader
+         * localizes cart_hash and the totals against whatever cart it is given,
+         * and localizeCheckoutData() runs once per request. Resolving after it
+         * would ship the shopper's own cart to a page rendering someone else's.
+         *
+         * @param \FluentCart\App\Models\Cart|null $cart
+         * @param array $context ['surface' => string, 'attributes' => array, 'block' => \WP_Block|null]
+         */
+        $cart = apply_filters('fluent_cart/checkout/render_cart', null, [
+                'surface'    => 'checkout-block',
+                'attributes' => $shortCodeAttribute,
+                'block'      => $block,
+        ]);
+
+        AssetLoader::loadCheckoutAssets($cart ?: null);
 
 //        return '[fluent_cart_checkout]';
         global $wp;
         $current_url = home_url(add_query_arg([], $wp->request));
         $current_url = add_query_arg(array_map('sanitize_text_field', wp_unslash($_GET)), $current_url);
-        $cart = CartHelper::getCart();
+
+        if (!$cart) {
+            $cart = CartHelper::getCart();
+        }
 
         if (!$cart || empty(Arr::get($cart, 'cart_data', []))) {
+            // Same filter as the shortcode checkout; see CheckoutPageHandler::render().
+            $emptyMessage = apply_filters('fluent_cart/checkout/empty_message', null, [
+                'surface'    => 'checkout-block',
+                'attributes' => $shortCodeAttribute,
+            ]);
+
             ob_start();
-            (new CartRenderer())->renderEmpty();
+            (new CartRenderer())->renderEmpty($emptyMessage);
             return ob_get_clean();
         }
 
@@ -107,17 +145,24 @@ class CheckoutBlockEditor extends BlockEditor
         ];
 
 
-        ob_start();
-        (new CheckoutRenderer($cart))->wrapperStart();
-        $wrapperStartHtml = ob_get_clean();
+        // Inner blocks resolve their cart through CheckoutRenderContext rather
+        // than each re-reading the device's cart, so a checkout rendering from
+        // a cart supplied by the filter above stays coherent all the way down.
+        return CheckoutRenderContext::rendering(
+                $cart,
+                ['surface' => 'checkout-block', 'attributes' => $shortCodeAttribute],
+                function () use ($cart, $block, $formAttributes) {
+                    ob_start();
+                    (new CheckoutRenderer($cart))->wrapperStart();
+                    $wrapperStartHtml = ob_get_clean();
 
-        $innerBlocksContent = '';
+                    $innerBlocksContent = '';
 
-        if (empty($block->inner_blocks) && version_compare( FLUENTCART_VERSION, '1.3.0', '>' )) {
-            return '[fluent_cart_checkout]';
-        } else if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
-            ob_start();
-            ?>
+                    if (empty($block->inner_blocks) && version_compare(FLUENTCART_VERSION, '1.3.0', '>')) {
+                        return '[fluent_cart_checkout]';
+                    } else if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
+                        ob_start();
+                        ?>
             <form <?php RenderHelper::renderAtts($formAttributes); ?>>
                 <div class="fct_block_checkout">
                     <?php
@@ -133,14 +178,16 @@ class CheckoutBlockEditor extends BlockEditor
                 </div>
             </form>
             <?php
-            $innerBlocksContent = ob_get_clean();
-        }
+                        $innerBlocksContent = ob_get_clean();
+                    }
 
-        ob_start();
-        (new CheckoutRenderer($cart))->wrapperEnd();
-        $wrapperEndHtml = ob_get_clean();
+                    ob_start();
+                    (new CheckoutRenderer($cart))->wrapperEnd();
+                    $wrapperEndHtml = ob_get_clean();
 
-        return $wrapperStartHtml . $innerBlocksContent . $wrapperEndHtml;
+                    return $wrapperStartHtml . $innerBlocksContent . $wrapperEndHtml;
+                }
+        );
     }
 
     /**

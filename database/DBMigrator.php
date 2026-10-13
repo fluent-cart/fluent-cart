@@ -498,6 +498,14 @@ class DBMigrator
             // activation path.
             \FluentCart\Database\Migrations\OrderTransactionsMigrator::migrated();
 
+            // 2026-09-14
+            // fct_carts cart_group/stage/user_id and updated_at indexes. The
+            // table had only UNIQUE KEY cart_hash, so every non-hash lookup —
+            // including the daily sweep's own WHERE updated_at <= ? — was a
+            // full table scan. Run here too so in-place updates deliver it;
+            // migrate() only covers the activation path.
+            \FluentCart\Database\Migrations\CartMigrator::migrated();
+
 
             // 2026-05-06
             // Backfill, dedup, then add unique index — must run in this order

@@ -704,6 +704,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Services\\Renderer\\CartRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/CartRenderer.php',
         'FluentCart\\App\\Services\\Renderer\\CartSummaryRender' => __DIR__ . '/../..' . '/app/Services/Renderer/CartSummaryRender.php',
         'FluentCart\\App\\Services\\Renderer\\CheckoutFieldsSchema' => __DIR__ . '/../..' . '/app/Services/Renderer/CheckoutFieldsSchema.php',
+        'FluentCart\\App\\Services\\Renderer\\CheckoutRenderContext' => __DIR__ . '/../..' . '/app/Services/Renderer/CheckoutRenderContext.php',
         'FluentCart\\App\\Services\\Renderer\\CheckoutRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/CheckoutRenderer.php',
         'FluentCart\\App\\Services\\Renderer\\CustomerDashboardButtonRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/CustomerDashboardButtonRenderer.php',
         'FluentCart\\App\\Services\\Renderer\\FormFieldRenderer' => __DIR__ . '/../..' . '/app/Services/Renderer/FormFieldRenderer.php',

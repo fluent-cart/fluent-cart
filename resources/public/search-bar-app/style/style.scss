@@ -33,7 +33,7 @@
 				@apply text-system-mid w-10 absolute top-0 left-0 h-10 flex items-center justify-center;
 			}
 			.fluent-cart-search-bar-app-input-clear {
-				@apply hidden left-auto right-[-1px] cursor-pointer transform-none rounded-tr rounded-br bg-transparent;
+				@apply hidden left-auto right-[-1px] cursor-pointer transform-none rounded-tr rounded-br bg-transparent border-0;
 			}
 			input {
 				@apply text-sm w-full bg-white shadow-none outline-none border border-solid border-gray-outline px-[36px] m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};
@@ -49,7 +49,7 @@
 		border-radius: var(--fct-popup-radius, theme('borderRadius[3]'));
 		box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.1);
 		h5 {
-			@apply text-lg font-semibold mb-4;
+			@apply text-lg font-semibold mb-4 mt-0;
 		}
 		.fluent-cart-search-bar-app-list-wrapper {
 			@apply m-0 p-0 list-none ml-[-3px];

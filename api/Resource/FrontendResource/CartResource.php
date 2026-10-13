@@ -181,10 +181,32 @@ class CartResource extends BaseResourceApi
         //$cartHash = App::request()->get('fct_cart_hash');
 
         if ($cartHash) {
+            /**
+             * Which cart groups a client-supplied hash is allowed to resolve.
+             *
+             * Deliberately a whitelist rather than an open lookup: a group named
+             * here becomes reachable by anyone holding the hash, which is the
+             * right trade for a checkout a shopper was handed a link to, and the
+             * wrong one for the device's own `global` basket. An add-on that
+             * mints its own checkout carts adds its group here so every later
+             * request — apply_coupon, save_checkout_data, place_order — resolves
+             * the same row.
+             *
+             * @param array $groups cart_group values resolvable by hash.
+             */
+            $hashGroups = apply_filters('fluent_cart/cart/hash_resolvable_cart_groups', ['instant']);
+            $hashGroups = array_values(array_filter(array_map('strval', (array)$hashGroups)));
+
+            if (!$hashGroups) {
+                // A listener returning nothing must not widen the lookup to
+                // every group; fall back to the shipped behaviour.
+                $hashGroups = ['instant'];
+            }
+
             $cartQuery = static::getQuery()
                 ->where('cart_hash', $cartHash)
                 ->where('stage', '!=', 'completed')
-                ->where('cart_group', 'instant');
+                ->whereIn('cart_group', $hashGroups);
 
             $tempCart = $cartQuery->first();
 

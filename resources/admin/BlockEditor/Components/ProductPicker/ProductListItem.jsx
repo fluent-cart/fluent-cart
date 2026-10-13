@@ -24,6 +24,11 @@ const ProductListItem = (props) => {
         ...product.variants[0],
         variation_type: product?.detail?.variation_type,
         variation_title: product?.post_title,
+        // The parent product's own name. A consumer that stores a chosen
+        // variation has no other way to say which product it came from:
+        // `variation_title` is the product name only for single-variant
+        // products, and is the variation's own name ("Infant") otherwise.
+        product_title: product?.post_title,
         is_child: false
     };
     const hasMultipleVariation = product.variants.length > 1;
@@ -54,6 +59,7 @@ const ProductListItem = (props) => {
             ...variant,
             variation_type: product?.detail?.variation_type,
             variation_title: variant?.variation_title,
+            product_title: product?.post_title,
             is_child: true
         }));
     }

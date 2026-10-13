@@ -4,6 +4,38 @@ export default class CheckoutHelper {
 
     static excludeKeys = ['fluent-cart', 'fct_cart_hash'];
 
+    /**
+     * Extra query params to attach to every checkout request.
+     *
+     * `window.fluentCartCheckoutParams` is an array of functions, each
+     * returning a plain object of params. An add-on that resolves its own
+     * checkout cart registers one so the server can tell its requests apart:
+     *
+     *     (window.fluentCartCheckoutParams ||= []).push(() => ({my_flag: 'yes'}));
+     *
+     * Called on EVERY request build rather than once, so a value that only
+     * becomes known later — a cart hash minted on first interaction — is picked
+     * up without re-registering. Contributors run last and therefore win,
+     * including over excludeKeys, which strips fct_cart_hash out of the
+     * inherited page query string.
+     *
+     * A throwing contributor is skipped; a broken add-on must not take checkout
+     * down with it.
+     */
+    static contributedParams() {
+        const params = {};
+
+        for (const contribute of (window.fluentCartCheckoutParams || [])) {
+            try {
+                Object.assign(params, contribute() || {});
+            } catch (e) {
+                // Deliberately swallowed — see above.
+            }
+        }
+
+        return params;
+    }
+
     static handleFragments(fragments) {
         let fargmentsReplaced = false;
         
@@ -92,6 +124,11 @@ export default class CheckoutHelper {
         if(shippingChargeId){
             params['shipping_method_id'] = shippingChargeId;
         }
+
+        // Last, so a contributor wins over everything above — same rule as
+        // _build(). Both builders are used, so both have to honour it.
+        Object.assign(params, CheckoutHelper.contributedParams());
+
         return params;
     }
 
@@ -147,7 +184,11 @@ export default class CheckoutHelper {
                 fullUrl.searchParams.set('modal_checkout', 'yes');
             }
 
-
+            // Last, so a contributor can override anything above — including
+            // the fct_cart_hash that excludeKeys strips.
+            for (const [key, value] of Object.entries(CheckoutHelper.contributedParams())) {
+                fullUrl.searchParams.set(key, value);
+            }
 
             // remove action param from url if exists
          //   fullUrl.searchParams.delete('action');

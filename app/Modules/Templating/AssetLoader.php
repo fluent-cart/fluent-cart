@@ -27,6 +27,20 @@ class AssetLoader
     static $loadedAssets = [];
     protected static bool $frontendAssetsRequired = false;
 
+    protected static bool $checkoutAssetsLoaded = false;
+
+    /** @var Cart|null The cart fluentcart_checkout_vars was last localized from. */
+    protected static $localizedCheckoutCart = null;
+
+    /**
+     * Test seam: forget which checkout assets and cart were already handled.
+     */
+    public static function resetCheckoutAssetsRuntimeCache(): void
+    {
+        self::$checkoutAssetsLoaded = false;
+        self::$localizedCheckoutCart = null;
+    }
+
     public static function markFrontendAssetsRequired(): void
     {
         self::$frontendAssetsRequired = true;
@@ -613,11 +627,15 @@ class AssetLoader
     {
         self::markFrontendAssetsRequired();
 
-        static $isLoaded = false;
-        if ($isLoaded) {
+        if (self::$checkoutAssetsLoaded) {
+            // The Checkout page loads these in <head> from the shopper's cart; a
+            // block rendering from another cart (an add-on's) must re-localize.
+            if ($cart instanceof Cart) {
+                self::localizeCheckoutData($cart);
+            }
             return;
         }
-        $isLoaded = true;
+
         if (!$cart) {
             $cart = CartHelper::getCart();
         }
@@ -628,12 +646,13 @@ class AssetLoader
             return;
         }
 
-        static $alreadyLoaded = false;
-        if ($alreadyLoaded) {
-            return;
-        }
-
-        $alreadyLoaded = true;
+        // Claim "loaded" only once there is actually something to load. Setting
+        // it above the cart check let an early caller — one running on
+        // wp_enqueue_scripts, before a cart exists — consume the guard and
+        // return, after which the real call enqueued nothing and the checkout
+        // shipped with no JS at all. loadCartAssets() carries its own guard, so
+        // reaching it more than once costs nothing.
+        self::$checkoutAssetsLoaded = true;
 
         Vite::enqueueAllStyles(
             [
@@ -667,11 +686,10 @@ class AssetLoader
 
     private static function localizeCheckoutData(Cart $cart)
     {
-        static $isLoaded = false;
-        if ($isLoaded) {
+        if (self::$localizedCheckoutCart === $cart) {
             return;
         }
-        $isLoaded = true;
+        self::$localizedCheckoutCart = $cart;
         $countryCode = (string)Arr::get($cart->checkout_data, 'form_data.billing_country');
         $countryInfo = [];
         if (!empty($countryCode)) {
@@ -696,7 +714,14 @@ class AssetLoader
             $checkoutData = is_array($cart->checkout_data) ? $cart->checkout_data : [];
             unset($checkoutData['__checkout_error_notices']);
             $cart->checkout_data = $checkoutData;
-            $cart->save();
+
+            // Clearing a consumed notice must not be what first writes the cart
+            // row. An unsaved cart has no stored notices to clear anyway, so the
+            // guard only ever skips a write that would have created a row as a
+            // side effect of rendering.
+            if ($cart->exists) {
+                $cart->save();
+            }
         }
 
         $data = [

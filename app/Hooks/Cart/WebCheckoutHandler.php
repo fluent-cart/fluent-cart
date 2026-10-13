@@ -111,6 +111,28 @@ class WebCheckoutHandler
             case 'get_product_modal_view':
                 $result = $this->getProductModalView();
                 break;
+            default:
+                /**
+                 * Let an add-on serve its own checkout verb under this route's
+                 * nonce policy, rather than standing up a second AJAX endpoint
+                 * that would have to re-implement the nonce check, the WP_Error
+                 * mapping and the response envelope below.
+                 *
+                 * Return an array (or a WP_Error) to handle the action; null —
+                 * the default — preserves today's behaviour for an unknown
+                 * verb, which is an empty 200.
+                 *
+                 * @param array|\WP_Error|null $result
+                 * @param array $context ['action' => string] The requested fc_checkout_action.
+                 */
+                $result = apply_filters('fluent_cart/checkout/route_response', null, [
+                    'action' => $action,
+                ]);
+
+                if ($result === null) {
+                    $result = [];
+                }
+                break;
         }
 
         if (is_wp_error($result)) {

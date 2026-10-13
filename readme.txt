@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -265,7 +265,7 @@ Absolutely. FluentCart includes customizable Gutenberg blocks and supports custo
 Yes. FluentCart is built using standard WordPress best practices and is compatible with any properly coded theme. It will automatically inherit your theme’s styles unless you choose to override them.
 
 = What payment methods are supported? =
-FluentCart supports major global payment options, including Stripe, PayPal, and credit cards. You can also integrate custom payment gateways using webhooks and extend functionality as needed.
+FluentCart includes built-in support for Stripe, PayPal, and cash on delivery. Additional gateways available through FluentCart Pro or gateway add-ons include Paddle, Mollie, Authorize.Net, Paystack, Razorpay, Mercado Pago, Flutterwave, Square, Airwallex, and SSLCommerz. Available payment methods, such as cards, digital wallets, and bank transfers, depend on your configured gateway. Developers can also add custom payment gateways using FluentCart's gateway API, hooks, and filters.
 
 = Will FluentCart Charge Fees? =
 
@@ -312,6 +312,11 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 1.9.0 (Oct 13, 2026) =
+- Adds On-page checkout with custom product selection, single or multiple selection, live totals, selection limits, and separate carts via the Checkout Page block or [fluent_cart_checkout] shortcode.
+- Fixes Search bar clear button border and spacing above search result headings.
+- Fixes Rating summary stacked issue
 
 = 1.8.0 (Oct 12, 2026) =
 - Adds Dynamic Pricing

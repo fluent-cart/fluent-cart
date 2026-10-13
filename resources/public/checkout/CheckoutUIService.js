@@ -11,6 +11,9 @@ export default class CheckoutUIService {
 
     viewsStates = {};
 
+    buttonHolds = new Set();
+    requestedButtonState = 'enable';
+
     views = {
         billingCountry: null,
         billingState: null,
@@ -74,13 +77,33 @@ export default class CheckoutUIService {
     }
 
     enableCheckoutButton() {
-        this.initViews();
-        this.setComponentState('checkoutButton', this.states.enable);
+        this.requestedButtonState = this.states.enable;
+        this.applyCheckoutButtonState();
     }
 
     disableCheckoutButton() {
+        this.requestedButtonState = this.states.disable;
+        this.applyCheckoutButtonState();
+    }
+
+    // A hold keeps the button disabled without losing what other callers asked
+    // for meanwhile, so releasing it cannot undo a gateway's disable.
+    holdCheckoutButton(owner) {
+        this.buttonHolds.add(owner);
+        this.applyCheckoutButtonState();
+    }
+
+    releaseCheckoutButton(owner) {
+        this.buttonHolds.delete(owner);
+        this.applyCheckoutButtonState();
+    }
+
+    applyCheckoutButtonState() {
         this.initViews();
-        this.setComponentState('checkoutButton', this.states.disable);
+        this.setComponentState(
+            'checkoutButton',
+            this.buttonHolds.size ? this.states.disable : this.requestedButtonState
+        );
     }
 
     hideCheckoutButton() {

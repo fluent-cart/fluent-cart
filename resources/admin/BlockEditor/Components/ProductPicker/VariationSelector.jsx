@@ -5,6 +5,7 @@ import Input from '@/BlockEditor/Components/Input';
 import EmptyBlock from "@/BlockEditor/Components/Empty";
 import React from "react";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import {resolveVariationSelection} from "./variationSelection";
 
 const {useEffect, useState} = wp.element;
 
@@ -18,7 +19,8 @@ const VariationSelector = (props) => {
         isMultiple = true,
         translationKey = 'fluent_cart_pricing_table_block_editor_data',
         allow_subscription = true,
-        not_subscribable = false
+        not_subscribable = false,
+        allowMultipleProducts = false
     } = props;
 
     const fetchUrl = rest.url + '/products';
@@ -61,50 +63,16 @@ const VariationSelector = (props) => {
 
     }
 
-    const resolveVariationSelection = (prev, variant, checked) => {
-        const variantId = String(variant.id);
-        const productId = String(variant.post_id || variant.product_id);
-
-        // Single select mode: only one item at a time (used by SKU block etc.)
-        if (!isMultiple) {
-            return checked ? { [variantId]: variant } : {};
-        }
-
-        const next = { ...prev };
-
-        const selectedProductIds = Object.values(prev).map(v =>
-            String(v.post_id || v.product_id)
-        );
-
-        const activeProductId = selectedProductIds[0] || null;
-
-        // PARENT CLICK (single select)
-        if (!variant.is_child) {
-            return checked ? { [variantId]: variant } : {};
-        }
-
-        // CHILD CLICK (multi select)
-        if (activeProductId && activeProductId !== productId) {
-            return checked ? { [variantId]: variant } : {};
-        }
-
-        if (checked) {
-            next[variantId] = variant;
-        } else {
-            delete next[variantId];
-        }
-
-        return next;
-    };
-
     const updateSelectedVariations = (variant, checked) => {
+        const options = {isMultiple, allowMultipleProducts};
+
         setSelectedVariations(prev =>
-            resolveVariationSelection(prev, variant, checked)
+            resolveVariationSelection(prev, variant, checked, options)
         );
 
         if (typeof onVariationSelectionUpdated === "function") {
             onVariationSelectionUpdated(prev =>
-                resolveVariationSelection(prev, variant, checked)
+                resolveVariationSelection(prev, variant, checked, options)
             );
         }
     };

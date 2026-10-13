@@ -10,6 +10,7 @@ use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Renderer\CartSummaryRender;
+use FluentCart\App\Services\Renderer\CheckoutRenderContext;
 use FluentCart\App\Services\Renderer\CheckoutRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
@@ -27,6 +28,20 @@ class InnerBlocks
 
     private function getCart()
     {
+        // The enclosing checkout already resolved the cart this whole block
+        // tree renders from, and it is not necessarily the device's own. Taking
+        // it from the render context is both cheaper than nineteen independent
+        // lookups and the only way an add-on-supplied cart stays coherent past
+        // the parent.
+        //
+        // Deliberately not memoized into $this->cart: the context is scoped to
+        // one render pass, this instance is not, and a stale cart outlives the
+        // pass that set it.
+        $contextCart = CheckoutRenderContext::cart();
+        if ($contextCart) {
+            return $contextCart;
+        }
+
         if ($this->cart === null) {
             $this->cart = CartHelper::getCart();
         }

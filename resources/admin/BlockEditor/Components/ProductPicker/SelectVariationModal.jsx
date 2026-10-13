@@ -17,7 +17,8 @@ const SelectVariationModal = (props) => {
         buttonLabel,
         allow_subscription = true,
         button = false,
-        not_subscribable = false
+        not_subscribable = false,
+        allowMultipleProducts = false
     } = props;
 
 
@@ -84,6 +85,7 @@ const SelectVariationModal = (props) => {
                                     setSelectedVariations(updatedVariation);
                                 }}
                                 isMultiple={isMultiple}
+                                allowMultipleProducts={allowMultipleProducts}
                             />
                         </div>
 

@@ -57,7 +57,22 @@ class ShippingModule
         ], $cart);
 
         $cart->fill($fillData);
-        $cart->save();
+
+        // Recalculating is always right; PERSISTING is not. A listener on
+        // `cart_data_items_updated` must not be the thing that first writes a
+        // cart row — a caller may be recalculating an in-memory cart purely to
+        // render totals, and `fct_carts` has no PRIMARY KEY, one index and only
+        // a 30-day sweep, so a row written on a passive render is expensive and
+        // effectively permanent.
+        //
+        // Every dispatch site in core saves the cart immediately BEFORE firing
+        // this action (Cart::addItem/removeItem, the coupon paths, modal
+        // checkout), so `exists` is already true there and nothing changes for
+        // them. `fill()` still runs unconditionally, so in-memory totals are
+        // correct either way.
+        if ($cart->exists) {
+            $cart->save();
+        }
     }
 
     public function maybeRecalculateShippingCharges($fillData, $data)
