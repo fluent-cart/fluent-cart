@@ -27,7 +27,7 @@ class OrderTransactionsMigrator extends Migrator
             `status` VARCHAR(20) NOT NULL DEFAULT '',
             `currency` VARCHAR(10) NOT NULL DEFAULT '', -- Add the currency column here
             `total` BIGINT NOT NULL DEFAULT '0',
-            `rate` BIGINT NOT NULL DEFAULT '1',
+            `rate` DECIMAL(24,12) NOT NULL DEFAULT '1.000000000000',
             `uuid` VARCHAR(100) NULL DEFAULT '',
             `meta` json DEFAULT NULL,
             `created_at` DATETIME NULL,
@@ -37,7 +37,8 @@ class OrderTransactionsMigrator extends Migrator
             INDEX `{$indexPrefix}_payment_method_idx` (`payment_method` ASC),
             INDEX `{$indexPrefix}_status_idx` (`status` ASC),
             INDEX `{$indexPrefix}_order_id_idx` (`order_id` ASC),
-            INDEX `{$indexPrefix}_subscription_id_idx` (`subscription_id` ASC)";
+            INDEX `{$indexPrefix}_subscription_id_idx` (`subscription_id` ASC),
+            INDEX `{$indexPrefix}_currency_idx` (`currency` ASC)";
     }
 
     /**
@@ -57,5 +58,27 @@ class OrderTransactionsMigrator extends Migrator
         // (e.g. "0042" -> 42) on write. Widen to VARCHAR so gateway-provided
         // last-4 strings survive intact. modifyColumnIfExists is idempotent.
         static::modifyColumnIfExists('card_last_4', 'VARCHAR(4) NULL');
+
+        static::widenRateColumn();
+
+        static::addIndexIfNotExists(static::getDbPrefix() . 'fct_ot__currency_idx', 'currency');
+    }
+
+    /**
+     * `rate` was BIGINT, which cannot hold an exchange rate. Every existing
+     * value is 1, so widening to the order's DECIMAL(24,12) is lossless.
+     */
+    public static function widenRateColumn()
+    {
+        if (static::getColumnType('rate') === 'decimal(24,12)') {
+            return;
+        }
+
+        static::modifyColumnIfExists('rate', "DECIMAL(24,12) NOT NULL DEFAULT '1.000000000000'");
+    }
+
+    public static function hasWideRateColumn(): bool
+    {
+        return static::getColumnType('rate') === 'decimal(24,12)';
     }
 }

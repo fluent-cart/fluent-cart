@@ -1,7 +1,13 @@
 const encoder = new TextEncoder();
 const MAX_MEMORY_BYTES = 64 * 1024 * 1024;
 
+// A plain number (a refund's "-10.00") is never a formula; anything else
+// starting with = + - @ (after any leading whitespace) is neutralised.
 const escapeCsvFormula = (value) => {
+    if (/^-?\d+(\.\d+)?$/.test(value)) {
+        return value;
+    }
+
     if (/^[\x00-\x20]*[=+\-@]/.test(value)) {
         return "'" + value;
     }

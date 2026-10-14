@@ -2,6 +2,7 @@
 
 namespace FluentCart\Api\Checkout;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\Api\Resource\CustomerResource as ApiCustomerResource;
 use FluentCart\Api\Resource\FrontendResource\CustomerAddressResource;
 use FluentCart\Api\Resource\FrontendResource\CustomerResource;
@@ -40,6 +41,26 @@ class CheckoutApi
      * @throws \Exception
      */
 
+    /**
+     * The checkout page was priced at another rate or currency: re-price the
+     * cart and reload, so the total and payment form match what is charged.
+     * The notice explains why once the page has reloaded.
+     */
+    private static function refuseForCurrency(Cart $cart, \WP_Error $error)
+    {
+        CartCurrency::releaseCheckout($cart);
+        $checkoutData = is_array($cart->checkout_data) ? $cart->checkout_data : [];
+        $checkoutData['__checkout_error_notices'] = [$error->get_error_message()];
+        $cart->checkout_data = $checkoutData;
+        $cart->save();
+
+        wp_send_json([
+            'status'  => 'failed',
+            'message' => $error->get_error_message(),
+            'reload'  => true,
+        ], 423);
+    }
+
     public static function placeOrder(array $data, $fromCheckout = false)
     {
 
@@ -70,6 +91,19 @@ class CheckoutApi
                 'message' => __('Cart is empty or already completed', 'fluent-cart'),
             ]);
         }
+
+        // The currency and rate the page was priced at (multi-currency plan
+        // §9.1), checked on the cart as submitted: coupon revalidation, tax,
+        // shipping and fee hooks below save the cart, and a save re-prices an
+        // expired lock — which would accept a rate the shopper never saw.
+        // Accepted, the lock is held for the rest of this checkout.
+        $shownCurrency = sanitize_text_field((string) Arr::get($data, 'fct_shown_currency', ''));
+        $shownQuote = sanitize_text_field((string) Arr::get($data, 'fct_shown_quote', ''));
+        $currencySnapshot = CartCurrency::checkoutSnapshot($cart, $shownCurrency, $shownQuote);
+        if (is_wp_error($currencySnapshot)) {
+            static::refuseForCurrency($cart, $currencySnapshot);
+        }
+        CartCurrency::holdForCheckout($cart);
 
         $cart = $cart->reValidateCoupons();
 
@@ -253,7 +287,14 @@ class CheckoutApi
 
         // TaxModule::recalculateTax() refreshes checkout_data['fees'] (RC-adjusted amounts,
         // deduplication) — reload so persisted fee items match the recomputed fee tax metadata.
-        $fees = (array) Arr::get($cart->checkout_data, 'fees', $fees);
+        // Without a tax recalculation the saved list can still hold a filter fee
+        // that no longer applies, so keep only fees getFees() returned.
+        $liveFeeKeys = array_map(function ($fee) {
+            return $fee['source'] . ':' . $fee['key'];
+        }, $fees);
+        $fees = array_values(array_filter((array) Arr::get($cart->checkout_data, 'fees', $fees), function ($fee) use ($liveFeeKeys) {
+            return in_array(sanitize_key(Arr::get($fee, 'source') ?: 'custom') . ':' . sanitize_key((string) Arr::get($fee, 'key')), $liveFeeKeys, true);
+        }));
 
         $taxBehavior = apply_filters('fluent_cart/cart/tax_behavior', 0, ['cart' => $cart]);
         $taxTotal = (int)Arr::get($cart->checkout_data, 'tax_data.tax_total', 0);
@@ -289,6 +330,13 @@ class CheckoutApi
             $shippingDiscount = max(0, $preDiscountShippingCharge - (int)$shippingCharge);
         }
 
+        // Every stage above priced the cart at the lock accepted on entry;
+        // refuse rather than build the order at a rate the shopper was not shown
+        $lockChanged = CartCurrency::heldLockChanged($cart);
+        if ($lockChanged) {
+            static::refuseForCurrency($cart, $lockChanged);
+        }
+
         // Last chance to write into cart_data before the order is built from it.
         // The helper's copy was read before $cart was recalculated; build the order
         // from $cart so a discount withdrawn on a retry can't be counted twice.
@@ -299,6 +347,7 @@ class CheckoutApi
         ]);
 
         $checkoutProcessor = new CheckoutProcessor($cartCheckoutHelper->getItems(), [
+            'currency_snapshot'         => $currencySnapshot,
             'customer_id'               => $customer->id,
             'user_tz'                   => $userTz,
             'create_account_after_paid' => $shouldCreateUser ? 'yes' : 'no',

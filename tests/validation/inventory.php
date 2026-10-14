@@ -198,12 +198,12 @@ return [
                 ],
                 [
                     'source_file' => 'api/Resource/ShopResource.php',
-                    'source_line' => 260,
+                    'source_line' => 262,
                     'needle'      => "cursorPaginate(Arr::get(\$params, 'per_page', 10)",
                 ],
                 [
                     'source_file' => 'api/Resource/ShopResource.php',
-                    'source_line' => 262,
+                    'source_line' => 264,
                     'needle'      => "simplePaginate(Arr::get(\$params, 'per_page', 10)",
                 ],
             ],

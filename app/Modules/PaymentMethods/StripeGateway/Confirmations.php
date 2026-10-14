@@ -3,7 +3,6 @@
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
 use FluentCart\App\App;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Customer;
@@ -1054,7 +1053,7 @@ class Confirmations
 
         $normalizedAmount = (int)Arr::get($charge, 'amount', 0);
 
-        if ($chargeCurrency && CurrenciesHelper::isZeroDecimal($chargeCurrency)) {
+        if ($chargeCurrency && StripeHelper::isZeroDecimal($chargeCurrency)) {
             $normalizedAmount = $normalizedAmount * 100;
         }
 

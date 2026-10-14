@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,9 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 2.0.0 (Oct 14, 2026) =
+- Adds Multi-Currency (Beta), sell in multiple currencies with exchange rates, rounding, charm pricing, and a currency switcher
 
 = 1.9.0 (Oct 13, 2026) =
 - Adds On-page checkout with custom product selection, single or multiple selection, live totals, selection limits, and separate carts via the Checkout Page block or [fluent_cart_checkout] shortcode.

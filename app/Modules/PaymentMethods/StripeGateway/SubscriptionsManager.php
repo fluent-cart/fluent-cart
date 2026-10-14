@@ -111,32 +111,6 @@ class SubscriptionsManager
         return $customerDailyLimit - $customerDailyAttempts;
     }
 
-    public function getOrCreateStripeCustomer($pm)
-    {
-        $api = new API();
-        // check if customer exist with the email, currently not using
-        $email = Arr::get($pm, 'billing_details.email');
-        $customers = $api->getStripeObject('customers', [
-            'email' => $email, 'limit' => 1
-        ]);
-
-        if ($customers && !is_wp_error($customers) && !empty($customers['data'][0])) {
-            return Arr::get($customers, 'data.0.id');
-        }
-
-        $response = $api->createStripeObject('customers', [
-            'name'    => Arr::get($pm, 'billing_details.name'),
-            'email'   => Arr::get($pm, 'billing_details.email'),
-            'address' => Arr::get($pm, 'billing_details.address'),
-        ]);
-
-        if (is_wp_error($response)) {
-            static::sendError($response->get_error_message());
-        }
-
-        return Arr::get($response, 'id');
-    }
-
     public static function addOldSubscriptionMeta($subscriptionId, $oldSubData)
     {
         $defaults = [

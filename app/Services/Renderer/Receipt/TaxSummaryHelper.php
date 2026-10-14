@@ -237,7 +237,10 @@ class TaxSummaryHelper
                     $shippingTaxLines,
                     'order_tax',
                     $isShippingInclusive,
-                    self::computeRateBaseMap(self::getOrderItemsForBaseMap($order))
+                    self::computeRateBaseMap(array_merge(
+                        self::getOrderItemsForBaseMap($order),
+                        self::feeTaxLinesAsBaseMapItems($feeTaxLines)
+                    ))
                 ),
             // Inclusive shipping tax follows the store global tax mode: when shipping is
             // priced inclusive its tax is already baked into the shipping price, so it
@@ -247,7 +250,7 @@ class TaxSummaryHelper
         ];
 
         $summary['displayMode'] = self::getTaxDisplayMode();
-        $summary['simpleLine']  = self::buildSimpleLine($summary);
+        $summary['simpleLine']  = self::buildSimpleLine($summary, $order->currency);
 
         return $summary;
     }
@@ -260,6 +263,30 @@ class TaxSummaryHelper
         $order->loadMissing(['order_items']);
 
         return $order->order_items ? $order->order_items->all() : [];
+    }
+
+    /**
+     * Fee tax lines in the item shape computeRateBaseMap() reads. Fee tax is folded
+     * into the rate rows, so without these the rate falls back to a base worked out
+     * from the rounded tax. Lines saved before rates were stored add nothing.
+     *
+     * @param array $feeTaxLines
+     * @return array
+     */
+    public static function feeTaxLinesAsBaseMapItems(array $feeTaxLines)
+    {
+        $items = [];
+        foreach ($feeTaxLines as $feeTaxLine) {
+            $rates = (array) Arr::get((array) $feeTaxLine, 'rates', []);
+            if (!$rates) {
+                continue;
+            }
+            $items[] = ['line_meta' => ['tax_config' => [
+                'inclusive' => (bool) Arr::get($feeTaxLine, 'inclusive', false),
+                'rates'     => $rates,
+            ]]];
+        }
+        return $items;
     }
 
     /**
@@ -676,7 +703,7 @@ class TaxSummaryHelper
         return (string) Arr::get(self::getTaxSettings(), 'price_suffix_included', '');
     }
 
-    public static function buildSimpleLine(array $summary): array
+    public static function buildSimpleLine(array $summary, $currencyCode = null): array
     {
         $label   = self::getTaxDisplayLabel();
         $isRc    = !empty($summary['isReverseCharge']);
@@ -695,10 +722,10 @@ class TaxSummaryHelper
                 $suffix = __('(incl.)', 'fluent-cart');
             }
             /* translators: %1$s: formatted tax amount, %2$s: inclusive suffix */
-            $value = sprintf(__('%1$s %2$s', 'fluent-cart'), html_entity_decode(Helper::toDecimal($total), ENT_QUOTES, 'UTF-8'), $suffix);
+            $value = sprintf(__('%1$s %2$s', 'fluent-cart'), html_entity_decode(Helper::toDecimal($total, true, $currencyCode), ENT_QUOTES, 'UTF-8'), $suffix);
         } else {
             $valueType = 'amount';
-            $value     = html_entity_decode(Helper::toDecimal($payable), ENT_QUOTES, 'UTF-8');
+            $value     = html_entity_decode(Helper::toDecimal($payable, true, $currencyCode), ENT_QUOTES, 'UTF-8');
         }
 
         return [

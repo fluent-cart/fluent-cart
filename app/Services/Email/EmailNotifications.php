@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\Email;
 
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Models\Meta;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\App\Services\Cache;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Support\Arr;
@@ -823,7 +824,9 @@ class EmailNotifications
         $isDefaultEmailBody = Arr::get($settings, 'is_default_body', 'yes') === 'yes' || empty(Arr::get($settings, 'email_body'));
 
         $emailBody = $isDefaultEmailBody ?
-            TemplateService::getTemplateByPathName(Arr::get($notification, 'template_path'), $viewData) :
+            CurrencyContext::withCurrencyOf((array) $viewData, function () use ($notification, $viewData) {
+                return TemplateService::getTemplateByPathName(Arr::get($notification, 'template_path'), $viewData);
+            }) :
             Arr::get($settings, 'email_body');
 
         return [

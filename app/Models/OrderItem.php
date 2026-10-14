@@ -78,10 +78,28 @@ class OrderItem extends Model
 
     protected function getFormattedTotalAttribute()
     {
-        if ($this->line_total == 0 && $this->discount_total == 0) {
-            return Helper::toDecimal($this->subtotal);
+        $amount = ($this->line_total == 0 && $this->discount_total == 0) ? $this->subtotal : $this->line_total;
+        if (!is_numeric($amount)) {
+            return $amount;
         }
-        return Helper::toDecimal($this->line_total);
+
+        return Helper::toDecimal($amount, true, $this->orderCurrency());
+    }
+
+    private function orderCurrency()
+    {
+        static $currencies = [];
+
+        if ($this->relationLoaded('order') && $this->order) {
+            return $this->order->currency;
+        }
+
+        $orderId = (int) $this->order_id;
+        if (!array_key_exists($orderId, $currencies)) {
+            $currencies[$orderId] = Order::query()->where('id', $orderId)->value('currency');
+        }
+
+        return $currencies[$orderId];
     }
 
     public function getCouponDiscountAttribute()
@@ -213,11 +231,11 @@ class OrderItem extends Model
         $unitPrice = $this->unit_price ?? 0;
 
         if ($type === 'payment') {
-            return Helper::generateSubscriptionInfo($otherInfo, $unitPrice) ?? '';
+            return Helper::generateSubscriptionInfo($otherInfo, $unitPrice, $this->orderCurrency()) ?? '';
         }
 
         if ($type === 'setup') {
-            return Helper::generateSetupFeeInfo($otherInfo) ?? '';
+            return Helper::generateSetupFeeInfo($otherInfo, false, $this->orderCurrency()) ?? '';
         }
 
         return '';

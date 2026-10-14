@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Filter;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use Closure;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
@@ -365,6 +366,16 @@ class OrderFilter extends BaseFilter
         return $fields;
     }
 
+    /**
+     * Currencies that have orders — code => code.
+     */
+    protected static function currencyOptions(): array
+    {
+        $codes = array_column(ReportCurrency::orderCurrencies(), 'currency');
+
+        return $codes ? array_combine($codes, $codes) : [];
+    }
+
     public static function advanceFilterOptions(): array
     {
         $manager = GatewayManager::getInstance();
@@ -440,6 +451,16 @@ class OrderFilter extends BaseFilter
                             'subscription' => __('Subscription', 'fluent-cart'),
                             'renewal'      => __('Renewal', 'fluent-cart'),
                         ],
+                        'is_multiple' => true,
+                        'is_only_in'  => true
+                    ],
+                    [
+                        // Filter to one currency, then sort by amount — mixed
+                        // currencies do not sort meaningfully (multi-currency plan §2.5.5)
+                        'label'       => __('Currency', 'fluent-cart'),
+                        'value'       => 'currency',
+                        'type'        => 'selections',
+                        'options'     => static::currencyOptions(),
                         'is_multiple' => true,
                         'is_only_in'  => true
                     ],

@@ -10,6 +10,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\Money;
 use FluentCart\Framework\Support\Arr;
 
 class Refund
@@ -28,6 +29,10 @@ class Refund
 
         if ($refundAmount <= 0) {
             return new \WP_Error('invalid_refund_amount', __('Invalid refund amount.', 'fluent-cart'));
+        }
+
+        if (!Money::isWholeAmount($refundAmount, $transaction->currency)) {
+            return new \WP_Error('invalid_refund_precision', __('Refund amount must use the smallest unit of the transaction currency.', 'fluent-cart'), ['status' => 422]);
         }
 
         $netOrderPaidAmount = $order->total_paid - $order->total_refunded;

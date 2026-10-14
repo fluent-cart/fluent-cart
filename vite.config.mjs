@@ -61,6 +61,7 @@ const inputs = [
     "resources/admin/BlockEditor/PricingTable/PricingTableBlockEditor.jsx",
     "resources/admin/BlockEditor/PricingTable/style/pricing-table-block-editor.scss",
     "resources/admin/BlockEditor/SearchBar/SearchBarBlockEditor.jsx",
+    "resources/admin/BlockEditor/CurrencySwitcher/CurrencySwitcherBlockEditor.jsx",
     "resources/admin/BlockEditor/CustomerProfile/CustomerProfileBlockEditor.jsx",
     "resources/admin/BlockEditor/CustomerProfile/style/customer-profile-block-editor.scss",
     "resources/admin/BlockEditor/Checkout/CheckoutBlockEditor.jsx",
@@ -114,6 +115,7 @@ const inputs = [
     'resources/admin/BlockEditor/Buttons/style/button-block-editor.scss',
 
     'resources/admin/BlockEditor/Components/style/fct-global-block-editor.scss',
+    'resources/admin/BlockEditor/Components/style/fct-pro-feature.scss',
 
     // Product Categories List
     'resources/admin/BlockEditor/ProductCategoriesList/ProductCategoriesListBlockEditor.jsx',
@@ -243,6 +245,8 @@ const inputs = [
     "resources/addon-assets/addon-assets.js",
     // Reviews PRO
     "resources/reviews-pro/reviews-pro.js",
+    // Accounting export PRO (Reports → Export)
+    "resources/accounting-export/accounting-export.js",
     // Subscriptions
     "resources/admin/Modules/Subscriptions/subscription.js",
     "resources/admin/Modules/Shipping/shipping.js",

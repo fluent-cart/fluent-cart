@@ -25,13 +25,25 @@
               </span>
             </h3>
             <span class="fct-dashboard-stat-widget__value inner-value">
-              <span v-if="stat.has_currency" v-html="CurrencyFormatter.scaled(stat.current_count)">
-
+              <span v-if="stat.has_currency">
+                {{ CurrencyFormatter.scaled(stat.current_count, true, false, stat.currency) }}
               </span>
               <template v-else>
                 {{ translateNumber(formatNumber(stat.current_count)) || 0 }}
               </template>
             </span>
+            <div v-if="stat.has_currency && stat.currency" class="mt-1 text-xs text-system-mid dark:text-system-light">
+              {{
+                /* translators: %s: store currency code */
+                translate('All currencies in %s', stat.currency)
+              }}
+              <div v-if="stat.excluded_orders">
+                {{
+                  /* translators: %s: number of orders */
+                  translate('%s orders without an exchange rate left out', translateNumber(stat.excluded_orders))
+                }}
+              </div>
+            </div>
           </div>
         </a>
         <div v-else class="fct-dashboard-stat-widget__inner">
@@ -76,7 +88,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Notify from "@/utils/Notify";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber"
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
-import {translateNumber} from "@/utils/translator/Translator";
+import translate, {translateNumber} from "@/utils/translator/Translator";
 
 const loading = ref(true);
 const stats = ref([])

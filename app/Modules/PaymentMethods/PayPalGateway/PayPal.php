@@ -23,7 +23,7 @@ class PayPal extends AbstractPaymentGateway
 
     private $methodSlug = 'paypal';
 
-    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'switch_payment_method' => [
+    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'multi_currency', 'switch_payment_method' => [
         'supported_gateways' => ['stripe', 'paypal'],
     ], 'dispute_handler', 'subscriptions', 'resume_subscription', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
 
@@ -404,8 +404,8 @@ class PayPal extends AbstractPaymentGateway
                 sprintf(
                     /* translators: %1$s: expected amount, %2$s: received amount */
                     __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. This may indicate payment tampering.', 'fluent-cart'),
-                    Helper::toDecimal($expectedAmount),
-                    Helper::toDecimal($paidAmount)
+                    Helper::toDecimal($expectedAmount, true, $transaction->currency),
+                    Helper::toDecimal($paidAmount, true, $paidCurrency ?: $transaction->currency)
                 ),
                 [
                     'module_name' => 'order',

@@ -21,6 +21,9 @@
         &.fct-add-product-item-modal {
           @apply w-[650px];
         }
+        &.fct-mc-history-dialog{
+            @apply w-[780px] max-w-[95%];
+        }
         &__header{
             @apply py-4 px-5 flex justify-between items-center mr-0 border border-solid border-gray-divider border-t-0 border-l-0 border-r-0 dark:border-dark-400;
             .el-dialog__title {

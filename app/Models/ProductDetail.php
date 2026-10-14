@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
@@ -76,12 +77,12 @@ class ProductDetail extends Model
 
     protected function getFormattedMinPriceAttribute()
     {
-        return Helper::toDecimal($this->min_price);
+        return StorefrontPrice::format($this->min_price);
     }
 
     protected function getFormattedMaxPriceAttribute()
     {
-        return Helper::toDecimal($this->max_price);
+        return StorefrontPrice::format($this->max_price);
     }
 
 

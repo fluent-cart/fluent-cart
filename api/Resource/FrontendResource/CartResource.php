@@ -209,6 +209,9 @@ class CartResource extends BaseResourceApi
                 ->whereIn('cart_group', $hashGroups);
 
             $tempCart = $cartQuery->first();
+            if ($tempCart) {
+                $tempCart->refreshStaleDynamicFees();
+            }
 
             static::$cartCache = $tempCart;
 
@@ -218,6 +221,9 @@ class CartResource extends BaseResourceApi
         }
 
         static::$cartCache = static::getOrSetCartForThisDevice($autoCreate);
+        if (static::$cartCache) {
+            static::$cartCache->refreshStaleDynamicFees();
+        }
 
         return static::$cartCache;
     }

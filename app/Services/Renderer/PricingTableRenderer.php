@@ -3,6 +3,7 @@
 namespace FluentCart\App\Services\Renderer;
 
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\Framework\Support\Arr;
@@ -204,15 +205,15 @@ class PricingTableRenderer
         foreach ($variants as $index => $variant) {
             $this->repeatInterval = Arr::get($variant, 'other_info.repeat_interval', null);
 
-            $this->itemPrice = esc_html(Helper::toDecimal(Arr::get($variant, 'item_price', 0), false, false, false));
+            $this->itemPrice = esc_html(Helper::toDecimal(StorefrontPrice::amount(Arr::get($variant, 'item_price', 0)), false, false, false));
 
-            $this->comparePrice = esc_html(Helper::toDecimal(Arr::get($variant, 'compare_price', 0), false, false, false, false));
+            $this->comparePrice = esc_html(Helper::toDecimal(StorefrontPrice::amount(Arr::get($variant, 'compare_price', 0)), false, false, false, false));
 
             $otherInfo = Arr::get($variant, 'other_info', null);
 
             $this->paymentInfo = Helper::generateSubscriptionInfo($otherInfo, $this->itemPrice);
 
-            $this->setupFeeInfo = Helper::generateSetupFeeInfo($otherInfo);
+            $this->setupFeeInfo = static::setupFeeInfo($otherInfo);
 
             $featureDescription = Arr::get($variant, 'other_info.description', '');
 
@@ -480,4 +481,23 @@ class PricingTableRenderer
     }
 
 
+
+    /**
+     * The setup fee line for a variant: its fee is stored in the base
+     * currency, so it is shown at the price the cart charges.
+     *
+     * @param array|object|null $otherInfo the variant's other_info
+     */
+    public static function setupFeeInfo($otherInfo): string
+    {
+        if (is_object($otherInfo)) {
+            $otherInfo = json_decode(json_encode($otherInfo), true);
+        }
+        $otherInfo = is_array($otherInfo) ? $otherInfo : [];
+        if (!empty($otherInfo['signup_fee'])) {
+            $otherInfo['signup_fee'] = StorefrontPrice::amount($otherInfo['signup_fee']);
+        }
+
+        return (string) Helper::generateSetupFeeInfo($otherInfo);
+    }
 }

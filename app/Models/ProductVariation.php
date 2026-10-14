@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AttributeHelper;
@@ -112,7 +113,8 @@ class ProductVariation extends Model
 
     protected function getFormattedTotalAttribute()
     {
-        return Helper::toDecimal($this->item_price);
+        // In the storefront visitor's currency; the base currency elsewhere
+        return StorefrontPrice::format($this->item_price);
     }
 
 
@@ -352,10 +354,10 @@ class ProductVariation extends Model
             'trial_days'       => Arr::get($otherInfo, 'trial_days', 0),
             'interval'         => Arr::get($otherInfo, 'repeat_interval', 'yearly'),
             'times'            => Arr::get($otherInfo, 'times', 0), // 0 means infinite
-            'signup_fee'       => Arr::get($otherInfo, 'signup_fee', 0) ? Helper::toDecimal(Arr::get($otherInfo, 'signup_fee', 0)) : 0,
+            'signup_fee'       => Arr::get($otherInfo, 'signup_fee', 0) ? StorefrontPrice::format(Arr::get($otherInfo, 'signup_fee', 0)) : 0,
             'signup_fee_label' => Arr::get($otherInfo, 'signup_fee_name', ''),
-            'price'            => Helper::toDecimal($this->item_price),
-            'compare_price'    => ($withComparePrice && $this->compare_price > $this->item_price) ? Helper::toDecimal($this->compare_price) : 0,
+            'price'            => StorefrontPrice::format($this->item_price),
+            'compare_price'    => ($withComparePrice && $this->compare_price > $this->item_price) ? StorefrontPrice::format($this->compare_price) : 0,
         ];
 
         return Helper::getSubscriptionTermText($formattedData);

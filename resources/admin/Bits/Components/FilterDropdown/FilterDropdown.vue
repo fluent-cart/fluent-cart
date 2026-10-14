@@ -156,9 +156,7 @@ const filters = [
     type: "currency",
     value: "currency",
     disableRoutes:[
-      "reports_products",
       "reports_customer",
-      "reports_subscriptions",
     ],
   },
   {

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Helpers;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Api\Resource\FrontendResource\CartResource;
 use FluentCart\App\App;
@@ -12,6 +13,7 @@ use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Services\CheckoutService;
+use FluentCart\App\Services\Money;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Support\Arr;
 
@@ -29,7 +31,7 @@ class CartHelper
     public static function validateQuantity($quantity, $isDelta = false)
     {
         if (!is_numeric($quantity)) {
-            return static::invalidQuantityError();
+            return self::invalidQuantityError();
         }
 
         $max = static::maxQuantity();
@@ -37,7 +39,7 @@ class CartHelper
         $min = $isDelta ? -$max : 1;
 
         if ($value != floor($value) || $value < $min || $value > $max) {
-            return static::invalidQuantityError();
+            return self::invalidQuantityError();
         }
 
         return null;
@@ -246,7 +248,7 @@ class CartHelper
 
         $factor = empty($shippingClass->per_item) ? 1 : $quantity;
         if ($shippingClass->type === 'percentage') {
-            return ($shippingClass->cost / 100) * $variation->item_price * $factor;
+            return Money::roundIfZeroDecimal(($shippingClass->cost / 100) * $variation->item_price * $factor, (string) CurrencySettings::get('currency'));
         }
 
         return ($shippingClass->cost * 100) * $factor;
@@ -402,9 +404,9 @@ class CartHelper
                     $perItem = $shippingClass->per_item;
                     $factor = empty($perItem) ? 1 : Arr::get($item, 'quantity');
                     if ($shippingClass->type === 'percentage') {
-                        $itemShippingCharge = ($shippingClass->cost / 100) * Arr::get($item, 'unit_price') * $factor;
+                        $itemShippingCharge = Money::roundIfZeroDecimal(($shippingClass->cost / 100) * Arr::get($item, 'unit_price') * $factor, (string) CurrencySettings::get('currency'));
                     } else {
-                        $itemShippingCharge = Helper::toCent($shippingClass->cost) * $factor;
+                        $itemShippingCharge = StorefrontPrice::fee(Helper::toCent($shippingClass->cost)) * $factor;
                     }
                 }
             }
@@ -420,10 +422,12 @@ class CartHelper
         $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
         $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
 
+        // Flat amounts are authored in the base currency; percentage rates
+        // already work on converted item prices (multi-currency plan §2.5.2)
         if ($configureRate === 'per_order') {
-            $shippingMethodAmount = $method->amount * 100;
+            $shippingMethodAmount = StorefrontPrice::fee($method->amount * 100);
         } else if ($configureRate === 'per_price') {
-            $shippingMethodAmount = $totalItemPrice * ($method->amount / 100);
+            $shippingMethodAmount = Money::roundIfZeroDecimal($totalItemPrice * ($method->amount / 100), (string) CurrencySettings::get('currency'));
         } else if ($configureRate === 'per_weight') {
             // Sum (product weight + package weight) * quantity for all physical items
             $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
@@ -474,12 +478,12 @@ class CartHelper
                 $cost = floatval(Arr::get($tier, 'cost', 0));
 
                 if ($totalWeight >= $min && ($max <= 0 || $totalWeight <= $max)) {
-                    $shippingMethodAmount = Helper::toCent($cost);
+                    $shippingMethodAmount = StorefrontPrice::fee(Helper::toCent($cost));
                     break;
                 }
             }
         } else {
-            $shippingMethodAmount = $method->amount * $totalQuantity * 100;
+            $shippingMethodAmount = StorefrontPrice::fee($method->amount * 100) * $totalQuantity;
         }
 
         if ($classAggregation === 'highest_class') {
@@ -501,6 +505,7 @@ class CartHelper
         $distributed = 0;
         $itemCount = count($physicalItems);
         $lastIndex = array_key_last($physicalItems);
+        $unit = Money::getDecimals((string) CurrencySettings::get('currency')) === 0 ? 100 : 1;
 
         foreach ($physicalItems as $key => $item) {
             if ($key === $lastIndex) {
@@ -511,6 +516,9 @@ class CartHelper
                 $share = (int) round(($item['line_total'] / $totalLineTotal) * $remainingShippingMethodAmount);
             } else {
                 $share = (int) round($remainingShippingMethodAmount / $itemCount);
+            }
+            if ($unit > 1) {
+                $share = min(max(0, $remainingShippingMethodAmount - $distributed), (int) floor($share / $unit) * $unit);
             }
             $items[$key]['itemwise_shipping_charge'] = $share;
             $distributed += $share;
@@ -651,10 +659,12 @@ class CartHelper
         $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
         $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
 
+        // Flat amounts are authored in the base currency; percentage rates
+        // already work on converted item prices (multi-currency plan §2.5.2)
         if ($configureRate === 'per_order') {
-            $methodBaseRate = Helper::toCent($selectedMethod->amount);
+            $methodBaseRate = StorefrontPrice::fee(Helper::toCent($selectedMethod->amount));
         } elseif ($configureRate === 'per_price') {
-            $methodBaseRate = $cartTotalPrice * ($selectedMethod->amount / 100);
+            $methodBaseRate = Money::roundIfZeroDecimal($cartTotalPrice * ($selectedMethod->amount / 100), (string) CurrencySettings::get('currency'));
         } elseif ($configureRate === 'per_weight') {
             $storeWeightUnit = Helper::shopConfig('weight_unit') ?: 'kg';
             $totalWeight = 0;
@@ -690,13 +700,13 @@ class CartHelper
                 $min = floatval(Arr::get($tier, 'min', 0));
                 $max = floatval(Arr::get($tier, 'max', 0));
                 if ($totalWeight >= $min && ($max <= 0 || $totalWeight <= $max)) {
-                    $methodBaseRate = Helper::toCent(floatval(Arr::get($tier, 'cost', 0)));
+                    $methodBaseRate = StorefrontPrice::fee(Helper::toCent(floatval(Arr::get($tier, 'cost', 0))));
                     break;
                 }
             }
         } else {
             // per_item
-            $methodBaseRate = Helper::toCent($selectedMethod->amount) * $cartTotalQuantity;
+            $methodBaseRate = StorefrontPrice::fee(Helper::toCent($selectedMethod->amount)) * $cartTotalQuantity;
         }
 
         // Accumulate class surcharges across all groups
@@ -720,9 +730,9 @@ class CartHelper
                     $sc = $shippingClasses->get($classId);
                     $factor = $sc->per_item ? $quantity : 1;
                     if ($sc->type === 'percentage') {
-                        $itemClassCharge = ($sc->cost / 100) * Arr::get($gItem, 'unit_price', 0) * $factor;
+                        $itemClassCharge = Money::roundIfZeroDecimal(($sc->cost / 100) * Arr::get($gItem, 'unit_price', 0) * $factor, (string) CurrencySettings::get('currency'));
                     } else {
-                        $itemClassCharge = Helper::toCent($sc->cost) * $factor;
+                        $itemClassCharge = StorefrontPrice::fee(Helper::toCent($sc->cost)) * $factor;
                     }
                 }
 
@@ -754,6 +764,7 @@ class CartHelper
         }
 
         $methodOnlyAmount = $methodBaseRate;
+        $unit = Money::getDecimals((string) CurrencySettings::get('currency')) === 0 ? 100 : 1;
         $distributed = 0;
         $itemCount = count($physicalItems);
 
@@ -778,6 +789,9 @@ class CartHelper
                 // itemwise_shipping_charge carries only the proportional base-rate share.
                 // The class surcharge stays exclusively in shipping_charge (set above) so it
                 // isn't taxed twice by TaxCalculator::getShippingTax(), which sums both fields.
+                if ($unit > 1) {
+                    $share = min(max(0, $methodOnlyAmount - $distributed), (int) floor($share / $unit) * $unit);
+                }
                 $gItem['itemwise_shipping_charge'] = $share;
                 $distributed += $share;
             }

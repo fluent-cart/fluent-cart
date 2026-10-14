@@ -3,7 +3,6 @@
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook;
 
 use FluentCart\App\Helpers\Status;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
@@ -336,7 +335,7 @@ class Webhook
 
         $amountPaid = Arr::get($vendorInvoiceObject, 'amount_paid', 0);
         $chargeCurrency = Arr::get($vendorInvoiceObject, 'currency', null);
-        if ($chargeCurrency && CurrenciesHelper::isZeroDecimal($chargeCurrency)) {
+        if ($chargeCurrency && StripeHelper::isZeroDecimal($chargeCurrency)) {
             $amountPaid = $amountPaid * 100;
         }
 

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Status;
@@ -69,7 +70,7 @@ class ReportHelper
         $filters = [
             'payment_status' => $params['paymentStatus'] ?? null,
             'status' => $params['orderStatus'] ?? null,
-            'currency' => $params['currency'] ?? null,
+            'currency' => ReportCurrency::resolve($params['currency'] ?? null),
             'mode' => $mode,
         ];
 
@@ -84,7 +85,7 @@ class ReportHelper
         $filters = [
             'payment_status' => Arr::get($params, 'paymentStatus'),
             'status' => Arr::get($params, 'orderStatus'),
-            'currency' => Arr::get($params, 'currency'),
+            'currency' => ReportCurrency::resolve(Arr::get($params, 'currency')),
             'mode' => $mode,
             'type' => array_filter(Arr::get($params, 'orderTypes', [])),
         ];
@@ -99,7 +100,15 @@ class ReportHelper
         ];
     }
 
-    public static function processParams($params = [], $additional = []): array
+    /**
+     * @param array $params
+     * @param string[] $additional
+     * @param bool $allowConverted opt-in: true only from a report that
+     *        implements the "All currencies (in base)" mode (it reads
+     *        ReportCurrency::ordersTable()). Every other report reads that
+     *        selection as the base currency (ReportCurrency::resolve()).
+     */
+    public static function processParams($params = [], $additional = [], bool $allowConverted = false): array
     {
         $params = static::sanitizeParams($params);
         
@@ -127,7 +136,10 @@ class ReportHelper
             'startDate'     => $startDate,
             'endDate'       => $endDate,
             'groupKey'      => Arr::get($params, 'groupKey'),
-            'currency'      => Arr::get($params, 'currency'),
+            // One currency per report — the requested one, else the base
+            // currency — or, where the report supports it, every currency
+            // converted to the base. Never all currencies summed unconverted.
+            'currency'      => ReportCurrency::resolve(Arr::get($params, 'currency'), $allowConverted),
             'paymentMode'   => Arr::get($params, 'filterMode'),
             'variationIds'  => Arr::get($params, 'variation_ids', []),
             'comparePeriod' => $comparePeriod

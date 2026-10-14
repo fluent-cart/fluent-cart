@@ -203,9 +203,14 @@ if (containers && containers.length > 0) {
                 }
 
 
+                // Decimal places belong to the currency being rendered, not the store's
+                const decimalsMap = window.fluentcart_customer_profile_vars.currency_decimals || {};
+                const decimalsKey = currencyKey || String(shopConfig.currency || '').toUpperCase();
+                const decimals = typeof decimalsMap[decimalsKey] === 'number' ? decimalsMap[decimalsKey] : 2;
+
                 let formatted = new Intl.NumberFormat(locale, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
                 }).format(amount ? amount / 100 : 0);
 
                 formatted = translateNumber(formatted);

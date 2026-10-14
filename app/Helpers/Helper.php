@@ -14,6 +14,7 @@ use FluentCart\App\Models\User;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Localization\LocalizationManager;
+use FluentCart\App\Services\Money;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Http\URL as BaseUrl;
@@ -499,18 +500,13 @@ class Helper
             return $amount;
         }
 
-        // Set default decimal places to 2
-        $decimal = 2;
-
-        // Check if the shop is using a zero-decimal currency
-        if (self::shopConfig('is_zero_decimal')) {
-            $decimal = 0;
-        }
-
         // Use provided or default currency code
         if (!$currencyCode) {
             $currencyCode = self::shopConfig('currency');
         }
+
+        // Decimal places belong to the currency being rendered, not the store's
+        $decimal = Money::getDecimals($currencyCode);
 
         // Get currency sign
         $sign = CurrenciesHelper::getCurrencySign($currencyCode);
@@ -1467,7 +1463,7 @@ class Helper
         return '';
     }
 
-    public static function generateSetupFeeInfo($otherInfo, $asArray = false)
+    public static function generateSetupFeeInfo($otherInfo, $asArray = false, $currencyCode = null)
     {
         // Convert to array if it's an object
         if (is_object($otherInfo)) {
@@ -1486,7 +1482,7 @@ class Helper
         if ($originalSetupFee = Arr::get($otherInfo, 'original_signup_fee', 0)) {
             if ($fee != $originalSetupFee) {
                 $title = __('Adjusted setup fee', 'fluent-cart');
-                $formattedAmount = CurrencySettings::getPriceHtml($fee, null, true, true);
+                $formattedAmount = CurrencySettings::getPriceHtml($fee, $currencyCode, true, true);
 
                 if ($asArray) {
                     return [
@@ -1499,7 +1495,7 @@ class Helper
             }
         }
 
-        $formattedAmount = CurrencySettings::getPriceHtml($fee, null, true, true);
+        $formattedAmount = CurrencySettings::getPriceHtml($fee, $currencyCode, true, true);
         if ($asArray) {
             return [
                 'signup_fee_name'      => $signupFeeName,

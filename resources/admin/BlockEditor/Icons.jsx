@@ -168,11 +168,29 @@ export const Empty = () => {
     </svg>
 }
 
+// Same crown as the admin's Pro screens (Bits/Components/Icons/Crown.vue)
+export const Crown = () => {
+    return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 16" fill="none" aria-hidden="true" focusable="false">
+        <path
+            d="M1.34546 6.87067C1.08675 6.15467 0.957399 5.79667 1.01256 5.56726C1.07289 5.31634 1.25133 5.12073 1.47942 5.05547C1.68795 4.9958 2.01235 5.13998 2.66115 5.42834C3.23502 5.6834 3.52196 5.81093 3.79155 5.80384C4.08838 5.79602 4.37392 5.67699 4.60107 5.46637C4.80737 5.27508 4.94574 4.97025 5.22249 4.36059L5.8324 3.017C6.34187 1.89466 6.5966 1.3335 7 1.3335C7.4034 1.3335 7.65813 1.89466 8.1676 3.017L8.77751 4.36059C9.05426 4.97025 9.19263 5.27508 9.39893 5.46637C9.62608 5.67699 9.91162 5.79602 10.2085 5.80384C10.478 5.81093 10.765 5.6834 11.3388 5.42834C11.9876 5.13998 12.312 4.9958 12.5206 5.05547C12.7487 5.12073 12.9271 5.31634 12.9874 5.56726C13.0426 5.79667 12.9132 6.15467 12.6545 6.87066L11.5425 9.94828C11.0668 11.2648 10.829 11.9231 10.3312 12.295C9.83349 12.6668 9.19027 12.6668 7.90384 12.6668H6.09616C4.80973 12.6668 4.16651 12.6668 3.66877 12.295C3.17102 11.9231 2.93318 11.2648 2.45748 9.94828L1.34546 6.87067Z"
+            stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M7 9.3335H7.00599" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3.6665 14.667H10.3332" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+}
+
 export const CaretRight = () => {
     return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
             d="M6.0404 3.13573L10.655 7.1027C11.115 7.50256 11.115 8.49167 10.655 8.89152L6.0404 12.8585C5.58036 13.2583 5 12.7638 5 11.9641L5 4.03014C5 3.24095 5.57328 2.7464 6.0404 3.13573Z"
             fill="currentColor"/>
+    </svg>
+}
+
+export const CaretDown = () => {
+    return <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+        <path d="M2 3.5L5 6.5L8 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+              strokeLinejoin="round"/>
     </svg>
 }
 

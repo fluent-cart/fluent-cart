@@ -74,6 +74,8 @@ class OrderController extends Controller
     public function store(OrderRequest $request)
     {
         $data = $request->getSafe($request->sanitize());
+        // Admin orders in another currency are not released yet
+        unset($data['currency']);
         $type = 'payment';
         $orderItems = Arr::get($data, 'order_items', []);
 

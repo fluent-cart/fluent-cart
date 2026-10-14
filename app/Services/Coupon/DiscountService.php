@@ -7,6 +7,8 @@ use FluentCart\App\Models\AppliedCoupon;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\Customer;
+use FluentCart\App\Services\Money;
+use FluentCart\Api\CurrencySettings;
 use FluentCart\Framework\Support\Arr;
 
 class DiscountService
@@ -423,6 +425,7 @@ class DiscountService
     private function applyDiscountToItems(array $items, $percent, Coupon $coupon)
     {
         $couponDiscountTotal = 0;
+        $currency = (string) CurrencySettings::get('currency');
 
         foreach ($items as $index => $item) {
             $existingAmount = (int) Arr::get($item, 'coupon_discount', 0);
@@ -431,7 +434,7 @@ class DiscountService
                 && Arr::get($item, 'other_info.trial_days', 0) > 0;
 
             $remainingTotal = max(0, $itemSubtotal - $existingAmount);
-            $currentDiscount = (int) round($remainingTotal * ($percent / 100));
+            $currentDiscount = (int) round(Money::roundIfZeroDecimal($remainingTotal * ($percent / 100), $currency));
             $discountTotal = min($existingAmount + $currentDiscount, $itemSubtotal);
             $netDiscount = max(0, $discountTotal - $existingAmount);
 
@@ -452,7 +455,7 @@ class DiscountService
                     if ($unitPrice > 0) {
                         $previousAmount = (int) Arr::get($item, 'recurring_discounts.amount', 0);
                         $remainingRecurring = max(0, $unitPrice - $previousAmount);
-                        $recurringDiscount = (int) round($remainingRecurring * ($percent / 100));
+                        $recurringDiscount = (int) round(Money::roundIfZeroDecimal($remainingRecurring * ($percent / 100), $currency));
                         $totalRecurringDiscount = min($previousAmount + $recurringDiscount, $unitPrice);
 
                         Arr::set($items, $index . '.recurring_discounts.amount', $totalRecurringDiscount);
@@ -475,6 +478,8 @@ class DiscountService
      */
     private function capDiscountAtMax(array $items, $valueKey, $maxAmount, array $preValues)
     {
+        $unit = Money::getDecimals((string) CurrencySettings::get('currency')) === 0 ? 100 : 1;
+        $maxAmount = (int) floor($maxAmount / $unit) * $unit;
         $shares = [];
         $totalShare = 0;
         foreach ($items as $index => $item) {
@@ -494,13 +499,12 @@ class DiscountService
         $capped = [];
         $cappedTotal = 0;
         foreach ($shares as $index => $share) {
-            $cappedShare = (int) floor(($share * $maxAmount) / $totalShare);
+            $cappedShare = (int) floor(($share * $maxAmount) / $totalShare / $unit) * $unit;
             $capped[$index] = $cappedShare;
             $cappedTotal += $cappedShare;
         }
 
-        // floor() can leave a few cents of the cap unassigned — hand them out
-        // to items that still have room so the total lands exactly on the cap.
+        // Allocate the remainder without splitting a currency unit.
         $leftover = $maxAmount - $cappedTotal;
         foreach ($shares as $index => $share) {
             if ($leftover <= 0) {

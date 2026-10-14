@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Cart;
 use FluentCart\Framework\Support\Arr;
@@ -44,7 +45,8 @@ class CartItemRenderer
             $wrapperClassAttributes[] = 'fct_has_image';
         }
 
-        $promoPriceOriginal = Arr::get($this->item, 'other_info.promo_price_original', 0);
+        // Recorded in the base currency; the line's prices are in the cart's
+        $promoPriceOriginal = StorefrontPrice::amount(Arr::get($this->item, 'other_info.promo_price_original', 0));
         if ($promoPriceOriginal && $promoPriceOriginal > $this->item['unit_price']) {
             $promoPriceOriginal = $promoPriceOriginal * Arr::get($this->item, 'quantity', 1);
         } else {

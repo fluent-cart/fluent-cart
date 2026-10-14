@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\Framework\Database\Query\Builder as Query;
 
@@ -9,7 +10,7 @@ class SourceReportService extends ReportService
 {
     public function getSourceReportData($params = [])
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("oo.utm_campaign,
                 oo.utm_source,
                 oo.utm_medium,

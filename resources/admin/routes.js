@@ -77,6 +77,7 @@ import AllPricingRules from "@/Modules/DynamicPricing/AllPricingRules.vue";
 import CreateNewPricingRule from "@/Modules/DynamicPricing/CreateNewPricingRule.vue";
 import EditPricingRule from "@/Modules/DynamicPricing/EditPricingRule.vue";
 
+import MultiCurrencyRoute from "@/Modules/Settings/MultiCurrency/MultiCurrencyRoute.vue";
 import CheckoutFields from "@/Modules/Settings/CheckoutFields.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
@@ -522,6 +523,16 @@ export var routes = {
                 }
             },
             ...AppConfig.get('addon_settings_routes', []).map(r => ({ component: StoreSettings, ...r })),
+            {
+                name: 'multi_currency',
+                path: 'multi-currency',
+                component: MultiCurrencyRoute,
+                meta: {
+                    active_menu: 'settings',
+                    title: translate('Multi Currency'),
+                    permission: 'is_super_admin'
+                },
+            },
             {
                 name: 'product_reviews',
                 path: 'product-reviews',

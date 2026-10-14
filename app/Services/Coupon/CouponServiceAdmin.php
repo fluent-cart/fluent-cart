@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\Coupon;
 
 use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Modules\MultiCurrency\Services\CouponCurrency;
 use FluentCart\App\Services\Coupon\Concerns\CanCalculateLineTotal;
 use FluentCart\App\Services\Coupon\Concerns\CanValidateCoupon;
 use FluentCart\Framework\Support\Arr;
@@ -35,6 +36,7 @@ class CouponServiceAdmin
     protected bool $usingCart = true;
     protected ?Collection $couponErrors = null;
     protected string $customerEmail = '';
+    protected ?array $currencyQuote = null;
 
 
     /**
@@ -56,6 +58,18 @@ class CouponServiceAdmin
         $this->previouslyAppliedCouponCodes = $this->previouslyAppliedCoupons->pluck('code')->toArray();
         $this->applicableCouponCodes = array_merge($this->applicableCouponCodes, $applicableCouponCodes);
         $this->init();
+    }
+
+    /**
+     * Coupons are authored in the base currency. Editing an order in another
+     * currency converts their fixed amounts and spend thresholds at the
+     * order's frozen rate, as the cart does at checkout.
+     */
+    public function withCurrencyQuote(?array $quote): self
+    {
+        $this->currencyQuote = $quote;
+
+        return $this;
     }
 
     private function init()
@@ -163,11 +177,17 @@ class CouponServiceAdmin
 
     protected function populateCouponsFromModel($couponCodes = [], $model = Coupon::class)
     {
-        return $model::query()
+        $coupons = $model::query()
             ->whereIn('code', $couponCodes) // Lowercase the array for comparison
             ->orderBy('priority')//Order by is important here
             ->get()
             ->keyBy('code');
+
+        // Saved coupons only: an order's previously applied ones are rebuilt
+        // from its own applied-coupon rows, already in its currency
+        return $this->currencyQuote
+            ? CouponCurrency::convert($coupons, $couponCodes, ['quote' => $this->currencyQuote])
+            : $coupons;
     }
 
     public function applyCoupon(string $couponCode): ?WP_Error

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\Api\Cookie\Cookie;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Api\Hasher\Hash;
@@ -33,6 +34,12 @@ class Cart extends Model
     protected $table = 'fct_carts';
 
     protected $hidden = ['order_id', 'customer_id', 'user_id'];
+
+    /**
+     * Fee sources always added through the fees filter, for fees saved
+     * before core marked filter-added fees as dynamic.
+     */
+    const LEGACY_DYNAMIC_FEE_SOURCES = ['dynamic-pricing'];
 
     /**
      * Static cache for loaded cart data with bundle children
@@ -86,6 +93,15 @@ class Cart extends Model
             if (empty($model->cart_hash)) {
                 $model->cart_hash = md5('fct_global_cart_' . wp_generate_uuid4() . time());
             }
+        });
+
+        // One currency, one locked rate per cart (multi-currency plan §11.6)
+        static::saving(function ($model) {
+            CartCurrency::reconcile($model);
+        });
+
+        static::saved(function ($model) {
+            CartCurrency::afterSave($model);
         });
     }
 
@@ -445,13 +461,15 @@ class Cart extends Model
                         $quantity += (int)Arr::get($prevItem, 'quantity', 1);
                     }
                     if (Arr::get($prevItem, 'other_info.promotion_id') || Arr::get($prevItem, 'other_info.is_price_locked') === 'yes') {
-                        $unitPrice = Arr::get($prevItem, 'unit_price', 0);
+                        // The base-currency price: the cart converts it again on save
+                        $unitPrice = CartCurrency::baseUnitPrice($prevItem);
                         if ($unitPrice) {
                             $variation->item_price = $unitPrice;
                         }
 
                         $providedOtherInfo = Arr::get($config, 'other_info', []);
-                        $existingOtherInfo = Arr::get($prevItem, 'other_info', []);
+                        // Rebuilt from the base price, so not the old line's currency marker
+                        $existingOtherInfo = CartCurrency::asBasePriced((array) Arr::get($prevItem, 'other_info', []));
                         $config['other_info'] = wp_parse_args($existingOtherInfo, $providedOtherInfo);
                     }
                 }
@@ -903,24 +921,28 @@ class Cart extends Model
             return $this->cachedFees;
         }
 
+        // Custom payment: preserves the original order's charges.
+        // Reactivation: renewals should not pick up dynamic fees.
+        $keepsStoredFees = $this->keepsStoredFees();
+
         // Recursion guard — if a filter callback calls getFees(), return stored fees only
         if ($this->isCalculatingFees) {
-            return $this->getStoredFees();
+            return $keepsStoredFees ? $this->getStoredFees() : $this->withoutDynamicFees($this->getStoredFees());
         }
 
         $this->isCalculatingFees = true;
 
-        // Start with persistent (stored) fees
         $storedFees = $this->getStoredFees();
 
-        // Custom payment: preserves the original order's charges.
-        // Reactivation: renewals should not pick up dynamic fees.
-        $isRenewal = Arr::get($this->checkout_data, 'renew_data.is_renewal') === 'yes';
-        if ($this->isLocked() || $isRenewal) {
+        if ($keepsStoredFees) {
             $this->isCalculatingFees = false;
             $this->cachedFees = $this->validateFees($storedFees);
             return $this->cachedFees;
         }
+
+        // Fees a filter added earlier are saved with the cart, but only the
+        // filter decides whether they still apply, so start without them.
+        $storedFees = $this->withoutDynamicFees($storedFees);
 
         // Resolve payment method: prefer explicit key, fall back to form data
         $paymentMethod = Arr::get($this->checkout_data, 'payment_method')
@@ -941,6 +963,14 @@ class Cart extends Model
             $allFees = $storedFees;
         }
 
+        // Mark what the filter added, so the next read starts without it.
+        $persistentKeys = array_map([$this, 'feeIdentity'], $storedFees);
+        foreach ($allFees as $index => $fee) {
+            if (is_array($fee) && !in_array($this->feeIdentity($fee), $persistentKeys, true)) {
+                $allFees[$index]['dynamic'] = true;
+            }
+        }
+
         // Validate and deduplicate (last wins — dynamic fees override stored)
         $validFees = $this->validateFees($allFees);
 
@@ -948,6 +978,62 @@ class Cart extends Model
         $this->cachedFees = $validFees;
 
         return $validFees;
+    }
+
+    /**
+     * Recalculate the cart when it still stores a filter-added fee that no
+     * filter adds any more (the add-on is off, or its rule no longer applies),
+     * so the tax worked out with that fee is recomputed.
+     *
+     * @return bool Whether a recalculation was triggered.
+     */
+    public function refreshStaleDynamicFees(): bool
+    {
+        if (!$this->exists || $this->keepsStoredFees()) {
+            return false;
+        }
+
+        $stored = $this->getStoredFees();
+        $storedDynamic = array_diff(
+            array_map([$this, 'feeIdentity'], $stored),
+            array_map([$this, 'feeIdentity'], $this->withoutDynamicFees($stored))
+        );
+        if (!$storedDynamic) {
+            return false;
+        }
+
+        $live = array_map([$this, 'feeIdentity'], $this->getFees());
+        if (!array_diff($storedDynamic, $live)) {
+            return false;
+        }
+
+        do_action('fluent_cart/cart/cart_data_items_updated', [
+            'cart'       => $this,
+            'scope'      => 'stale_dynamic_fees',
+            'scope_data' => null,
+        ]);
+
+        return true;
+    }
+
+    private function keepsStoredFees(): bool
+    {
+        return $this->isLocked() || Arr::get($this->checkout_data, 'renew_data.is_renewal') === 'yes';
+    }
+
+    private function withoutDynamicFees(array $fees): array
+    {
+        return array_values(array_filter($fees, function ($fee) {
+            // Saved before fees were marked; Pro adds these through the filter.
+            $legacy = in_array(Arr::get((array) $fee, 'source'), self::LEGACY_DYNAMIC_FEE_SOURCES, true);
+
+            return !$legacy && empty(Arr::get((array) $fee, 'dynamic'));
+        }));
+    }
+
+    private function feeIdentity($fee): string
+    {
+        return sanitize_key(Arr::get((array) $fee, 'source') ?: 'custom') . ':' . sanitize_key((string) Arr::get((array) $fee, 'key'));
     }
 
     /**
@@ -969,7 +1055,7 @@ class Cart extends Model
      *       'key'     => 'processing_fee',
      *       'label'   => 'Processing Fee',
      *       'amount'  => 450,           // cents, must be positive
-     *       'source'  => 'dynamic-pricing',
+     *       'source'  => 'my-addon',
      *       'taxable' => false,
      *       'meta'    => ['rule_id' => 42],
      *   ]);
@@ -1193,6 +1279,10 @@ class Cart extends Model
                 'source'    => $source,
                 'meta'      => (array) ($fee['meta'] ?? []),
             ];
+
+            if (!empty($fee['dynamic'])) {
+                $validFees[$compositeKey]['dynamic'] = true;
+            }
         }
 
         return array_values($validFees);

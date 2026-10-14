@@ -20,6 +20,7 @@ return [
 
             try {
                 $customer = FcFixture::customer();
+                $beforeCreate = gmdate('Y-m-d H:i:s');
                 $created = FcFixture::order([
                     'created_at' => $createdAt,
                     'config'     => [
@@ -28,6 +29,7 @@ return [
                 ]);
                 $orderId = (int) $created->id;
                 $orderUuid = (string) $created->uuid;
+                $afterCreate = gmdate('Y-m-d H:i:s');
 
                 FcTest::assert($orderId > 0, 'Order create returns a positive exact ID');
                 FcTest::assert(
@@ -60,7 +62,35 @@ return [
                     (string) $stored->note,
                     'Order exact ownership marker round-trips'
                 );
-                FcTest::assertSame($expectedConfig, $stored->config, 'Order JSON config round-trips');
+                $storedConfig = $stored->config;
+                $capturedAt = $storedConfig['fx']['captured_at'] ?? '';
+                FcTest::assert(
+                    $capturedAt >= $beforeCreate && $capturedAt <= $afterCreate,
+                    'Order snapshot captures its creation time in GMT'
+                );
+                $baseCurrency = \FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency::get();
+                $expectedConfig['fx'] = [
+                    'currency' => 'USD',
+                    'base_currency' => $baseCurrency,
+                    'rate' => '1.000000000000',
+                    'rate_id' => null,
+                    'source' => $baseCurrency === 'USD' ? 'base' : 'unknown',
+                    'captured_at' => $capturedAt,
+                    'margin' => '0',
+                    'rounding' => 'none',
+                    'charm' => 'none',
+                    'adjustment' => '0',
+                    'decimals' => 2,
+                ];
+                // MySQL JSON objects do not preserve insertion order.
+                ksort($expectedConfig['fx']);
+                if (isset($storedConfig['fx'])) {
+                    ksort($storedConfig['fx']);
+                }
+                ksort($expectedConfig);
+                ksort($storedConfig);
+                FcTest::assertSame($expectedConfig, $storedConfig, 'Order JSON config and snapshot round-trip');
+                FcTest::assertSame('1.000000000000', (string) $stored->rate, 'Order rate matches its snapshot');
                 FcTest::assertSame($createdAt, (string) $stored->created_at, 'Order GMT timestamp round-trips');
                 FcTest::assertSame($orderUuid, (string) $stored->uuid, 'Order generated UUID round-trips');
                 FcFixture::assertNoForbiddenOrderSideEffects($orderId, 0);

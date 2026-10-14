@@ -231,6 +231,12 @@ foreach ($manifest['cases'] as $entry) {
                 }
             }
 
+            if (isset($entry['empty_response'])) {
+                $empty = $entry['empty_response'];
+                if ($result['status'] === $empty['status'] && $result['message'] === __($empty['message'], 'fluent-cart')) {
+                    $ok[] = $empty['status'];
+                }
+            }
             FcTest::assertHealthy($result, $label . "  [GET {$route}]", $ok);
         } finally {
             wp_set_current_user($adminId);

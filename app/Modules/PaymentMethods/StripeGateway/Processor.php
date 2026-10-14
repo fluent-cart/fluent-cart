@@ -3,7 +3,6 @@
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
 use FluentCart\App\App;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
 use FluentCart\App\Services\Payments\PaymentInstance;
@@ -73,7 +72,8 @@ class Processor
             return new \WP_Error('no_subscription', __('No subscription found.', 'fluent-cart'));
         }
 
-        $stripeCustomer = StripeHelper::createOrGetStripeCustomer($paymentInstance->order->customer);
+        // Stripe subscriptions bind the customer to one currency, so ask for one that can bill this order's.
+        $stripeCustomer = StripeHelper::createOrGetStripeCustomer($paymentInstance->order->customer, $paymentInstance->order->currency);
 
         if (is_wp_error($stripeCustomer)) {
             return $stripeCustomer;
@@ -795,7 +795,7 @@ class Processor
         $transactionCurrency = $transaction->currency;
         $intentAmount = (int)$transaction->total;
 
-        if ($transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency)) {
+        if ($transactionCurrency && StripeHelper::isZeroDecimal($transactionCurrency)) {
             $intentAmount = (int)($intentAmount / 100);
         }
 
@@ -918,7 +918,7 @@ class Processor
         $transactionCurrency = $transaction->currency;
         $chargeAmount = (int)$transaction->total;
 
-        if ($transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency)) {
+        if ($transactionCurrency && StripeHelper::isZeroDecimal($transactionCurrency)) {
             $chargeAmount = (int)($chargeAmount / 100);
         }
 
@@ -1107,7 +1107,7 @@ class Processor
 
     private function buildHostedLineItems($order, $currency, $chargeAmount)
     {
-        $isZeroDecimal = $currency && CurrenciesHelper::isZeroDecimal($currency);
+        $isZeroDecimal = $currency && StripeHelper::isZeroDecimal($currency);
         $stripeCurrency = strtolower($currency);
 
         $lineItems = [];
@@ -1522,8 +1522,8 @@ class Processor
         $transactionCurrency = $transaction->currency;
         $orderType = $order->type;
 
-        // Create or get Stripe customer
-        $stripeCustomer = StripeHelper::createOrGetStripeCustomer($fcCustomer);
+        // Same currency rule as the onsite subscription path.
+        $stripeCustomer = StripeHelper::createOrGetStripeCustomer($fcCustomer, $order->currency);
         if (is_wp_error($stripeCustomer)) {
             return $stripeCustomer;
         }
@@ -1566,7 +1566,7 @@ class Processor
         }
 
         $recurringTotal = (int)$subscriptionModel->recurring_total;
-        $isZeroDecimal = $transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency);
+        $isZeroDecimal = $transactionCurrency && StripeHelper::isZeroDecimal($transactionCurrency);
         if ($isZeroDecimal) {
             $initialAmount = (int)($initialAmount / 100);
             $recurringTotal = (int)($recurringTotal / 100);

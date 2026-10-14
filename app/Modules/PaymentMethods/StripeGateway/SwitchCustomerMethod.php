@@ -44,7 +44,11 @@ class SwitchCustomerMethod
                 $customerId = $subscriptionModel->vendor_customer_id;
             }
             if (!$customerId) {
-                $customerId = $this->subscriptions->getOrCreateStripeCustomer($pm);
+                $stripeCustomer = StripeHelper::createOrGetStripeCustomer($subscriptionModel->customer, $subscriptionModel->order->currency);
+                if (is_wp_error($stripeCustomer)) {
+                    $this->sendError($stripeCustomer->get_error_message());
+                }
+                $customerId = Arr::get($stripeCustomer, 'id');
             }
         }
 

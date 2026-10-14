@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 
 class RefundReportService extends ReportService
@@ -10,9 +11,8 @@ class RefundReportService extends ReportService
     {
         $groupKey = $params['groupKey'];
 
-        $query = App::db()->query()
-            ->from('fct_orders as o')
-            ->join('fct_order_transactions as ot', 'o.id', '=', 'ot.order_id')
+        $query = ReportCurrency::fromOrders(App::db()->query(), $params);
+        $query = ReportCurrency::joinTransactions($query, $params)
             ->selectRaw("COUNT(DISTINCT ot.order_id) as total_refunded,
 
                 SUM(ot.total) / 100 as total_refunded_amount,
@@ -57,8 +57,7 @@ class RefundReportService extends ReportService
             $params['startDate'], $params['endDate'], $params['groupKey']
         );
 
-        $orderSubQuery = App::db()->query()
-            ->from('fct_orders as o')
+        $orderSubQuery = ReportCurrency::fromOrders(App::db()->query(), $params)
             ->selectRaw("{$group['field']},
 
                 o.total_refund,
@@ -141,7 +140,7 @@ class RefundReportService extends ReportService
             ->groupBy('order_id');
 
         $orderQuery = $this->applyFilters(
-            App::db()->table('fct_orders as o'), $params
+            ReportCurrency::ordersTable($params), $params
         );
 
         return $orderQuery

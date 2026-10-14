@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\Framework\Support\Arr;
@@ -18,10 +19,11 @@ class SubscriptionReportService extends ReportService
         $startDate    = Arr::get($params, 'startDate');
         $endDate      = Arr::get($params, 'endDate');
 
-        $baseQuery = App::db()->query()
-            ->from('fct_subscriptions as s')
+        $baseQuery = ReportCurrency::fromSubscriptions(App::db()->query(), $params, 's')
             ->whereBetween('s.created_at', [$startDate, $endDate])
             ->when($variationIds, fn ($q) => $q->whereIn('s.variation_id', $variationIds));
+
+        ReportCurrency::whereCurrencyColumn($baseQuery, 's.currency', ReportCurrency::resolve(Arr::get($params, 'currency'), true));
 
         if ($customDays) {
             $query = $baseQuery->selectRaw("COUNT(*) AS day_{$customDays}")
@@ -50,16 +52,17 @@ class SubscriptionReportService extends ReportService
 
     public function getDailySignups($params = [])
     {
-        return App::db()->query()
+        $query = ReportCurrency::fromSubscriptions(App::db()->query(), $params, 's')
             ->selectRaw('
                 DATE(s.created_at) AS trend_date, 
                 COUNT(s.id) AS value
             ')
-            ->from('fct_subscriptions as s')
             ->whereBetween('s.created_at', [$params['startDate'], $params['endDate']])
             ->when($params['variationIds'], fn ($q) => $q->whereIn('s.variation_id', $params['variationIds']))
             ->groupBy('trend_date')
-            ->orderBy('trend_date')
+            ->orderBy('trend_date');
+
+        return ReportCurrency::whereCurrencyColumn($query, 's.currency', ReportCurrency::resolve(Arr::get($params, 'currency'), true))
             ->get();
     }
 
@@ -86,12 +89,14 @@ class SubscriptionReportService extends ReportService
                 $dateColumn = 'o.canceled_at';
             }
 
-            $query->from('fct_subscriptions as o')->where('o.status', $subscriptionType)
+            ReportCurrency::fromSubscriptions($query, $params, 'o')->where('o.status', $subscriptionType)
                 ->whereBetween($dateColumn, [
                     $startDate->format('Y-m-d H:i:s'),
                     $endDate->format('Y-m-d H:i:s'),
                 ])
                 ->when($params['variationIds'], fn ($q) => $q->whereIn('o.variation_id', $params['variationIds']));
+
+            ReportCurrency::whereCurrencyColumn($query, 'o.currency', ReportCurrency::resolve(Arr::get($params, 'currency'), true));
         }
 
         $query->selectRaw("{$group['field']}, COUNT(o.id) as count")->groupByRaw($group['by']);
@@ -138,7 +143,7 @@ class SubscriptionReportService extends ReportService
             // For labels/keys, we use the end of the month as per requirement
             $labelDate = $dt->format('Y-m-t');
 
-            $stats = App::db()->table('fct_subscriptions')
+            $statsQuery = ReportCurrency::subscriptionsTable($params)
                 ->selectRaw("
                 SUM(
                     CASE 
@@ -273,7 +278,10 @@ class SubscriptionReportService extends ReportService
                 ->whereNotIn('status', [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])
                 ->when(!empty($params['variationIds']), function ($q) use ($params) {
                     $q->whereIn('variation_id', $params['variationIds']);
-                })
+                });
+
+            // MRR and churn are only summable within one currency
+            $stats = ReportCurrency::whereCurrencyColumn($statsQuery, 'currency', ReportCurrency::resolve(Arr::get($params, 'currency'), true))
                 ->first();
 
             $newSubscriptions = (int) $stats->new_subscriptions;
@@ -348,11 +356,13 @@ class SubscriptionReportService extends ReportService
         $startCohort = $startDate->format('Y-m');
         $endCohort = $endDate->format('Y-m');
 
+        $currency = ReportCurrency::resolve($params['currency'] ?? null);
+
         if ($groupBy === 'year') {
-            return $this->getCohortDataByYear($startCohort, $endCohort, $productIds, $metric, $maxPeriods);
+            return $this->getCohortDataByYear($startCohort, $endCohort, $productIds, $metric, $maxPeriods, $currency);
         }
 
-        return $this->getCohortDataByMonth($startCohort, $endCohort, $productIds, $metric, $maxPeriods);
+        return $this->getCohortDataByMonth($startCohort, $endCohort, $productIds, $metric, $maxPeriods, $currency);
     }
 
     /**
@@ -365,13 +375,15 @@ class SubscriptionReportService extends ReportService
      * @param int $maxPeriods
      * @return array
      */
-    protected function getCohortDataByMonth($startCohort, $endCohort, $productIds, $metric, $maxPeriods)
+    protected function getCohortDataByMonth($startCohort, $endCohort, $productIds, $metric, $maxPeriods, $currency = null)
     {
         $query = App::db()->table('fct_retention_snapshots')
             ->whereBetween('cohort', [$startCohort, $endCohort])
             ->where('period_offset', '<=', $maxPeriods)
             ->orderBy('cohort', 'ASC')
             ->orderBy('period_offset', 'ASC');
+
+        ReportCurrency::whereCurrencyColumn($query, 'currency', $currency ?: ReportCurrency::resolve());
 
         if (!empty($productIds)) {
             // Filter by specific product IDs and aggregate
@@ -440,7 +452,7 @@ class SubscriptionReportService extends ReportService
      * @param int $maxPeriods
      * @return array
      */
-    protected function getCohortDataByYear($startCohort, $endCohort, $productIds, $metric, $maxPeriods)
+    protected function getCohortDataByYear($startCohort, $endCohort, $productIds, $metric, $maxPeriods, $currency = null)
     {
         // We need offsets 12, 24, 36... where 12 is baseline, 24 is Year 1, etc.
         // So max offset = (maxPeriods + 1) * 12 to include enough data
@@ -453,6 +465,8 @@ class SubscriptionReportService extends ReportService
             ->where('period_offset', '>=', 12) // Start from 12 (end of year 1)
             ->orderBy('cohort', 'ASC')
             ->orderBy('period_offset', 'ASC');
+
+        ReportCurrency::whereCurrencyColumn($query, 'currency', $currency ?: ReportCurrency::resolve());
 
         if (!empty($productIds)) {
             // Filter by specific product IDs

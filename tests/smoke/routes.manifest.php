@@ -569,7 +569,10 @@ $declare($api, 832, 'files/bucket-list', [
     'params' => ['driver' => '{driver}'],
 ]);
 $declare($api, 843, 'app/init');
-$declare($api, 844, 'app/attachments', ['ok' => [200, 423]]);
+$declare($api, 844, 'app/attachments', [
+    'ok' => [200, 423],
+    'empty_response' => ['status' => 422, 'message' => 'No Images Found'],
+]);
 
 $activityId = $declare($api, 849, 'activity', [
     'params' => [

@@ -16,7 +16,7 @@ use FluentCart\Framework\Support\Arr;
 
 class Cod extends AbstractPaymentGateway
 {
-    public array $supportedFeatures = ['payment', 'refund', 'offline'];
+    public array $supportedFeatures = ['payment', 'refund', 'offline', 'multi_currency'];
 
     public BaseGatewaySettings $settings;
 

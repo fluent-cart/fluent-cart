@@ -326,30 +326,28 @@ $publicCases[] = [
     'known_failure' => true,
     'phase'         => 18,
     'run'           => function () {
-        $source = file(
-            dirname(__DIR__, 2)
-            . '/app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php'
+        $method = new ReflectionMethod(
+            \FluentCart\App\Http\Controllers\FrontendControllers\CustomerSubscriptionController::class,
+            'getSubscription'
         );
-        $line = is_array($source) ? $source[101] : '';
-        $rejectsCancelled = strpos($line, 'SUBSCRIPTION_CANCELED') !== false;
-        if ($rejectsCancelled) {
-            FcTest::fail(
-                'KNOWN-FAILURE unexpectedly passed; add a safe dynamic cancelled-UUID '
-                . 'rejection probe and reclassify this source pin.'
-            );
-        } elseif (
-            strpos($line, 'SUBSCRIPTION_PENDING') !== false
-            && strpos($line, 'SUBSCRIPTION_INTENDED') !== false
-        ) {
-            FcTest::skip(
-                'KNOWN-FAILURE — CustomerSubscriptionController.php:102 rejects only '
-                . 'pending/intended status; a cancelled record still passes UUID ownership '
-                . 'into gateway-capability formatting. Correct-UUID dispatch is forbidden.'
-            );
+        $source = implode('', array_slice(
+            file($method->getFileName()),
+            $method->getStartLine() - 1,
+            $method->getEndLine() - $method->getStartLine() + 1
+        ));
+        FcTest::assert(
+            strpos($source, '!$subscription->isVisibleToCustomer()') !== false,
+            'customer detail enforces the shared subscription visibility predicate'
+        );
+        $subscription = new \FluentCart\App\Models\Subscription();
+        $subscription->status = \FluentCart\App\Helpers\Status::SUBSCRIPTION_CANCELED;
+        if (!$subscription->isVisibleToCustomer()) {
+            FcTest::fail('KNOWN-FAILURE unexpectedly passed; reclassify cancelled subscription visibility.');
         } else {
-            FcTest::fail(
-                'KNOWN-FAILURE cancelled-status predicate drifted at '
-                . 'CustomerSubscriptionController.php:102.'
+            FcTest::skip(
+                'KNOWN-FAILURE — Subscription::isVisibleToCustomer() admits canceled history; '
+                . 'CustomerSubscriptionController::getSubscription() uses that predicate. '
+                . 'The cancelled-history policy decision remains open (FIX-PLAN #15).'
             );
         }
     },

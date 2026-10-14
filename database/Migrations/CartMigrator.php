@@ -34,7 +34,8 @@ class CartMigrator extends Migrator
                 `updated_at` DATETIME NULL,
                 `deleted_at` TIMESTAMP NULL,
                 UNIQUE KEY cart_hash (cart_hash),
-                INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `cart_hash` ASC)";
+                INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `cart_hash` ASC),
+                INDEX `" . static::userCartIndex() . "` (`user_id` ASC, `cart_group` ASC, `updated_at` ASC)";
     }
     public static function migrated()
     {
@@ -65,5 +66,24 @@ class CartMigrator extends Migrator
     public static function hasCustomerRecoveryIndex(): bool
     {
         return static::hasIndex(self::CUSTOMER_RECOVERY_INDEX);
+    }
+
+    /**
+     * A logged-in shopper's latest open cart (CartCurrency::requestCart(),
+     * CartResource's user fallback): user_id + cart_group, newest first.
+     */
+    public static function addUserCartIndex(): void
+    {
+        static::addIndexIfNotExists(static::userCartIndex(), ['user_id', 'cart_group', 'updated_at']);
+    }
+
+    public static function hasUserCartIndex(): bool
+    {
+        return static::hasIndex(static::userCartIndex());
+    }
+
+    private static function userCartIndex(): string
+    {
+        return static::getDbPrefix() . 'fct_carts_user_group_updated_idx';
     }
 }

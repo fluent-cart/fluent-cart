@@ -3,12 +3,15 @@
 namespace FluentCart\Database;
 
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\Framework\Database\Schema;
 use FluentCart\Framework\Support\Arr;
 
@@ -62,6 +65,26 @@ class DataBackfills
             // Remove after one or two releases once affected installs have upgraded.
             'order_address_index' => [
                 'title' => 'Order Address Index',
+            ],
+            // 2026-09-27 — multi-currency (dev-docs/multi-currency/plan.md §10).
+            // Orders that predate currency snapshots get one: legacy_base when
+            // in the base currency, legacy_unknown otherwise — never a guessed
+            // rate. Remove after one or two releases once installs have upgraded.
+            'order_currency_snapshot' => [
+                'title' => 'Order Currency Snapshot',
+            ],
+            // 2026-09-27 — copies each subscription's currency out of its
+            // config JSON / parent order into the new currency column, plus the
+            // parent order's snapshot that renewals carry.
+            // Remove after one or two releases once installs have upgraded.
+            'subscription_currency' => [
+                'title' => 'Subscription Currency',
+            ],
+            // 2026-09-27 — recount customer stats per currency: purchase_value
+            // becomes a per-currency map again and ltv/aov stop adding
+            // different currencies together. Remove after one or two releases.
+            'customer_currency_stats' => [
+                'title' => 'Customer Currency Stats',
             ],
         ];
     }
@@ -149,6 +172,18 @@ class DataBackfills
 
         if ($slug === 'order_address_index') {
             return self::ensureOrderAddressIndex();
+        }
+
+        if ($slug === 'order_currency_snapshot') {
+            return self::backfillOrderCurrencySnapshots();
+        }
+
+        if ($slug === 'subscription_currency') {
+            return self::backfillSubscriptionCurrency();
+        }
+
+        if ($slug === 'customer_currency_stats') {
+            return self::recountCustomerCurrencyStats();
         }
 
         // registered slug without a runner — mark done so it can't wedge the
@@ -621,6 +656,196 @@ class DataBackfills
         Meta::query()
             ->where('object_type', 'option')
             ->where('meta_key', '_fluent_cart_completed_billing_date_cursor')
+            ->delete();
+
+        return true;
+    }
+
+    /**
+     * Give every order that predates currency snapshots a config.fx block.
+     * Idempotent: only rows without one are selected. Amounts and the rate
+     * column are never touched (plan §10).
+     *
+     * @return bool true when done; false = budget spent, more remains
+     */
+    private static function backfillOrderCurrencySnapshots()
+    {
+        return self::runKeysetChunks('order_currency_snapshot', '_fluent_cart_order_fx_cursor', function ($lastId, $chunkSize) {
+            return Order::query()
+                ->select(['id', 'currency', 'rate', 'config', 'created_at', 'updated_at'])
+                ->where('id', '>', $lastId)
+                ->whereRaw("JSON_EXTRACT(config, '$.fx') IS NULL")
+                ->orderBy('id', 'ASC')
+                ->limit($chunkSize)
+                ->get();
+        }, function ($rows) {
+            $written = true;
+            foreach ($rows as $order) {
+                $snapshot = CurrencySnapshot::legacy($order->currency, $order->rate, $order->created_at);
+                $written = self::setSnapshot('fct_orders', $order->id, $snapshot);
+                if ($written === false) {
+                    break;
+                }
+            }
+
+            return $written !== false;
+        });
+    }
+
+    /**
+     * Fill fct_subscriptions.currency (from config.currency, else the parent
+     * order) and copy the parent order's snapshot into config.fx.
+     *
+     * @return bool true when done; false = budget spent, more remains
+     */
+    private static function backfillSubscriptionCurrency()
+    {
+        return self::runKeysetChunks('subscription_currency', '_fluent_cart_subscription_currency_cursor', function ($lastId, $chunkSize) {
+            return Subscription::query()
+                ->select(['id', 'parent_order_id', 'currency', 'config', 'created_at', 'updated_at'])
+                ->where('id', '>', $lastId)
+                ->where('currency', '')
+                ->orderBy('id', 'ASC')
+                ->limit($chunkSize)
+                ->get();
+        }, function ($rows) {
+            $parentOrders = Order::query()
+                ->select(['id', 'currency', 'rate', 'config', 'created_at'])
+                ->whereIn('id', $rows->pluck('parent_order_id')->filter()->unique()->values()->toArray())
+                ->get()
+                ->keyBy('id');
+
+            foreach ($rows as $subscription) {
+                $config = is_array($subscription->config) ? $subscription->config : [];
+                $parentOrder = $parentOrders->get($subscription->parent_order_id);
+
+                $currency = Arr::get($config, 'currency') ?: ($parentOrder ? $parentOrder->currency : '');
+                $currency = strtoupper((string) ($currency ?: BaseCurrency::get()));
+
+                $snapshot = CurrencySnapshot::isSnapshot(Arr::get($config, 'fx'))
+                    ? null
+                    : (CurrencySnapshot::parentSnapshot($parentOrder, $currency) ?: CurrencySnapshot::legacy($currency, 1, $subscription->created_at));
+
+                if (self::setSnapshot('fct_subscriptions', $subscription->id, $snapshot, $currency) === false) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Recount every customer's stats with the per-currency recountStat().
+     * One grouped query per customer — every customer is being repaired.
+     *
+     * @return bool true when done; false = budget spent, more remains
+     */
+    private static function recountCustomerCurrencyStats()
+    {
+        return self::runKeysetChunks('customer_currency_stats', '_fluent_cart_customer_currency_stats_cursor', function ($lastId, $chunkSize) {
+            return Customer::query()
+                ->where('id', '>', $lastId)
+                ->orderBy('id', 'ASC')
+                ->limit($chunkSize)
+                ->get();
+        }, function ($customers) {
+            foreach ($customers as $customer) {
+                $customer->recountStat();
+            }
+        }, ['chunk_size' => 200, 'max_chunks_per_run' => 5]);
+    }
+
+    /**
+     * Write a backfill snapshot in one statement. The chunk was read without
+     * a lock, and a cancel or gateway update can commit in between: JSON_SET
+     * changes only the fx key, so other config keys survive, and updated_at
+     * is not written, so it is neither bumped nor reverted. A row that gained
+     * a snapshot (or a currency) meanwhile is left alone.
+     *
+     * @param string $table fct_orders or fct_subscriptions
+     * @param int $id
+     * @param array|null $snapshot null to leave config.fx as it is
+     * @param string|null $currency subscriptions only: fills an empty currency column
+     * @return int|false false when the write failed
+     */
+    private static function setSnapshot($table, $id, $snapshot, $currency = null)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . $table;
+
+        $sets = [];
+        $args = [];
+        if ($snapshot !== null) {
+            // A config that is not a JSON object (empty, '[]', invalid) starts from {}
+            $sets[] = "config = IF(JSON_VALID(config),"
+                . " IF(JSON_EXTRACT(config, '$.fx') IS NULL, JSON_SET(IF(JSON_TYPE(config) = 'OBJECT', config, '{}'), '$.fx', JSON_EXTRACT(%s, '$')), config),"
+                . " JSON_OBJECT('fx', JSON_EXTRACT(%s, '$')))";
+            $args[] = wp_json_encode($snapshot);
+            $args[] = wp_json_encode($snapshot);
+        }
+        if ($currency !== null) {
+            $sets[] = "currency = IF(currency = '', %s, currency)";
+            $args[] = $currency;
+        }
+        if (!$sets) {
+            return 0;
+        }
+
+        $args[] = (int) $id;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table and SET clauses are fixed above
+        return $wpdb->query($wpdb->prepare("UPDATE {$table} SET " . implode(', ', $sets) . ' WHERE id = %d', $args));
+    }
+
+    /**
+     * Shared keyset-cursor loop for the currency backfills: bounded chunks
+     * per request, cursor persisted after every chunk so a timeout resumes
+     * instead of restarting, cursor deleted on completion.
+     *
+     * @param string $slug
+     * @param string $cursorKey fct_meta option holding the last processed id
+     * @param callable $fetch fn(int $lastId, int $chunkSize): Collection ordered by id
+     * @param callable $apply fn(Collection $rows): mixed — false when the chunk's write failed
+     * @param array $defaultBudget chunk_size / max_chunks_per_run
+     * @return bool true when done; false = budget spent or a write failed, more remains
+     */
+    private static function runKeysetChunks($slug, $cursorKey, callable $fetch, callable $apply, array $defaultBudget = [])
+    {
+        $budget = apply_filters('fluent_cart/data_backfills/chunk_budget', wp_parse_args($defaultBudget, [
+            'chunk_size'         => 500,
+            'max_chunks_per_run' => 10,
+        ]), ['slug' => $slug]);
+
+        $chunkSize = max(1, (int)Arr::get($budget, 'chunk_size', 500));
+        $maxChunksPerRun = max(1, (int)Arr::get($budget, 'max_chunks_per_run', 10));
+        $chunksProcessed = 0;
+        $lastId = (int)fluent_cart_get_option($cursorKey, 0, false);
+
+        do {
+            $rows = $fetch($lastId, $chunkSize);
+
+            if ($rows->isEmpty()) {
+                break;
+            }
+
+            // A failed write keeps the cursor, so the next run retries these rows
+            if ($apply($rows) === false) {
+                return false;
+            }
+
+            $lastId = (int)$rows->last()->id;
+            fluent_cart_update_option($cursorKey, $lastId);
+            $chunksProcessed++;
+
+            if ($rows->count() >= $chunkSize && $chunksProcessed >= $maxChunksPerRun) {
+                return false;
+            }
+        } while ($rows->count() >= $chunkSize);
+
+        Meta::query()
+            ->where('object_type', 'option')
+            ->where('meta_key', $cursorKey)
             ->delete();
 
         return true;

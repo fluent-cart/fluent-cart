@@ -108,6 +108,28 @@ abstract class Migrator
     }
 
     /**
+     * The column's current SQL type, lowercased (e.g. "decimal(24,12)"), or ''
+     * when the column does not exist. Lets a migration skip a MODIFY that has
+     * already run — a MODIFY on a large table is a full rebuild, not a no-op.
+     *
+     * @param string $column Column name
+     * @return string
+     */
+    protected static function getColumnType($column)
+    {
+        $wpdb = Schema::db();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SHOW COLUMNS FROM %i LIKE %s",
+            static::getTableName(),
+            $column
+        ));
+
+        return $row ? strtolower((string) $row->Type) : '';
+    }
+
+    /**
      * Check if an index exists on the table.
      *
      * @param string $indexName Index name

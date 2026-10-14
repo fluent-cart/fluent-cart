@@ -65,7 +65,7 @@
 
                     <el-col :lg="24">
                         <el-form-item :label="$t('Refund amount')" required="">
-                            <el-input type="number" :min="1" :max="maxRefundAmount" v-model.number="refund.amount"
+                            <el-input type="number" :min="refundStep" :step="refundStep" :max="maxRefundAmount" v-model.number="refund.amount"
                                       @input="checkMaxRefundAmount">
                                 <template #prefix="">
                                     {{ orderCurrencySign }}
@@ -213,6 +213,12 @@ export default {
         }
     },
     computed: {
+        refundStep() {
+            const transaction = this.refundableTransactions.find(item => item.id === this.refund.transaction_id);
+            // Stripe stores 'jpy'; the decimals map is keyed 'JPY'
+            const currency = String(transaction?.currency || this.order.currency || '').toUpperCase();
+            return AppConfig.get('currency_decimals', {})[currency] === 0 ? 1 : 0.01;
+        },
         CurrencyFormatter() {
             return CurrencyFormatter
         },
@@ -325,9 +331,14 @@ export default {
                 return this.handleMessage('Please add refund amount.', 'error');
             }
 
+            if (this.refundStep === 1 && !Number.isInteger(Number(this.refund.amount))) {
+                this.refundProcessing = false;
+                return this.handleMessage(translate('Refund amount must be a whole number for this currency.'), 'error');
+            }
+
             if (this.refund.amount > this.refund.availableAmount) {
                 this.refundProcessing = false;
-                return this.handleMessage(`Refund amount should not exceed: ${this.appVars.shop.currency_sign}${this.refund.availableAmount}`, 'error');
+                return this.handleMessage(`Refund amount should not exceed: ${this.orderCurrencySign}${this.refund.availableAmount}`, 'error');
             }
 
             // get only id, quantity, restore_quantity from this.refundTableItems
@@ -357,10 +368,11 @@ export default {
             }).then(res => {
                 // this.handleSuccess(res.message);
                 this.refundNote = res;
+                this.updateRefundable();
             }).catch(errors => {
+                // Keep the typed amount: reloading the max here would put the full amount back under the button
                 this.handleError(errors);
             }).finally(() => {
-                this.updateRefundable();
                 this.refundProcessing = false;
             })
         }

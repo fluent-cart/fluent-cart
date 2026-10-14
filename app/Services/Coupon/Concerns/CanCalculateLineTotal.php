@@ -55,6 +55,8 @@ trait CanCalculateLineTotal
 
     protected function formatDiscountNumbers()
     {
+        $currency = Arr::get((array) $this->currencyQuote, 'currency');
+
         foreach ($this->discountData as $code => $discount) {
             $formattedTitle = $code;
 
@@ -62,9 +64,10 @@ trait CanCalculateLineTotal
                 $formattedTitle .= ' (' . $discount['actual_amount'] . '%)';
             }
 
-            $this->discountData[$code]['formatted_discount'] = CurrencySettings::getPriceHtml($discount['discount']);
+            $this->discountData[$code]['formatted_discount'] = CurrencySettings::getPriceHtml($discount['discount'], $currency);
             $this->discountData[$code]['actual_formatted_discount'] = CurrencySettings::getPriceHtml(
-                $discount['discount']
+                $discount['discount'],
+                $currency
             );
             $this->discountData[$code]['formatted_title'] = $formattedTitle;
 

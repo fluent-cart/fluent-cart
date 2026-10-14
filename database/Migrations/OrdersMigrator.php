@@ -37,7 +37,7 @@ class OrdersMigrator extends Migrator
                 `total_amount` BIGINT NOT NULL DEFAULT '0',
                 `total_paid` BIGINT NOT NULL DEFAULT '0',
                 `total_refund` BIGINT NOT NULL DEFAULT '0',
-                `rate` DECIMAL(12,4) NOT NULL DEFAULT '1.0000',
+                `rate` DECIMAL(24,12) NOT NULL DEFAULT '1.000000000000',
                 `tax_behavior` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0 => no_tax, 1 => exclusive, 2 => inclusive',
                 `note` TEXT NOT NULL DEFAULT '',
                 `ip_address` TEXT NOT NULL DEFAULT '',
@@ -52,7 +52,8 @@ class OrdersMigrator extends Migrator
                 INDEX `{$indexPrefix}_status_type` (`type` ASC),
                 INDEX `{$indexPrefix}_customer_id` (`customer_id` ASC),
                 INDEX `{$indexPrefix}_date_created_completed` (`created_at` ASC, `completed_at` ASC),
-                INDEX `{$indexPrefix}_uuid` (`uuid` ASC)";
+                INDEX `{$indexPrefix}_uuid` (`uuid` ASC),
+                INDEX `{$indexPrefix}_currency_created` (`currency` ASC, `created_at` ASC)";
     }
 
     public static function migrated()
@@ -63,6 +64,37 @@ class OrdersMigrator extends Migrator
         static::renameDiscountTotalColumn();
         static::addPaymentStatusIndex();
         static::addUuidIndex();
+        static::widenRateColumn();
+        static::addCurrencyCreatedIndex();
+    }
+
+    /**
+     * Currency-scoped reports filter on currency + a created_at range
+     * (multi-currency plan §3 Phase 2).
+     */
+    public static function addCurrencyCreatedIndex()
+    {
+        static::addIndexIfNotExists(static::getDbPrefix() . 'fct_ord__currency_created', ['currency', 'created_at']);
+    }
+
+    /**
+     * `rate` holds the base->presentment exchange rate frozen at order
+     * creation. DECIMAL(12,4) rounds IDR->USD (~0.000061) to 0.0001 — a 64%
+     * error — so it is widened before anything writes a real rate. Every
+     * existing value is 1, so the change is lossless.
+     */
+    public static function widenRateColumn()
+    {
+        if (static::getColumnType('rate') === 'decimal(24,12)') {
+            return;
+        }
+
+        static::modifyColumnIfExists('rate', "DECIMAL(24,12) NOT NULL DEFAULT '1.000000000000'");
+    }
+
+    public static function hasWideRateColumn(): bool
+    {
+        return static::getColumnType('rate') === 'decimal(24,12)';
     }
 
     public static function addFeeTotalColumn()

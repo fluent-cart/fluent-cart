@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\StoreManagedRenewal\Services;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
@@ -138,6 +139,11 @@ class RenewalService
         // pending + the normal dunning flow.
         $isSystemInvoice = $subscription->isSystem();
 
+        // Renewals carry the subscription's rate — no lookup (plan §9.2) — and
+        // bill in its currency: the recurring amount is in that currency, which
+        // can differ from the parent order's
+        $fx = CurrencySnapshot::fromSubscription($subscription);
+
         // Create invoice (child order) — created_at is now, due date stored as meta
         $childOrderData = [
             'parent_id'        => $parentOrder->id,
@@ -149,7 +155,7 @@ class RenewalService
             'customer_id'      => $subscription->customer_id,
             'payment_method'   => $subscription->current_payment_method,
             'payment_status'   => $isSystemInvoice ? Status::PAYMENT_SCHEDULED : Status::PAYMENT_PENDING,
-            'currency'         => $parentOrder->currency,
+            'currency'         => $fx['currency'],
             'tax_behavior'     => $parentOrder->tax_behavior,
             'subtotal'         => $subtotal,
             'tax_total'        => $taxTotal,
@@ -158,7 +164,8 @@ class RenewalService
             'total_paid'       => 0,
             'config'           => [
                 'is_invoice'     => true,
-                'invoice_source' => 'automatic_renewal'
+                'invoice_source' => 'automatic_renewal',
+                'fx'             => $fx,
             ]
         ];
 
@@ -244,7 +251,7 @@ class RenewalService
                 'payment_method' => $subscription->current_payment_method,
                 'payment_mode' => $parentOrder->mode,
                 'status' => Status::TRANSACTION_PENDING,
-                'currency' => $parentOrder->currency,
+                'currency' => $fx['currency'],
                 'total' => $total,
                 'meta' => [
                     'is_invoice' => true,

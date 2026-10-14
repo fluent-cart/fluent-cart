@@ -1122,20 +1122,24 @@ class FcFixture
     }
 
     /**
-     * Assert that a transition created only its single expected activity row.
+     * Allow the creation-time operations row and expected transition activities.
      *
      * @param int $orderId
      * @param int $expectedActivityCount
+     * @param bool $afterCleanup
      * @return void
      */
-    public static function assertNoForbiddenOrderSideEffects($orderId, $expectedActivityCount)
+    public static function assertNoForbiddenOrderSideEffects($orderId, $expectedActivityCount, $afterCleanup = false)
     {
         $counts = self::orderRelatedCounts($orderId);
         $activityTable = self::orderConfig()['activity_table'];
+        $creationCounts = $afterCleanup ? [] : self::orderConfig()['creation_related_counts'];
         $expected = [];
 
         foreach ($counts as $table => $count) {
-            $expectedCount = $table === $activityTable ? (int) $expectedActivityCount : 0;
+            $expectedCount = $table === $activityTable
+                ? (int) $expectedActivityCount
+                : ($creationCounts[$table] ?? 0);
             if ($count !== $expectedCount) {
                 $expected[$table] = [
                     'expected' => $expectedCount,
@@ -1217,7 +1221,7 @@ class FcFixture
                 );
             }
 
-            self::assertNoForbiddenOrderSideEffects($id, 0);
+            self::assertNoForbiddenOrderSideEffects($id, 0, true);
 
             if ($order) {
                 $errorOffset = self::databaseErrorOffset();

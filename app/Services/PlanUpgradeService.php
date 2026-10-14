@@ -2,6 +2,9 @@
 
 namespace FluentCart\App\Services;
 
+use FluentCart\App\Modules\MultiCurrency\Services\PriceConverter;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Meta;
@@ -111,19 +114,11 @@ class PlanUpgradeService
             ->get();
 
         $order = Order::query()->where('uuid', $orderHash)->first();
-
-        if ($order->type === 'subscription') {
-            $lastRenewal = Order::query()
-                ->where('parent_id', $order->id)
-                ->where('type', 'renewal')
-                ->whereIn('payment_status', ['paid', 'partially_refunded'])
-                ->orderBy('id', 'DESC')
-                ->first();
-
-            if ($lastRenewal) {
-                $order = $lastRenewal;
-            }
+        if (!$order) {
+            return [];
         }
+
+        $order = self::upgradeSourceOrder($order);
 
         $originalItem = $order->order_items->where('object_id', $variationId)->first();
         if (!$originalItem) {
@@ -135,11 +130,30 @@ class PlanUpgradeService
             return [];
         }
 
+        // An upgrade is a new order: priced in the shopper's chosen currency
+        // (else the subscription's) at today's rate and rules; the prorate
+        // credit is converted from what was paid (multi-currency plan §15.6).
+        // An order whose currency cannot be quoted offers no upgrade at all
+        $quote = CartCurrency::upgradeQuote($order);
+        $paidAt = CurrencySnapshot::fromOrder($order);
+        $currency = $quote ? (string) $quote['currency'] : (string) $order->currency;
+
         $upgradePaths = [];
         foreach ($upgrades as $upgrade) {
             $toVariants = Arr::get($upgrade->meta_value, 'to_variants', []);
+
+            if (!$quote) {
+                foreach ($toVariants as $toVariant) {
+                    $variant = ProductVariation::query()->find($toVariant);
+                    if ($variant) {
+                        $upgradePaths[] = self::unavailablePath($variant, $toVariant, $order->currency);
+                    }
+                }
+                continue;
+            }
+
             $isProrate = Arr::get($upgrade->meta_value, 'is_prorate', false);
-            $discountAmount = Helper::toCent(Arr::get($upgrade->meta_value, 'discount_amount'));
+            $discountAmount = PriceConverter::toQuote(Helper::toCent(Arr::get($upgrade->meta_value, 'discount_amount')), $quote);
 
             foreach ($toVariants as $toVariant) {
                 // calculate prorate credit, discount amount
@@ -150,26 +164,33 @@ class PlanUpgradeService
 
                 $prorateCredit = 0;
                 if ($isProrate) {
-                    $prorateCredit = self::calculateUpgradeToDiscount($order, $originalItem);
+                    $prorateCredit = PriceConverter::between(self::calculateUpgradeToDiscount($order, $originalItem), $paidAt, $quote);
+                    if ($prorateCredit === null) {
+                        // upgradeQuote() keeps an untrusted credit in its own currency; never price it 1:1
+                        $upgradePaths[] = self::unavailablePath($variant, $toVariant, $order->currency);
+                        continue;
+                    }
                 }
 
                 $signupFee = Arr::get($variant->other_info, 'signup_fee', 0);
                 if (empty($signupFee)) {
                     $signupFee = 0;
                 }
-                
-                $cost = floatval($variant->item_price + $signupFee - $prorateCredit - $discountAmount);
+                $signupFee = PriceConverter::toPrice($signupFee, $quote);
+                $itemPrice = PriceConverter::toPrice($variant->item_price, $quote);
+
+                $cost = floatval($itemPrice + $signupFee - $prorateCredit - $discountAmount);
 
                 if ($cost < 0) {
                     $cost = 0;
                 }
 
                 $paymentType = Arr::get($variant, 'payment_type');
-                $paymentSummary = Helper::toDecimal($cost) . ' one-time';
+                $paymentSummary = Helper::toDecimal($cost, true, $currency) . ' one-time';
                 if ($paymentType === 'subscription') {
-                    $paymentSummary = '<strong>' . Helper::toDecimal($cost) . '</strong> ' . __('first', 'fluent-cart') . ' '
+                    $paymentSummary = '<strong>' . Helper::toDecimal($cost, true, $currency) . '</strong> ' . __('first', 'fluent-cart') . ' '
                         . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval'))
-                        . ', ' . __('then', 'fluent-cart') . ' ' . Helper::toDecimal($variant->item_price)
+                        . ', ' . __('then', 'fluent-cart') . ' ' . Helper::toDecimal($itemPrice, true, $currency)
                         . '/' . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval')) . ' ' . __('thereafter', 'fluent-cart') . '.';
                 }
 
@@ -181,10 +202,12 @@ class PlanUpgradeService
                     'signup_fee'      => (float)$signupFee,
                     'signup_fee_name' => Arr::get($variant->other_info, 'signup_fee_name', ''),
                     'payment_summary' => $paymentSummary,
-                    'price'           => (float)$variant->item_price,
-                    'original_price'  => floatval($variant->item_price + $signupFee),
+                    'price'           => (float)$itemPrice,
+                    'original_price'  => floatval($itemPrice + $signupFee),
                     'cost'            => $cost,
-                    'currency'        => $order->currency,
+                    'currency'        => $currency,
+                    'is_available'    => true,
+                    'unavailable_reason' => '',
                     'upgrade_url'     => add_query_arg([
                         'fluent-cart' => 'upgrade_plan',
                         'order_hash'  => $orderHash,
@@ -197,6 +220,81 @@ class PlanUpgradeService
 
 
         return $upgradePaths;
+    }
+
+    /**
+     * The order an upgrade from $order is credited from — and whose
+     * currency and rate the credit is in: a subscription's latest paid or
+     * partially refunded renewal, else $order itself. An unpaid or failed
+     * renewal was never paid, so it never counts. The customer portal and
+     * Pro's upgrade link both use this, so they credit the same order.
+     */
+    public static function upgradeSourceOrder(Order $order): Order
+    {
+        if ($order->type !== Status::ORDER_TYPE_SUBSCRIPTION) {
+            return $order;
+        }
+
+        $lastRenewal = Order::query()
+            ->where('parent_id', $order->id)
+            ->where('type', Status::ORDER_TYPE_RENEWAL)
+            ->whereIn('payment_status', [Status::PAYMENT_PAID, Status::PAYMENT_PARTIALLY_REFUNDED])
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        return $lastRenewal ?: $order;
+    }
+
+    /**
+     * A quote in the order's own currency, or null when that currency cannot
+     * be quoted. Null means no upgrade from this order at all —
+     * CartCurrency::upgradeQuote() is null then too.
+     *
+     * The prorate credit is in the order's currency. A base-currency order
+     * always qualifies; a foreign one only with a current rate or its own
+     * trusted snapshot — quoteFor() otherwise falls back to the base
+     * currency, which must never be mixed with it.
+     */
+    public static function orderCurrencyQuote(Order $order): ?array
+    {
+        $currency = (string) $order->currency;
+        $quote = CartCurrency::quoteFor($currency, CurrencySnapshot::fromOrder($order));
+
+        if (strcasecmp((string) Arr::get($quote, 'currency'), $currency) !== 0) {
+            return null;
+        }
+
+        return $quote;
+    }
+
+    /**
+     * An upgrade path that is listed but cannot be priced. Every key of a
+     * priced path is kept; amounts are null and there is no upgrade link.
+     */
+    private static function unavailablePath(ProductVariation $variant, $toVariant, $currency): array
+    {
+        $reason = sprintf(
+            /* translators: %s: currency code, e.g. GBP */
+            __('This upgrade is not available because no exchange rate is set for %s. Please contact the store.', 'fluent-cart'),
+            strtoupper((string) $currency)
+        );
+
+        return [
+            'title'              => $variant->variation_title,
+            'to_variant'         => $toVariant,
+            'discount_amount'    => null,
+            'prorate_credit'     => null,
+            'signup_fee'         => null,
+            'signup_fee_name'    => Arr::get($variant->other_info, 'signup_fee_name', ''),
+            'payment_summary'    => esc_html($reason),
+            'price'              => null,
+            'original_price'     => null,
+            'cost'               => null,
+            'currency'           => $currency,
+            'is_available'       => false,
+            'unavailable_reason' => $reason,
+            'upgrade_url'        => '',
+        ];
     }
 
 

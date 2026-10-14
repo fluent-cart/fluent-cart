@@ -7,6 +7,7 @@ use FluentCart\App\Models\Model;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductReview;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
@@ -528,6 +529,14 @@ class EmailNotificationMailer
     }
 
     public function parseEmailContent($notification, $data, $templateData = null): array
+    {
+        // Pro block bodies and the order header format money before the smartcode pass
+        return CurrencyContext::withCurrencyOf((array) $data, function () use ($notification, $data, $templateData) {
+            return $this->renderEmailContent($notification, $data, $templateData);
+        });
+    }
+
+    private function renderEmailContent($notification, $data, $templateData = null): array
     {
         $templateData = $templateData ?: $data;
 

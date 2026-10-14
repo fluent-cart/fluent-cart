@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 
 class ProductReportService extends ReportService
@@ -16,7 +17,7 @@ class ProductReportService extends ReportService
                 $q->whereIn('object_id', $params['variationIds'])
             );
 
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->joinSub($orderItemsSubQuery, 'oi', function ($join) {
                 $join->on('oi.order_id', '=', 'o.id');
             })
@@ -72,7 +73,7 @@ class ProductReportService extends ReportService
                 $q->whereIn('object_id', $params['variationIds'])
             );
 
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->joinSub($orderItemsSubQuery, 'oi', function ($join) {
                 $join->on('oi.order_id', '=', 'o.id');
             })

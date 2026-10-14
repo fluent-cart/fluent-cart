@@ -342,14 +342,27 @@ class FilterState extends Model {
   }
 
   get currencies() {
-    return Object.entries(reportFilter.data.currencies).map(
-      ([code, symbol]) => {
+    // "All currencies" only where the current report converts
+    const converted = reportFilter.supportsConvertedCurrency();
+    return Object.keys(reportFilter.data.currencies)
+      .filter((code) => converted || code !== '__all__')
+      .map((code) => {
+        if (code === '__all__') {
+          // Every order converted to the base currency at its own rate
+          const excluded = reportFilter.data.convertedExcludedOrders;
+          /* translators: %1$s: base currency code */
+          let label = translate('All currencies (in %1$s)', reportFilter.data.baseCurrency);
+          if (excluded) {
+            /* translators: %1$s: number of orders */
+            label += ' — ' + translate('%1$s orders without an exchange rate left out', excluded);
+          }
+          return {label, value: code};
+        }
         return {
           label: code,
           value: code,
         };
-      }
-    );
+      });
   }
 
   // Helper method to determine if a filter option should render
@@ -362,7 +375,8 @@ class FilterState extends Model {
     }
 
     if (filterOption.value === 'currency') {
-      return this.data.currencies && this.data.currencies.length > 1;
+      // The list lives on the report filter, not on this dropdown's own state
+      return Object.keys(reportFilter.data.currencies || {}).length > 1;
     }
 
     return true;

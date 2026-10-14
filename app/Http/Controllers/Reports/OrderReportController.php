@@ -16,7 +16,7 @@ class OrderReportController extends Controller
     
     public function getOrderChart(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
         
         $service = OrderReportService::make();
 
@@ -46,7 +46,7 @@ class OrderReportController extends Controller
 
     public function getNewVsReturningCustomer(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = OrderReportService::make();
 
@@ -57,7 +57,7 @@ class OrderReportController extends Controller
 
     public function getOrderByGroup(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $data = OrderReportService::make([])->groupBy($params);
 
@@ -69,7 +69,7 @@ class OrderReportController extends Controller
     public function getOrderValueDistribution(Request $request)
     {
 
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = OrderReportService::make();
 
@@ -80,7 +80,7 @@ class OrderReportController extends Controller
 
     public function getReportByDayAndHour(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = OrderReportService::make();
 
@@ -89,7 +89,7 @@ class OrderReportController extends Controller
 
     public function getItemCountDistribution(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = OrderReportService::make();
 
@@ -100,7 +100,7 @@ class OrderReportController extends Controller
 
     public function getOrderCompletionTime(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = OrderReportService::make();
 

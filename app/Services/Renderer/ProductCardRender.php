@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
@@ -379,6 +380,11 @@ class ProductCardRender
                 }
             }
         }
+
+        // Displayed in the visitor's currency; the filter above keeps its base input
+        $minPrice = StorefrontPrice::amount($minPrice);
+        $maxPrice = StorefrontPrice::amount($maxPrice);
+        $comparePrice = StorefrontPrice::amount($comparePrice);
 
         $formattedMinPrice = Helper::toDecimal($minPrice);
         $formattedMaxPrice = Helper::toDecimal($maxPrice);

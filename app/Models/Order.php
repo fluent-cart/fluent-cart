@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
@@ -49,6 +50,10 @@ class Order extends Model
             if (!isset($model->config)) {
                 $model->config = [];
             }
+
+            // Every order carries a currency snapshot (config.fx + rate).
+            // dev-docs/multi-currency/plan.md §9.
+            CurrencySnapshot::applyToNewOrder($model);
 
             if ($model->payment_status === 'paid' || apply_filters('fluent_cart/create_receipt_number_on_order_create', false)) {
                 $model->receipt_number = OrderService::getNextReceiptNumber();
@@ -639,9 +644,11 @@ class Order extends Model
                         : $taxableAmount;
                 }
 
+                // The order's own currency — admin (base) and the customer
+                // portal (visitor's currency) read this label too
                 $displayLabel .= ' ' . sprintf(
                     __('on %s', 'fluent-cart'),
-                    html_entity_decode(Helper::toDecimal($displayBase), ENT_QUOTES, 'UTF-8')
+                    html_entity_decode(Helper::toDecimal($displayBase, true, $this->currency ?: null), ENT_QUOTES, 'UTF-8')
                 );
             }
 

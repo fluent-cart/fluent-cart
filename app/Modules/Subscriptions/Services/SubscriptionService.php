@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\Subscriptions\Services;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\App\App;
 use FluentCart\App\Events\Subscription\SubscriptionCanceled;
 use FluentCart\App\Events\Subscription\SubscriptionEOT;
@@ -12,6 +13,7 @@ use FluentCart\App\Events\Subscription\SubscriptionRenewed;
 use FluentCart\App\Events\Subscription\SubscriptionResumed;
 use FluentCart\App\Events\Subscription\SubscriptionUpdated;
 use FluentCart\App\Events\Subscription\SubscriptionValidityExpired;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
@@ -152,6 +154,10 @@ class SubscriptionService
             }
         }
 
+        // Renewals carry the subscription's rate (plan §9.2); a gateway that does
+        // not report the paid currency defaults to the subscription's, not the parent's
+        $fx = CurrencySnapshot::fromSubscription($subscriptionModel);
+
         $transactionDefaults = [
             'order_id' => $parentOrder->id,
             'subscription_id' => $subscriptionModel->id,
@@ -160,7 +166,7 @@ class SubscriptionService
             'payment_method' => $subscriptionModel->current_payment_method,
             'payment_mode' => $parentOrder->mode,
             'status' => Status::TRANSACTION_SUCCEEDED,
-            'currency' => $parentOrder->currency,
+            'currency' => $fx['currency'],
             'total' => $subscriptionModel->recurring_total,
             'meta' => Arr::get($transactionData, 'meta', [])
         ];
@@ -250,7 +256,9 @@ class SubscriptionService
             'total_paid' => $transactionData['status'] === Status::TRANSACTION_SUCCEEDED ? $transactionData['total'] : 0,
             'completed_at' => $createdAt,
             'created_at' => $createdAt,
-            'config' => []
+            'config' => [
+                'fx' => $fx,
+            ]
         ];
 
         try {
@@ -946,6 +954,7 @@ class SubscriptionService
 
         $updates = [];
         $changes = [];
+        $logChanges = [];
 
         foreach ($data as $key => $value) {
             if (!in_array($key, $allowedFields)) {
@@ -1090,6 +1099,9 @@ class SubscriptionService
             $logOld = $key === 'recurring_total' ? number_format($oldValue / 100, 2) : $oldValue;
             $logNew = $key === 'recurring_total' ? number_format($value / 100, 2) : $value;
             $changes[] = sprintf('%s: %s → %s', $key, $logOld, $logNew);
+            $logChanges[] = $key === 'recurring_total'
+                ? sprintf('%s: %s → %s', $key, Helper::toDecimal($oldValue, true, $subscription->currency), Helper::toDecimal($value, true, $subscription->currency))
+                : end($changes);
         }
 
         if (empty($updates)) {
@@ -1171,7 +1183,7 @@ class SubscriptionService
 
         $subscription->addLog(
             'Subscription updated',
-            sprintf('Admin updated: %s', implode(', ', $changes)),
+            sprintf('Admin updated: %s', implode(', ', $logChanges)),
             'info'
         );
 

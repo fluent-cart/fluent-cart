@@ -159,6 +159,12 @@ const routes = ref([
     url: '/settings/product-reviews'
   },
   {
+    name: translate('Multi Currency'),
+    icon: "Currency",
+    permission: ["is_super_admin"],
+    url: '/settings/multi-currency'
+  },
+  {
     name: translate("Payment Settings"),
     icon: "PaymentIcon",
     permission: ["is_super_admin"],

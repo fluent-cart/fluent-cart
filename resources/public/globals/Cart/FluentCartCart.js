@@ -1,4 +1,5 @@
 import UtmManager from "../utils/UTMManager";
+import formatCartTotal from './formatCartTotal';
 
 export default class FluentCartCart {
     static #instance = null;
@@ -642,7 +643,6 @@ export default class FluentCartCart {
     updateCartTotalPrice(cartData = []) {
         // Calculate total from subtotal (in cents)
         let totalCents = 0;
-        const currencySymbol = window.fluentcart_drawer_vars?.currency_settings?.currency_sign || '$';
 
         cartData.forEach(item => {
             if (item.subtotal) {
@@ -650,9 +650,8 @@ export default class FluentCartCart {
             }
         });
 
-        // Convert cents to dollars and format
-        const totalDollars = String(parseFloat((totalCents / 100).toFixed(2)));
-        const formattedTotal = `${currencySymbol}${totalDollars}`;
+        // The cart's currency decimals, separators and symbol position
+        const formattedTotal = formatCartTotal(totalCents, window.fluentcart_drawer_vars?.currency_settings || {});
 
         // Update all elements
         document.querySelectorAll('[data-fluent-cart-cart-total-price]').forEach(el => {

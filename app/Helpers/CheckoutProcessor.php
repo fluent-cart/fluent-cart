@@ -11,6 +11,7 @@ use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\App\Modules\Tax\TaxCalculator;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
@@ -247,7 +248,8 @@ class CheckoutProcessor
             'status'              => Status::PAYMENT_PENDING,
             'currency'            => $this->orderModel->currency,
             'total'               => $this->orderModel->total_amount,
-            'rate'                => 1,
+            // The order's frozen rate; a retried transaction is updated, not created
+            'rate'                => $this->orderModel->rate,
             'meta'                => [],
         ];
 
@@ -468,8 +470,30 @@ class CheckoutProcessor
                     $subscriptionData['parent_order_id'] = $this->orderModel->id;
                     $existingSubscription = Subscription::query()->where('parent_order_id', $this->orderModel->id)->first();
                     if ($existingSubscription) {
-                        $existingSubscription->fill($subscriptionData);
-                        $existingSubscription->save();
+                        // A retry can be in another currency than the first attempt;
+                        // the subscription renews in the one paid now. (A new
+                        // subscription gets both from Subscription::creating.)
+                        $subscriptionData['currency'] = $this->orderModel->currency;
+
+                        $db = Subscription::query()->getConnection();
+                        $db->beginTransaction();
+                        try {
+                            // Keep what a gateway wrote between attempts (e.g. Stripe's
+                            // replaced-subscription marker); checkout's own keys win.
+                            // Row lock so a concurrent mergeConfig() isn't overwritten.
+                            $locked = Subscription::query()->where('id', $existingSubscription->id)->lockForUpdate()->first();
+                            $storedConfig = (array) ($locked ? $locked->config : $existingSubscription->config);
+                            unset($storedConfig[SubscriptionManagementMode::CONFIG_KEY]);
+                            $subscriptionData['config'] = array_merge($storedConfig, (array) Arr::get($subscriptionData, 'config', []), [
+                                'fx' => CurrencySnapshot::fromOrder($this->orderModel),
+                            ]);
+                            $existingSubscription->fill($subscriptionData);
+                            $existingSubscription->save();
+                            $db->commit();
+                        } catch (\Exception $e) {
+                            $db->rollBack();
+                            throw $e;
+                        }
                         $this->subscriptionModel = $existingSubscription;
                     } else {
                         $this->subscriptionModel = Subscription::query()->create($subscriptionData);
@@ -498,7 +522,8 @@ class CheckoutProcessor
             'status'              => Status::PAYMENT_PENDING,
             'currency'            => $this->orderModel->currency,
             'total'               => $this->orderModel->total_amount,
-            'rate'                => 1,
+            // The order's frozen rate; a retried transaction is updated, not created
+            'rate'                => $this->orderModel->rate,
             'meta'                => [],
         ];
 
@@ -1139,7 +1164,7 @@ class CheckoutProcessor
             'payment_method'        => Arr::get($this->args, 'payment_method', ''),
             'payment_status'        => Status::PAYMENT_PENDING,
             'payment_method_title'  => '',
-            'currency'              => $this->storeSettings->get('currency'),
+            'currency'              => Arr::get($this->args, 'currency_snapshot.currency') ?: $this->storeSettings->get('currency'),
             'subtotal'              => $itemsSubtotal,
             'discount_tax'          => 0,
             'manual_discount_total' => $this->manualDiscountTotal + $this->prorateCreditTotal + $this->upgradeDiscountTotal,
@@ -1152,7 +1177,7 @@ class CheckoutProcessor
             //            'total_amount'          => $this->orderTotals['total_amount'],
             'total_paid'            => 0,
             'total_refund'          => 0,
-            'rate'                  => 1,
+            'rate'                  => Arr::get($this->args, 'currency_snapshot.rate', 1),
             'note'                  => Arr::get($this->args, 'note', ''),
             'ip_address'            => Arr::get($this->args, 'ip_address', ''),
             'config'                => [
@@ -1165,6 +1190,13 @@ class CheckoutProcessor
                 'upgrade_discount'          => $this->upgradeDiscountTotal,
             ],
         ];
+
+        // Frozen from the cart's locked quote — Order::creating keeps an
+        // explicit snapshot (multi-currency plan §9.1)
+        $currencySnapshot = Arr::get($this->args, 'currency_snapshot');
+        if (is_array($currencySnapshot) && !empty($currencySnapshot['currency'])) {
+            $orderData['config']['fx'] = $currencySnapshot;
+        }
 
         if ($taxBehavior === 1) {
             // Pure exclusive: fee_tax is already in fee_total; exclude it here to avoid double-count.

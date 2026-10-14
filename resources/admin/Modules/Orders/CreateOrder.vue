@@ -24,6 +24,24 @@
     <div class="single-page-body">
       <div class="fct-create-order">
         <div class="fct-create-order-main">
+          <Card.Container v-if="orderCurrencies.length">
+            <Card.Body>
+              <div class="flex flex-wrap items-center gap-3 text-sm">
+                <span>{{ translate('Order currency') }}</span>
+                <el-select v-model="orderCurrency" size="small" class="max-w-[200px]">
+                  <el-option
+                      v-for="currency in orderCurrencies"
+                      :key="currency.code"
+                      :label="currency.code + ' ' + currency.sign"
+                      :value="currency.code"
+                  />
+                </el-select>
+                <span v-if="selectedOrderCurrency && !selectedOrderCurrency.is_base">
+                  {{ translate('Enter prices in %1$s; they are converted at 1 %1$s = %2$s %3$s when the order is created.', baseOrderCurrency, trimRate(selectedOrderCurrency.rate), selectedOrderCurrency.code) }}
+                </span>
+              </div>
+            </Card.Body>
+          </Card.Container>
           <Card.Container class="overflow-hidden">
             <Card.Header
                 :title="$t('Products')"
@@ -452,6 +470,7 @@ import Shipping from "./Shipping.vue";
 import Arr from "@/utils/support/Arr";
 import Asset from "@/utils/support/Asset";
 import Rest from "@/utils/http/Rest";
+import AppConfig from "@/utils/Config/AppConfig";
 import Notify from "@/utils/Notify";
 import dayjs from "dayjs";
 
@@ -471,6 +490,7 @@ export default {
   },
   data() {
     return {
+      orderCurrency: '',
       loading: false,
       calculating: false,
       customModal: false,
@@ -537,6 +557,16 @@ export default {
     },
   },
   computed: {
+    orderCurrencies() {
+      return AppConfig.get('admin_order_currencies', []) || [];
+    },
+    baseOrderCurrency() {
+      const base = this.orderCurrencies.find(currency => currency.is_base);
+      return base ? base.code : '';
+    },
+    selectedOrderCurrency() {
+      return this.orderCurrencies.find(currency => currency.code === this.orderCurrency) || null;
+    },
     beforeRouteLeave(to, from, next) {
       this.redirectRouteName = to.name;
       this.changes_made ? (this.outerVisible = true) : next();
@@ -621,6 +651,7 @@ export default {
         discount: this.discount,
         shipping: this.shippingSettings,
         labels: this.selectedLabels,
+        currency: this.orderCurrency || undefined,
         user_tz: dayjs.tz.guess(),
         trigger: "on_admin_create",
       })
@@ -647,6 +678,9 @@ export default {
     },
     reloadOrder() {
       return window.location.reload();
+    },
+    trimRate(rate) {
+      return String(rate).replace(/\.?0+$/, '');
     },
     addProduct() {
       this.createProductModal = !this.createProductModal;

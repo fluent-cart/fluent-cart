@@ -11,6 +11,7 @@ use FluentCart\App\Helpers\UtmHelper;
 use FluentCart\App\Hooks\Cart\CartLoader;
 use FluentCart\App\Hooks\Handlers\ShortCodes\CustomerProfileHandler;
 use FluentCart\App\Models\Cart;
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Renderer\ProductFilterRender;
@@ -740,6 +741,12 @@ class AssetLoader
                 'trans'                                        => TransStrings::checkoutPageString(),
                 'payments_trans'                               => TransStrings::paymentsString(),
                 'cart_hash'                                    => $cart->cart_hash,
+                // The currency this page's prices are shown in; sent back with
+                // the order so a currency changed in another tab is caught
+                'currency'                                     => CurrencySettings::get('currency'),
+                // ...and the quote (currency and rate) they were priced at,
+                // so a rate refreshed in another tab is caught too
+                'quote_revision'                               => CartCurrency::quoteRevision($cart),
                 'is_instant_checkout'                          =>  $isInstantCheckout,
                 'is_modal_checkout'                            =>  $hasModalCheckout ? 'yes' : 'no',
 

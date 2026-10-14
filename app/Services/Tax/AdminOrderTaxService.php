@@ -134,6 +134,7 @@ class AdminOrderTaxService
                         'label'      => Arr::get($taxedLine, 'title', ''),
                         'tax_amount' => $feeLineTax,
                         'inclusive'  => (bool) Arr::get($taxedLine, 'line_meta.tax_config.inclusive', false),
+                        'rates'      => (array) Arr::get($taxedLine, 'line_meta.tax_config.rates', []),
                     ];
                 } else {
                     $productLines[] = $taxedLine;

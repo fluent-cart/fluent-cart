@@ -25,9 +25,10 @@
                   <el-table-column :label="translate('Price')" :width="100" :aria-label="translate('Price')">
                     <template #default="scope">
                       <div class="plan-price">
-                        <div class="plan-price">
+                        <div class="plan-price" v-if="scope.row.is_available !== false">
                           {{ formatNumber(scope.row.original_price, true, false, scope.row.currency) }}
                         </div>
+                        <div class="plan-price" v-else>&mdash;</div>
                       </div>
                     </template>
                   </el-table-column>
@@ -35,7 +36,8 @@
                         <template #default="scope">
                             <div class="upgrade-cost">
                                 <div class="upgrade-title">
-                                    <span v-html="scope.row.payment_summary"></span>
+                                    <span v-if="scope.row.is_available === false">{{ scope.row.unavailable_reason }}</span>
+                                    <span v-else v-html="scope.row.payment_summary"></span>
                                 </div>
                             </div>
                         </template>
@@ -44,7 +46,8 @@
                     <el-table-column :label="translate('Action')" :width="110" :aria-label="translate('Action')">
                         <template #default="scope">
                             <div class="upgrade-action">
-                                <el-button 
+                                <el-button
+                                    v-if="scope.row.is_available !== false"
                                     class="el-button--x-small" 
                                     tag="a" 
                                     :href="scope.row.upgrade_url"
@@ -59,10 +62,10 @@
                     </el-table-column>
                 </el-table>
             </div>
-            <div v-else-if="loading" role="status" aria-live="polite">
+            <div v-else-if="loading" class="p-5" role="status" aria-live="polite">
                 <el-skeleton :animated="true" :rows="2"/>
             </div>
-            <div v-else role="alert" aria-live="assertive">
+            <div v-else class="p-5" role="alert" aria-live="assertive">
                 {{ translate('No upgrade found for this purchase') }}
             </div>
         </el-dialog>

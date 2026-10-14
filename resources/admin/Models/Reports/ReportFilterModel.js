@@ -7,6 +7,18 @@ import DateUtil from "@/utils/support/Date";
 import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
 import AppConfig from "@/utils/Config/AppConfig";
 
+/** Value of the "All currencies, converted to the base currency" option */
+export const CONVERTED_CURRENCY = '__all__';
+
+/**
+ * Report routes whose endpoints convert every order (ReportCurrency::ordersTable)
+ * or subscription (ReportCurrency::subscriptionsTable) to the base currency.
+ * Every other report reads one currency.
+ */
+export const CONVERTED_CURRENCY_ROUTES = [
+    'reports_sales', 'reports_orders', 'reports_revenue', 'reports_refunds', 'reports_products', 'reports_sources',
+    'subscriptions-retention', 'future_renewals',
+];
 
 class ReportFilterModel extends Model {
     filterState = null;
@@ -16,6 +28,8 @@ class ReportFilterModel extends Model {
         orderTypes: ['all'],
         paymentStatus: ['all'],
         currencies: [],
+        baseCurrency: '',
+        convertedExcludedOrders: 0,
         currency: "",
         currencySign: "",
         dateRange: [
@@ -33,6 +47,7 @@ class ReportFilterModel extends Model {
         compareDate: DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
         compareType: "previous_period",
         subscriptionType: "",
+        reportRoute: "",
     };
 
     storageKey = "report-filter";
@@ -58,7 +73,9 @@ class ReportFilterModel extends Model {
         this.data.compareType = data.compareType ? data.compareType : this.data.compareType;
         this.data.compareDate = data.compareDate ?? this.data.compareDate;
         this.data.subscriptionType = data.subscriptionType ?? this.data.subscriptionType;
-        this.data.currency = data.currency ? this.data.currency : AppConfig.get('shop.currency');
+        // Keep the stored choice; fetchReportMeta() falls back to the currency
+        // with the most orders when the stored one is empty or not in range.
+        this.data.currency = data.currency || '';
         this.data.dateRange = [
             data.startDate ?? this.data.dateRange[0],
             data.endDate ?? this.data.dateRange[1],
@@ -70,16 +87,48 @@ class ReportFilterModel extends Model {
         this.data.storeMode = data.storeMode ?? this.data.storeMode;
     }
 
+    // Counters in an object: the Model proxy writes unknown props into data,
+    // so a plain numeric field would never change when read back
+    requests = {meta: 0, filterChange: 0};
+
+    /**
+     * Resolves once the effective currency is known; ReportsView renders the
+     * report pages only then, so their first request carries it.
+     */
     fetchReportMeta() {
-        Rest.get("reports/fetch-report-meta", this.applicableFilters)
+        return this.loadMeta(true);
+    }
+
+    /**
+     * Which currencies have orders depends on the date range, so this runs on
+     * load and on every filter change. Only the latest request applies.
+     *
+     * @param {boolean} adoptMinDate the first load starts the range at the first
+     *                               order in it; a filter change keeps the chosen dates
+     */
+    loadMeta(adoptMinDate) {
+        const request = ++this.requests.meta;
+
+        return Rest.get("reports/fetch-report-meta", this.applicableFilters)
             .then((response) => {
-                this.data.currencies = response.currencies;
-                this.data.dateRange[0] = response.min_date;
-                const [key, value] = Object.entries(response.currencies)[0];
-                if (this.applicableFilters.params.currency === "") {
-                    this.data.currency = key;
+                if (request !== this.requests.meta) {
+                    return; // a newer range is loading
                 }
-                this.data.currencySign = value;
+                this.data.currencies = response.currencies || {};
+                this.data.baseCurrency = response.base_currency || '';
+                this.data.convertedExcludedOrders = response.converted_excluded_orders || 0;
+                if (adoptMinDate) {
+                    this.data.dateRange[0] = response.min_date;
+                }
+                const codes = Object.keys(this.data.currencies);
+                // Every report is in exactly one currency: keep the selected one
+                // while it has orders in range, else the one with the most orders.
+                if (!this.data.currency || !codes.includes(this.data.currency)) {
+                    this.data.currency = response.default_currency || codes[0] || AppConfig.get('shop.currency');
+                }
+                this.normalizeConvertedCurrency();
+                this.data.currencySign = this.data.currencies[this.data.currency] || '';
+                this.syncCurrencyChip();
                 this.data.storeMode = response.storeMode;
                 this.data.firstOrderDate = dayjs(response.first_order_date || dayjs().startOf("month")).format(
                     "YYYY-MM-DD 00:00:00"
@@ -92,6 +141,57 @@ class ReportFilterModel extends Model {
             .finally(() => {
                 this.data.loading = false;
             });
+    }
+
+    /**
+     * Whether the current report supports the "All currencies" mode.
+     */
+    supportsConvertedCurrency() {
+        return CONVERTED_CURRENCY_ROUTES.includes(this.data.reportRoute);
+    }
+
+    /**
+     * Set before the report page requests data, so a report without the
+     * converted mode never shows "All currencies" over single-currency numbers.
+     */
+    setReportRoute(name) {
+        this.data.reportRoute = name || '';
+        if (this.normalizeConvertedCurrency()) {
+            this.data.currencySign = this.data.currencies[this.data.currency] || '';
+            this.syncCurrencyChip();
+            this.syncStorage();
+        }
+    }
+
+    /**
+     * "All currencies" on a report that cannot convert becomes the base
+     * currency — what its endpoints read — or, without base orders in
+     * range, the currency with the most orders.
+     *
+     * @return {boolean} whether the selection changed
+     */
+    normalizeConvertedCurrency() {
+        if (this.data.currency !== CONVERTED_CURRENCY || this.supportsConvertedCurrency()) {
+            return false;
+        }
+        const codes = Object.keys(this.data.currencies || {}).filter((code) => code !== CONVERTED_CURRENCY);
+        const base = this.data.baseCurrency || AppConfig.get('shop.currency');
+        this.data.currency = codes.includes(base) ? base : (codes[0] || base);
+        return true;
+    }
+
+    /**
+     * Keep the picker's chip on the currency the reports use.
+     */
+    syncCurrencyChip() {
+        const state = this.filterState && this.filterState.data;
+        if (!state) {
+            return;
+        }
+        if (state.selectedFilters && state.selectedFilters.currency) {
+            state.selectedFilters.currency.value = this.data.currency;
+        }
+        state.currency = this.data.currency;
     }
 
     get currentCurrencySign() {
@@ -109,7 +209,13 @@ class ReportFilterModel extends Model {
     }
 
     async onFilterChange() {
-        // this.fetchReportMeta();
+        const change = ++this.requests.filterChange;
+        // The currencies with orders depend on the range: resolve the selection
+        // before any report requests data
+        await this.loadMeta(false);
+        if (change !== this.requests.filterChange) {
+            return; // a newer change reloads the reports
+        }
         this.syncStorage();
         this.setDateDiff();
         for (let key in this.listeners) {

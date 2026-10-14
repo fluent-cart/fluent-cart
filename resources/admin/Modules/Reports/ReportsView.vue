@@ -10,7 +10,15 @@
         <!-- setting header -->
         <SettingsHeader :heading="translate(routeTitle)" :show-save-button="false"/>
 
-        <div v-if="!hideAllFilters || shouldRenderFilter" class="fct-report-filter-wrap">
+        <div v-if="!hideAllFilters || shouldRenderFilter || showFutureRenewalsCurrency" class="fct-report-filter-wrap" :class="{ 'is-future-renewals': isFutureRenewals }">
+          <div v-if="showFutureRenewalsCurrency" class="flex items-center gap-2">
+            <CurrencyFilter
+                v-model="filters.currency"
+                :currencies="filter.currencies"
+                :aria-label="translate('Currency')"
+                @change="reportFilter.onFilterChange()"
+            />
+          </div>
           <AppliedFilters v-if="!hideAllFilters" :filter-state="filter" />
 
           <div v-if="!hideAllFilters && shouldRenderFilter" class="fct-report-filter-button">
@@ -40,7 +48,8 @@
           />
 
           <!-- Replace the dynamic component with router-view -->
-          <router-view v-slot="{ Component }">
+          <!-- Reports mount once the currency is resolved, so none requests a stale one -->
+          <router-view v-if="metaReady" v-slot="{ Component }">
             <component :is="Component" :reportFilter="reportFilter" />
           </router-view>
         </div>
@@ -59,6 +68,7 @@ import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
 import Storage from "@/utils/Storage";
 import AppliedFilters from "@/Bits/Components/FilterDropdown/parts/AppliedFilters.vue";
 import FilterDropdown from "@/Bits/Components/FilterDropdown/FilterDropdown.vue";
+import CurrencyFilter from "@/Bits/Components/FilterDropdown/parts/CurrencyFilter.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 import ReportNavLinks from "@/Modules/Reports/Components/ReportNavLinks.vue";
 import translate from "@/utils/translator/Translator";
@@ -73,6 +83,10 @@ const menuState = ref({
 const filter = useFilterState();
 const route = useRoute();
 const routeTitle = ref(route.meta?.title);
+const isFutureRenewals = computed(() => route.name === 'future_renewals');
+const showFutureRenewalsCurrency = computed(() =>
+  isFutureRenewals.value && filter.currencies.filter(currency => currency.value !== '__all__').length > 1
+);
 
 const filters = computed(() => {
   return reportFilter.data;
@@ -83,11 +97,11 @@ filter.onFilterChanged((filter) => {
 });
 
 const shouldRenderFilter = computed(() => {
-  return !["reports_overview", "reports_customer", "future_renewals", "reports_sources"].includes(route.name);
+  return !["reports_overview", "reports_customer", "future_renewals", "reports_sources", "reports_export"].includes(route.name);
 });
 
 const hideAllFilters = computed(() => {
-  return ['reports_overview', 'reports', "future_renewals"].includes(route.name);
+  return ['reports_overview', 'reports', "future_renewals", "reports_export"].includes(route.name);
 });
 
 let pluginAppWrap = null
@@ -153,8 +167,15 @@ watch(() => route.name, (newVal, oldVal) => {
   routeTitle.value = route.meta?.title || 'Reports';
 });
 
+// Before the page fetches: "All currencies" only on reports that convert
+watch(() => route.name, (name) => reportFilter.setReportRoute(name), {immediate: true});
+
+const metaReady = ref(false);
+
 onMounted(() => {
-  reportFilter.fetchReportMeta();
+  reportFilter.fetchReportMeta().finally(() => {
+    metaReady.value = true;
+  });
   retrieveFilters();
   pluginAppWrap = document.getElementById('fluent_cart_plugin_app');
   if (pluginAppWrap) {

@@ -626,7 +626,7 @@ return [
                 );
             } elseif ($documented) {
                 FcTest::skip(
-                    'KNOWN-FAILURE — ShopResource.php:260-262 passes raw per_page '
+                    'KNOWN-FAILURE — ShopResource.php:262-264 passes raw per_page '
                     . 'to its paginator; CustomerOrderController.php:62-82 has the '
                     . 'same source-checked bypass but its installed-data list probe '
                     . 'is excluded for the documented Order.php:356 diagnostic. '
@@ -655,12 +655,10 @@ return [
             $deletes = array_filter($inventory['declarations'], function ($route) {
                 return $route['verb'] === 'DELETE';
             });
-            // 18 → 17: e7b731971 removed DELETE customers/{id}/address, one of
-            // the six frontend routes shadowed by the admin customers group.
             FcTest::assertSame(
-                17,
+                19,
                 count($deletes),
-                'all 17 destructive route declarations are inventoried'
+                'all 19 destructive route declarations are inventoried'
             );
 
             foreach ($deletes as $route) {

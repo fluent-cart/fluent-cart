@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Hooks\Handlers\CustomCheckout;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Status;
@@ -74,7 +76,14 @@ class CustomCheckout
 
             Arr::set($newItem, 'item_price', $orderItem->unit_price);
 
-            // Keep the variation's other_info as-is (trial_days, signup_fee, repeat_interval, times).
+            // The variation's signup fee is in the base currency; the cart is
+            // pinned to the order's currency and never converts it
+            $signupFeeItem = $order->order_items->first(function ($item) {
+                return $item->payment_type === 'signup_fee';
+            });
+            Arr::set($newItem, 'other_info.signup_fee', $signupFeeItem ? (int) $signupFeeItem->unit_price : 0);
+
+            // Keep the rest of the variation's other_info as-is (trial_days, repeat_interval, times).
             // The variation's other_info has the clean product-level config that CheckoutProcessor
             // expects when processing the cart.
 
@@ -177,6 +186,11 @@ class CustomCheckout
         }
 
         $instantCart->checkout_data = $checkoutData;
+
+        // Paying an existing order (re-pay, renewal invoice): its items are
+        // already in the order's currency — pin the cart to it before the
+        // first save so it is never converted (multi-currency plan §9.1)
+        CartCurrency::pin($instantCart, CurrencySnapshot::fromOrder($order));
 
         $instantCart->save();
 

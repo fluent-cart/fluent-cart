@@ -3,7 +3,6 @@
  * Phase 29 gateway webhook signature and replay regressions.
  */
 
-use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Activity;
 use FluentCart\App\Models\OrderTransaction;
@@ -12,16 +11,6 @@ use FluentCart\App\Modules\PaymentMethods\PayPalGateway\IPN as PayPalIPN;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API as StripeAPI;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\IPN as StripeIPN;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\Webhook as StripeWebhook;
-
-if (!function_exists('getallheaders')) {
-    function getallheaders()
-    {
-        return isset($GLOBALS['fc_phase29_headers'])
-            && is_array($GLOBALS['fc_phase29_headers'])
-            ? $GLOBALS['fc_phase29_headers']
-            : [];
-    }
-}
 
 $webhookFixture = function ($relativePath, $asObject = false) {
     $root = realpath(dirname(__DIR__) . '/fixtures/webhooks');
@@ -46,34 +35,35 @@ $webhookFixture = function ($relativePath, $asObject = false) {
 };
 
 $withPhase29PayPalMode = function (callable $callback) {
-    $property = new ReflectionProperty(StoreSettings::class, 'cachedStoreSettings');
-    $property->setAccessible(true);
-    $previous = $property->getValue();
-    $settings = is_array($previous) ? $previous : [];
-    $settings['order_mode'] = 'phase29';
-    $property->setValue(null, $settings);
-
+    $previousServer = $_SERVER;
+    foreach (array_keys($_SERVER) as $key) {
+        if (strpos($key, 'HTTP_PAYPAL_') === 0) {
+            unset($_SERVER[$key]);
+        }
+    }
     fluent_cart_get_option('_paypal_access_token_phase29', [
         'access_token' => 'phase29-provider-token',
-        'expires_at'   => time() + 3600,
+        'expires_at' => time() + 3600,
     ], false);
 
     try {
-        return $callback();
+        return FcProviderHarness::withPayPalMode('phase29', $callback);
     } finally {
-        $property->setValue(null, $previous);
-        $GLOBALS['fc_phase29_headers'] = [];
+        $_SERVER = $previousServer;
     }
 };
 
 $paypalHeaders = function ($signature) {
-    return [
+    $headers = [
         'PayPal-Auth-Algo'         => 'SHA256withRSA',
         'PayPal-Cert-Url'          => 'https://api-m.sandbox.paypal.com/certs/phase29.pem',
         'PayPal-Transmission-Id'   => 'phase29-transmission-id',
         'PayPal-Transmission-Sig'  => (string) $signature,
         'PayPal-Transmission-Time' => '2026-07-31T12:34:56Z',
     ];
+    foreach ($headers as $name => $value) {
+        $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $value;
+    }
 };
 
 return [
@@ -291,13 +281,12 @@ return [
             try {
                 $withPhase29PayPalMode(function () use ($paypalHeaders, $transport) {
                     $handler = new PayPalIPN();
-                    $GLOBALS['fc_phase29_headers'] = [];
                     $absent = $handler->verifyWebhook('WH-PHASE29-SIGNATURE');
 
-                    $GLOBALS['fc_phase29_headers'] = $paypalHeaders('wrong-signature');
+                    $paypalHeaders('wrong-signature');
                     $wrong = $handler->verifyWebhook('WH-PHASE29-SIGNATURE');
 
-                    $GLOBALS['fc_phase29_headers'] = $paypalHeaders('%%%malformed%%%');
+                    $paypalHeaders('%%%malformed%%%');
                     $malformed = $handler->verifyWebhook('WH-PHASE29-SIGNATURE');
 
                     $transport->assertComplete();
@@ -323,7 +312,6 @@ return [
                 FcTest::assertSame($baseline, FcFixture::protectedCounts(), 'invalid PayPal signatures preserve protected rows');
             } finally {
                 $transport->uninstall();
-                $GLOBALS['fc_phase29_headers'] = [];
             }
         },
     ],
@@ -385,7 +373,7 @@ return [
                         ) !== false,
                         'production PayPal cancellation handler is registered'
                     );
-                    $GLOBALS['fc_phase29_headers'] = $paypalHeaders('valid-canned-signature');
+                    $paypalHeaders('valid-canned-signature');
 
                     $firstVerified = $handler->verifyWebhook('WH-PHASE29-SIGNATURE');
                     if ($firstVerified === true) {
@@ -440,7 +428,6 @@ return [
                 remove_action('fluent_cart/subscription_canceled', $captureCancellation, PHP_INT_MAX);
                 remove_filter('fluent_cart/should_send_email_notification', $disableNotifications, 1);
                 remove_filter('fluent_cart/integration/order_integrations', $disableIntegrations, PHP_INT_MAX);
-                $GLOBALS['fc_phase29_headers'] = [];
                 FcDomainFixture::cleanupAll();
             }
         },

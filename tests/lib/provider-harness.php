@@ -9,6 +9,27 @@
 
 class FcProviderHarness
 {
+    public static function withPayPalMode($mode, callable $callback)
+    {
+        $store = new ReflectionProperty(\FluentCart\Api\StoreSettings::class, 'cachedStoreSettings');
+        $store->setAccessible(true);
+        $previousStore = $store->getValue();
+        $settings = (new \FluentCart\Api\StoreSettings())->get();
+        $settings['order_mode'] = $mode;
+        $api = new ReflectionProperty(\FluentCart\App\Modules\PaymentMethods\PayPalGateway\API\API::class, 'settings');
+        $api->setAccessible(true);
+        $previousApi = $api->getValue();
+        $store->setValue(null, $settings);
+        $api->setValue(null, null);
+
+        try {
+            return $callback();
+        } finally {
+            $api->setValue(null, $previousApi);
+            $store->setValue(null, $previousStore);
+        }
+    }
+
     /** @var string */
     private $fixtureRoot;
 

@@ -7,6 +7,7 @@ use FluentCart\Framework\Support\Arr;
 
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\AddressHelper;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\DateTime\DateFormatter;
@@ -79,11 +80,20 @@ class ReceiptRenderer
 
     public function render($hideWrapper = false)
     {
-
         $order = Arr::get($this->config, 'order', null);
         if (!$order) {
             return;
         }
+
+        // The order's amounts render in its own currency (multi-currency)
+        CurrencyContext::withCurrency($order->currency, function () use ($hideWrapper) {
+            $this->renderReceipt($hideWrapper);
+        });
+    }
+
+    private function renderReceipt($hideWrapper = false)
+    {
+        $order = Arr::get($this->config, 'order', null);
 
         $this->vat_tax_id = $order->getCustomerTaxNumber();
 

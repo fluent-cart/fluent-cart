@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
@@ -169,7 +170,7 @@ class DashBoardReportService extends ReportService
             $params['startDate'], $params['endDate'], $params['groupKey']
         );
 
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("{$group['field']},
 
                 COUNT(o.id) AS orders,

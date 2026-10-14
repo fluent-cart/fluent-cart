@@ -58,6 +58,9 @@
   min-height: calc(100dvh - 106px);
   .fct-report-filter-wrap {
     @apply flex items-center justify-between bg-white py-4 px-4 rounded-none dark:bg-dark-700 transition-all duration-300 ease-in-out;
+    &.is-future-renewals {
+      @apply px-7.5;
+    }
   }
   &.fct-layout-width {
     @apply max-w-full;

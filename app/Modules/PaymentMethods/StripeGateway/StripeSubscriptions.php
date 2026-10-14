@@ -4,7 +4,6 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
@@ -41,7 +40,7 @@ class StripeSubscriptions extends AbstractSubscriptionModule
         $amount = Arr::get($subscription, 'items.data.0.price.unit_amount');
 
         if ($amount !== null) {
-            $amount = CurrenciesHelper::isZeroDecimal($currency)
+            $amount = StripeHelper::isZeroDecimal($currency)
                 ? (string) (int) $amount
                 : number_format(((int) $amount) / 100, 2, '.', '');
         }

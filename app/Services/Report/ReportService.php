@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\Api\CurrencySettings;
@@ -24,7 +26,7 @@ abstract class ReportService
     {
         $this->filters = $filters;
         if (!isset($this->filters['currency']) || empty($this->filters['currency'])) {
-            $this->filters['currency'] = CurrencySettings::get()['currency'];
+            $this->filters['currency'] = BaseCurrency::get();
         }
     }
 
@@ -162,7 +164,9 @@ abstract class ReportService
         $query->whereBetween("o.created_at", [
             $filters['startDate'], $filters['endDate']
         ])
-        ->when($filters['currency'], fn($q) => 
+        // The ALL mode reads a derived table that already holds only
+        // converted, rate-trusted orders (ReportCurrency::ordersTable)
+        ->when($filters['currency'] && $filters['currency'] !== ReportCurrency::ALL, fn($q) =>
             $q->where("o.currency", $filters['currency'])
         )
         ->when($filters['paymentStatus'], fn($q) => 

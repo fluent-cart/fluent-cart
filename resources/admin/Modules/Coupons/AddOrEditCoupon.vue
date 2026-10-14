@@ -1244,19 +1244,21 @@ export default {
           metaValue: this.$refs.dynamic_templates?.getFormStates()
         }
       })
-          .then((response) => {
+          .then(async (response) => {
             this.$refs.dynamic_templates?.afterUpdatingData({
               coupon: this.coupon,
               response: response,
             });
 
             Notify.success(response.message);
-            
-            this.$router.push({
-              name: 'coupons'
-            });
 
             this.validationErrors = {};
+            this.changes_made = 0;
+            await this.$nextTick();
+
+            await this.$router.push({
+              name: 'coupons'
+            });
           })
           .catch((errors) => {
             if (errors.status_code == '422') {

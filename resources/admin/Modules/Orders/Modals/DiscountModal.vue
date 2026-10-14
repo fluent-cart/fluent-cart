@@ -17,7 +17,7 @@
           <el-form-item :label="$t('Discount value')">
             <el-input type="number" :min="1" v-model.number="initialDiscount.value" @keyup="isDisabledApplyButton">
               <template #prefix>
-                <span v-if="initialDiscount.type === 'amount'" v-html="appVars.shop.currency_sign"></span>
+                <span v-if="initialDiscount.type === 'amount'" v-html="currencySign"></span>
                 <span v-else>%</span>
               </template>
             </el-input>
@@ -52,12 +52,14 @@
 
 <script>
 import {ref, reactive} from "vue";
-import {formatNumber, formatMoney} from "@/Bits/productService";
+import {formatNumber} from "@/Bits/productService";
+import AppConfig from "@/utils/Config/AppConfig";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import translate from "@/utils/translator/Translator";
 
 export default {
   name: "DiscountModal",
-  props: ['discount', 'showModal', 'totalAmount'],
+  props: ['discount', 'showModal', 'totalAmount', 'currency'],
   setup(props, {emit}) {
 
     // Create a local copy of the discount for the modal's form inputs
@@ -73,6 +75,7 @@ export default {
       // }
     ]);
     const error = ref('');
+    const currencySign = AppConfig.get('currency_signs', {})[props.currency] || AppConfig.get('shop.currency_sign', '$');
 
     const isDisabledApplyButton = () => {
       error.value = '';
@@ -90,7 +93,7 @@ export default {
       } else {
         if (discountAmount > orderTotalAmount) {
           /* translators: %s - order total amount */
-          error.value = translate('Discount should not exceed the full product price (%s).', formatMoney(orderTotalAmount));
+          error.value = translate('Discount should not exceed the full product price (%s).', CurrencyFormatter.formatForOrder(props.totalAmount, props.currency));
         }
         return isNaN(parseDiscountValue) || parseDiscountValue < 1 || discountAmount > orderTotalAmount
       }
@@ -118,6 +121,7 @@ export default {
       initialDiscount,
       isDisabledApplyButton,
       error,
+      currencySign,
     }
   }
 }

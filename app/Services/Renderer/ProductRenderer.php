@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\App\App;
 use FluentCart\App\Services\FrontendView;
 use FluentCart\Api\StoreSettings;
@@ -1045,8 +1046,9 @@ class ProductRenderer
                 'product'   => $this->product,
                 'variation' => $first_price,
             ]);
-            $itemPrice = (int)$itemPrice;
-            $comparePrice = $first_price ? (int)$first_price->compare_price : 0;
+            // Displayed in the visitor's currency; the filter keeps its base input
+            $itemPrice = StorefrontPrice::amount((int)$itemPrice);
+            $comparePrice = $first_price ? StorefrontPrice::amount((int)$first_price->compare_price) : 0;
             if ($comparePrice <= $itemPrice) {
                 $comparePrice = 0;
             }
@@ -1084,8 +1086,8 @@ class ProductRenderer
             ]));
             return;
         }
-        $min_price = $this->product->detail->min_price;
-        $max_price = $this->product->detail->max_price;
+        $min_price = StorefrontPrice::amount($this->product->detail->min_price);
+        $max_price = StorefrontPrice::amount($this->product->detail->max_price);
 
         do_action('fluent_cart/product/single/before_price_range_block', RenderContext::decorate([
                 'product'       => $this->product,
@@ -1175,7 +1177,7 @@ class ProductRenderer
 
         do_action('fluent_cart/product/single/before_price_block', RenderContext::decorate([
                 'product'       => $this->product,
-                'current_price' => $this->defaultVariant ? $this->defaultVariant->item_price : 0,
+                'current_price' => $this->defaultVariant ? StorefrontPrice::amount($this->defaultVariant->item_price) : 0,
                 'scope'         => 'product_variant_price'
         ]));
 
@@ -1215,7 +1217,7 @@ class ProductRenderer
 
         do_action('fluent_cart/product/single/after_price_block', RenderContext::decorate([
                 'product'       => $this->product,
-                'current_price' => $this->defaultVariant ? $this->defaultVariant->item_price : 0,
+                'current_price' => $this->defaultVariant ? StorefrontPrice::amount($this->defaultVariant->item_price) : 0,
                 'scope'         => 'product_variant_price'
         ]));
     }
@@ -1240,7 +1242,7 @@ class ProductRenderer
 
     public function applyVariationPriceFilter($variant, $paymentType = 'onetime')
     {
-        $priceText = $paymentType === 'onetime' ? Helper::toDecimal($variant->item_price) : $variant->getSubscriptionTermsText(true);
+        $priceText = $paymentType === 'onetime' ? StorefrontPrice::format($variant->item_price) : $variant->getSubscriptionTermsText(true);
         echo wp_kses_post(apply_filters('fluent_cart/single_product/variation_price', esc_html($priceText), [
                 'product' => $this->product,
                 'variant' => $variant,
@@ -1249,7 +1251,7 @@ class ProductRenderer
         do_action('fluent_cart/product/after_price', RenderContext::decorate([
                 'product'       => $this->product,
                 'variant'       => $variant,
-                'current_price' => $variant->item_price,
+                'current_price' => StorefrontPrice::amount($variant->item_price),
                 'scope'         => 'product_variant_price'
         ]));
         RenderHelper::renderPriceSuffix($this->product, $variant, 'product_variant_price');
@@ -1277,7 +1279,7 @@ class ProductRenderer
 
         <span class="fct-compare-price">
             <span class="fct-sr-only"><?php echo esc_html__('Original price:', 'fluent-cart'); ?></span>
-            <del><?php echo esc_html(Helper::toDecimal($variant->compare_price)); ?></del>
+            <del><?php echo esc_html(StorefrontPrice::format($variant->compare_price)); ?></del>
         </span>
         <?php
     }
@@ -1872,7 +1874,7 @@ class ProductRenderer
         }
 
         if ($comparePrice) {
-            $comparePrice = Helper::toDecimal($comparePrice);
+            $comparePrice = StorefrontPrice::format($comparePrice);
         }
 
         $paymentType = Arr::get($variant->other_info, 'payment_type');
@@ -1898,7 +1900,7 @@ class ProductRenderer
                 'data-default-variation-id'        => $defaultId,
                 'data-payment-type'                => $paymentType,
                 'data-available-stock'             => $availableStocks,
-                'data-item-price'                  => Helper::toDecimal($variant->item_price),
+                'data-item-price'                  => StorefrontPrice::format($variant->item_price),
                 'data-compare-price'               => $comparePrice,
                 'data-stock-management'            => ModuleSettings::isActive('stock_management') ? 'yes' : 'no',
                 'data-sku'                         => $variant->sku ?? '',
@@ -1923,8 +1925,8 @@ class ProductRenderer
         $itemClasses = array_filter($itemClasses);
         $renderingAttributes['class'] = implode(' ', $itemClasses);
 
-        $itemPrice = $variant->item_price;
-        $comparePrice = $variant->compare_price;
+        $itemPrice = StorefrontPrice::amount($variant->item_price);
+        $comparePrice = StorefrontPrice::amount($variant->compare_price);
         if (!$comparePrice || $comparePrice <= $itemPrice) {
             $comparePrice = 0;
         }

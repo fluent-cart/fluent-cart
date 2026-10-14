@@ -641,6 +641,8 @@ class TaxModule
                     'label'      => Arr::get($taxedLine, 'title', ''),
                     'tax_amount' => $taxAmount,
                     'inclusive'  => (bool) Arr::get($taxedLine, 'line_meta.tax_config.inclusive', false),
+                    // Per-rate base and tax, so the breakdown shows the exact taxable base.
+                    'rates'      => (array) Arr::get($taxedLine, 'line_meta.tax_config.rates', []),
                 ];
             } else {
                 $productLines[] = $taxedLine;

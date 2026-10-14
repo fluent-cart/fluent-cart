@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 
 class RevenueReportService extends ReportService
@@ -12,7 +13,7 @@ class RevenueReportService extends ReportService
             ->selectRaw('order_id, SUM(quantity) AS total_items')
             ->groupBy('order_id');
 
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->leftJoinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $query = $this->applyFilters($query, $params);
@@ -85,7 +86,7 @@ class RevenueReportService extends ReportService
 
         $group = ReportHelper::processGroup($startDate, $endDate, $params['groupKey']);
 
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("{$group['field']},
 
                 SUM(o.total_paid) / 100 AS total_sales,

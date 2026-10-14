@@ -82,7 +82,7 @@ return [
         'id'            => 'pure-money-to-cent-float-precision',
         'name'          => 'Money-to-cent conversion preserves decimal half-cent precision',
         'phase'         => 12,
-        'known_failure' => true,
+        'known_failure' => false,
         'targets'       => ['FluentCart\App\Helpers\Helper::toCent'],
         'boundaries'    => ['positive binary-float half cent', 'negative binary-float half cent'],
         'run'           => function () {
@@ -91,22 +91,7 @@ return [
                 Helper::toCent('-1.005'),
             ];
 
-            if ($actual === [101, -101]) {
-                FcTest::fail(
-                    'KNOWN-FAILURE unexpectedly passed; reclassify decimal-safe cent conversion.'
-                );
-            } elseif ($actual === [100, -100]) {
-                FcTest::skip(
-                    'KNOWN-FAILURE — Helper.php:577-578 converts through binary float; '
-                    . 'observed ["1.005"=>100,"-1.005"=>-100].'
-                );
-            } else {
-                FcTest::fail(
-                    'KNOWN-FAILURE behavior drifted from the documented half-cent defect.'
-                    . "\n  expected defect: [100,-100]"
-                    . "\n  actual: " . wp_json_encode($actual)
-                );
-            }
+            FcTest::assertSame([101, -101], $actual, 'decimal half cents round away from zero');
         },
     ],
     [

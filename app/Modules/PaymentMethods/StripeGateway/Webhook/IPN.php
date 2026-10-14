@@ -4,7 +4,6 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook;
 
 use FluentCart\App\Events\Order\OrderRefund;
 use FluentCart\App\Events\Subscription\SubscriptionRenewalFailed;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
@@ -101,7 +100,7 @@ class IPN
             $refundCurrency = Arr::get($charge, 'currency') ?? $order->currency;
             $normalizedRefundAmount = (int)Arr::get($refund, 'amount', 0);
 
-            if ($refundCurrency && CurrenciesHelper::isZeroDecimal($refundCurrency)) {
+            if ($refundCurrency && StripeHelper::isZeroDecimal($refundCurrency)) {
                 $normalizedRefundAmount = $normalizedRefundAmount * 100;
             }
 
@@ -151,7 +150,7 @@ class IPN
             $chargeCurrency = Arr::get($charge, 'currency', $order->currency);
             $normalizedChargeAmount = (int)Arr::get($charge, 'amount', 0);
 
-            if ($chargeCurrency && CurrenciesHelper::isZeroDecimal($chargeCurrency)) {
+            if ($chargeCurrency && StripeHelper::isZeroDecimal($chargeCurrency)) {
                 $normalizedChargeAmount = $normalizedChargeAmount * 100;
             }
 

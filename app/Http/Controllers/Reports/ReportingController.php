@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Http\Controllers\Reports;
 
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\Api\Resource\OrderItemResource;
 use FluentCart\Api\Resource\OrderResource;
 use FluentCart\Api\StoreSettings;
@@ -89,18 +91,10 @@ class ReportingController extends Controller
         $startDate = $request->get('params.startDate', null);
         $endDate = $request->get('params.endDate', null);
 
-        $data = Order::query()
-            ->select('currency')
-            ->selectRaw('COUNT(*) as order_count')
-            ->selectRaw('MIN(created_at) as min_created_at')
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]);
-            })
-            ->groupBy('currency')
-            ->orderBy('order_count', 'desc')
-            ->get(['currency', 'min_created_at']);
+        $orderCurrencies = ReportCurrency::orderCurrencies($startDate, $endDate);
 
-        $min_created_at = $data->min('min_created_at');
+        $minDates = array_filter(array_column($orderCurrencies, 'min_created_at'));
+        $min_created_at = $minDates ? min($minDates) : null;
 
         if ($min_created_at < $startDate) {
             $min_created_at = $startDate;
@@ -110,12 +104,33 @@ class ReportingController extends Controller
             $min_created_at = (new DateTime())->format('Y-m-d H:i:s');
         }
 
-        $currentCurrency = (new StoreSettings())->getCurrency();
+        $baseCurrency = BaseCurrency::get();
+        $currencyCodes = array_column($orderCurrencies, 'currency');
+        if (!$currencyCodes) {
+            $currencyCodes = [$baseCurrency];
+        }
 
-        $currencyWithSign = CurrenciesHelper::getCurrencyWithSign([$currentCurrency]);
+        // Every currency with orders in range, most orders first — the picker
+        // shows them all and defaults to the first (multi-currency plan §13).
+        $currencyWithSign = [];
+        foreach ($currencyCodes as $code) {
+            $currencyWithSign[$code] = CurrenciesHelper::getCurrencySign($code) ?: $code;
+        }
+
+        // With more than one currency, offer every order converted to the
+        // base currency at its own frozen rate (multi-currency plan §2.4 Tier B)
+        $excludedOrders = 0;
+        if (count($currencyCodes) > 1) {
+            $currencyWithSign[ReportCurrency::ALL] = CurrenciesHelper::getCurrencySign($baseCurrency) ?: $baseCurrency;
+            $excludedOrders = ReportCurrency::excludedOrderCount($startDate, $endDate);
+        }
 
         return [
             'currencies' => $currencyWithSign,
+            'currency_order_counts' => array_column($orderCurrencies, 'order_count', 'currency'),
+            'default_currency' => $currencyCodes[0],
+            'base_currency' => $baseCurrency,
+            'converted_excluded_orders' => $excludedOrders,
             'min_date' => $min_created_at,
             'storeMode' => (new StoreSettings())->get('order_mode'),
             'first_order_date' => Order::query()->min('created_at')
@@ -214,7 +229,7 @@ class ReportingController extends Controller
 
     public function getSalesGrowthChart(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), ['orderStatus']);
+        $params = ReportHelper::processParams($request->get('params'), ['orderStatus'], true);
 
         $service = DashBoardReportService::make();
 

@@ -188,8 +188,8 @@ class IPN
                                 sprintf(
                                     /* translators: %1$s: expected amount, %2$s: received amount, %3$s: transaction UUID */
                                     __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Subscription not confirmed.', 'fluent-cart'),
-                                    Helper::toDecimal(PayPalHelper::wireCents($transaction->total, $transaction->currency)),
-                                    Helper::toDecimal($paidAmount),
+                                    Helper::toDecimal(PayPalHelper::wireCents($transaction->total, $transaction->currency), true, $transaction->currency),
+                                    Helper::toDecimal($paidAmount, true, $transaction->currency),
                                     $transaction->uuid
                                 ),
                                 'error',
@@ -330,8 +330,8 @@ class IPN
                 sprintf(
                     /* translators: %1$s: expected amount, %2$s: received amount, %3$s: transaction UUID */
                     __('Payment amount mismatch detected. Expected: %1$s, Received: %2$s. Transaction: %3$s. Order not confirmed.', 'fluent-cart'),
-                    Helper::toDecimal($expectedAmount),
-                    Helper::toDecimal($paidAmount),
+                    Helper::toDecimal($expectedAmount, true, $transaction->currency),
+                    Helper::toDecimal($paidAmount, true, $transaction->currency),
                     $transaction->uuid
                 ),
                 'error',

@@ -17,7 +17,7 @@ class ProductReportController extends Controller
 
     public function getProductPerformance(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = ProductReportService::make();
 
@@ -30,7 +30,7 @@ class ProductReportController extends Controller
 
     public function getProductReport(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
         
         $service = ProductReportService::make();
 

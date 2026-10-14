@@ -2,6 +2,13 @@
 
 namespace FluentCart\Api\Resource;
 
+use FluentCart\App\Modules\MultiCurrency\Services\PriceConverter;
+use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencySettings;
+use FluentCart\App\Modules\MultiCurrency\Services\CouponCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\Api\Orders;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
@@ -280,12 +287,18 @@ class OrderResource extends BaseResourceApi
         $items = Arr::except(Arr::get($order, 'order_items'), ['*']);
         OrderService::validateProducts($items);
 
-        $customer = static::getCustomer($data);
-
-        if (Arr::get($discount, 'value', 0) > 0) {
-            static::distributeManualDiscount($items, Helper::toCent(Arr::get($discount, 'value', 0)));
+        // The admin enters prices in the base currency; an order in another
+        // currency converts them at that currency's current rate, frozen on
+        // the order (multi-currency plan §11.7)
+        $currencyQuote = static::adminOrderCurrencyQuote(Arr::get($data, 'currency'));
+        if (is_wp_error($currencyQuote)) {
+            return $currencyQuote;
         }
 
+        $customer = static::getCustomer($data);
+
+        // Coupons are checked on the base-currency lines the admin entered;
+        // the calculated discounts are converted with the items below
         $couponCheck = CouponResource::validateOrderCoupons($items, (array) Arr::get($data, 'applied_coupon', []), Arr::get($customer, 'email', ''));
         if (is_wp_error($couponCheck)) {
             return $couponCheck;
@@ -293,18 +306,36 @@ class OrderResource extends BaseResourceApi
         $items = $couponCheck['items'];
         $data['applied_coupon'] = $couponCheck['applied_coupons'];
 
+        // Unrounded: the coupon service spreads discounts in fractions of a cent
+        $baseLineCouponTotal = static::lineCouponDiscountTotal($items, false);
+        $percentageCoupons = static::areOnlyPercentageCoupons(Arr::get($data, 'applied_coupon', []));
+        $items = static::convertAdminOrderItems($items, $currencyQuote, $percentageCoupons);
+        $shippingTotal = PriceConverter::toQuote(Helper::roundCent(static::assertShippingCents(Arr::get($data, 'shipping_total'))), $currencyQuote);
+
+        if (Arr::get($discount, 'value', 0) > 0) {
+            static::distributeManualDiscount($items, PriceConverter::toQuote(Helper::toCent(Arr::get($discount, 'value', 0)), $currencyQuote), PriceConverter::unit($currencyQuote));
+        }
+
         // admin order processor
         $adminOrderProcessor = new AdminOrderProcessor($items, [
             'customer_id'               => $customer->id,
             'payment_method'            => $paymentMethod,
-            'applied_coupons'           => Arr::get($data, 'applied_coupon', []),
+            'applied_coupons'           => static::convertAdminAppliedCoupons(Arr::get($data, 'applied_coupon', []), $currencyQuote, $baseLineCouponTotal, static::lineCouponDiscountTotal($items), $percentageCoupons),
             // Normalized here as well as in OrderRequest::sanitize(): this is a public
             // Resource API, and a direct caller never passes through the request layer. The
             // shared helper also absorbs the null that pickKeys() injects for an omitted key
             // AFTER Sanitizer::sanitize() has run, which no sanitizer can reach. Negative
             // and PRESENT-but-malformed shipping are rejected here too, on the RAW value
             // and BEFORE rounding — see assertShippingCents().
-            'shipping_total'            => Helper::roundCent(static::assertShippingCents(Arr::get($data, 'shipping_total'))),
+            'shipping_total'            => $shippingTotal,
+            'currency_snapshot'         => CurrencySnapshot::make($currencyQuote['currency'], $currencyQuote['rate'], [
+                'source'   => $currencyQuote['source'],
+                'rate_id'  => $currencyQuote['rate_id'],
+                'margin'   => $currencyQuote['margin'],
+                'rounding'   => $currencyQuote['rounding'],
+                'charm'      => Arr::get($currencyQuote, 'charm'),
+                'adjustment' => Arr::get($currencyQuote, 'adjustment'),
+            ]),
             'billing_address'           => Arr::get($customer, 'billing_address', []),
             'shipping_address'          => Arr::get($customer, 'shipping_address', []),
             'user_tz'                   => Arr::get($data, 'user_tz', ''),
@@ -458,7 +489,9 @@ class OrderResource extends BaseResourceApi
                 ];
             }
 
-            $taxResult = AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+            $taxResult = CurrencyContext::withCurrency($order->currency, function () use ($taxItems, $taxAddress, $taxSettings) {
+                return AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+            });
 
             if ($taxResult === null) {
                 return; // Tax disabled or no result
@@ -763,7 +796,9 @@ class OrderResource extends BaseResourceApi
                 ];
             }
 
-            $taxResult = AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+            $taxResult = CurrencyContext::withCurrency($order->currency, function () use ($taxItems, $taxAddress, $taxSettings) {
+                return AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
+            });
 
             if ($taxResult === null) {
                 if (!TaxModule::isTaxEnabled()) {
@@ -1395,7 +1430,251 @@ class OrderResource extends BaseResourceApi
         return true;
     }
 
-    private static function distributeManualDiscount(&$items, $manualDiscountTotal)
+    /**
+     * The quote an admin-created order is priced at: the base currency, or
+     * an enabled currency that has a rate.
+     *
+     * @param mixed $currency requested currency code
+     * @return array|\WP_Error
+     */
+    private static function adminOrderCurrencyQuote($currency)
+    {
+        $currency = strtoupper(sanitize_text_field((string) $currency));
+
+        if ($currency === '' || BaseCurrency::is($currency)) {
+            return PriceConverter::baseQuote();
+        }
+
+        $quote = MultiCurrencySettings::isOffered($currency) ? CartCurrency::freshQuote($currency) : null;
+
+        if (!$quote) {
+            return new \WP_Error('invalid_currency', sprintf(
+                /* translators: %1$s: currency code */
+                __('%1$s is not an enabled currency with an exchange rate.', 'fluent-cart'),
+                $currency
+            ));
+        }
+
+        return $quote;
+    }
+
+    /**
+     * Convert admin-entered base-currency item amounts to the order's currency.
+     *
+     * @param bool $percentageCoupons the line discounts come from percentage
+     *                                coupons only (areOnlyPercentageCoupons())
+     */
+    private static function convertAdminOrderItems(array $items, array $quote, bool $percentageCoupons = false): array
+    {
+        if (PriceConverter::isBaseQuote($quote)) {
+            return $items;
+        }
+
+        foreach ($items as &$item) {
+            $baseUnitPrice = is_numeric(Arr::get($item, 'unit_price')) ? (float) $item['unit_price'] : 0.0;
+
+            // Prices follow the currency's pricing rules, as on the storefront;
+            // discounts convert plainly
+            foreach (['unit_price', 'price'] as $key) {
+                if (isset($item[$key]) && is_numeric($item[$key])) {
+                    $item[$key] = PriceConverter::toPrice($item[$key], $quote);
+                }
+            }
+
+            // A percentage coupon takes its percentage of the line the order
+            // charges — the rounded price — as the cart does, so its discount
+            // follows the line, not the plain rate. In the currency's smallest
+            // unit, as every converted amount: whole yen for JPY
+            $discountKeys = ['discount_total', 'coupon_discount', 'manual_discount'];
+            if ($percentageCoupons && $baseUnitPrice > 0 && is_numeric(Arr::get($item, 'unit_price'))) {
+                $lineRatio = (float) $item['unit_price'] / $baseUnitPrice;
+                foreach (['discount_total', 'coupon_discount'] as $key) {
+                    if (isset($item[$key]) && is_numeric($item[$key])) {
+                        $item[$key] = PriceConverter::toQuoteUnit((float) $item[$key] * $lineRatio, $quote);
+                    }
+                }
+                $discountKeys = ['manual_discount'];
+            }
+            foreach ($discountKeys as $key) {
+                if (isset($item[$key]) && is_numeric($item[$key])) {
+                    $item[$key] = PriceConverter::toQuote($item[$key], $quote);
+                }
+            }
+
+            // A price adjustment below the rate (or a charm ending) can price
+            // the line under its plainly converted coupon: the coupon takes
+            // the line and no more, as the coupon service caps it in the cart
+            if (is_numeric(Arr::get($item, 'unit_price'))) {
+                $lineSubtotal = (int) $item['unit_price'] * max(1, (int) Arr::get($item, 'quantity', 1));
+                foreach (['discount_total', 'coupon_discount'] as $key) {
+                    if (isset($item[$key]) && is_numeric($item[$key]) && $item[$key] > $lineSubtotal) {
+                        $item[$key] = $lineSubtotal;
+                    }
+                }
+            }
+            if (!empty($item['other_info']['signup_fee'])) {
+                $item['other_info']['signup_fee'] = PriceConverter::toPrice($item['other_info']['signup_fee'], $quote);
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
+     * The Create Order screen applies coupons to the base-currency prices the
+     * admin entered; the applied-coupon amounts are converted with the items
+     * so the order's coupon records are in the order's currency.
+     *
+     * The order's coupon total is the sum of the converted line discounts,
+     * each rounded on its own, so it can drift from the separately converted
+     * coupons by more than a cent per coupon. When the base line discounts
+     * describe these coupons (equal base sums), the converted records are
+     * reconciled to the converted line total exactly: a shortfall goes on
+     * the largest coupon; a surplus is taken from the largest coupons first,
+     * none below 0 (ties: the first). When they don't, each coupon keeps its
+     * own converted amount.
+     *
+     * Percentage coupons (areOnlyPercentageCoupons()) follow their lines:
+     * each record is scaled by the lines' converted/base coupon ratio, then
+     * reconciled the same way.
+     *
+     * Every record is in the currency's smallest unit, as the lines are, so
+     * the difference reconciled is whole units too (whole yen for JPY).
+     *
+     * @param mixed $appliedCoupons code => ['id' => int, 'discount' => int cents, ...]
+     * @param float $baseLineCouponTotal line coupon discounts before conversion, unrounded
+     * @param int $convertedLineCouponTotal the same lines after conversion (the order's coupon total)
+     */
+    private static function convertAdminAppliedCoupons($appliedCoupons, array $quote, float $baseLineCouponTotal, int $convertedLineCouponTotal, bool $percentageCoupons = false): array
+    {
+        if (!is_array($appliedCoupons)) {
+            return [];
+        }
+
+        if (PriceConverter::isBaseQuote($quote)) {
+            return $appliedCoupons;
+        }
+
+        $baseSum = 0;
+        $convertedSum = 0;
+        $convertedCodes = [];
+        foreach ($appliedCoupons as $code => &$appliedCoupon) {
+            if (!is_array($appliedCoupon) || !isset($appliedCoupon['discount']) || !is_numeric($appliedCoupon['discount'])) {
+                continue;
+            }
+            $baseSum += (float) $appliedCoupon['discount'];
+            $appliedCoupon['discount'] = ($percentageCoupons && $baseLineCouponTotal > 0)
+                ? PriceConverter::toQuoteUnit((float) $appliedCoupon['discount'] * $convertedLineCouponTotal / $baseLineCouponTotal, $quote)
+                : PriceConverter::toQuote($appliedCoupon['discount'], $quote);
+            $convertedSum += $appliedCoupon['discount'];
+            $convertedCodes[] = $code;
+        }
+        unset($appliedCoupon);
+
+        // Equal to within a cent: the service spreads a coupon over lines in
+        // fractions of a cent (999.99 + 1800 against lines of 1799.39 + 1000.6)
+        if (!$convertedCodes || abs($baseSum - $baseLineCouponTotal) >= 1) {
+            return $appliedCoupons;
+        }
+
+        // Largest converted amount first; equal amounts keep request order.
+        // Sorted by position explicitly — usort is not stable before PHP 8.
+        $positions = array_flip($convertedCodes);
+        usort($convertedCodes, function ($left, $right) use ($appliedCoupons, $positions) {
+            $byAmount = $appliedCoupons[$right]['discount'] <=> $appliedCoupons[$left]['discount'];
+
+            return $byAmount !== 0 ? $byAmount : $positions[$left] <=> $positions[$right];
+        });
+
+        $difference = $convertedLineCouponTotal - $convertedSum;
+        if ($difference > 0) {
+            $appliedCoupons[$convertedCodes[0]]['discount'] += $difference;
+        } elseif ($difference < 0) {
+            // Take the surplus from the largest coupons first, none below 0,
+            // until the records sum to the order's coupon total exactly
+            $surplus = -$difference;
+            foreach ($convertedCodes as $code) {
+                if ($surplus <= 0) {
+                    break;
+                }
+                $taken = min($surplus, $appliedCoupons[$code]['discount']);
+                $appliedCoupons[$code]['discount'] -= $taken;
+                $surplus -= $taken;
+            }
+        }
+
+        return $appliedCoupons;
+    }
+
+    /**
+     * Whether every coupon applied on the Create Order screen is a plain
+     * percentage coupon — read from the coupons themselves, not the request.
+     * Their line discounts are then proportional to the line prices. A
+     * fixed coupon, or a percentage one with a maximum discount (a fixed
+     * cap), converts plainly instead.
+     *
+     * @param mixed $appliedCoupons code => ['id' => int, 'discount' => int cents, ...]
+     */
+    private static function areOnlyPercentageCoupons($appliedCoupons): bool
+    {
+        if (!is_array($appliedCoupons) || !$appliedCoupons) {
+            return false;
+        }
+
+        $couponIds = [];
+        foreach ($appliedCoupons as $appliedCoupon) {
+            $couponId = is_array($appliedCoupon) ? (int) Arr::get($appliedCoupon, 'id', 0) : 0;
+            if ($couponId <= 0) {
+                return false;
+            }
+            $couponIds[] = $couponId;
+        }
+        $couponIds = array_values(array_unique($couponIds));
+
+        $coupons = Coupon::query()->whereIn('id', $couponIds)->get();
+        if ($coupons->count() !== count($couponIds)) {
+            return false;
+        }
+
+        foreach ($coupons as $coupon) {
+            if ($coupon->type !== 'percentage' || !empty(Arr::get((array) $coupon->conditions, 'max_discount_amount'))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Sum of the lines' coupon discounts — the discount_total that
+     * AdminOrderProcessor adds up as coupon_discount_total (the manual
+     * discount is the separate manual_discount key). $asProcessed false:
+     * the unrounded sum, as the coupon service sent it.
+     *
+     * @return int|float
+     */
+    private static function lineCouponDiscountTotal(array $items, bool $asProcessed = true)
+    {
+        $total = 0;
+        foreach ($items as $item) {
+            $total += $asProcessed ? (int) Arr::get($item, 'discount_total', 0) : (float) Arr::get($item, 'discount_total', 0);
+        }
+
+        return $total;
+    }
+
+    /**
+     * Spread the manual discount over the lines by their share of the
+     * subtotal, in whole units of the order's currency. Each line takes at
+     * most what it has left after its coupon discount (AdminOrderProcessor
+     * subtracts both from the line), so no line total goes negative; a
+     * discount larger than the lines can take is recorded only up to that.
+     *
+     * @param int $unit the order currency's smallest unit in cents (100 for
+     *                  a zero-decimal currency): each line's share is whole units
+     */
+    private static function distributeManualDiscount(&$items, $manualDiscountTotal, int $unit = 1)
     {
         $totalSubtotal = array_reduce($items, function ($carry, $item) {
             return $carry + ((int)Arr::get($item, 'unit_price', 0) * (int)Arr::get($item, 'quantity', 1));
@@ -1406,27 +1685,77 @@ class OrderResource extends BaseResourceApi
         }
 
         $distributed = 0;
-        foreach ($items as &$checkoutItem) {
+        $capacities = [];
+        foreach ($items as $key => &$checkoutItem) {
             $unitPrice = (int)Arr::get($checkoutItem, 'unit_price', 0);
             $quantity = (int)Arr::get($checkoutItem, 'quantity', 1);
             $itemSubtotal = $unitPrice * $quantity;
+            $capacity = max(0, $itemSubtotal - (int)Arr::get($checkoutItem, 'discount_total', 0));
 
-            $itemManualDiscount = (int) (($itemSubtotal / $totalSubtotal) * $manualDiscountTotal);
-
-            if ($itemManualDiscount > $itemSubtotal) {
-                $itemManualDiscount = $itemSubtotal;
-            }
+            $itemManualDiscount = (int) (floor(($itemSubtotal / $totalSubtotal) * $manualDiscountTotal / $unit) * $unit);
+            $itemManualDiscount = max(0, min($itemManualDiscount, $capacity));
 
             $distributed += $itemManualDiscount;
+            $capacities[$key] = $capacity - $itemManualDiscount;
 
             Arr::set($checkoutItem, 'manual_discount', $itemManualDiscount);
-
         }
+        unset($checkoutItem);
 
-        $diff = round($manualDiscountTotal - $distributed, 2);
-        // Adjust the first item to account for any precision differences
-        if ($diff != 0) {
-            $items[0]['manual_discount'] = (int) (Arr::get($items[0], 'manual_discount', 0) + $diff);
+        $remainder = (int) round($manualDiscountTotal - $distributed);
+        $positions = array_flip(array_keys($items));
+        // Bounded by the line count, not the amount: every bulk round leaves
+        // less than a unit per open line or a line with less than a unit of
+        // room, and every pass after it ends the remainder or fills a line.
+        // The round limit only backs that up.
+        $rounds = 2 * count($items) + 2;
+        while ($remainder > 0 && $rounds-- > 0) {
+            $open = array_filter($capacities, function ($capacity) {
+                return $capacity > 0;
+            });
+            if (!$open) {
+                break;
+            }
+
+            // A line capped at its capacity leaves a shortfall that can be
+            // most of the discount, not rounding dust. Give every open line
+            // the same whole units at once - as many full passes of a unit
+            // each as the remainder and the smallest open line allow. That is
+            // what passing a unit at a time would give them, without
+            // iterating once per cent or yen
+            $fullPasses = min(
+                intdiv($remainder, count($open) * $unit),
+                intdiv(min($open), $unit)
+            );
+            if ($fullPasses > 0) {
+                $step = $fullPasses * $unit;
+                foreach (array_keys($open) as $key) {
+                    $items[$key]['manual_discount'] += $step;
+                    $capacities[$key] -= $step;
+                    $remainder -= $step;
+                }
+                continue;
+            }
+
+            // Less than a unit per open line is left (or a line has less than
+            // a unit of room): one pass of a unit each, largest remaining
+            // capacity first (ties by position: usort is not stable before
+            // PHP 8), never past a line's capacity
+            $keys = array_keys($open);
+            usort($keys, function ($left, $right) use ($capacities, $positions) {
+                $byCapacity = $capacities[$right] <=> $capacities[$left];
+
+                return $byCapacity !== 0 ? $byCapacity : $positions[$left] <=> $positions[$right];
+            });
+            foreach ($keys as $key) {
+                if ($remainder <= 0) {
+                    break;
+                }
+                $step = min($unit, $remainder, $capacities[$key]);
+                $items[$key]['manual_discount'] += $step;
+                $capacities[$key] -= $step;
+                $remainder -= $step;
+            }
         }
     }
 
@@ -1648,7 +1977,8 @@ class OrderResource extends BaseResourceApi
             $couponCheck = CouponResource::validateOrderCoupons(
                 $submittedItems,
                 (array) $appliedCoupons,
-                $order->customer ? $order->customer->email : ''
+                $order->customer ? $order->customer->email : '',
+                CouponCurrency::orderQuote($order)
             );
             if (is_wp_error($couponCheck)) {
                 return $couponCheck;
@@ -1720,8 +2050,17 @@ class OrderResource extends BaseResourceApi
             unset($orderData['customer']);
             unset($orderData['tax_lines']);
 
-
-            $orderData['currency'] = Helper::shopConfig('currency');
+            // Currency and exchange rate are stamped once at creation and are
+            // immutable; every amount on the row is in that currency.
+            // dev-docs/multi-currency/plan.md §2.3 invariants #1 and #3.
+            unset($orderData['currency'], $orderData['rate']);
+            if (isset($orderData['config']) && is_array($orderData['config'])) {
+                unset($orderData['config']['fx']);
+                $storedFx = Arr::get($order->config, 'fx');
+                if ($storedFx) {
+                    $orderData['config']['fx'] = $storedFx;
+                }
+            }
 
             $oldOrder = clone $order;
             $isUpdated = $order->update($orderData);

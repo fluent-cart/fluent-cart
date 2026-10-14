@@ -17,6 +17,7 @@ use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\ProductReviewService;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
+use FluentCart\App\Services\Money;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\DateTime\DayjsFormatter;
 use FluentCart\App\Services\Translations\TransStrings;
@@ -438,6 +439,7 @@ class CustomerProfileHandler extends ShortCode
                 'currency_signs'    => array_map(function ($sign) {
                     return html_entity_decode($sign, ENT_QUOTES, 'UTF-8');
                 }, CurrenciesHelper::getCurrencySigns()),
+                'currency_decimals' => Money::getDecimalsMap(),
                 'trans'             => TransStrings::getCustomerProfileString(),
                 'download_url_base' => site_url('fluent-cart/download-file/?fluent_cart_download=true'),
                 'placeholder_image' => Helper::getProductPlaceholderUrl(),

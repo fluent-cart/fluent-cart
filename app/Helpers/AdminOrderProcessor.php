@@ -260,7 +260,7 @@ class AdminOrderProcessor
             'payment_method'        => Arr::get($this->args, 'payment_method', ''),
             'payment_status'        => Status::PAYMENT_PENDING,
             'payment_method_title'  => '',
-            'currency'              => $this->storeSettings->get('currency'),
+            'currency'              => Arr::get($this->args, 'currency_snapshot.currency') ?: $this->storeSettings->get('currency'),
             'subtotal'              => $itemsSubtotal,
             'discount_tax'          => 0,
             'manual_discount_total' => $this->manualDiscountTotal,
@@ -271,7 +271,7 @@ class AdminOrderProcessor
 //            'total_amount'          => $this->orderTotals['total_amount'],
             'total_paid'            => 0,
             'total_refund'          => 0,
-            'rate'                  => 1,
+            'rate'                  => Arr::get($this->args, 'currency_snapshot.rate', 1),
             'note'                  => Arr::get($this->args, 'note', ''),
             'ip_address'            => Arr::get($this->args, 'ip_address', ''),
             'config'                => [
@@ -279,6 +279,13 @@ class AdminOrderProcessor
                 'source'                    => 'admin',
             ],
         ];
+
+        // Frozen from the rate the admin order was priced at — Order::creating
+        // keeps an explicit snapshot (multi-currency plan §11.7)
+        $currencySnapshot = Arr::get($this->args, 'currency_snapshot');
+        if (is_array($currencySnapshot) && !empty($currencySnapshot['currency'])) {
+            $orderData['config']['fx'] = $currencySnapshot;
+        }
 
         $totalAmount = $orderData['subtotal'] - $orderData['coupon_discount_total'] - $orderData['manual_discount_total'] + $orderData['shipping_total'] + $orderData['tax_total'];
         $orderData['total_amount'] = $totalAmount > 0 ? $totalAmount : 0;

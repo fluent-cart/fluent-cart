@@ -19,6 +19,7 @@ use FluentCart\App\Models\TaxClass;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\App\Modules\Tax\TaxCalculator;
+use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Coupon\CouponServiceAdmin;
 use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Services\Payments\Refund;
@@ -630,6 +631,18 @@ return [
             $gateway = new FcPhase23InertGateway();
             $slug = 'phase23_inert';
             $registeredManagers = [];
+            $taxSettings = [
+                'enable_tax' => 'yes',
+                'tax_inclusion' => 'excluded',
+                'tax_calculation_basis' => 'billing',
+                'tax_rounding' => 'item',
+            ];
+            $taxSettingsFilter = function () use ($taxSettings) {
+                return $taxSettings;
+            };
+            $taxModules = [];
+            $taxSettingsProperty = new ReflectionProperty(TaxModule::class, 'taxSettings');
+            $taxSettingsProperty->setAccessible(true);
             $taxBehaviorFilter = function () {
                 return 1;
             };
@@ -643,28 +656,61 @@ return [
             $terminated = false;
 
             try {
+                add_filter('pre_option_fluent_cart_tax_configuration_settings', $taxSettingsFilter);
+                global $wp_filter;
+                foreach ($wp_filter['fluent_cart/cart/cart_data_items_updated']->callbacks as $callbacks) {
+                    foreach ($callbacks as $callback) {
+                        $handler = $callback['function'];
+                        if (is_array($handler) && $handler[0] instanceof TaxModule) {
+                            $key = spl_object_hash($handler[0]);
+                            if (!isset($taxModules[$key])) {
+                                $addedRecalculation = has_action('fluent_cart/cart/cart_data_items_updated', [$handler[0], 'recalculateTax']) === false;
+                                $taxModules[$key] = [$handler[0], $taxSettingsProperty->getValue($handler[0]), $addedRecalculation];
+                                $taxSettingsProperty->setValue($handler[0], $taxSettings);
+                                if ($addedRecalculation) {
+                                    add_action('fluent_cart/cart/cart_data_items_updated', [$handler[0], 'recalculateTax'], 10, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+                TaxCalculator::resetCache();
                 $customer = FcFixture::customer();
                 FcFixture::customerAddress((int) $customer->id, 'billing');
                 FcFixture::customerAddress((int) $customer->id, 'shipping');
+                $standard = TaxClass::query()->where('slug', 'standard')->first();
+                FcTest::assert($standard !== null, 'standard TaxClass exists for checkout');
+                FcFixture::taxRate((int) $standard->id, [
+                    'country' => 'BD',
+                    'state' => 'BD-13',
+                    'postcode' => '99123',
+                    'rate' => 0.05,
+                ]);
+                $product = FcDomainFixture::product([
+                    'item_price' => 1001,
+                    'fulfillment_type' => 'digital',
+                    'other_info' => ['tax_class' => 'standard', 'tax_exempt' => 'no'],
+                ]);
 
                 $cart = FcAutomationFixture::cart('phase23-checkout', '2001-02-03 04:05:06', [
                     'customer_id'   => (int) $customer->id,
                     'cart_group'    => 'instant',
                     'stage'         => 'cart',
                     'cart_data'     => [
-                        $phase23CartItem(230099, 1001, 1),
+                        $phase23CartItem((int) $product['variation']->id, 1001, 1, [
+                            'post_id' => (int) $product['post']->ID,
+                            'is_custom' => false,
+                        ]),
                     ],
                     'checkout_data' => [
                         'disable_coupons' => 'yes',
                         'fees'            => [],
-                        'tax_data'        => [
-                            'tax_total'          => 1,
-                            'shipping_tax'       => 0,
-                            'tax_behavior'       => 1,
-                            'store_tax_behavior' => 1,
-                            'exclusive_tax_total' => 1,
-                            'fee_tax'            => 0,
-                            'fee_tax_lines'      => [],
+                        'form_data'      => [
+                            'billing_country' => 'BD',
+                            'billing_state' => 'BD-13',
+                            'billing_city' => 'Dhaka',
+                            'billing_postcode' => '99123',
+                            'ship_to_different' => 'no',
                         ],
                     ],
                 ]);
@@ -697,7 +743,7 @@ return [
                         'billing_country'    => 'BD',
                         'billing_state'      => 'BD-13',
                         'billing_city'       => 'Dhaka',
-                        'billing_postcode'   => '1205',
+                        'billing_postcode'   => '99123',
                         'billing_address_1'  => 'Phase 23 exact checkout',
                         'billing_address_2'  => '',
                         'billing_phone'      => '',
@@ -751,6 +797,14 @@ return [
                     $manager->remove($slug);
                 }
                 remove_filter('fluent_cart/cart/tax_behavior', $taxBehaviorFilter, PHP_INT_MAX);
+                remove_filter('pre_option_fluent_cart_tax_configuration_settings', $taxSettingsFilter);
+                foreach ($taxModules as $module) {
+                    if ($module[2]) {
+                        remove_action('fluent_cart/cart/cart_data_items_updated', [$module[0], 'recalculateTax'], 10);
+                    }
+                    $taxSettingsProperty->setValue($module[0], $module[1]);
+                }
+                TaxCalculator::resetCache();
                 wp_set_current_user($previousUserId);
                 App::request()->set($requestKey, $previousHash);
                 CartResource::resetCartCache();

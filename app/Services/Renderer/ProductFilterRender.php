@@ -2,14 +2,14 @@
 
 namespace FluentCart\App\Services\Renderer;
 
-use FluentCart\Api\StoreSettings;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\Api\Taxonomy;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
-use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
@@ -27,7 +27,8 @@ class ProductFilterRender
     public function __construct($config = [])
     {
         $this->buildFilters($config);
-        $this->currency = (new StoreSettings())->getCurrency();
+        // The visitor's currency; the store currency when multi-currency is off
+        $this->currency = CurrencyContext::current();
     }
 
     public function render()
@@ -194,8 +195,11 @@ class ProductFilterRender
     public function renderPriceRange($filter = [])
     {
 
-        $minPrice = ProductVariation::query()->min('item_price');
-        $maxPrice = ProductVariation::query()->max('item_price');
+        // Bounds from buildFilters(), already in the visitor's currency
+        $minPrice = Arr::get($filter, 'min', 0);
+        $maxPrice = Arr::get($filter, 'max', 0);
+        $fromValue = Arr::get($filter, 'min_value', $minPrice);
+        $toValue = Arr::get($filter, 'max_value', $maxPrice);
 
         $currencySign = (new CurrenciesHelper())->getCurrencySign($this->currency);
 
@@ -222,11 +226,11 @@ class ProductFilterRender
                                 id="price-range-from"
                                 class="fc_price_range_input"
                                 type="text"
-                                value="<?php echo esc_attr($minPrice / 100); ?>"
+                                value="<?php echo esc_attr($fromValue); ?>"
                                 name="price_range_from"
                                 placeholder="<?php echo esc_html__('e.g 100', 'fluent-cart'); ?>"
                                 data-range-slider-from-value
-                                data-value="<?php echo esc_attr($minPrice / 100); ?>"
+                                data-value="<?php echo esc_attr($minPrice); ?>"
                                 aria-describedby="price-range-help"
                         >
                     </div>
@@ -244,11 +248,11 @@ class ProductFilterRender
                                 id="price-range-to"
                                 class="fc_price_range_input"
                                 type="text"
-                                value="<?php echo esc_attr($maxPrice / 100); ?>"
+                                value="<?php echo esc_attr($toValue); ?>"
                                 name="price_range_to"
                                 placeholder="<?php echo esc_html__('e.g 500', 'fluent-cart'); ?>"
                                 data-range-slider-to-value
-                                data-value="<?php echo esc_attr($maxPrice / 100); ?>"
+                                data-value="<?php echo esc_attr($maxPrice); ?>"
                                 aria-describedby="price-range-help"
                         >
                     </div>
@@ -310,8 +314,10 @@ class ProductFilterRender
             }
             if ($formattedFilters[$key]['filter_type'] === 'range') {
                 $this->shouldLoadRangePlugin = true;
-                $minValue = Helper::toDecimalWithoutComma(ProductDetail::query()->min('min_price'));
-                $maxValue = Helper::toDecimalWithoutComma(ProductDetail::query()->max('max_price'));
+                // Slider bounds in the visitor's currency; ShopResource converts
+                // the chosen range back to base before it reaches SQL
+                $minValue = Helper::toDecimalWithoutComma(StorefrontPrice::amount(ProductDetail::query()->min('min_price')));
+                $maxValue = Helper::toDecimalWithoutComma(StorefrontPrice::amount(ProductDetail::query()->max('max_price')));
 
                 $minFromUrl = Arr::get($this->urlFilters, $key . '_from', 0);
                 $maxFromUrl = Arr::get($this->urlFilters, $key . '_to', $maxValue);

@@ -119,6 +119,7 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import { formatNumber } from "../Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
+import Notify from "@/utils/Notify";
 import SummaryLoader from "../Components/SummaryLoader.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
@@ -161,6 +162,7 @@ const data = ref({
     groupBy: 'monthly'
 });
 const loading = ref(true);
+let latestRequest = 0;
 
 /**
  * ----------------------------------------------------------------------------
@@ -168,17 +170,29 @@ const loading = ref(true);
  * ----------------------------------------------------------------------------
  */
 const fetchData = (filters, groupKey = 'monthly') => {
+    const request = ++latestRequest;
     loading.value = true;
 
-    Rest.get('reports/future-renewals', {
+    return Rest.get('reports/future-renewals', {
         params: {
             ...filters.params,
             groupKey: groupKey
         }
     }).then(response => {
-        data.value = response
+        if (request === latestRequest) {
+            data.value = response;
+        }
     })
-    .finally(() => loading.value = false)
+    .catch(error => {
+        if (request === latestRequest) {
+            Notify.error(error);
+        }
+    })
+    .finally(() => {
+        if (request === latestRequest) {
+            loading.value = false;
+        }
+    });
 }
 
 const createSeries = (name, type, yAxisIndex, data, color) => {
@@ -468,6 +482,7 @@ watch(loading, (value) => {
  * ----------------------------------------------------------------------------
  */
 onMounted(() => {
+    reportFilter.addListener('future-renewals', fetchData);
     fetchData(reportFilter.applicableFilters);
 
     nextTick(() => {
@@ -479,6 +494,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    reportFilter.removeListener('future-renewals');
+    latestRequest++;
     window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
     window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
 });

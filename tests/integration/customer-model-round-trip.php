@@ -57,9 +57,12 @@ return [
                     (string) $stored->status,
                     'Customer status round-trips'
                 );
+                $purchaseValue = $stored->purchase_value;
+                ksort($expected['purchase_value']);
+                ksort($purchaseValue);
                 FcTest::assertSame(
                     $expected['purchase_value'],
-                    $stored->purchase_value,
+                    $purchaseValue,
                     'Customer JSON purchase_value round-trips'
                 );
                 FcTest::assertSame(

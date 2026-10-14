@@ -9,21 +9,50 @@ use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
 use FluentCart\App\Services\Payments\PaymentHelper;
+use FluentCart\App\Services\Money;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\Framework\Support\Arr;
 
 class StripeHelper
 {
-    public static function createOrGetStripeCustomer(Customer $customer)
+    /**
+     * Stripe customer to bill $customer with.
+     *
+     * Stripe bills subscriptions and invoices in one currency per customer. When
+     * $currency is given and the stored `stripe_customer_id` already bills another
+     * currency, a customer dedicated to that currency is used instead, stored in
+     * `stripe_customer_id_{currency}` meta (lowercase ISO code, e.g. stripe_customer_id_eur).
+     * Leave $currency empty for PaymentIntents and SetupIntents, which have no such limit.
+     *
+     * @param Customer $customer
+     * @param string $currency order currency, for calls that create a Stripe subscription
+     * @return array|\WP_Error Stripe customer object
+     */
+    public static function createOrGetStripeCustomer(Customer $customer, $currency = '')
     {
-        // check if we already have a stripe_customer_id for this person
+        $currency = strtolower((string)$currency);
+        $currencyMetaKey = $currency ? 'stripe_customer_id_' . $currency : '';
+
+        if ($currencyMetaKey) {
+            $dedicatedId = $customer->getMeta($currencyMetaKey, false);
+            $dedicated = $dedicatedId ? self::getUsableStripeCustomer($dedicatedId, $customer, $currency) : null;
+            if ($dedicated) {
+                return $dedicated;
+            }
+        }
+
+        // The legacy id keeps serving every currency it can bill, so single-currency stores are unchanged.
+        $legacyIsValid = false;
         $existingStripeCustomerId = $customer->getMeta('stripe_customer_id', false);
         if ($existingStripeCustomerId) {
-            $existingStripeCustomer = (new API())->getStripeObject('customers/' . $existingStripeCustomerId);
+            $existingStripeCustomer = self::getUsableStripeCustomer($existingStripeCustomerId, $customer);
 
-            if (!is_wp_error($existingStripeCustomer) && is_array($existingStripeCustomer) && !empty($existingStripeCustomer['id']) && isset($existingStripeCustomer['email']) && $existingStripeCustomer['email'] === $customer->email) {
-                return $existingStripeCustomer;
+            if ($existingStripeCustomer) {
+                if (self::stripeCustomerCanBill($existingStripeCustomer, $currency)) {
+                    return $existingStripeCustomer;
+                }
+                $legacyIsValid = true;
             }
         }
 
@@ -48,10 +77,43 @@ class StripeHelper
         $id = Arr::get($newStripeCustomer, 'id', false);
 
         if ($id) {
-            $customer->updateMeta('stripe_customer_id', $id);
+            $customer->updateMeta($legacyIsValid ? $currencyMetaKey : 'stripe_customer_id', $id);
         }
 
         return $newStripeCustomer;
+    }
+
+    /**
+     * The Stripe customer when it still exists, belongs to $customer's email and
+     * can bill $currency; null otherwise.
+     */
+    private static function getUsableStripeCustomer($stripeCustomerId, Customer $customer, $currency = '')
+    {
+        $stripeCustomer = (new API())->getStripeObject('customers/' . $stripeCustomerId);
+
+        if (is_wp_error($stripeCustomer) || !is_array($stripeCustomer) || empty($stripeCustomer['id'])) {
+            return null;
+        }
+
+        if (!isset($stripeCustomer['email']) || $stripeCustomer['email'] !== $customer->email) {
+            return null;
+        }
+
+        return self::stripeCustomerCanBill($stripeCustomer, $currency) ? $stripeCustomer : null;
+    }
+
+    // Stripe sets a customer's currency on its first subscription or invoice; empty means never billed.
+    private static function stripeCustomerCanBill(array $stripeCustomer, $currency)
+    {
+        $billedCurrency = strtolower((string)Arr::get($stripeCustomer, 'currency', ''));
+
+        return !$currency || !$billedCurrency || $billedCurrency === strtolower($currency);
+    }
+
+    // Stripe takes UGX amounts ×100 like a two-decimal currency, though it charges whole shillings.
+    public static function isZeroDecimal($currency)
+    {
+        return $currency && strtoupper((string)$currency) !== 'UGX' && CurrenciesHelper::isZeroDecimal($currency);
     }
 
     public static function transformSubscriptionStatus($stripeSubscription, $subscriptionModel = null)
@@ -92,7 +154,7 @@ class StripeHelper
         $amount = Arr::get($stripeSubscription, 'plan.amount', 0);
         $currency = Arr::get($stripeSubscription, 'plan.currency', null);
 
-        if ($currency && CurrenciesHelper::isZeroDecimal($currency)) {
+        if ($currency && self::isZeroDecimal($currency)) {
             $amount = $amount * 100;
         }
 
@@ -141,7 +203,7 @@ class StripeHelper
     {
         $amount = (int)$amount;
 
-        if ($currency && CurrenciesHelper::isZeroDecimal($currency)) {
+        if ($currency && self::isZeroDecimal($currency)) {
             $amount *= 100;
         }
 
@@ -168,6 +230,10 @@ class StripeHelper
 
     public static function processRemoteRefund($transaction, $amount, $args)
     {
+        if (!Money::isWholeAmount($amount, $transaction->currency)) {
+            return new \WP_Error('invalid_refund_precision', __('Refund amount must use the smallest unit of the transaction currency.', 'fluent-cart'));
+        }
+
         $intentId = $transaction->vendor_charge_id;
         if (!$intentId) {
             return new \WP_Error('invalid_refund', __('Invalid transaction ID for refund.', 'fluent-cart'));
@@ -176,7 +242,7 @@ class StripeHelper
         $refundAmount = (int)$amount;
         $refundCurrency = $transaction->currency;
 
-        if ($refundCurrency && CurrenciesHelper::isZeroDecimal($refundCurrency)) {
+        if ($refundCurrency && self::isZeroDecimal($refundCurrency)) {
             $refundAmount = (int)($refundAmount / 100);
         }
 

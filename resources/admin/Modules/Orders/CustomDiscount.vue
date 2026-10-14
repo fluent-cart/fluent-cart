@@ -57,6 +57,7 @@
       <DiscountModal
           :discount="discount"
           :totalAmount="order.subtotal"
+          :currency="order.currency"
           @when-discount-edit-is-done="applyDiscount"
           @emit-cancel-discount-modal="discountModalIsOpen = false"
       />

@@ -18,7 +18,8 @@ let resourcesDir = [
     path.join('resources/withdrawal'),
     path.join('resources/order-bump'),
     path.join('resources/addon-assets'),
-    path.join('resources/attributes')
+    path.join('resources/attributes'),
+    path.join('resources/accounting-export')
 ];
 let phpFile = path.join('app/Services/Translations/admin-translation.php');
 

@@ -59,6 +59,7 @@ add_action('init', function () {
 
 \FluentCart\App\Hooks\Handlers\ShortCodes\SearchBarShortCode::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\SearchBarBlockEditor::register();
+\FluentCart\App\Hooks\Handlers\BlockEditors\CurrencySwitcherBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\PricingTableBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\BlockEditors\CustomerProfileBlockEditor::register();
 \FluentCart\App\Hooks\Handlers\ShortCodes\CustomerProfileHandler::register();
@@ -266,6 +267,7 @@ if (defined('WP_CLI') && WP_CLI) {
 \FluentCart\App\Modules\Subscriptions\SubscriptionModule::register();
 \FluentCart\App\Modules\Shipping\ShippingModule::register();
 \FluentCart\App\Modules\StoreManagedRenewal\RenewalModule::register();
+\FluentCart\App\Modules\MultiCurrency\MultiCurrencyModule::register();
 (new \FluentCart\App\Hooks\Handlers\AttributesHandler())->register();
 (new \FluentCart\App\Hooks\Handlers\AdvancedVariationHandler())->register();
 

@@ -79,8 +79,10 @@ export function useExport(config) {
         return `${config.filenamePrefix}-${date}.${format}`;
     };
 
+    // A deep copy taken once per export: Rest posts JSON, so a JSON round
+    // trip is exactly what the server would have received anyway.
     const sanitizeFilters = (filters) => {
-        const sanitized = {...(filters || {})};
+        const sanitized = JSON.parse(JSON.stringify(filters || {}));
         [
             'page',
             'per_page',
@@ -133,6 +135,12 @@ export function useExport(config) {
     };
 
     const requestBatches = async (options, initialMaxRecords) => {
+        // Snapshot the filters when the export starts: the cursor and the rows
+        // already written belong to them, so a filter edited mid-export must
+        // not reach the later batches.
+        const filters = sanitizeFilters(
+            options.scope === 'all' ? config.buildAllParams() : config.buildParams()
+        );
         let cursor = 0;
         let maxRecords = initialMaxRecords;
 
@@ -148,9 +156,7 @@ export function useExport(config) {
                 ids: options.ids || [],
                 columns: options.columns || [],
                 modules: options.modules || [],
-                filters: sanitizeFilters(
-                    options.scope === 'all' ? config.buildAllParams() : config.buildParams()
-                ),
+                filters,
                 cursor,
                 max_records: maxRecords
             };
@@ -174,7 +180,13 @@ export function useExport(config) {
                 return;
             }
 
-            if (!batch.records.length && !progress.value.fetched) {
+            // A batch may come back empty while the server still has more
+            // (the accounting export's sales -> refunds hand-off, or a filter
+            // that matched nothing in this batch): follow the cursor while it
+            // moves, and only call it "no data" once the server is done.
+            const hasMore = Boolean(batch.has_more && batch.cursor && batch.cursor !== cursor);
+
+            if (!batch.records.length && !progress.value.fetched && !hasMore) {
                 await activeWriter.abort();
                 activeWriter = null;
                 isExporting.value = false;
@@ -187,7 +199,7 @@ export function useExport(config) {
             const reachedTotal = progress.value.total
                 && progress.value.fetched >= progress.value.total;
 
-            if (reachedTotal || !batch.has_more || !batch.cursor || !batch.records.length) {
+            if (reachedTotal || !hasMore) {
                 await activeWriter.close();
                 activeWriter = null;
                 isExporting.value = false;

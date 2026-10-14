@@ -21,6 +21,7 @@ class SubscriptionsMigrator extends Migrator
                 `parent_order_id` BIGINT(20) UNSIGNED NOT NULL,
                 `product_id` BIGINT(20) UNSIGNED NOT NULL,
                 `item_name` TEXT NOT NULL,
+                `currency` VARCHAR(10) NOT NULL DEFAULT '',
                 `quantity` INT NOT NULL DEFAULT '1',
                 `variation_id` BIGINT(20) UNSIGNED NOT NULL,
                 `billing_interval` VARCHAR(45) NULL,
@@ -53,6 +54,7 @@ class SubscriptionsMigrator extends Migrator
                  INDEX `{$indexPrefix}vendor_subscription_id_idx` (`vendor_subscription_id` ASC),
                  INDEX `{$indexPrefix}_expiry_scan_idx` (`status`, `next_billing_date`, `id`),
                  INDEX `{$indexPrefix}collection_method_idx` (`collection_method`),
+                 INDEX `{$indexPrefix}currency_idx` (`currency`),
                  INDEX `" . self::CUSTOMER_RECOVERY_INDEX . "` (`customer_id` ASC, `id` ASC)";
     }
 
@@ -65,6 +67,29 @@ class SubscriptionsMigrator extends Migrator
         static::addVendorSubscriptionIdIndex();
         static::addExpiryScanIndex();
         static::addCollectionMethodIndex();
+        static::addCurrencyColumn();
+    }
+
+    /**
+     * The subscription's presentment currency, promoted out of the
+     * `config.currency` JSON so MRR and churn can group by it. Existing rows
+     * keep '' until the `subscription_currency` data backfill copies the
+     * parent order's currency.
+     */
+    public static function addCurrencyColumn()
+    {
+        // "ALTER TABLE %i ADD COLUMN `currency` VARCHAR(10) NOT NULL DEFAULT '' AFTER `item_name`"
+        static::addColumnIfNotExists('currency', "VARCHAR(10) NOT NULL DEFAULT ''", 'item_name');
+
+        static::addIndexIfNotExists(
+            static::getDbPrefix() . 'fct_index_currency_idx',
+            'currency'
+        );
+    }
+
+    public static function hasCurrencyColumn(): bool
+    {
+        return static::getColumnType('currency') !== '';
     }
 
     // Serves the store-managed cron guard: whereIn(collection_method,[manual,system])->exists().

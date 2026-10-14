@@ -6,6 +6,7 @@ use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Vite;
+use FluentCart\App\Services\Money;
 use FluentCart\App\Services\URL;
 use FluentCart\Api\StoreSettings;
 use FluentCart\Api\PaymentMethods;
@@ -600,6 +601,9 @@ class MenuHandler
             'checkout_url'                     => $checkoutUrl,
             'dummy_product_info'               => apply_filters('fluent_cart/dummy_product_info', []) ?: [],
             'currency_signs'                   => CurrenciesHelper::getCurrencySigns(),
+            'currency_decimals'                => Money::getDecimalsMap(),
+            // Admin orders in another currency are not released yet
+            'admin_order_currencies'           => [],
             'filter_options'                   => $filterOptions,
             'table_config'                     => $tableConfig,
             'receipt_page_url'                 => $settings->getReceiptPage(),

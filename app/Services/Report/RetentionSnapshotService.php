@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\Database\Migrations\RetentionSnapshotsMigrator;
@@ -336,10 +337,13 @@ class RetentionSnapshotService
 
         $this->log('Grouping by customer-product pairs...', 'info', $progressCallback);
 
-        // Group subscriptions by customer_id + product_id
+        // Group subscriptions by customer_id + product_id + currency — MRR is
+        // only summable within one currency (multi-currency plan §13)
+        $baseCurrency = BaseCurrency::get();
         $grouped = [];
         foreach ($allSubscriptions as $sub) {
-            $key = "{$sub->customer_id}_{$sub->product_id}";
+            $sub->currency = strtoupper((string) ($sub->currency ?? '')) ?: $baseCurrency;
+            $key = "{$sub->customer_id}_{$sub->product_id}_{$sub->currency}";
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [];
             }
@@ -362,6 +366,10 @@ class RetentionSnapshotService
             $firstSub = $subscriptions[0];
             $customerId = $firstSub->customer_id;
             $productId = $firstSub->product_id;
+            $currency = $firstSub->currency;
+            if (!isset($aggregates[$currency])) {
+                $aggregates[$currency] = [];
+            }
             $cohort = (new \DateTime($firstSub->created_at))->format('Y-m');
 
             // Get cohort baseline
@@ -392,7 +400,7 @@ class RetentionSnapshotService
 
                 // Aggregate for specific product
                 $this->addToAggregate(
-                    $aggregates,
+                    $aggregates[$currency],
                     $cohort,
                     $period,
                     $productId,
@@ -403,7 +411,7 @@ class RetentionSnapshotService
 
                 // Aggregate for all products
                 $this->addToAggregate(
-                    $aggregates,
+                    $aggregates[$currency],
                     $cohort,
                     $period,
                     'all',
@@ -422,7 +430,10 @@ class RetentionSnapshotService
 
         // Insert aggregates in batches
         $this->log('Inserting snapshots to database...', 'info', $progressCallback);
-        $totalInserted = $this->insertAggregates('fct_retention_snapshots', $aggregates, $progressCallback);
+        $totalInserted = 0;
+        foreach ($aggregates as $currency => $currencyAggregates) {
+            $totalInserted += $this->insertAggregates('fct_retention_snapshots', $currencyAggregates, $progressCallback, (string) $currency);
+        }
         
         unset($aggregates);
         if (function_exists('gc_collect_cycles')) {
@@ -632,7 +643,7 @@ class RetentionSnapshotService
     /**
      * Insert aggregates into database in batches
      */
-    protected function insertAggregates(string $table, array $aggregates, ?callable $progressCallback): int
+    protected function insertAggregates(string $table, array $aggregates, ?callable $progressCallback, string $currency = ''): int
     {
         $snapshots = [];
         $batchInsertThreshold = 10000;
@@ -656,6 +667,7 @@ class RetentionSnapshotService
                         'cohort'                    => $cohort,
                         'period'                    => $period,
                         'product_id'                => $productId,
+                        'currency'                  => $currency,
                         'period_offset'             => $data['period_offset'],
                         'cohort_customers'          => $data['cohort_customers'],
                         'cohort_mrr'                => $data['cohort_mrr'],

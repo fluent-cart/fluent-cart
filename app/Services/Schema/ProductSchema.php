@@ -2,7 +2,8 @@
 
 namespace FluentCart\App\Services\Schema;
 
-use FluentCart\Api\CurrencySettings;
+use FluentCart\App\Services\Money;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
@@ -271,11 +272,11 @@ class ProductSchema
             return [];
         }
 
-        // CurrencySettings directly, not Helper::shopConfig(): that helper
-        // also reads the store's shipping packages, which no offer needs.
-        $currencySettings = CurrencySettings::get();
-        $currency = strtoupper((string) Arr::get($currencySettings, 'currency', 'USD'));
-        $decimals = Arr::get($currencySettings, 'is_zero_decimal') ? 0 : 2;
+        // Always the base currency and base amounts: crawlers must see one
+        // stable price, not the visitor's presentment currency
+        // (multi-currency plan §12.7)
+        $currency = BaseCurrency::get();
+        $decimals = Money::getDecimals($currency);
 
         // Availability the way the buy button decides it: with the stock
         // module off everything on the page is for sale, whatever the

@@ -245,7 +245,7 @@ return [
         'kind'          => 'behavior',
         'phase'         => 29,
         'known_failure' => false,
-        'run'           => function () use ($phase29MakePaymentInstance, $phase29WithStoreMode) {
+        'run'           => function () use ($phase29MakePaymentInstance) {
             $transport = new FcProviderHarness();
 
             try {
@@ -264,7 +264,7 @@ return [
                     ->expect('POST', 'https://api.paypal.com/v2/checkout/orders', 'paypal/order-created-success.json')
                     ->install();
 
-                $result = $phase29WithStoreMode('phase29', function () use ($payment) {
+                $result = FcProviderHarness::withPayPalMode('phase29', function () use ($payment) {
                     return (new PayPalProcessor())->handleSinglePayment($payment);
                 });
                 $transport->assertComplete();
@@ -333,7 +333,7 @@ return [
         'kind'          => 'behavior',
         'phase'         => 29,
         'known_failure' => false,
-        'run'           => function () use ($phase29MakePaymentInstance, $phase29WithStoreMode) {
+        'run'           => function () use ($phase29MakePaymentInstance) {
             $transport = new FcProviderHarness();
 
             try {
@@ -352,7 +352,7 @@ return [
                     ->expect('POST', 'https://api.paypal.com/v2/checkout/orders', 'paypal/rate-limit.json')
                     ->install();
 
-                $result = $phase29WithStoreMode('phase29', function () use ($payment) {
+                $result = FcProviderHarness::withPayPalMode('phase29', function () use ($payment) {
                     return (new PayPalProcessor())->handleSinglePayment($payment);
                 });
                 $transport->assertComplete();

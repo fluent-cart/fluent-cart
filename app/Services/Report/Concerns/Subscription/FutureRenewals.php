@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report\Concerns\Subscription;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -15,7 +16,7 @@ trait FutureRenewals
         // $groupBy = $params['groupBy'] ?? 'daily'; // daily or monthly
         $groupBy = 'monthly';
 
-        $activeSubscriptions = $this->getActiveSubscriptions();
+        $activeSubscriptions = $this->getActiveSubscriptions(ReportCurrency::resolve($params['currency'] ?? null, true));
         $projections = [];
         $totalProjected = 0;
         $totalRenewals = 0;
@@ -83,9 +84,9 @@ trait FutureRenewals
     /**
      * Get all active subscriptions with billing info
      */
-    private function getActiveSubscriptions()
+    private function getActiveSubscriptions($currency)
     {
-        return App::db()->table('fct_subscriptions')
+        $query = ReportCurrency::subscriptionsTable(['currency' => $currency])
             ->select([
                 'id',
                 'recurring_total',
@@ -101,8 +102,10 @@ trait FutureRenewals
             ->where(function ($query) {
                 $query->whereNull('expire_at')
                     ->orWhere('expire_at', '>', gmdate('Y-m-d H:i:s'));
-            })
-            ->get();
+            });
+
+        // Projected renewal amounts are only summable within one currency
+        return ReportCurrency::whereCurrencyColumn($query, 'currency', $currency)->get();
     }
 
     /**

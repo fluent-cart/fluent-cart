@@ -18,7 +18,7 @@ class RefundReportController extends Controller
 
     public function getRefundChart(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = RefundReportService::make();
 
@@ -49,7 +49,7 @@ class RefundReportController extends Controller
 
     public function getWeeksBetweenRefund(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = RefundReportService::make();
 
@@ -60,7 +60,7 @@ class RefundReportController extends Controller
 
     public function getRefundDataByGroup(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = RefundReportService::make();
 

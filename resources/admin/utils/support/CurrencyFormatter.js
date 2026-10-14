@@ -21,6 +21,15 @@ export default class CurrencyFormatter {
         };
     }
 
+    // Decimal places belong to the currency being rendered, not the store's.
+    // Falls back to the store currency, then to 2.
+    static #decimalsFor(currencyName) {
+        const decimalsMap = AppConfig.get('currency_decimals', {});
+        const code = (currencyName || AppConfig.get('shop.currency', '')).toUpperCase();
+        const decimals = Arr.get(decimalsMap, code);
+        return typeof decimals === 'number' ? decimals : 2;
+    }
+
     static setLocale() {
         const wpLocale = (AppConfig.get('wp_locale', 'en-US')).replace('_', '-');
         const shopConfig = AppConfig.get('shop', {});
@@ -54,7 +63,7 @@ export default class CurrencyFormatter {
 
         let formatted = new Intl.NumberFormat(CurrencyFormatter.#locale, {
             minimumFractionDigits: 0,
-            maximumFractionDigits: 2
+            maximumFractionDigits: CurrencyFormatter.#decimalsFor(currencyName)
         }).format(amount ? amount / 100 : 0);
 
         formatted = translateNumber(formatted);
@@ -95,11 +104,16 @@ export default class CurrencyFormatter {
             amount = amount / 1000;
             suffix = 'K';
         } else {
-            return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currency);
+            return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currencyName);
         }
 
 
-        formattedAmount = CurrencyFormatter.formatNumber(amount, false, hideEmpty, currency);
+        // Scaled values keep up to 2 fraction digits regardless of the
+        // currency's own decimals — "¥7.4K", not "¥7K".
+        formattedAmount = translateNumber(new Intl.NumberFormat(CurrencyFormatter.#locale, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(amount ? amount / 100 : 0));
 
         if(!withCurrency) {
             return formattedAmount;
@@ -159,12 +173,12 @@ export default class CurrencyFormatter {
     }
 
     // Format a list of amounts
-    static formatBulk(amounts, useScaling = false, currency = CurrencyFormatter.#currencyConfig().sign, hideEmpty = false) {
+    static formatBulk(amounts, useScaling = false, currencyName = '', hideEmpty = false) {
         return amounts.map(amount => {
             if (useScaling) {
-                return CurrencyFormatter.formatScaled(amount, true, hideEmpty, currency);
+                return CurrencyFormatter.formatScaled(amount, true, hideEmpty, currencyName);
             }
-            return CurrencyFormatter.formatNumber(amount, true, hideEmpty, currency);
+            return CurrencyFormatter.formatNumber(amount, true, hideEmpty, currencyName);
         });
     }
 

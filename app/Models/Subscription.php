@@ -2,7 +2,8 @@
 
 namespace FluentCart\App\Models;
 
-use FluentCart\Api\CurrencySettings;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AttributeHelper;
@@ -50,6 +51,7 @@ class Subscription extends Model
         'parent_order_id',
         'product_id',
         'item_name',
+        'currency',
         'variation_id',
         'billing_interval',
         'signup_fee',
@@ -83,6 +85,9 @@ class Subscription extends Model
             if (empty($model->uuid)) {
                 $model->uuid = md5(time() . wp_generate_uuid4());
             }
+
+            // Currency column + the parent order's snapshot, which renewals carry.
+            CurrencySnapshot::applyToNewSubscription($model);
         });
     }
 
@@ -417,22 +422,25 @@ class Subscription extends Model
      */
     public function getCurrencyAttribute(): string
     {
-        $currency = '';
-
-        if (empty($this->config)) {
-            // get from store settings
-            $currency = CurrencySettings::get('currency');
-            return strtoupper($currency);
+        $column = (string) Arr::get($this->attributes, 'currency', '');
+        if ($column !== '') {
+            return strtoupper($column);
         }
 
-        $definedCurrency = Arr::get($this->config, 'currency', '');
-
-        if(empty($definedCurrency)) {
-            $currency = CurrencySettings::get('currency');
-            return strtoupper($currency);
+        $definedCurrency = Arr::get((array) $this->config, 'currency', '');
+        if ($definedCurrency) {
+            return strtoupper($definedCurrency);
         }
 
-        return strtoupper($definedCurrency);
+        // Not CurrencySettings::get(): on storefront requests that is the visitor's currency
+        $parentCurrency = $this->parent_order_id
+            ? Order::query()->where('id', $this->parent_order_id)->value('currency')
+            : '';
+        if ($parentCurrency) {
+            return strtoupper($parentCurrency);
+        }
+
+        return BaseCurrency::get();
     }
 
     /**

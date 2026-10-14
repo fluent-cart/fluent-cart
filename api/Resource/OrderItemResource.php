@@ -6,6 +6,8 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductVariation;
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
+use FluentCart\App\Modules\MultiCurrency\Services\PriceConverter;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
@@ -139,6 +141,27 @@ class OrderItemResource extends BaseResourceApi
     }
 
     /**
+     * The order's frozen currency snapshot as a pricing quote, when the order
+     * is in a currency other than the base with a known rate; null otherwise
+     * (base-currency orders, and legacy orders whose rate was never known).
+     *
+     * @param \FluentCart\App\Models\Order|mixed $order
+     */
+    private static function orderCurrencyQuote($order): ?array
+    {
+        if (!$order instanceof \FluentCart\App\Models\Order) {
+            return null;
+        }
+
+        $snapshot = CurrencySnapshot::fromOrder($order);
+        if (!CurrencySnapshot::hasTrustedRate($snapshot) || PriceConverter::isBaseQuote($snapshot)) {
+            return null;
+        }
+
+        return $snapshot;
+    }
+
+    /**
      * Create or Update order items with the provided data.
      *
      * This function creates or updates order items based on the provided data.
@@ -242,6 +265,23 @@ class OrderItemResource extends BaseResourceApi
                     $otherInfo = Arr::get($item, 'other_info', []);
                     if (!is_array($otherInfo)) {
                         $otherInfo = [];
+                    }
+
+                    // The picker sends the variant's base-currency price. An order in
+                    // another currency prices it at the order's own frozen rate and
+                    // pricing rules, from the stored base price (multi-currency plan §9.1).
+                    $orderQuote = static::orderCurrencyQuote($order);
+                    if ($orderQuote) {
+                        $baseVariation = ProductVariation::query()->find($variationId);
+                        if ($baseVariation) {
+                            $itemData['unit_price'] = PriceConverter::toPrice($baseVariation->item_price, $orderQuote);
+                            $itemData['subtotal'] = Arr::get($item, 'quantity', 0) * $itemData['unit_price'];
+                            $itemData['line_total'] = $itemData['subtotal'] - Arr::get($item, 'discount_total', 0);
+                            $signupFee = Arr::get($baseVariation->other_info, 'signup_fee');
+                            if (!empty($signupFee)) {
+                                $otherInfo['signup_fee'] = PriceConverter::toPrice($signupFee, $orderQuote);
+                            }
+                        }
                     }
                     if (!array_key_exists('item_attributes', $otherInfo)) {
                         $otherInfo['item_attributes'] = AttributeHelper::getProductItemAttributes($variationId, $productId);

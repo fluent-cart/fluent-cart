@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\ShortCodeParser;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\App\App;
 use FluentCart\Framework\Container\Contracts\BindingResolutionException;
 use FluentCart\Framework\Foundation\Application;
@@ -200,6 +201,14 @@ class SmartCodeParser
      * @throws BindingResolutionException
      */
     public function parseTemplate(string $template, array $data): string
+    {
+        // An order's amounts render in its own currency (multi-currency)
+        return CurrencyContext::withCurrencyOf($data, function () use ($template, $data) {
+            return $this->parseOrderTemplate($template, $data);
+        });
+    }
+
+    private function parseOrderTemplate(string $template, array $data): string
     {
         $templateParts = $this->getTemplateWrapper();
 

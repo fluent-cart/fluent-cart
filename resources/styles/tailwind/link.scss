@@ -1,0 +1,12 @@
+/*===== text link =====*/
+// Underlined text link. Docs and other off-admin pages open in a new tab; admin routes stay in place.
+.fct-text-link{
+  @apply inline-flex items-center text-primary-500 font-medium leading-4 no-underline border-0 border-b border-solid border-primary-500 dark:text-gray-50 dark:border-gray-50;
+  &:hover,
+  &:focus{
+    @apply text-primary-600 border-primary-600 shadow-none dark:text-white dark:border-white;
+  }
+  &:focus-visible{
+    @apply outline outline-2 outline-offset-2 outline-primary-500;
+  }
+}

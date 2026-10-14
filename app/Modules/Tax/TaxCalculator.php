@@ -6,6 +6,8 @@ use FluentCart\App\App;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\TaxRate;
 use FluentCart\App\Models\TaxClass;
+use FluentCart\App\Services\Money;
+use FluentCart\Api\CurrencySettings;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\Tax\TaxManager;
 use FluentCart\Framework\Support\Collection;
@@ -58,6 +60,8 @@ class TaxCalculator
 
     private $roundingMode = 'item';
 
+    private $currency = '';
+
     public function __construct($lineItems, $config = [])
     {
         $this->inclusive = Arr::get($config, 'inclusive', true);
@@ -67,6 +71,7 @@ class TaxCalculator
         $this->city = Arr::get($config, 'city');
         $this->postCode = Arr::get($config, 'postcode');
         $this->roundingMode = Arr::get($config, 'tax_rounding', 'item');
+        $this->currency = (string) CurrencySettings::get('currency');
 
         // Map territory country codes (GP→FR+state=GP) before rate lookup.
         $resolved = TaxManager::getInstance()->resolveTaxCountryAndState(
@@ -1023,15 +1028,16 @@ class TaxCalculator
     private function roundTax($amount)
     {
         if ($this->roundingMode === 'item') {
-            return (int) round($amount, 0, PHP_ROUND_HALF_UP);
+            return (int) round(Money::roundIfZeroDecimal($amount, $this->currency), 0, PHP_ROUND_HALF_UP);
         }
-        // subtotal and total modes defer rounding — caller accumulates raw float
-        return $amount;
+        // subtotal and total modes defer rounding — caller accumulates raw float.
+        // Zero-decimal lines still round: recurring and first-charge tax are read per line.
+        return Money::roundIfZeroDecimal($amount, $this->currency);
     }
 
     private function finalRound($amount)
     {
-        return (int) round($amount, 0, PHP_ROUND_HALF_UP);
+        return (int) round(Money::roundIfZeroDecimal($amount, $this->currency), 0, PHP_ROUND_HALF_UP);
     }
 
     protected function resolveMatchedRates($matchedRates)

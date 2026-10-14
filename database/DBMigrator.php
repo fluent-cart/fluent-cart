@@ -136,9 +136,16 @@ class DBMigrator
         do_action('fluent_cart/after_migrate');
     }
 
+    /**
+     * Bump when a branch adds a step to maybeMigrateCurrencySchema(), so
+     * stores that completed the earlier steps run the new one.
+     */
+    const CURRENCY_SCHEMA_VERSION = '4';
+
     public static function maybeMigrateDBChanges()
     {
         self::maybeMigrateCustomerRecoveryIndexes();
+        self::maybeMigrateCurrencySchema();
 
         /*
          * TODO We will remove this after final release
@@ -188,6 +195,13 @@ class DBMigrator
             // 2026-09-07 — product reviews. A store updating from a release
             // without the reviews table gets it created here.
             ProductReviewsMigrator::migrate();
+
+            // 2026-09-27 — multi-currency: widen fct_orders.rate to hold a
+            // real exchange rate. Transactions and subscriptions are covered
+            // by their migrated() calls below.
+            OrdersMigrator::widenRateColumn();
+            OrdersMigrator::addCurrencyCreatedIndex();
+            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::addCurrencyDimension();
 
             // let's check the orders table sequence number
             global $wpdb;
@@ -643,6 +657,45 @@ class DBMigrator
                 }
             }
             update_option($option, '1', false);
+        } finally {
+            self::releaseMigrationLock();
+        }
+    }
+
+    /**
+     * The currency columns record their own completion. The DB version is
+     * written before its upgrade steps run, so a widen that fails or is cut
+     * off on a large table (lock wait, killed request) would never run again,
+     * and every rate after it would be rounded into the old narrow column with
+     * no error. Until all of them are verified, each admin load retries.
+     */
+    public static function maybeMigrateCurrencySchema(): void
+    {
+        $option = '_fluent_cart_currency_schema_version';
+        if (get_option($option) === self::CURRENCY_SCHEMA_VERSION) {
+            return;
+        }
+        if (!(defined('WP_CLI') && WP_CLI) && (!is_admin() || !current_user_can('manage_options'))) {
+            return;
+        }
+        if (!self::acquireMigrationLock()) {
+            return;
+        }
+        try {
+            if (get_option($option) === self::CURRENCY_SCHEMA_VERSION) {
+                return;
+            }
+            OrdersMigrator::widenRateColumn();
+            OrderTransactionsMigrator::widenRateColumn();
+            SubscriptionsMigrator::addCurrencyColumn();
+            RetentionSnapshotsMigrator::addCurrencyDimension();
+            CartMigrator::addUserCartIndex();
+
+            if (!OrdersMigrator::hasWideRateColumn() || !OrderTransactionsMigrator::hasWideRateColumn() || !SubscriptionsMigrator::hasCurrencyColumn()
+                || !RetentionSnapshotsMigrator::hasCurrencyDimension() || !CartMigrator::hasUserCartIndex()) {
+                return; // Keep the upgrade pending if an ALTER failed.
+            }
+            update_option($option, self::CURRENCY_SCHEMA_VERSION, false);
         } finally {
             self::releaseMigrationLock();
         }

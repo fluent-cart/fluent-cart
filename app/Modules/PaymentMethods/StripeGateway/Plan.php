@@ -2,7 +2,6 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
@@ -62,6 +61,10 @@ class Plan
 
         $sitePrefix = Helper::getSitePrefix();
         $pricingId = 'fct_' . $sitePrefix . '_price_' . $data['variation_id'] . '_' . $data['recurring_total'] . '_' . $data['billing_interval'] . '_' . $intervalCount . '_' . $data['trial_days'] . '_' . $data['currency'];
+        // UGX plans created before amounts were sent ×100 hold 1/100 of the price; never reuse them.
+        if (strtoupper((string)$data['currency']) === 'UGX') {
+            $pricingId .= '_x100';
+        }
         $productId = 'fct_' . $sitePrefix . '_product_' . $data['product_id'];
 
         // Let's see if we have the price already created
@@ -89,7 +92,7 @@ class Plan
         $currency = Arr::get($data, 'currency');
         $recurringAmount = (int)Arr::get($data, 'recurring_total', 0);
 
-        if (CurrenciesHelper::isZeroDecimal($currency)) {
+        if (StripeHelper::isZeroDecimal($currency)) {
             $recurringAmount = (int)($recurringAmount / 100);
         }
 
@@ -137,11 +140,14 @@ class Plan
 
 
         $priceId = 'fct_' . $data['amount'] . '_' . $data['currency'];
+        if (strtoupper((string)$data['currency']) === 'UGX') {
+            $priceId .= '_x100';
+        }
 
         $currency = Arr::get($data, 'currency');
         $unitAmount = (int)Arr::get($data, 'amount', 0);
 
-        if (CurrenciesHelper::isZeroDecimal($currency)) {
+        if (StripeHelper::isZeroDecimal($currency)) {
             $unitAmount = (int)($unitAmount / 100);
         }
 

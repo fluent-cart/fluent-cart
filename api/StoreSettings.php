@@ -7,6 +7,7 @@ use FluentCart\App\Vite;
 use FluentCart\App\CPT\Pages;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CurrenciesHelper;
+use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencySettings;
 use FluentCart\App\Services\OrderService;
 use FluentCart\App\Services\Theme\ColorPalette;
 use FluentCart\App\Services\Theme\FrontendTheme;
@@ -157,6 +158,7 @@ class StoreSettings implements ArrayableInterface
         ];
         $isProActive = App::isProActive();
         $proFeatureIcon = Vite::getAssetUrl('images/crown.svg');
+        $isCurrencyLocked = MultiCurrencySettings::isBaseCurrencyLocked();
 
         // Read-only schedule for store-managed subscription renewals. Pulled live
         // from the same map the scheduler uses, so it stays accurate under the
@@ -446,10 +448,17 @@ class StoreSettings implements ArrayableInterface
                                                             <div class="form-note">' . __("Select the primary currency for your store.", 'fluent-cart') . '</div>'
                                     ],
                                     "currency" => [
-                                        'wrapperClass' => 'col-span-2 flex items-center',
+                                        'wrapperClass' => $isCurrencyLocked ? 'col-span-2 flex flex-col items-stretch' : 'col-span-2 flex items-center',
                                         "label"        => '',
                                         "type"         => "select",
                                         'filterable'   => true,
+                                        'disabled'     => $isCurrencyLocked,
+                                        'note'         => $isCurrencyLocked ? sprintf(
+                                            /* translators: %1$s: opening link tag, %2$s: closing link tag */
+                                            esc_html__('The store currency is the base currency for every exchange rate and report, so it cannot be changed while multi-currency is enabled and orders exist. Disable it in %1$sMulti Currency settings%2$s to change the currency.', 'fluent-cart'),
+                                            '<a class="fct-text-link" href="' . esc_url(admin_url('admin.php?page=fluent-cart#/settings/multi-currency')) . '">',
+                                            '</a>'
+                                        ) : '',
                                         "options"      => CurrencySettings::getFormattedCurrencies(),
                                         "value"        => "USD"
                                     ],

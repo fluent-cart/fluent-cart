@@ -43,6 +43,7 @@
 @import "sidebar.scss";
 @import "licenses.scss";
 @import "icon-button.scss";
+@import "link.scss";
 @import "form.scss";
 @import "fileupload.scss";
 @import "coupon.scss";

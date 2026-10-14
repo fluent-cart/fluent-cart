@@ -3,6 +3,7 @@
 namespace FluentCart\App\Models;
 
 
+use FluentCart\App\Modules\MultiCurrency\Services\CouponCurrency;
 use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\HasActivity;
 use FluentCart\App\Services\DateTime\DateTime;
@@ -11,6 +12,19 @@ use FluentCart\Framework\Support\Arr;
 class Coupon extends Model
 {
     use CanSearch, HasActivity;
+
+    public static function boot()
+    {
+        parent::boot();
+
+        // A copy converted to a cart's currency is in-memory only; writing
+        // it back would store converted amounts on the real coupon
+        static::saving(function ($model) {
+            if (CouponCurrency::isConvertedCopy($model)) {
+                return false;
+            }
+        });
+    }
 
     protected $table = 'fct_coupons';
 

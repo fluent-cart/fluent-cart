@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer\Receipt;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
@@ -75,6 +76,16 @@ class ThankYouRender
         if (!$order) {
             return;
         }
+
+        // The order's amounts render in its own currency (multi-currency)
+        CurrencyContext::withCurrency($order->currency, function () use ($hide_wrapper) {
+            $this->renderOrder($hide_wrapper);
+        });
+    }
+
+    private function renderOrder($hide_wrapper = false)
+    {
+        $order = Arr::get($this->config, 'order', null);
         ?>
         <?php if (!$hide_wrapper) {
         $this->renderWrapperStart();

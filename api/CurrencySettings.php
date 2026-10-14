@@ -4,6 +4,7 @@ namespace FluentCart\Api;
 
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Services\Money;
 use FluentCart\Framework\Support\Arr;
 
 class CurrencySettings
@@ -45,11 +46,16 @@ class CurrencySettings
         $settings['is_zero_decimal'] = CurrenciesHelper::isZeroDecimal($settings['currency']);
         $settings['currency_sign'] = html_entity_decode(CurrenciesHelper::getCurrencySign($settings['currency']));
 
+        // Keyed reads go through the filter too, so a storefront presenting
+        // another currency (multi-currency) is honoured by every caller —
+        // gateways included — not only by callers that read the full array.
+        $settings = apply_filters('fluent_cart/global_currency_setting', $settings, []);
+
         if ($key) {
             return Arr::get($settings, $key);
         }
 
-        return apply_filters('fluent_cart/global_currency_setting', $settings, []);
+        return $settings;
     }
 
     public function getCurrency($settings = [])
@@ -120,12 +126,8 @@ class CurrencySettings
         $sign     = CurrenciesHelper::getCurrencySign($currencyCode);
         $position = Arr::get($settings, 'currency_position', 'before');
 
-        // Decimal configuration
-        $decimal = $showDecimal ? 2 : 0;
-
-        if (!empty($settings['is_zero_decimal'])) {
-            $decimal = 0;
-        }
+        // Decimal places belong to the currency being rendered, not the store's
+        $decimal = $showDecimal ? Money::getDecimals($currencyCode) : 0;
 
         // Separator configuration
         $decimalSeparatorSetting = Arr::get($settings, 'decimal_separator', 'dot');

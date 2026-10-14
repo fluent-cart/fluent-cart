@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
@@ -10,16 +11,17 @@ class DefaultReportService extends ReportService
 {
     public function fetchTopSoldProducts(array $params)
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw('
                 oi.post_id AS product_id,
                 SUM(oi.quantity) AS quantity_sold,
                 SUM(oi.line_total) / 100 AS total_amount
             ')
-            ->join('fct_order_items as oi', 'oi.order_id', '=', 'o.id')
             ->where('oi.post_id', '>', 0)
             ->groupBy('oi.post_id')
             ->orderByDesc('quantity_sold');
+
+        $query = ReportCurrency::joinOrderItems($query, $params);
 
         unset($params['variationIds']);
 
@@ -47,16 +49,17 @@ class DefaultReportService extends ReportService
 
     public function fetchTopSoldVariants(array $params): array
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw('
                 oi.object_id AS variation_id,
                 SUM(oi.quantity) AS quantity_sold,
                 SUM(oi.line_total) / 100 AS total_amount
             ')
-            ->join('fct_order_items as oi', 'oi.order_id', '=', 'o.id')
             ->where('oi.object_id', '>', 0)
             ->groupBy('oi.object_id')
             ->orderByDesc('quantity_sold');
+
+        $query = ReportCurrency::joinOrderItems($query, $params);
 
         unset($params['variationIds']);
 
@@ -221,7 +224,7 @@ class DefaultReportService extends ReportService
             ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
             ->when($variationIds, fn ($q) => $q->whereIn('object_id', $variationIds));
 
-        $orderMetricsQuery = App::db()->table('fct_orders as o')
+        $orderMetricsQuery = ReportCurrency::ordersTable($params)
             ->joinSub($itemsSub, 'oi_sum', fn ($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $orderMetricsQuery = $orderMetricsQuery->selectRaw("{$group['field']},

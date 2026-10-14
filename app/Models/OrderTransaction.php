@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Services\DateTime\DateTime;
@@ -105,6 +106,9 @@ class OrderTransaction extends Model
             if (empty($model->uuid)) {
                 $model->uuid = md5(time() . wp_generate_uuid4());
             }
+
+            // Carry the order's frozen exchange rate; flag a foreign currency.
+            CurrencySnapshot::applyToNewTransaction($model);
         });
 
         // created_at is the checkout time, which can be weeks before the money

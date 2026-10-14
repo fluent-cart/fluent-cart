@@ -1189,3 +1189,373 @@
         margin-left: 46px;
     }
 }
+// Popovers are teleported to <body>, outside .fct-mc-settings
+.el-popper.fct-mc-remove-popover{
+    @apply break-normal;
+}
+
+// Multi-currency settings, sized to the Figma "Multi Currency" frame
+.fct-mc-settings{
+    .fct-card{
+        @apply mb-5;
+    }
+    .fct-card-header.border-bottom{
+        @apply h-14 px-5 py-0 flex-nowrap border-gray-divider dark:border-dark-500;
+    }
+    .fct-card-header-title{
+        @apply text-base font-semibold leading-6 tracking-[-0.011em] text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-icon{
+        @apply w-5 h-5 shrink-0;
+    }
+    .fct-mc-body{
+        @apply flex flex-col gap-3 p-5;
+    }
+    .fct-mc-checkout{
+        @apply gap-4 px-5 py-4;
+    }
+    .fct-mc-toggle-row{
+        @apply flex items-start gap-3;
+    }
+    .fct-mc-field-text{
+        @apply flex flex-col flex-1 min-w-0;
+    }
+    .fct-mc-field-label{
+        @apply text-sm font-medium leading-5 tracking-[-0.006em] text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-field-hint{
+        @apply text-xs leading-4 text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-divider{
+        @apply h-[1px] w-full bg-gray-divider dark:bg-dark-500;
+    }
+    .fct-mc-base-currency{
+        @apply flex flex-col gap-1;
+    }
+    .fct-mc-badge{
+        @apply inline-flex items-center px-2 py-0.5 rounded-sm bg-gray-100 text-xs font-medium leading-4 text-system-dark dark:bg-dark-500 dark:text-gray-50;
+    }
+    .fct-mc-setting-row{
+        @apply flex items-center justify-between gap-4;
+    }
+    .fct-mc-beta-notice .el-alert__title{
+        @apply text-xs leading-5;
+    }
+    .fct-mc-note{
+        @apply flex items-center gap-1 p-2 rounded bg-gray-50 text-xs leading-4 text-system-dark dark:bg-dark-600 dark:text-gray-50;
+        .fct-mc-icon{
+            @apply w-4 h-4 text-gray-500 dark:text-gray-400;
+        }
+    }
+    .fct-mc-inline-row{
+        @apply flex items-center flex-wrap gap-3 text-sm leading-5 tracking-[-0.006em] text-system-dark dark:text-gray-50;
+        .fct-mc-counter.el-input-number{
+            @apply w-[120px];
+        }
+    }
+
+    // Selects: 20px Remix arrow, 4px text inset inside the padding
+    .fct-mc-provider-select,
+    .fct-mc-add-currency,
+    .fct-mc-select{
+        .el-select__selection{
+            @apply px-1;
+        }
+        .el-select__suffix .el-icon{
+            @apply w-5 h-5 text-system-mid dark:text-gray-300;
+        }
+    }
+    .fct-mc-provider-select{
+        @apply w-[184px] shrink-0;
+        .el-select__wrapper{
+            @apply min-h-9 p-2 gap-1;
+        }
+        .el-select__selected-item{
+            @apply text-sm font-medium text-system-mid dark:text-gray-300;
+        }
+    }
+    .fct-mc-add-currency{
+        @apply w-[170px];
+        .el-select__wrapper{
+            @apply min-h-8 p-1.5 gap-0.5;
+        }
+        .el-select__prefix{
+            @apply m-0 text-system-mid dark:text-gray-300;
+        }
+        .el-select__placeholder{
+            @apply text-sm font-medium text-system-mid dark:text-gray-300;
+        }
+    }
+    .fct-mc-select{
+        .el-select__wrapper{
+            @apply min-h-8 p-1.5 gap-0.5;
+        }
+        .el-select__selected-item{
+            @apply text-sm text-system-dark dark:text-gray-50;
+        }
+    }
+
+    // Counter input: borderless 24px -/+ buttons inside a 32px field
+    .fct-mc-counter.el-input-number{
+        @apply leading-none;
+        .el-input__wrapper{
+            @apply min-h-8 h-8 py-0 px-8;
+        }
+        .el-input__inner{
+            @apply text-[13px] leading-5 text-center text-system-dark dark:text-gray-50;
+        }
+        .el-input-number__decrease,
+        .el-input-number__increase{
+            @apply top-1 bottom-1 w-6 h-auto rounded-sm border-0 bg-transparent text-system-mid hover:bg-gray-50 hover:text-system-dark dark:text-gray-300 dark:hover:bg-dark-500 dark:hover:text-gray-50;
+        }
+        .el-input-number__decrease{
+            @apply left-1;
+        }
+        .el-input-number__increase{
+            @apply right-1;
+        }
+    }
+
+    // Switcher usage, read as a second paragraph under the toggle hint
+    .fct-mc-switcher-line{
+        @apply flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-2.5 pt-2.5 border-0 border-t border-solid border-gray-divider text-xs leading-5 text-system-mid dark:border-dark-500 dark:text-gray-300;
+    }
+
+    .fct-mc-shortcode{
+        @apply inline-flex items-center gap-1.5 py-1 px-2 rounded-xs border-0 bg-gray-100 cursor-copy text-system-mid hover:bg-gray-200 dark:bg-dark-500 dark:text-gray-300 dark:hover:bg-dark-400;
+        .fct-mc-icon{
+            @apply w-3.5 h-3.5;
+        }
+        code{
+            @apply p-0 bg-transparent text-xs text-inherit;
+        }
+        &:focus-visible{
+            @apply outline outline-2 outline-offset-1 outline-primary-500;
+        }
+    }
+
+    .fct-mc-table{
+        @apply overflow-x-auto;
+    }
+    .fct-mc-table-head,
+    .fct-mc-table-row{
+        @apply px-5 min-w-[700px];
+    }
+    // The pricing panel sits below the cells so its accordion can animate as a normal block
+    .fct-mc-table-head,
+    .fct-mc-table-cells{
+        @apply flex gap-6;
+    }
+    .fct-mc-table-cells{
+        @apply items-start;
+    }
+    .fct-mc-table-head{
+        @apply pt-2.5 pb-[11px] border-0 border-b border-solid border-gray-divider text-[11px] font-medium leading-3 tracking-[0.02em] uppercase text-system-mid dark:border-dark-500 dark:text-gray-300;
+    }
+    .fct-mc-table-row{
+        @apply py-5;
+        transition: background-color 0.6s ease;
+        &.is-needs-rate{
+            @apply bg-warning-25 dark:bg-warning-alpha-16;
+        }
+        & + .fct-mc-table-row{
+            @apply border-0 border-t border-solid border-gray-divider dark:border-dark-500;
+        }
+        &.is-just-added{
+            @apply bg-success-50 dark:bg-dark-500;
+        }
+    }
+    .fct-mc-table-empty{
+        @apply px-5 py-6 text-sm text-center text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-col-currency{
+        @apply w-[140px] shrink-0;
+    }
+    .fct-mc-col-rate{
+        @apply w-[170px] shrink-0;
+    }
+    .fct-mc-col-pricing{
+        @apply flex-1 min-w-[340px];
+    }
+    .fct-mc-col-actions{
+        @apply flex w-[72px] shrink-0 justify-end gap-1;
+    }
+    // Every column: a 32px main line, then a 16px detail line 4px below
+    .fct-mc-col-currency,
+    .fct-mc-col-rate,
+    .fct-mc-col-pricing{
+        @apply flex flex-col gap-1;
+    }
+    .fct-mc-code{
+        @apply flex items-center min-h-8 text-sm font-medium leading-5 text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-currency-name{
+        @apply text-xs leading-4 text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-rate{
+        @apply flex flex-wrap items-center gap-1 min-h-8 text-sm font-medium leading-5;
+    }
+    .fct-mc-rate-value{
+        @apply text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-rate-code{
+        @apply text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-rate-hold-note{
+        // Starts under the Rate column: 140px currency column + 24px gap
+        @apply flex items-center gap-1 m-0 mt-2 ml-[164px] text-xs leading-4 text-warning-800 dark:text-warning-200;
+        svg{
+            @apply shrink-0 text-warning-500;
+            width: 14px;
+            height: 14px;
+        }
+    }
+    .fct-mc-rate-edit{
+        @apply flex flex-col items-start gap-2 mt-1;
+        .fct-mc-rate-input{
+            @apply w-full;
+        }
+    }
+    .fct-mc-compact-button,
+    .fct-mc-icon-button{
+        @apply inline-flex items-center justify-center border-0 bg-transparent cursor-pointer text-system-mid hover:bg-gray-50 hover:text-system-dark dark:text-gray-300 dark:hover:bg-dark-500 dark:hover:text-gray-50;
+        &:focus-visible{
+            @apply outline outline-2 outline-offset-1 outline-primary-500;
+        }
+    }
+    .fct-mc-compact-button{
+        @apply p-0.5 rounded-sm;
+    }
+    .fct-mc-icon-button{
+        @apply p-1.5 rounded;
+    }
+    .fct-mc-pricing-unit{
+        @apply text-[13px] leading-5 text-system-mid whitespace-nowrap dark:text-gray-300;
+    }
+
+    // No rate yet: spans the Rate and Pricing columns
+    .fct-mc-needs-rate{
+        @apply flex flex-col gap-2 flex-1 min-w-[534px];
+        .badge{
+            @apply normal-case;
+        }
+    }
+    .fct-mc-needs-rate-line,
+    .fct-mc-needs-rate-input{
+        @apply flex flex-wrap items-center gap-2;
+    }
+    .fct-mc-needs-rate-line{
+        @apply min-h-8;
+    }
+    .fct-mc-needs-rate-input .fct-mc-rate-input{
+        @apply w-[160px];
+    }
+
+    // Pricing follows the Currency and Rate columns: a 32px main line, then a 12px detail line
+    .fct-mc-example{
+        @apply flex flex-wrap items-center gap-2 min-h-8 text-[13px] leading-5 text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-example-base,
+    .fct-mc-example-price{
+        @apply text-sm font-medium text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-pricing-meta{
+        @apply flex flex-wrap items-center gap-1;
+        .fct-mc-compact-button{
+            @apply p-0;
+            &.is-active{
+                @apply text-system-dark dark:text-gray-50;
+            }
+        }
+        .fct-mc-icon{
+            @apply w-4 h-4;
+        }
+    }
+
+    .fct-mc-pricing-panel{
+        // Same surface as the card, so the grey .fct-tooltip stands out on top of it
+        @apply flex flex-col gap-4 mt-4 py-4 px-5 rounded border border-solid border-gray-divider bg-white dark:bg-dark-700 dark:border-dark-500;
+    }
+    .fct-mc-pricing-panel-head{
+        @apply flex flex-wrap items-start justify-between gap-4;
+    }
+    .fct-mc-pricing-panel-grid{
+        @apply grid grid-cols-3 gap-5;
+    }
+    .fct-mc-pricing-field{
+        @apply flex flex-col gap-1.5 min-w-0;
+        .fct-mc-counter.el-input-number{
+            @apply flex-1 w-auto min-w-0;
+        }
+        .fct-mc-select{
+            @apply w-full;
+        }
+    }
+
+    .el-switch{
+        @apply h-5;
+        .el-switch__core{
+            @apply min-w-8 w-8 h-5 rounded-full;
+        }
+        .el-switch__action{
+            @apply w-4 h-4;
+        }
+    }
+}
+
+.fct-mc-history-dialog{
+    .fct-mc-history-intro{
+        @apply m-0 mb-3 text-sm text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-history-table{
+        .cell{
+            @apply leading-5;
+        }
+    }
+    .fct-mc-history-rate{
+        @apply flex flex-wrap items-center gap-1;
+    }
+    .fct-mc-history-rate-value{
+        @apply font-medium text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-rate-code{
+        @apply text-system-mid dark:text-gray-300;
+    }
+    .fct-mc-history-rate .badge{
+        margin-left: 4px;
+    }
+    // Same header and row heights as the loaded table, so the dialog barely moves
+    .fct-mc-history-skeleton-head{
+        @apply block w-full;
+        height: 37px;
+    }
+    .fct-mc-history-skeleton-row{
+        @apply flex items-center gap-5 px-5 border-b border-gray-divider dark:border-dark-400;
+        height: 66px;
+        .el-skeleton__item{
+            height: 14px;
+        }
+    }
+    .fct-mc-history-source{
+        @apply truncate;
+        max-width: 100%;
+    }
+    .fct-mc-history-change{
+        @apply font-medium whitespace-nowrap;
+        &.is-up{
+            @apply text-success-700 dark:text-success-400;
+        }
+        &.is-down{
+            @apply text-red-600 dark:text-red-400;
+        }
+        &.is-same{
+            @apply font-normal text-system-mid dark:text-gray-300;
+        }
+    }
+    .fct-mc-history-date{
+        @apply block whitespace-nowrap text-system-dark dark:text-gray-50;
+    }
+    .fct-mc-history-muted{
+        @apply block whitespace-nowrap text-xs text-system-mid dark:text-gray-300;
+    }
+}

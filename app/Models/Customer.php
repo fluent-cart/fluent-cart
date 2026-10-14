@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Modules\MultiCurrency\Services\BaseAmountSql;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Concerns\CanSearch;
@@ -198,21 +199,48 @@ class Customer extends Model
 
     public function recountStat()
     {
+        // Check before subtracting: payment columns can be unsigned in MySQL.
+        $net = 'CASE WHEN COALESCE(total_paid, 0) > COALESCE(total_refund, 0) THEN COALESCE(total_paid, 0) - COALESCE(total_refund, 0) ELSE 0 END';
+        [$baseNet, $baseBindings] = BaseAmountSql::toBase($net);
+        [$trusted, $trustedBindings] = BaseAmountSql::trustedRate();
 
-        $stats = Order::query()->where('customer_id', $this->id)
+        // Grouped per currency: amounts of different currencies are only
+        // added together after conversion at each order's frozen rate
+        // (dev-docs/multi-currency/plan.md §13).
+        $rows = Order::query()->where('customer_id', $this->id)
             ->whereIn('payment_status', Status::getOrderPaymentSuccessStatuses())
-            ->selectRaw('COUNT(*) AS purchase_count, MIN(created_at) AS first_purchase_date, MAX(created_at) AS last_purchase_date')
-            // Check before subtracting: payment columns can be unsigned in MySQL.
-            ->selectRaw('COALESCE(SUM(CASE WHEN COALESCE(total_paid, 0) > COALESCE(total_refund, 0) THEN COALESCE(total_paid, 0) - COALESCE(total_refund, 0) ELSE 0 END), 0) AS ltv')
-            ->toBase()->first();
+            ->selectRaw('UPPER(currency) AS currency_code, COUNT(*) AS purchase_count, MIN(created_at) AS first_purchase_date, MAX(created_at) AS last_purchase_date')
+            ->selectRaw("COALESCE(SUM({$net}), 0) AS net")
+            ->selectRaw("COALESCE(SUM({$baseNet}), 0) AS base_net", $baseBindings)
+            ->selectRaw("COALESCE(SUM({$trusted}), 0) AS trusted_count", $trustedBindings)
+            ->groupByRaw('UPPER(currency)')
+            ->toBase()->get();
 
-        $this->purchase_count = (int) $stats->purchase_count;
-        $this->first_purchase_date = $stats->first_purchase_date;
-        $this->last_purchase_date = $stats->last_purchase_date;
-        $this->ltv = (int) $stats->ltv;
-        $this->aov = $this->purchase_count ? $this->ltv / $this->purchase_count : 0;
+        $purchaseCount = 0;
+        $trustedCount = 0;
+        $ltv = 0;
+        $purchaseValue = [];
+        $firstPurchase = null;
+        $lastPurchase = null;
+
+        foreach ($rows as $row) {
+            $purchaseCount += (int) $row->purchase_count;
+            $trustedCount += (int) $row->trusted_count;
+            $ltv += (int) $row->base_net;
+            $purchaseValue[$row->currency_code] = (int) $row->net;
+            $firstPurchase = $firstPurchase === null ? $row->first_purchase_date : min($firstPurchase, $row->first_purchase_date);
+            $lastPurchase = $lastPurchase === null ? $row->last_purchase_date : max($lastPurchase, $row->last_purchase_date);
+        }
+
+        $this->purchase_count = $purchaseCount;
+        $this->first_purchase_date = $firstPurchase;
+        $this->last_purchase_date = $lastPurchase;
+        // Per-currency totals, exact — and LTV/AOV in the base currency,
+        // leaving out orders whose rate is unknown rather than guessing one
+        $this->purchase_value = $purchaseValue;
+        $this->ltv = $ltv;
+        $this->aov = $trustedCount ? $ltv / $trustedCount : 0;
         $this->save();
-
 
         return $this;
     }

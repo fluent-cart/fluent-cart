@@ -2,6 +2,7 @@
 
 namespace FluentCart\Api\Resource;
 
+use FluentCart\App\Modules\MultiCurrency\Services\StorefrontPrice;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
@@ -134,7 +135,8 @@ class ShopResource extends BaseResourceApi
             })
             ->when(!empty($filters['price_range_from']) && !empty($filters['price_range_to']), function ($query) use ($filters) {
                 return $query->whereHas('detail', function ($query) use ($filters) {
-                    return $query->search(["min_price" => ["column" => "min_price", "operator" => "between", "value" => [Helper::toCent($filters['price_range_from']), Helper::toCent($filters['price_range_to'])]]]);
+                    // The shopper's bounds are in their currency; min_price is base
+                    return $query->search(["min_price" => ["column" => "min_price", "operator" => "between", "value" => StorefrontPrice::rangeToBase(Helper::toCent($filters['price_range_from']), Helper::toCent($filters['price_range_to']))]]);
                 });
             })
             ->when(!empty($taxonomy_filters), function ($query) use ($taxonomy_filters) {

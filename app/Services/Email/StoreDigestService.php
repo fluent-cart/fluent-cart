@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Email;
 
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
@@ -364,7 +365,9 @@ class StoreDigestService
             'startDate'     => $startDate,
             'endDate'       => $endDate,
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
-            'currency'      => null,
+            // The digest is formatted in the base currency, so it sums only
+            // base-currency orders (multi-currency plan §13)
+            'currency'      => BaseCurrency::get(),
             'variationIds'  => [],
             'paymentStatus' => Status::getReportStatuses(),
         ]);
@@ -381,7 +384,9 @@ class StoreDigestService
             'startDate'     => $startDate,
             'endDate'       => $endDate,
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
-            'currency'      => null,
+            // The digest is formatted in the base currency, so it sums only
+            // base-currency orders (multi-currency plan §13)
+            'currency'      => BaseCurrency::get(),
             'variationIds'  => [],
             'paymentStatus' => Status::getReportStatuses(),
         ]);

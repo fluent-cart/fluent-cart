@@ -158,7 +158,6 @@
 
 .search-bar{
     &.is-transparent{
-        @apply mr-3;
         .el-input__wrapper{
             @apply border-transparent bg-gray-50 dark:bg-dark-600;
             &.is-focus{

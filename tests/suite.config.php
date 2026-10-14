@@ -75,6 +75,7 @@ return [
             'identity_column' => 'note',
             'identity_prefix' => 'Owned Phase Five order fixture ',
             'activity_table'  => 'fct_activity',
+            'creation_related_counts' => ['fct_order_operations' => 1],
             'related_rows'    => [
                 [
                     'table'       => 'fct_activity',

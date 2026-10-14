@@ -188,6 +188,7 @@ import translate, {translateNumber} from "@/utils/translator/Translator";
 import Notify from "@/utils/Notify";
 import Rest from "@/utils/http/Rest";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import {orderQuote, toPrice} from "@/utils/support/CurrencyPricing";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 
 export default {
@@ -363,6 +364,25 @@ export default {
             vl.shipping_charge = parseInt(vl.shipping_charge) || 0;
             vl.discount_total = parseInt(vl.discount_total) || 0;
             vl.quantity = parseInt(vl.quantity) || 1;
+
+            // Editing an order in another currency: the picker has base-currency
+            // prices; price the new line at the order's own frozen rate and rules,
+            // as the server does when it saves (OrderItemResource).
+            const quote = this.order_id ? orderQuote(this.order) : null;
+            if (quote) {
+              // Always from the remembered base price: the same search result
+              // can be picked again, and must not be converted twice
+              vl.fx_base = vl.fx_base || {
+                price: vl.price,
+                unit_price: vl.unit_price,
+                signup_fee: vl.other_info?.signup_fee || 0,
+              };
+              vl.price = toPrice(vl.fx_base.price, quote);
+              vl.unit_price = toPrice(vl.fx_base.unit_price, quote);
+              if (vl.fx_base.signup_fee) {
+                vl.other_info = {...vl.other_info, signup_fee: toPrice(vl.fx_base.signup_fee, quote)};
+              }
+            }
 
             // Initialize custom price fields for subscription products
             if (vl.payment_type === 'subscription') {

@@ -7,7 +7,6 @@ use FluentCart\Api\Orders;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\CartCheckoutHelper;
 use FluentCart\App\Helpers\CartHelper;
-use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Hooks\Cart\WebCheckoutHandler;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
@@ -17,6 +16,7 @@ use FluentCart\App\Modules\PaymentMethods\StripeGateway\Connect\ConnectConfig;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\IPN;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook\Webhook;
 use FluentCart\App\Services\CustomPayment\PaymentIntent;
+use FluentCart\App\Services\Money;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Vite;
@@ -27,7 +27,7 @@ class Stripe extends AbstractPaymentGateway
 
     private $methodSlug = 'stripe';
 
-    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'switch_payment_method' => [
+    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'multi_currency', 'switch_payment_method' => [
         'supported_gateways' => ['stripe', 'paypal'],
     ], 'dispute_handler', 'subscriptions', 'zero_recurring', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
 
@@ -80,7 +80,16 @@ class Stripe extends AbstractPaymentGateway
         $transactionCurrency = $paymentInstance->transaction->currency;
         $chargeAmount = (int)$paymentInstance->transaction->total;
 
-        if ($transactionCurrency && CurrenciesHelper::isZeroDecimal($transactionCurrency)) {
+        // *100 storage cannot represent a three-decimal currency's smallest unit
+        if (Money::isThreeDecimal($transactionCurrency)) {
+            return new \WP_Error('unsupported_currency', sprintf(
+                /* translators: %1$s: currency code */
+                __('%1$s is a three-decimal currency and is not supported for payment processing.', 'fluent-cart'),
+                strtoupper($transactionCurrency)
+            ));
+        }
+
+        if ($transactionCurrency && StripeHelper::isZeroDecimal($transactionCurrency)) {
             $chargeAmount = (int)round($chargeAmount / 100);
         }
 
@@ -231,7 +240,16 @@ class Stripe extends AbstractPaymentGateway
         }
 
         $chargeAmount = (int) $transaction->total;
-        if ($transaction->currency && CurrenciesHelper::isZeroDecimal($transaction->currency)) {
+
+        if (Money::isThreeDecimal($transaction->currency)) {
+            return new \WP_Error('unsupported_currency', sprintf(
+                /* translators: %1$s: currency code */
+                __('%1$s is a three-decimal currency and is not supported for payment processing.', 'fluent-cart'),
+                strtoupper($transaction->currency)
+            ));
+        }
+
+        if ($transaction->currency && StripeHelper::isZeroDecimal($transaction->currency)) {
             $chargeAmount = (int) round($chargeAmount / 100);
         }
 
@@ -815,7 +833,18 @@ class Stripe extends AbstractPaymentGateway
         $storeCurrency = CurrencySettings::get('currency');
         $intentAmount = (int)$totalPrice;
 
-        if ($storeCurrency && CurrenciesHelper::isZeroDecimal($storeCurrency)) {
+        if (Money::isThreeDecimal($storeCurrency)) {
+            wp_send_json([
+                'status'  => 'failed',
+                'message' => sprintf(
+                    /* translators: %1$s: currency code */
+                    __('%1$s is a three-decimal currency and is not supported for payment processing.', 'fluent-cart'),
+                    strtoupper($storeCurrency)
+                )
+            ], 422);
+        }
+
+        if ($storeCurrency && StripeHelper::isZeroDecimal($storeCurrency)) {
             $intentAmount = (int)($intentAmount / 100);
         }
 

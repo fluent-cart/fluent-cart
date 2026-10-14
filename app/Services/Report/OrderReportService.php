@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Report;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Services\DateTime\DateFormatter;
 
@@ -11,7 +12,7 @@ class OrderReportService extends ReportService
     {
         $groupKey = ReportHelper::sanitizeGroupKey($params['groupKey'] ?? null);
 
-        $query = App::db()->table('fct_orders as o');
+        $query = ReportCurrency::ordersTable($params);
 
         $query = $this->applyFilters($query, $params);
 
@@ -55,7 +56,7 @@ class OrderReportService extends ReportService
 
     public function getOrderValueDistribution(array $params)
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("SUM(CASE WHEN total_amount <= 10000 THEN 1 ELSE 0 END) AS `0-100`,
                 SUM(CASE WHEN total_amount > 10000 AND total_amount <= 20000 THEN 1 ELSE 0 END) AS `100-200`,
                 SUM(CASE WHEN total_amount > 20000 AND total_amount <= 30000 THEN 1 ELSE 0 END) AS `200-300`,
@@ -89,7 +90,7 @@ class OrderReportService extends ReportService
             ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
             ->when($variationIds, fn($q) => $q->whereIn('object_id', $variationIds));
             
-        $orderQuery = App::db()->table('fct_orders as o')
+        $orderQuery = ReportCurrency::ordersTable($params)
             ->joinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $orderQuery = $this->applyFilters($orderQuery, $params);
@@ -187,7 +188,7 @@ class OrderReportService extends ReportService
 
     public function getNewVsReturningCustomer($params = [])
     {
-        $orders = App::db()->table('fct_orders as o')
+        $orders = ReportCurrency::ordersTable($params)
             ->leftJoin('fct_customers as c', 'c.id', '=', 'o.customer_id');
 
         $orders = $this->applyFilters($orders, $params);
@@ -246,7 +247,7 @@ class OrderReportService extends ReportService
 
     public function getReportByDayAndHour(array $params): array
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("HOUR(o.created_at) AS hour_24,
 
                 DAYOFWEEK(o.created_at) AS day_of_week,
@@ -326,7 +327,7 @@ class OrderReportService extends ReportService
             ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
             ->when($params['variationIds'], fn($q) => $q->whereIn('object_id', $params['variationIds']));
             
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw('COUNT(*) AS order_count, oi_sum.item_count')
             ->joinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'))
             ->groupBy('oi_sum.item_count');
@@ -354,7 +355,7 @@ class OrderReportService extends ReportService
 
     public function getOrderCompletionTime(array $params): array
     {
-        $query = App::db()->table('fct_orders as o')
+        $query = ReportCurrency::ordersTable($params)
             ->selectRaw("TIMESTAMPDIFF(
                     HOUR, o.created_at, o.completed_at
                 ) AS hour,

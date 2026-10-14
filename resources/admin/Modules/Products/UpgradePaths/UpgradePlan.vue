@@ -22,9 +22,10 @@
           <el-table-column :label="$t('Price')" :width="100">
             <template #default="scope">
               <div class="plan-price">
-                <div class="plan-price">
+                <div class="plan-price" v-if="scope.row.is_available !== false">
                   {{ formatNumber(scope.row.price, order.currency) }}
                 </div>
+                <div class="plan-price" v-else>&mdash;</div>
               </div>
             </template>
           </el-table-column>
@@ -34,7 +35,8 @@
             <template #default="scope">
               <div class="upgrade-cost">
                 <div class="upgrade-title">
-                  <span v-html="scope.row.payment_summary"></span>
+                  <span v-if="scope.row.is_available === false">{{ scope.row.unavailable_reason }}</span>
+                  <span v-else v-html="scope.row.payment_summary"></span>
                   <div v-if="scope.row.prorate_credit" class="upgrade-text">
                   </div>
                 </div>
@@ -44,7 +46,7 @@
           <el-table-column :label="$t('Action')" :width="110">
             <template #default="scope">
               <div class="upgrade-action">
-                <el-button class="el-button--x-small" tag="a" :href="scope.row.upgrade_url" target="_blank">
+                <el-button v-if="scope.row.is_available !== false" class="el-button--x-small" tag="a" :href="scope.row.upgrade_url" target="_blank">
                   {{ $t('Upgrade') }}
                 </el-button>
               </div>

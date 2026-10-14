@@ -22,7 +22,7 @@ class SourceReportController extends Controller
 
     public function index(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = SourceReportService::make();
 

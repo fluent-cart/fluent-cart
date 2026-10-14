@@ -54,11 +54,13 @@ return [
                 if ($after === null) {
                     throw new RuntimeException('ProductDetail disappeared after route update.');
                 }
+                $before['other_info'] = json_decode($before['other_info'], true);
+                $after['other_info'] = json_decode($after['other_info'], true);
                 FcCrudFixture::assertOnlyFieldChanged(
                     $before,
                     $after,
                     'other_info',
-                    wp_json_encode(['active_editor' => $editorMode]),
+                    ['active_editor' => $editorMode],
                     'ProductDetail one-column route update'
                 );
 

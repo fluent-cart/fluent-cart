@@ -6,6 +6,7 @@ use FluentCart\App\Helpers\CouponHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Modules\MultiCurrency\Services\CouponCurrency;
 use FluentCart\App\Services\Coupon\CouponServiceAdmin;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -237,6 +238,7 @@ class CouponResource extends BaseResourceApi
         }
 
         $couponService = new CouponServiceAdmin($lineItems, null, $previouslyAppliedCouponCodes->keys()->toArray(), $customerEmail);
+        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
         $couponApplied = $couponService->applyCoupon($couponCode);
         if (is_wp_error($couponApplied)) {
             return $couponApplied;
@@ -296,6 +298,7 @@ class CouponResource extends BaseResourceApi
 
 
         $couponService = new CouponServiceAdmin($lineItems, null, $previouslyAppliedCouponCodes->keys()->toArray(), $customerEmail);
+        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
 
         $isCancelled = $couponService->cancelCoupon($couponCode);
 
@@ -346,6 +349,7 @@ class CouponResource extends BaseResourceApi
             $couponService = new CouponServiceAdmin($lineItems, $previouslyAppliedCouponCodes, [], $customerEmail);
         }
 
+        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
         $couponService->reapplyCoupons();
 
         $calculated_items = $couponService->getCalculatedLineItems();
@@ -369,9 +373,10 @@ class CouponResource extends BaseResourceApi
      * @param array $items Order line items.
      * @param array $appliedCoupons Applied-coupon map keyed by coupon code.
      * @param string $customerEmail
+     * @param array|null $currencyQuote The order's frozen rate (CouponCurrency::orderQuote()); null prices coupons in base.
      * @return array|WP_Error ['applied_coupons' => array, 'items' => array]
      */
-    public static function validateOrderCoupons(array $items, array $appliedCoupons, $customerEmail = '')
+    public static function validateOrderCoupons(array $items, array $appliedCoupons, $customerEmail = '', ?array $currencyQuote = null)
     {
         $codes = array_map('strval', array_keys(Arr::except($appliedCoupons, ['*'])));
 
@@ -383,6 +388,7 @@ class CouponResource extends BaseResourceApi
         }
 
         $couponService = new CouponServiceAdmin($items, null, $codes, (string) $customerEmail);
+        $couponService->withCurrencyQuote($currencyQuote);
         $couponService->reapplyCoupons();
 
         $discountData = $couponService->getDiscountData();

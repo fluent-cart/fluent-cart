@@ -765,9 +765,9 @@ class Processor
                 sprintf(
                     /* translators: %1$s: expected amount, %2$s: expected currency, %3$s: received amount, %4$s: received currency */
                     __('Subscription initial payment mismatch. Expected: %1$s %2$s, Received: %3$s %4$s. Order not marked paid; awaiting webhook.', 'fluent-cart'),
-                    Helper::toDecimal($expectedAmount),
+                    Helper::toDecimal($expectedAmount, false, $transaction->currency),
                     $transaction->currency,
-                    Helper::toDecimal($lastPaymentAmount),
+                    Helper::toDecimal($lastPaymentAmount, false, $lastPaymentCurrency ?: $transaction->currency),
                     $lastPaymentCurrency
                 ),
                 [
@@ -1100,8 +1100,8 @@ class Processor
                     sprintf(
                         /* translators: %1$s: expected amount, %2$s: received amount */
                         __('Capture amount mismatch detected during transaction sync. Expected: %1$s, Received: %2$s. Transaction was not confirmed.', 'fluent-cart'),
-                        Helper::toDecimal($expectedAmount),
-                        Helper::toDecimal($captureAmount)
+                        Helper::toDecimal($expectedAmount, true, $transaction->currency),
+                        Helper::toDecimal($captureAmount, true, $transaction->currency)
                     ),
                     [
                         'module_name' => 'order',

@@ -16,7 +16,7 @@ class DefaultReportController extends Controller
 
     public function getTopSoldProducts(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = DefaultReportService::make();
 
@@ -25,7 +25,7 @@ class DefaultReportController extends Controller
 
     public function getTopSoldVariants(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = DefaultReportService::make();
 
@@ -34,7 +34,7 @@ class DefaultReportController extends Controller
 
     public function getSalesReport(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = DefaultReportService::make([]);
 

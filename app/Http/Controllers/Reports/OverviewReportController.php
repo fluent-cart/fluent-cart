@@ -2,8 +2,8 @@
 
 namespace FluentCart\App\Http\Controllers\Reports;
 
+use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
-use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Status;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Http\Controllers\Controller;
@@ -16,10 +16,7 @@ class OverviewReportController extends Controller
         $start = gmdate('Y-m-01 00:00:00', strtotime('first day of 30 months ago'));
         $end = gmdate('Y-m-t 23:59:59', strtotime('last day of this month'));
 
-        $currency = $request->get('params.currency');
-        if (empty($currency)) {
-            $currency = (new StoreSettings)->getCurrency();
-        }
+        $currency = ReportCurrency::resolve($request->get('params.currency'));
 
         $orderStats = $this->getMonthToMonthStats($start, $end, $currency);
 
@@ -63,7 +60,7 @@ class OverviewReportController extends Controller
             ")
             ->whereIn('payment_status', $paymentStatuses)
             ->whereBetween('created_at', [$start, $end])
-            // ->where('currency', $currency)
+            ->where('currency', ReportCurrency::resolve($currency))
             ->groupBy('month')
             ->orderBy('month')
             ->get();

@@ -155,7 +155,12 @@ class TaxRenderer
         // lines from the map in fixed mode so the rate rows sum to the reversed total.
         $rcNonDynamic = $isReverseCharge
             && Arr::get($taxData, 'reverse_charge_price_mode', 'fixed') !== 'dynamic';
-        $rateBaseMap  = TaxSummaryHelper::computeRateBaseMap((array) ($cart->cart_data ?: []), $rcNonDynamic);
+        $baseMapItems = (array) ($cart->cart_data ?: []);
+        if (!$isReverseCharge) {
+            // Fee tax is in the rate rows, so its base must be in the map too.
+            $baseMapItems = array_merge($baseMapItems, TaxSummaryHelper::feeTaxLinesAsBaseMapItems($feeTaxLines));
+        }
+        $rateBaseMap  = TaxSummaryHelper::computeRateBaseMap($baseMapItems, $rcNonDynamic);
         if ($isReverseCharge) {
             // Under reverse charge the stored tax_lines amounts are zeroed at calc time,
             // but the original per-rate amounts survive in item line_meta. Restore them

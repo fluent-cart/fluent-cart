@@ -424,6 +424,15 @@ class FluentCartCheckoutHandler {
                 this.handleSuccessfulResponse(data);
                 return data;
             } else {
+                // Re-priced (new rate or currency): reload so the total and the
+                // payment form match what will be charged; the notice shows after
+                if (data?.reload) {
+                    // Without ?currency=, which would switch back to the old one
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('currency');
+                    window.location.replace(url.toString());
+                    return false;
+                }
                 if (data?.errors && typeof data?.errors === 'object') {
                     let message = '';
                     for (const fieldKey in data.errors) {
@@ -568,6 +577,17 @@ class FluentCartCheckoutHandler {
     prepareFormData() {
         const formData = new FormData(this.form);
         formData.append("_wpnonce", this.nonce);
+
+        const shownCurrency = window.fluentcart_checkout_vars?.currency;
+        if (shownCurrency) {
+            formData.append("fct_shown_currency", shownCurrency);
+        }
+
+        // The quote this page was priced at; a rate refreshed in another tab is refused
+        const shownQuote = window.fluentcart_checkout_vars?.quote_revision;
+        if (shownQuote) {
+            formData.append("fct_shown_quote", shownQuote);
+        }
 
         const utmData = window.fluentCartUtmManager?.get() || {};
 

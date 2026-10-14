@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Http\Controllers;
 
+use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencySettings;
 use FluentCart\App\App;
 use FluentCart\Api\Helper;
 use FluentCart\Api\Confirmation;
@@ -87,6 +88,14 @@ class SettingsController extends Controller
 
             $data['require_logged_in'] = 'no';
 
+            // The store currency is the multi-currency base currency; it is
+            // locked once orders exist while multi-currency is on.
+            $currencyGuard = MultiCurrencySettings::guardBaseCurrencyChange($storeSettings->get('currency'), Arr::get($data, 'currency'));
+            if (is_wp_error($currencyGuard)) {
+                return $this->sendError([
+                    'message' => $currencyGuard->get_error_message()
+                ], 423);
+            }
 
             $saved = $storeSettings->save($data);
 

@@ -195,18 +195,20 @@ return [
                     'the isolated synthetic token reaches the fake PayPal transport'
                 );
 
-                $actual = PayPalHelper::getPayPalPlan([
-                    'order_id'         => -1,
-                    'product_id'       => $productId,
-                    'variation_id'     => $variationId,
-                    'trial_days'       => 7,
-                    'billing_interval' => Status::BILLING_QUARTERLY,
-                    'currency'         => 'USD',
-                    'interval_count'   => 1,
-                    'recurring_amount' => 10005,
-                    'signup_fee'       => 250,
-                    'bill_times'       => 4,
-                ]);
+                $actual = FcProviderHarness::withPayPalMode('phase22', function () use ($productId, $variationId) {
+                    return PayPalHelper::getPayPalPlan([
+                        'order_id'         => -1,
+                        'product_id'       => $productId,
+                        'variation_id'     => $variationId,
+                        'trial_days'       => 7,
+                        'billing_interval' => Status::BILLING_QUARTERLY,
+                        'currency'         => 'USD',
+                        'interval_count'   => 1,
+                        'recurring_amount' => 10005,
+                        'signup_fee'       => 250,
+                        'bill_times'       => 4,
+                    ]);
+                });
                 $transport->assertComplete();
                 $requests = $transport->requests();
                 $planBody = $requests[3]['body'];

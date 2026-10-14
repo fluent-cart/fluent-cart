@@ -17,7 +17,8 @@ class SubscriptionReportController extends Controller
 
     public function getRetentionChart(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), ['customDays']);
+        // Counts every subscription with a trustworthy rate in the converted mode
+        $params = ReportHelper::processParams($request->get('params'), ['customDays'], true);
 
         $service = SubscriptionReportService::make();
 
@@ -30,7 +31,7 @@ class SubscriptionReportController extends Controller
 
     public function getDailySignups(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
         $service = SubscriptionReportService::make();
 
@@ -43,6 +44,8 @@ class SubscriptionReportController extends Controller
 
     public function getSubscriptionChart(Request $request)
     {
+        // No converted mode: its order counts and future installments read
+        // unconverted rows, so "All currencies" reads as the base currency
         $params = ReportHelper::processParams($request->get('params'), $this->params);
 
         $service = SubscriptionReportService::make();
@@ -64,7 +67,7 @@ class SubscriptionReportController extends Controller
 
         return [
             'currentMetrics' => $currentMetrics['grouped'],
-            'compareMetrics' => $compareMetrics['grouped'],
+            'compareMetrics' => $compareMetrics['grouped'] ?? [],
             'summary'        => $summary,
             'fluctuations'   => []
         ];
@@ -72,7 +75,7 @@ class SubscriptionReportController extends Controller
 
     public function getFutureRenewals(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'), ['startDate', 'endDate']);
+        $params = ReportHelper::processParams($request->get('params'), ['startDate', 'endDate'], true);
 
         $service = SubscriptionReportService::make();
 
@@ -81,7 +84,8 @@ class SubscriptionReportController extends Controller
 
     public function getRetentionData(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'));
+        // MRR and churn convert each subscription at its own frozen rate
+        $params = ReportHelper::processParams($request->get('params'), [], true);
 
         $service = SubscriptionReportService::make();
 
@@ -93,6 +97,7 @@ class SubscriptionReportController extends Controller
     public function getCohortData(Request $request)
     {
         $requestParams = $request->get('params', []);
+        // No converted mode: the retention snapshots are kept per currency
         $params = ReportHelper::processParams($requestParams);
         
         // Supported groupBy: 'month' or 'year' (week not supported with current snapshots)
