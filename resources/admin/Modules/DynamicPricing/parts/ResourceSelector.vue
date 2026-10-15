@@ -3,6 +3,8 @@ import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
+import ProductChips from "@/Bits/Components/ProductChips/ProductChips.vue";
+import {groupIdsByLabels, mergeOptionLabels} from "@/Bits/Components/ProductChips/labelIndex";
 
 /*
  * A remote select that knows nothing about what it is selecting.
@@ -47,6 +49,10 @@ const emit = defineEmits(['update:modelValue']);
 const options = ref([]);
 const loading = ref(false);
 const failed = ref(false);
+const dropdownOpen = ref(false);
+
+// Labels of every option loaded so far; a search replaces `options` but picks still need names.
+const knownLabels = ref({});
 
 /*
  * el-select needs an array in multiple mode and rebuilds its tags from it, so
@@ -76,6 +82,8 @@ const selected = computed({
     },
     set: (value) => emit('update:modelValue', value),
 });
+
+const chipGroups = computed(() => groupIdsByLabels(selected.value, knownLabels.value));
 
 const selectedIds = computed(() => {
     if (props.modelValue === null || props.modelValue === '') {
@@ -142,6 +150,7 @@ const fetchOptions = (search = '') => {
             }
 
             options.value = response.options || [];
+            knownLabels.value = mergeOptionLabels(knownLabels.value, options.value);
 
             if (!search) {
                 unfilteredOptions = options.value;
@@ -235,6 +244,7 @@ watch(() => props.dataKey, () => {
     unfilteredLoaded = false;
     failed.value = false;
     options.value = [];
+    knownLabels.value = {};
 
     // Bumps the request counter, so anything still in flight for the old key
     // is retired as it lands.
@@ -262,7 +272,11 @@ onBeforeUnmount(() => clearTimeout(searchTimer));
         :remote-method="search"
         :placeholder="placeholder || translate('Search and select')"
         popper-class="fct-resource-selector-popper"
+        @visible-change="(visible) => dropdownOpen = visible"
     >
+        <template v-if="multiple" #tag>
+            <ProductChips class="fct-product-chips--wrap" :groups="chipGroups" :tooltips-disabled="dropdownOpen"/>
+        </template>
         <el-option
             v-for="option in options"
             :key="option.value"

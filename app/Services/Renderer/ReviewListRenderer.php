@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer;
 
+use FluentCart\App\Services\ProductReviewService;
 use FluentCart\Framework\Support\Arr;
 
 /**
@@ -87,6 +88,10 @@ class ReviewListRenderer
             // second page renders.
             'item_class'       => '',
         ]);
+
+        // The store-wide switches win over a block asking to show either.
+        $this->options['show_reviewer'] = $this->options['show_reviewer'] && ProductReviewService::showsReviewerName();
+        $this->options['show_avatar'] = $this->options['show_avatar'] && ProductReviewService::showsReviewerAvatar();
     }
 
     /**

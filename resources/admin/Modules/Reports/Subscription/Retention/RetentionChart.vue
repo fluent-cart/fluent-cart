@@ -328,14 +328,14 @@ const seriesData = computed(() => {
             name: translate("Subscription Retention"),
             key: "count",
             type: chartType.value,
-            color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
+            color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
             data: retentionData.value.map((item) => item.retention_rate)
         },
         {
             name: translate("MRR Retention"),
             key: "count",
             type: chartType.value,
-            color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
+            color: colors.sea_green,
             data: retentionData.value.map(item => item.retention_rate_money)
         }
     ];
@@ -374,7 +374,7 @@ watch(isEmpty, (value) => {
     if (!value) initChart();
 })
 
-watch(props.loading, (value) => {
+watch(() => props.loading, (value) => {
     if (!value) initChart();
 })
 

@@ -157,6 +157,9 @@ class EmailPreviewService
             public $created_at;
             public $total = 4900;
             public $vendor_charge_id = 'ch_preview_123';
+            public $payment_method = 'stripe';
+            public $card_brand = 'visa';
+            public $card_last_4 = '4242';
             public $order = null;
 
             public function __construct()

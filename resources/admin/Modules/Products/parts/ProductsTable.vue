@@ -278,14 +278,16 @@ defineExpose({
     <el-table-column v-if="reviewsModuleActive && productTable.isColumnVisible('reviews')" :label="translate('Reviews')"
                      width="130">
       <template #default="scope">
-        <router-link
-            class="hover:no-underline flex items-center gap-1.5"
+        <RouteCell
+            class="hover:no-underline"
             :to="{ name: 'reviews', query: { post_id: scope.row.ID } }"
             :aria-label="translate('View reviews for %s', scope.row.post_title)"
         >
-          <StarRating :rating="scope.row.avg_rating || 0" size="small"/>
-          <span class="text-xs text-gray-500">({{ translateNumber(scope.row.reviews_count || 0) }})</span>
-        </router-link>
+          <span class="flex items-center gap-1.5">
+            <StarRating :rating="scope.row.avg_rating || 0" size="small"/>
+            <span class="text-xs text-gray-500">({{ translateNumber(scope.row.reviews_count || 0) }})</span>
+          </span>
+        </RouteCell>
       </template>
     </el-table-column>
 

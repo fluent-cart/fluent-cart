@@ -67,10 +67,7 @@
           >
             <div class="title">{{ translate('Payment Method') }}</div>
             <div class="value">
-              {{ row.current_payment_method ?
-                Str.headline(row.current_payment_method.trim().replace(/_/g, '-'))
-                : '-'
-              }}
+              {{ paymentMethodAdminTitle(row.current_payment_method) || '-' }}
             </div>
           </div>
 
@@ -105,7 +102,6 @@
 </template>
 
 <script type="text/babel">
-import Str from "@/utils/support/Str";
 
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import {ArrowDown} from "@element-plus/icons-vue";
@@ -114,6 +110,7 @@ import Badge from "@/Bits/Components/Badge.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import CustomerInfoPopover from "@/Modules/Customers/parts/CustomerInfoPopover.vue";
 import translate from "@/utils/translator/Translator";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 
 export default {
   name: 'SubscriptionsTableMobile',
@@ -139,13 +136,9 @@ export default {
     }
   },
   emits: ['fetch'],
-  computed: {
-    Str() {
-      return Str
-    },
-  },
   methods: {
     translate,
+    paymentMethodAdminTitle,
     collectionMethodLabel(method) {
       const labels = {
         manual: translate('Manual'),

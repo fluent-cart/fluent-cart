@@ -223,6 +223,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Hooks\\Handlers\\GlobalPermissionsHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/GlobalPermissionsHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\GlobalStorageHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/GlobalStorageHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\MenuHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/MenuHandler.php',
+        'FluentCart\\App\\Hooks\\Handlers\\ModuleImportMap' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ModuleImportMap.php',
         'FluentCart\\App\\Hooks\\Handlers\\OrderEventHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/OrderEventHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\PromoGatewaysHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/PromoGatewaysHandler.php',
         'FluentCart\\App\\Hooks\\Handlers\\ReminderHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ReminderHandler.php',

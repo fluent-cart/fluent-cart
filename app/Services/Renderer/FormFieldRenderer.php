@@ -173,8 +173,10 @@ class FormFieldRenderer
         $label = Arr::get($fieldData, 'label', '');
 
         $wrapperAttributes = array_filter([
-            'class' => 'fct_input_wrapper fct_input_wrapper_' . $type,
-            'id'    => 'fct_wrapper_' . $fieldId
+            'class'          => 'fct_input_wrapper fct_input_wrapper_' . $type,
+            'id'             => 'fct_wrapper_' . $fieldId,
+            'data-fct-label' => $this->getVisibleLabel($fieldData),
+            'data-fct-field' => 'input'
         ]);
 
         if (!empty($fieldData['wrapper_atts'])) {
@@ -321,6 +323,17 @@ class FormFieldRenderer
         <?php
     }
 
+    // Field name the docked / floating label styles draw from the wrapper; screen readers keep the input's aria-label.
+    private function getVisibleLabel($fieldData)
+    {
+        $text = Arr::get($fieldData, 'placeholder', '');
+        if (!$text) {
+            $text = Arr::get($fieldData, 'aria-label', '');
+        }
+
+        return wp_strip_all_tags(html_entity_decode((string)$text, ENT_QUOTES, 'UTF-8'));
+    }
+
     private function renderSelectField($fieldData)
     {
         $fieldId = Arr::get($fieldData, 'id', '');
@@ -347,8 +360,10 @@ class FormFieldRenderer
         $options = Arr::get($fieldData, 'options', []);
 
         $wrapperAttributes = array_filter([
-            'class' => 'fct_input_wrapper fct_input_wrapper_select',
-            'id'    => 'fct_wrapper_' . $fieldId
+            'class'          => 'fct_input_wrapper fct_input_wrapper_select',
+            'id'             => 'fct_wrapper_' . $fieldId,
+            'data-fct-label' => $this->getVisibleLabel($fieldData),
+            'data-fct-field' => 'select'
         ]);
 
         if (!empty($fieldData['wrapper_atts'])) {

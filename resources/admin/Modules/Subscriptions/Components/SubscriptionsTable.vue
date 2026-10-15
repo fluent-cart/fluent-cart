@@ -90,7 +90,7 @@
 
       <el-table-column v-if="columns.indexOf('payment_method') !== -1" :label="translate('Payment Method')" width="150">
         <template #default="scope">
-          {{ scope.row.current_payment_method ? Str.headline(scope.row.current_payment_method.trim().replace(/_/g, '-')) : '-' }}
+          {{ paymentMethodAdminTitle(scope.row.current_payment_method) || '-' }}
         </template>
       </el-table-column>
 
@@ -114,7 +114,6 @@
 </template>
 
 <script type="text/babel">
-import Str from "@/utils/support/Str";
 
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import {ArrowDown} from "@element-plus/icons-vue";
@@ -125,6 +124,7 @@ import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import CustomerInfoPopover from "@/Modules/Customers/parts/CustomerInfoPopover.vue";
 import {translateNumber} from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 
 export default {
   name: 'SubscriptionsTable',
@@ -151,13 +151,9 @@ export default {
     }
   },
   emits: ['fetch'],
-  computed: {
-    Str() {
-      return Str
-    },
-  },
   methods: {
     translate,
+    paymentMethodAdminTitle,
     translateNumber,
     collectionMethodLabel(method) {
       const labels = {

@@ -38,7 +38,7 @@ import { computed } from "vue";
 import checkBoxFilter from "@/Models/Reports/CheckBoxFilterModel";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import CurrencyFormatter from '@/utils/support/CurrencyFormatter';
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
 import refundReport from "@/Models/Reports/RefundReportModel";
 import SummaryLoader from "../Components/SummaryLoader.vue";
@@ -60,7 +60,7 @@ const summaryCards = computed(() => [
     info: translate("Total Refunded Amount"),
   },
   {
-    title: translate("Avgerage Amount"),
+    title: translate("Average Amount"),
     value: refundReport.data.summary.average_refunded_amount,
     key: 'average_refunded_amount',
     percentage: refundReport.data.fluctuations.average_refunded_amount,
@@ -87,7 +87,7 @@ const dataLoader = computed(() => {
 
 const formatSummary = (summary) => {
   const value = !summary.no_currency
-      ? CurrencyFormatter.scaled(summary.value)
+      ? reportFilter.formatAmount(summary.value)
       : formatNumber(summary.value)
 
   return summary.is_percentage ? `${value}%` : value

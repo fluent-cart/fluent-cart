@@ -15,7 +15,10 @@
         />
       </el-col>
       <el-col :lg="12">
-        <TopSoldVariants :default-report="defaultReport" />
+        <TopSoldVariants
+          :data="defaultReport.data.topSoldVariants"
+          :loading="defaultReport.data.isBusy.topSoldVariants"
+        />
       </el-col>
       <el-col :lg="8" v-if="false">
         <FailedOrders :default-report="defaultReport" />
@@ -54,7 +57,7 @@ const reportFilter = ref(props.reportFilter);
 const getData = async (params) => {
   if (!params) return;
 
-  await defaultReport.getSalesReport(params);
+  await reportFilter.value.trackCompareRange(defaultReport.getSalesReport(params));
 
   // await defaultReport.getDefaultReport(params);
   // await defaultReport.getDefaultReportFluctuations(params);

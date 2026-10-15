@@ -13,6 +13,7 @@ use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 use FluentCart\App\Modules\Tax\TaxCalculator;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
@@ -324,7 +325,7 @@ class CheckoutProcessor
         }
 
         if ($isLocked) {
-            $orderData = array_filter(Arr::only($orderData, ['note', 'payment_method', 'ip_address', 'customer_id', 'shipping_total', 'total_amount', 'tax_total', 'fee_total', 'shipping_tax']), function ($value) {
+            $orderData = array_filter(Arr::only($orderData, ['note', 'payment_method', 'payment_method_title', 'ip_address', 'customer_id', 'shipping_total', 'total_amount', 'tax_total', 'fee_total', 'shipping_tax']), function ($value) {
                 return $value !== null && $value !== '';
             });
 
@@ -1163,7 +1164,7 @@ class CheckoutProcessor
             'customer_id'           => '',
             'payment_method'        => Arr::get($this->args, 'payment_method', ''),
             'payment_status'        => Status::PAYMENT_PENDING,
-            'payment_method_title'  => '',
+            'payment_method_title'  => PaymentHelper::getGatewayTitle(Arr::get($this->args, 'payment_method', '')),
             'currency'              => Arr::get($this->args, 'currency_snapshot.currency') ?: $this->storeSettings->get('currency'),
             'subtotal'              => $itemsSubtotal,
             'discount_tax'          => 0,

@@ -1205,6 +1205,9 @@ class ProductController extends Controller
                 // remote-search picker.
                 $variantQuery->orderBy('id')->limit(100);
             }])
+            // Unconstrained, so the report filter can tell a fully picked product
+            // from one whose children were cut by the limit above.
+            ->withCount('variants')
             ->when(!empty($name) || count($ids) > 0, function (Builder $q) use ($name, $ids) {
                 $q->where('post_status', 'publish');
 
@@ -1233,6 +1236,7 @@ class ProductController extends Controller
                 return [
                     'value'    => $product->ID,
                     'label'    => $product->post_title,
+                    'variations_count' => (int) $product->variants_count,
                     'children' => $product->variants->map(function ($variation) use ($product) {
                         return [
                             'value' => $variation->id,

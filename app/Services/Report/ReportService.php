@@ -9,6 +9,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Query\Builder as Query;
+use FluentCart\Framework\Support\DateTime;
 
 abstract class ReportService
 {
@@ -203,9 +204,16 @@ abstract class ReportService
         }
 
         // force include the end date in the period to support php < 8.0
-        $endDate = $endDate->copy()->add(new \DateInterval('PT1S'));
+        $endDate = $this->clampToToday($endDate, $groupKey)->add(new \DateInterval('PT1S'));
 
-        $period = new \DatePeriod($startDate, new \DateInterval($interval), $endDate);
+        $periodStart = $startDate->copy();
+        if ($groupKey === 'monthly') {
+            $periodStart->startOfMonth();
+        } else if ($groupKey === 'yearly') {
+            $periodStart->startOfYear();
+        }
+
+        $period = new \DatePeriod($periodStart, new \DateInterval($interval), $endDate);
 
         $range = [];
 
@@ -232,13 +240,49 @@ abstract class ReportService
         return $range;
     }
 
+    // Clamp to the end of the current bucket, not just today, so a range
+    // starting mid-month (or mid-year) still yields the current bucket.
+    protected function clampToToday($endDate, $groupKey = 'daily')
+    {
+        $today = DateTime::now($endDate->getTimezone())->endOfDay();
+
+        if ($endDate < $today) {
+            return $endDate->copy();
+        }
+
+        $limit = $today->copy();
+
+        if ($groupKey === 'monthly') {
+            $limit = $limit->endOfMonth();
+        } else if ($groupKey === 'yearly') {
+            $limit = $limit->endOfYear();
+        }
+
+        return $limit;
+    }
+
+    // Chart queries and their zero-filled buckets must share this end date,
+    // or a future-dated row lands in a bucket after today.
+    protected function clampParamsToToday(array $params)
+    {
+        // Auto grouping follows the requested range, not the clamped one.
+        if (empty($params['groupKey']) || $params['groupKey'] === 'default') {
+            $params['groupKey'] = ReportHelper::defineGroupKey($params['startDate'], $params['endDate']);
+        }
+
+        $params['endDate'] = $this->clampToToday($params['endDate']);
+
+        return $params;
+    }
+
     public function getFutureInstallments($params = [])
     {
         $query = App::db()->table('fct_subscriptions as s')
             ->selectRaw("SUM((s.bill_times - s.bill_count) * s.recurring_total) / 100 AS amount")
             ->join('fct_orders as o', 'o.id', '=', 's.parent_order_id')
             ->where('s.bill_times', '>', 0)
-            ->where('s.bill_count', '<', App::db()->raw('s.bill_times'));
+            ->where('s.bill_count', '<', App::db()->raw('s.bill_times'))
+            ->whereIn('s.status', ['active', 'trialing', 'past_due']);
 
         $query = $this->applyFilters($query, $params);
 

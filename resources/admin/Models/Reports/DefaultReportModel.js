@@ -141,13 +141,12 @@ class DefaultReportModel extends Model {
   }
 
   getSalesReport(query = {}) {
-    this.data.isBusy.salesReport = true;
-
     return this.makeRequest(
       "sales-report",
       query,
+      null,
       'salesReport'
-    ).then(() => this.data.isBusy.salesReport = false);
+    );
   }
 }
 

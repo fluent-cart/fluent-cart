@@ -10,6 +10,7 @@ import Theme from "@/utils/Theme";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 
 import { maybeLiability } from "@/Modules/Reports/Utils/liability";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import ReportSummary from "@/Bits/Components/ReportSummary.vue";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
 
@@ -151,7 +152,7 @@ const hasCurrency = (key) => {
 
 const formatAmount = (summary) => {
   return hasCurrency(summary.key) 
-    ? maybeLiability(summary.value, summary.liability) 
+    ? maybeLiability(summary.value, summary.liability, reportFilter.reportCurrency) 
     : formatNumber(summary.value);
 };
 </script>

@@ -100,17 +100,17 @@ return [
             'source_checks' => [
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 98,
+                    'line'   => 103,
                     'needle' => '$orderQuery->selectRaw',
                 ],
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 109,
+                    'line'   => 114,
                     'needle' => 'COUNT(o.id) AS order_count',
                 ],
                 [
                     'file'   => 'app/Services/Report/OrderReportService.php',
-                    'line'   => 132,
+                    'line'   => 137,
                     'needle' => 'SUM(COALESCE(oi_sum.total_items, 0))',
                 ],
             ],

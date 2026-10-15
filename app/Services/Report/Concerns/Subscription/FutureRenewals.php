@@ -20,6 +20,7 @@ trait FutureRenewals
         $projections = [];
         $totalProjected = 0;
         $totalRenewals = 0;
+        $byVariation = [];
 
         // Initialize grouped data structure
         $current = clone $startDate;
@@ -53,6 +54,22 @@ trait FutureRenewals
             $projectedAmount = $renewals * $subscription->recurring_total;
             $totalProjected += $projectedAmount;
 
+            if ($renewals > 0) {
+                $variationId = (int) $subscription->variation_id;
+                if (!isset($byVariation[$variationId])) {
+                    $byVariation[$variationId] = [
+                        'variation_id'     => $variationId,
+                        'product_id'       => (int) $subscription->product_id,
+                        'product_title'    => (string) $subscription->item_name,
+                        'variation_title'  => '',
+                        'renewals_count'   => 0,
+                        'projected_amount' => 0,
+                    ];
+                }
+                $byVariation[$variationId]['renewals_count'] += $renewals;
+                $byVariation[$variationId]['projected_amount'] += $projectedAmount;
+            }
+
             // Get renewal dates for this subscription to group them
             $renewalDates = $this->getRenewalDatesInPeriod($subscription, $startDate, $endDate);
 
@@ -78,7 +95,38 @@ trait FutureRenewals
                 $endDate->format('Y-m-d H:i:s'),
             ],
             'groupBy' => $groupBy,
+            'by_variation' => $this->futureRenewalsByVariation($byVariation),
         ];
+    }
+
+    private function futureRenewalsByVariation(array $rows)
+    {
+        if ($rows) {
+            $catalog = App::db()->table('fct_product_variations as pv')
+                ->leftJoin('posts as p', 'p.ID', '=', 'pv.post_id')
+                ->whereIn('pv.id', array_keys($rows))
+                ->select(['pv.id', 'pv.post_id', 'p.post_title', 'pv.variation_title'])
+                ->get();
+
+            foreach ($catalog as $variation) {
+                $variationId = (int) $variation->id;
+                $rows[$variationId]['product_id'] = (int) $variation->post_id;
+                if (is_string($variation->post_title) && $variation->post_title !== '') {
+                    $rows[$variationId]['product_title'] = $variation->post_title;
+                }
+                $rows[$variationId]['variation_title'] = (string) $variation->variation_title;
+            }
+        }
+
+        usort($rows, function ($a, $b) {
+            if ($a['projected_amount'] === $b['projected_amount']) {
+                return $a['variation_id'] <=> $b['variation_id'];
+            }
+
+            return $b['projected_amount'] <=> $a['projected_amount'];
+        });
+
+        return array_values($rows);
     }
 
     /**
@@ -89,15 +137,17 @@ trait FutureRenewals
         $query = ReportCurrency::subscriptionsTable(['currency' => $currency])
             ->select([
                 'id',
+                'product_id',
+                'variation_id',
+                'item_name',
                 'recurring_total',
                 'billing_interval',
                 'next_billing_date',
                 'status',
                 'expire_at',
-                'bill_times',
-                'bill_count',
             ])
             ->whereIn('status', ['active', 'trialing']) // Active statuses
+            ->where('bill_times', '<=', 0)
             ->whereNotNull('next_billing_date')
             ->where(function ($query) {
                 $query->whereNull('expire_at')
@@ -126,14 +176,6 @@ trait FutureRenewals
             return 0;
         }
 
-        // Check if subscription has limited billing cycles
-        if ($subscription->bill_times > 0) {
-            $remainingBills = $subscription->bill_times - $subscription->bill_count;
-            if ($remainingBills <= 0) {
-                return 0;
-            }
-        }
-
         $renewalCount = 0;
         $currentBilling = clone $nextBilling;
         $intervalDays = $this->getIntervalDays($subscription->billing_interval);
@@ -145,12 +187,6 @@ trait FutureRenewals
         while ($currentBilling <= $periodEnd) {
             if ($currentBilling >= $periodStart) {
                 $renewalCount++;
-
-                // Check if we've reached the billing limit
-                if ($subscription->bill_times > 0 &&
-                    ($subscription->bill_count + $renewalCount) >= $subscription->bill_times) {
-                    break;
-                }
             }
             $currentBilling->modify("+{$intervalDays} days");
         }
@@ -185,16 +221,8 @@ trait FutureRenewals
             return $renewalDates;
         }
 
-        if ($subscription->bill_times > 0) {
-            $remainingBills = $subscription->bill_times - $subscription->bill_count;
-            if ($remainingBills <= 0) {
-                return $renewalDates;
-            }
-        }
-
         $currentBilling = clone $nextBilling;
         $intervalDays = $this->getIntervalDays($subscription->billing_interval);
-        $renewalCount = 0;
 
         if ($intervalDays < 1) { // unresolved interval would never advance the loop
             return $renewalDates;
@@ -203,12 +231,6 @@ trait FutureRenewals
         while ($currentBilling <= $periodEnd) {
             if ($currentBilling >= $periodStart) {
                 $renewalDates[] = clone $currentBilling;
-                $renewalCount++;
-
-                if ($subscription->bill_times > 0 &&
-                    ($subscription->bill_count + $renewalCount) >= $subscription->bill_times) {
-                    break;
-                }
             }
             $currentBilling->modify("+{$intervalDays} days");
         }

@@ -8,13 +8,18 @@ const stored = vi.hoisted(() => ({
     'report-filter_currencies': {USD: '$', JPY: '¥', __all__: '$'},
 }));
 const filterState = vi.hoisted(() => ({
-    data: {selectedFilters: {}, currency: 'USD'},
+    data: {selectedFilters: {}, dateRange: [], currency: 'USD'},
     currencies: [
         {label: 'USD', value: 'USD'},
         {label: 'JPY', value: 'JPY'},
         {label: 'All currencies (in USD)', value: '__all__'},
     ],
     onFilterChanged: vi.fn(),
+    removeFilter: vi.fn(),
+    setSelectChange(value, item) {
+        this.data.selectedFilters[item.value] = {label: item.label, value, type: item.type};
+        this.onFilterChanged.mock.lastCall[0](this.data.selectedFilters);
+    },
 }));
 vi.mock('vue-router', () => ({useRoute: () => route}));
 vi.mock('@/utils/Storage', () => ({default: {
@@ -23,14 +28,19 @@ vi.mock('@/utils/Storage', () => ({default: {
     remove: () => {},
 }}));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn()}}));
-vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD'}}));
+vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD', onShopUpdate: () => {}}}));
 vi.mock('@/utils/translator/Translator', () => ({default: text => text}));
 vi.mock('@/Bits/Components/FilterDropdown/FilterState', () => ({default: () => filterState}));
 vi.mock('@/Bits/Components/Alert.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/AdminNotice.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Modules/Reports/Components/ReportNavLinks.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Modules/Settings/Parts/SettingsHeader.vue', () => ({default: {render: () => null}}));
-vi.mock('@/Bits/Components/FilterDropdown/parts/AppliedFilters.vue', () => ({default: {render: () => h('div', 'Date filters')}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/DateRangeFilter.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/CompareToFilter.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/StatusFilter.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/MultiselectFilter.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/TreeSelectFilter.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Bits/Components/FilterDropdown/parts/ResetFilters.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/FilterDropdown/FilterDropdown.vue', () => ({default: {render: () => h('div', 'Advanced filters')}}));
 
 import Rest from '@/utils/http/Rest';
@@ -70,6 +80,8 @@ beforeEach(() => {
     reportFilter.data.currency = 'USD';
     reportFilter.data.baseCurrency = 'USD';
     reportFilter.data.currencies = {USD: '$', JPY: '¥', __all__: '$'};
+    filterState.data.selectedFilters = {};
+    reportFilter.syncCurrencyChip();
     reportFilter.removeListener('picker-test');
     Rest.get.mockResolvedValue({
         currencies: {USD: '$', JPY: '¥', __all__: '$'},
@@ -96,7 +108,7 @@ describe('Future Renewals currency picker', () => {
         expect(html).toContain('aria-label="Currency"');
         expect(html).toContain('JPY');
         expect(html).toContain('All currencies (in USD)');
-        expect(html).not.toContain('Date filters');
+        expect(html).not.toContain('fct-applied-filter-date');
         expect(html).not.toContain('Advanced filters');
     });
 
@@ -118,16 +130,15 @@ describe('Future Renewals currency picker', () => {
         route.name = 'reports_orders';
         const html = await renderReports();
 
-        expect(html).toContain('Date filters');
+        expect(html).toContain('fct-applied-filter-date');
         expect(html).toContain('Advanced filters');
-        expect(selectCurrency).toBeNull();
     });
 
     it('keeps the Export page filters hidden', async () => {
         route.name = 'reports_export';
         const html = await renderReports();
 
-        expect(html).not.toContain('Date filters');
+        expect(html).not.toContain('fct-applied-filter-date');
         expect(html).not.toContain('Advanced filters');
         expect(selectCurrency).toBeNull();
     });

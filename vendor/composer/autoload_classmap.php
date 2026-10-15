@@ -187,6 +187,7 @@ return array(
     'FluentCart\\App\\Hooks\\Handlers\\GlobalPermissionsHandler' => $baseDir . '/app/Hooks/Handlers/GlobalPermissionsHandler.php',
     'FluentCart\\App\\Hooks\\Handlers\\GlobalStorageHandler' => $baseDir . '/app/Hooks/Handlers/GlobalStorageHandler.php',
     'FluentCart\\App\\Hooks\\Handlers\\MenuHandler' => $baseDir . '/app/Hooks/Handlers/MenuHandler.php',
+    'FluentCart\\App\\Hooks\\Handlers\\ModuleImportMap' => $baseDir . '/app/Hooks/Handlers/ModuleImportMap.php',
     'FluentCart\\App\\Hooks\\Handlers\\OrderEventHandler' => $baseDir . '/app/Hooks/Handlers/OrderEventHandler.php',
     'FluentCart\\App\\Hooks\\Handlers\\PromoGatewaysHandler' => $baseDir . '/app/Hooks/Handlers/PromoGatewaysHandler.php',
     'FluentCart\\App\\Hooks\\Handlers\\ReminderHandler' => $baseDir . '/app/Hooks/Handlers/ReminderHandler.php',

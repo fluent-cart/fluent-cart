@@ -17,28 +17,28 @@
         <el-table-column :prop="selectedGroupKey" :label="translate(selectedGroupLabel)" min-width="150">
           <template #default="scope">
             <span v-if="selectedGroupKey !== 'payment_method'"> {{ toCountryName(scope.row[selectedGroupKey]) }} </span>
-            <span v-else> {{ scope.row[selectedGroupKey] }} </span>
+            <span v-else> {{ paymentMethodAdminTitle(scope.row.payment_method) }} </span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="refunds" :label="translate('Refunds')" min-width="150">
-          <template #default="scope" v-html="scope.row.totalRefunded">
-
+        <el-table-column prop="refunds" :label="translate('Refunds')" min-width="150" sortable :sort-method="byNumber((row) => row.totalRefunded)">
+          <template #default="scope">
+            {{ translateNumber(scope.row.totalRefunded) }}
           </template>
         </el-table-column>
 
-        <el-table-column prop="refunded_amount" :label="translate('Refunded Amount')" min-width="150">
+        <el-table-column prop="refunded_amount" :label="translate('Refunded Amount')" min-width="150" sortable :sort-method="byNumber((row) => row.totalRefundedAmount.total)">
           <template #default="scope">
             <div class="inline-flex">
-              {{ CurrencyFormatter.scaled(scope.row.totalRefundedAmount.total) }}
+              {{ reportFilter.formatAmount(scope.row.totalRefundedAmount.total) }}
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="average_refund" :label="translate('Average Refund')" min-width="150">
+        <el-table-column prop="average_refund" :label="translate('Average Refund')" min-width="150" sortable :sort-method="byNumber((row) => row.totalRefundedAmount.average)">
           <template #default="scope">
             <div class="inline-flex">
-              {{ CurrencyFormatter.scaled(scope.row.totalRefundedAmount.average) }}
+              {{ reportFilter.formatAmount(scope.row.totalRefundedAmount.average) }}
             </div>
           </template>
         </el-table-column>
@@ -53,11 +53,12 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import ExportReport from "../ExportReport.vue";
-import translate from "@/utils/translator/Translator";
+import translate, { translateNumber } from "@/utils/translator/Translator";
 import toCountryName from "../Utils/toCountryName";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 
 const props = defineProps({
@@ -91,4 +92,6 @@ const selectedGroupLabel = computed(() => {
 const groupData = () => {
   emit("group-data", selectedGroupKey.value);
 };
+
+const byNumber = (read) => (a, b) => Number(read(a)) - Number(read(b));
 </script>

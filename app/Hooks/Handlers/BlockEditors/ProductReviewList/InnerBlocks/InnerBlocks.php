@@ -809,7 +809,7 @@ class InnerBlocks
     {
         $review = $this->currentReview($block);
 
-        if (!$review) {
+        if (!$review || !ProductReviewService::showsReviewerAvatar()) {
             return '';
         }
 
@@ -825,7 +825,7 @@ class InnerBlocks
         $review = $this->currentReview($block);
         $name = $review ? trim((string) Arr::get($review, 'reviewer_name', '')) : '';
 
-        if ($name === '') {
+        if ($name === '' || !ProductReviewService::showsReviewerName()) {
             return '';
         }
 

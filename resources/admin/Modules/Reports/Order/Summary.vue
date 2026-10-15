@@ -25,7 +25,7 @@ const summaryCards = [
   {
     title: translate("Gross Sales"),
     key: "gross_sale",
-    content: translate("The total sales you had in this period."),
+    content: translate("Total paid on paid, partially paid and refunded orders created in this period, including tax and shipping. Discounts are already applied. Refunds are not deducted."),
     checkable: true,
     hasCurrency: true,
   },
@@ -34,44 +34,44 @@ const summaryCards = [
     key: "total_refund",
     liability: true,
     hasCurrency: true,
-    content: translate("Refunds made in this period. This is deducted from gross sales to calculate revenue."),
+    content: translate("Amount refunded on orders created in this period. Deducted from gross sales to calculate revenue."),
   },
   {
     title: translate("Revenue"),
     key: "net_revenue",
     hasCurrency: true,
-    content: translate("Gross sales less refunds, taxes, shipping, fees."),
+    content: translate("Gross sales less refunds and taxes. Shipping charges and payment fees are not deducted."),
     checkable: true
   },
   {
     title: translate("Orders"),
     key: "order_count",
-    content: translate("The total number of orders placed in this period."),
+    content: translate("Paid, partially paid and refunded orders created in this period, in the report currency. Renewal orders are included; unpaid orders are not."),
     checkable: true,
     hideCurrency: true
   },
   {
     title: translate("Items"),
     key: "total_item_count",
-    content: translate("The total number of items sold in this period."),
+    content: translate("Total quantity of items on the orders counted in this period. With a product filter, only the matching items are counted."),
     hideCurrency: true
   },
   {
     title: translate("Average Gross"),
     key: "average_gross",
     hasCurrency: true,
-    content: translate("Average gross sales per order in this period."),
+    content: translate("Gross sales divided by the number of orders counted in this period."),
   },
   {
     title: translate("Average Revenue"),
     key: "average_net",
     hasCurrency: true,
-    content: translate("Average revenue per order in this period."),
+    content: translate("Revenue divided by the number of orders counted in this period."),
   },
   {
     title: translate("Average Order Items"),
     key: "average_order_items_count",
-    content: translate("Average number of items per order in this period."),
+    content: translate("Items divided by the number of orders counted in this period."),
     hideCurrency: true
   },
 ];
@@ -98,7 +98,7 @@ const onCheckBoxChange = (key) => {
 
 const formatAmount = (summary) => {
   return allowedKeys.value.includes(summary.key) 
-    ? maybeLiability(summary.value, summary.liability) 
+    ? maybeLiability(summary.value, summary.liability, props.reportFilter.reportCurrency) 
     : formatNumber(summary.value);
 };
 </script>
@@ -134,11 +134,10 @@ const formatAmount = (summary) => {
         <div class="title">
           {{ card.title }}
           <el-tooltip :content="card.content" placement="top"
-                      popper-class="fct-tooltip" effect="dark">
-            <DynamicIcon
-                class="text-gray-500 w-4 h-4 cursor-help"
-                name="InformationFill"
-            />
+                      popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+            <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help focus-visible:outline-2 focus-visible:outline-offset-2" :aria-label="translate('About this metric')">
+              <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+            </button>
           </el-tooltip>
         </div><!-- title -->
 

@@ -6,6 +6,7 @@ import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
 import Theme from "@/utils/Theme";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import toCountryName from "@/Modules/Reports/Utils/toCountryName";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
@@ -122,7 +123,7 @@ const updateChart = () => {
       axisLabel: {
         color: themeColors.value.textColor,
         fontSize: 12,
-        formatter: value => CurrencyFormatter.formatScaled(value) // Convert back to cents for formatting
+        formatter: value => CurrencyFormatter.formatScaled(value, true, false, AppConfig.get('shop.currency')) // Convert back to cents for formatting
       },
       splitLine: {
         show: true,

@@ -731,7 +731,7 @@ $variation($reportMetaId, 'order type/status/date/currency filter state', [
         'compareDate'     => '{report_start}',
         'subscriptionType'=> 'automatic',
     ],
-], 'resources/admin/Models/Reports/ReportFilterModel.js', 145, ['needs' => ['report', 'variation']]);
+], 'resources/admin/Models/Reports/ReportFilterModel.js', 150, ['needs' => ['report', 'variation']]);
 $reportCase(31, 'quick-order-stats');
 $reportCase(32, 'report-overview');
 $declare($reports, 33, 'reports/search-repeat-customer', [
@@ -874,13 +874,21 @@ $variation($productPerformanceId, 'product performance pagination and ordering',
     'sort_type'=> 'DESC',
     'search'   => '__fc_smoke__',
 ], 'resources/admin/Modules/Reports/Product/ProductTopChart.vue', 397, ['needs' => 'report']);
-$customerReportId = $reportCase(96, 'customer-report', [
+$productCompareParams = $reportParams;
+$productCompareParams['params']['variation_ids'] = ['{variation_id}'];
+$reportCase(94, 'product-compare', [
+    'needs'  => ['report', 'variation'],
+    'params' => $productCompareParams,
+    // Compare is Pro-only; the pro-absent axis must see the 403 refusal.
+    'ok'     => defined('FLUENTCART_PRO_PLUGIN_VERSION') ? [200] : [403],
+]);
+$customerReportId = $reportCase(97, 'customer-report', [
     'params' => $withReportGroup($reportParams, 'default'),
 ]);
 foreach (['monthly', 'yearly'] as $groupKey) {
     $variation($customerReportId, 'chart groupKey=' . $groupKey, $withReportGroup($reportParams, $groupKey), 'resources/admin/Modules/Reports/Customer/CustomerReportChart.vue', 112, ['needs' => 'report']);
 }
-$reportCase(99, 'sources');
+$reportCase(100, 'sources');
 
 $advance = 'app/Http/Routes/advance_filter_routes.php';
 $advanceFilterId = $declare($advance, 22, 'advance_filter/get-filter-options', [

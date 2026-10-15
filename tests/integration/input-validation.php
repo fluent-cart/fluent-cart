@@ -888,7 +888,7 @@ return [
                 );
             } elseif (count($present) === count($validationInventory['v_html_sinks'])) {
                 FcTest::skip(
-                    'KNOWN-FAILURE — 15 source-pinned stored/row-derived values remain '
+                    'KNOWN-FAILURE — 14 source-pinned stored/row-derived values remain '
                     . 'bound directly to v-html; examples='
                     . wp_json_encode(array_slice($present, 0, 4))
                 );

@@ -6,7 +6,6 @@ import RevenueGroupedBy from "./RevenueGroupedBy.vue";
 import RevenueReportSummary from "./RevenueReportSummary.vue";
 import revenueReport from "@/Models/Reports/RevenueReportModel";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
-import Comparison from "./Comparison.vue";
 import translate from "@/utils/translator/Translator";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 
@@ -18,25 +17,25 @@ const props = defineProps({
 });
 
 const appliedGroupKey = ref('default');
+const tableGroupKey = ref("billing_country");
 const reportFilter = props.reportFilter;
-const params = reportFilter.applicableFilters;
 
 const getRevenueReport = (params, groupKey = 'default') => {
-  revenueReport.getReportData({
+  reportFilter.trackCompareRange(revenueReport.getReportData({
     params: {
       ...params.params,
       groupKey: groupKey,
     },
-  })
+  }));
 }
 
 const fetchNetRevenue = (groupKey) => {
-  revenueReport.getReportData({
+  reportFilter.trackCompareRange(revenueReport.getReportData({
     params: {
-      ...params.params,
+      ...reportFilter.applicableFilters.params,
       groupKey: groupKey,
     },
-  });
+  }));
 };
 
 const filterChartData = (groupKey) => {
@@ -46,13 +45,14 @@ const filterChartData = (groupKey) => {
 
   appliedGroupKey.value = groupKey;
 
-  getRevenueReport(params, appliedGroupKey.value)
+  getRevenueReport(reportFilter.applicableFilters, appliedGroupKey.value)
 };
 
 const fetchDataByGroup = (groupKey) => {
+  tableGroupKey.value = groupKey;
   revenueReport.getReportByGroup({
     params: {
-      ...params.params,
+      ...reportFilter.applicableFilters.params,
       groupKey: groupKey,
     },
   });
@@ -64,14 +64,14 @@ const getData = (params) => {
   revenueReport.getReportByGroup({
     params: {
       ...params.params,
-      groupKey: "billing_country",
+      groupKey: tableGroupKey.value,
     },
   });
 };
 
 onMounted(() => {
   reportFilter.addListener("revenue-report", getData);
-  getData(params);
+  getData(reportFilter.applicableFilters);
 });
 
 onUnmounted(() => {
@@ -94,16 +94,6 @@ onUnmounted(() => {
           :loading="revenueReport.data.isBusy.revenueReport"
       />
 
-      <!-- comparison -->
-      <Comparison
-          class="my-7.5"
-          :currentMetrics="revenueReport.data.revenueReport"
-          :previousMetrics="revenueReport.data.previousMetrics"
-          :hasComparison="props.reportFilter.data.compareType !== 'no_comparison'"
-          :reportFilter="reportFilter"
-          :loading="revenueReport.data.isBusy.revenueReport"
-      />
-
       <!-- will use this in different page later-->
       <!-- <el-row>
         <el-col :lg="24">
@@ -115,6 +105,8 @@ onUnmounted(() => {
       <Revenue
         :revenueReport="revenueReport.data.revenueReport"
         :appliedGroupKey="appliedGroupKey"
+        :previousMetrics="revenueReport.data.previousMetrics"
+        :hasComparison="props.reportFilter.data.compareType !== 'no_comparison'"
         @fetch-data="fetchNetRevenue"
         :loading="revenueReport.data.isBusy.revenueReport"
       />

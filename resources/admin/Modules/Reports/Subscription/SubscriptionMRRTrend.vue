@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, onUnmounted} from 'vue';
 import * as Card from "@/Bits/Components/Card/Card.js";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
@@ -58,6 +58,12 @@ onMounted(() => {
     props.reportFilter.addListener("daily-mrr-chart", () => {
       handleDateRangeChange();
     });
+  }
+});
+
+onUnmounted(() => {
+  if (props.reportFilter) {
+    props.reportFilter.removeListener("daily-mrr-chart");
   }
 });
 </script>

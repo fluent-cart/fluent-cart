@@ -1,7 +1,7 @@
 <template>
   <div class="fct-applied-filters-wrap">
     <ul class="fct-applied-filter-list">
-      <li class="fct-applied-filter fct-applied-filter-date">
+      <li class="fct-applied-filter fct-applied-filter-date" v-if="!only">
         <div class="fct-applied-filter-label">{{$t('Date:')}}</div>
         <div class="fct-applied-filter-value">
           <DateRangeFilter
@@ -17,9 +17,11 @@
         </div>
       </li>
 
-      <li class="fct-applied-filter fct-applied-filter-compare-to" v-if="shouldRenderCompareToFilter">
+      <li class="fct-applied-filter fct-applied-filter-compare-to" v-if="!only && shouldRenderCompareToFilter">
         <CompareToFilter
             :filterState="filter"
+            :compareRange="compareRange"
+            :compareRanges="compareRanges"
         />
       </li>
 
@@ -28,9 +30,7 @@
             v-for="(filterItem, filterItemKey) in selectedFilters"
             :key="filterItemKey">
           <li
-              :class="`fct-applied-filter ${
-              filterItemKey === 'variation_ids' ? 'fct-applied-filter-variation' : ''
-            } ${filterItemKey === 'orderTypes' ? 'fct-applied-filter-order-types' : ''}`"
+              class="fct-applied-filter fct-applied-filter-select"
               v-if="shouldRenderFilter(filterItemKey)"
           >
             <div class="fct-applied-filter-label">{{ filterItem.label }}:</div>
@@ -42,6 +42,7 @@
                   :filter-state="filter"
                   :filter-item="filterItem"
                   :filter-item-key="filterItemKey"
+                  @clear="handleRemoveFilter({ filterKey: filterItemKey, itemId: null })"
               />
 
               <MultiselectFilter
@@ -49,6 +50,7 @@
                   :filter-state="filter"
                   :filter-item="filterItem"
                   :filter-item-key="filterItemKey"
+                  @clear="handleRemoveFilter({ filterKey: filterItemKey, itemId: null })"
               />
 
               <!-- Tree Select (variation_ids) -->
@@ -68,7 +70,9 @@
               <CurrencyFilter
                   v-else-if="filterItemKey === 'currency'"
                   v-model="filter.data.currency"
+                  :aria-label="filterItem.label"
                   :currencies="filter.currencies"
+                  @clear="handleRemoveFilter({ filterKey: filterItemKey, itemId: null })"
                   @change="
                   (value) => {
                     filter.setSelectChange(value, {
@@ -86,17 +90,11 @@
             </div>
 
 
-            <RemoveButton
-                v-if="filterItemKey !== 'variation_ids'"
-                :filterKey="filterItemKey"
-                :itemId="filterItemKey === 'variation_ids' ? filterItem.value[0].id : null"
-                @remove="handleRemoveFilter"
-            />
           </li>
         </template>
       </template>
 
-      <li class="fct-applied-filter-clear-wrap" v-if="Object.keys(selectedFilters).length">
+      <li class="fct-applied-filter-clear-wrap" v-if="!only && Object.keys(selectedFilters).length">
         <ResetFilters :filter-state="filter" />
       </li>
     </ul>
@@ -105,7 +103,6 @@
 </template>
 
 <script setup>
-import RemoveButton from "@/Bits/Components/FilterDropdown/parts/RemoveButton.vue";
 import StatusFilter from "@/Bits/Components/FilterDropdown/parts/StatusFilter.vue";
 import DateRangeFilter from "@/Bits/Components/FilterDropdown/parts/DateRangeFilter.vue";
 import PopoverFilter from "@/Bits/Components/FilterDropdown/parts/PopoverFilter.vue";
@@ -121,6 +118,18 @@ const props = defineProps({
   filterState: {
     type: [Object],
   },
+  only: {
+    type: Array,
+    default: null,
+  },
+  compareRange: {
+    type: Object,
+    default: null,
+  },
+  compareRanges: {
+    type: Object,
+    default: null,
+  },
 });
 
 const filter = props.filterState;
@@ -131,13 +140,17 @@ const handleRemoveFilter = ({ filterKey, itemId }) => {
 };
 
 const shouldRenderFilter = (key) => {
+  if (props.only && !props.only.includes(key)) {
+    return false;
+  }
+
   // always skip internal filters
   if (["dateRange", "compareType", "compareDate"].includes(key)) {
     return false;
   }
 
   // skip specific filters on customer report
-  if (router.name === "reports_customer" || router.name === "reports_sources") {
+  if (router.name === "reports_customer") {
     return false;
   }
 
@@ -149,6 +162,7 @@ const shouldRenderCompareToFilter = computed(() => {
     "reports_revenue", 
     "reports_subscriptions", 
     "reports_products", 
+    "reports_products_compare",
     "reports_customer", 
     "reports_sales",
     'reports_orders',
@@ -160,6 +174,7 @@ const shouldRenderCompareToFilter = computed(() => {
 const selectedFilters = computed(() => {
   return Object.keys(filter.data.selectedFilters)
   .filter(key => !(key === "orderTypes" && router.name === 'reports_subscriptions'))
+  .filter(key => !(key === "subscriptionType" && router.name === 'reports_sources'))
   .reduce((acc, key) => {
     acc[key] = filter.data.selectedFilters[key];
     return acc;

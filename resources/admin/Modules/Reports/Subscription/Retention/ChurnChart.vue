@@ -323,20 +323,14 @@ const retentionData = computed(() => {
 
 const seriesData = computed(() => {
     // Calculate churn rates from retention_data
-    const subscriptionChurnData = retentionData.value.map((item, index) => {
-        // Start count is the previous month's active subscriptions
-        const startSubs = index > 0 
-            ? parseInt(retentionData.value[index - 1].active_subscriptions) || 0
-            : parseInt(item.active_subscriptions) - parseInt(item.new_subscriptions) || 0;
+    const subscriptionChurnData = retentionData.value.map((item) => {
+        const startSubs = parseInt(item.start_subscriptions) || 0;
         const churned = parseInt(item.churned_subscriptions) || 0;
         return startSubs > 0 ? ((churned / startSubs) * 100).toFixed(2) : 0;
     });
 
-    const mrrChurnData = retentionData.value.map((item, index) => {
-        // Start MRR is the previous month's MRR
-        const startMrr = index > 0 
-            ? parseFloat(retentionData.value[index - 1].mrr) || 0
-            : parseFloat(item.mrr) - parseFloat(item.new_subscriptions_mrr) || 0;
+    const mrrChurnData = retentionData.value.map((item) => {
+        const startMrr = parseFloat(item.start_mrr) || 0;
         const churnedMrr = parseFloat(item.churned_subscriptions_mrr) || 0;
         return startMrr > 0 ? ((churnedMrr / startMrr) * 100).toFixed(2) : 0;
     });
@@ -345,13 +339,13 @@ const seriesData = computed(() => {
         {
             name: translate("Subscription Churn"),
             type: chartType.value,
-            color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
+            color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
             data: subscriptionChurnData
         },
         {
             name: translate("MRR Churn"),
             type: chartType.value,
-            color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
+            color: colors.sea_green,
             data: mrrChurnData
         }
     ];
@@ -390,7 +384,7 @@ watch(isEmpty, (value) => {
     if (!value) initChart();
 })
 
-watch(props.loading, (value) => {
+watch(() => props.loading, (value) => {
     if (!value) initChart();
 })
 

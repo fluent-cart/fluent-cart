@@ -8,7 +8,7 @@ import { computed } from "vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
-import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
+import { formatNumber, formatCompactNumber } from "@/Modules/Reports/Utils/formatNumber";
 import reportFilter from "@/Models/Reports/ReportFilterModel";
 
 /**
@@ -55,6 +55,12 @@ const props = defineProps({
     fluctuationSuffix: {
         type: String,
         default: ''
+    },
+
+    // Currency of `amount`; defaults to the currency the report is shown in.
+    currency: {
+        type: String,
+        default: ''
     }
 });
 
@@ -70,13 +76,15 @@ const hasComparison = computed(() => {
 });
 
 const fluctuationDisplay = computed(() => {
-    return formatNumber(props.fluctuation);
+    return formatCompactNumber(props.fluctuation);
 });
 
 const amount = computed(() => {
-    const formatter = props.hasCurrency ? CurrencyFormatter.scaled : formatNumber;
+    if (!props.hasCurrency) {
+        return formatNumber(props.amount);
+    }
 
-    return formatter(props.amount);
+    return CurrencyFormatter.scaled(props.amount, true, false, props.currency || reportFilter.reportCurrency);
 });
 
 const tooltip = computed(() => {

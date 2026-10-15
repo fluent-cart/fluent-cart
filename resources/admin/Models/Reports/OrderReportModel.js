@@ -69,21 +69,21 @@ class OrderReportModel extends Model {
   }
 
   getOrderChartData(query = {}) {
-    this.data.isBusy.orderChartData = true;
-
     return this.makeRequest(
       "order-chart",
-      query
-    ).then(() => this.data.isBusy.orderChartData = false)
+      query,
+      null,
+      "orderChartData"
+    );
   }
 
   getNewVsReturningCustomer(query = {}) {
-    this.data.isBusy.newVsReturning = true;
-
     return this.makeRequest(
       "fetch-new-vs-returning-customer",
-      query
-    ).then(() => this.data.isBusy.newVsReturning = false);
+      query,
+      null,
+      "newVsReturning"
+    );
   }
 
   getOrderByGroup(query = {}) {
@@ -123,11 +123,12 @@ class OrderReportModel extends Model {
   }
 
   getReportByDayAndHour(query = {}) {
-    this.data.isBusy.orderByDayAndHour = true;
     return this.makeRequest(
       "fetch-report-by-day-and-hour",
-      query
-    ).then(() => this.data.isBusy.orderByDayAndHour = false);
+      query,
+      null,
+      "orderByDayAndHour"
+    );
   }
 
   getDashboardStats(query = {}) {

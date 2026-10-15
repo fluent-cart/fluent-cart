@@ -32,6 +32,7 @@ import Theme from '@/utils/Theme';
 import dayjs from 'dayjs';
 import {resolveDateFormat, fluentDayjsLocale} from '@/utils/Utils';
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import translate from "@/utils/translator/Translator";
 import toCountryName from "@/Modules/Reports/Utils/toCountryName";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
@@ -280,7 +281,7 @@ const initChart = () => {
       axisLabel: {
         color: isDarkTheme.value ? '#ffffff' : '#696778',
         fontSize: 12,
-        formatter: value => CurrencyFormatter.formatScaled(value * 100) // Convert back to cents for formatting
+        formatter: value => CurrencyFormatter.formatScaled(value * 100, true, false, AppConfig.get('shop.currency')) // Convert back to cents for formatting
       },
       splitLine: {
         show: true,

@@ -21,10 +21,20 @@ class ReviewModalRenderer
 
     protected $productName;
 
+    protected $showName;
+
+    protected $showAvatar;
+
+    protected $nameFormat;
+
     public function __construct(ProductReview $review, $productName = '')
     {
         $this->review = $review;
         $this->productName = $productName;
+        // Once per thread, not per entry.
+        $this->showName = ProductReviewService::showsReviewerName();
+        $this->showAvatar = ProductReviewService::showsReviewerAvatar();
+        $this->nameFormat = ProductReviewService::reviewerNameFormat();
     }
 
     public function render()
@@ -146,13 +156,21 @@ class ReviewModalRenderer
 
     protected function renderAuthorRow(ProductReview $entry)
     {
-        $authorName = $entry->reviewer_name ?: __('Anonymous', 'fluent-cart');
+        // Store replies keep their name; it is what marks them as the store's.
+        $authorName = $entry->is_admin_reply
+            ? (string) $entry->reviewer_name
+            : ProductReviewService::formatReviewerName($entry->reviewer_name, $this->nameFormat);
+        $authorName = $authorName ?: __('Anonymous', 'fluent-cart');
         ?>
         <div class="fct-review-modal-author-row" data-review-author-row>
-            <?php $this->renderAvatar($entry, $authorName); ?>
+            <?php if ($this->showAvatar) : ?>
+                <?php $this->renderAvatar($entry, $authorName); ?>
+            <?php endif; ?>
             <div class="fct-review-modal-meta-text">
                 <div class="fct-review-modal-name-line">
-                    <span class="fct-review-modal-author" data-review-author><?php echo esc_html($authorName); ?></span>
+                    <?php if ($this->showName) : ?>
+                        <span class="fct-review-modal-author" data-review-author><?php echo esc_html($authorName); ?></span>
+                    <?php endif; ?>
                     <?php if ($entry->rating > 0) : ?>
                         <span class="fct-review-modal-stars" data-review-stars><?php $this->renderStars((int) $entry->rating); ?></span>
                     <?php endif; ?>

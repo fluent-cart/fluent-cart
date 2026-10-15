@@ -43,9 +43,12 @@ class VatFieldRenderer
         $isEuCountry = TaxModule::isTaxEnabled()
             && $this->taxApplicableCountry
             && LocalizationManager::getInstance()->isEuTaxCountry($this->taxApplicableCountry);
+        $fieldLabel = __('VAT/GST/Tax Number', 'fluent-cart') . ($isRequired ? ' *' : '');
         ?>
         <div data-fluent-cart-checkout-page-form-input-wrapper class="fct_tax_input_wrapper"
              id="fct_billing_tax_id_wrapper"
+             data-fct-label="<?php echo esc_attr($fieldLabel); ?>"
+             data-fct-field="input"
         >
             <label for="fct_billing_tax_id" class="sr-only">
                 <?php echo esc_html__('VAT Number', 'fluent-cart'); ?>
@@ -71,6 +74,7 @@ class VatFieldRenderer
                 <button
                     type="button"
                     data-fluent-cart-tax-remove-btn
+                    data-fct-action-label="<?php echo esc_attr($fieldLabel); ?>"
                     aria-label="<?php echo esc_attr__('Remove VAT number', 'fluent-cart'); ?>"
                 >
                     <?php echo esc_html__('Remove', 'fluent-cart'); ?>
@@ -79,6 +83,7 @@ class VatFieldRenderer
                 <button
                     type="button"
                     data-fluent-cart-checkout-page-tax-apply-btn
+                    data-fct-action-label="<?php echo esc_attr($fieldLabel); ?>"
                     aria-label="<?php echo esc_attr__('Apply VAT number', 'fluent-cart'); ?>"
                 >
                     <?php echo esc_html__('Apply', 'fluent-cart'); ?>

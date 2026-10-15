@@ -5,7 +5,6 @@ import { formatNumber } from "../Utils/formatNumber";
 import { computed } from "vue";
 import reportFilter from "@/Models/Reports/ReportFilterModel";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 
 import ReportSummary from "@/Bits/Components/ReportSummary.vue";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
@@ -55,7 +54,7 @@ const summaryData = computed(() => {
 
 const formatAmount = (summary) => {
   return ['monthly_net', 'monthly_gross'].includes(summary.key) 
-    ? CurrencyFormatter.scaled(summary.value)
+    ? reportFilter.formatAmount(summary.value)
     : formatNumber(summary.value);
 };
 </script>

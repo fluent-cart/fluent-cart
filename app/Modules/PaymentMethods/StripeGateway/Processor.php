@@ -78,6 +78,7 @@ class Processor
         if (is_wp_error($stripeCustomer)) {
             return $stripeCustomer;
         }
+        $stripeCustomer = StripeHelper::updateAddressOnReactivation($stripeCustomer, $paymentInstance->order, $subscriptionModel);
 
         $feeTotal = $orderType !== 'renewal' ? (int)$paymentInstance->order->fee_total : 0;
         $initialAmount = (int)$subscriptionModel->signup_fee + $paymentInstance->getExtraAddonAmount() + $feeTotal;
@@ -1527,6 +1528,7 @@ class Processor
         if (is_wp_error($stripeCustomer)) {
             return $stripeCustomer;
         }
+        $stripeCustomer = StripeHelper::updateAddressOnReactivation($stripeCustomer, $order, $subscriptionModel);
 
         // Get or create Stripe price/plan
         if ($orderType == 'renewal') {

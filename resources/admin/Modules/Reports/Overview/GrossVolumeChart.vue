@@ -9,6 +9,7 @@ import Theme from "@/utils/Theme";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
@@ -117,7 +118,7 @@ const seriesData = computed(() => {
       title: mapLabel[props.currentKey] || props.currentKey,
       dataKey: "current",
       type: "line",
-      color: isDarkTheme.value ? colors.report.blue_dark_mode : colors.report.blue, // Purple for bars
+      color: isDarkTheme.value ? colors.report.blue_dark_mode : colors.report.royal_blue,
     },
     {
       title: mapLabel[props.prevKey] || props.prevKey,
@@ -253,7 +254,7 @@ const updateChart = () => {
           color: isDarkTheme.value ? "#ffffff" : "#696778",
           fontSize: 12,
           formatter: (value) => {
-            return CurrencyFormatter.formatScaledChart(value);
+            return CurrencyFormatter.formatScaledChart(value, AppConfig.get('shop.currency'));
           },
         },
         splitLine: {
@@ -341,15 +342,10 @@ onMounted(() => {
   <div class="fct-gross-volume-chart-wrap">
     <Card.Container id="chartContainer" ref="cardRef">
       <Card.Header :title="translate(title)" title_size="small" border_bottom>
-        <template #action>
-<!--          <div class="fct-btn-group sm">-->
-<!--            <ChartTab-->
-<!--                :activeType="chartType"-->
-<!--                :types="{ bar: 'BarChart', line: 'LineChart' }"-->
-<!--                @change="toggleChartType"-->
-<!--            />-->
-<!--            <Screenshot :targetRef="chartRef"/>-->
-<!--          </div>-->
+        <template v-if="$slots.subtitle" #title>
+          <p class="fct-card-header-text text-system-mid dark:text-gray-300">
+            <slot name="subtitle"/>
+          </p>
         </template>
       </Card.Header>
       <Card.Body class="p-0">

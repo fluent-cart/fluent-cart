@@ -9,7 +9,10 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CartHelper;
+use FluentCart\App\Hooks\Handlers\BlockEditors\Checkout\CheckoutBlockEditor;
+use FluentCart\App\Hooks\Handlers\ShortCodes\Checkout\CheckoutPageHandler;
 use FluentCart\App\Models\Cart;
+use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Support\Arr;
@@ -100,6 +103,78 @@ class CheckoutRenderer
         $this->wrapperEnd();
     }
 
+    /**
+     * Whether a checkout block/shortcode is configured with its own products.
+     * Mirrors Pro's mode inference: products set and `checkout_mode` not `cart`.
+     */
+    public static function isCustomProductCheckout(array $attributes): bool
+    {
+        if (Arr::get($attributes, 'checkout_mode') === 'cart') {
+            return false;
+        }
+
+        foreach (['variant_ids', 'variation_ids', 'variation_id'] as $key) {
+            $value = Arr::get($attributes, $key);
+
+            if (is_string($value)) {
+                $value = preg_split('/[\s,]+/', $value, -1, PREG_SPLIT_NO_EMPTY);
+            }
+
+            foreach ((array)$value as $item) {
+                if (is_object($item)) {
+                    $item = (array)$item;
+                }
+
+                if (is_array($item)) {
+                    $item = Arr::get($item, 'id', Arr::get($item, 'variation_id', 0));
+                }
+
+                if (absint($item)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A custom-product checkout is rendered by the add-on that supplies its
+     * products. Without one it renders nothing, never the shopper's own cart.
+     *
+     * @param array $context ['surface' => string, 'attributes' => array, 'block' => \WP_Block|null]
+     * @return string
+     */
+    public static function renderCustomProductCheckout(array $context): string
+    {
+        ob_start();
+        do_action('fluent_cart/checkout/render_custom_product_checkout', $context);
+
+        return (string)ob_get_clean();
+    }
+
+    /**
+     * Render a custom-product checkout from the cart its add-on supplied, on
+     * the surface it was placed on. Echoes the markup.
+     *
+     * @param \FluentCart\App\Models\Cart $cart
+     * @param array $context The context passed to render_custom_product_checkout.
+     * @return void
+     */
+    public static function renderCustomProductCart($cart, array $context)
+    {
+        $attributes = (array)Arr::get($context, 'attributes', []);
+
+        if (Arr::get($context, 'surface') === 'checkout-shortcode') {
+            (new CheckoutPageHandler())->renderCart($cart, $attributes);
+            return;
+        }
+
+        AssetLoader::loadCheckoutAssets($cart);
+
+        echo CheckoutBlockEditor::renderCart($cart, $attributes, Arr::get($context, 'block')); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered markup
+    }
+
     public function getFragment($fragmentName)
     {
         $maps = [
@@ -130,6 +205,8 @@ class CheckoutRenderer
             $classNames[] = $configClass;
         }
 
+        $classNames[] = 'fct-field-labels-' . static::resolveFieldLabelStyle(Arr::get($this->config, 'field_label_style', ''));
+
         $classNames = apply_filters('fluent_cart/checkout_page_css_classes', $classNames, [
             'cart' => $this->cart
         ]);
@@ -152,6 +229,17 @@ class CheckoutRenderer
                 'cart' => $this->cart
             ];
             do_action('fluent_cart/after_checkout_page_start', $hookData);
+    }
+
+    /**
+     * How grouped checkout fields show their name: 'docked' (default),
+     * 'floating' or 'placeholder'. Unknown values fall back to the default.
+     */
+    public static function resolveFieldLabelStyle($style)
+    {
+        $allowed = ['docked', 'floating', 'placeholder'];
+
+        return in_array($style, $allowed, true) ? $style : 'docked';
     }
 
     public function renderNotices()
@@ -376,7 +464,9 @@ class CheckoutRenderer
                         ?>
                         <div data-fluent-cart-checkout-page-form-input-wrapper
                              class="fct_input_wrapper"
-                             id="billing_company_name_wrapper">
+                             id="billing_company_name_wrapper"
+                             data-fct-label="<?php echo esc_attr($companyLabel . ($isCompanyRequired ? ' *' : '')); ?>"
+                             data-fct-field="input">
                             <label for="billing_company_name" class="sr-only">
                                 <?php echo esc_html($companyLabel); ?>
                             </label>
@@ -400,7 +490,9 @@ class CheckoutRenderer
                         ?>
                         <div data-fluent-cart-checkout-page-form-input-wrapper
                              class="fct_input_wrapper"
-                             id="billing_legal_registration_id_wrapper">
+                             id="billing_legal_registration_id_wrapper"
+                             data-fct-label="<?php echo esc_attr($legalLabel . ($isLegalRequired ? ' *' : '')); ?>"
+                             data-fct-field="input">
                             <label for="billing_legal_registration_id" class="sr-only">
                                 <?php echo esc_html($legalLabel); ?>
                             </label>

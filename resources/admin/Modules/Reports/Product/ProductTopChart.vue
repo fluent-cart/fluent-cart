@@ -358,7 +358,7 @@
 </template>
 
 <script setup>
-import {ref, computed, watch, onMounted, nextTick} from "vue";
+import {ref, computed, watch, onMounted, onUnmounted, nextTick} from "vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import dayjs from "dayjs";
 import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
@@ -378,15 +378,22 @@ const props = defineProps({
 const isDarkTheme = ref(Theme.isDark());
 const loading = ref(true)
 
+const onThemeChange = () => {
+  isDarkTheme.value = Theme.isDark();
+};
+
 onMounted(() => {
   getTopChart();
   props.reportFilter.addListener("product-top-chart", () => {
     getTopChart()
   });
 
-  window.addEventListener("onFluentCartThemeChange", function () {
-    isDarkTheme.value = Theme.isDark();
-  });
+  window.addEventListener("onFluentCartThemeChange", onThemeChange);
+});
+
+onUnmounted(() => {
+  props.reportFilter.removeListener("product-top-chart");
+  window.removeEventListener("onFluentCartThemeChange", onThemeChange);
 });
 
 const productTopChart = ref({});
@@ -534,7 +541,7 @@ const aggregateDataByYear = (year) => {
   Object.entries(chartData.value).forEach(([monthKey, products]) => {
     if (monthKey.startsWith(year)) {
       products.forEach((product) => {
-        if (!yearData[product.name]) {
+        if (!yearData[product.variation_id]) {
           yearData[product.variation_id] = {
             ...product,
             value: 0,

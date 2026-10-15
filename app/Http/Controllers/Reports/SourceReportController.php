@@ -23,6 +23,7 @@ class SourceReportController extends Controller
     public function index(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = SourceReportService::make();
 
@@ -47,6 +48,8 @@ class SourceReportController extends Controller
         return [
             'sourceReportData' => $currentMetrics,
             'fluctuations'     => $fluctuations,
+            'compare_range'    => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'   => $compareRanges,
         ];
     }
 }

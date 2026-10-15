@@ -208,6 +208,8 @@ class FilterState extends Model {
         // Kept so the tag row can name the product even after the tree that
         // supplied it is filtered away by a search.
         productName: node.productName,
+        productId: node.productId,
+        variationsCount: node.variationsCount,
       }));
 
     this.handleTreeSelections(selectedItems)
@@ -406,7 +408,8 @@ class FilterState extends Model {
   }
 
   resetFilters() {
-    this.data.selectedFilters = {};
+    const currencyChip = this.data.selectedFilters.currency;
+    this.data.selectedFilters = currencyChip ? { currency: currencyChip } : {};
     this.data.currency = "";
     this.data.variation_ids = [];
     this.data.dateRange = [
@@ -418,6 +421,7 @@ class FilterState extends Model {
     this.data.compareType = "previous_period";
     this.data.compareDate = DateUtil.withTimezone(dayjs().subtract(1, "month").format("YYYY-MM-DD 00:00:00"));
     reportFilter.resetFiltersToDefault();
+    reportFilter.syncCurrencyChip();
     this.triggerFilterChanged();
   }
 
@@ -425,6 +429,11 @@ class FilterState extends Model {
     if (id != null) {
       this.removeFilterItem(key, id);
       reportFilter.resetFilterToDefault(key);
+      this.triggerFilterChanged();
+    } else if (key === "currency") {
+      // A report always reads one currency: clearing resets the chip, never removes it
+      reportFilter.resetFilterToDefault(key);
+      reportFilter.syncCurrencyChip();
       this.triggerFilterChanged();
     } else {
       delete this.data.selectedFilters[key];
@@ -509,6 +518,13 @@ class FilterState extends Model {
   }
 }
 
+// ReportFilterModel and ReportsView must share one state: the model writes
+// the currency chip the view renders
+let sharedState = null;
+
 export default function useFilterState() {
-  return FilterState.init();
+  if (!sharedState) {
+    sharedState = FilterState.init();
+  }
+  return sharedState;
 }

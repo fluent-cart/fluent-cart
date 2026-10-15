@@ -30,7 +30,11 @@ import NotFound from "@/Pages/NotFound.vue";
 import Unauthorized from "@/Pages/Unauthorized.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Rest from "@/utils/http/Rest";
+import {addLicensingFallbackRoutes} from "@/Modules/Licensing/legacyLicensingRoutes.js";
 
+
+// Late priority: fills licensing routes only when Pro registered none (old Pro, no Pro).
+window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_cart/licensing_fallback', addLicensingFallbackRoutes, 999);
 
 const appRoutes = window.fluent_cart_admin.hooks.applyFilters('fluent_cart_routes', routes);
 

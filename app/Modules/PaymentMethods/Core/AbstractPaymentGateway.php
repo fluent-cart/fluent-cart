@@ -364,7 +364,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
                 'reason'  => sprintf(
                     /* translators: %s is the payment method name */
                     __('Selected payment method %s is not active!', 'fluent-cart'),
-                    $this->getMeta('route')
+                    $this->getMeta('title')
                 )
             ];
         }

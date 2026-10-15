@@ -58,7 +58,7 @@ const colors = Theme.colors.report;
 const isDarkTheme = ref(Theme.isDark());
 
 // Method to create a series object
-const createSeries = (name, type, yAxisIndex, data, color) => {
+const createSeries = (name, type, yAxisIndex, data, color, lineType = 'solid', fill = true) => {
   return {
     name,
     type,
@@ -69,11 +69,12 @@ const createSeries = (name, type, yAxisIndex, data, color) => {
     color,
     lineStyle: {
       width: 3,
+      type: lineType,
     },
-    areaStyle: {
-      opacity: 0.3,
+    areaStyle: fill ? {
+      opacity: 0.1,
       color: color,
-    },
+    } : undefined,
     symbol: "circle",
     showSymbol: true,
     symbolSize: 8,
@@ -89,10 +90,10 @@ const createSeries = (name, type, yAxisIndex, data, color) => {
       lineStyle: {
         color: color,
       },
-      areaStyle: {
-        opacity: .3,
+      areaStyle: fill ? {
+        opacity: .1,
         color: color,
-      },
+      } : undefined,
     },
     animation: true,
     animationEasing: "cubicOut",
@@ -121,7 +122,7 @@ const seriesData = computed(() => {
       name: translate("Current Range"),
       key: "units_sold",
       type: chartType.value,
-      color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
+      color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
       data: props.chartData.map((item) => item["units_sold"]),
     },
   ];
@@ -132,7 +133,11 @@ const seriesData = computed(() => {
         name: translate("Compare Range"),
         key: "units_sold",
         type: chartType.value,
-        color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
+        color: chartType.value === 'bar'
+          ? echarts.color.modifyAlpha(isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue, 0.35)
+          : (isDarkTheme.value ? colors.blue_dark_mode_compare : colors.royal_blue_compare),
+        lineType: 'dotted',
+        fill: false,
         data: props.compareData.map((item) => ({ value: item.units_sold, date: item.group })),
       },
     )
@@ -143,7 +148,9 @@ const seriesData = computed(() => {
     item.type,
     0,
     item.data,
-    item.color
+    item.color,
+    item.lineType,
+    item.fill
   ))
 });
 

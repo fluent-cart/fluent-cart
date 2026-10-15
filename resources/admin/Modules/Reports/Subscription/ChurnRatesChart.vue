@@ -1,5 +1,5 @@
 <script setup>
-import {computed, nextTick, onMounted, ref, watch} from "vue";
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from "vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
@@ -64,6 +64,12 @@ onMounted(() => {
     props.reportFilter.addListener("churn-rates-chart", () => {
       handleDateRangeChange();
     });
+  }
+});
+
+onUnmounted(() => {
+  if (props.reportFilter) {
+    props.reportFilter.removeListener("churn-rates-chart");
   }
 });
 </script>

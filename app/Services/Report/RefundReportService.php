@@ -77,8 +77,8 @@ class RefundReportService extends ReportService
                 SUM(total_refund) / 100 as refunded_amount,
 
                 CASE
-                    WHEN COUNT(total_refund) > 0
-                        THEN SUM(total_refund) / COUNT(total_refund) / 100
+                    WHEN COUNT(CASE WHEN total_refund > 0 THEN 1 END) > 0
+                        THEN SUM(total_refund) / COUNT(CASE WHEN total_refund > 0 THEN 1 END) / 100
                     ELSE 0
                 END as average_refunded_amount,
 

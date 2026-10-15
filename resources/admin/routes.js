@@ -53,6 +53,7 @@ import CustomerReport from "@/Modules/Reports/Customer/CustomerReport.vue";
 import SourcesReport from "@/Modules/Reports/Sources/SourcesReport.vue";
 
 import ProductReport from './Modules/Reports/Product/ProductReport.vue';
+import ProductCompare from './Modules/Reports/Product/ProductCompare.vue';
 import OverviewReport from './Modules/Reports/Overview/Overview.vue';
 import AddonSettings from "./Modules/Settings/AddonSettings.vue";
 import MailingSettings from "@/Modules/Settings/EmailNotification/MailingSettings.vue";
@@ -319,6 +320,7 @@ export var routes = {
         name: "reports",
         path: "/reports",
         component: ReportsView,
+        redirect: {name: "reports_overview"},
         meta: {
             active_menu: "reports",
             permission: "reports/view"
@@ -326,7 +328,7 @@ export var routes = {
         children: [
             {
                 name: "reports_overview",
-                path: "overview", // Empty path makes this the default child route
+                path: "overview",
                 component: OverviewReport,
                 meta: {
                     title: translate("Overview"),
@@ -411,6 +413,15 @@ export var routes = {
                 component: ProductReport,
                 meta: {
                     title: translate("Product"),
+                    permission: "reports/view"
+                },
+            },
+            {
+                name: "reports_products_compare",
+                path: "products/compare",
+                component: ProductCompare,
+                meta: {
+                    title: translate("Compare"),
                     permission: "reports/view"
                 },
             },

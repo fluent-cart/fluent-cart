@@ -23,7 +23,7 @@
                     <template #default="scope">
                         <div class="flex items-center gap-2.5">
                             <div class="w-7" v-if="getCardBrand(scope.row.card_brand, scope.row.payment_method_type)">
-                                <img class="w-full" :title="scope.row.payment_method" :src="getCardBrand(scope.row.card_brand, scope.row.payment_method_type)" :alt="scope.row.card_brand">
+                                <img class="w-full" :title="paymentMethodAdminTitle(scope.row.payment_method)" :src="getCardBrand(scope.row.card_brand, scope.row.payment_method_type)" :alt="scope.row.card_brand">
                             </div>
 
                             <span v-else class="capitalize">{{scope.row.payment_method_type}}</span>
@@ -90,10 +90,10 @@
                             v-if="scope.row.transaction_type == 'charge' && scope.row.status == 'pending' && scope.row.vendor_charge_id"
                             effect="dark"
                             :placement="'top'"
-                            :content="translate('Sync payment status from %1$s', scope.row.payment_method)"
+                            :content="translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method))"
                             popper-class="fct-tooltip"
                         >
-                            <el-button size="small" :aria-label="translate('Sync payment status from %1$s', scope.row.payment_method)" :loading="syncing_transaction === scope.row.id" @click="syncTransaction(scope.row)">
+                            <el-button size="small" :aria-label="translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method))" :loading="syncing_transaction === scope.row.id" @click="syncTransaction(scope.row)">
                                 <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
                             </el-button>
                         </el-tooltip>
@@ -131,7 +131,7 @@
                     target="_blank" 
                     class="el-button el-button--warning is-link"
                 >
-                {{ translate('See dispute on ') + disputeTransaction?.payment_method }}
+                {{ translate('See dispute on ') + paymentMethodAdminTitle(disputeTransaction?.payment_method) }}
                 </a>
                 <el-button v-if="disputeTransaction?.meta?.is_charge_refundable" type="primary" @click="() => $emit('triggerRefundModal')" :loading="loadingDisputeAction">
                     {{ translate('Refund customer') }}
@@ -151,6 +151,7 @@ import Badge from '@/Bits/Components/Badge.vue';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Str from "../../utils/support/Str";
 import {getCardBrand} from "@/Bits/common.js";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 
@@ -185,6 +186,7 @@ export default {
         }
     },
     methods: {
+        paymentMethodAdminTitle,
         translate,
         getCardBrand,
         translateNumber,

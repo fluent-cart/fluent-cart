@@ -5,7 +5,6 @@ import { computed, onMounted, ref, watch } from "vue";
 import { formatNumber } from "../Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import orderReport from "@/Models/Reports/OrderReportModel";
 
 const props = defineProps({
@@ -26,16 +25,16 @@ const groupKeys = [
 const selectedGroupKey = ref("number");
 const isCheckedPercentage = ref(false);
 
-// const emit = defineEmits(["fetch-new-vs-returning-customer"]);
+const customerTypeLabels = {
+  New: translate("New"),
+  Returning: translate("Returning"),
+  Renewal: translate("Renewal"),
+  Guest: translate("Guest"),
+};
 
-// const selectGroupKey = () => {
-  // if (isCheckedPercentage.value === true) {
-  //   selectedGroupKey.value = "percentage";
-  // } else {
-  //   selectedGroupKey.value = "number";
-  // }
-  // emit("fetch-new-vs-returning-customer", selectedGroupKey.value);
-// };
+const customerTypeLabel = (type) => {
+  return customerTypeLabels[type] ?? type;
+};
 
 const dataLoader = computed(() => {
   return orderReport.data.isBusy.newVsReturning;
@@ -52,19 +51,23 @@ const dataSource = computed(() => {
       'average_gross',
     ];
 
-    const newResult = { customer_type: "New" };
-    const returningResult = { customer_type: "Returning" };
+    const rows = props.tableData || [];
+    const totals = {};
 
     metrics.forEach((key) => {
-      const newValue = parseFloat(props.tableData[0][key]);
-      const returningValue = parseFloat(props.tableData[1][key]);
-      const total = newValue + returningValue;
-      
-      newResult[key] = (newValue * 100) / total;
-      returningResult[key] = (returningValue * 100) / total;
-    })
+      totals[key] = rows.reduce((sum, row) => sum + (parseFloat(row[key]) || 0), 0);
+    });
 
-    return [newResult, returningResult];
+    return rows.map((row) => {
+      const result = { customer_type: row.customer_type };
+
+      metrics.forEach((key) => {
+        const value = parseFloat(row[key]) || 0;
+        result[key] = totals[key] ? (value * 100) / totals[key] : 0;
+      });
+
+      return result;
+    });
   }
 
   return props.tableData;
@@ -93,7 +96,7 @@ const formatPercentage = (value) => {
             popper-class="fct-tooltip"
             :content="
               translate(
-                'Returning customers are those who first ordered before this period.'
+                'New: the order is the customer\'s first paid order. Returning: the customer had an earlier paid order. Renewal: subscription renewal orders. Guest: orders without a customer account.'
               )
             "
             placement="top"
@@ -104,7 +107,7 @@ const formatPercentage = (value) => {
       </template>
       <template #action>
         <div class="fct-btn-group sm">
-          <el-checkbox v-model="isCheckedPercentage" @change="selectGroupKey">
+          <el-checkbox v-model="isCheckedPercentage">
             {{ translate("Show Percentages") }}
           </el-checkbox>
           <ExportReport :data="dataSource" :filename="'order_report.csv'" />
@@ -117,7 +120,7 @@ const formatPercentage = (value) => {
       <el-table v-else :data="dataSource" border>
         <el-table-column prop="customer_type" :label="translate('Type')" min-width="90">
           <template #default="scope">
-            {{ scope.row.customer_type }}
+            {{ customerTypeLabel(scope.row.customer_type) }}
           </template>
         </el-table-column>
 
@@ -157,7 +160,7 @@ const formatPercentage = (value) => {
           <template #default="scope">
             <div class="inline-flex" v-html="isCheckedPercentage
                   ? formatPercentage(scope.row.gross_sales)
-                  : CurrencyFormatter.scaled(scope.row.gross_sales)">
+                  : reportFilter.formatAmount(scope.row.gross_sales)">
 
             </div>
           </template>
@@ -169,7 +172,7 @@ const formatPercentage = (value) => {
           min-width="150"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_gross) : CurrencyFormatter.scaled(scope.row.average_gross)">
+            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_gross) : reportFilter.formatAmount(scope.row.average_gross)">
 
             </div>
           </template>
@@ -183,7 +186,7 @@ const formatPercentage = (value) => {
           <template #default="scope">
             <div class="inline-flex" v-html="isCheckedPercentage
                   ? formatPercentage(scope.row.net_sales)
-                  : CurrencyFormatter.scaled(scope.row.net_sales)">
+                  : reportFilter.formatAmount(scope.row.net_sales)">
 
             </div>
           </template>
@@ -195,7 +198,7 @@ const formatPercentage = (value) => {
           min-width="150"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_net) : CurrencyFormatter.scaled(scope.row.average_net)">
+            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_net) : reportFilter.formatAmount(scope.row.average_net)">
 
             </div>
           </template>

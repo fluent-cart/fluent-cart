@@ -19,7 +19,6 @@ import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
 import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
@@ -75,7 +74,7 @@ const filterChartData = () => {
 
 const hasComparison = computed(() => props.reportFilter.data.compareType !== 'no_comparison');
 
-const createSeries = (name, type, data, color, yAxisIndex, animation = true) => {
+const createSeries = (name, type, data, color, yAxisIndex, animation = true, lineType = 'solid') => {
   return {
     name,
     type,
@@ -85,6 +84,7 @@ const createSeries = (name, type, data, color, yAxisIndex, animation = true) => 
     color,
     lineStyle: {
       width: 3,
+      type: lineType,
     },
     symbol: "circle",
     showSymbol: true,
@@ -124,7 +124,7 @@ const seriesData = computed(() => {
       key: "refunded_amount",
       // type: chartType.value,
       type: 'line',
-      color: isDarkTheme.value ? colors.blue_dark_mode : colors.blue,
+      color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
       yAxisIndex: 0,
       data: props.chartData.map((item) => item.refunded_amount),
       animation: false,
@@ -148,7 +148,8 @@ const seriesData = computed(() => {
         key: "refunded_amount_compare",
         // type: chartType.value,
         type: 'line',
-        color: isDarkTheme.value ? colors.purple_dark_mode : colors.purple,
+        color: isDarkTheme.value ? colors.blue_dark_mode_compare : colors.royal_blue_compare,
+        lineType: 'dotted',
         yAxisIndex: 0,
         data: props.compareData.map((item) => item.refunded_amount),
         animation: false,
@@ -174,6 +175,7 @@ const seriesData = computed(() => {
     item.color,
     item.yAxisIndex,
     item.animation,
+    item.lineType,
   ));
 });
 
@@ -280,7 +282,7 @@ const updateChart = () => {
         axisLabel: {
           color: isDarkTheme.value ? "#ffffff" : "#000000",
           fontSize: 12,
-          formatter: (value) => `${CurrencyFormatter.scaled(value)}`,
+          formatter: (value) => `${props.reportFilter.formatAmount(value)}`,
         },
         splitLine: {
           show: true,

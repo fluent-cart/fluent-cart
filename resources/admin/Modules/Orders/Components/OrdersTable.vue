@@ -1,4 +1,5 @@
 <script setup>
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import Badge from "@/Bits/Components/Badge.vue";
 import translate from "@/utils/translator/Translator";
@@ -264,10 +265,10 @@ defineExpose({
                                   :class="scope.row.payment_method">
                  <img
                      :src="getPaymentProviderLogo(scope.row.payment_method)"
-                     :alt="Str.headline(scope.row.payment_method)">
+                     :alt="paymentMethodAdminTitle(scope.row.payment_method)">
               </span>
                             <el-tag v-else type="info" round size="small" class="capitalize">
-                                {{ Str.headline(scope.row.payment_method) }}
+                                {{ paymentMethodAdminTitle(scope.row.payment_method) }}
                             </el-tag>
                         </div>
                     </RouteCell>

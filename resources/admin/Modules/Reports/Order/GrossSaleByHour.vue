@@ -9,7 +9,7 @@ import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
 import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
@@ -167,7 +167,7 @@ const updateChart = () => {
         axisLabel: {
           color: isDarkTheme.value ? "#FFFFFF" : "#696778",
           fontSize: 12,
-          formatter: (value) => `${CurrencyFormatter.scaled(value)}`,
+          formatter: (value) => `${reportFilter.formatAmount(value)}`,
         },
         min: 0,
         max: "dataMax",

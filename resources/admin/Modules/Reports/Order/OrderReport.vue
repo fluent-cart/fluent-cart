@@ -97,7 +97,7 @@ const getData = (params) => {
 
   // orderReport.getOrderReportFluctuations(params);
   
-  orderReport.getOrderChartData({
+  reportFilter.trackCompareRange(orderReport.getOrderChartData({
     params: {
       ...params.params,
       // "" is not whitelisted server-side and used to be rewritten to
@@ -105,7 +105,7 @@ const getData = (params) => {
       // explicitly so the selector's "Auto (…)" label stays honest.
       groupKey: "default",
     },
-  });
+  }));
 
   orderReport.getNewVsReturningCustomer(params);
   orderReport.getReportByDayAndHour(params);
@@ -117,12 +117,12 @@ const getData = (params) => {
 const fetchChartData = (selectedGroupKey) => {
   const params = reportFilter.applicableFilters;
   if (params) {
-    orderReport.getOrderChartData({
+    reportFilter.trackCompareRange(orderReport.getOrderChartData({
       params: {
         ...params.params,
         groupKey: selectedGroupKey,
       },
-    });
+    }));
   }
 };
 

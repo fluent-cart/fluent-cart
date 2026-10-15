@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, onUnmounted} from 'vue';
 import * as Card from "@/Bits/Components/Card/Card.js";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
@@ -61,6 +61,10 @@ onMounted(() => {
   props.reportFilter.addListener("daily-signup-chart", (filters) => {
     getDailySignups(filters.params)
   });
+});
+
+onUnmounted(() => {
+  props.reportFilter.removeListener("daily-signup-chart");
 });
 </script>
 

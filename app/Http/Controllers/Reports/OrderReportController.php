@@ -17,6 +17,7 @@ class OrderReportController extends Controller
     public function getOrderChart(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
         
         $service = OrderReportService::make();
 
@@ -40,6 +41,8 @@ class OrderReportController extends Controller
             'summary'         => $currentMetrics['summary'],
             'previousSummary' => $previousMetrics['summary'],
             'fluctuations'    => $fluctuations,
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
             // 'previousMetrics' => $previousMetrics['chartData'],
         ];
     }

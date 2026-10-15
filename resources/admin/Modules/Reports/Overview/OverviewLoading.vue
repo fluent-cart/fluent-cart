@@ -15,11 +15,11 @@ const loader1 = [
 
 const loader2 = [
   {
-    title: translate('Net Revenue'),
+    title: translate('Revenue'),
     key: 'net_revenue',
   },
   {
-    title: translate('Net Revenue Quarterly'),
+    title: translate('Revenue Quarterly'),
     key: 'net_revenue_quarterly',
   }
 ];
@@ -30,7 +30,7 @@ const loader3 = [
     key: 'top_country_gross',
   },
   {
-    title: translate('Top Country Net Volume'),
+    title: translate('Top Country Volume'),
     key: 'top_country_net',
   }
 ];
@@ -41,7 +41,7 @@ const loader4 = [
     key: 'top_country_revenue',
   },
   {
-    title: translate('Top Countries Net Revenue'),
+    title: translate('Top Countries Revenue'),
     key: 'top_country_net_revenue',
   }
 ];

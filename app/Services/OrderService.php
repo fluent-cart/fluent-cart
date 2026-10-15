@@ -626,6 +626,7 @@ class OrderService
             'billing_info'           => $subscription->billingInfo,
             'current_payment_method' => $subscription->current_payment_method,
             'payment_method'         => $subscription->payment_method,
+            'payment_method_title'   => $subscription->payment_method_title,
             'payment_info'           => $subscription->payment_info,
             'bill_times'             => $subscription->bill_times,
             'bill_count'             => $subscription->bill_count,
@@ -670,6 +671,9 @@ class OrderService
             'currency'         => $transaction->currency,
             'status'           => $transaction->status,
             'payment_method'   => $transaction->payment_method,
+            'payment_method_title' => $transaction->order && $transaction->order->payment_method === $transaction->payment_method
+                ? PaymentHelper::getMethodTitle($transaction->payment_method, $transaction->order->payment_method_title)
+                : $transaction->payment_method_title,
             'card_brand'       => $transaction->card_brand,
             'card_last_4'      => $transaction->card_last_4,
             'vendor_charge_id' => $transaction->vendor_charge_id,

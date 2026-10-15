@@ -65,7 +65,9 @@ const themeColors = computed(() => ({
   bgColor: isDarkTheme.value ? '#2d3748' : '#ffffff',
 }));
 
-const primaryColor = computed(() => isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray);
+const primaryColor = computed(() => props.chartType === 'line'
+  ? (isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue)
+  : (isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray));
 
 // Computed labels for x-axis
 const labels = computed(() => chartData.value.map(item => prepareLabel(item.label)));

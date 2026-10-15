@@ -33,7 +33,7 @@ if (!empty($celebration)) {
     <p><b><?php esc_html_e('Subscription Renewal Summary:', 'fluent-cart'); ?></b></p>
     <p><?php esc_html_e('Renewal Date:', 'fluent-cart'); ?> <b><?php echo esc_html(\FluentCart\App\Services\DateTime\DateFormatter::format($transaction->created_at, true, $order)); ?></b></p>
     <p><?php esc_html_e('Renewal Amount 💰:', 'fluent-cart'); ?> <b><?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($transaction->total)); ?></b></p>
-    <p><?php esc_html_e('Payment Method:', 'fluent-cart'); ?> <b><?php echo esc_html($transaction->getPaymentMethodText()); ?></b></p>
+    <p><?php esc_html_e('Payment Method:', 'fluent-cart'); ?> <b><?php echo esc_html($transaction->card_brand && $transaction->card_last_4 ? $transaction->getPaymentMethodText() : \FluentCart\App\Services\Payments\PaymentHelper::getMethodAdminTitle($transaction->payment_method)); ?></b></p>
     <p><?php esc_html_e('Vendor Transaction ID:', 'fluent-cart'); ?> <b><?php echo esc_html($transaction->vendor_charge_id); ?></b></p>
 </div>
 

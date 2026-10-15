@@ -218,14 +218,16 @@ class DefaultReportService extends ReportService
 
         $variationIds = array_map('intval', $params['variationIds'] ?? []);
 
+        // Bound by order date, not item date: a renewal's item rows keep the parent's created_at
         $itemsSub = App::db()->table('fct_order_items')
             ->selectRaw('order_id, SUM(quantity) AS items_sold')
             ->groupBy('order_id')
-            ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
+            ->whereIn('order_id', fn ($q) => $q->select('id')->from('fct_orders')
+                ->whereBetween('created_at', [$params['startDate'], $params['endDate']]))
             ->when($variationIds, fn ($q) => $q->whereIn('object_id', $variationIds));
 
         $orderMetricsQuery = ReportCurrency::ordersTable($params)
-            ->joinSub($itemsSub, 'oi_sum', fn ($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
+            ->leftJoinSub($itemsSub, 'oi_sum', fn ($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $orderMetricsQuery = $orderMetricsQuery->selectRaw("{$group['field']},
 

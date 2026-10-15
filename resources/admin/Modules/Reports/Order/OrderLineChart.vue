@@ -19,7 +19,6 @@ import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
 import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import orderReport from "@/Models/Reports/OrderReportModel";
 import {
@@ -80,7 +79,7 @@ const seriesData = computed(() =>
     {
       title: translate("Gross Sales"),
       key: "gross_sale",
-      color: isDarkTheme.value ? colors.blue_dark_mode : colors.blue,
+      color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
       yAxisIndex: 0,
       type: 'line',
     },
@@ -242,7 +241,7 @@ const updateChart = () => {
         axisLabel: {
           color: isDarkTheme.value ? "#ffffff" : "#696778",
           fontSize: 12,
-          formatter: (value) => `${CurrencyFormatter.scaled(value)}`,
+          formatter: (value) => `${props.reportFilter.formatAmount(value)}`,
         },
         splitLine: {
           show: true,

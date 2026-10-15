@@ -51,6 +51,7 @@
                 <el-col :lg="12" class="mt-6 xl:mt-0">
                 <TopSoldProducts
                     :data="dashBoardReport.topSoldProducts"
+                    :currency="AppConfig.get('shop.currency')"
                     :loading="dashBoardReport.isBusy.topSoldProducts"
                 />
                 </el-col>

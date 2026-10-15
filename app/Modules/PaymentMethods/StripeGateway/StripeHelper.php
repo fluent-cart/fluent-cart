@@ -7,6 +7,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Money;
@@ -81,6 +82,30 @@ class StripeHelper
         }
 
         return $newStripeCustomer;
+    }
+
+    // Reactivating is how a customer corrects the billing address on future Stripe invoices.
+    public static function updateAddressOnReactivation(array $stripeCustomer, Order $order, Subscription $subscription)
+    {
+        $billingAddress = $order->billing_address;
+        if (!$billingAddress || (int)Arr::get($subscription->config, 'reactivation_order_id', 0) !== (int)$order->id) {
+            return $stripeCustomer;
+        }
+
+        // Empty strings clear lines the old address had.
+        $updated = (new API())->createStripeObject('customers/' . $stripeCustomer['id'], [
+            'address' => [
+                'line1'       => (string)$billingAddress->address_1,
+                'line2'       => (string)$billingAddress->address_2,
+                'city'        => (string)$billingAddress->city,
+                'country'     => (string)$billingAddress->country,
+                'postal_code' => (string)$billingAddress->postcode,
+                'state'       => (string)$billingAddress->state,
+            ],
+        ]);
+
+        // Best-effort: a failed update must not block the reactivation.
+        return is_wp_error($updated) || empty($updated['id']) ? $stripeCustomer : $updated;
     }
 
     /**

@@ -126,6 +126,13 @@ export default class AddressField {
                 cloned.classList.remove('hidden');
                 cloned.classList.add('show');
 
+                // The clone moves to <body>, outside the checkout wrapper that carries the field label style.
+                const labelStyle = [...(button.closest('[data-fluent-cart-checkout-page]')?.classList || [])]
+                    .find(className => className.startsWith('fct-field-labels-'));
+                if (labelStyle) {
+                    cloned.classList.add(labelStyle);
+                }
+
                 this.#bindAddressSelectAction(cloned, button, addressType);
                 this.#bindApplyAction(cloned, button);
 
@@ -395,6 +402,18 @@ export default class AddressField {
     }
 
 
+    // The field label styles read data-fct-label / data-fct-field, so follow the country's state naming
+    // (Province, County…) and whether the state renders as a select or a text input.
+    syncStateLabel(wrapper, response) {
+        if (!wrapper || !wrapper.dataset.fctLabel) {
+            return;
+        }
+        const isRequired = /\s\*$/.test(wrapper.dataset.fctLabel);
+        const stateLabel = response?.address_locale?.state?.label || 'State';
+        wrapper.dataset.fctLabel = stateLabel + (isRequired ? ' *' : '');
+        wrapper.dataset.fctField = response?.states?.length ? 'select' : 'input';
+    }
+
     updateStateInput(response, type = 'billing') {
         if (!response) {
             return;
@@ -416,6 +435,7 @@ export default class AddressField {
         } else {
 
             this.form.querySelector(id).style.display = 'block';
+            this.syncStateLabel(this.form.querySelector(id), response);
             if (this.billingStateSelect !== null) {
                 this.billingStateSelect.destroy();
                 this.billingStateSelect = null;

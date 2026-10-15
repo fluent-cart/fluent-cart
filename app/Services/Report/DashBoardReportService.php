@@ -166,6 +166,7 @@ class DashBoardReportService extends ReportService
 
     public function getSalesGrowthChart(array $params)
     {
+        $params = $this->clampParamsToToday($params);
         $group = ReportHelper::processGroup(
             $params['startDate'], $params['endDate'], $params['groupKey']
         );
@@ -255,6 +256,7 @@ class DashBoardReportService extends ReportService
                 'o.customer_id',
                 App::db()->raw("CONCAT(c.first_name, ' ', c.last_name) AS customer_name"),
                 App::db()->raw("(o.total_amount) / 100 as total_amount"),
+                'o.currency',
                 'o.created_at',
                 App::db()->raw("(SELECT COUNT(*) FROM {$prefix}fct_order_items WHERE order_id = o.id) AS order_items_count"),
             ])

@@ -21,8 +21,8 @@
         </div>
       </template>
 
-      <span v-else class="text text-capitalize" aria-label="Payment method: {{ transaction.payment_method }}">
-        {{ transaction.payment_method }}
+      <span v-else class="text text-capitalize" :aria-label="transaction.payment_method_title">
+        {{ transaction.payment_method_title }}
     </span>
     </div>
 </template>

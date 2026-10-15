@@ -54,7 +54,8 @@ import { ref, onMounted, computed, onUnmounted } from "vue";
 import translate from "@/utils/translator/Translator";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import { averageRate, formatAverage } from "@/Modules/Reports/Utils/retentionAverages";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import SummaryLoader from "@/Modules/Reports/Components/SummaryLoader.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
@@ -91,46 +92,21 @@ const retentionSummary = computed(() => {
     const items = retentionData.value;
     if (!items.length) return [];
 
-    // Calculate averages
-    const totalRetention = items.reduce((sum, item) => sum + parseFloat(item.retention_rate), 0);
-    const avgRetention = (totalRetention / items.length).toFixed(1);
+    const avgRetention = averageRate(items, 'retention_rate', 'start_subscriptions');
+    const avgMrrRetention = averageRate(items, 'retention_rate_money', 'start_mrr');
 
-    const totalMrrRetention = items.reduce((sum, item) => sum + parseFloat(item.retention_rate_money), 0);
-    const avgMrrRetention = (totalMrrRetention / items.length).toFixed(1);
-
-    // Get last item for detailed text
     const lastItem = items[items.length - 1];
 
-    // Previous month logic
-    let prevMonthName = '';
-    let startCount = 0;
-    let startMrr = 0;
+    const prevMonthDate = new Date(lastItem.day);
+    prevMonthDate.setDate(1);
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
 
-    if (items.length > 1) {
-        const prevItem = items[items.length - 2];
-        const prevMonthDate = new Date(prevItem.day);
-        prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
+    const startCount = parseInt(lastItem.start_subscriptions) || 0;
+    const startMrr = parseFloat(lastItem.start_mrr) || 0;
 
-        startCount = parseInt(prevItem.active_subscriptions);
-        startMrr = parseFloat(prevItem.mrr);
-    } else {
-        // Fallback if only 1 month of data (less accurate but prevents crash)
-        const prevMonthDate = new Date(lastItem.day);
-        prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-        prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
-
-        // If we only have 1 month, we can't know the previous active count from the array.
-        // We can either fallback to the reverse calc or show 0/unknown.
-        // Let's keep the reverse calc ONLY for this edge case.
-        const retainedCount = parseInt(lastItem.active_subscriptions) - parseInt(lastItem.new_subscriptions);
-        startCount = lastItem.retention_rate > 0 ? Math.round(retainedCount / (lastItem.retention_rate / 100)) : 0;
-
-        const retainedMrr = parseFloat(lastItem.mrr) - parseFloat(lastItem.new_subscriptions_mrr);
-        startMrr = lastItem.retention_rate_money > 0 ? (retainedMrr / (lastItem.retention_rate_money / 100)) : 0;
-    }
-
-    const retainedCount = parseInt(lastItem.active_subscriptions) - parseInt(lastItem.new_subscriptions);
-    const retainedMrr = parseFloat(lastItem.mrr) - parseFloat(lastItem.new_subscriptions_mrr);
+    const retainedCount = parseInt(lastItem.retained_subscriptions) || 0;
+    const retainedMrr = parseFloat(lastItem.retained_mrr) || 0;
 
     const retentionRate = parseFloat(lastItem.retention_rate);
     const retentionRateMoney = parseFloat(lastItem.retention_rate_money);
@@ -141,7 +117,7 @@ const retentionSummary = computed(() => {
         {
             title: translate("Subscription Retention"),
             value: `${retentionRate}%`,
-            average_value: `${avgRetention}%`,
+            average_value: formatAverage(avgRetention),
             month_name: monthName,
             sub_title: translate("Average in period"),
             /* translators: %1$s: retention rate percentage; %2$s: retained count; %3$s: month name; %4$s: starting count */
@@ -151,11 +127,11 @@ const retentionSummary = computed(() => {
         {
             title: translate("MRR Retention"),
             value: `${retentionRateMoney}%`,
-            average_value: `${avgMrrRetention}%`,
+            average_value: formatAverage(avgMrrRetention),
             month_name: monthName,
             sub_title: translate("Average in period"),
             /* translators: %1$s: retention rate percentage; %2$s: retained MRR amount; %3$s: month name; %4$s: starting MRR amount */
-            description: translate('You retained %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${lastItem.retention_rate_money}%`, CurrencyFormatter.scaled(retainedMrr), prevMonthName, CurrencyFormatter.scaled(startMrr)),
+            description: translate('You retained %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${lastItem.retention_rate_money}%`, reportFilter.formatAmount(retainedMrr), prevMonthName, reportFilter.formatAmount(startMrr)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
         }
     ];

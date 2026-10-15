@@ -3,8 +3,8 @@ import { ref, shallowRef, onMounted, nextTick, computed, watch } from "vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import ExportReport from "../ExportReport.vue";
 import toCountryName from "../Utils/toCountryName";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import ReportTableLoader from "../ReportTableLoader.vue";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import { liabilityClass, maybeLiability } from "../Utils/liability";
 import translateNumber from "@/utils/translator/Translator";
 import Empty from '@/Bits/Components/Table/Empty.vue';
@@ -33,21 +33,13 @@ const groupKeys = [
   { label: "Payment Method", value: "payment_method" },
 ];
 
-const paymentMethodMap = ref({
-  offline_payment: "Cash On Delivery",
-  paypal: "PayPal",
-  stripe: "Stripe",
-});
-
 const selectedGroupKey = ref("billing_country");
 
 const selectGroupKey = () => {
   emit("fetch-data-by-group", selectedGroupKey.value);
 };
 
-const getPaymentMethodLabel = (paymentMethod) => {
-  return paymentMethodMap.value[paymentMethod] || paymentMethod.value;
-};
+const byNumber = (key) => (a, b) => Number(a[key]) - Number(b[key]);
 </script>
 
 <template>
@@ -120,13 +112,15 @@ const getPaymentMethodLabel = (paymentMethod) => {
           v-if="selectedGroupKey === 'payment_method'"
         >
           <template #default="scope">
-            {{ scope.row.payment_method }}
+            {{ paymentMethodAdminTitle(scope.row.payment_method) }}
           </template>
         </el-table-column>
         <el-table-column
           prop="order_count"
           :label="$t('Order Count')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('orders')"
         >
           <template #default="scope">
             {{ translateNumber(scope.row.orders) }}
@@ -137,9 +131,11 @@ const getPaymentMethodLabel = (paymentMethod) => {
           prop="total_sales"
           :label="$t('Gross Sales')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('gross_sale')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.gross_sale)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.gross_sale)">
 
             </div>
           </template>
@@ -149,17 +145,19 @@ const getPaymentMethodLabel = (paymentMethod) => {
           prop="total_refunds"
           :label="$t('Refunds')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('total_refunds')"
         >
           <template #default="scope">
-            <div class="inline-flex" :class="liabilityClass(scope.row.total_refunds)" v-html="maybeLiability(scope.row.total_refunds)">
+            <div class="inline-flex" :class="liabilityClass(scope.row.total_refunds)" v-html="maybeLiability(scope.row.total_refunds, null, reportFilter.reportCurrency)">
 
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="total_tax" :label="$t('Taxes')" min-width="150" v-if="total_tax > 0">
+        <el-table-column prop="total_tax" :label="$t('Taxes')" min-width="150" sortable :sort-method="byNumber('total_tax')" v-if="total_tax > 0">
           <template #default="scope">
-            <div class="inline-flex" :class="liabilityClass(scope.row.total_tax)" v-html="maybeLiability(scope.row.total_tax)">
+            <div class="inline-flex" :class="liabilityClass(scope.row.total_tax)" v-html="maybeLiability(scope.row.total_tax, null, reportFilter.reportCurrency)">
 
             </div>
           </template>
@@ -169,10 +167,12 @@ const getPaymentMethodLabel = (paymentMethod) => {
           prop="shipping_total"
           :label="$t('Shipping')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('shipping_total')"
           v-if="shipping_total > 0"
         >
           <template #default="scope">
-            <div class="inline-flex" :class="liabilityClass(scope.row.shipping_total)" v-html="maybeLiability(scope.row.shipping_total)">
+            <div class="inline-flex" :class="liabilityClass(scope.row.shipping_total)" v-html="maybeLiability(scope.row.shipping_total, null, reportFilter.reportCurrency)">
 
             </div>
           </template>
@@ -182,9 +182,11 @@ const getPaymentMethodLabel = (paymentMethod) => {
           prop="net_revenue"
           :label="$t('Revenue')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('net_sale')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.net_sale)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.net_sale)">
 
             </div>
           </template>

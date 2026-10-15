@@ -33,6 +33,7 @@ const subscriptionReportData = ref({
 
 const reportFilter = props.reportFilter;
 const appliedGroupKey = ref('default');
+const retentionCustomDays = ref(null);
 
 const currencySign = computed(() => {
   return reportFilter.currentCurrencySign;
@@ -63,19 +64,19 @@ const getData = (filters) => {
   //subscriptionReport.listSubscriptionsByCustomer(params);
   // subscriptionReport.getSubscriptionOverview(params);
 
-  fetchSubscriptionChart(filters);
-  fetchRetentionChart(filters);
+  fetchSubscriptionChart(filters, appliedGroupKey.value);
+  fetchRetentionChart(filters, retentionCustomDays.value);
 };
 
 const fetchSubscriptionChart = (filters, groupKey = 'default') => {
   subscriptionReportData.value.loading = true;
 
-  Rest.get('reports/subscription-chart', {
+  reportFilter.trackCompareRange(Rest.get('reports/subscription-chart', {
     params: {
       ...filters.params,
       groupKey: groupKey
     }
-  })
+  }))
   .then(response => {
     subscriptionReportData.value = response
   })
@@ -86,7 +87,7 @@ const onFilterData = (groupKey) => {
   if (appliedGroupKey.value !== groupKey) {
     appliedGroupKey.value = groupKey;
     
-    fetchSubscriptionChart(reportFilter.applicableFilters.params, groupKey);
+    fetchSubscriptionChart(reportFilter.applicableFilters, groupKey);
   }
 };
 
@@ -100,6 +101,7 @@ const fetchRetentionChart = (filters, customDays = null) => {
 };
 
 const onCustomRetentionChart = (value) => {
+  retentionCustomDays.value = value;
   fetchRetentionChart(reportFilter.applicableFilters, value)
 }
 

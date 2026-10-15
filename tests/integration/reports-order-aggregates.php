@@ -107,19 +107,19 @@ return [
 
                 $newReturning = $orderService->getNewVsReturningCustomer($daily);
                 FcTest::assertSame(
-                    1,
+                    4,
                     count($newReturning),
-                    'GET /reports/fetch-new-vs-returning-customer returns one exact owned class'
+                    'GET /reports/fetch-new-vs-returning-customer always returns the four classes'
                 );
                 FcTest::assertSame(
-                    'New',
-                    (string) $newReturning[0]->customer_type,
-                    'GET /reports/fetch-new-vs-returning-customer honors the first-purchase boundary'
+                    ['New', 1],
+                    [(string) $newReturning[0]->customer_type, (int) $newReturning[0]->order_count],
+                    'GET /reports/fetch-new-vs-returning-customer counts the first paid owned Order as New'
                 );
                 FcTest::assertSame(
-                    2,
-                    (int) $newReturning[0]->order_count,
-                    'GET /reports/fetch-new-vs-returning-customer counts exact owned Orders'
+                    ['Returning', 1],
+                    [(string) $newReturning[1]->customer_type, (int) $newReturning[1]->order_count],
+                    'GET /reports/fetch-new-vs-returning-customer counts the later paid owned Order as Returning'
                 );
 
                 foreach ([

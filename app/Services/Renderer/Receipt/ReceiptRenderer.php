@@ -819,7 +819,7 @@ class ReceiptRenderer
                         ?>
                         <tr>
                             <td style="padding: 10px;border:none;border-bottom: 1px solid #dee2e6;">
-                                <?php echo esc_html($transaction->getPaymentMethodText()); ?>
+                                <?php echo esc_html($transaction->getPaymentMethodText($order)); ?>
                             </td>
                             <td style="padding: 10px;border:none;border-bottom: 1px solid #dee2e6;text-align: center;">
                                 <?php

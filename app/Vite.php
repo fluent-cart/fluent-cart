@@ -144,18 +144,32 @@ class  Vite
         return ($assetPath . $file['file']);
     }
 
-    private function ensureChunkCssIsLoaded($file)
+    // Vite lists CSS on the chunk that owns it, so a shared chunk's styles live
+    // under the entry's static imports, not on the entry itself.
+    private function ensureChunkCssIsLoaded($file, array &$visited = [])
     {
         $assetPath = static::getAssetPath();
         if (isset($file['css']) && is_array($file['css'])) {
-            foreach ($file['css'] as $key => $path) {
+            foreach ($file['css'] as $path) {
                 wp_enqueue_style(
-                    $file['file'] . '_' . $key . '_css',
+                    $path . '_css',
                     $assetPath . $path,
                     [],
                     FLUENTCART_VERSION
                 );
             }
+        }
+
+        if (empty($file['imports']) || !is_array($file['imports'])) {
+            return;
+        }
+
+        foreach ($file['imports'] as $import) {
+            if (isset($visited[$import]) || !isset($this->manifestData[$import])) {
+                continue;
+            }
+            $visited[$import] = true;
+            $this->ensureChunkCssIsLoaded($this->manifestData[$import], $visited);
         }
     }
 

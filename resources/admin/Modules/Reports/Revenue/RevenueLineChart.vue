@@ -11,7 +11,6 @@ import Theme from "@/utils/Theme";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
 import { formatNumber } from "../Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import {
@@ -59,7 +58,7 @@ const colors = Theme.colors.report;
 const isDarkTheme = ref(Theme.isDark());
 
 // Method to create a series object
-const createSeries = (name, type, yAxisIndex, data, color, hidden = false) => {
+const createSeries = (name, type, yAxisIndex, data, color, hidden = false, lineType = 'solid', fill = true) => {
   return {
     name,
     type,
@@ -71,11 +70,12 @@ const createSeries = (name, type, yAxisIndex, data, color, hidden = false) => {
     hidden,
     lineStyle: {
       width: 3,
+      type: lineType,
     },
-    areaStyle: {
-      opacity: 0.3,
+    areaStyle: fill ? {
+      opacity: 0.1,
       color: color,
-    },
+    } : undefined,
     symbol: "circle",
     showSymbol: true,
     symbolSize: 8,
@@ -91,10 +91,10 @@ const createSeries = (name, type, yAxisIndex, data, color, hidden = false) => {
       lineStyle: {
         color: color,
       },
-      areaStyle: {
-        opacity: .3,
+      areaStyle: fill ? {
+        opacity: .1,
         color: color,
-      },
+      } : undefined,
     },
     animation: true,
     animationEasing: "cubicOut",
@@ -128,7 +128,7 @@ const seriesData = computed(() => {
       name: translate("Current Revenue"),
       key: "net_revenue",
       type: chartType.value,
-      color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
+      color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
       data: props.chartData.map((item) => item["net_revenue"])
     },
   ];
@@ -138,7 +138,11 @@ const seriesData = computed(() => {
       name: translate("Compare Revenue"),
       key: "net_revenue",
       type: chartType.value,
-      color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
+      color: chartType.value === 'bar'
+        ? echarts.color.modifyAlpha(isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue, 0.35)
+        : (isDarkTheme.value ? colors.blue_dark_mode_compare : colors.royal_blue_compare),
+      lineType: 'dotted',
+      fill: false,
       data: props.compareData.map(item => {
         return {
           value: item.net_revenue,
@@ -155,7 +159,9 @@ const seriesData = computed(() => {
     0,
     item.data,
     item.color,
-    item.hidden
+    item.hidden,
+    item.lineType,
+    item.fill
   ));
 });
 
@@ -273,7 +279,7 @@ const updateChart = () => {
       axisLabel: {
         color: isDarkTheme.value ? "#ffffff" : "#000000",
         fontSize: 12,
-        formatter: (value) => `${CurrencyFormatter.scaled(value)}`,
+        formatter: (value) => `${props.reportFilter.formatAmount(value)}`,
       },
       splitLine: {
         show: true,

@@ -4,7 +4,6 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import { formatNumber } from "../Utils/formatNumber";
 import { computed } from "vue";
 import translate from "@/utils/translator/Translator";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 
 const props = defineProps({
   orderReport: {
@@ -68,7 +67,7 @@ const averageResults = computed(() => {
       <div class="fct-report-result-content">
         <div class="value">
           <span class="inline-flex">
-            {{ CurrencyFormatter.scaled(avg.value) }}
+            {{ reportFilter.formatAmount(avg.value) }}
           </span>
           <div
             class="percentage"

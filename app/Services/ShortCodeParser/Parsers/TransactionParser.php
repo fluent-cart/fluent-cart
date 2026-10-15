@@ -7,6 +7,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
@@ -54,6 +55,11 @@ class TransactionParser extends BaseParser
             return (string) ($amount / 100);
         }
         return $this->get($accessor, $code);
+    }
+
+    public function getPaymentMethodTitle(): string
+    {
+        return PaymentHelper::getMethodTitle(Arr::get($this->transaction, 'payment_method', ''));
     }
 
     public function getRefundAmount(): string

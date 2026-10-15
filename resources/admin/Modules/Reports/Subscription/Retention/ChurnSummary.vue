@@ -53,7 +53,8 @@ import { ref, onMounted, computed, onUnmounted } from "vue";
 import translate from "@/utils/translator/Translator";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import { averageRate, formatAverage } from "@/Modules/Reports/Utils/retentionAverages";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import SummaryLoader from "@/Modules/Reports/Components/SummaryLoader.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
@@ -90,69 +91,44 @@ const churnSummary = computed(() => {
     const items = retentionData.value;
     if (!items.length) return [];
 
-    // Calculate averages for churn rate
-    const churnRates = items.map((item, index) => {
-        // Start count is the previous month's active subscriptions
-        const startSubs = index > 0 
-            ? parseInt(items[index - 1].active_subscriptions) || 0 
-            : parseInt(item.active_subscriptions) - parseInt(item.new_subscriptions) || 0;
-        const churned = parseInt(item.churned_subscriptions) || 0;
-        
-        return startSubs > 0 ? (churned / startSubs) * 100 : 0;
+    const churnRates = items.map((item) => {
+        const startSubs = parseInt(item.start_subscriptions) || 0;
+        const startMrr = parseFloat(item.start_mrr) || 0;
+        return {
+            start_subscriptions: startSubs,
+            start_mrr: startMrr,
+            churn_rate: startSubs > 0 ? ((parseInt(item.churned_subscriptions) || 0) / startSubs) * 100 : 0,
+            mrr_churn_rate: startMrr > 0 ? ((parseFloat(item.churned_subscriptions_mrr) || 0) / startMrr) * 100 : 0,
+        };
     });
 
-    const mrrChurnRates = items.map((item, index) => {
-        // Start MRR is the previous month's MRR
-        const startMrr = index > 0 
-            ? parseFloat(items[index - 1].mrr) || 0 
-            : parseFloat(item.mrr) - parseFloat(item.new_subscriptions_mrr) || 0;
-        const churnedMrr = parseFloat(item.churned_subscriptions_mrr) || 0;
-        
-        return startMrr > 0 ? (churnedMrr / startMrr) * 100 : 0;
-    });
+    const avgChurnRate = averageRate(churnRates, 'churn_rate', 'start_subscriptions');
+    const avgMrrChurnRate = averageRate(churnRates, 'mrr_churn_rate', 'start_mrr');
 
-    const avgChurnRate = (churnRates.reduce((sum, rate) => sum + rate, 0) / churnRates.length).toFixed(1);
-    const avgMrrChurnRate = (mrrChurnRates.reduce((sum, rate) => sum + rate, 0) / mrrChurnRates.length).toFixed(1);
-
-    // Get last item for detailed text
     const lastItem = items[items.length - 1];
-    const lastIndex = items.length - 1;
-    
-    // Calculate start values from previous month
-    const startCount = lastIndex > 0 
-        ? parseInt(items[lastIndex - 1].active_subscriptions) || 0
-        : parseInt(lastItem.active_subscriptions) - parseInt(lastItem.new_subscriptions) || 0;
-        
-    const startMrr = lastIndex > 0 
-        ? parseFloat(items[lastIndex - 1].mrr) || 0
-        : parseFloat(lastItem.mrr) - parseFloat(lastItem.new_subscriptions_mrr) || 0;
-        
+    const lastRates = churnRates[churnRates.length - 1];
+    const startCount = lastRates.start_subscriptions;
+    const startMrr = lastRates.start_mrr;
+
     const churnedCount = parseInt(lastItem.churned_subscriptions) || 0;
     const churnedMrr = parseFloat(lastItem.churned_subscriptions_mrr) || 0;
 
-    const churnRate = startCount > 0 ? ((churnedCount / startCount) * 100).toFixed(1) : 0;
-    const mrrChurnRate = startMrr > 0 ? ((churnedMrr / startMrr) * 100).toFixed(1) : 0;
+    const churnRate = startCount > 0 ? lastRates.churn_rate.toFixed(1) : 0;
+    const mrrChurnRate = startMrr > 0 ? lastRates.mrr_churn_rate.toFixed(1) : 0;
 
     const currentMonthDate = new Date(lastItem.day);
     const monthName = monthNames[currentMonthDate.getMonth()] + " " + currentMonthDate.getFullYear().toString();
 
-    // Previous month name for description
-    let prevMonthName = '';
-    if (items.length > 1) {
-        const prevItem = items[items.length - 2];
-        const prevMonthDate = new Date(prevItem.day);
-        prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
-    } else {
-        const prevMonthDate = new Date(lastItem.day);
-        prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-        prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
-    }
+    const prevMonthDate = new Date(lastItem.day);
+    prevMonthDate.setDate(1);
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthName = monthNames[prevMonthDate.getMonth()] + " " + prevMonthDate.getFullYear().toString();
 
     return [
         {
             title: translate("Subscription Churn"),
             value: `${churnRate}%`,
-            average_value: `${avgChurnRate}%`,
+            average_value: formatAverage(avgChurnRate),
             month_name: monthName,
             sub_title: translate("Average in period"),
             /* translators: %1$s: churn rate percentage; %2$s: churned count; %3$s: month name; %4$s: starting count */
@@ -162,11 +138,11 @@ const churnSummary = computed(() => {
         {
             title: translate("MRR Churn"),
             value: `${mrrChurnRate}%`,
-            average_value: `${avgMrrChurnRate}%`,
+            average_value: formatAverage(avgMrrChurnRate),
             month_name: monthName,
             sub_title: translate("Average in period"),
             /* translators: %1$s: churn rate percentage; %2$s: churned MRR amount; %3$s: month name; %4$s: starting MRR amount */
-            description: translate('You lost %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${mrrChurnRate}%`, CurrencyFormatter.scaled(churnedMrr), prevMonthName, CurrencyFormatter.scaled(startMrr)),
+            description: translate('You lost %1$s (%2$s) of your %3$s subscription MRR (%4$s).', `${mrrChurnRate}%`, reportFilter.formatAmount(churnedMrr), prevMonthName, reportFilter.formatAmount(startMrr)),
             color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
         }
     ];

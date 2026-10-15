@@ -3,11 +3,10 @@ import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
-import { ref, computed, watch, onMounted, nextTick, getCurrentInstance } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, getCurrentInstance } from "vue";
 import AdvancedFilter from "@/Bits/Components/TableNew/Components/AdvancedFilter/AdvancedFilter.vue";
 import SourceReportFilterModel from "@/Models/Reports/SourceReportFilterModel";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
-import CurrencyFormatter from '@/utils/support/CurrencyFormatter';
 import { formatNumber } from "../Utils/formatNumber";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
@@ -103,7 +102,7 @@ const getSourceReport = () => {
         },
     };
 
-    Rest.get('/reports/sources', requestParams)
+    props.reportFilter.trackCompareRange(Rest.get('/reports/sources', requestParams))
         .then((response) => {
             if (requestId !== latestRequestId) return;
 
@@ -147,6 +146,8 @@ const onFilterTypeChanged = (filterType) => {
     sourceFilterModel.onFilterTypeChanged(filterType);
 };
 
+const byNumber = (key) => (a, b) => Number(a[key]) - Number(b[key]);
+
 const isCheckboxDisabled = (key) => {
     if (selectedColumns.value.includes(key)) return false;
 
@@ -156,9 +157,13 @@ const isCheckboxDisabled = (key) => {
 onMounted(() => {
     getSourceReport();
 
-    props.reportFilter.addListener("product-top-chart", () => {
+    props.reportFilter.addListener("sources-report", () => {
         getSourceReport()
     });
+});
+
+onUnmounted(() => {
+    props.reportFilter.removeListener("sources-report");
 });
 </script>
 
@@ -324,7 +329,7 @@ onMounted(() => {
                                 </template>
                             </el-table-column>
 
-                            <el-table-column :label="translate('Orders')" width="200">
+                            <el-table-column prop="orders" :label="translate('Orders')" width="200" sortable :sort-method="byNumber('orders')">
                                 <template #default="scope">
                                     <div class="inline-flex items-center gap-2">
                                         {{ formatNumber(scope.row.orders) }}
@@ -338,10 +343,10 @@ onMounted(() => {
                             </el-table-column>
 
                             <template v-if="isNet">
-                                <el-table-column :label="translate('Net Sales')" width="200">
+                                <el-table-column prop="net_sales" :label="translate('Revenue')" width="200" sortable :sort-method="byNumber('net_sales')">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
-                                            {{ CurrencyFormatter.scaled(scope.row.net_sales) }}
+                                            {{ reportFilter.formatAmount(scope.row.net_sales) }}
 
                                             <Fluctuation class="flex"
                                                 :fluctuation="fluctuations[scope.row.utm_key]?.net_sales_fluctuation || 0"
@@ -350,10 +355,10 @@ onMounted(() => {
                                     </template>
                                 </el-table-column>
 
-                                <el-table-column :label="translate('Average Order Net')" width="200">
+                                <el-table-column prop="average_net_order" :label="translate('Average Order Net')" width="200" sortable :sort-method="byNumber('average_net_order')">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
-                                            {{ CurrencyFormatter.scaled(scope.row.average_net_order) }}
+                                            {{ reportFilter.formatAmount(scope.row.average_net_order) }}
 
                                             <Fluctuation class="flex"
                                                 :fluctuation="fluctuations[scope.row.utm_key]?.average_net_order_fluctuation || 0"
@@ -364,10 +369,10 @@ onMounted(() => {
                             </template>
 
                             <template v-else>
-                                <el-table-column :label="translate('Gross Sales')" width="200">
+                                <el-table-column prop="gross_sales" :label="translate('Gross Sales')" width="200" sortable :sort-method="byNumber('gross_sales')">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
-                                            {{ CurrencyFormatter.scaled(scope.row.gross_sales) }}
+                                            {{ reportFilter.formatAmount(scope.row.gross_sales) }}
 
                                             <Fluctuation class="flex"
                                                 :fluctuation="fluctuations[scope.row.utm_key]?.gross_sales_fluctuation || 0"
@@ -376,10 +381,10 @@ onMounted(() => {
                                     </template>
                                 </el-table-column>
 
-                                <el-table-column :label="translate('Average Order')" width="200">
+                                <el-table-column prop="average_order" :label="translate('Average Order')" width="200" sortable :sort-method="byNumber('average_order')">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
-                                            {{ CurrencyFormatter.scaled(scope.row.average_order) }}
+                                            {{ reportFilter.formatAmount(scope.row.average_order) }}
 
                                             <Fluctuation class="flex"
                                                 :fluctuation="fluctuations[scope.row.utm_key]?.average_order_fluctuation || 0"

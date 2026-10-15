@@ -226,7 +226,7 @@ class ReportHelper
     public static function getCompareRange($type, $currentRange, $compareDate = null)
     {
         $currentStartDate = $currentRange['startDate'];
-        $currentendDate = $currentRange['endDate'];
+        $currentendDate = static::clampToToday($currentStartDate, $currentRange['endDate']);
 
         $diffDays = $currentendDate->diff($currentStartDate)->days;
 
@@ -236,24 +236,11 @@ class ReportHelper
                 $currentStartDate->copy()->subDays(1)->endOfDay()
             ];
         } else if ($type == 'previous_month') {
-            $fromDate = $currentStartDate->copy()->subMonths(1);
-            
-            return [
-                $fromDate->copy(),
-                $fromDate->addDays($diffDays)->endOfDay()
-            ];
+            return static::shiftedRange($currentStartDate->copy()->subMonths(1), $diffDays, $currentStartDate);
         } else if ($type == 'previous_quarter') {
-            $fromDate = $currentStartDate->copy()->subMonths(3);
-            return [
-                $fromDate->copy()->startOfMonth(),
-                $fromDate->addDays($diffDays)->endOfDay()
-            ];
+            return static::shiftedRange($currentStartDate->copy()->subMonths(3), $diffDays, $currentStartDate);
         } else if ($type == 'previous_year') {
-            $fromDate = $currentStartDate->copy()->subYears(1);
-            return [
-                $fromDate->copy(),
-                $fromDate->addDays($diffDays)->endOfDay()
-            ];
+            return static::shiftedRange($currentStartDate->copy()->subYears(1), $diffDays, $currentStartDate);
         } else if ($type == 'custom' && $compareDate) {
             $compareDate = (new DateTime($compareDate))->startOfDay();
             return [
@@ -263,5 +250,54 @@ class ReportHelper
         } else {
             return false;
         }
+    }
+
+    public static function formatCompareRange($comparePeriod)
+    {
+        if (!$comparePeriod) {
+            return null;
+        }
+
+        return [
+            'start' => $comparePeriod[0]->format('Y-m-d H:i:s'),
+            'end'   => $comparePeriod[1]->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    public static function formatCompareRanges($params)
+    {
+        $ranges = [];
+
+        foreach (['previous_period', 'previous_month', 'previous_quarter', 'previous_year'] as $type) {
+            $ranges[$type] = static::formatCompareRange(static::getCompareRange($type, [
+                'startDate' => $params['startDate']->copy(),
+                'endDate'   => $params['endDate']->copy(),
+            ]));
+        }
+
+        return $ranges;
+    }
+
+    // Presets such as This Month end in the future; only the elapsed days
+    // have data, so the compare range is sized to them.
+    protected static function clampToToday($startDate, $endDate)
+    {
+        $today = DateTime::now()->endOfDay();
+
+        if ($endDate <= $today || $startDate > $today) {
+            return $endDate;
+        }
+
+        return $today;
+    }
+
+    // A shifted compare range keeps the primary length but never reaches
+    // into the primary range (a 31-day month shifted back one month would).
+    protected static function shiftedRange($fromDate, $diffDays, $currentStartDate)
+    {
+        $toDate = $fromDate->copy()->addDays($diffDays)->endOfDay();
+        $dayBefore = $currentStartDate->copy()->subDays(1)->endOfDay();
+
+        return [$fromDate, $toDate < $dayBefore ? $toDate : $dayBefore];
     }
 }

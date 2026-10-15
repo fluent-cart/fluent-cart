@@ -41,9 +41,9 @@ const assetsPath = computed(() => {
 
     <template v-else-if="data?.current_payment_method == 'offline_payment'">
       <div class="text" role="status"
-        :aria-label="`${Str.headline(data?.current_payment_method) || Str.headline(data?.payment_method)} payment method`">
+        :aria-label="`${data?.payment_method_title || Str.headline(data?.current_payment_method)} payment method`">
         {{
-          Str.headline(data?.current_payment_method) || Str.headline(data?.payment_method)
+          data?.payment_method_title || Str.headline(data?.current_payment_method)
         }}
       </div>
     </template>

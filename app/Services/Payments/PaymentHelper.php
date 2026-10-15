@@ -72,6 +72,72 @@ class PaymentHelper
         return apply_filters('fluent_cart/payment/success_url', add_query_arg($queryArgs, $receiptUrl), $context);
     }
 
+    /**
+     * Display label of a registered gateway, honouring the admin checkout label.
+     *
+     * @param string|null $slug Gateway route, e.g. "offline_payment"
+     * @return string Empty when no registered gateway matches
+     */
+    public static function getGatewayTitle($slug): string
+    {
+        $slug = (string) $slug;
+        if ($slug === '') {
+            return '';
+        }
+
+        $gateway = GatewayManager::getInstance($slug);
+        if (!$gateway) {
+            return '';
+        }
+
+        $title = method_exists($gateway, 'getMeta')
+            ? $gateway->getMeta('title')
+            : Arr::get($gateway->meta(), 'title');
+
+        return (string) $title;
+    }
+
+    /**
+     * Label to show for a stored payment method slug.
+     *
+     * @param string|null $slug Gateway route stored on the order, transaction or subscription
+     * @param string|null $storedTitle Title snapshot, e.g. order.payment_method_title
+     * @return string The snapshot, else the gateway label, else the slug in title case
+     */
+    public static function getMethodTitle($slug, $storedTitle = ''): string
+    {
+        $storedTitle = (string) $storedTitle;
+        if ($storedTitle !== '') {
+            return $storedTitle;
+        }
+
+        $title = static::getGatewayTitle($slug);
+        if ($title !== '') {
+            return $title;
+        }
+
+        return ucwords(str_replace(['_', '-'], ' ', (string) $slug));
+    }
+
+    /**
+     * Gateway name for admin screens: the gateway's own name, never the buyer-facing checkout label.
+     *
+     * @param string|null $slug Gateway route stored on the order, transaction or subscription
+     * @return string admin_title, else the gateway's default title, else the slug
+     */
+    public static function getMethodAdminTitle($slug): string
+    {
+        $slug = (string) $slug;
+        $gateway = $slug !== '' ? GatewayManager::getInstance($slug) : null;
+        if (!$gateway) {
+            return $slug;
+        }
+
+        $meta = $gateway->meta();
+
+        return (string) (Arr::get($meta, 'admin_title') ?: Arr::get($meta, 'title') ?: $slug);
+    }
+
     public static function getCustomPaymentLink($orderHash): string
     {
             return wp_sanitize_redirect(

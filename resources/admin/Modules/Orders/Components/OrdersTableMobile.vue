@@ -1,4 +1,5 @@
 <script setup>
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import Badge from "@/Bits/Components/Badge.vue";
 import translate from "@/utils/translator/Translator";
@@ -203,10 +204,10 @@ const getOrderTypeText = (type) => {
                       :class="row.payment_method">
                      <img
                          :src="getPaymentProviderLogo(row.payment_method)"
-                         :alt="Str.headline(row.payment_method)">
+                         :alt="paymentMethodAdminTitle(row.payment_method)">
                   </span>
                 <el-tag v-else type="info" round size="small" class="capitalize">
-                  {{ Str.headline(row.payment_method) }}
+                  {{ paymentMethodAdminTitle(row.payment_method) }}
                 </el-tag>
               </div>
             </div><!-- fct-order-table-payment-status-col -->

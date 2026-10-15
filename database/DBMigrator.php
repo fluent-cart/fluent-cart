@@ -202,6 +202,7 @@ class DBMigrator
             OrdersMigrator::widenRateColumn();
             OrdersMigrator::addCurrencyCreatedIndex();
             \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::addCurrencyDimension();
+            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::queueRebuildIfPopulated();
 
             // let's check the orders table sequence number
             global $wpdb;

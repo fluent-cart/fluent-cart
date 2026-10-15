@@ -541,14 +541,18 @@ class FcFixture
             );
         }
 
-        $order = self::order([
-            'config' => ['fixture_case' => 'phase7-reports'],
-        ]);
+        // Currency and rate must be known at creation: Order::creating stamps the fx snapshot from them
+        $order = self::order(array_merge(
+            array_intersect_key($attributes, ['currency' => true, 'rate' => true]),
+            ['config' => ['fixture_case' => 'phase7-reports']]
+        ));
+        unset($attributes['rate']);
         $id = (int) $order->id;
 
         $allowed = [
             'status',
             'parent_id',
+            'customer_id',
             'payment_status',
             'payment_method',
             'payment_method_title',

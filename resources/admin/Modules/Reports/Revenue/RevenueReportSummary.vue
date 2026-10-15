@@ -20,30 +20,30 @@ const summaryCards = [
   { 
     title: translate("Gross Sales"),
     key: "gross_sale", 
-    info: translate("The total sales you had in this period.") 
+    info: translate("Total paid on paid, partially paid and refunded orders created in this period, including tax and shipping. Discounts are already applied. Refunds are not deducted.") 
   },
   { 
     title: translate("Refunds"),
     key: "total_refunded_amount", 
     liability: true,
-    info: translate("Refunds made in this period. This is deducted from gross sales to calculate revenue.") 
+    info: translate("Amount refunded on orders created in this period. Deducted from gross sales to calculate revenue.") 
   },
   { 
     title: translate("Taxes"),
     key: "tax_total", 
     liability: true,
-    info: translate("Taxes paid in orders. This is deducted from gross sales to calculate revenue.") 
+    info: translate("Tax collected on orders created in this period, including tax on shipping. Deducted from gross sales to calculate revenue.") 
   },
   { 
     title: translate("Shipping"),
     key: "shipping_total", 
     liability: true,
-    info: translate("Shipping paid in orders. This is deducted from gross sales to calculate revenue.") 
+    info: translate("Shipping charged on orders created in this period, before shipping tax. Not deducted when calculating revenue.") 
   },
   { 
     title: translate("Revenue"),
     key: "net_revenue", 
-    info: translate("Gross sales less refunds, taxes, shipping, fees.") 
+    info: translate("Gross sales less refunds and taxes. Shipping charges and payment fees are not deducted.") 
   },
 ];
 
@@ -79,7 +79,7 @@ const dataLoader = computed(() => {
         <div class="value">
 
           <div class="inner-value">
-            <ReportSummary :amount="maybeLiability(summary.value, summary.liability)" :title="summary.title" />
+            <ReportSummary :amount="maybeLiability(summary.value, summary.liability, reportFilter.reportCurrency)" :title="summary.title" />
           </div>
 
           <Fluctuation 
@@ -93,9 +93,10 @@ const dataLoader = computed(() => {
           {{ summary.title }}
 
           <el-tooltip :content="summary.info" placement="top"
-                      popper-class="fct-tooltip" effect="dark"
-          >
-            <DynamicIcon class="text-gray-500 w-4 flex-shrink-0" name="InformationFill" />
+                      popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+            <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help focus-visible:outline-2 focus-visible:outline-offset-2" :aria-label="translate('About this metric')">
+              <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+            </button>
           </el-tooltip>
         </div>
       </div>

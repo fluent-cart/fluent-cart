@@ -35,6 +35,7 @@ class DefaultReportController extends Controller
     public function getSalesReport(Request $request)
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = DefaultReportService::make([]);
 
@@ -58,6 +59,8 @@ class DefaultReportController extends Controller
             'summaryData'     => $currentMetrics['summary'],
             'previousSummary' => $previousMetrics['summary'],
             'fluctuations'    => $fluctuations,
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
         ];
     }
 }

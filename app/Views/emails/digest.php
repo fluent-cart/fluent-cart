@@ -89,7 +89,7 @@ $kpiCell = function ($label, $value, $deltaHtml = '') {
         <tr>
             <?php
             echo $kpiCell(__('Gross Sales', 'fluent-cart'), $metrics['gross_sale'], $renderDelta($flux['gross_sale'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            echo $kpiCell(__('Net Revenue', 'fluent-cart'), $metrics['net_revenue'], $renderDelta($flux['net_revenue'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            echo $kpiCell(__('Revenue', 'fluent-cart'), $metrics['net_revenue'], $renderDelta($flux['net_revenue'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             ?>
         </tr>
         <tr>

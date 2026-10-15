@@ -138,7 +138,7 @@ class OverviewReportController extends Controller
     {
         $TotalRevenue = array_sum(array_column($data, 'current'));
         $TotalRevenuePrev = array_sum(array_column($data, 'prev'));
-        $YoYGrowth = $TotalRevenuePrev ? number_format((($TotalRevenue - $TotalRevenuePrev) / $TotalRevenuePrev) * 100, 2, '.', '') : 100;
+        $YoYGrowth = $TotalRevenuePrev ? number_format((($TotalRevenue - $TotalRevenuePrev) / $TotalRevenuePrev) * 100, 2, '.', '') : null;
 
         return [
             'total'      => $TotalRevenue,
@@ -192,6 +192,8 @@ class OverviewReportController extends Controller
         $gross_revenue_column = 'SUM(o.total_paid) AS gross_revenue';
 
         $currencyFilter = $currency ? 'AND o.currency = ?' : '';
+        $statuses = Status::getReportStatuses();
+        $statusPlaceholders = implode(', ', array_fill(0, count($statuses), '?'));
 
         $top_countries_query = "WITH monthly_country_revenue AS (
             SELECT
@@ -203,7 +205,7 @@ class OverviewReportController extends Controller
             FROM {$wpdb->prefix}fct_orders o
             INNER JOIN {$wpdb->prefix}fct_order_addresses a ON o.id = a.order_id
             WHERE
-                o.payment_status IN ('paid', 'partially-paid', 'refunded', 'partially-refunded')
+                o.payment_status IN ({$statusPlaceholders})
                 AND o.created_at >= ?
                 AND o.created_at < ?
                 AND a.type = 'billing'
@@ -222,7 +224,7 @@ class OverviewReportController extends Controller
         WHERE revenue_rank <= 5
         ORDER BY month, revenue_rank";
 
-        $bindings = [$start_date, $end_date];
+        $bindings = array_merge($statuses, [$start_date, $end_date]);
         if ($currency) {
             $bindings[] = $currency;
         }

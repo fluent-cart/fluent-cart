@@ -17,14 +17,15 @@ const props = defineProps({
 });
 
 const reportFilter = props.reportFilter;
+const tableGroupKey = ref("billing_country");
 
 const getData = (params) => {
-  refundReport.getRefundChartData({
+  reportFilter.trackCompareRange(refundReport.getRefundChartData({
     params: {
       ...params.params,
       groupKey: "default",
     },
-  });
+  }));
   refundReport.getWeeksBetweenRefund(params);
   // refundReport.getRefundSummary(params);
   getRefundDataByGroup(params);
@@ -35,12 +36,13 @@ const getRefundDataByGroup = (params) => {
   refundReport.getRefundDataByGroup({
     params: {
       ...params.params,
-      groupKey: "billing_country",
+      groupKey: tableGroupKey.value,
     },
   });
 };
 
 const groupData = (groupKey) => {
+  tableGroupKey.value = groupKey;
   const params = reportFilter.applicableFilters;
   refundReport.getRefundDataByGroup({
     params: {
@@ -53,12 +55,12 @@ const groupData = (groupKey) => {
 const fetchChartData = (selectedGroupKey) => {
   const params = reportFilter.applicableFilters;
   if (params) {
-    refundReport.getRefundChartData({
+    reportFilter.trackCompareRange(refundReport.getRefundChartData({
       params: {
         ...params.params,
         groupKey: selectedGroupKey,
       },
-    });
+    }));
   }
 };
 

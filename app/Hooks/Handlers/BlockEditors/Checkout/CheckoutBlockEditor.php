@@ -95,22 +95,42 @@ class CheckoutBlockEditor extends BlockEditor
          * @param \FluentCart\App\Models\Cart|null $cart
          * @param array $context ['surface' => string, 'attributes' => array, 'block' => \WP_Block|null]
          */
-        $cart = apply_filters('fluent_cart/checkout/render_cart', null, [
+        $context = [
                 'surface'    => 'checkout-block',
                 'attributes' => $shortCodeAttribute,
                 'block'      => $block,
-        ]);
+        ];
+
+        $cart = apply_filters('fluent_cart/checkout/render_cart', null, $context);
+
+        if (!$cart && CheckoutRenderer::isCustomProductCheckout($shortCodeAttribute)) {
+            return CheckoutRenderer::renderCustomProductCheckout($context);
+        }
 
         AssetLoader::loadCheckoutAssets($cart ?: null);
-
-//        return '[fluent_cart_checkout]';
-        global $wp;
-        $current_url = home_url(add_query_arg([], $wp->request));
-        $current_url = add_query_arg(array_map('sanitize_text_field', wp_unslash($_GET)), $current_url);
 
         if (!$cart) {
             $cart = CartHelper::getCart();
         }
+
+        return static::renderCart($cart, $shortCodeAttribute, $block);
+    }
+
+    /**
+     * Render the checkout block for an already resolved cart. Checkout assets
+     * must already be loaded for that cart.
+     *
+     * @param \FluentCart\App\Models\Cart|null $cart
+     * @param array $shortCodeAttribute
+     * @param \WP_Block|null $block
+     * @return string
+     */
+    public static function renderCart($cart, array $shortCodeAttribute, $block = null): string
+    {
+//        return '[fluent_cart_checkout]';
+        global $wp;
+        $current_url = home_url(add_query_arg([], $wp->request));
+        $current_url = add_query_arg(array_map('sanitize_text_field', wp_unslash($_GET)), $current_url);
 
         if (!$cart || empty(Arr::get($cart, 'cart_data', []))) {
             // Same filter as the shortcode checkout; see CheckoutPageHandler::render().
@@ -145,21 +165,23 @@ class CheckoutBlockEditor extends BlockEditor
         ];
 
 
+        $labelStyle = CheckoutRenderer::resolveFieldLabelStyle(Arr::get($shortCodeAttribute, 'field_label_style', ''));
+
         // Inner blocks resolve their cart through CheckoutRenderContext rather
         // than each re-reading the device's cart, so a checkout rendering from
         // a cart supplied by the filter above stays coherent all the way down.
         return CheckoutRenderContext::rendering(
                 $cart,
                 ['surface' => 'checkout-block', 'attributes' => $shortCodeAttribute],
-                function () use ($cart, $block, $formAttributes) {
+                function () use ($cart, $block, $formAttributes, $labelStyle) {
                     ob_start();
-                    (new CheckoutRenderer($cart))->wrapperStart();
+                    (new CheckoutRenderer($cart, ['field_label_style' => $labelStyle]))->wrapperStart();
                     $wrapperStartHtml = ob_get_clean();
 
                     $innerBlocksContent = '';
 
                     if (empty($block->inner_blocks) && version_compare(FLUENTCART_VERSION, '1.3.0', '>')) {
-                        return '[fluent_cart_checkout]';
+                        return '[fluent_cart_checkout field_label_style="' . esc_attr($labelStyle) . '"]';
                     } else if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
                         ob_start();
                         ?>

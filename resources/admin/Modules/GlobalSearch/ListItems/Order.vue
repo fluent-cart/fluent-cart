@@ -1,5 +1,5 @@
 <script setup>
-import Str from "@/utils/support/Str";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import ProductInfo from "@/Bits/Components/Card/ProductInfo.vue";
 import {formatNumber} from "@/Bits/productService";
 import Badge from "@/Bits/Components/Badge.vue";
@@ -42,9 +42,9 @@ const getPaymentProviderLogo = (payment_method) => {
       <img
            v-if="getPaymentProviderLogo(order.payment_method)"
            :src="getPaymentProviderLogo(order.payment_method)"
-           :alt="Str.headline(order.payment_method)">
+           :alt="paymentMethodAdminTitle(order.payment_method)">
       <el-tag v-else type="info" round size="small" class="capitalize">
-        {{ Str.headline(order.payment_method) }}
+        {{ paymentMethodAdminTitle(order.payment_method) }}
       </el-tag>
     </div>
   </div>

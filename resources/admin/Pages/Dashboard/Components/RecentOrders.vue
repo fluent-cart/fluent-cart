@@ -39,7 +39,7 @@ const reportData = dashBoardReport.data;
             </div>
           </div>
           <div class="list-right-content">
-            <div class="list-value" v-html="CurrencyFormatter.scaled(order.total_amount)">
+            <div class="list-value" v-html="CurrencyFormatter.scaled(order.total_amount, true, false, order.currency)">
 
             </div>
             <div class="list-price">

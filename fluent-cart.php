@@ -5,7 +5,7 @@ defined('ABSPATH') or die;
 /*
 Plugin Name: FluentCart
 Description: FluentCart WordPress Plugin
-Version: 2.0.0
+Version: 2.1.0
 Author: FluentCart Team
 Author URI: https://fluentcart.com/about-us
 Plugin URI: https://fluentcart.com
@@ -15,14 +15,18 @@ Domain Path: /language
 */
 
 if (!defined('FLUENTCART_PLUGIN_PATH')) {
-    define('FLUENTCART_VERSION', '2.0.0');
+    define('FLUENTCART_VERSION', '2.1.0');
     define('FLUENTCART_DB_VERSION', '1.0.57');
     define('FLUENTCART_PLUGIN_PATH', plugin_dir_path(__FILE__));
     define('FLUENTCART_URL', plugin_dir_url(__FILE__));
     define('FLUENTCART_PLUGIN_FILE_PATH', __FILE__);
     define('FLUENTCART_UPLOAD_DIR', 'fluent_cart');
     define('FLUENT_CART_DIR_FILE', __FILE__);
-    define('FLUENTCART_MIN_PRO_VERSION', '2.0.0');
+    define('FLUENTCART_MIN_PRO_VERSION', '2.1.0');
+    // Admin module contract for add-on bundles: the @fluent-cart/* import map
+    // and the exports of resources/admin/shared/module-ui.js. Bump only on a
+    // breaking change to that surface.
+    define('FLUENTCART_MODULE_API', 1);
 }
 
 register_activation_hook(__FILE__, function () {

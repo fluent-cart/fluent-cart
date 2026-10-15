@@ -49,10 +49,10 @@
                 v-if="row.transaction_type == 'charge' && row.status == 'pending' && row.vendor_charge_id"
                 effect="dark"
                 :placement="'top'"
-                :content="translate('Sync payment status from %1$s', row.payment_method)"
+                :content="translate('Sync payment status from %1$s', paymentMethodAdminTitle(row.payment_method))"
                 popper-class="fct-tooltip"
             >
-              <el-button size="small" :aria-label="translate('Sync payment status from %1$s', row.payment_method)" :loading="syncing_transaction === row.id" @click="syncTransaction(row)">
+              <el-button size="small" :aria-label="translate('Sync payment status from %1$s', paymentMethodAdminTitle(row.payment_method))" :loading="syncing_transaction === row.id" @click="syncTransaction(row)">
                 <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
               </el-button>
             </el-tooltip>
@@ -72,7 +72,7 @@
                     >
                       <img
                           class="w-full"
-                          :title="row.payment_method"
+                          :title="paymentMethodAdminTitle(row.payment_method)"
                           :src="getCardBrand(row.card_brand, row.payment_method_type)"
                           :alt="row.card_brand"
                       >
@@ -114,6 +114,7 @@ import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import translate from "@/utils/translator/Translator";
 import Str from "@/utils/support/Str";
 import {getCardBrand} from "@/Bits/common.js";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
 
@@ -150,6 +151,7 @@ export default {
     }
   },
   methods: {
+    paymentMethodAdminTitle,
     translate,
     getCardBrand,
     syncTransaction(transaction) {

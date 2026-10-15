@@ -3,10 +3,14 @@
       v-model="filter.data.selectedFilters[filterItemKey].value"
       :placeholder="$t('Select Status')"
       filterable
-      @change="filter.applyFilterChange"
+      clearable
+      @change="onChange"
       popper-class="fct-dropdown-compact"
       size="small"
   >
+    <template #label="{ label }">
+      <el-tag disable-transitions>{{ label }}</el-tag>
+    </template>
     <el-option
         v-for="filterOption in filterItem.options"
         :key="filterOption.value"
@@ -33,6 +37,18 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['clear']);
+
 const filter = props.filterState;
+
+// Element Plus fires change (with the empty value) and then clear for one
+// click; routing clear off change keeps the report to a single refresh.
+const onChange = (value) => {
+  if (value) {
+    filter.applyFilterChange();
+  } else {
+    emit('clear');
+  }
+};
 </script>
 

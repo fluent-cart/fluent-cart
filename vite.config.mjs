@@ -8,6 +8,7 @@ import {moveManifestPlugin} from "./build/vite/plugins/moveManifestPlugin.mjs";
 import {staticCopyManifestPlugin} from "./build/vite/plugins/staticCopyManifestPlugin.mjs";
 import {manifestPhpConfigPlugin} from "./build/vite/plugins/manifestPhpConfigPlugin.mjs";
 import {minifyStaticLibPlugin} from "./build/vite/plugins/minifyStaticLibPlugin.mjs";
+import {sharedModuleGuardPlugin} from "./build/vite/plugins/sharedModuleGuardPlugin.mjs";
 import fs from "fs"; // Add this dependency for file operations
 
 const serverConfig = require('./config/vite.json');
@@ -38,6 +39,17 @@ const chunkCacheBustPlugin = {
                    .replace(/(import\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`);
     }
 };
+
+const VENDOR_CHUNKS = [
+    ['vendor-vue', /[\\/]node_modules[\\/](vue|@vue)[\\/]/],
+    ['vendor-dayjs', /[\\/]node_modules[\\/]dayjs[\\/]/],
+    ['vendor-echarts', /[\\/]node_modules[\\/](echarts|zrender)[\\/]/],
+];
+
+function vendorChunk(id) {
+    const match = VENDOR_CHUNKS.find(([, pattern]) => pattern.test(id));
+    return match ? match[0] : undefined;
+}
 
 // https://vitejs.dev/config/
 
@@ -237,8 +249,11 @@ const inputs = [
     "resources/order-bump/order-bump.js",
     // Attributes
     "resources/attributes/attributes.js",
-    // Licensing
-    "resources/licensing/license.js",
+    // Import-map targets for add-on admin bundles (ModuleImportMap.php)
+    "resources/admin/shared/module-vue.js",
+    "resources/admin/shared/module-dayjs.js",
+    "resources/admin/shared/module-echarts.js",
+    "resources/admin/shared/module-ui.js",
     // EU Withdrawal addon (admin requests page)
     "resources/withdrawal/withdrawal.js",
     // Addon Assets
@@ -313,6 +328,7 @@ export default defineConfig({
         minifyStaticLibPlugin({
             libDir: "public/lib",
         }),
+        sharedModuleGuardPlugin(),
         manifestPhpConfigPlugin({
             rootDir: __dirname,
             manifestPath: serverConfig.manifest_path,
@@ -332,8 +348,13 @@ export default defineConfig({
         // https://rollupjs.org/guide/en/#big-list-of-options
         rollupOptions: {
             input: inputs,
+            // Keep shared module-* entries as thin facades: never merge other
+            // code into an entry that exports (see sharedModuleGuardPlugin).
+            preserveEntrySignatures: 'strict',
             output: {
-                manualChunks: undefined,
+                // Libraries behind the add-on import map get their own chunks, so
+                // core never imports a module-* entry (sharedModuleGuardPlugin).
+                manualChunks: vendorChunk,
                 chunkFileNames: "chunks/[name].js",
                 entryFileNames: "[name].js",
                 assetFileNames: "assets/[name][extname]",

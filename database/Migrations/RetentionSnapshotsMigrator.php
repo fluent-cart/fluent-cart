@@ -2,6 +2,8 @@
 
 namespace FluentCart\Database\Migrations;
 
+use FluentCart\App\App;
+
 class RetentionSnapshotsMigrator extends Migrator
 {
     public static string $tableName = "fct_retention_snapshots";
@@ -74,6 +76,34 @@ class RetentionSnapshotsMigrator extends Migrator
         if (static::hasCurrencyDimension()) {
             static::dropIndexIfExists(static::getDbPrefix() . 'fct_rs_cohort_period_product_idx');
         }
+    }
+
+    /**
+     * Snapshot rows refresh only when an admin clicks Generate Snapshots, so
+     * a semantics change (per-currency rows, installment plans excluded)
+     * would keep serving the old numbers indefinitely. Queue one rebuild for
+     * stores that already hold snapshots; a fresh store has nothing to redo.
+     */
+    public static function queueRebuildIfPopulated()
+    {
+        if (!class_exists('ActionScheduler') || !\ActionScheduler::is_initialized()) {
+            return;
+        }
+
+        if (!App::db()->table(static::$tableName)->exists()) {
+            return;
+        }
+
+        if (as_has_scheduled_action('fluent_cart_generate_retention_snapshots', null, 'fluent-cart-snapshots')) {
+            return;
+        }
+
+        as_schedule_single_action(
+            time(),
+            'fluent_cart_generate_retention_snapshots',
+            [null, null],
+            'fluent-cart-snapshots'
+        );
     }
 
     public static function hasCurrencyDimension(): bool

@@ -8,7 +8,6 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
-use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -74,6 +73,7 @@ class OrderParser extends BaseParser
         'buyer_reverse_charge_declaration' => 'getBuyerReverseChargeDeclaration',
         'tax_breakdown'                    => 'getTaxBreakdown',
         'fee_lines'                        => 'getFeeLines',
+        'payment_method_human'             => 'getPaymentMethodTitle',
     ];
 
     protected array $attributeMap = [
@@ -519,27 +519,10 @@ class OrderParser extends BaseParser
             return '';
         }
 
-        $title = (string) Arr::get($this->order, 'payment_method_title', '');
-        if ($title !== '') {
-            return $title;
-        }
-
-        $slug = (string) Arr::get($this->order, 'payment_method', '');
-        if ($slug === '') {
-            return '';
-        }
-
-        if (class_exists(GatewayManager::class)) {
-            $gateway = GatewayManager::getInstance($slug);
-            if ($gateway) {
-                $gatewayTitle = (string) $gateway->getMeta('title');
-                if ($gatewayTitle !== '') {
-                    return $gatewayTitle;
-                }
-            }
-        }
-
-        return ucwords(str_replace(['_', '-'], ' ', $slug));
+        return PaymentHelper::getMethodTitle(
+            Arr::get($this->order, 'payment_method', ''),
+            Arr::get($this->order, 'payment_method_title', '')
+        );
     }
 
     public function getFeeLines(): string

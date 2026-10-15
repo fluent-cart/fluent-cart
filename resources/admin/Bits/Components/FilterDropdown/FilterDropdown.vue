@@ -118,9 +118,10 @@ const filters = [
         "reports_refunds",
         "reports_orders",
         "reports_sales",
+        "reports_sources",
     ],
     options: [
-      {label: translate("Active"), value: "subscription"},
+      {label: translate("New"), value: "subscription"},
       {label: translate("Renewal"), value: "renewal"},
       {label: translate("Expired"), value: "expired"},
       {label: translate("Canceled"), value: "canceled"},

@@ -19,6 +19,7 @@ class RefundReportController extends Controller
     public function getRefundChart(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = RefundReportService::make();
 
@@ -44,6 +45,8 @@ class RefundReportController extends Controller
             'chartData'       => $currentMetrics['grouped'],
             'fluctuations'    => $fluctuations,
             'previousMetrics' => $previousMetrics['grouped'],
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
         ];
     }
 

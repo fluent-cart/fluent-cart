@@ -4,7 +4,6 @@ import {formatNumber} from "../Utils/formatNumber";
 import {computed} from "vue";
 import translate from "@/utils/translator/Translator";
 
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter"
 import ReportSummary from "@/Bits/Components/ReportSummary.vue";
 import Fluctuation from "@/Bits/Components/Fluctuation.vue";
 import SummaryLoader from "@/Modules/Reports/Components/SummaryLoader.vue";
@@ -48,9 +47,9 @@ const summaryCardKeys = [
   // "failed_payments_count",
   
   {
-    title: translate("Future Installments"),
+    title: translate("Installments Still Due"),
     key: "future_installments",
-    info: translate("The total amount expected from future installments."),
+    info: translate("Remaining balance on installment plans started in the selected period."),
     hasCurrency: true,
   },
 ];
@@ -90,7 +89,7 @@ const summaryData = computed(() => {
       <div class="summary-item-inner">
         <div class="value">
           <div class="inner-value">
-            <ReportSummary :amount="CurrencyFormatter.scaled(card.value)" :title="card.title" />
+            <ReportSummary :amount="reportFilter.formatAmount(card.value)" :title="card.title" />
           </div><!-- inner-value -->
 
           <!-- <Fluctuation 

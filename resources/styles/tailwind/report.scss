@@ -57,9 +57,9 @@
   max-height: calc(100dvh - 106px);
   min-height: calc(100dvh - 106px);
   .fct-report-filter-wrap {
-    @apply flex items-center justify-between bg-white py-4 px-4 rounded-none dark:bg-dark-700 transition-all duration-300 ease-in-out;
-    &.is-future-renewals {
-      @apply px-7.5;
+    @apply flex items-start justify-between gap-3 bg-white py-4 px-4 rounded-none dark:bg-dark-700 transition-all duration-300 ease-in-out;
+    .fct-report-filter-button {
+      @apply flex-none min-h-7 flex items-center;
     }
   }
   &.fct-layout-width {
@@ -409,6 +409,9 @@
 
   grid-template-columns: repeat(var(--avg-grid-cols), minmax(0, 1fr));
 
+  &.summary-col-6 {
+    @apply grid-cols-6;
+  }
   &.summary-col-4 {
     @apply grid-cols-4;
   }
@@ -492,6 +495,184 @@
 }
 
 
+.fct-product-compare {
+  &__intro {
+    @apply -mt-3 mb-5 text-sm text-system-mid dark:text-gray-300;
+  }
+
+  &__hint,
+  &__note {
+    @apply m-0 px-5 py-3 text-[13px] text-system-mid dark:text-gray-300;
+  }
+
+  &__toggle.el-button {
+    @apply ml-1 align-baseline;
+  }
+
+  &__error {
+    @apply flex flex-col items-center gap-3 px-5 py-10 text-center text-sm text-red-500;
+
+    p {
+      @apply m-0;
+    }
+  }
+
+  // Outranks element-plus `.el-table td .cell { font-normal }`
+  &__table.el-table th.el-table__cell.fct-product-compare__col--active .cell,
+  &__table.el-table td.el-table__cell.fct-product-compare__col--active .cell {
+    @apply font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &__entity {
+    @apply flex items-center gap-2.5;
+  }
+
+  &__dot {
+    @apply w-2.5 h-2.5 rounded-full flex-shrink-0;
+  }
+
+  &__entity-text {
+    @apply flex flex-col min-w-0;
+  }
+
+  &__name {
+    @apply text-sm font-medium text-system-dark truncate dark:text-gray-50;
+  }
+
+  &__sub {
+    @apply text-xs text-system-mid truncate dark:text-gray-300;
+  }
+
+  &__header {
+    @apply inline-flex items-center gap-1;
+  }
+
+  &__info {
+    @apply inline-flex items-center p-0 border-0 bg-transparent text-gray-500 cursor-pointer rounded-sm;
+
+    .icon,
+    svg {
+      @apply w-4 h-4;
+    }
+
+    &:focus-visible {
+      @apply outline outline-2 outline-offset-2 outline-primary-500;
+    }
+  }
+
+  &__table .el-table__footer-wrapper td.el-table__cell {
+    @apply bg-gray-25 border-gray-divider font-semibold text-system-dark dark:bg-dark-600 dark:border-dark-500 dark:text-gray-50;
+  }
+
+  // Element Plus paints the active caret in primary-500, the dark header colour, so in dark mode
+  // the inactive caret looks like the lit one.
+  &__table th.descending .sort-caret.descending {
+    @apply dark:border-t-gray-100;
+  }
+
+  &__table th.ascending .sort-caret.ascending {
+    @apply dark:border-b-gray-100;
+  }
+
+  &__table th.descending .sort-caret.ascending {
+    @apply dark:border-b-dark-300;
+  }
+
+  &__table th.ascending .sort-caret.descending {
+    @apply dark:border-t-dark-300;
+  }
+
+  &__metric {
+    @apply inline-flex flex-wrap items-center gap-2 whitespace-nowrap;
+
+    .percentage {
+      @apply flex flex-shrink-0 items-center gap-0.5 text-xs font-semibold tabular-nums;
+    }
+  }
+}
+
+.fct-product-compare-chart {
+  .fct-card-header-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  // base.css gives every #wpbody-content element letter-spacing with !important. Chrome paints canvas text
+  // with it while echarts measures on a detached canvas without it, so wrapped legend items overlapped.
+  #wpbody-content & canvas {
+    @apply tracking-normal #{!important};
+  }
+
+  &__wrap {
+    @apply relative;
+  }
+
+  &__ghost {
+    @apply absolute inset-0 m-0 flex items-center justify-center px-5 text-center text-sm text-system-mid pointer-events-none dark:text-gray-300;
+  }
+
+  &__tag {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full border border-solid border-gray-outline text-xs text-system-mid dark:border-dark-400 dark:text-gray-300;
+  }
+
+  &__preview {
+    @apply relative w-full h-[400px] overflow-hidden;
+  }
+
+  &__preview-art {
+    @apply absolute inset-0 block w-full h-full;
+
+    path {
+      @apply fill-none;
+      stroke-width: 2.5;
+      vector-effect: non-scaling-stroke;
+    }
+  }
+
+  &__preview-grid line {
+    @apply stroke-gray-divider dark:stroke-dark-600;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__preview-body {
+    @apply absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-5 py-12 text-center;
+    background: radial-gradient(ellipse at center, theme('colors.white / 96%') 0%, theme('colors.white / 60%') 45%, transparent 75%);
+
+    &:where(.fluent_theme_dark, .fluent_theme_dark *) {
+      background: radial-gradient(ellipse at center, theme('colors.dark.700 / 96%') 0%, theme('colors.dark.700 / 60%') 45%, transparent 75%);
+    }
+  }
+
+  &__preview-title {
+    @apply m-0 text-base font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &__preview-text {
+    @apply m-0 max-w-[420px] text-sm text-system-mid dark:text-gray-300;
+  }
+
+  &__chips {
+    @apply mt-1 flex flex-wrap items-center justify-center gap-3;
+  }
+
+  &__chip {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-solid border-gray-outline bg-white text-[13px] text-system-mid dark:border-dark-400 dark:bg-dark-700 dark:text-gray-300;
+
+    &.is-more {
+      @apply border-dashed;
+    }
+  }
+
+  &__dot {
+    @apply inline-block w-2.5 h-2.5 rounded-full flex-shrink-0;
+  }
+
+  &__open.el-button {
+    @apply mt-2;
+  }
+}
+
+
 // Responsive 
 @media (max-width: 1024px) {
   .fct-report-order-summary {
@@ -500,6 +681,9 @@
     }
     &.summary-col-4 {
       @apply grid-cols-2;
+    }
+    &.summary-col-6 {
+      @apply grid-cols-3;
     }
 
     .summary-item::after {
@@ -528,5 +712,23 @@
 
   .fct-reports-view-inner .fct-report-body {
     @apply pl-0 #{!important};
+  }
+}
+
+@media (max-width: 640px) {
+  .fct-report-order-summary {
+    &.summary-col-6 {
+      @apply grid-cols-2;
+    }
+  }
+}
+
+// The global td:first-child padding also lands on every cell nested in the expand cell; restore the year row's padding so columns line up.
+.fct-revenue-breakdown-inner {
+  .el-table__cell:not(:first-child) .cell {
+    @apply pl-2;
+  }
+  .el-table__cell:not(:last-child) .cell {
+    @apply pr-2;
   }
 }

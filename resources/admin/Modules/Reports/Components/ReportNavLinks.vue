@@ -147,7 +147,15 @@ const navLinks = [
     route: 'reports_products',
     label: translate('Products'),
     url: '/reports/products',
-    icon: 'Product'
+    icon: 'Product',
+    always_open: true,
+    child: [
+      {
+        route: 'reports_products_compare',
+        label: translate('Compare'),
+        url: '/reports/products/compare'
+      },
+    ]
   },
   {
     route: 'reports_customer',

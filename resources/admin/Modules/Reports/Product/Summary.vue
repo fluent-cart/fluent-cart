@@ -21,41 +21,44 @@ const reportFilter = props.reportFilter;
 
 const summaryCards = [
   { 
-    title: "Units Sold", 
+    title: translate("Units Sold"), 
     key: "units_sold",
-    info: translate("The total number of units sold in this period.")
+    info: translate("Quantity of items sold on paid, partially paid and refunded orders in this period.")
+  },
+  {
+    title: translate("Customers"),
+    key: "customer_count",
+    info: translate("Distinct customers who bought these items in this period. Guest orders without a customer record are not counted.")
   },
   { 
-    title: "Gross Sale", 
+    title: translate("Item Sales"), 
     key: "gross_sale", 
     hasCurrency: true,
-    info: translate("The total sales you had in this period.") 
+    info: translate("Sum of item line totals, after discounts and before shipping, on paid, partially paid and refunded orders in this period. Refunds are not deducted. Differs from Gross Sales on the Revenue and Orders tabs, which use order totals.") 
+  },
+  {
+    title: translate("Discounts"),
+    key: "total_discounts",
+    hasCurrency: true,
+    liability: true,
+    info: translate("Item subtotals less item sales: coupon, manual and order-level discounts on these items in this period.")
   },
   { 
-    title: "Refunds", 
+    title: translate("Refunds"), 
     key: "total_refunds", 
     hasCurrency: true,
     liability: true,
-    info: translate("Refunds made in this period. This is deducted from gross sales to calculate revenue.")
+    info: translate("Amount refunded on these items. Deducted from item sales to calculate revenue.")
   },
   { 
-    title: "Revenue", 
+    title: translate("Revenue"), 
     key: "net_sale", 
     hasCurrency: true,
-    info: translate("Gross sales less refunds, taxes, shipping, fees.")
+    info: translate("Item sales less item refunds and item tax.")
   },
-  // { 
-  //   title: "Customer Count", 
-  //   key: "customer_count" 
-  // },
-  // { 
-  //   title: "Avg. Selling Price", 
-  //   key: "average_selling_price", 
-  //   hasCurrency: true 
-  // },
 ];
 
-const dataLoader = computed(() => productReport.data.isBusy);
+const dataLoader = computed(() => productReport.data.productReportBusy);
 
 const summaryData = computed(() => {
   return summaryCards.map((card) => ({
@@ -83,7 +86,7 @@ const getPercentageClass = (percentage) => {
 
 const formatAmount = (summary) => {
   return allowedKeys.value.includes(summary.key) 
-    ? maybeLiability(summary.value, summary.liability) 
+    ? maybeLiability(summary.value, summary.liability, reportFilter.reportCurrency) 
     : formatNumber(summary.value);
 };
 
@@ -92,7 +95,7 @@ const formatAmount = (summary) => {
 <template>
   <SummaryLoader v-if="dataLoader" :loading="dataLoader" :count="summaryData.length" />
 
-  <div v-else class="fct-report-order-summary" :class="dataLoader ? '' : 'summary-col-4'">
+  <div v-else class="fct-report-order-summary summary-col-6">
     <div class="summary-item" v-for="(summary, index) in summaryData" :key="index">
       <div class="summary-item-inner">
         <div class="value">
@@ -112,9 +115,10 @@ const formatAmount = (summary) => {
           {{ translate(summary.title) }}
 
           <el-tooltip :content="summary.info" placement="top"
-                      popper-class="fct-tooltip" effect="dark"
-          >
-            <DynamicIcon class="text-gray-500 w-4 flex-shrink-0" name="InformationFill" />
+                      popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+            <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help focus-visible:outline-2 focus-visible:outline-offset-2" :aria-label="translate('About this metric')">
+              <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+            </button>
           </el-tooltip>
         </div>
 

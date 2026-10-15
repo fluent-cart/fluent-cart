@@ -11,7 +11,6 @@ module.exports = {
         './resources/admin/**/*.{vue,js,php}',
         './app/Modules/StorageDrivers/S3/VueTemplates/SettingsPage.vue',
         './api/StoreSettings.php',
-        './resources/licensing/**/*.{vue,js,php}',
     ],
 
     corePlugins: {

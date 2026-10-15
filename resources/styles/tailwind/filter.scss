@@ -295,13 +295,8 @@
     }
     .fct-applied-filter {
         @apply m-0 min-h-7 flex gap-1 items-center bg-gray-25 rounded-sm text-[13px] text-system-dark pl-2 pr-1 border border-solid border-gray-outline leading-none dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400;
-        &-variation{
-            @apply pr-0 overflow-hidden;
-            .fct-applied-filter-value{
-                @apply border-r-0;
-            }
-        }
-        &-date{
+        &-date,
+        &-select{
             @apply pr-0 overflow-hidden;
             .fct-applied-filter-value{
                 @apply border-r-0;
@@ -310,19 +305,16 @@
         &-compare-to {
             @apply bg-transparent border-0 p-0 rounded-none dark:bg-transparent;
         }
-        &.fct-applied-filter-variation {
+        &.fct-applied-filter-select {
             .el-select {
+                .el-select__wrapper,
                 .el-select__selection {
-                    @apply py-[1.8px];
+                    @apply hover:bg-transparent dark:hover:bg-transparent;
                 }
-            }
-        }
-        &.fct-applied-filter-order-types {
-            .el-select {
                 .el-select__selection {
                     @apply py-[1.8px];
-                    .el-tag {
-                        @apply py-[1px] px-2 #{!important};
+                    .el-tag:hover {
+                        @apply bg-gray-200 text-system-mid dark:bg-dark-400 dark:text-gray-50;
                     }
                 }
             }
@@ -341,12 +333,16 @@
         }
     }
     .fct-applied-filter-remove{
-        @apply p-0 m-0 bg-transparent border-0 flex items-center justify-center shadow-none text-system-mid w-5 h-5 rounded-full cursor-pointer hover:text-system-dark hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-500;
+        @apply p-0 m-0 bg-transparent border-0 flex items-center justify-center shadow-none text-system-light w-[15px] h-[15px] cursor-pointer hover:text-system-dark dark:hover:text-gray-50;
+        .icon,
         svg{
-            @apply w-4 h-4;
+            @apply w-full h-full;
         }
     }
     .el-select{
+        .el-select__clear {
+            @apply w-[15px] h-[15px] text-system-light hover:text-system-dark dark:hover:text-gray-50;
+        }
         .el-select__wrapper{
             @apply border-0 rounded-none -mx-2 py-0 pl-0 pr-1.5 bg-transparent min-h-[auto] text-[13px];
             input{
@@ -393,6 +389,58 @@
     .fct-applied-filter-popover-wrap{
         @apply h-full flex items-center justify-center;
     }
+}
+
+.fct-product-chips {
+    @apply flex flex-nowrap items-center gap-1 min-w-0 normal-case;
+    .fct-product-chip__text {
+        @apply block max-w-[180px] truncate;
+    }
+}
+
+.fct-product-chip:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-300 rounded;
+}
+
+.fct-product-chips__measure {
+    @apply absolute left-0 top-0 flex gap-1 h-0 w-max overflow-hidden invisible pointer-events-none;
+}
+
+// Form pickers sit in narrow cells (bundle items column is 140px), so chips wrap and shrink.
+.fct-product-chips--wrap {
+    @apply flex-wrap max-w-full;
+    .fct-product-chip,
+    .el-tag {
+        @apply max-w-full min-w-0;
+    }
+}
+
+.fct-filter-dropdown {
+    .fct-product-chips {
+        @apply flex-wrap max-w-full;
+        .fct-product-chip,
+        .el-tag {
+            @apply max-w-full min-w-0;
+        }
+    }
+    .fct-product-tree:not(.is-tree-open) .el-select__input-wrapper {
+        @apply absolute opacity-0 -z-10;
+    }
+}
+
+// The empty search input would wrap below the chips and grow the row.
+.fct-advanced-filter-container .fct-advanced-product-tree:not(.is-tree-open) .el-select__input-wrapper {
+    @apply absolute opacity-0 -z-10;
+}
+
+// el-tooltip marks its child as .el-tooltip__trigger, which the applied-filter
+// value styles stretch to full height with negative margins.
+.fct-applied-filter-list .fct-applied-filter-value .fct-product-chips .fct-product-chip {
+    @apply h-auto m-0 p-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent;
+}
+
+.fct-product-chip-tooltip__title {
+    @apply font-semibold mb-0.5;
 }
 
 .fct-applied-filter-popover-content{
@@ -461,7 +509,22 @@
             @apply w-[180px];
         }
     }
+    .fct-compare-to-range {
+        @apply text-[11px] leading-4 whitespace-nowrap text-system-light dark:text-gray-400;
+    }
 
+}
+
+.fct-compare-to-dropdown {
+    .el-select-dropdown__item {
+        @apply flex items-center gap-4 overflow-visible text-clip;
+    }
+    .fct-compare-to-option-label {
+        @apply shrink-0 min-w-[7.5rem];
+    }
+    .fct-compare-to-option-range {
+        @apply shrink-0 text-xs font-normal text-system-mid dark:text-gray-300;
+    }
 }
 
 .fct-date-range-filter.is-clearable,

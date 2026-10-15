@@ -45,9 +45,10 @@
               <OrdersTableMobile class="show-on-mobile fct-single-subscription-orders-mobile" :orders="visibleRelatedOrders" :columns="['type']"/>
             </CardContainer>
 
-            <CardContainer v-if="subscription.licenses" class="overflow-hidden">
+            <CardContainer v-if="subscription.licenses && canViewLicenses" class="overflow-hidden">
               <CardHeader class="pb-4" :title="$t('Related Licenses')" title_size="small"/>
-              <LicenseTable :licenses="subscription.licenses" :columns="[]"/>
+              <ExtensionComponent v-if="hasLicenseTable" name="license_table" :licenses="subscription.licenses" :columns="[]"/>
+              <LicensingUnavailable v-else/>
             </CardContainer>
 
             <CardContainer v-if="subscription.activities && subscription.activities.length" class="overflow-hidden mb-0">
@@ -180,7 +181,10 @@ import {Container as CardContainer, Body as CardBody, Header as CardHeader} from
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import OrdersTable from "@/Modules/Orders/Components/OrdersTable.vue";
 import OrdersTableMobile from "@/Modules/Orders/Components/OrdersTableMobile.vue";
-import LicenseTable from "../../../licensing/components/_LicenseTable.vue";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import LicensingUnavailable from "@/Modules/Licensing/LicensingUnavailable.vue";
+import Permission from "@/utils/permission/Permission";
+import {hasExtensionComponent} from "@/utils/extensionComponents";
 import Labels from "@/Modules/Parts/Labels/Label.vue";
 import Str from "../../utils/support/Str";
 import SubscriptionDetails from "@/Modules/Subscriptions/Components/SubscriptionDetails.vue";
@@ -209,7 +213,8 @@ export default {
     SingleSubscriptionLoader,
     SubscriptionDetails,
     Labels,
-    LicenseTable,
+    ExtensionComponent,
+    LicensingUnavailable,
     CopyToClipboard,
     CardContainer,
     CardBody,
@@ -240,6 +245,13 @@ export default {
     }
   },
   computed: {
+    hasLicenseTable() {
+      return hasExtensionComponent('license_table');
+    },
+    // License rows are licenses/view data, even on a record the user can open.
+    canViewLicenses() {
+      return Permission.has('licenses/view');
+    },
     Str() {
       return Str
     },

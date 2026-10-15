@@ -21,6 +21,7 @@
         v-model="filter.data.currency"
         :currencies="filter.currencies"
         @change="filter.setSelectChange"
+        @clear="filter.removeFilter('currency', null)"
     />
     <TreeSelectFilter
         v-if="filter.activeFilterOptions.type === 'tree-select' "

@@ -9,7 +9,6 @@ use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
-use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -89,11 +88,7 @@ class StatusHelper
     }
 
     /**
-     * Backfills payment_method_title when it was never stamped at creation.
-     *
-     * Only changeOrderStatus() (the COD-only path) writes payment_method_title.
-     * Every other gateway settles via syncOrderStatuses(), which never touched
-     * it, so the column stays empty for those orders.
+     * Backfills payment_method_title for orders created before checkout stamped it.
      */
     protected function resolvePaymentMethodTitle()
     {
@@ -102,17 +97,7 @@ class StatusHelper
             return $title;
         }
 
-        $slug = $this->order->payment_method;
-        if (!$slug || !class_exists(GatewayManager::class)) {
-            return $title;
-        }
-
-        $gateway = GatewayManager::getInstance($slug);
-        if (!$gateway || !method_exists($gateway, 'getMeta')) {
-            return $title;
-        }
-
-        $resolvedTitle = (string) $gateway->getMeta('title');
+        $resolvedTitle = PaymentHelper::getGatewayTitle($this->order->payment_method);
 
         return $resolvedTitle !== '' ? $resolvedTitle : $title;
     }

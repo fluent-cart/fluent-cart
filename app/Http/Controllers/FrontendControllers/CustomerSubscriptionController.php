@@ -113,6 +113,7 @@ class CustomerSubscriptionController extends BaseFrontendController
             'billing_info'              => $subscription->billingInfo,
             'current_payment_method'    => $subscription->current_payment_method,
             'payment_method'            => $subscription->payment_method,
+            'payment_method_title'      => $subscription->payment_method_title,
             'payment_info'              => $subscription->payment_info,
             'bill_times'                => $subscription->bill_times,
             'bill_count'                => $subscription->bill_count,

@@ -180,6 +180,7 @@ class EditorShortCodeHelper
             '{{transaction.refund_amount}}'           => __('Refund Amount', 'fluent-cart'),
             '{{transaction.refund_amount_formatted}}' => __('Refund Amount (Formatted)', 'fluent-cart'),
             '{{transaction.payment_method}}'          => __('Payment Method', 'fluent-cart'),
+            '{{transaction.payment_method_title}}'    => __('Payment Method Title', 'fluent-cart'),
             '{{transaction.card_last_4}}'             => __('Card Last 4', 'fluent-cart'),
             '{{transaction.card_brand}}'              => __('Card Brand', 'fluent-cart'),
             '{{transaction.status}}'                  => __('Status', 'fluent-cart'),

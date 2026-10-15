@@ -94,11 +94,12 @@
               </CardBody>
             </CardContainer>
 
-            <CardContainer v-if="customer.licenses" class="overflow-hidden">
+            <CardContainer v-if="customer.licenses && canViewLicenses" class="overflow-hidden">
               <CardHeader :title="translate('Licenses') + ' ('+translateNumber(customer.licenses.length)+')'"
                           title_size="small"></CardHeader>
               <CardBody class="px-0 pb-0 fct-single-customer-license-table">
-                <license-table :columns="['product', 'order_id']" :licenses="customer.licenses"/>
+                <ExtensionComponent v-if="hasLicenseTable" name="license_table" :columns="['product', 'order_id']" :licenses="customer.licenses"/>
+                <LicensingUnavailable v-else/>
               </CardBody>
             </CardContainer>
           </el-col>
@@ -144,7 +145,10 @@ import translate from "@/utils/translator/Translator";
 <script type="text/babel">
 import OrdersTable from "@/Modules/Orders/Components/OrdersTable.vue";
 import OrdersTableMobile from "@/Modules/Orders/Components/OrdersTableMobile.vue";
-import LicenseTable from "@/../licensing/components/_LicenseTable.vue";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import LicensingUnavailable from "@/Modules/Licensing/LicensingUnavailable.vue";
+import Permission from "@/utils/permission/Permission";
+import {hasExtensionComponent} from "@/utils/extensionComponents";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import SaveBar from "@/Bits/Components/SaveBar.vue";
@@ -181,7 +185,8 @@ export default {
     CardContainer,
     CardHeader,
     CardBody,
-    LicenseTable,
+    ExtensionComponent,
+    LicensingUnavailable,
     OrdersTableMobile,
     SubscriptionsTable,
     SingleCustomerLoader,
@@ -225,7 +230,15 @@ export default {
       },
     },
   },
-  computed: {},
+  computed: {
+    hasLicenseTable() {
+      return hasExtensionComponent('license_table');
+    },
+    // License rows are licenses/view data, even on a record the user can open.
+    canViewLicenses() {
+      return Permission.has('licenses/view');
+    }
+  },
   methods: {
     getProductName(product) {
       if (!product?.product?.post_title) {

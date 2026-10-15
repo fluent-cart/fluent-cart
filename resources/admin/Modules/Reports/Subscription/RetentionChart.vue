@@ -118,8 +118,8 @@ const seriesData = computed(() => [
   createSeries(
     translate("Customers"),
     chartType.value, 
-    chartValues.value, 
-    isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray
+    chartValues.value,
+    isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue
   ),
 ]);
 

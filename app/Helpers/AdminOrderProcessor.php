@@ -259,7 +259,7 @@ class AdminOrderProcessor
             'customer_id'           => '',
             'payment_method'        => Arr::get($this->args, 'payment_method', ''),
             'payment_status'        => Status::PAYMENT_PENDING,
-            'payment_method_title'  => '',
+            'payment_method_title'  => PaymentHelper::getGatewayTitle(Arr::get($this->args, 'payment_method', '')),
             'currency'              => Arr::get($this->args, 'currency_snapshot.currency') ?: $this->storeSettings->get('currency'),
             'subtotal'              => $itemsSubtotal,
             'discount_tax'          => 0,

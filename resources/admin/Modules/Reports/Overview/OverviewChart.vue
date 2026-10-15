@@ -9,6 +9,7 @@ import Theme from "@/utils/Theme";
 import ChartTab from "@/Bits/Components/ChartTab.vue";
 import translate from "@/utils/translator/Translator";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 
@@ -204,7 +205,7 @@ const updateChart = () => {
         axisLabel: {
           color: isDarkTheme.value ? "#ffffff" : "#696778",
           fontSize: 12,
-          formatter: (value) => `${CurrencyFormatter.formatScaledChart(value)}`,
+          formatter: (value) => `${CurrencyFormatter.formatScaledChart(value, AppConfig.get('shop.currency'))}`,
         },
         splitLine: {
           show: true,

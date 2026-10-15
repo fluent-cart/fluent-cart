@@ -402,7 +402,7 @@ import Permission from "@/utils/permission/Permission";
 import {Container as CardContainer, Body as CardBody, Header as CardHeader} from "@/Bits/Components/Card/Card.js";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Str from "../../../utils/support/Str";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import dayjs from "dayjs";
 import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
@@ -464,9 +464,6 @@ export default {
     }
   },
   computed: {
-    Str() {
-      return Str
-    },
     billTimesMin() {
       return 0;
     },
@@ -609,8 +606,7 @@ export default {
       return 'subscription_renewal_reminder';
     },
     paymentMethod() {
-      const slug = this.subscription?.current_payment_method || '';
-      return this.subscription?.payment_method_title || (slug ? Str.headline(slug.replace(/_/g, '-')) : '');
+      return paymentMethodAdminTitle(this.subscription?.current_payment_method);
     },
     showNextBillingDate() {
       const status = (this.subscription?.status || '').toLowerCase();

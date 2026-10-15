@@ -21,7 +21,15 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  currency: {
+    type: String,
+    default: '',
+  },
 });
+
+const formatAmount = (amount) => props.currency
+  ? CurrencyFormatter.scaled(amount, true, false, props.currency)
+  : reportFilter.formatAmount(amount);
 
 const reportData = computed(() => props.data);
 
@@ -74,7 +82,7 @@ const formatDate = (date) => {
               <div class="list-value">
                 {{ translateNumber(product.quantity_sold) }} {{ translate(" Sold") }}
               </div>
-              <div class="list-price" v-html="CurrencyFormatter.scaled(product.total_amount)">
+              <div class="list-price" v-html="formatAmount(product.total_amount)">
 
               </div>
             </div>

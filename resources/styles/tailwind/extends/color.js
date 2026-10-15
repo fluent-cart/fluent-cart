@@ -139,6 +139,7 @@ export default {
 
     report: {
         'royal_blue': "#4D6EF5",
+        'royal_blue_compare': '#748EF7',
         // 'cyan_blue': "#D4E0E9",
         'medium_turquoise': "#33D3BB",
         'hot_pink': "#FB4BA3",
@@ -167,6 +168,7 @@ export default {
         'dark_cyan_blue_40': '#47C2FF66',
         'purple_dark_mode': '#9175FF',
         'blue_dark_mode': '#6F8CFF',
+        'blue_dark_mode_compare': '#4E63AF',
     },
     information: {
         'dark': '#122368',

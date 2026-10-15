@@ -409,7 +409,7 @@
                     </td>
                     <td style="width:30%;text-align:right">
                         <p>
-                            <?php echo esc_html($transaction->getPaymentMethodText()); ?>
+                            <?php echo esc_html($transaction->getPaymentMethodText($order ?? null)); ?>
                         </p>
                     </td>
                 </tr>

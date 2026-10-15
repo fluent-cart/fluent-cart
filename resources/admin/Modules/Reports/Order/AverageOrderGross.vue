@@ -107,7 +107,7 @@ const colors = Theme.colors.report;
 const isDarkTheme = ref(Theme.isDark());
 
 const primaryColor = computed(() =>
-  isDarkTheme.value ? colors.blue_dark_mode : colors.blue
+  isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue
 );
 
 const dataLoader = computed(() => {

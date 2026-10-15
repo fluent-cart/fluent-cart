@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {onMounted, onUnmounted, ref} from "vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
@@ -57,6 +57,12 @@ onMounted(() => {
     props.reportFilter.addListener("sub-count-chart", () => {
       handleDateRangeChange();
     });
+  }
+});
+
+onUnmounted(() => {
+  if (props.reportFilter) {
+    props.reportFilter.removeListener("sub-count-chart");
   }
 });
 </script>

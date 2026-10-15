@@ -408,12 +408,12 @@ class OrderController extends Controller
             $responseData['gateway_refund'] = [
                 'status'  => is_wp_error($vendorRefundId) ? 'failed' : 'success',
                 'message' => !is_wp_error($vendorRefundId)
-                    ? sprintf(__('Refund processed on %s', 'fluent-cart'), ucfirst($transaction->payment_method))
-                    : sprintf(__('ERROR processing refund on %s: %s', 'fluent-cart'), ucfirst($transaction->payment_method), $vendorRefundId->get_error_message())
+                    ? sprintf(__('Refund processed on %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method))
+                    : sprintf(__('ERROR processing refund on %s: %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method), $vendorRefundId->get_error_message())
             ];
 
             if (is_wp_error($vendorRefundId)) {
-                fluent_cart_warning_log('Refund failed on ' . ucfirst($transaction->payment_method), $vendorRefundId->get_error_message(), [
+                fluent_cart_warning_log('Refund failed on ' . $transaction->payment_method, $vendorRefundId->get_error_message(), [
                     'module_name' => 'order',
                     'module_id'   => $order->id,
                     'log_type'    => 'api'

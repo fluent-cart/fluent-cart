@@ -1,24 +1,26 @@
 <script setup>
-import { computed } from "vue";
-import defaultReport from "@/Models/Reports/DefaultReportModel";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import ReportCard from "@/Modules/Reports/Components/ReportCard.vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
 import translate from "@/utils/translator/Translator";
 
 const props = defineProps({
-  defaultReport: {
-    type: [Array, Object],
+  data: {
+    type: Array,
     required: true,
+  },
+  loading: {
+    type: Boolean,
+    required: true,
+  },
+  error: {
+    type: String,
+    default: '',
   },
 });
 
-const reportData = defaultReport.data;
-
-const dataLoader = computed(() => {
-  return defaultReport.data.isBusy.topSoldVariants;
-});
+const emit = defineEmits(['retry']);
 
 </script>
 
@@ -30,16 +32,20 @@ const dataLoader = computed(() => {
         heading: translate('Top Sold Variants'),
       }"
     >
-      <el-skeleton v-if="dataLoader" animated :rows="7" />
+      <el-skeleton v-if="loading" animated :rows="7" />
+
+      <el-alert v-else-if="error" type="error" :title="error" :closable="false" show-icon>
+        <el-button size="small" class="mt-2" @click="emit('retry')">{{ translate('Retry') }}</el-button>
+      </el-alert>
 
       <template v-else>
         <ul
-          v-if="reportData?.topSoldVariants?.length > 0"
+          v-if="data?.length > 0"
           class="fct-report-sold-product-list has-scroll"
         >
           <li
-            v-for="product in reportData.topSoldVariants"
-            :key="product.product_id"
+            v-for="product in data"
+            :key="product.variation_id"
           >
             <router-link
               :to="{
@@ -69,7 +75,7 @@ const dataLoader = computed(() => {
                 </div>
                 <div class="list-price">
                   <div class="inline-flex">
-                    {{ CurrencyFormatter.scaled(product.total_amount) }}
+                    {{ reportFilter.formatAmount(product.total_amount) }}
                   </div>
                 </div>
               </div>

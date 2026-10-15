@@ -374,6 +374,7 @@ export default class AddressService {
 
         } else {
             this.formWrapper.querySelector(id).style.display = 'block';
+            this.syncStateLabel(this.formWrapper.querySelector(id), response);
 
             if (type === 'billing' && this.billingStateSelect !== null) {
                 this.billingStateSelect.destroy();
@@ -493,6 +494,18 @@ export default class AddressService {
         }
 
         return newElement;
+    }
+
+    // The field label styles read data-fct-label / data-fct-field, so follow the country's state naming
+    // (Province, County…) and whether the state renders as a select or a text input.
+    syncStateLabel(wrapper, response) {
+        if (!wrapper || !wrapper.dataset.fctLabel) {
+            return;
+        }
+        const isRequired = /\s\*$/.test(wrapper.dataset.fctLabel);
+        const stateLabel = response?.address_locale?.state?.label || 'State';
+        wrapper.dataset.fctLabel = stateLabel + (isRequired ? ' *' : '');
+        wrapper.dataset.fctField = response?.states?.length ? 'select' : 'input';
     }
 
     showHideState(hide, type = 'billing') {

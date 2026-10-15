@@ -46,6 +46,9 @@
                 </div>
 
                 <div class="flex gap-2 items-center">
+                  <span v-if="cohortData.generated_at" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ translate('Last generated %s', dateTimeI18(cohortData.generated_at, 'date_time')) }}
+                  </span>
                   <el-button size="small" @click="generateSnapshots" :loading="loading">
                     {{ translate('Generate Snapshots') }}
                   </el-button>
@@ -61,8 +64,18 @@
                 <el-skeleton animated :rows="10" />
               </div>
 
+              <div v-if="!loading && hasError" class="text-center pb-6">
+                <Empty
+                    icon="Empty/ListView"
+                    :has-dark="true"
+                    :text="translate('This report could not be loaded.')"
+                    class="fct-report-empty-state"
+                />
+                <el-button size="small" @click="fetchData()">{{ translate('Retry') }}</el-button>
+              </div>
+
               <el-table
-                  v-if="!loading && !isEmpty"
+                  v-if="!loading && !hasError && !isEmpty"
                   :data="tableData"
                   border
                   class="fct-cohort-el-table"
@@ -124,7 +137,7 @@
               </el-table>
 
               <Empty
-                  v-if="!loading && isEmpty"
+                  v-if="!loading && !hasError && isEmpty"
                   icon="Empty/ListView"
                   :has-dark="true"
                   :text="translate('Click Generate Snapshots above to view cohort data.')"
@@ -227,15 +240,15 @@
  * Imports
  * ----------------------------------------------------------------------------
  */
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { ElMessage } from "element-plus";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
+import {dateTimeI18} from "@/utils/Utils";
 import Rest from "@/utils/http/Rest";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import ExportReport from "../ExportReport.vue";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import {handleError, handleSuccess, handleResponse, $confirm} from "@/Bits/common";
@@ -260,6 +273,8 @@ const cohortData = ref({
     metric: 'subscribers'
 });
 const loading = ref(true);
+const hasError = ref(false);
+let requestSeq = 0;
 const groupBy = ref('year');
 const metric = ref('subscribers');
 const displayMode = ref('percent');
@@ -350,20 +365,26 @@ const tableData = computed(() => {
         // Add each period's data
         cohort.periods.forEach((period, index) => {
             const periodNum = index + 1;
-            row[`period_${periodNum}`] = getDisplayValue(period);
+            const displayValue = getDisplayValue(period);
+            row[`period_${periodNum}`] = displayValue && period.partial ? `${displayValue}*` : displayValue;
             row[`period_${periodNum}_data`] = period;
-            
+
             // Build tooltip content
-            if (getDisplayValue(period)) {
+            if (displayValue) {
                 let tooltipContent = '';
                 if (metric.value === 'mrr') {
-                    tooltipContent = `<strong>${period.retention_rate_mrr}%</strong> (${formatCurrency(period.retained_mrr)}) of ${formatCurrency(cohort.start_mrr)} remains`;
+                    const baseMrr = period.base_mrr ?? cohort.start_mrr;
+                    tooltipContent = `<strong>${period.retention_rate_mrr}%</strong> (${formatCurrency(period.retained_mrr)}) of ${formatCurrency(baseMrr)} remains`;
                 } else {
-                    tooltipContent = `<strong>${period.retention_rate_count}%</strong> (${period.retained_count}) of ${cohort.start_count} remains`;
+                    const baseCount = period.base_count ?? cohort.start_count;
+                    tooltipContent = `<strong>${period.retention_rate_count}%</strong> (${period.retained_count}) of ${baseCount} remains`;
                 }
                 if (period.churned_mrr > 0 || period.churned_count > 0) {
                     const churnedValue = metric.value === 'mrr' ? formatCurrency(period.churned_mrr) : period.churned_count;
                     tooltipContent += `<div class="mt-1 text-gray-400">${churnedValue} churned in this period</div>`;
+                }
+                if (period.partial) {
+                    tooltipContent += `<div class="mt-1 text-gray-400">${translate('Partial: %1$s of %2$s monthly cohorts have reached this point', period.matured_cohorts, period.total_cohorts)}</div>`;
                 }
                 row[`period_${periodNum}_tooltip`] = tooltipContent;
             }
@@ -451,7 +472,9 @@ const spanMethod = ({ row, column, rowIndex, columnIndex }) => {
 };
 
 const fetchData = (filters = null) => {
+    const seq = ++requestSeq;
     loading.value = true;
+    hasError.value = false;
     
     const params = reportFilter.applicableFilters.params;
 
@@ -462,12 +485,19 @@ const fetchData = (filters = null) => {
             metric: metric.value
         }
     }).then(response => {
+        if (seq !== requestSeq) return;
         cohortData.value = response;
         // Update maxPeriods from server response
         if (response.max_periods) {
             maxPeriods.value = response.max_periods;
         }
-    }).finally(() => loading.value = false);
+    }).catch(() => {
+        if (seq !== requestSeq) return;
+        hasError.value = true;
+    }).finally(() => {
+        if (seq !== requestSeq) return;
+        loading.value = false;
+    });
 };
 
 const getPeriodLabel = (index) => {
@@ -530,7 +560,7 @@ const formatStartValue = (cohort) => {
 };
 
 const formatCurrency = (value) => {
-    return CurrencyFormatter.scaled(value);
+    return reportFilter.formatAmount(value);
 };
 
 const getDisplayValue = (period) => {
@@ -767,6 +797,10 @@ watch([groupBy], () => {
 onMounted(() => {
     fetchData();
     reportFilter.addListener("cohort-report", fetchData);
+});
+
+onUnmounted(() => {
+    reportFilter.removeListener("cohort-report");
 });
 </script>
 

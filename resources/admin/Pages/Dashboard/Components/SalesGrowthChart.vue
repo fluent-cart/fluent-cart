@@ -13,6 +13,7 @@ import ChartTab from "@/Bits/Components/ChartTab.vue";
 import translate, {_x} from "@/utils/translator/Translator";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import AppConfig from "@/utils/Config/AppConfig";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import {
@@ -53,14 +54,12 @@ const isDarkTheme = ref(Theme.isDark());
 
 const isEmpty = computed(() => props.chartData.every(item => item.orders === 0));
 
-const primaryColor = computed(() =>
-  isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
-  // isDarkTheme.value ? colors.blue_dark_mode : colors.blue
+const ordersColor = computed(() =>
+  isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue
 );
 
-const secondaryColor = computed(() =>
-  isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
-  // isDarkTheme.value ? colors.purple_dark_mode : colors.purple,
+const revenueColor = computed(() =>
+  isDarkTheme.value ? colors.purple_dark_mode : colors.purple
 );
 
 const seriesData = computed(() =>
@@ -72,23 +71,26 @@ const seriesData = computed(() =>
     {
       title: _x("Orders", "Chart series legend"),
       key: "orders",
-      color: primaryColor.value,
-      yAxisIndex: 1
+      color: ordersColor.value,
+      yAxisIndex: 1,
+      fill: false
     },
     {
       title: _x("Revenue", "Chart series legend"),
       key: "net_revenue",
-      color: secondaryColor.value,
-      yAxisIndex: 0
+      color: revenueColor.value,
+      yAxisIndex: 0,
+      fill: true
     },
     
-  ].map(({ title, key, color, yAxisIndex}) =>{
+  ].map(({ title, key, color, yAxisIndex, fill}) =>{
         return createSeries(
             title,
             chartType.value,
             props.chartData.map((item) => item[key]),
             color,
-            yAxisIndex
+            yAxisIndex,
+            fill
         );
       }
 
@@ -197,7 +199,7 @@ const updateChart = () => {
         axisLabel: {
           color: isDarkTheme.value ? "#ffffff" : "#696778",
           fontSize: 12,
-          formatter: (value) => `${CurrencyFormatter.scaledChart(value)}`,
+          formatter: (value) => `${CurrencyFormatter.scaledChart(value, true, false, AppConfig.get('shop.currency'))}`,
         },
         splitLine: {
           show: true,
@@ -240,7 +242,7 @@ const updateChart = () => {
 };
 
 // Method to create a series object
-const createSeries = (name, type, data, color, yAxisIndex) => ({
+const createSeries = (name, type, data, color, yAxisIndex, fill) => ({
   name,
   type,
   barMaxWidth: 30,
@@ -250,10 +252,10 @@ const createSeries = (name, type, data, color, yAxisIndex) => ({
   lineStyle: {
     width: 3,
   },
-  areaStyle: {
-    opacity: 0.3,
+  areaStyle: fill ? {
+    opacity: 0.1,
     color: color,
-  },
+  } : undefined,
   symbol: "circle",
   showSymbol: true,
   symbolSize: 8,
@@ -270,16 +272,15 @@ const createSeries = (name, type, data, color, yAxisIndex) => ({
     lineStyle: {
       color: color,
     },
-    areaStyle: {
-      opacity: .3,
+    areaStyle: fill ? {
+      opacity: .1,
       color: color,
-    },
+    } : undefined,
   },
   animation: true,
   animationEasing: "cubicOut",
   animationDuration: 800,
   animationDelay: 0,
-  barGap: '-100%',
   legendHoverLink: false,
 });
 

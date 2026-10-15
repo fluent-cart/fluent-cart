@@ -6,6 +6,11 @@ import Rest from "@/utils/http/Rest";
 import DateUtil from "@/utils/support/Date";
 import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
 import AppConfig from "@/utils/Config/AppConfig";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import translate from "@/utils/translator/Translator";
+
+// A late or failed response must not overwrite the range of a newer request or route.
+let compareRangeSeq = 0;
 
 /** Value of the "All currencies, converted to the base currency" option */
 export const CONVERTED_CURRENCY = '__all__';
@@ -17,6 +22,7 @@ export const CONVERTED_CURRENCY = '__all__';
  */
 export const CONVERTED_CURRENCY_ROUTES = [
     'reports_sales', 'reports_orders', 'reports_revenue', 'reports_refunds', 'reports_products', 'reports_sources',
+    'reports_products_compare',
     'subscriptions-retention', 'future_renewals',
 ];
 
@@ -31,6 +37,7 @@ class ReportFilterModel extends Model {
         baseCurrency: '',
         convertedExcludedOrders: 0,
         currency: "",
+        defaultCurrency: "",
         currencySign: "",
         dateRange: [
             DateUtil.withTimezone(dayjs().subtract(1, "month").format("YYYY-MM-DD 00:00:00")),
@@ -48,6 +55,8 @@ class ReportFilterModel extends Model {
         compareType: "previous_period",
         subscriptionType: "",
         reportRoute: "",
+        compareRange: null,
+        compareRanges: null,
     };
 
     storageKey = "report-filter";
@@ -108,6 +117,8 @@ class ReportFilterModel extends Model {
      */
     loadMeta(adoptMinDate) {
         const request = ++this.requests.meta;
+        // The default belongs to a range: none is known until this one resolves
+        this.data.defaultCurrency = '';
 
         return Rest.get("reports/fetch-report-meta", this.applicableFilters)
             .then((response) => {
@@ -121,10 +132,11 @@ class ReportFilterModel extends Model {
                     this.data.dateRange[0] = response.min_date;
                 }
                 const codes = Object.keys(this.data.currencies);
+                this.data.defaultCurrency = response.default_currency || codes[0] || AppConfig.get('shop.currency');
                 // Every report is in exactly one currency: keep the selected one
                 // while it has orders in range, else the one with the most orders.
                 if (!this.data.currency || !codes.includes(this.data.currency)) {
-                    this.data.currency = response.default_currency || codes[0] || AppConfig.get('shop.currency');
+                    this.data.currency = this.data.defaultCurrency;
                 }
                 this.normalizeConvertedCurrency();
                 this.data.currencySign = this.data.currencies[this.data.currency] || '';
@@ -156,11 +168,33 @@ class ReportFilterModel extends Model {
      */
     setReportRoute(name) {
         this.data.reportRoute = name || '';
+        compareRangeSeq++;
+        this.data.compareRange = null;
+        this.data.compareRanges = null;
         if (this.normalizeConvertedCurrency()) {
             this.data.currencySign = this.data.currencies[this.data.currency] || '';
             this.syncCurrencyChip();
             this.syncStorage();
         }
+    }
+
+    trackCompareRange(request) {
+        const seq = ++compareRangeSeq;
+        request.then(
+            (response) => {
+                if (seq === compareRangeSeq) {
+                    this.data.compareRange = response?.compare_range ?? null;
+                    this.data.compareRanges = response?.compare_ranges ?? null;
+                }
+            },
+            () => {
+                if (seq === compareRangeSeq) {
+                    this.data.compareRange = null;
+                    this.data.compareRanges = null;
+                }
+            }
+        );
+        return request;
     }
 
     /**
@@ -188,8 +222,17 @@ class ReportFilterModel extends Model {
         if (!state) {
             return;
         }
-        if (state.selectedFilters && state.selectedFilters.currency) {
+        if (!state.selectedFilters) {
+            state.selectedFilters = {};
+        }
+        if (state.selectedFilters.currency) {
             state.selectedFilters.currency.value = this.data.currency;
+        } else if (this.data.currency) {
+            state.selectedFilters.currency = {
+                label: translate('Currency'),
+                value: this.data.currency,
+                type: 'currency',
+            };
         }
         state.currency = this.data.currency;
     }
@@ -199,6 +242,24 @@ class ReportFilterModel extends Model {
         this.data.currencies.hasOwnProperty(this.data.currency)
             ? this.data.currencies[this.data.currency]
             : "";
+    }
+
+    get reportCurrency() {
+        return this.data.currency === CONVERTED_CURRENCY
+            ? (this.data.baseCurrency || AppConfig.get('shop.currency'))
+            : this.data.currency;
+    }
+
+    formatAmount(amount, {cents = false, chart = false} = {}) {
+        const currency = this.reportCurrency;
+        if (chart) {
+            return cents
+                ? CurrencyFormatter.formatScaledChart(amount, currency)
+                : CurrencyFormatter.scaledChart(amount, true, false, currency);
+        }
+        return cents
+            ? CurrencyFormatter.formatScaled(amount, true, false, currency)
+            : CurrencyFormatter.scaled(amount, true, false, currency);
     }
 
     listeners = {};
@@ -305,9 +366,14 @@ class ReportFilterModel extends Model {
             DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
         ];
         this.data.subscriptionType = "";
+        this.data.currency = "";
     }
 
     resetFilterToDefault(key) {
+        // Empty until loadMeta() resolves it to the currency with the most orders
+        if (key === "currency") {
+            this.data.currency = this.data.defaultCurrency;
+        }
         if (key === "compareType") {
             this.data.compareType = "previous_period";
         }

@@ -28,7 +28,7 @@ class OrderTransaction extends Model
 
     protected $table = 'fct_order_transactions';
 
-    protected $appends = ['url', 'refundable'];
+    protected $appends = ['url', 'refundable', 'payment_method_title'];
     /**
      * The attributes that are mass assignable.
      *
@@ -193,13 +193,26 @@ class OrderTransaction extends Model
         return max(0, min((int) $filtered, $baseAmount));
     }
 
-    public function getPaymentMethodText()
+    /**
+     * @param Order|null $order Parent order; its title snapshot applies when the transaction used the same gateway
+     * @return string Card brand and last 4, else the payment method title
+     */
+    public function getPaymentMethodText($order = null)
     {
         if ($this->card_brand && $this->card_last_4) {
             return sprintf('%1$s ***%2$s', esc_html($this->card_brand), esc_html($this->card_last_4));
         }
 
-        return $this->payment_method;
+        if ($order && $order->payment_method === $this->payment_method) {
+            return PaymentHelper::getMethodTitle($this->payment_method, $order->payment_method_title);
+        }
+
+        return $this->payment_method_title;
+    }
+
+    public function getPaymentMethodTitleAttribute(): string
+    {
+        return PaymentHelper::getMethodTitle($this->payment_method);
     }
 
     /**

@@ -16,6 +16,7 @@ import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
 import Input from "@/BlockEditor/Components/Input";
 import Empty from "@/BlockEditor/Components/Empty";
 import ProductsProPanel from "./Components/ProductsProPanel";
+import FieldLabelsPanel from "./Components/FieldLabelsPanel";
 import CheckoutPreview from "./Checkout.png";
 
 /**
@@ -138,6 +139,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         selection_mode: {type: 'string', default: 'single'},
         max_items: {type: 'number', default: 5},
         selector_label: {type: 'string'},
+        field_label_style: {type: 'string', default: 'docked'},
     },
 
     edit: function ({attributes, setAttributes}) {
@@ -155,6 +157,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                         <ProductsProPanel attributes={attributes}/>
                     </InspectorControls>
                 )}
+                <InspectorControls>
+                    <FieldLabelsPanel attributes={attributes} setAttributes={setAttributes}/>
+                </InspectorControls>
                 <InnerBlocks
                     templateLock={false}
                     template={DEFAULT_TEMPLATE}

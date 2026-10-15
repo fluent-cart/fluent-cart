@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import orderReportModel from "@/Models/Reports/OrderReportModel";
 import ExportReport from "../ExportReport.vue";
 import { computed } from "vue";
@@ -7,7 +8,6 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 import translateNumber from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import toCountryName from "../Utils/toCountryName";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 
 const props = defineProps({
@@ -18,16 +18,15 @@ const props = defineProps({
 
 const reportFilter = props.reportFilter;
 const selectedGroupKey = ref("billing_country");
-const params = reportFilter.applicableFilters;
 
 const currencySign = computed(() => {
   return reportFilter.currentCurrencySign;
 });
 
-const getData = () => {
+const getData = (filters = reportFilter.applicableFilters) => {
   orderReportModel.getOrderByGroup({
     params: {
-      ...params.params,
+      ...filters.params,
       groupKey: selectedGroupKey.value,
     },
   });
@@ -39,12 +38,19 @@ const groupKeys = [
   { label: translate("Payment Method"), value: "payment_method" },
 ];
 
+const byNumber = (key) => (a, b) => Number(a[key]) - Number(b[key]);
+
 const formatPercentage = (value) => {
   return `${parseFloat(value).toFixed(2)}%`;
 };
 
 onMounted(() => {
+  reportFilter.addListener("order-grouped-by", getData);
   getData();
+});
+
+onUnmounted(() => {
+  reportFilter.removeListener("order-grouped-by");
 });
 </script>
 
@@ -56,7 +62,7 @@ onMounted(() => {
           <el-select
             class="el-select--x-small"
             v-model="selectedGroupKey"
-            @change="getData"
+            @change="getData()"
             :placeholder="translate('Select Group')"
           >
             <el-option
@@ -87,7 +93,7 @@ onMounted(() => {
           v-if="selectedGroupKey === 'payment_method'"
         >
           <template #default="scope">
-            {{ scope.row.payment_method }}
+            {{ paymentMethodAdminTitle(scope.row.payment_method) }}
           </template>
         </el-table-column>
 
@@ -113,15 +119,15 @@ onMounted(() => {
           </template>
         </el-table-column>
 
-        <el-table-column prop="orders" :label="translate('Orders')" min-width="150">
+        <el-table-column prop="orders" :label="translate('Orders')" min-width="150" sortable :sort-method="byNumber('orders')">
           <template #default="scope">
             {{ translateNumber(scope.row.orders) }}
           </template>
         </el-table-column>
 
-        <el-table-column prop="gross_sale" :label="translate('Gross Sales')" min-width="150">
+        <el-table-column prop="gross_sale" :label="translate('Gross Sales')" min-width="150" sortable :sort-method="byNumber('gross_sale')">
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.gross_sale)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.gross_sale)">
 
             </div>
           </template>
@@ -131,17 +137,19 @@ onMounted(() => {
           prop="average_order_gross"
           :label="translate('Average Gross Sales')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('average_order_gross')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.average_order_gross)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.average_order_gross)">
 
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="net_sale" :label="translate('Revenue')" min-width="150">
+        <el-table-column prop="net_sale" :label="translate('Revenue')" min-width="150" sortable :sort-method="byNumber('net_sale')">
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.net_sale)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.net_sale)">
 
             </div>
           </template>
@@ -151,9 +159,11 @@ onMounted(() => {
           prop="average_order_net"
           :label="translate('Average Revenue')"
           min-width="150"
+          sortable
+          :sort-method="byNumber('average_order_net')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="CurrencyFormatter.scaled(scope.row.average_order_net)">
+            <div class="inline-flex" v-html="reportFilter.formatAmount(scope.row.average_order_net)">
               
             </div>
           </template>

@@ -1,4 +1,4 @@
-import InspectorSettings from "./Components/InspectorSettings";
+import SettingsProPanel from "./Components/SettingsProPanel";
 import ProNotice from "@/BlockEditor/Components/Pro/ProNotice";
 import ProBlockIcon from "@/BlockEditor/Components/Pro/ProBlockIcon";
 import {CaretDown} from "@/BlockEditor/Icons";
@@ -88,6 +88,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     supports: {
         html: false,
     },
+    // Pro's Switcher Settings panel edits these; declared here so they survive without Pro
     attributes: {
         display: {type: 'string', default: ''},
         flag: {type: 'string', default: 'yes'},
@@ -99,7 +100,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         list_flag_position: {type: 'string', default: 'left'},
     },
 
-    edit: function ({attributes, setAttributes}) {
+    edit: function ({attributes}) {
         const {useBlockProps} = wp.blockEditor;
         const blockProps = useBlockProps();
         const preview = blockEditorData.preview || {};
@@ -111,6 +112,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         if (!isProActive) {
             return (
                 <div {...blockProps}>
+                    <SettingsProPanel/>
                     <ProNotice note={blockEditorData.pro_note}/>
                 </div>
             );
@@ -126,8 +128,6 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
         return (
             <div {...blockProps}>
-                {/* Core's select has no display options; only the button reads them */}
-                {isButton && <InspectorSettings attributes={attributes} setAttributes={setAttributes}/>}
                 {isButton ? (
                     <ButtonPreview currency={currencies[0]} attributes={attributes}/>
                 ) : (

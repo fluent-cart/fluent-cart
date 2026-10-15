@@ -248,7 +248,7 @@
                                         **** {{ subscription.billing_info.details?.last_4 }}
                                     </span>
 
-                                     <span v-else>{{ subscription.current_payment_method }}</span>
+                                     <span v-else>{{ subscription.payment_method_title }}</span>
                                 </span>
                                     <span
                                         v-if="subscription.is_auto_charged"

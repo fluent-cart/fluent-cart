@@ -880,8 +880,13 @@ class ProductReviewFrontendController extends BaseFrontendController
             $reply->makeHidden(['reviewer_email', 'user_id', 'customer_id', 'order_id', 'meta']);
         }
 
+        $repliesData = $replies->toArray();
+        if (!empty($repliesData['data']) && is_array($repliesData['data'])) {
+            $repliesData['data'] = ProductReviewService::redactReviewerIdentity($repliesData['data']);
+        }
+
         return $this->sendSuccess([
-            'replies' => $replies->toArray(),
+            'replies' => $repliesData,
         ]);
     }
 

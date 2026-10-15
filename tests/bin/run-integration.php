@@ -462,7 +462,7 @@ foreach ($validationInventory['v_html_sinks'] as $entry) {
 if (
     count($validationInventory['request_wiring']) !== 12
     || count($validationInventory['read_probes']) !== 7
-    || count($validationInventory['v_html_sinks']) !== 15
+    || count($validationInventory['v_html_sinks']) !== 14
     || !isset(
         $cases['validation-destructive-routes-have-policy-methods'],
         $cases['validation-v-html-user-data-sinks']
@@ -640,10 +640,10 @@ foreach ($reportInventory['routes'] as $reportRoute) {
 }
 
 if (
-    count($reportInventory['routes']) !== 42
-    || array_sum($reportTotals['GET']) !== 41
+    count($reportInventory['routes']) !== 43
+    || array_sum($reportTotals['GET']) !== 42
     || array_sum($reportTotals['POST']) !== 1
-    || $reportSmokeCases !== 66
+    || $reportSmokeCases !== 67
 ) {
     WP_CLI::error(
         'Phase 7 report inventory totals are incomplete: routes='
@@ -712,7 +712,7 @@ WP_CLI::log(sprintf(
     . "validation inventory: request_wiring=%d read_probes=%d "
     . "destructive_policies=19 v_html_sinks=%d\n"
     . "throughput inventory: profiles=%d list=%d aggregate=%d rows=%d/%d\n"
-    . "report inventory: declarations=42 GET=41 POST=1 Phase1_query_shapes=%d "
+    . "report inventory: declarations=43 GET=42 POST=1 Phase1_query_shapes=%d "
     . "GET_value=%d GET_KNOWN-FAILURE=%d GET_skipped=%d POST_skipped=%d",
     $allCaseCount,
     count($cases),

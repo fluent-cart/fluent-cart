@@ -47,6 +47,7 @@ class SubscriptionReportController extends Controller
         // No converted mode: its order counts and future installments read
         // unconverted rows, so "All currencies" reads as the base currency
         $params = ReportHelper::processParams($request->get('params'), $this->params);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = SubscriptionReportService::make();
 
@@ -69,7 +70,9 @@ class SubscriptionReportController extends Controller
             'currentMetrics' => $currentMetrics['grouped'],
             'compareMetrics' => $compareMetrics['grouped'] ?? [],
             'summary'        => $summary,
-            'fluctuations'   => []
+            'fluctuations'   => [],
+            'compare_range'  => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges' => $compareRanges,
         ];
     }
 

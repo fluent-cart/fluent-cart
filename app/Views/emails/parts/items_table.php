@@ -805,7 +805,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                     </td>
                     <td style="width:30%;text-align:right">
                         <p style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                            <?php echo esc_html($transaction ? $transaction->getPaymentMethodText() : ''); ?>
+                            <?php echo esc_html($transaction ? $transaction->getPaymentMethodText($order) : ''); ?>
                         </p>
                     </td>
                 </tr>

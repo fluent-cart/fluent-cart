@@ -8,6 +8,7 @@ class CustomerReportService extends ReportService
 {
     public function getCustomerReportData($params = [])
     {
+        $params = $this->clampParamsToToday($params);
         $group = ReportHelper::processGroup(
             $params['startDate'], $params['endDate'], $params['groupKey']
         );

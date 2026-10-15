@@ -12,16 +12,13 @@
       @check="onCheck"
       popper-class="fct-tooltip-long"
       @remove-tag="onRemove"
+      @visible-change="(open) => dropdownOpen = open"
       @clear="onClear"
       size="small"
+      :class="['fct-product-tree', { 'is-tree-open': dropdownOpen }]"
   >
         <template #tag>
-          <div style="flex-wrap: wrap; row-gap: 4px; display: flex; align-items: center;">
-              <el-tag style="margin-right: 4px;" v-for="(items, itemName) in filteredProducts">
-                  {{ itemName }}
-                  <span v-if="items.length"> | {{ items.join(', ') }}</span>
-              </el-tag>
-          </div>
+          <ProductChips :groups="productGroups" :fit="false" :max="2" :tooltips-disabled="dropdownOpen"/>
         </template>
   </el-tree-select>
 </template>
@@ -30,6 +27,7 @@
 import {computed, getCurrentInstance, onMounted, ref} from "vue";
 import Utils from "@/utils/Utils";
 import Storage from "@/utils/Storage";
+import ProductChips from "@/Bits/Components/ProductChips/ProductChips.vue";
 
 const props = defineProps({
   filterState: {
@@ -42,6 +40,7 @@ const filter = props.filterState;
 const cachedProducts = ref([]);
 const products = ref([]);
 const loading = ref(false);
+const dropdownOpen = ref(false);
 const selfRef = getCurrentInstance().ctx;
 
 // Searches are fired per keystroke and can resolve out of order, so only the
@@ -51,7 +50,9 @@ let latestRequest = 0;
 const searchVariantByName = (name) => {
   const productVariations = Storage.get('product_variations');
 
-  if (productVariations) {
+  // A tree cached before variations_count existed would pin every chip to
+  // "(n picked)"; treat it as missing so the fetch below replaces it.
+  if (Array.isArray(productVariations) && productVariations.every(product => 'variations_count' in product)) {
     cachedProducts.value = productVariations;
   }
 
@@ -110,12 +111,17 @@ const onCheck = (value, info) => {
   const parents = {};
   [...checkedNodes, ...(info.halfCheckedNodes || [])].forEach(node => {
     (node.children || []).forEach(variation => {
-      parents[variation.value] = node.label;
+      parents[variation.value] = node;
     });
   });
 
   filter.setTreeSelectItem(
-    checkedNodes.map(node => ({...node, productName: parents[node.value]}))
+    checkedNodes.map(node => ({
+      ...node,
+      productName: parents[node.value]?.label,
+      productId: parents[node.value]?.value,
+      variationsCount: parents[node.value]?.variations_count,
+    }))
   );
 };
 
@@ -127,23 +133,41 @@ const onClear = () => {
   filter.clearTreeSelect();
 };
 
-const filteredProducts = computed(() => {
+const productGroups = computed(() => {
   // Read the selection itself, not the visible list — a product dropped by the
   // current search (or never loaded by this instance) still has to show a name.
   const selectedItems = filter.data.selectedFilters.variation_ids?.value || [];
 
-  let formattedItems = {};
-
-  selectedItems.forEach(item => {
-      const productName = item.productName || 'Unknown';
-
-      if (!formattedItems[productName]) {
-          formattedItems[productName] = [];
-      }
-      formattedItems[productName].push(item.label || item.id);
+  // Chips render from the stored items alone; the cached tree, once loaded,
+  // only refines them with the product's total variation count for items that
+  // did not carry it themselves.
+  const productById = {};
+  const productByVariation = {};
+  cachedProducts.value.forEach(product => {
+    productById[product.value] = product;
+    (product.children || []).forEach(variation => {
+      productByVariation[variation.value] = product;
+    });
   });
 
-  return formattedItems;
+  const groups = {};
+  selectedItems.forEach(item => {
+    const treeProduct = productById[item.productId] || productByVariation[item.id];
+    const productName = item.productName || treeProduct?.label;
+    // Items saved before productId was stored only carry the name.
+    const productId = item.productId ?? treeProduct?.value;
+    const key = productId != null ? `id-${productId}` : (productName ? `name-${productName}` : 'unknown');
+
+    if (!groups[key]) {
+      groups[key] = {key, productName, total: 0, labels: []};
+    }
+    // The count travels with the item because a product picked through a
+    // search is never in the cached first page.
+    groups[key].total = groups[key].total || Number(item.variationsCount) || Number(treeProduct?.variations_count) || 0;
+    groups[key].labels.push(item.label || item.id);
+  });
+
+  return Object.values(groups);
 });
 
 onMounted(() => {

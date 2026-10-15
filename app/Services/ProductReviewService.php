@@ -1422,6 +1422,10 @@ class ProductReviewService
             'reviews' => $reviews->toArray(),
         ];
 
+        if (!empty($responseData['reviews']['data']) && is_array($responseData['reviews']['data'])) {
+            $responseData['reviews']['data'] = static::redactReviewerIdentity($responseData['reviews']['data']);
+        }
+
         return apply_filters('fluent_cart/review/public_response', $responseData, $postId);
     }
 
@@ -1703,6 +1707,160 @@ class ProductReviewService
         static::$reviewSettingsCache = array_merge($moduleSettings, $settings);
 
         return static::$reviewSettingsCache;
+    }
+
+    /**
+     * Store-wide switch for reviewer names on public surfaces. A block can
+     * hide the name; it cannot show one this turns off.
+     */
+    public static function showsReviewerName(): bool
+    {
+        return (bool) apply_filters('fluent_cart/review/show_reviewer_name', true);
+    }
+
+    /**
+     * Store-wide switch for reviewer avatars on public surfaces. Off also
+     * drops the Gravatar URL, which carries a hash of the reviewer's email.
+     */
+    public static function showsReviewerAvatar(): bool
+    {
+        return (bool) apply_filters('fluent_cart/review/show_reviewer_avatar', true);
+    }
+
+    const REVIEWER_NAME_FORMATS = ['full', 'first', 'first_initial', 'anonymous', 'masked'];
+
+    /**
+     * How public reviews read a customer's name: one of REVIEWER_NAME_FORMATS,
+     * anything else falls back to the full name.
+     */
+    public static function reviewerNameFormat(): string
+    {
+        $format = apply_filters('fluent_cart/review/reviewer_name_format', 'full');
+
+        return in_array($format, static::REVIEWER_NAME_FORMATS, true) ? $format : 'full';
+    }
+
+    /**
+     * A customer's name in the given format. Applied at display time, so the
+     * stored name never changes.
+     *
+     * @param string $name
+     * @param string|null $format One of REVIEWER_NAME_FORMATS; null reads the filter.
+     * @return string
+     */
+    public static function formatReviewerName($name, $format = null): string
+    {
+        $name = trim((string) preg_replace('/\s+/u', ' ', (string) $name));
+
+        if ($format === null) {
+            $format = static::reviewerNameFormat();
+        }
+
+        if ($name === '') {
+            return '';
+        }
+
+        $parts = explode(' ', $name);
+
+        switch ($format) {
+            case 'first':
+                $display = (string) Arr::first($parts);
+                break;
+            case 'first_initial':
+                $display = (string) Arr::first($parts);
+                if (count($parts) > 1) {
+                    $initial = mb_substr((string) Arr::last($parts), 0, 1);
+                    $display .= ' ' . (function_exists('mb_strtoupper') ? mb_strtoupper($initial) : strtoupper($initial)) . '.';
+                }
+                break;
+            case 'anonymous':
+                $display = __('Anonymous', 'fluent-cart');
+                break;
+            case 'masked':
+                $display = static::maskReviewerName($name);
+                break;
+            default:
+                $display = $name;
+        }
+
+        return (string) apply_filters('fluent_cart/review/reviewer_display_name', $display, [
+            'name'   => $name,
+            'format' => $format,
+        ]);
+    }
+
+    /**
+     * "Jordan Hughes" → "Jor***hes", "J Hughes" → "J***hes": up to three
+     * letters of the first name and the last three of the last. When that
+     * would spell the whole name, only the first letter shows.
+     *
+     * @param string $name Whitespace already collapsed.
+     * @return string
+     */
+    protected static function maskReviewerName(string $name): string
+    {
+        $words = array_values(array_filter(array_map(function ($word) {
+            return (string) preg_replace('/[^\p{L}\p{N}]+/u', '', $word);
+        }, explode(' ', $name)), 'strlen'));
+
+        if (!$words) {
+            return '';
+        }
+
+        $first = (string) Arr::first($words);
+        $initialOnly = mb_substr($first, 0, 1) . '***';
+
+        if (count($words) === 1) {
+            return mb_strlen($first) > 6
+                ? mb_substr($first, 0, 3) . '***' . mb_substr($first, -3)
+                : $initialOnly;
+        }
+
+        $last = (string) Arr::last($words);
+        $start = mb_substr($first, 0, 3);
+        $end = mb_substr($last, -3);
+
+        if (count($words) === 2 && $start === $first && $end === $last) {
+            return $initialOnly;
+        }
+
+        return $start . '***' . $end;
+    }
+
+    /**
+     * Apply the name format and the hide switches to rows another shopper
+     * reads. Store replies keep their name. Keys stay, so the response shape
+     * does not change.
+     *
+     * @param array $rows Serialized review rows.
+     * @return array
+     */
+    public static function redactReviewerIdentity(array $rows): array
+    {
+        $showName = static::showsReviewerName();
+        $showAvatar = static::showsReviewerAvatar();
+        $format = static::reviewerNameFormat();
+
+        if ($showName && $showAvatar && $format === 'full'
+            && !has_filter('fluent_cart/review/reviewer_display_name')) {
+            return $rows;
+        }
+
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            if (!$showName) {
+                $rows[$index]['reviewer_name'] = '';
+            } elseif (empty($row['is_admin_reply'])) {
+                $rows[$index]['reviewer_name'] = static::formatReviewerName(Arr::get($row, 'reviewer_name', ''), $format);
+            }
+            if (!$showAvatar) {
+                $rows[$index]['photo'] = '';
+            }
+        }
+
+        return $rows;
     }
 
     public static function getProductRatingSummary($postId): array

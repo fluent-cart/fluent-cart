@@ -44,7 +44,7 @@ if (!is_dir($mapDir) || !is_file($adminMapFile)) {
 // (useNavigationMenuUpdateService), the settings heading (StoreSettings) and
 // the payment page name (GlobalPaymentComponents) — mapped to the translation
 // map their bundle's translate util reads at runtime. The extra Vite entries
-// (withdrawal, licensing, order-bump, addon-assets, attributes) share the
+// (withdrawal, order-bump, addon-assets, attributes) share the
 // admin translator; the customer-profile portal ships its own translator and
 // reads customer-profile-translation.php instead.
 $routeFiles = [
@@ -53,7 +53,6 @@ $routeFiles = [
     'resources/admin/Modules/Shipping/shipping.js' => 'admin-translation.php',
     'resources/admin/Modules/Coupons/coupons.js' => 'admin-translation.php',
     'resources/withdrawal/withdrawal.js' => 'admin-translation.php',
-    'resources/licensing/license.js' => 'admin-translation.php',
     'resources/order-bump/order-bump.js' => 'admin-translation.php',
     'resources/addon-assets/addon-assets.js' => 'admin-translation.php',
     'resources/attributes/attributes.js' => 'admin-translation.php',

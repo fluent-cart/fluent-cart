@@ -5,19 +5,11 @@ namespace FluentCart\App\Services\Report;
 use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
+use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Database\Migrations\RetentionSnapshotsMigrator;
 
 class RetentionSnapshotService
 {
-    /**
-     * Statuses to exclude from analysis (never really started)
-     */
-    protected array $excludedStatuses = [
-        Status::SUBSCRIPTION_PENDING,
-        Status::SUBSCRIPTION_INTENDED,
-        'incomplete_expired',
-    ];
-
     /**
      * Active statuses
      */
@@ -25,6 +17,8 @@ class RetentionSnapshotService
         Status::SUBSCRIPTION_ACTIVE,
         Status::SUBSCRIPTION_TRIALING,
     ];
+
+    protected ?\DateTime $now = null;
 
     /**
      * Generate retention snapshots
@@ -137,7 +131,8 @@ class RetentionSnapshotService
             ->whereNotNull('product_id')
             ->where('customer_id', '>', 0)
             ->where('product_id', '>', 0)
-            ->whereNotIn('status', $this->excludedStatuses)
+            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
+            ->where('bill_times', '<=', 0)
             ->groupBy(['customer_id', 'product_id']);
 
         if ($productIdFilter) {
@@ -155,7 +150,8 @@ class RetentionSnapshotService
         $query = App::db()->query()
             ->from('fct_subscriptions')
             ->selectRaw('MIN(created_at) as first_date, MAX(created_at) as last_date')
-            ->whereNotIn('status', $this->excludedStatuses);
+            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
+            ->where('bill_times', '<=', 0);
 
         if ($productIdFilter) {
             $query->where('product_id', $productIdFilter);
@@ -207,7 +203,8 @@ class RetentionSnapshotService
             ->whereNotNull('product_id')
             ->where('customer_id', '>', 0)
             ->where('product_id', '>', 0)
-            ->whereNotIn('status', $this->excludedStatuses)
+            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
+            ->where('bill_times', '<=', 0)
             ->orderBy('created_at', 'ASC')
             ->get();
 
@@ -305,7 +302,8 @@ class RetentionSnapshotService
             ->whereNotNull('product_id')
             ->where('customer_id', '>', 0)
             ->where('product_id', '>', 0)
-            ->whereNotIn('status', $this->excludedStatuses)
+            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
+            ->where('bill_times', '<=', 0)
             ->orderBy('created_at', 'ASC')
             ->get();
 
@@ -502,7 +500,8 @@ class RetentionSnapshotService
                 ->whereNotNull('product_id')
                 ->where('customer_id', '>', 0)
                 ->where('product_id', '>', 0)
-                ->whereNotIn('status', $this->excludedStatuses)
+                ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
+                ->where('bill_times', '<=', 0)
                 ->orderBy('created_at', 'ASC');
 
             $batchSubscriptions = $query->get();
@@ -648,6 +647,7 @@ class RetentionSnapshotService
         $snapshots = [];
         $batchInsertThreshold = 10000;
         $totalInserted = 0;
+        $generatedAt = DateTime::gmtNow()->format('Y-m-d H:i:s');
 
         // Convert aggregates to final snapshot format and insert in batches
         foreach ($aggregates as $cohort => $periods) {
@@ -677,8 +677,8 @@ class RetentionSnapshotService
                         'churned_customers'         => $data['cohort_customers'] - $data['retained_customers'],
                         'retention_rate_customers'  => $retentionRateCustomers,
                         'retention_rate_mrr'        => $retentionRateMrr,
-                        'created_at'                => current_time('mysql'),
-                        'updated_at'                => current_time('mysql'),
+                        'created_at'                => $generatedAt,
+                        'updated_at'                => $generatedAt,
                     ];
 
                     // Batch insert when threshold is reached
@@ -715,6 +715,19 @@ class RetentionSnapshotService
         $monthStart = new \DateTime($month . '-01');
         $monthEnd = (clone $monthStart)->modify('last day of this month')->setTime(23, 59, 59);
 
+        $cohortStart = null;
+        foreach ($subscriptions as $sub) {
+            $createdAt = new \DateTime($sub->created_at);
+            if (!$cohortStart || $createdAt < $cohortStart) {
+                $cohortStart = $createdAt;
+            }
+        }
+
+        // The cohort month counts anyone active during it; later months count who is still subscribed at month end.
+        $isCohortMonth = $cohortStart && $cohortStart->format('Y-m') === $month;
+        $now = $this->getNow();
+        $pointInTime = $monthEnd > $now ? $now : $monthEnd;
+
         $isActive = false;
         $mrr = 0;
 
@@ -726,10 +739,11 @@ class RetentionSnapshotService
                 continue;
             }
 
-            // Check if subscription was active during this month
-            $wasActiveThisMonth = $this->wasSubscriptionActiveInMonth($sub, $monthStart, $monthEnd);
+            $counts = $isCohortMonth
+                ? $this->wasSubscriptionActiveInMonth($sub, $monthStart, $monthEnd)
+                : $this->wasSubscriptionActiveAt($sub, $pointInTime);
 
-            if ($wasActiveThisMonth) {
+            if ($counts) {
                 $isActive = true;
                 // Use the subscription's recurring amount as MRR (normalized to monthly)
                 $mrr = max($mrr, $this->normalizeToMonthlyMrr($sub));
@@ -742,15 +756,17 @@ class RetentionSnapshotService
         ];
     }
 
+    protected function getNow(): \DateTime
+    {
+        if (!$this->now) {
+            $this->now = new \DateTime(DateTime::gmtNow()->format('Y-m-d H:i:s'));
+        }
+
+        return $this->now;
+    }
+
     /**
-     * Check if a subscription was active during a given month
-     * 
-     * A subscription is considered active in a month if:
-     * - It was created on or before the end of that month, AND
-     * - It had not ended before the start of that month
-     * 
-     * For ended subscriptions, we use the END date (expire_at, or canceled_at + billing period)
-     * For active subscriptions, we check if they existed during that month
+     * Check if a subscription was active at any time during a given month
      */
     protected function wasSubscriptionActiveInMonth($sub, \DateTime $monthStart, \DateTime $monthEnd): bool
     {
@@ -776,22 +792,45 @@ class RetentionSnapshotService
         return $createdAt <= $monthEnd && $endDate >= $monthStart;
     }
 
+    protected function wasSubscriptionActiveAt($sub, \DateTime $at): bool
+    {
+        if (new \DateTime($sub->created_at) > $at) {
+            return false;
+        }
+
+        $endDate = $this->getSubscriptionEndDate($sub);
+
+        return !$endDate || $endDate > $at;
+    }
+
     /**
      * Get the effective end date of a subscription
      * Returns null if subscription is still ongoing
-     * 
-     * We use last_payment + billing_interval as the effective end date.
-     * This represents when the subscription actually stopped providing revenue.
      */
     protected function getSubscriptionEndDate($sub): ?\DateTime
     {
-        // If subscription is currently active/trialing, it's still ongoing
+        // Renewals leave expire_at stale on active subscriptions, so their dates are ignored.
         if (in_array($sub->status, $this->activeStatuses)) {
             return null;
         }
 
-        // For non-active subscriptions, use last_payment + billing_interval as end date
-        // This is the most accurate indicator of when the customer stopped paying
+        $endDate = null;
+        foreach (['canceled_at', 'expire_at'] as $column) {
+            $value = $sub->{$column} ?? null;
+            if (empty($value) || $value === '0000-00-00 00:00:00') {
+                continue;
+            }
+            $date = new \DateTime($value);
+            if (!$endDate || $date < $endDate) {
+                $endDate = $date;
+            }
+        }
+
+        if ($endDate) {
+            return $endDate;
+        }
+
+        // No end dates recorded: assume it ran one billing period past the last payment
         if (!empty($sub->last_payment) && $sub->last_payment !== '0000-00-00 00:00:00') {
             $lastPayment = new \DateTime($sub->last_payment);
             $interval = $this->getBillingIntervalMonths($sub->billing_interval ?? 'yearly');

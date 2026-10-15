@@ -226,7 +226,7 @@ class AddressSelectRenderer
                 <div class="fct_form_section_body">
                     <div class="fct_checkout_input_group">
                         <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                            id="<?php echo esc_attr($this->address_type); ?>_label_wrapper">
+                            id="<?php echo esc_attr($this->address_type); ?>_label_wrapper" <?php $this->renderFieldAtts(__('Address Label', 'fluent-cart'), true); ?>>
                             <label for="<?php echo esc_attr($this->address_type); ?>_label" class="sr-only">
                                 <?php echo esc_html__('Address Label', 'fluent-cart'); ?>
                             </label>
@@ -249,7 +249,7 @@ class AddressSelectRenderer
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'phone'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_phone_wrapper">
+                                id="<?php echo esc_attr($this->address_type); ?>_phone_wrapper" <?php $this->renderFieldAtts(__('Phone number', 'fluent-cart'), Arr::get($this->requirements_fields, 'phone') === 'required'); ?>>
                                 <label for="<?php echo esc_attr($this->address_type); ?>_phone" class="sr-only">
                                     <?php echo esc_html__('Phone Number', 'fluent-cart'); ?>
                                 </label>
@@ -262,7 +262,7 @@ class AddressSelectRenderer
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'country'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_country_wrapper">
+                                id="<?php echo esc_attr($this->address_type); ?>_country_wrapper" <?php $this->renderFieldAtts(__('Country / Region', 'fluent-cart'), Arr::get($this->requirements_fields, 'country') === 'required', 'select'); ?>>
                                 <label for="<?php echo esc_attr($this->address_type); ?>_country" class="sr-only">
                                     <?php echo esc_html__('Country / Region', 'fluent-cart'); ?>
                                 </label>
@@ -286,7 +286,7 @@ class AddressSelectRenderer
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'address_1'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_address_1_wrapper">
+                                id="<?php echo esc_attr($this->address_type); ?>_address_1_wrapper" <?php $this->renderFieldAtts(__('Street Address', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_1') === 'required'); ?>>
                                 <label for="<?php echo esc_attr($this->address_type); ?>_address_1" class="sr-only">
                                     <?php echo esc_html__('Street Address', 'fluent-cart'); ?>
                                     <?php echo Arr::get($this->requirements_fields, 'address_1') === 'required' ? esc_html__(' (required)', 'fluent-cart') : ''; ?>
@@ -306,7 +306,7 @@ class AddressSelectRenderer
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'address_2'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_address_2_wrapper">
+                                id="<?php echo esc_attr($this->address_type); ?>_address_2_wrapper" <?php $this->renderFieldAtts(__('Apt, suite, unit', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_2') === 'required'); ?>>
                                 <label for="<?php echo esc_attr($this->address_type); ?>_address_2" class="sr-only">
                                     <?php echo esc_html__('Apartment, suite, unit, etc.', 'fluent-cart'); ?>
                                 </label>
@@ -319,7 +319,7 @@ class AddressSelectRenderer
 
                         <?php if (!empty(Arr::get($this->requirements_fields, 'state'))): ?>
                             <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_state_wrapper" style="display: block;">
+                                id="<?php echo esc_attr($this->address_type); ?>_state_wrapper" style="display: block;" <?php $this->renderFieldAtts(__('State / Province', 'fluent-cart'), Arr::get($this->requirements_fields, 'state') === 'required', 'select'); ?>>
                                 <label for="<?php echo esc_attr($this->address_type); ?>_state" class="sr-only">
                                     <?php echo esc_html__('State / Province', 'fluent-cart'); ?>
                                 </label>
@@ -335,13 +335,13 @@ class AddressSelectRenderer
 
                         <div id="<?php echo esc_attr($this->address_type); ?>_city_zip_section"
                             data-fluent-cart-checkout-page-form-section=""
-                            class="fct_checkout_form_section <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? 'full-column' : '' ?>">
+                            class="fct_checkout_form_section fct_city_zip_section <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? 'full-column' : '' ?>">
 
                             <div class="fct_form_section_body">
-                                <div class="fct_checkout_input_group">
+                                <div class="fct_checkout_input_group <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? '' : 'fct_2_columns'; ?>">
                                     <?php if (!empty(Arr::get($this->requirements_fields, 'city'))): ?>
                                         <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                            id="<?php echo esc_attr($this->address_type); ?>_city_wrapper">
+                                            id="<?php echo esc_attr($this->address_type); ?>_city_wrapper" <?php $this->renderFieldAtts(__('City / Town', 'fluent-cart'), Arr::get($this->requirements_fields, 'city') === 'required'); ?>>
                                             <label for="<?php echo esc_attr($this->address_type); ?>_city" class="sr-only">
                                                 <?php echo esc_html__('City / Town', 'fluent-cart'); ?>
                                             </label>
@@ -355,7 +355,7 @@ class AddressSelectRenderer
                                     <?php endif; ?>
                                     <?php if (!empty(Arr::get($this->requirements_fields, 'postcode'))): ?>
                                         <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                            id="<?php echo esc_attr($this->address_type); ?>_postcode_wrapper">
+                                            id="<?php echo esc_attr($this->address_type); ?>_postcode_wrapper" <?php $this->renderFieldAtts(__('Postcode / ZIP', 'fluent-cart'), Arr::get($this->requirements_fields, 'postcode') === 'required'); ?>>
                                             <label for="<?php echo esc_attr($this->address_type); ?>_postcode" class="sr-only">
                                                 <?php echo esc_html__('Postcode / ZIP', 'fluent-cart'); ?>
                                             </label>
@@ -399,7 +399,7 @@ class AddressSelectRenderer
         $type = esc_attr($this->address_type);
 
         if (CheckoutFieldsSchema::isFullNameRequired()) : ?>
-            <div class="fct_input_wrapper" id="<?php echo $type; ?>_name_wrapper">
+            <div class="fct_input_wrapper" id="<?php echo $type; ?>_name_wrapper" <?php $this->renderFieldAtts(__('Full Name', 'fluent-cart'), true); ?>>
                 <label for="<?php echo $type; ?>_full_name" class="sr-only">
                     <?php echo esc_html__('Full Name', 'fluent-cart'); ?>
                 </label>
@@ -417,7 +417,7 @@ class AddressSelectRenderer
 
         <?php else : ?>
 
-            <div class="fct_input_wrapper" id="<?php echo $type; ?>_first_name_wrapper">
+            <div class="fct_input_wrapper" id="<?php echo $type; ?>_first_name_wrapper" <?php $this->renderFieldAtts(__('First Name', 'fluent-cart'), true); ?>>
                 <label for="<?php echo $type; ?>_first_name" class="sr-only">
                     <?php echo esc_html__('First Name', 'fluent-cart'); ?>
                 </label>
@@ -434,7 +434,7 @@ class AddressSelectRenderer
             </div>
 
             <?php if (CheckoutFieldsSchema::isLastNameEnabled()) : ?>
-                <div class="fct_input_wrapper" id="<?php echo $type; ?>_last_name_wrapper">
+                <div class="fct_input_wrapper" id="<?php echo $type; ?>_last_name_wrapper" <?php $this->renderFieldAtts(__('Last Name', 'fluent-cart'), CheckoutFieldsSchema::isLastNameRequired()); ?>>
                     <label for="<?php echo $type; ?>_last_name" class="sr-only">
                         <?php echo esc_html__('Last Name', 'fluent-cart'); ?>
                     </label>
@@ -452,6 +452,12 @@ class AddressSelectRenderer
             <?php endif; ?>
 
         <?php endif;
+    }
+
+    // Field name and control type the docked / floating label styles read (see checkout.scss).
+    private function renderFieldAtts($label, $isRequired = false, $control = 'input')
+    {
+        echo 'data-fct-label="' . esc_attr($label . ($isRequired ? ' *' : '')) . '" data-fct-field="' . esc_attr($control) . '"';
     }
 
     public function renderBusinessDetailsFields()
@@ -499,7 +505,7 @@ class AddressSelectRenderer
                         $placeholder = $label . ($isRequired ? ' *' : '');
                         ?>
                         <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                            id="<?php echo esc_attr($fieldId); ?>_wrapper">
+                            id="<?php echo esc_attr($fieldId); ?>_wrapper" <?php $this->renderFieldAtts($label, $isRequired); ?>>
                             <label for="<?php echo esc_attr($fieldId); ?>" class="sr-only">
                                 <?php echo esc_html($label); ?>
                             </label>

@@ -95,6 +95,41 @@
                 </Card.Body>
             </Card.Container>
         </div>
+
+        <Card.Container v-if="!loading && variationRows.length" class="overflow-hidden">
+            <Card.Header :title="translate('Renewals by Variant')" title_size="small" border_bottom />
+            <Card.Body class="px-0 pb-0">
+                <el-table :data="variationRows" :default-sort="{prop: 'projected_amount', order: 'descending'}">
+                    <el-table-column prop="product_title" :label="translate('Product')" min-width="200" />
+
+                    <el-table-column prop="variation_title" :label="translate('Variant')" min-width="150" />
+
+                    <el-table-column
+                        prop="renewals_count"
+                        :label="translate('Renewals')"
+                        min-width="120"
+                        sortable
+                        :sort-method="byNumber('renewals_count')"
+                    >
+                        <template #default="scope">
+                            {{ formatNumber(scope.row.renewals_count) }}
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column
+                        prop="projected_amount"
+                        :label="translate('Projected revenue')"
+                        min-width="150"
+                        sortable
+                        :sort-method="byNumber('projected_amount')"
+                    >
+                        <template #default="scope">
+                            {{ reportFilter.formatAmount(scope.row.projected_amount, {cents: true}) }}
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </Card.Body>
+        </Card.Container>
     </UserCan>
 </template>
 
@@ -121,7 +156,6 @@ import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import SummaryLoader from "../Components/SummaryLoader.vue";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
     makeXAxisLabels,
@@ -321,7 +355,7 @@ const updateChart = () => {
                 axisLabel: {
                     color: isDarkTheme.value ? "#ffffff" : "#000000",
                     fontSize: 12,
-                    formatter: (value) => `${CurrencyFormatter.formatScaledChart(value)}`,
+                    formatter: (value) => `${reportFilter.formatAmount(value, {cents: true, chart: true})}`,
                 },
                 splitLine: {
                     show: true,
@@ -412,7 +446,7 @@ const seriesData = computed(() => {
             name: translate("Revenue"),
             key: "count",
             type: 'line',
-            color: isDarkTheme.value ? colors.blue_dark_mode : colors.blue,
+            color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
             data: data.value.projections.map((item) => item.projected_amount)
         },
         {
@@ -440,7 +474,7 @@ const xAxisConfig = computed(() => {
 const summaryCards = computed(() => [
     {
         title: translate("Renewal Revenue"),
-        value: CurrencyFormatter.formatScaled(data.value.totalProjected),
+        value: reportFilter.formatAmount(data.value.totalProjected, {cents: true}),
         key: 'renewal_revenue',
     },
     {
@@ -454,6 +488,10 @@ const summaryCards = computed(() => [
 const isEmpty = computed(() => {
     return !data.value.totalRenewals;
 });
+
+const variationRows = computed(() => data.value.by_variation || []);
+
+const byNumber = (key) => (a, b) => Number(a[key]) - Number(b[key]);
 
 /**
  * ----------------------------------------------------------------------------

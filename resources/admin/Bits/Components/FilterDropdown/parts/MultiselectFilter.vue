@@ -4,9 +4,13 @@
       :placeholder="$t('Select Order Type')"
       multiple
       filterable
+      clearable
       popper-class="fct-dropdown-compact fct-multi-select-filter"
       size="small"
   >
+    <template #tag="{ data }">
+      <el-tag v-for="item in data" :key="item.value" disable-transitions>{{ item.currentLabel }}</el-tag>
+    </template>
     <el-option
         v-for="filterOption in filterItem.options"
         :key="filterOption.value"
@@ -33,6 +37,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['clear']);
+
 const filter = props.filterState;
 
 const orderTypes = computed({
@@ -40,7 +46,13 @@ const orderTypes = computed({
     return filter.data.selectedFilters[props.filterItemKey]?.value ?? [];
   },
   set: (val) => {
-    filter.setMultiSelectChange(props.filterItemKey, val);
+    // Element Plus empties the model and then fires clear for one click;
+    // clearing from the setter keeps the report to a single refresh.
+    if (val.length) {
+      filter.setMultiSelectChange(props.filterItemKey, val);
+    } else {
+      emit('clear');
+    }
   }
 });
 </script>

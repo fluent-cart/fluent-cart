@@ -4,6 +4,7 @@ namespace FluentCart\App\Services\ShortCodeParser\Parsers;
 
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Services\DateTime\DateFormatter;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\Framework\Support\Arr;
 
 class SubscriptionParser extends BaseParser
@@ -45,6 +46,8 @@ class SubscriptionParser extends BaseParser
                 return $subscription->recurring_amount ? (string) ($subscription->recurring_amount / 100) : '0';
             case 'recurring_amount_formatted':
                 return esc_html(Helper::toDecimal($subscription->recurring_amount));
+            case 'payment_method_title':
+                return esc_html(PaymentHelper::getMethodTitle($subscription->current_payment_method));
             case 'payment_info':
                 return wp_kses_post($subscription->payment_info);
             case 'next_billing_date':

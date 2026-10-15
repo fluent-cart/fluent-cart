@@ -14,6 +14,7 @@ use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\Concerns\HasActivity;
+use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\SubscriptionHelper;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\Framework\Database\Orm\Relations\BelongsTo;
@@ -284,22 +285,12 @@ class Subscription extends Model
     }
 
     /**
-     * Display label of the backing gateway ("Authorize.Net", "Cash"), the same
-     * source StatusHelper stamps into order.payment_method_title. Empty when the
-     * slug resolves to no registered gateway.
+     * Display label of the backing gateway ("Authorize.Net", "Cash"). The slug
+     * in title case when no registered gateway matches.
      */
     public function getPaymentMethodTitleAttribute(): string
     {
-        $gateway = $this->resolveGateway();
-        if (!$gateway) {
-            return '';
-        }
-
-        $title = method_exists($gateway, 'getMeta')
-            ? $gateway->getMeta('title')
-            : Arr::get($gateway->meta(), 'title');
-
-        return (string) $title;
+        return PaymentHelper::getMethodTitle($this->current_payment_method);
     }
 
     public function getUrlAttribute($value)
@@ -386,7 +377,7 @@ class Subscription extends Model
             return sprintf('%1$s ***%2$s', esc_html($info['brand']), esc_html($info['last_4']));
         }
 
-        return Arr::get($info, 'method', '');
+        return Arr::get($info, 'method') ?: PaymentHelper::getMethodTitle($this->current_payment_method);
     }
 
     public function product_detail(): BelongsTo

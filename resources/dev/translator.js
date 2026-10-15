@@ -14,7 +14,6 @@ const TranslationHelper = require('./TranslationHelper');
 // and their own maps; they stay out of this list.
 let resourcesDir = [
     path.join('resources/admin'),
-    path.join('resources/licensing'),
     path.join('resources/withdrawal'),
     path.join('resources/order-bump'),
     path.join('resources/addon-assets'),

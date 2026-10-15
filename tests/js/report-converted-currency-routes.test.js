@@ -20,7 +20,7 @@ vi.mock('@/utils/Storage', () => ({
     },
 }));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn()}}));
-vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD'}}));
+vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD', onShopUpdate: () => {}}}));
 const filterState = vi.hoisted(() => ({data: {selectedFilters: {}, currency: ''}}));
 vi.mock('@/Bits/Components/FilterDropdown/FilterState', () => ({default: () => filterState}));
 vi.mock('@/utils/translator/Translator', () => ({default: (text) => text}));

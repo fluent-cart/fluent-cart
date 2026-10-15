@@ -15,15 +15,27 @@
             </template>
           </PageHeading>
 
-          <Summary :data="data" :loading="loading" />
+          <template v-if="!hasError">
+            <Summary :data="data" :loading="loading" />
 
-          <RetentionChart :data="data" :loading="loading" />
+            <RetentionChart :data="data" :loading="loading" />
 
-          <Lifetime :data="data" :loading="loading" />
+            <Lifetime :data="data" :loading="loading" />
 
-          <ChurnSummary :data="data" :loading="loading" />
+            <ChurnSummary :data="data" :loading="loading" />
 
-          <ChurnChart :data="data" :loading="loading" />
+            <ChurnChart :data="data" :loading="loading" />
+          </template>
+
+          <div v-else class="text-center pb-6">
+            <Empty
+                icon="Empty/ListView"
+                :has-dark="true"
+                :text="translate('This report could not be loaded.')"
+                class="fct-report-empty-state"
+            />
+            <el-button size="small" @click="retry">{{ translate('Retry') }}</el-button>
+          </div>
         </div>
 
     </UserCan>
@@ -35,7 +47,7 @@
  * Imports
  * ----------------------------------------------------------------------------
  */
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import translate from "@/utils/translator/Translator";
@@ -46,6 +58,7 @@ import RetentionChart from "./RetentionChart.vue";
 import ChurnSummary from "./ChurnSummary.vue";
 import ChurnChart from "./ChurnChart.vue";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
+import Empty from "@/Bits/Components/Table/Empty.vue";
 
 /**
  * ----------------------------------------------------------------------------
@@ -65,6 +78,9 @@ const data = ref({
     retention_data: []
 });
 const loading = ref(true);
+const hasError = ref(false);
+const lastRequest = ref({ filters: null, groupKey: 'monthly' });
+let requestSeq = 0;
 
 /**
  * ----------------------------------------------------------------------------
@@ -72,7 +88,10 @@ const loading = ref(true);
  * ----------------------------------------------------------------------------
  */
 const fetchData = (filters, groupKey = 'monthly') => {
+    const seq = ++requestSeq;
     loading.value = true;
+    hasError.value = false;
+    lastRequest.value = { filters, groupKey };
 
     Rest.get('reports/subscription-retention', {
         params: {
@@ -80,8 +99,19 @@ const fetchData = (filters, groupKey = 'monthly') => {
             groupKey: groupKey
         }
     }).then(response => {
+        if (seq !== requestSeq) return;
         data.value = response;
-    }).finally(() => loading.value = false)
+    }).catch(() => {
+        if (seq !== requestSeq) return;
+        hasError.value = true;
+    }).finally(() => {
+        if (seq !== requestSeq) return;
+        loading.value = false;
+    })
+}
+
+const retry = () => {
+    fetchData(lastRequest.value.filters, lastRequest.value.groupKey);
 }
 
 /**
@@ -93,5 +123,9 @@ onMounted(() => {
     fetchData(reportFilter.applicableFilters);
 
     reportFilter.addListener("retention-report", fetchData);
+});
+
+onUnmounted(() => {
+    reportFilter.removeListener("retention-report");
 });
 </script>

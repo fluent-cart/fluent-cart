@@ -15,9 +15,9 @@
 
       <slot></slot>
 
-      <el-button type="primary" tag="a" :href="upgradeUrl(placement)" target="_blank">
+      <el-button v-if="showButton" type="primary" tag="a" :href="buttonUrl || upgradeUrl(placement)" :target="buttonUrl ? '_self' : '_blank'">
         <DynamicIcon name="Crown"/>
-        {{translate('Upgrade to Pro')}}
+        {{ buttonText || translate('Upgrade to Pro') }}
       </el-button>
     </div>
   </div>
@@ -43,6 +43,19 @@ export default {
     placement: {
       type: String,
       default: 'upgrade_page'
+    },
+    // Optional in-admin action instead of the upgrade link, e.g. "Update FluentCart Pro".
+    buttonText: {
+      type: String,
+      default: ''
+    },
+    buttonUrl: {
+      type: String,
+      default: ''
+    },
+    showButton: {
+      type: Boolean,
+      default: true
     }
   },
   methods: {translate, upgradeUrl}

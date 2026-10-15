@@ -13,6 +13,7 @@ use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Services\Payments\PaymentHelper;
 
 class ThankYouRender
 {
@@ -680,13 +681,12 @@ class ThankYouRender
                 <?php echo esc_html__('Payment Method', 'fluent-cart'); ?>
             </div>
             <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
-                <?php if ($transaction->card_last_4) :
+                <?php if ($transaction && $transaction->card_last_4) :
                     echo esc_html($transaction->card_brand) . ' ' . esc_html($transaction->card_last_4);
+                elseif ($transaction) :
+                    echo esc_html($transaction->getPaymentMethodText($order));
                 else:
-                    $title = $transaction->payment_method;
-                    $gateway = GatewayManager::getInstance($transaction->payment_method);
-                    $title = $gateway ? $gateway->getMeta('title') : $title;
-                    echo esc_html($title);
+                    echo esc_html(PaymentHelper::getMethodTitle($order->payment_method, $order->payment_method_title));
                 endif; ?>
             </div>
         </div>

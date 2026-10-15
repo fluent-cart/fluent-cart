@@ -83,7 +83,7 @@ describe('admin product thumbnails use the illustration', () => {
     const EMPTY_IMAGE_ALLOWED = ['resources/admin/utils/support/Image.js'];
 
     it('no admin surface still references the empty-image icon', () => {
-        const offenders = [...walk('resources/admin'), ...walk('resources/licensing')]
+        const offenders = walk('resources/admin')
             .filter((file) => !EMPTY_IMAGE_ALLOWED.includes(file))
             .filter((file) => /images\/empty-image(-dark)?\.svg|Image\.emptyImage\(/.test(stripComments(read(file))));
 

@@ -81,6 +81,7 @@ class RevenueReportService extends ReportService
 
     public function getRevenueData($params = []): array
     {
+        $params = $this->clampParamsToToday($params);
         $startDate = $params['startDate'];
         $endDate = $params['endDate'];
 

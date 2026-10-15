@@ -63,9 +63,10 @@ return [
             // re-verified unchanged: OrderRequest guard + getSafe(sanitize()).
             // 215 → 216: getSafe() result now keyed to the sent fields via
             // array_intersect_key(), so unsent columns are left unchanged.
-            'method_line'    => 204,
+            // 204/216 → 206/218: 3a5ae335e3 and f6d51d68d3 added lines above.
+            'method_line'    => 206,
             'method_needle'  => 'function updateOrder(OrderRequest $request',
-            'sanitize_line'  => 216,
+            'sanitize_line'  => 218,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -250,11 +251,6 @@ return [
             'needle'      => 'v-html="activity.content"',
         ],
         [
-            'source_file' => 'resources/licensing/components/ViewLicense.vue',
-            'source_line' => 297,
-            'needle'      => 'v-html="log.meta_value"',
-        ],
-        [
             'source_file' => 'resources/admin/Modules/Tickets/AllTickets.vue',
             'source_line' => 102,
             'needle'      => 'v-html="scope.row.content"',
@@ -281,22 +277,22 @@ return [
         ],
         [
             'source_file' => 'resources/admin/Modules/Orders/Components/OrdersTable.vue',
-            'source_line' => 312,
+            'source_line' => 313,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Orders/Components/OrdersTable.vue',
-            'source_line' => 315,
+            'source_line' => 316,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Orders/Components/OrdersTableMobile.vue',
-            'source_line' => 243,
+            'source_line' => 244,
             'needle'      => 'v-html="Arr.get(row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Orders/Components/OrdersTableMobile.vue',
-            'source_line' => 245,
+            'source_line' => 246,
             'needle'      => 'v-html="Arr.get(row, column.accessor)"',
         ],
         [

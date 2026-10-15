@@ -7,6 +7,7 @@ import Comparison from "@/Modules/Reports/Customer/Comparison.vue";
 import Rest from "@/utils/http/Rest";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import translate from "@/utils/translator/Translator";
+import Empty from "@/Bits/Components/Table/Empty.vue";
 
 const props = defineProps({
   reportFilter: {
@@ -24,40 +25,59 @@ const customerReport = ref({
   loading: true,
 });
 const appliedGroupKey = ref('default');
+const hasError = ref(false);
+const lastRequest = ref({ params: null, groupKey: 'default' });
+let requestSeq = 0;
 const reportFilter = props.reportFilter;
-const params = reportFilter.applicableFilters.params;
 
 const getData = (params, groupKey = 'default') => {
+  const seq = ++requestSeq;
   customerReport.value.loading = true;
+  hasError.value = false;
+  lastRequest.value = { params, groupKey };
 
-  Rest.get('reports/customer-report', {
+  reportFilter.trackCompareRange(Rest.get('reports/customer-report', {
     params: {
       ...params,
       groupKey: groupKey
     }
-  })
+  }))
   .then(response => {
+    if (seq !== requestSeq) return;
     customerReport.value = response;
   })
+  .catch(() => {
+    if (seq !== requestSeq) return;
+    hasError.value = true;
+  })
   .finally(() => {
+    if (seq !== requestSeq) return;
     customerReport.value.loading = false;
   });
+}
+
+const retry = () => {
+  getData(lastRequest.value.params, lastRequest.value.groupKey);
 }
 
 const filterData = (groupKey) => {
   if (appliedGroupKey.value !== groupKey) {
     appliedGroupKey.value = groupKey;
     
-    getData(params, groupKey);
+    getData(reportFilter.applicableFilters.params, groupKey);
   }
 }
 
 onMounted(() => {
-  getData(params);
+  getData(reportFilter.applicableFilters.params);
 
   props.reportFilter.addListener("customer-report", (filters) => {
     getData(filters.params, appliedGroupKey.value);
   });
+});
+
+onUnmounted(() => {
+  reportFilter.removeListener("customer-report");
 });
 
 </script>
@@ -67,27 +87,39 @@ onMounted(() => {
     <div class="fct-customer-report-page">
       <PageHeading :title="translate('Customers')"></PageHeading>
 
-      <Summary :reportFilter="reportFilter" :customerReport="customerReport" />
+      <template v-if="!hasError">
+        <Summary :reportFilter="reportFilter" :customerReport="customerReport" />
 
-      <CustomerReportChart
-          :chartData="customerReport.currentMetrics"
-          :compareData="customerReport.previousMetrics"
-          :reportFilter="reportFilter"
-          :appliedGroupKey="appliedGroupKey"
-          @filter-data="filterData"
-          :is-empty="!customerReport.summary.customer_count"
-          :loading="customerReport.loading"
-      />
+        <CustomerReportChart
+            :chartData="customerReport.currentMetrics"
+            :compareData="customerReport.previousMetrics"
+            :reportFilter="reportFilter"
+            :appliedGroupKey="appliedGroupKey"
+            @filter-data="filterData"
+            :is-empty="!customerReport.summary.customer_count"
+            :loading="customerReport.loading"
+        />
 
-      <!-- comparison -->
-      <Comparison
-          class="my-7.5"
-          :currentMetrics="customerReport.currentMetrics"
-          :previousMetrics="customerReport.previousMetrics"
-          :hasComparison="props.reportFilter.data.compareType !== 'no_comparison'"
-          :reportFilter="reportFilter"
-          :loading="customerReport.loading"
-      />
+        <!-- comparison -->
+        <Comparison
+            class="my-7.5"
+            :currentMetrics="customerReport.currentMetrics"
+            :previousMetrics="customerReport.previousMetrics"
+            :hasComparison="props.reportFilter.data.compareType !== 'no_comparison'"
+            :reportFilter="reportFilter"
+            :loading="customerReport.loading"
+        />
+      </template>
+
+      <div v-else class="text-center pb-6">
+        <Empty
+            icon="Empty/ListView"
+            :has-dark="true"
+            :text="translate('This report could not be loaded.')"
+            class="fct-report-empty-state"
+        />
+        <el-button size="small" @click="retry">{{ translate('Retry') }}</el-button>
+      </div>
     </div>
   </UserCan>
 </template>

@@ -17,6 +17,7 @@ class RevenueReportController extends Controller
     public function getRevenue(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = RevenueReportService::make();
 
@@ -41,6 +42,8 @@ class RevenueReportController extends Controller
             'fluctuations'    => $fluctuations,
             'previousMetrics' => $previousMetrics['groups'],
             'appliedGroupKey' => $revenueData['groupKey'],
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
         ];
     }
 

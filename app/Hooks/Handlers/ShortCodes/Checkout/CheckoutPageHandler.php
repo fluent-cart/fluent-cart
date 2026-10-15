@@ -34,16 +34,35 @@ class CheckoutPageHandler extends ShortCode
          * @param \FluentCart\App\Models\Cart|null $cart
          * @param array $context ['surface' => string, 'attributes' => array, 'block' => null]
          */
-        $cart = apply_filters('fluent_cart/checkout/render_cart', null, [
+        $context = [
             'surface'    => 'checkout-shortcode',
             'attributes' => $attributes,
             'block'      => null,
-        ]);
+        ];
+
+        $cart = apply_filters('fluent_cart/checkout/render_cart', null, $context);
+
+        if (!$cart && CheckoutRenderer::isCustomProductCheckout($attributes)) {
+            echo CheckoutRenderer::renderCustomProductCheckout($context); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered markup
+            return;
+        }
 
         if (!$cart) {
             $cart = CartHelper::getCart();
         }
 
+        $this->renderCart($cart, $attributes);
+    }
+
+    /**
+     * Render the checkout shortcode for an already resolved cart.
+     *
+     * @param \FluentCart\App\Models\Cart|null $cart
+     * @param array $attributes
+     * @return void
+     */
+    public function renderCart($cart, array $attributes = [])
+    {
         if (!$cart || empty($cart->cart_data)) {
             /**
              * The message an empty checkout shows. Lets the add-on that supplied
@@ -131,8 +150,10 @@ class CheckoutPageHandler extends ShortCode
         CheckoutRenderContext::rendering(
             $cart,
             ['surface' => 'checkout-shortcode', 'attributes' => $attributes],
-            function () use ($cart) {
-                (new CheckoutRenderer($cart))->render();
+            function () use ($cart, $attributes) {
+                (new CheckoutRenderer($cart, [
+                    'field_label_style' => CheckoutRenderer::resolveFieldLabelStyle(Arr::get($attributes, 'field_label_style', ''))
+                ]))->render();
             }
         );
     }

@@ -2,7 +2,7 @@
     <el-tree-select
         v-model="selectedVariationIds"
         :data="products"
-        :filter-method="Utils.debounce(searchProducts)"
+        :filter-method="debouncedSearch"
         :filter-node-method="filterNodeMethod"
         filterable
         show-checkbox
@@ -24,12 +24,7 @@
             </div>
         </template>
         <template v-else #tag>
-            <div class="flex items-center flex-wrap gap-1.5" v-if="selectedFormattedItems">
-                <el-tag class="mr-2" v-for="(items, itemName) in selectedFormattedItems">
-                    {{ itemName }}
-                    <span v-if="items.length"> | {{ items.join(', ') }}</span>
-                </el-tag>
-            </div>
+            <ProductChips class="fct-product-chips--wrap" :groups="productGroups" :tooltips-disabled="dropdownOpen"/>
         </template>
     </el-tree-select>
 </template>
@@ -37,9 +32,16 @@
 <script type="text/babel">
 
 import Utils from "@/utils/Utils";
+import ProductChips from "@/Bits/Components/ProductChips/ProductChips.vue";
+import {groupIdsByTree} from "@/Bits/Components/ProductChips/productChips";
+import {mergeProductTree} from "@/Bits/Components/ProductChips/labelIndex";
+import translate from "@/utils/translator/Translator";
 
 export default {
   name: 'ProductVariationSelector',
+  components: {
+    ProductChips
+  },
   props: {
     modelValue: {
       type: [Array, String, Number],
@@ -62,21 +64,21 @@ export default {
   data() {
     return {
       products: [],
+      // Every product loaded so far, so picks hidden by a search keep their names.
+      knownProducts: [],
       selectedVariationIds: this.modelValue,
-      loading: false
+      loading: false,
+      dropdownOpen: false
     }
   },
   computed: {
-    Utils() {
-      return Utils;
+    productGroups() {
+      return groupIdsByTree(this.selectedVariationIds, this.knownProducts);
     },
     selectedFormattedItems() {
-      let selectedVariationIds = this.selectedVariationIds;
-      if (!this.is_multiple) {
-        selectedVariationIds = [];
-        if (this.selectedVariationIds) {
-          selectedVariationIds.push(this.selectedVariationIds);
-        }
+      const selectedVariationIds = [];
+      if (this.selectedVariationIds) {
+        selectedVariationIds.push(this.selectedVariationIds);
       }
 
       if (!selectedVariationIds || !selectedVariationIds?.length) {
@@ -86,7 +88,7 @@ export default {
       let keyedProducts = {};
 
       let keyedVariations = {};
-      this.products.forEach(product => {
+      this.knownProducts.forEach(product => {
         keyedProducts[product.label] = product.children;
         product.children.forEach(variation => {
           keyedVariations[variation.value] = {
@@ -107,10 +109,11 @@ export default {
           }
           formattedItems[variation.productName].push(variation.variationName);
         } else {
-          if (!formattedItems['Unknown']) {
-            formattedItems['Unknown'] = [];
+          const unknown = translate('Unknown');
+          if (!formattedItems[unknown]) {
+            formattedItems[unknown] = [];
           }
-          formattedItems['Unknown'].push(id);
+          formattedItems[unknown].push(id);
         }
       });
 
@@ -131,6 +134,10 @@ export default {
       this.selectedVariationIds = newVal;
     }
   },
+  created() {
+    // Built once per instance; a template-level debounce is rebuilt on every render.
+    this.debouncedSearch = Utils.debounce(this.searchProducts);
+  },
   mounted() {
     if (!this.is_multiple) {
       this.selectedVariationIds = this.selectedVariationIds ? parseInt(this.selectedVariationIds) : null;
@@ -141,6 +148,7 @@ export default {
   },
   methods: {
     onVisibleChange(visible) {
+      this.dropdownOpen = visible;
       this.$emit('visible-change', visible);
     },
     searchProducts(search = '') {
@@ -155,6 +163,7 @@ export default {
       this.$get("products/search-product-variant-options", queryParams)
           .then((response) => {
             this.products = response.products;
+            this.knownProducts = mergeProductTree(this.knownProducts, response.products);
           })
           .catch((errors) => {
           })

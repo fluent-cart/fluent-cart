@@ -76,7 +76,10 @@ class OrderReportService extends ReportService
 
     public function getOrderLineChart($params = [])
     {
-        $monthBetween = $params['endDate']->diffInMonths($params['startDate']) + 1;
+        $params = $this->clampParamsToToday($params);
+        $monthBetween = $params['endDate'] < $params['startDate']
+            ? 1
+            : $params['endDate']->diffInMonths($params['startDate']) + 1;
 
         $group = ReportHelper::processGroup(
             $params['startDate'], $params['endDate'], $params['groupKey']
@@ -84,14 +87,16 @@ class OrderReportService extends ReportService
 
         $variationIds = array_map('intval', $params['variationIds'] ?? []);
 
+        // Bound by order date, not item date: an item row may predate its order
         $itemsSub = App::db()->table('fct_order_items')
             ->selectRaw('order_id, SUM(quantity) AS total_items')
             ->groupBy('order_id')
-            ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
+            ->whereIn('order_id', fn($q) => $q->select('id')->from('fct_orders')
+                ->whereBetween('created_at', [$params['startDate'], $params['endDate']]))
             ->when($variationIds, fn($q) => $q->whereIn('object_id', $variationIds));
             
         $orderQuery = ReportCurrency::ordersTable($params)
-            ->joinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
+            ->leftJoinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
 
         $orderQuery = $this->applyFilters($orderQuery, $params);
 
@@ -133,7 +138,7 @@ class OrderReportService extends ReportService
 
             CASE
                 WHEN COUNT(o.id) = 0 THEN 0
-                ELSE oi_sum.total_items / COUNT(o.id)
+                ELSE SUM(COALESCE(oi_sum.total_items, 0)) / COUNT(o.id)
             END AS average_order_items_count,
 
             ROUND(AVG(o.total_paid / 100)) AS average_order_gross")
@@ -188,17 +193,26 @@ class OrderReportService extends ReportService
 
     public function getNewVsReturningCustomer($params = [])
     {
-        $orders = ReportCurrency::ordersTable($params)
-            ->leftJoin('fct_customers as c', 'c.id', '=', 'o.customer_id');
+        global $wpdb;
 
-        $orders = $this->applyFilters($orders, $params);
+        $paidStatuses = implode(', ', array_map(function ($status) {
+            return "'" . esc_sql($status) . "'";
+        }, \FluentCart\App\Helpers\Status::getReportStatuses()));
+        $renewal = \FluentCart\App\Helpers\Status::ORDER_TYPE_RENEWAL;
 
+        $orders = $this->applyFilters(ReportCurrency::ordersTable($params), $params);
+
+        // Renewals are checked first: they always follow a paid parent order, so the earlier-order test would call them Returning.
         $rows = $orders->selectRaw("CASE
-                WHEN
-                    c.first_purchase_date IS NOT NULL
-                    AND c.first_purchase_date >= '{$params['startDate']}'
-                THEN 'New'
-                ELSE 'Returning'
+                WHEN o.type = '{$renewal}' THEN 'Renewal'
+                WHEN o.customer_id IS NULL THEN 'Guest'
+                WHEN EXISTS (
+                    SELECT 1 FROM {$wpdb->prefix}fct_orders AS p
+                    WHERE p.customer_id = o.customer_id
+                        AND p.payment_status IN ({$paidStatuses})
+                        AND (p.created_at < o.created_at OR (p.created_at = o.created_at AND p.id < o.id))
+                ) THEN 'Returning'
+                ELSE 'New'
             END AS customer_type,
 
             COUNT(DISTINCT o.customer_id) AS customer_count,
@@ -216,29 +230,26 @@ class OrderReportService extends ReportService
         ->groupBy('customer_type')
         ->get();
 
+        $byType = [];
+        foreach ($rows as $row) {
+            $byType[$row->customer_type] = $row;
+        }
+
         $result = [];
+        foreach (['New', 'Returning', 'Renewal', 'Guest'] as $type) {
+            $row = $byType[$type] ?? null;
+            $orderCount = $row ? (int) $row->order_count : 0;
+            $grossSales = $row ? (float) $row->gross_sales : 0.0;
+            $netSales = $row ? (float) $row->net_sales : 0.0;
 
-        if ($rows->count()) {
-            foreach ($rows as $index => $item) {
-                $result[$index] = $item;
-
-                $result[$index]->average_net = $item->net_sales / $item->order_count;
-                $result[$index]->average_gross = $item->gross_sales / $item->order_count;
-            }
-        } else {
-            $metrics = [
-                'customer_type'  => 'new',
-                'customer_count' => 0,
-                'order_count'    => 0,
-                'net_sales'      => 0,
-                'average_net'    => 0,
-                'gross_sales'    => 0,
-                'average_gross'  => 0,
-            ];
-    
-            $result = [
-                $metrics,
-                wp_parse_args(['customer_type' => 'returning'], $metrics),
+            $result[] = (object) [
+                'customer_type'  => $type,
+                'customer_count' => $row ? (int) $row->customer_count : 0,
+                'order_count'    => $orderCount,
+                'gross_sales'    => $grossSales,
+                'net_sales'      => $netSales,
+                'average_gross'  => $orderCount ? $grossSales / $orderCount : 0,
+                'average_net'    => $orderCount ? $netSales / $orderCount : 0,
             ];
         }
 

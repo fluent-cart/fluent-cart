@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Http\Controllers\Reports;
 
+use FluentCart\App\App;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Http\Controllers\Controller;
@@ -31,6 +32,7 @@ class ProductReportController extends Controller
     public function getProductReport(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+        $compareRanges = ReportHelper::formatCompareRanges($params);
         
         $service = ProductReportService::make();
 
@@ -54,6 +56,21 @@ class ProductReportController extends Controller
             'fluctuations'    => $fluctuations,
             'currentMetrics'  => $currentMetrics['grouped'],
             'previousMetrics' => $previousMetrics['grouped'],
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
         ];
+    }
+
+    public function getProductCompare(Request $request)
+    {
+        if (!App::isProActive()) {
+            return $this->sendError([
+                'message' => __('Comparing products is only available in FluentCart Pro.', 'fluent-cart')
+            ], 403);
+        }
+
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+
+        return ProductReportService::make()->getProductCompare($params);
     }
 }

@@ -18,7 +18,7 @@ vi.mock('@/Models/Reports/ReportFilterModel', () => ({default: reportFilter}));
 vi.mock('@/utils/Storage', () => ({default: {get: (key, fallback = '') => fallback, set: () => {}, remove: () => {}}}));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn(() => new Promise(() => {}))}}));
 vi.mock('@/utils/translator/Translator', () => ({default: (text) => text}));
-vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD'}}));
+vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD', onShopUpdate: () => {}}}));
 vi.mock('vue-router', () => ({useRoute: () => ({name: ''})}));
 
 import useFilterState from '@/Bits/Components/FilterDropdown/FilterState';

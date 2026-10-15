@@ -578,7 +578,7 @@ body:not(.fluent-cart-no-colors) {
     @apply border-0;
   }
 
-  #billing_city_zip_section {
+  .fct_city_zip_section {
     &.full-column {
       .fct_checkout_input_group {
         @apply grid-cols-1;
@@ -586,24 +586,25 @@ body:not(.fluent-cart-no-colors) {
     }
     .fct_checkout_input_group {
       @apply grid grid-cols-2;
-    }
-    .fct_input_wrapper {
-      &:first-child {
-        input {
-          @apply border-l border-b-[1px];
-          border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-        }
-      }
 
-      &:last-child {
-        input {
-          @apply border-r border-b-[1px];
-          border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+      .fct_input_wrapper {
+        &:first-child {
+          input {
+            @apply border-l border-b-[1px];
+            border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+          }
         }
-      }
 
-      input {
-        @apply rounded-none border-[0.5px];
+        &:last-child {
+          input {
+            @apply border-r border-b-[1px];
+            border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+          }
+        }
+
+        input {
+          @apply rounded-none border-[0.5px];
+        }
       }
     }
   }
@@ -704,6 +705,217 @@ body:not(.fluent-cart-no-colors) {
         }
       }
     }
+  }
+}
+
+/*==== field label styles (class set by CheckoutRenderer::wrapperStart) ====*/
+// Grouped fields draw whole 1px borders and overlap the previous field by 1px:
+// the 0.5px halves above round up to a 2px seam on 1x screens and in Firefox.
+.fct-field-labels-docked,
+.fct-field-labels-floating,
+.fct-field-labels-placeholder {
+  .fct_checkout_input_group {
+    > * + * {
+      margin-top: -1px;
+    }
+
+    &.fct_2_columns > * + *,
+    .fct_2_columns > * + * {
+      margin-top: 0;
+      margin-left: -1px;
+    }
+
+    .fct_input_wrapper,
+    [data-fct-field] {
+      position: relative;
+
+      // !important: the half-border rules above use :not(#id) selectors, which carry ID specificity.
+      > input:not([type=checkbox], [type=radio], [type=hidden]),
+      > .fct-nice-select {
+        border-width: 1px !important;
+      }
+
+      // lift the active field so its border colour isn't covered by a neighbour
+      &:focus-within,
+      &.has-error {
+        z-index: 1;
+      }
+
+      &:has(> .fct-nice-select.open) {
+        z-index: 2;
+      }
+    }
+
+    .fct-nice-select {
+      height: 40px;
+      line-height: 38px;
+      font-size: 15px;
+      padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+
+      &:focus,
+      &.open {
+        border-color: var(--fct-checkout-active-border-color);
+      }
+    }
+  }
+}
+
+// Docked: a filled, unfocused field shows its name small at the right edge. The name
+// sits on a fading field-colour box inside the border, so a long value runs under it.
+.fct-field-labels-docked [data-fct-label] {
+  &::after {
+    content: attr(data-fct-label);
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    right: 1px;
+    align-content: center;
+    // content-box: the 42% cap is for the text, not the fade and padding
+    box-sizing: content-box;
+    max-width: 42%;
+    padding-left: 20px;
+    padding-right: calc(var(--fct-input-padding-x, theme('spacing.4')) - 1px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--fct-checkout-secondary-text-color);
+    background: linear-gradient(to right, transparent, var(--fct-checkout-input-bg-color, #fff) 16px);
+    // same colour as the field, so a square middle field never shows these curves
+    border-top-right-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
+    border-bottom-right-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s ease;
+  }
+
+  // hidden while focused, so typing gets the full width and the caret is never covered
+  &:has(> input:not(:placeholder-shown)):not(:focus-within)::after {
+    opacity: 1;
+  }
+
+  // an inline action button (EU VAT "Apply"/"Remove") owns the right edge, so the button draws
+  // the name: right: 100% keeps it beside the button at any width or translation
+  &:has(> button) {
+    &::after {
+      display: none;
+    }
+
+    > button::before {
+      content: attr(data-fct-action-label);
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 100%;
+      align-content: center;
+      padding-left: 20px;
+      padding-right: 12px;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.2;
+      color: var(--fct-checkout-secondary-text-color);
+      background: linear-gradient(to right, transparent, var(--fct-checkout-input-bg-color, #fff) 16px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s ease;
+    }
+
+    &:has(> input:not(:placeholder-shown)):not(:focus-within) > button::before {
+      opacity: 1;
+    }
+  }
+
+  &[data-fct-field="select"] {
+    &::after {
+      opacity: 1;
+      right: 36px;
+      border-radius: 0;
+    }
+
+    &:has(> .fct-nice-select.open)::after {
+      opacity: 0;
+    }
+
+    > .fct-nice-select {
+      padding-right: 36px;
+    }
+  }
+}
+
+// Own rules: a browser without :autofill would otherwise drop the whole selector list.
+// Paint the field colour back over the autofill tint so the label box matches the field.
+.fct-field-labels-docked [data-fct-label] > input:autofill {
+  box-shadow: 0 0 0 1000px var(--fct-checkout-input-bg-color, #fff) inset;
+  -webkit-text-fill-color: var(--fct-checkout-input-text-color);
+}
+
+.fct-field-labels-docked [data-fct-label]:has(> input:autofill):not(:focus-within)::after {
+  opacity: 1;
+}
+
+// Floating: the name sits where the placeholder was and shrinks to the top on focus or once filled.
+.fct-field-labels-floating [data-fct-label] {
+  > input:not([type=checkbox], [type=radio], [type=hidden]),
+  > .fct-nice-select {
+    min-height: 48px;
+    padding-top: 21px;
+    padding-bottom: 7px;
+  }
+
+  > .fct-nice-select {
+    height: 48px;
+    line-height: 20px;
+  }
+
+  // opacity, not color: the popup's colour rules set a more specific placeholder color
+  > input::placeholder {
+    opacity: 0;
+  }
+
+  &::after {
+    content: attr(data-fct-label);
+    position: absolute;
+    top: 24px;
+    left: calc(var(--fct-input-padding-x, theme('spacing.4')) + 1px);
+    transform: translateY(-50%);
+    max-width: calc(100% - 48px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--fct-checkout-input-placeholder-text-color);
+    pointer-events: none;
+    transition: top .15s ease, font-size .15s ease, transform .15s ease;
+  }
+
+  &:focus-within::after,
+  &:has(> input:not(:placeholder-shown))::after,
+  &[data-fct-field="select"]::after {
+    top: 7px;
+    transform: none;
+    font-size: 12px;
+    color: var(--fct-checkout-secondary-text-color);
+  }
+
+  &.has-error::after {
+    color: theme('colors.red.500');
+  }
+}
+
+.fct-field-labels-floating [data-fct-label]:has(> input:autofill)::after {
+  top: 7px;
+  transform: none;
+  font-size: 12px;
+  color: var(--fct-checkout-secondary-text-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fct-field-labels-docked [data-fct-label]::after,
+  .fct-field-labels-floating [data-fct-label]::after {
+    transition: none;
   }
 }
 
@@ -1805,7 +2017,7 @@ body:not(.fluent-cart-no-colors) {
         input,
         select,
         textarea {
-            @apply bg-[var(--fct-checkout-input-bg-color)] border-[var(--fct-checkout-border-color)] focus:border-[#d6dae1] focus:text-[var(--fct-checkout-input-text-color)] text-[var(--fct-checkout-input-text-color)] placeholder:text-[var(--fct-checkout-input-placeholder-text-color)];
+            @apply bg-[var(--fct-checkout-input-bg-color)] border-[var(--fct-checkout-border-color)] focus:border-[var(--fct-checkout-active-border-color)] focus:text-[var(--fct-checkout-input-text-color)] text-[var(--fct-checkout-input-text-color)] placeholder:text-[var(--fct-checkout-input-placeholder-text-color)];
         }
     }
 }

@@ -91,6 +91,7 @@ $router->prefix('reports')
         //Product (y)
         $router->get('product-report', [ProductReportController::class, 'getProductReport']); //d
         $router->get('product-performance', [ProductReportController::class, 'getProductPerformance']); //d
+        $router->get('product-compare', [ProductReportController::class, 'getProductCompare']);
 
         //Customer
         $router->get('customer-report', [CustomerReportController::class, 'index']); //d

@@ -12,6 +12,7 @@ class CustomerReportController extends Controller
     public function index(Request $request)
     {
         $params = ReportHelper::processParams($request->get('params'));
+        $compareRanges = ReportHelper::formatCompareRanges($params);
 
         $service = CustomerReportService::make();
 
@@ -36,6 +37,8 @@ class CustomerReportController extends Controller
             'fluctuations'    => $fluctuations,
             'currentMetrics'  => $currentMetrics['grouped'],
             'previousMetrics' => $previousMetrics['grouped'],
+            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
+            'compare_ranges'  => $compareRanges,
         ];
     }
 }

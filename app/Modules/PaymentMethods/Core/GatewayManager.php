@@ -186,6 +186,7 @@ class GatewayManager
     {
         $routes = [];
         foreach ($this->gateways as $key => $gateway) {
+            $meta = $gateway->meta();
             $routes[] = [
                 'path' => $gateway->getMeta('route'),
                 'name' => $gateway->getMeta('route'),
@@ -193,7 +194,8 @@ class GatewayManager
                 'meta' => [
                     'title' => $gateway->getMeta('title'),
                     'label' => $gateway->getMeta('label'),
-                    'admin_title' => $gateway->getMeta('admin_title')
+                    'admin_title' => $gateway->getMeta('admin_title'),
+                    'admin_name' => Arr::get($meta, 'admin_title') ?: Arr::get($meta, 'title') ?: $gateway->getMeta('route')
                 ]
             ];
         }

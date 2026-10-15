@@ -43,7 +43,8 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import { monthNames } from "@/Modules/Reports/Utils/monthNames";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import reportFilter from "@/Models/Reports/ReportFilterModel";
+import { averageRate, expectedLifetimeMonths } from "@/Modules/Reports/Utils/retentionAverages";
 
 /**
  * ----------------------------------------------------------------------------
@@ -76,21 +77,12 @@ const lifetimeSummary = computed(() => {
     const items = retentionData.value;
     if (!items.length) return null;
 
-    // 1. Calculate Average Retention Rate (Decimal)
-    const totalRetention = items.reduce((sum, item) => sum + parseFloat(item.retention_rate), 0);
-    const avgRetentionPercent = totalRetention / items.length;
+    const avgRetentionPercent = averageRate(items, 'retention_rate', 'start_subscriptions');
+    if (avgRetentionPercent === null) return null;
     const avgRetentionDecimal = avgRetentionPercent / 100;
 
-    // 2. Expected Lifetime = 1 / (1 - Retention Rate)
-    // If retention is 100%, lifetime is infinite, so cap or handle it.
-    // If retention is 0%, lifetime is 1 month (or 0 depending on model, usually 1/Churn where Churn=1 -> 1 month)
-    let expectedLifetime = 0;
-    if (avgRetentionDecimal < 1) {
-        const churnRate = 1 - avgRetentionDecimal;
-        expectedLifetime = 1 / churnRate;
-    } else {
-        expectedLifetime = items.length; // Fallback for perfect retention
-    }
+    const lifetime = expectedLifetimeMonths(avgRetentionDecimal);
+    const expectedLifetime = lifetime.months;
 
     // 3. ARPU (Average Revenue Per User) for the LAST month
     const lastItem = items[items.length - 1];
@@ -108,11 +100,19 @@ const lifetimeSummary = computed(() => {
     const currentMonthDate = new Date(lastItem.day);
     const monthName = monthNames[currentMonthDate.getMonth()] + " " + currentMonthDate.getFullYear().toString();
 
+    const avgRetentionText = `${avgRetentionPercent.toFixed(1)}%`;
+
     return {
-        /* translators: %1$s: retention rate percentage; %2$s: number of months */
-        expected_lifetime_text: translate('Based on an average monthly subscription retention rate of %1$s, your expected subscription lifetime is %2$s months.', `${avgRetentionPercent.toFixed(1)}%`, expectedLifetime.toFixed(1)),
-        /* translators: %1$s: month name; %2$s: formatted revenue amount; %3$s: formatted lifetime value */
-        ltv_text: translate('In %1$s, your average monthly revenue per subscriber was %2$s, giving you an expected subscription lifetime value of %3$s.', monthName, CurrencyFormatter.scaled(arpu), CurrencyFormatter.scaled(ltv))
+        expected_lifetime_text: lifetime.capped
+            /* translators: %1$s: retention rate percentage */
+            ? translate('Based on an average monthly subscription retention rate of %1$s, your expected subscription lifetime is over 10 years.', avgRetentionText)
+            /* translators: %1$s: retention rate percentage; %2$s: number of months */
+            : translate('Based on an average monthly subscription retention rate of %1$s, your expected subscription lifetime is %2$s months.', avgRetentionText, expectedLifetime.toFixed(1)),
+        ltv_text: lifetime.capped
+            /* translators: %1$s: month name; %2$s: formatted revenue amount; %3$s: formatted lifetime value */
+            ? translate('In %1$s, your average monthly revenue per subscriber was %2$s, giving you an expected subscription lifetime value of at least %3$s.', monthName, reportFilter.formatAmount(arpu), reportFilter.formatAmount(ltv))
+            /* translators: %1$s: month name; %2$s: formatted revenue amount; %3$s: formatted lifetime value */
+            : translate('In %1$s, your average monthly revenue per subscriber was %2$s, giving you an expected subscription lifetime value of %3$s.', monthName, reportFilter.formatAmount(arpu), reportFilter.formatAmount(ltv))
     };
 });
 </script>

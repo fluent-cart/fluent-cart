@@ -56,6 +56,8 @@ class MenuHandler
 
                 \FluentCart\App\Events\FirstTimePluginActivation::handle();
                 (new AdminFooter())->register();
+                add_action('admin_enqueue_scripts', [ModuleImportMap::class, 'print'], 1);
+                add_action('fluent_cart/loading_app', [ModuleImportMap::class, 'dropLegacyBundles'], PHP_INT_MAX);
                 add_action('admin_enqueue_scripts', function () {
                     Vite::enqueueStyle('fluent_cart_admin_app_css',
                         'styles/tailwind/style.css',

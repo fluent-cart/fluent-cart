@@ -814,7 +814,7 @@
                 </template>
               </el-dialog>
 
-              <Card.Container v-if="order.licenses" class="overflow-hidden">
+              <Card.Container v-if="order.licenses && canViewLicenses" class="overflow-hidden">
                 <Card.Header
                     :title="translate('Licenses')"
                     title_size="small"
@@ -822,10 +822,13 @@
                 </Card.Header>
 
                 <Card.Body class="px-0 pb-0">
-                  <license-table
+                  <ExtensionComponent
+                      v-if="hasLicenseTable"
+                      name="license_table"
                       :licenses="order.licenses"
                       :columns="['product']"
                   />
+                  <LicensingUnavailable v-else/>
                 </Card.Body>
               </Card.Container>
 
@@ -1052,13 +1055,19 @@ import Labels from "@/Modules/Parts/Labels/Label.vue";
 import Activity from "@/Modules/Orders/Activity.vue";
 import Alert from "@/Bits/Components/Alert.vue";
 import DynamicTemplates from "@/Bits/Components/DynamicTemplates/DynamicTemplates.vue";
-import LicenseTable from "../../../licensing/components/_LicenseTable.vue";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import LicensingUnavailable from "@/Modules/Licensing/LicensingUnavailable.vue";
+import Permission from "@/utils/permission/Permission";
+import {hasExtensionComponent} from "@/utils/extensionComponents";
 import SingleOrderLoader from "@/Modules/Orders/Components/SingleOrderLoader.vue";
 import NotFound from "@/Pages/NotFound.vue";
 import SubscriptionPlan from "@/Modules/Subscriptions/SubscriptionPlan.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import {pluralizeTranslate} from "@/utils/translator/Translator";
 
+const hasLicenseTable = hasExtensionComponent('license_table');
+// License rows are licenses/view data, even on an order the user can open.
+const canViewLicenses = Permission.has('licenses/view');
 const productItemModal = ref();
 const fetchBySearch = () => productItemModal.value.fetchBySearch();
 

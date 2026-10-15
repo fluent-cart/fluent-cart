@@ -4,7 +4,6 @@ const fs = require('fs');
 // The directory where your Vue components are located
 const componentsDir = [
     './resources/admin/**/*.vue',
-    './resources/licensing/**/*.vue',
 ];  // Adjust this path to match your project structure
 
 // The destination file where the new imports and component registration will go
