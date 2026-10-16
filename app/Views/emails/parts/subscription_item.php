@@ -39,7 +39,7 @@
                     <td style="width:20%;text-align:right">
                         <p style="font-size:14px;color:rgb(17,24,39);margin:0px;line-height:24px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px">
                             <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($transaction->total)); ?>
-                            (<?php echo esc_html($subscription->billing_interval); ?>)
+                            (<?php echo esc_html(apply_filters('fluent_cart/email_notification/billing_interval', $subscription->billing_interval)); ?>)
                         </p>
                     </td>
                 </tr>
