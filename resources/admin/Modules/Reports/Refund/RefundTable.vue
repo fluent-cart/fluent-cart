@@ -6,7 +6,7 @@
           <el-select v-model="selectedGroupKey" @change="groupData" class="el-select--x-small" :placeholder="translate('Select Group')">
             <el-option v-for="group in groupKeys" :key="group.value" :label="translate(group.label)" :value="group.value" />
           </el-select>
-          <ExportReport :data="tableData" filename="refund.csv" class="!ml-0" />
+          <ExportReport :data="tableData" filename="refund.csv" class="!ms-0" />
         </div>
       </template>
     </Card.Header>

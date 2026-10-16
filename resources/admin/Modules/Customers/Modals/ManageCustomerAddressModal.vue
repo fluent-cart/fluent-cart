@@ -39,7 +39,7 @@
             </p>
           </div>
 
-          <div class="fct-address-action absolute top-0 right-0 pt-2">
+          <div class="fct-address-action absolute top-0 end-0 pt-2">
             <el-dropdown
                 trigger="click"
                 class="fct-more-option-wrap"
@@ -121,7 +121,7 @@
             @click="() => (isEditAddress = false)"
             style="margin-bottom: 16px"
         >
-          <el-icon>
+          <el-icon class="fct-address-back-icon">
             <Back/>
           </el-icon>
           {{ $t("Manage address") }}

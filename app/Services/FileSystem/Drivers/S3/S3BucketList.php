@@ -39,9 +39,9 @@ class S3BucketList
         $this->timeStamp = gmdate('Ymd\THis\Z');
         $this->date = substr($this->timeStamp, 0, 8);
         if ($region !== 'us-east-1' && $region) {
-            $this->requestUrl = "https://s3.{$region}.amazonaws.com";
+            $this->requestUrl = "https://s3.{$region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
-            $this->requestUrl = "https://s3.amazonaws.com";
+            $this->requestUrl = "https://s3.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         $this->generateSignature();
@@ -141,7 +141,7 @@ class S3BucketList
 
     private function getHost(): string
     {
-        return parse_url($this->requestUrl, PHP_URL_HOST) ?: "s3.amazonaws.com";
+        return wp_parse_url($this->requestUrl, PHP_URL_HOST) ?: "s3.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function createStringToSign(): string

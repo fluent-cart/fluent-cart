@@ -329,7 +329,7 @@ class ProductReportService extends ReportService
         }
 
         if (count($buckets) > self::MAX_COMPARE_BUCKETS) {
-            throw new HttpException(422, __('The date range is too long to compare products.', 'fluent-cart'), 'report_range_too_long');
+            throw new HttpException(422, esc_html__('The date range is too long to compare products.', 'fluent-cart'), 'report_range_too_long');
         }
 
         return [$group, $buckets];

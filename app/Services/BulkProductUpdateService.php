@@ -292,6 +292,7 @@ class BulkProductUpdateService
             if (!empty($sku)) {
                 if (in_array($sku, $skus, true)) {
                     $skuErrors["variants.$i.sku"] = sprintf(
+                        /* translators: %s: SKU */
                         __('Duplicate SKU "%s" within this product.', 'fluent-cart'),
                         $sku
                     );
@@ -303,6 +304,7 @@ class BulkProductUpdateService
                     }
                     if ($query->first()) {
                         $skuErrors["variants.$i.sku"] = sprintf(
+                            /* translators: %s: SKU */
                             __('SKU "%s" is already in use by another product.', 'fluent-cart'),
                             $sku
                         );
@@ -377,12 +379,12 @@ class BulkProductUpdateService
         $postId = absint(Arr::get($productData, 'ID', 0));
 
         if (!$postId) {
-            throw new \RuntimeException(__('Product ID is required', 'fluent-cart'));
+            throw new \RuntimeException(__('Product ID is required', 'fluent-cart')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
         }
 
         $product = Product::query()->find($postId);
         if (!$product) {
-            throw new \RuntimeException(__('Product not found', 'fluent-cart'));
+            throw new \RuntimeException(__('Product not found', 'fluent-cart')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
         }
 
         // Use ProductResource::update for variants/detail (amounts are cents)

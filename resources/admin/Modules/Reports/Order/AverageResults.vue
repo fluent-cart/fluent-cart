@@ -84,7 +84,7 @@ const averageResults = computed(() => {
               class="w-2"
               name="CaretDown"
             />
-            {{ formatNumber(avg.fluctuation) }}%
+            <span dir="ltr">{{ formatNumber(avg.fluctuation) }}%</span>
           </div>
         </div>
         <div class="title">

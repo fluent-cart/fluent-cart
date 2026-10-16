@@ -35,7 +35,7 @@ const props = defineProps({
           <div class="fct-customer-details">
             <div class="fct-customer-name">
               {{ row?.full_name || translate("No Name") }}
-              <span class="fct-customer-id">#{{ row?.id }}</span>
+              <span class="fct-customer-id inline-block">#{{ row?.id }}</span>
             </div>
             <div class="fct-customer-email">
               {{ row?.email }}

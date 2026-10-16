@@ -35,7 +35,7 @@
 }
 
 .fct-product-modal-close {
-  @apply bg-[var(--fct-secondary-btn-bg-color,#ffffff)] text-[var(--fct-primary-text-color,#2F3448)] absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))] p-0 border-0;
+  @apply bg-[var(--fct-secondary-btn-bg-color,#ffffff)] text-[var(--fct-primary-text-color,#2F3448)] absolute top-4 end-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full hover:bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))] p-0 border-0;
   svg {
     @apply w-3 h-3;
   }

@@ -53,7 +53,7 @@
 
       <template #reference>
         <div class="fct-customer-card fct-popover-box-action">
-          <div class="fct-customer-name mr-4 truncate">
+          <div class="fct-customer-name me-4 truncate">
             {{ customer?.full_name || translate('No Name') }}
           </div>
           <div class="fct-popover-box-action-icon">

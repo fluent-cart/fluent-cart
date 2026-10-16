@@ -10,6 +10,8 @@ $metrics = isset($digest['metrics']) ? $digest['metrics'] : [];
 $flux = isset($digest['fluctuations']) ? $digest['fluctuations'] : [];
 $topProducts = isset($digest['top_products']) ? $digest['top_products'] : [];
 $isEmpty = !empty($digest['is_empty']);
+$startSide = \FluentCart\App\Services\Email\EmailDirection::start();
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
 
 /**
  * Render a period-over-period delta badge.
@@ -100,8 +102,8 @@ $kpiCell = function ($label, $value, $deltaHtml = '') {
         </tr>
         <tr>
             <?php
-            /* translators: %1$s: number of refunded orders */
             $refundSub = sprintf(
+                /* translators: %1$s: number of refunded orders */
                 _n('%1$s refund', '%1$s refunds', $metrics['refund_count'], 'fluent-cart'),
                 number_format_i18n($metrics['refund_count'])
             );
@@ -118,9 +120,9 @@ $kpiCell = function ($label, $value, $deltaHtml = '') {
     <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
            style="border:1px solid #eaeaea;border-radius:8px;border-collapse:separate;overflow:hidden;">
         <tr style="background-color:#f8f9fa;">
-            <th align="left" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Type', 'fluent-cart'); ?></th>
-            <th align="right" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Orders', 'fluent-cart'); ?></th>
-            <th align="right" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Revenue', 'fluent-cart'); ?></th>
+            <th align="<?php echo esc_attr($startSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Type', 'fluent-cart'); ?></th>
+            <th align="<?php echo esc_attr($endSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Orders', 'fluent-cart'); ?></th>
+            <th align="<?php echo esc_attr($endSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Revenue', 'fluent-cart'); ?></th>
         </tr>
         <?php
         $rows = [
@@ -132,8 +134,8 @@ $kpiCell = function ($label, $value, $deltaHtml = '') {
             ?>
             <tr>
                 <td style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html($row[0]); ?></td>
-                <td align="right" style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html(number_format_i18n($row[1])); ?></td>
-                <td align="right" style="padding:12px 16px;font-size:14px;font-weight:600;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo $row[2]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+                <td align="<?php echo esc_attr($endSide); ?>" style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html(number_format_i18n($row[1])); ?></td>
+                <td align="<?php echo esc_attr($endSide); ?>" style="padding:12px 16px;font-size:14px;font-weight:600;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo $row[2]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
             </tr>
         <?php endforeach; ?>
     </table>
@@ -146,15 +148,15 @@ $kpiCell = function ($label, $value, $deltaHtml = '') {
         <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
                style="border:1px solid #eaeaea;border-radius:8px;border-collapse:separate;overflow:hidden;">
             <tr style="background-color:#f8f9fa;">
-                <th align="left" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Product', 'fluent-cart'); ?></th>
-                <th align="right" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Units', 'fluent-cart'); ?></th>
-                <th align="right" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Revenue', 'fluent-cart'); ?></th>
+                <th align="<?php echo esc_attr($startSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Product', 'fluent-cart'); ?></th>
+                <th align="<?php echo esc_attr($endSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Units', 'fluent-cart'); ?></th>
+                <th align="<?php echo esc_attr($endSide); ?>" style="padding:10px 16px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;"><?php echo esc_html__('Revenue', 'fluent-cart'); ?></th>
             </tr>
             <?php foreach ($topProducts as $product): ?>
                 <tr>
                     <td style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html($product['name']); ?></td>
-                    <td align="right" style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html(number_format_i18n($product['qty'])); ?></td>
-                    <td align="right" style="padding:12px 16px;font-size:14px;font-weight:600;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo $product['revenue']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+                    <td align="<?php echo esc_attr($endSide); ?>" style="padding:12px 16px;font-size:14px;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo esc_html(number_format_i18n($product['qty'])); ?></td>
+                    <td align="<?php echo esc_attr($endSide); ?>" style="padding:12px 16px;font-size:14px;font-weight:600;color:#2F3448;border-top:1px solid #eaeaea;"><?php echo $product['revenue']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
                 </tr>
             <?php endforeach; ?>
         </table>
@@ -200,11 +202,11 @@ if (empty($digest['is_pro']) && !empty($proPromo['body'])): ?>
         <?php
         $manageLink = '<a href="' . esc_url($digest['settings_url']) . '" style="color:#94a3b8;text-decoration:underline;">'
             . esc_html__('Manage digest settings', 'fluent-cart') . '</a>';
-        /* translators: %1$s: "Manage digest settings" link */
         echo sprintf(
+            /* translators: %1$s: "Manage digest settings" link */
             esc_html__('This digest is enabled for your store. %1$s', 'fluent-cart'),
-            $manageLink
-        ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            $manageLink // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- link built with esc_url() and esc_html__()
+        );
         ?>
     </p>
 <?php endif; ?>

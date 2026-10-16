@@ -5,6 +5,7 @@ namespace FluentCart\App\Http\Controllers\FrontendControllers;
 //use FluentCart\Api\Resource\FrontendResource\CustomerResource;
 use FluentCart\Api\Resource\CustomerAddressResource;
 use FluentCart\Api\Resource\CustomerResource;
+use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\Resource\FrontendResource\OrderResource;
 use FluentCart\Api\Resource\OrderDownloadPermissionResource;
 use FluentCart\App\App;
@@ -512,8 +513,8 @@ class CustomerProfileController extends BaseFrontendController
 
     public function getDownloads(Request $request): \WP_REST_Response
     {
-        $page = $request->get('page', 1);
-        $perPage = $request->get('per_page', 10);
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = ShopResource::clampPerPage($request->get('per_page', 10));
 
         $errorResponse = $this->checkUserLoggedIn();
 

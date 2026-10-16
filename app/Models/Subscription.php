@@ -805,15 +805,12 @@ class Subscription extends Model
 
     public function canPause()
     {
-        // Store-billed (manual/system) subscriptions can always be paused
-        // (unless already paused/canceled/expired)
         if ($this->usesRenewalEngine()) {
+            // Pausing voids renewal invoices, so overdue balances must remain payable.
             return in_array($this->status, [
                 Status::SUBSCRIPTION_ACTIVE,
-                Status::SUBSCRIPTION_TRIALING,
-                Status::SUBSCRIPTION_PAST_DUE,
-                Status::SUBSCRIPTION_EXPIRING
-            ]);
+                Status::SUBSCRIPTION_TRIALING
+            ], true) && $this->shouldSubscriptionActiveLocally();
         }
 
         // Automatic subscriptions require gateway support

@@ -243,6 +243,7 @@
 
                                      <span
                                         v-if="subscription.billing_info.details?.last_4"
+                                        class="fct-ltr-isolate"
                                         :aria-label="$t('Credit Card ending in') + ' ' + subscription.billing_info.details?.last_4"
                                     >
                                         **** {{ subscription.billing_info.details?.last_4 }}

@@ -24,6 +24,7 @@ class Notify {
         message = this.parseMessage(message)
         this.$notify({
             type: type,
+            position: document.documentElement?.dir === 'rtl' ? 'top-left' : 'top-right',
             title: title,
             offset: offset ?? this.offset,
             message: message,

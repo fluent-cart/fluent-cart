@@ -7,7 +7,10 @@
   &__header{
     @apply pt-4 pb-0 px-5;
     &.show-close{
-      @apply pr-3;
+      @apply pe-3;
+      [dir="rtl"] & {
+        @apply pr-5;
+      }
     }
   }
   &__title{
@@ -47,7 +50,7 @@
   &__status {
     @apply w-10 h-10 flex-shrink-0 rounded;
     + .el-message-box__message{
-      @apply pr-0;
+      @apply pe-0;
     }
     &.el-message-box-icon--warning{
       @apply bg-warning-25;

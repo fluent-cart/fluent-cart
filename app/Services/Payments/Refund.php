@@ -35,7 +35,16 @@ class Refund
             return new \WP_Error('invalid_refund_precision', __('Refund amount must use the smallest unit of the transaction currency.', 'fluent-cart'), ['status' => 422]);
         }
 
-        $netOrderPaidAmount = $order->total_paid - $order->total_refunded;
+        // From the ledger, not the columns: OrderPaid's recountTotalPaid() can leave
+        // total_paid already net of refunds, so subtracting total_refund double counts.
+        $orderPaid = (int) $order->transactions()
+            ->where('status', Status::TRANSACTION_SUCCEEDED)
+            ->sum('total');
+        $orderRefunded = (int) $order->transactions()
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->where('status', Status::TRANSACTION_REFUNDED)
+            ->sum('total');
+        $netOrderPaidAmount = $orderPaid - $orderRefunded;
         if ($refundAmount > $netOrderPaidAmount) {
             return new \WP_Error('invalid_refund_amount', __('Refund amount exceeds the net paid amount for this order.', 'fluent-cart'));
         }

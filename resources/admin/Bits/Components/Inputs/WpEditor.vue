@@ -1,5 +1,5 @@
 <script setup>
-import {nextTick, onMounted, ref, watch} from "vue";
+import {nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import Popover from "@/Modules/Settings/Parts/input-popover-dropdown.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -55,7 +55,18 @@ const plainContent = ref(props.modelValue);
 
 const editorValue = ref();
 
+// TinyMCE floats its menus on <body> in page coordinates, but admin screens scroll inside
+// their own panels, so an open menu drifts off its button. Close menus on any outside scroll.
+const closeFloatingMenus = (event) => {
+  if (event.target instanceof Element && event.target.closest(".mce-floatpanel")) {
+    return;
+  }
+  window.tinymce?.ui?.FloatPanel?.hideAll?.();
+};
+
 onMounted(function () {
+  document.addEventListener("scroll", closeFloatingMenus, true);
+
   const wpEditor = window.wp.editor;
   if (wpEditor) {
     hasWpEditor.value = true;
@@ -69,6 +80,10 @@ onMounted(function () {
       }, 200);
     });
   }
+});
+
+onBeforeUnmount(function () {
+  document.removeEventListener("scroll", closeFloatingMenus, true);
 });
 
 const emit = defineEmits([
@@ -132,6 +147,8 @@ const initEditor = () => {
     mediaButtons: true,
     tinymce: {
       plugins: 'fullscreen,lists,link',
+      // Templates render in dir="ltr" emails/PDFs; keep the preview LTR even in an RTL admin.
+      directionality: 'ltr',
       content_style: Theme.isDark() ? '*{color:white;} body { background: #11171d; }' : '',
       toolbar1: "formatselect,table,bold,italic,bullist,numlist,link,blockquote,alignleft,aligncenter,alignright,underline,strikethrough,forecolor,removeformat,codeformat,outdent,indent,undo,redo,mediaButton",
       setup(ed) {
@@ -278,7 +295,7 @@ watch(plainContent, async (newContent, oldContent) => {
 
 
   <div class="relative w-full">
-    <div class="top-1 absolute w-[calc(100%-128px)] left-0 flex gap-2 justify-between pb-0 z-[9]">
+    <div class="top-1 absolute w-[calc(100%-128px)] start-0 flex gap-2 justify-between pb-0 z-[9]">
       <div class="flex gap-2 flex-row" v-if="Object.keys(shortCodes).length">
         <div class="fct-add-shortcode-button-wrap">
           <Popover

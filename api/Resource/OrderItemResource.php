@@ -4,6 +4,7 @@ namespace FluentCart\Api\Resource;
 
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AttributeHelper;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
@@ -162,6 +163,63 @@ class OrderItemResource extends BaseResourceApi
     }
 
     /**
+     * New catalog lines on an order in another currency are priced at the
+     * order's frozen rate on save. The edit screen must have shown that price.
+     */
+    public static function newItemPricesMatch($order, array $items): bool
+    {
+        $orderQuote = static::orderCurrencyQuote($order);
+        if (!$orderQuote) {
+            return true;
+        }
+
+        $newItems = [];
+        foreach ($items as $item) {
+            $productId = Arr::get($item, 'post_id');
+            $variationId = Arr::get($item, 'object_id');
+            if (!isset($productId, $variationId) || Arr::get($item, 'other_info.is_custom', false)) {
+                continue;
+            }
+
+            $isExist = $order->order_items
+                ->where('post_id', $productId)
+                ->where('object_id', $variationId)
+                ->first();
+            if (!$isExist) {
+                $newItems[] = $item;
+            }
+        }
+        if (!$newItems) {
+            return true;
+        }
+
+        $variations = ProductVariation::query()
+            ->whereIn('id', array_values(array_unique(array_map(function ($item) {
+                return (int) Arr::get($item, 'object_id');
+            }, $newItems))))
+            ->get()
+            ->keyBy('id');
+
+        foreach ($newItems as $item) {
+            $variation = $variations->get((int) Arr::get($item, 'object_id'));
+            if (!$variation) {
+                continue;
+            }
+
+            if (Helper::roundCent(Arr::get($item, 'unit_price', 0)) !== PriceConverter::toPrice($variation->item_price, $orderQuote)) {
+                return false;
+            }
+
+            $signupFee = Arr::get($variation->other_info, 'signup_fee');
+            if (!empty($signupFee) && Helper::roundCent(Arr::get($item, 'other_info.signup_fee', 0)) !== PriceConverter::toPrice($signupFee, $orderQuote)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Create or Update order items with the provided data.
      *
      * This function creates or updates order items based on the provided data.
@@ -267,9 +325,9 @@ class OrderItemResource extends BaseResourceApi
                         $otherInfo = [];
                     }
 
-                    // The picker sends the variant's base-currency price. An order in
-                    // another currency prices it at the order's own frozen rate and
-                    // pricing rules, from the stored base price (multi-currency plan §9.1).
+                    // An order in another currency prices the line at the order's own
+                    // frozen rate and pricing rules, from the stored base price
+                    // (multi-currency plan §9.1).
                     $orderQuote = static::orderCurrencyQuote($order);
                     if ($orderQuote) {
                         $baseVariation = ProductVariation::query()->find($variationId);

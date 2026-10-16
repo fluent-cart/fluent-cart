@@ -28,6 +28,16 @@ class TransactionParser extends BaseParser
         'total'
     ];
 
+    protected array $attributeMap = [
+        'payment_method' => 'transaction.payment_method',
+        'card_last_4' => 'transaction.card_last_4',
+        'card_brand' => 'transaction.card_brand',
+        'status' => 'transaction.status',
+        'currency' => 'transaction.currency',
+        'created_at' => 'transaction.created_at',
+        'vendor_charge_id' => 'transaction.vendor_charge_id',
+    ];
+
     public function parse($accessor = '', $code = '', $transformer = null): ?string
     {
 

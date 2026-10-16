@@ -17,7 +17,7 @@ class DccApplies
         $this->country = $country;
         $this->currency = $currency;
         if (!$this->country || !$this->currency) {
-            throw new \Exception(__('Please set store country and currency first!', 'fluent-cart'));
+            throw new \Exception(esc_html__('Please set store country and currency first!', 'fluent-cart'));
         }
         $this->allowedCountryCurrencyMatrix = self::dccSupportedCountryCurrencyMatrix();
         $this->countryCardMatrix = self::countryCardMatrix();

@@ -114,8 +114,8 @@
       border-radius: var(--fct-input-radius, theme('borderRadius[2.5]')) !important;
       padding-top: var(--fct-input-padding-y, theme('spacing[2.5]')) !important;
       padding-bottom: var(--fct-input-padding-y, theme('spacing[2.5]')) !important;
-      padding-right: var(--fct-input-padding-x, theme('spacing[2.5]')) !important;
-      padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
+      padding-inline-end: var(--fct-input-padding-x, theme('spacing[2.5]')) !important;
+      padding-inline-start: var(--fct-input-padding-x, theme('spacing.3')) !important;
     }
   }
 }

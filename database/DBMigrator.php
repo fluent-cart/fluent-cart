@@ -5,6 +5,10 @@ namespace FluentCart\Database;
 use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Models\Product;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
 use FluentCart\Database\Migrations\CartMigrator;
@@ -201,7 +205,8 @@ class DBMigrator
             // by their migrated() calls below.
             OrdersMigrator::widenRateColumn();
             OrdersMigrator::addCurrencyCreatedIndex();
-            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::addCurrencyDimension();
+            // migrate(), not just the ALTERs: the table was never created on stores updated since 1.3.20
+            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::migrate();
             \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::queueRebuildIfPopulated();
 
             // let's check the orders table sequence number
@@ -689,7 +694,7 @@ class DBMigrator
             OrdersMigrator::widenRateColumn();
             OrderTransactionsMigrator::widenRateColumn();
             SubscriptionsMigrator::addCurrencyColumn();
-            RetentionSnapshotsMigrator::addCurrencyDimension();
+            RetentionSnapshotsMigrator::migrate();
             CartMigrator::addUserCartIndex();
 
             if (!OrdersMigrator::hasWideRateColumn() || !OrderTransactionsMigrator::hasWideRateColumn() || !SubscriptionsMigrator::hasCurrencyColumn()

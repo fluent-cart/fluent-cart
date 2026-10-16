@@ -175,17 +175,17 @@
             // re-sizes such a column once the rows are known, other engines
             // collapse it to nothing. The content stacks from the top and the
             // last row takes the slack.
-            @apply grid grid-cols-[140px_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pr-2.5;
-            // The image column runs the card's full height, so a divider
-            // drawn on it reaches the bottom however long the text is; the
-            // photo itself stays a square at the top of the column.
+            @apply grid grid-cols-[140px_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pe-2.5;
+            // The image column runs the card's full height, and the photo fills
+            // it: a square left a gap below once the text (e.g. a rating row)
+            // grew taller than the 140px minimum.
             .fct-product-image-block,
             .fct-dynamic-product-image {
               grid-area: image;
               @apply relative self-stretch h-auto min-h-[140px] w-[140px] max-w-none aspect-auto;
               .fct-product-card-image-wrap,
               .fct-product-image-link {
-                @apply relative h-auto w-full aspect-square;
+                @apply relative h-full min-h-[140px] w-full aspect-auto;
               }
             }
             .fct-product-image-wrap {
@@ -197,15 +197,17 @@
             .fct-product-image-link,
             .fct-dynamic-product-image {
               img {
-                @apply rounded-tr-none;
-                border-bottom-left-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
+                @apply rounded-se-none;
+                border-end-start-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
               }
             }
             // Only the product's own image is taken out of flow to fill the
             // square. The image block can also hold overlay inner blocks and
             // add-on output, whose images must keep their own layout.
+            // An absolutely placed image keeps its own ratio, so it needs an
+            // explicit size to fill a column taller than it is wide.
             .fct-product-card-image-wrap > .fct-product-card-image {
-              @apply absolute inset-0 aspect-auto;
+              @apply absolute inset-0 aspect-auto w-full h-full;
             }
             // The placeholder illustration is shown whole rather than cropped,
             // and it fills the column so its divider sits beside the content,
@@ -216,7 +218,7 @@
             }
             .fct-product-card-image-wrap.is-placeholder {
               border-bottom: 0;
-              border-right: 1px solid var(--fct-card-border-color, #d6dae1);
+              border-inline-end: 1px solid var(--fct-card-border-color, #d6dae1);
               > .fct-product-card-image {
                 @apply object-contain;
               }
@@ -224,7 +226,7 @@
             .fct-product-card-title,
             .fct-dynamic-product-title {
               grid-area: title;
-              @apply pt-1.5 px-0 mr-auto w-full;
+              @apply pt-1.5 px-0 me-auto w-full;
               a {
                 overflow: inherit !important;
                 white-space: pre-wrap !important;
@@ -236,18 +238,18 @@
             // empty, and an empty auto row is zero high.
             .fct-product-card-rating {
               grid-area: rating;
-              @apply px-0 mr-auto;
+              @apply px-0 me-auto;
             }
             .fct-product-card-prices,
             .fct-dynamic-product-price {
               grid-area: price;
-              @apply px-0 mr-auto;
+              @apply px-0 me-auto;
             }
             button,
             .fct-product-view-button,
             .fct-dynamic-product-button {
               grid-area: button;
-              @apply mt-3 self-start justify-self-start mr-auto mb-2.5 min-w-[160px] w-auto;
+              @apply mt-3 self-start justify-self-start me-auto mb-2.5 min-w-[160px] w-auto;
             }
             .wp-block-group {
                  grid-area: button;
@@ -255,7 +257,7 @@
             .fct-product-card-excerpt,
             .fct-dynamic-product-excerpt {
               grid-area: excerpt;
-              @apply block mr-auto px-0;
+              @apply block me-auto px-0;
             }
           }
         }
@@ -399,21 +401,21 @@
 .fct-shop-product-search {
   @apply relative mb-4;
   input {
-    @apply pl-9 w-full text-sm border border-solid focus:outline-none focus:shadow-none leading-[1.5];
+    @apply ps-9 w-full text-sm border border-solid focus:outline-none focus:shadow-none leading-[1.5];
     padding-top: var(--fct-input-padding-y, theme('spacing.2'));
     padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
-    padding-right: var(--fct-input-padding-x, theme('spacing.3'));
+    padding-inline-end: var(--fct-input-padding-x, theme('spacing.3'));
     border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
   }
   .fct-search-icon {
-    @apply absolute top-1/2 left-3 mt-[1px];
+    @apply absolute top-1/2 start-3 mt-[1px];
     transform: translateY(-50%);
     svg {
       @apply h-3.5;
     }
   }
   .fct-search-clear {
-    @apply absolute top-1/2 right-2 cursor-pointer mt-[1px];
+    @apply absolute top-1/2 end-2 cursor-pointer mt-[1px];
     transform: translateY(-50%);
     svg {
       @apply h-3.5;
@@ -483,7 +485,7 @@
 
 .fct-shop-per-page-selector {
   select {
-    @apply bg-transparent cursor-pointer focus:outline-0 text-sm py-0 pl-0 pr-[22px] h-auto min-h-[auto] leading-[1.2] outline-0 ring-0 border-0 min-w-[50px] font-medium;
+    @apply bg-transparent cursor-pointer focus:outline-0 text-sm py-0 ps-0 pe-[22px] h-auto min-h-[auto] leading-[1.2] outline-0 ring-0 border-0 min-w-[50px] font-medium;
   }
 }
 
@@ -495,6 +497,11 @@
 
     button {
       @apply bg-transparent min-w-5.5 flex justify-center items-center rounded-full cursor-pointer p-1 leading-none text-sm max-h-5.5 gap-1 font-medium border-0;
+    }
+
+    // Prev/next chevrons point the reading direction; « » mirror via bidi on their own.
+    [dir="rtl"] & .arrow svg {
+      transform: scaleX(-1);
     }
   }
 }
@@ -548,6 +555,11 @@
   }
   .fct-shop-price-range {
     @apply flex items-center max-w-[50%];
+
+    // Sign + amount are separate flex items; keep their PHP order in RTL.
+    [dir="rtl"] & {
+      direction: ltr;
+    }
   }
   .fct-shop-currency-sign {
     @apply text-sm;
@@ -565,7 +577,7 @@
   }
 
   .noUi-handle {
-    @apply w-4 h-4 -right-2.5 -top-[5px] rounded-full shadow-none #{!important};
+    @apply w-4 h-4 -end-2.5 -top-[5px] rounded-full shadow-none #{!important};
     &::before,
     &::after {
       @apply hidden;
@@ -627,7 +639,7 @@
 
 /*======= filter checkbox ========*/
 .fct-shop-checkbox {
-  @apply font-medium flex items-center leading-none relative pl-6 capitalize mb-4 cursor-pointer select-none last:mb-0;
+  @apply font-medium flex items-center leading-none relative ps-6 capitalize mb-4 cursor-pointer select-none last:mb-0;
   input {
     @apply absolute opacity-0 cursor-pointer h-0 w-0;
     &:checked ~ .checkmark + span {
@@ -640,7 +652,7 @@
   }
 
   .checkmark {
-    @apply absolute top-0 left-0 h-4 w-4 border border-solid rounded-xs;
+    @apply absolute top-0 start-0 h-4 w-4 border border-solid rounded-xs;
     &:after {
       @apply absolute left-1 top-[1px] w-1.5 h-2.5 border-solid border-2 border-t-0 border-l-0 rotate-45 hidden;
       content: "";
@@ -652,12 +664,12 @@
 
 /*======= Filter wrapper ========*/
 .fct-shop-responsive-filter-wrapper {
-  @apply bg-[rgba(0,0,0,.5)] fixed right-full top-0 z-[1000] flex flex-col items-end h-[100vh] w-full;
+  @apply bg-[rgba(0,0,0,.5)] fixed end-full top-0 z-[1000] flex flex-col items-end h-[100vh] w-full;
   &.admin_bar_enabled{
     @apply h-[calc(100vh-46px)] mt-[46px]
   }
   &.show {
-    @apply right-0;
+    @apply end-0;
   }
 }
 
@@ -715,7 +727,7 @@
     }
   }
   &-close{
-    @apply absolute top-4 right-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full text-[var(--fct-primary-text-color,#2F3448)] hover:bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))];
+    @apply absolute top-4 end-4 w-7.5 h-7.5 cursor-pointer flex justify-center items-center z-[999] rounded-full text-[var(--fct-primary-text-color,#2F3448)] hover:bg-[var(--fct-secondary-btn-hover-bg-color,theme('colors.gray.50'))];
   }
 }
 
@@ -780,7 +792,7 @@
   @apply mb-4;
 }
 .fct-shop-checkbox-child-options {
-  @apply ml-4;
+  @apply ms-4;
 }
 
 
@@ -804,7 +816,7 @@
   }
 }
 .fct-shop-sorting-dropdown {
-  @apply absolute top-full right-0 z-[99999] min-w-[220px] p-2 border border-solid mt-2.5;
+  @apply absolute top-full end-0 z-[99999] min-w-[220px] p-2 border border-solid mt-2.5;
   border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
   box-shadow: 0px -4px 16px -12px rgba(14, 18, 27, 0.10), 0px 16px 32px 0px rgba(14, 18, 27, 0.10);
   transform: scale(0.95);

@@ -29,8 +29,8 @@
         border-radius: 8px;
         min-height: 36px;
         box-shadow: none;
-        padding-left: 14px;
-        padding-right: 40px;
+        padding-inline-start: 14px;
+        padding-inline-end: 40px;
         width: 120px;
         &:focus{
             box-shadow: none;
@@ -121,8 +121,9 @@
         border-radius: 8px;
         border-style: none;
         background-color: #fff;
-        margin-right: 20px;
-        padding: 10px 0 0 20px;
+        margin-inline-end: 20px;
+        padding: 10px 0 0;
+        padding-inline-start: 20px;
         box-shadow: 1px 10px 12px 5px rgba(0,0,0,0.01);
     }
 }
@@ -190,7 +191,7 @@
         list-style: none;
         margin: 0;
         width: 100%;
-        text-align: left;
+        text-align: start;
         transition: background-color 0.2s;
         gap: 8px;
         position: relative;
@@ -211,7 +212,7 @@
             &:after{
                 position: absolute;
                 top: 50%;
-                right: 10px;
+                inset-inline-end: 10px;
                 background-repeat: no-repeat;
                 background-position: center;
                 width: 16px;

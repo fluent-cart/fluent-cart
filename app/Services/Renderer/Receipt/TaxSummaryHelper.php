@@ -450,9 +450,10 @@ class TaxSummaryHelper
             }
             $inclusive  = !empty($ftl['inclusive']);
             $feeLabel   = Arr::get($ftl, 'label', __('fee', 'fluent-cart'));
-            /* translators: %1$s: fee label */
             $displayLabel = $inclusive
+                /* translators: %1$s: fee label */
                 ? sprintf(__('Included in %1$s', 'fluent-cart'), $feeLabel)
+                /* translators: %1$s: fee label */
                 : sprintf(__('Added on %1$s', 'fluent-cart'), $feeLabel);
             $rows[] = [
                 'label'         => $feeLabel,

@@ -205,8 +205,8 @@ class AttributesController extends Controller
         $maxGroups = (int) apply_filters('fluent_cart/attribute_groups/max_reorder', 500);
         if (count($ids) > $maxGroups) {
             return $this->response->sendError([
-                /* translators: %1$d: maximum number of groups that can be reordered in one request */
                 'message' => sprintf(
+                    /* translators: %1$d: maximum number of groups that can be reordered in one request */
                     __('Too many groups in the reorder request (maximum %1$d).', 'fluent-cart'),
                     $maxGroups
                 )

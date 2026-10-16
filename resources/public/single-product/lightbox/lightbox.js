@@ -621,7 +621,12 @@ class Lightbox {
         const KEYCODE_ESC = 27;
         const KEYCODE_LEFTARROW = 37;
         const KEYCODE_RIGHTARROW = 39;
-        const keycode = event.keyCode;
+        let keycode = event.keyCode;
+
+        // Prev/next buttons are mirrored on RTL pages, so the arrow keys follow.
+        if (getComputedStyle(this.lightbox).direction === 'rtl' && (keycode === KEYCODE_LEFTARROW || keycode === KEYCODE_RIGHTARROW)) {
+            keycode = keycode === KEYCODE_LEFTARROW ? KEYCODE_RIGHTARROW : KEYCODE_LEFTARROW;
+        }
 
         if (keycode === KEYCODE_ESC) {
             event.stopPropagation();

@@ -504,6 +504,7 @@ export default class Filter {
                         noUiSlider.create(sliderWrapper, {
                             start: [minStart, maxStart],
                             connect: true,
+                            direction: getComputedStyle(sliderWrapper).direction === 'rtl' ? 'rtl' : 'ltr',
                             step: 0.1,  // Add this line
                             range: {
                                 'min': minValue,

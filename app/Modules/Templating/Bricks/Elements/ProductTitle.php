@@ -90,11 +90,11 @@ class ProductTitle extends Element {
             <?php if ($prefix) : ?>
                 <?php $this->set_attribute('prefix', 'class', ['post-prefix']); ?>
                 <?php if (isset($settings['prefixBlock'])) : ?>
-                    <div <?php echo $this->render_attributes('prefix'); ?>>
+                    <div <?php echo $this->render_attributes('prefix'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Bricks render_attributes() escapes each value ?>>
                         <?php echo wp_kses_post($prefix); ?>
                     </div>
                 <?php else : ?>
-                    <span <?php echo $this->render_attributes('prefix'); ?>>
+                    <span <?php echo $this->render_attributes('prefix'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Bricks render_attributes() escapes each value ?>>
                         <?php echo wp_kses_post($prefix); ?>
                     </span>
                 <?php endif; ?>
@@ -105,11 +105,11 @@ class ProductTitle extends Element {
             <?php if ($suffix) : ?>
                 <?php $this->set_attribute('suffix', 'class', ['post-suffix']); ?>
                 <?php if (isset($settings['suffixBlock'])) : ?>
-                    <div <?php echo $this->render_attributes('suffix'); ?>>
+                    <div <?php echo $this->render_attributes('suffix'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Bricks render_attributes() escapes each value ?>>
                         <?php echo wp_kses_post($suffix); ?>
                     </div>
                 <?php else : ?>
-                    <span <?php echo $this->render_attributes('suffix'); ?>>
+                    <span <?php echo $this->render_attributes('suffix'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Bricks render_attributes() escapes each value ?>>
                         <?php echo wp_kses_post($suffix); ?>
                     </span>
                 <?php endif; ?>

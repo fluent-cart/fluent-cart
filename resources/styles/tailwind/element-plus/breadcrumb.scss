@@ -12,3 +12,13 @@
         }
     }
 }
+
+// Element Plus floats items left and uses a right-pointing chevron.
+[dir="rtl"] .el-breadcrumb {
+    &__item {
+        float: right;
+    }
+    &__separator svg {
+        transform: scaleX(-1);
+    }
+}

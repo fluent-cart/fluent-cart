@@ -98,7 +98,7 @@ const getOrderTypeText = (type) => {
 
               <template v-else>
                 <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatNumber(row.total_amount, true, false, row.currency)"></span>
-                <span class="ml-1" v-if="row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(row.total_amount) - parseInt(row.total_refund)), true, false, row.currency)"></span>
+                <span class="ms-1" v-if="row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(row.total_amount) - parseInt(row.total_refund)), true, false, row.currency)"></span>
               </template>
             </div>
 

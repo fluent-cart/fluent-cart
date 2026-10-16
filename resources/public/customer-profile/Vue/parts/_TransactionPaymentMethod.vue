@@ -4,7 +4,7 @@
       <template v-if="transaction.payment_method === 'paypal'">
         <div class="flex gap-2 items-center">
           <img :src="`${assetUrl}images/payment-methods/paypal-icon.svg`" :alt="$t('PayPal logo')" class="w-[22px]">
-          <span class="text-[var(--fct-customer-dashboard-hint-text-color,#808B9C)] text-sm" :aria-label="$t('Transaction ID:') + transaction.vendor_charge_id || ''">{{ transaction.vendor_charge_id || '' }}</span>
+          <span class="text-[var(--fct-customer-dashboard-hint-text-color,#808B9C)] text-sm fct-ltr-isolate" :aria-label="$t('Transaction ID:') + transaction.vendor_charge_id || ''">{{ transaction.vendor_charge_id || '' }}</span>
         </div>
       </template>
 
@@ -13,7 +13,7 @@
           <img :src="`${assetUrl}images/credit-card/card.svg`" :alt="$t('Credit Card logo')">
           <span v-if="transaction.card_brand" class="text">{{ transaction.card_brand }}</span>
           <span 
-            class="text" 
+            class="text fct-ltr-isolate" 
             :aria-label="$t('Credit card ending in') + ' ' + transaction.card_last_4"
           >
             **** {{ transaction.card_last_4 }}

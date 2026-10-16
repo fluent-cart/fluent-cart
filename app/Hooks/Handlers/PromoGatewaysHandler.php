@@ -47,12 +47,13 @@ class PromoGatewaysHandler
                 try {
                     $gateway->register($slug, new $promoClass());
                 } catch (\Exception $e) {
-                    // Log error but continue with other gateways
-                    error_log(sprintf(
-                        'Failed to register promo gateway %s: %s',
-                        $slug,
-                        $e->getMessage()
-                    ));
+                    // Skip a broken promo gateway so the others still register.
+                    /** This action is documented in app/Hooks/Handlers/AddonGatewaysHandler.php */
+                    do_action('fluent_cart/payment_gateway/registration_failed', [
+                        'slug'      => $slug,
+                        'source'    => 'promo',
+                        'exception' => $e,
+                    ]);
                 }
             }
         }

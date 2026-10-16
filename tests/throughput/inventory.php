@@ -18,7 +18,7 @@ return [
             'source_checks' => [
                 [
                     'file'   => 'app/Http/Controllers/OrderController.php',
-                    'line'   => 60,
+                    'line'   => 63,
                     'needle' => 'OrderFilter::fromRequest($request)->paginate()',
                 ],
                 [

@@ -482,7 +482,9 @@ export default class AdvancedVariationSelector {
                 } else if (e.key === 'End') {
                     nextIdx = siblings.length - 1;
                 } else {
-                    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+                    // Left/right swap meaning on RTL pages.
+                    const forwardKey = getComputedStyle(button).direction === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+                    const dir = (e.key === forwardKey || e.key === 'ArrowDown') ? 1 : -1;
                     nextIdx = (currentIdx + dir + siblings.length) % siblings.length;
                 }
 

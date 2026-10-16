@@ -126,7 +126,12 @@ const onSwatchKeydown = (e) => {
     if (idx === -1) return;
     const last = colorSwatches.length - 1;
     let next = -1;
-    switch (e.key) {
+    // Swatches flow right-to-left in RTL, so the horizontal arrows swap meaning.
+    let key = e.key;
+    if (getComputedStyle(target).direction === 'rtl' && (key === 'ArrowRight' || key === 'ArrowLeft')) {
+        key = key === 'ArrowRight' ? 'ArrowLeft' : 'ArrowRight';
+    }
+    switch (key) {
         case 'ArrowRight':
         case 'ArrowDown':
             next = idx === last ? 0 : idx + 1;

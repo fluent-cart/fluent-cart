@@ -193,7 +193,7 @@ const handleCloseModal = () => {
 </script>
 
 <template>
-  <div class="fct-bulk-delete-action-wrap p-4 pl-5 pt-0">
+  <div class="fct-bulk-delete-action-wrap p-4 ps-5 pt-0">
     <el-popconfirm
         :title="translate('Are you sure you want to delete these orders?')"
         @confirm="handleBulkDelete"

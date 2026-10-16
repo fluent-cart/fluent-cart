@@ -63,12 +63,19 @@
       &-actions {
         @apply flex items-center justify-end;
         .fct-advanced-filter-toggle-wrapper{
-          @apply mr-5;
+          margin-inline-end: theme('spacing.5');
+
+          .fct-advanced-filter-toggle {
+            .el-switch__label {
+              margin-left: 0;
+              margin-inline-start: 10px;
+            }
+          }
         }
       }
 
       &.is-full-width-search {
-        @apply mb-[-4px] pl-2.5 pt-2.5;
+        @apply mb-[-4px] ps-2.5 pt-2.5;
       }
     }
 
@@ -168,11 +175,11 @@
 
   &-list {
     &-item {
-      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider py-5 pr-[120px] gap-2.5 grid last:border-b-0 dark:border-dark-500;
+      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider py-5 pe-[120px] gap-2.5 grid last:border-b-0 dark:border-dark-500;
     }
 
     &-icon {
-      @apply absolute bg-white top-1/2 left-0 w-12 h-12 border border-solid border-gray-outline rounded-full flex items-center justify-center -mt-[5px] dark:bg-dark-600 dark:border-dark-400;
+      @apply absolute bg-white top-1/2 start-0 w-12 h-12 border border-solid border-gray-outline rounded-full flex items-center justify-center -mt-[5px] dark:bg-dark-600 dark:border-dark-400;
       transform: translateY(-50%);
 
       img {
@@ -181,7 +188,7 @@
 
       + .fct-content-card-list-head,
       + .fct-content-card-list-head + .fct-content-card-list-content {
-        @apply pl-15;
+        @apply ps-15;
       }
 
       &.local {
@@ -226,7 +233,7 @@
     }
 
     &-action {
-      @apply absolute top-1/2 right-0;
+      @apply absolute top-1/2 end-0;
       transform: translateY(-50%);
     }
   }
@@ -280,7 +287,7 @@
   }
 
   .view-link {
-    @apply block invisible absolute right-[16px] top-0 text-system-dark dark:text-gray-50 focus:outline-none focus:shadow-none;
+    @apply block invisible absolute end-[16px] top-0 text-system-dark dark:text-gray-50 focus:outline-none focus:shadow-none;
   }
 
   &:hover {
@@ -298,7 +305,7 @@
     }
 
     .fct-product-link {
-      @apply block max-w-full truncate mr-[36px];
+      @apply block max-w-full truncate me-[36px];
     }
   }
 
@@ -330,7 +337,7 @@
   .product-name {
     @apply inline-grid relative leading-[22px];
     &-inner{
-      @apply truncate pr-10;
+      @apply truncate pe-10;
     }
   }
   .product-name-inner {
@@ -341,8 +348,9 @@
   }
 
 
+  // Element Plus forces text-align: left on table cells, which pins RTL titles to the far side.
   .fct-product-info-details {
-    @apply flex-1;
+    @apply flex-1 text-start;
   }
 }
 
@@ -354,7 +362,7 @@
 
 .fct-manage-address {
   &-block {
-    @apply bg-gray-50 py-4 pl-4 pr-[100px] border border-solid border-gray-divider rounded mb-4 relative dark:bg-dark-500 dark:border-dark-400;
+    @apply bg-gray-50 py-4 ps-4 pe-[100px] border border-solid border-gray-divider rounded mb-4 relative dark:bg-dark-500 dark:border-dark-400;
     &.default-address {
       @apply pt-5 mt-2;
     }
@@ -379,7 +387,7 @@
       @apply relative;
     }
     .fct-address-action {
-      @apply absolute top-3 right-2;
+      @apply absolute top-3 end-2;
     }
   }
 }

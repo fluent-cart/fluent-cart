@@ -48,6 +48,7 @@ class Webhook
             '<p class="%s">%s</p>',
             $class,
             \sprintf(
+                /* translators: %1$s: "Add endpoint" link */
                 __('Click %1$s and paste the webhook URL above', 'fluent-cart'),
                 \sprintf('<a href="%s" target="_blank">%s %s</a>', $url, __('Add endpoint', 'fluent-cart'), $svg)
             )

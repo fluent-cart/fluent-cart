@@ -153,7 +153,7 @@ class MenuHandler
         // Runs synchronously in <head> before any paint — applies the dark class and
         // data-fct-theme attribute to <html> so logos and the theme icon render correctly
         // from the very first frame, with no light-to-dark flash.
-        echo '<script>' . $this->getDarkModeInitScript() . '</script>';
+        wp_print_inline_script_tag($this->getDarkModeInitScript());
     }
 
     public function enqueueDarkModeToggleForTaxonomy()
@@ -604,8 +604,6 @@ class MenuHandler
             'dummy_product_info'               => apply_filters('fluent_cart/dummy_product_info', []) ?: [],
             'currency_signs'                   => CurrenciesHelper::getCurrencySigns(),
             'currency_decimals'                => Money::getDecimalsMap(),
-            // Admin orders in another currency are not released yet
-            'admin_order_currencies'           => [],
             'filter_options'                   => $filterOptions,
             'table_config'                     => $tableConfig,
             'receipt_page_url'                 => $settings->getReceiptPage(),

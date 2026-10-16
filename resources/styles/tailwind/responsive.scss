@@ -65,7 +65,7 @@
       .fct-material-input{
         .el-input__wrapper,
         .el-select__wrapper {
-          @apply rounded-bl-none border-b-[0.5px] border-r-[1px];
+          @apply rounded-es-none border-b-[0.5px] border-e-[1px];
         }
       }
     }
@@ -73,7 +73,7 @@
       .fct-material-input{
         .el-input__wrapper,
         .el-select__wrapper {
-          @apply rounded-bl border-b-[1px] border-l-[1px];
+          @apply rounded-es border-b-[1px] border-s-[1px];
         }
       }
     }
@@ -293,15 +293,15 @@
       @apply text-sm font-medium text-system-dark leading-[20px] dark:text-gray-50;
     }
     .fct-popover-box-action {
-      @apply p-0 rounded-none gap-1 relative top-auto right-auto translate-y-0 inline-flex items-center hover:bg-transparent;
+      @apply p-0 rounded-none gap-1 relative top-auto start-auto translate-y-0 inline-flex items-center hover:bg-transparent;
       white-space: normal;
       .fct-customer-name,
       .fct-order-count-text{
-        @apply mr-0;
+        @apply me-0;
       }
     }
     .fct-popover-box-action-icon {
-      @apply opacity-100 relative top-auto right-auto translate-y-0;
+      @apply opacity-100 relative top-auto end-auto translate-y-0;
     }
     .fct-order-and-customer-info {
       @apply grid gap-2.5;
@@ -468,15 +468,15 @@
       }
     }
     .fct-popover-box-action {
-      @apply p-0 rounded-none gap-1 relative top-auto right-auto translate-y-0 inline-flex items-center hover:bg-transparent;
+      @apply p-0 rounded-none gap-1 relative top-auto start-auto translate-y-0 inline-flex items-center hover:bg-transparent;
       white-space: normal;
       .fct-customer-name,
       .fct-order-count-text{
-        @apply mr-0;
+        @apply me-0;
       }
     }
     .fct-popover-box-action-icon {
-      @apply opacity-100 relative top-auto right-auto translate-y-0;
+      @apply opacity-100 relative top-auto end-auto translate-y-0;
     }
     .fct-table-customer-col .fct-popover-box {
       .link {

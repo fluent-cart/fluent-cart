@@ -53,12 +53,17 @@ class AddonGatewaysHandler
                 try {
                     $gateway->register($slug, new $addonClass());
                 } catch (\Exception $e) {
-                    // Log error but continue with other gateways
-                    error_log(sprintf(
-                        'Failed to register addon gateway %s: %s',
-                        $slug,
-                        $e->getMessage()
-                    ));
+                    // Skip a broken add-on gateway so the others still register.
+                    /**
+                     * Fires when a payment gateway throws while registering.
+                     *
+                     * @param array $payload ['slug' => string, 'source' => 'addon'|'promo', 'exception' => \Exception]
+                     */
+                    do_action('fluent_cart/payment_gateway/registration_failed', [
+                        'slug'      => $slug,
+                        'source'    => 'addon',
+                        'exception' => $e,
+                    ]);
                 }
             }
         }

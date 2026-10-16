@@ -225,7 +225,7 @@ onMounted(() => {
     <!-- Flex row (override the shared item's grid + right-padding reservation):
          content shrinks/wraps on the left, actions stay pinned right with a gap,
          so the description can never run under the buttons. -->
-    <div v-if="appReady" class="fct-content-card-list-item py-4 px-6 !flex !pr-6 items-start justify-between !gap-4">
+    <div v-if="appReady" class="fct-content-card-list-item py-4 px-6 !flex !pe-4 items-start justify-between !gap-4">
         <div class="min-w-0">
             <div class="fct-content-card-list-head">
                 <div class="flex items-start gap-2 flex-row">

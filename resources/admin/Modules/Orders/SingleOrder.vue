@@ -198,7 +198,7 @@
 
                             <tr class="align-top">
                               <!--                            product image-->
-                              <td class="w-[64px] pr-3 align-top" :rowspan="getProductRowSpan(product)">
+                              <td class="w-[64px] pe-3 align-top" :rowspan="getProductRowSpan(product)">
                                 <div class="product-thumbnail w-[46px] flex-shrink-0">
                                   <!-- External link -->
                                   <a
@@ -339,7 +339,7 @@
                                   >{{ formatNumber(product.variants.compare_price) }}</span>
                                   <span
                                       v-if="product.line_meta && product.line_meta.original_unit_price"
-                                      class="del line-through opacity-60 text-xs mr-0.5"
+                                      class="del line-through opacity-60 text-xs me-0.5"
                                   >{{ formatNumber(product.line_meta.original_unit_price) }}</span>
                                   <span>{{ formatNumber(product.unit_price) }}</span>
                                   <span>×</span>
@@ -354,7 +354,7 @@
                               </td>
 
                               <!--                            product base price & quantity-->
-                              <td class="fct-order-item-qty-col text-right whitespace-nowrap">
+                              <td class="fct-order-item-qty-col text-end whitespace-nowrap">
                                 <div
                                     class="product-details-content-second shrink-0 grow-0 basis-[90px]"
                                     v-if="!isEditingItem"
@@ -372,7 +372,7 @@
                                     </span>
                                     <span
                                         v-if="product.line_meta && product.line_meta.original_unit_price"
-                                        class="del line-through opacity-60 text-xs mr-0.5"
+                                        class="del line-through opacity-60 text-xs me-0.5"
                                     >{{ formatNumber(product.line_meta.original_unit_price) }}</span>
                                     <span>{{
                                         formatNumber(product.unit_price)
@@ -394,7 +394,7 @@
                               </td>
 
                               <!--                            product price-->
-                              <td class="fct-order-item-price-col text-right whitespace-nowrap">
+                              <td class="fct-order-item-price-col text-end whitespace-nowrap">
                                 <div
                                     class="product-details-content-third shrink-0 grow-0 flex justify-end gap-1 basis-[100px]"
                                 >
@@ -423,7 +423,7 @@
                                   <td colspan="2" class="">
                                     <span class="fct-tax-badge">{{ formatTaxRateBadge(rate) }}</span>
                                   </td>
-                                  <td class="text-right">
+                                  <td class="text-end">
                                     <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!product.line_meta?.tax_config?.inclusive || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
                                       <template v-if="product.line_meta && product.line_meta.tax_config && product.line_meta.tax_config.inclusive">{{ translate('incl.') }} </template>
                                       <template v-else>+</template>
@@ -451,7 +451,7 @@
                                   {{ product?.other_info.signup_fee_name }}
                                 </span>
                               </td>
-                              <td class="text-right text-xs text-system-mid dark:text-gray-300 whitespace-nowrap">
+                              <td class="text-end text-xs text-system-mid dark:text-gray-300 whitespace-nowrap">
                                 + {{ formatNumber(product?.other_info?.setup_fee_per_item === 'yes' ? product.other_info.signup_fee * product.quantity : product.other_info.signup_fee) }}
                               </td>
                             </tr>
@@ -466,7 +466,7 @@
                                   <td colspan="2" class="pb-2">
                                     <span class="fct-tax-badge">{{ translate('Setup fee') }}: {{ formatTaxRateBadge(rate) }}</span>
                                   </td>
-                                  <td class="text-right pb-2">
+                                  <td class="text-end pb-2">
                                     <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!isSubscriptionSetupFeeInclusive(product) || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
                                       <template v-if="isSubscriptionSetupFeeInclusive(product)">{{ translate('incl.') }} </template>{{ formatNumber(rate.tax_amount) }}
                                     </span>
@@ -597,7 +597,7 @@
                       <td>- {{ formatNumber(order.coupon_discount_total) }}</td>
                     </tr>
                     <tr v-if="isEditingItem">
-                      <td colspan="3" style="text-align:right; font-style:italic; opacity:0.65; font-size:0.85em;">
+                      <td colspan="3" style="text-align:end; font-style:italic; opacity:0.65; font-size:0.85em;">
                         {{ translate('Tax will be recalculated on save') }}
                       </td>
                     </tr>
@@ -673,7 +673,7 @@
                       <td>
                         <p class="flex flex-end m-0 items-center">
                           <WarnTriangleFilled
-                              class="w-6 text-amber-500 mr-2"
+                              class="w-6 text-amber-500 me-2"
                           />
                           {{ translate("Total Refund Owed") }}
                         </p>

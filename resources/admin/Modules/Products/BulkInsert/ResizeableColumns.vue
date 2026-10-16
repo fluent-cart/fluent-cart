@@ -16,7 +16,7 @@
                 :style="{
                   width: column.width + 'px',
                   zIndex: (index === 0 || (index === columns.length - 1 && stickyLast)) ? 70 : (columns.length - index + 50),
-                  left: index === 0 && $slots['header-first'] ? '40px' : (index === 0 ? '0px' : undefined)
+                  insetInlineStart: index === 0 && $slots['header-first'] ? '40px' : (index === 0 ? '0px' : undefined)
                 }"
                 v-for="(column, index) in columns"
                 :key="column.key || index"
@@ -111,11 +111,13 @@ const onMouseDown = (event, index) => {
   const startX = event.clientX;
   const startWidth = props.columns[index].width;
   const minWidth = props.columns[index].minWidth || 50;
+  // In RTL the resizer sits on the column's left edge, so dragging left widens it.
+  const dirSign = getComputedStyle(event.target).direction === 'rtl' ? -1 : 1;
 
   resizingIndex.value = index;
 
   const onMouseMove = (event) => {
-    const newWidth = startWidth + (event.clientX - startX);
+    const newWidth = startWidth + (event.clientX - startX) * dirSign;
     if (newWidth >= minWidth) {
       props.columns[index].width = newWidth;
     }

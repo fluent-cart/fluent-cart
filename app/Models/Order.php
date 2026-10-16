@@ -540,6 +540,33 @@ class Order extends Model
         return is_array($businessInfo) ? $businessInfo : [];
     }
 
+    /**
+     * Seller identity snapshotted at checkout. Fields missing from the
+     * snapshot (orders placed before it existed) come from live settings.
+     *
+     * @return array{company_name: string, legal_registration_id: string, seller_vat_id: string, seller_tax_id: string, store_country: string}
+     */
+    public function getStoreBusinessInfo(): array
+    {
+        $snapshot = $this->getMeta('store_business_info', []);
+        $snapshot = is_array($snapshot) ? $snapshot : [];
+        $storeSettings = null;
+        $info = [];
+
+        foreach (['company_name', 'legal_registration_id', 'seller_vat_id', 'seller_tax_id', 'store_country'] as $field) {
+            if (isset($snapshot[$field])) {
+                $info[$field] = (string) $snapshot[$field];
+                continue;
+            }
+            if (!$storeSettings) {
+                $storeSettings = new \FluentCart\Api\StoreSettings();
+            }
+            $info[$field] = (string) $storeSettings->get($field, '');
+        }
+
+        return $info;
+    }
+
     public function getPrimaryOrderTaxRate()
     {
         return $this->orderTaxRates ? $this->orderTaxRates->first() : null;
@@ -647,6 +674,7 @@ class Order extends Model
                 // The order's own currency — admin (base) and the customer
                 // portal (visitor's currency) read this label too
                 $displayLabel .= ' ' . sprintf(
+                    /* translators: %s: formatted amount the tax is calculated on */
                     __('on %s', 'fluent-cart'),
                     html_entity_decode(Helper::toDecimal($displayBase, true, $this->currency ?: null), ENT_QUOTES, 'UTF-8')
                 );

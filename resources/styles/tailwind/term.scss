@@ -83,7 +83,7 @@
     }
   }
 
-  @apply w-full inline-flex bg-gray-50 text-system-dark-light text-xs font-medium rounded leading-none py-1.5 pl-2 pr-1 items-center gap-2.5 dark:bg-dark-500 dark:text-gray-50 #{!important};
+  @apply w-full inline-flex bg-gray-50 text-system-dark-light text-xs font-medium rounded leading-none py-1.5 ps-2 pe-1 items-center gap-2.5 dark:bg-dark-500 dark:text-gray-50 #{!important};
   .text{
     @apply truncate;
   }
@@ -127,7 +127,7 @@
   &-header{
     @apply pb-5;
     &-button-wrap{
-      @apply pt-5 -ml-2.5;
+      @apply pt-5 -ms-2.5;
       .el-button {
         @apply w-full justify-start text-sm font-semibold;
         @apply text-dark-500 bg-transparent border-0 dark:hover:bg-dark-400  #{!important};
@@ -144,9 +144,9 @@
 
 .fct-add-labels-modal{
   .fct-term-list{
-    @apply pl-2.5 mb-4;
+    @apply ps-2.5 mb-4;
     li:not(.title){
-      @apply -ml-2.5;
+      @apply -ms-2.5;
     }
   }
 }

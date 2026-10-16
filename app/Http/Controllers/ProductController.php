@@ -418,6 +418,7 @@ class ProductController extends Controller
 
             return $this->sendSuccess([
                 'message' => sprintf(
+                    /* translators: %d: number of products created */
                     __('%d product(s) created successfully', 'fluent-cart'),
                     count($result['created'])
                 ),
@@ -1846,6 +1847,7 @@ class ProductController extends Controller
 
             return $this->sendSuccess([
                 'message' => sprintf(
+                    /* translators: %d: number of products updated */
                     __('%d product(s) updated successfully', 'fluent-cart'),
                     count($result['updated'])
                 ),

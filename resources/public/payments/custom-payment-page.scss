@@ -114,20 +114,20 @@ ul{
     }
     &-table{
       table{
-        @apply w-full border-collapse border-0 text-left text-sm font-normal m-0 !important;
+        @apply w-full border-collapse border-0 text-start text-sm font-normal m-0 !important;
       }
       td,
       th{
-        @apply px-5 py-2.5 border border-solid border-gray-divider border-x-0 border-t-0 text-right bg-transparent !important;
+        @apply px-5 py-2.5 border border-solid border-gray-divider border-x-0 border-t-0 text-end bg-transparent !important;
       }
       tr{
         th:first-child,
         td:first-child{
-          @apply pl-0 text-left !important;
+          @apply ps-0 text-start !important;
         }
         th:last-child,
         td:last-child {
-          @apply pr-0;
+          @apply pe-0;
         }
       }
       thead{
@@ -140,7 +140,7 @@ ul{
           td{
             @apply text-[13px];
             &:not(:first-child){
-              @apply text-right;
+              @apply text-end;
             }
           }
           &:last-child td{
@@ -158,7 +158,7 @@ ul{
         tr{
           td{
             &:not(:first-child){
-              @apply text-right;
+              @apply text-end;
             }
           }
           &:first-child td{
@@ -231,7 +231,7 @@ ul{
   }
 
   label {
-    @apply mb-0 flex items-center gap-3 relative leading-[22px] cursor-pointer text-[15px] text-system-dark-light select-none font-medium py-3 pr-5 pl-3 w-full;
+    @apply mb-0 flex items-center gap-3 relative leading-[22px] cursor-pointer text-[15px] text-system-dark-light select-none font-medium py-3 pe-5 ps-3 w-full;
     img {
       @apply h-5.5;
     }
@@ -261,7 +261,7 @@ ul{
   }
 
   label {
-    @apply mb-0 block relative leading-[24px] cursor-pointer text-base text-system-mid select-none pl-10 font-medium py-3 pr-4 max-w-full #{!important};
+    @apply mb-0 block relative leading-[24px] cursor-pointer text-base text-system-mid select-none ps-10 font-medium py-3 pe-4 max-w-full #{!important};
   }
 
   &:last-child {
@@ -277,7 +277,7 @@ ul{
   }
 
   .checkmark {
-    @apply absolute top-[50%] left-3 h-4 w-4 bg-white rounded-full border-[1.5px] border-solid border-gray-outline;
+    @apply absolute top-[50%] start-3 h-4 w-4 bg-white rounded-full border-[1.5px] border-solid border-gray-outline;
     transform: translateY(-50%);
 
     &:after {

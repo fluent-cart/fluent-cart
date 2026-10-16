@@ -29,22 +29,28 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
     $isReversed = $order->isReverseChargeTaxOrder();
     $rcMode = $order->getOrderRcMode();
     $fctEmailDisplayMode = ($order instanceof \FluentCart\App\Models\Order) ? TaxSummaryHelper::getTaxDisplayMode() : 'itemized';
+    // In RTL the totals span the row so their labels line up under the item column.
+    $isRtlTotals = \FluentCart\App\Services\Email\EmailDirection::isRtl();
+    $totalsWidth = $isRtlTotals ? '100%' : '400';
+    $totalsWidthCss = $isRtlTotals ? '100%' : '400px';
+    $startSide = \FluentCart\App\Services\Email\EmailDirection::start();
+    $endSide = \FluentCart\App\Services\Email\EmailDirection::end();
 
 ?>
 
 <table role="presentation" style="border-spacing:0;padding: 0; width: 100%;border: none">
     <thead>
     <tr>
-        <th style="background-color:rgb(249,250,251); padding-left: 16px">
-            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: left">
+        <th style="background-color:rgb(249,250,251); padding-<?php echo esc_attr($startSide); ?>: 16px">
+            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: <?php echo esc_attr($startSide); ?>">
                 <?php echo esc_html__('Item', 'fluent-cart'); ?>
             </p>
         </th>
 
         <th style="background-color:rgb(249,250,251); width: 50px"></th>
 
-        <th style="background-color:rgb(249,250,251); padding-right: 16px; width: 200px;">
-            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: right">
+        <th style="background-color:rgb(249,250,251); padding-<?php echo esc_attr($endSide); ?>: 16px; width: 200px;">
+            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: <?php echo esc_attr($endSide); ?>">
                 <?php echo esc_html__('Total', 'fluent-cart'); ?>
             </p>
         </th>
@@ -53,7 +59,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
     <tbody style="width:100%">
     <?php foreach ($orderItems as $item): ?>
         <tr>
-            <td style="padding-left: 16px;padding-top: 8px;padding-bottom: 8px;" colspan="2">
+            <td style="padding-<?php echo esc_attr($startSide); ?>: 16px;padding-top: 8px;padding-bottom: 8px;" colspan="2">
                 <p style="font-size: 15px; color: #2F3448; font-weight: 500; overflow: hidden; line-height: 18px; margin-top: 0; margin-bottom: 5px;">
 
                     <?php echo esc_html($item['post_title']); ?>
@@ -87,10 +93,10 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php endif; ?>
                 </p>
             </td>
-            <td style="padding-right: 16px;text-align:right">
+            <td style="padding-<?php echo esc_attr($endSide); ?>: 16px;text-align:<?php echo esc_attr($endSide); ?>">
                 <p style="font-size:14px;font-weight:700;color:rgb(17,24,39);margin:0;line-height:24px;">
                     <?php if ((int) Arr::get($item, 'discount_total', 0) > 0): ?>
-                        <span style="text-decoration:line-through;color:rgb(107,114,128);font-weight:400;margin-right:4px;">
+                        <span style="text-decoration:line-through;color:rgb(107,114,128);font-weight:400;margin-<?php echo esc_attr($endSide); ?>:4px;">
                             <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal(Arr::get($item, 'subtotal', 0))); ?>
                         </span>
                     <?php endif; ?>
@@ -121,13 +127,13 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                         ?>
                                     </span>
                                 </td>
-                                <td style="text-align:right;padding: 2px 0;">
+                                <td style="text-align:<?php echo esc_attr($endSide); ?>;padding: 2px 0;">
                                     <span style="font-size:11px;font-weight:500;color:<?php echo esc_attr($pillColor); ?>;<?php echo esc_attr($reversedAmountStyle); ?>">
                                         <?php if ($rate['inclusive']): ?>
                                             <?php /* translators: %1$s: formatted tax amount e.g. "$3.92" */ ?>
-                                            <?php echo esc_html(sprintf(__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Helpers\Helper::toDecimal($rate['tax_amount']))); ?>
+                                            <?php echo sprintf(esc_html__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($rate['tax_amount']))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                         <?php else: ?>
-                                            + <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($rate['tax_amount'])); ?>
+                                            <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('+ ' . \FluentCart\App\Helpers\Helper::toDecimal($rate['tax_amount'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                         <?php endif; ?>
                                     </span>
                                 </td>
@@ -142,7 +148,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 $reversedAmountStyle = ($isReversed && (!$itemIsInclusive || $rcMode === 'dynamic')) ? 'text-decoration:line-through;opacity:0.6;' : '';
                 $pillBg    = $itemIsInclusive ? '#EAF3DE' : '#FAEEDA';
                 $pillColor = $itemIsInclusive ? '#3B6D11' : '#854F0B';
-                $pillLabel = $itemIsInclusive ? esc_html__('Tax (incl.)', 'fluent-cart') : esc_html__('Tax (excl.)', 'fluent-cart');
+                $pillLabel = $itemIsInclusive ? __('Tax (incl.)', 'fluent-cart') : __('Tax (excl.)', 'fluent-cart');
             ?>
             <tr>
                 <td colspan="3" style="padding: 0 16px 8px;">
@@ -150,16 +156,16 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                         <tr>
                             <td style="padding: 2px 0;">
                                 <span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;background:<?php echo esc_attr($pillBg); ?>;color:<?php echo esc_attr($pillColor); ?>;">
-                                    <?php echo $pillLabel; ?>
+                                    <?php echo esc_html($pillLabel); ?>
                                 </span>
                             </td>
-                            <td style="text-align:right;padding: 2px 0;">
+                            <td style="text-align:<?php echo esc_attr($endSide); ?>;padding: 2px 0;">
                                 <span style="font-size:11px;font-weight:500;color:<?php echo esc_attr($pillColor); ?>;<?php echo esc_attr($reversedAmountStyle); ?>">
                                     <?php if ($itemIsInclusive): ?>
                                         <?php /* translators: %1$s: formatted tax amount e.g. "$3.92" */ ?>
-                                        <?php echo esc_html(sprintf(__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Helpers\Helper::toDecimal((int) $item['tax_amount']))); ?>
+                                        <?php echo sprintf(esc_html__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal((int) $item['tax_amount']))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     <?php else: ?>
-                                        + <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal((int) $item['tax_amount'])); ?>
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('+ ' . \FluentCart\App\Helpers\Helper::toDecimal((int) $item['tax_amount'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     <?php endif; ?>
                                 </span>
                             </td>
@@ -217,13 +223,13 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                             ?>
                                         </span>
                                     </td>
-                                    <td style="text-align:right;padding: 2px 0;">
+                                    <td style="text-align:<?php echo esc_attr($endSide); ?>;padding: 2px 0;">
                                         <span style="font-size:11px;font-weight:500;color:<?php echo esc_attr($sfColor); ?>;<?php echo esc_attr($reversedAmountStyle); ?>">
                                             <?php if ($sfRate['inclusive']): ?>
                                                 <?php /* translators: %1$s: formatted tax amount e.g. "$3.92" */ ?>
-                                                <?php echo esc_html(sprintf(__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Helpers\Helper::toDecimal($sfRate['tax_amount']))); ?>
+                                                <?php echo sprintf(esc_html__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($sfRate['tax_amount']))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                             <?php else: ?>
-                                                + <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($sfRate['tax_amount'])); ?>
+                                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('+ ' . \FluentCart\App\Helpers\Helper::toDecimal($sfRate['tax_amount'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                             <?php endif; ?>
                                         </span>
                                     </td>
@@ -257,13 +263,13 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                             <?php echo esc_html__('Setup Fee Tax', 'fluent-cart'); ?>
                                         </span>
                                     </td>
-                                    <td style="text-align:right;padding: 2px 0;">
+                                    <td style="text-align:<?php echo esc_attr($endSide); ?>;padding: 2px 0;">
                                         <span style="font-size:11px;font-weight:500;color:<?php echo esc_attr($sfFallbackColor); ?>;<?php echo esc_attr($reversedAmountStyle); ?>">
                                             <?php if ($sfIsInclusive): ?>
                                                 <?php /* translators: %1$s: formatted tax amount e.g. "$3.92" */ ?>
-                                                <?php echo esc_html(sprintf(__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Helpers\Helper::toDecimal($sfTax))); ?>
+                                                <?php echo sprintf(esc_html__('incl. %1$s', 'fluent-cart'), \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($sfTax))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                             <?php else: ?>
-                                                + <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($sfTax)); ?>
+                                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('+ ' . \FluentCart\App\Helpers\Helper::toDecimal($sfTax)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                             <?php endif; ?>
                                         </span>
                                     </td>
@@ -282,10 +288,12 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
         <td colspan="2" style="border-top:1px solid #e5e7eb;padding-top:12px;font-size:0;line-height:0;">&nbsp;</td>
     </tr>
     <tr>
+<?php if (!$isRtlTotals): ?>
         <td style="width: 50%;"></td>
+<?php endif; ?>
         <td style="width: 100%;">
-            <table role="presentation" width="400"
-                   style="margin: 0 0 0 auto; width: 400px; max-width: 100%; border: none;">
+            <table role="presentation" width="<?php echo esc_attr($totalsWidth); ?>"
+                   style="margin: <?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('0 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
                 <tbody>
                 <!-- Zone A: plain subtotal / shipping / fees / discount -->
                 <?php if ($order->subtotal != $order->total_amount): ?>
@@ -295,9 +303,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Subtotal', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->subtotal)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($order->subtotal)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -327,9 +335,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php endif; ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping + $emailShippingDiscount)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping + $emailShippingDiscount)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -340,9 +348,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Shipping Discount', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%;text-align:right">
+                            <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                    - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailShippingDiscount)); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('- ' . \FluentCart\App\Helpers\Helper::toDecimal($emailShippingDiscount)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -352,9 +360,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Shipping after discount', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%;text-align:right">
+                            <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping)); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailDisplayShipping)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -367,9 +375,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html($feeItem['title']); ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($feeItem['subtotal'])); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($feeItem['subtotal'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -388,36 +396,36 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo $onlyProrateCredit ? esc_html__('Prorate Credit', 'fluent-cart') : esc_html__('Discount', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
-                                - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('- ' . \FluentCart\App\Helpers\Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
                     <?php if ($prorateCredit > 0 && $upgradeDiscount > 0): ?>
                         <tr style="width:100%">
-                            <td style="width:70%;padding-left:12px;">
+                            <td style="width:70%;padding-<?php echo esc_attr($startSide); ?>:12px;">
                                 <p style="font-size:12px;color:rgb(107,114,128);line-height:20px;margin: 0;">
                                     <?php echo esc_html__('Upgrade Discount', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%;text-align:right">
+                            <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:12px;color:rgb(107,114,128);margin:0;line-height:20px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($upgradeDiscount)); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($upgradeDiscount)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
                     <?php endif; ?>
                     <?php if ($prorateCredit > 0 && !$onlyProrateCredit): ?>
                         <tr style="width:100%">
-                            <td style="width:70%;padding-left:12px;">
+                            <td style="width:70%;padding-<?php echo esc_attr($startSide); ?>:12px;">
                                 <p style="font-size:12px;color:rgb(107,114,128);line-height:20px;margin: 0;">
                                     <?php echo esc_html__('Prorate Credit', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%;text-align:right">
+                            <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:12px;color:rgb(107,114,128);margin:0;line-height:20px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($prorateCredit)); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($prorateCredit)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -437,8 +445,8 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 </tbody>
             </table><!-- /Zone A -->
             <!-- Zone B: tax breakdown inside its own grey box -->
-            <table role="presentation" align="right" width="400"
-                   style="border-spacing:0;border-collapse:collapse;margin:12px 0 0 auto;width:400px;max-width:100%;border:none;">
+            <table role="presentation" align="<?php echo esc_attr($endSide); ?>" width="<?php echo esc_attr($totalsWidth); ?>"
+                   style="border-spacing:0;border-collapse:collapse;margin:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('12px 0 0 auto')); ?>;width:<?php echo esc_attr($totalsWidthCss); ?>;max-width:100%;border:none;">
                 <tbody>
                 <tr>
                     <td style="background-color:rgb(249,250,251);padding:16px;border-radius:8px;">
@@ -452,7 +460,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html($emailTaxSummary['simpleLine']['label']); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px;">
                                 <?php echo esc_html($emailTaxSummary['simpleLine']['value']); ?>
                             </p>
@@ -485,13 +493,13 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                             <table style="width:100%;border-collapse:collapse;border-spacing:0;table-layout:fixed;">
                                 <tbody>
                                 <tr>
-                                    <td style="width:58%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:2px 12px 2px 0;border:none;white-space:nowrap;">
+                                    <td style="width:58%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('2px 12px 2px 0')); ?>;border:none;white-space:nowrap;">
                                         <?php echo esc_html__('Rate', 'fluent-cart'); ?>
                                     </td>
-                                    <td style="width:24%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:2px 12px 2px 0;text-align:right;border:none;white-space:nowrap;">
+                                    <td style="width:24%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('2px 12px 2px 0')); ?>;text-align:<?php echo esc_attr($endSide); ?>;border:none;white-space:nowrap;">
                                         <?php echo esc_html__('Taxable base', 'fluent-cart'); ?>
                                     </td>
-                                    <td style="width:18%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:2px 0 2px 0;text-align:right;border:none;white-space:nowrap;">
+                                    <td style="width:18%;font-size:11px;text-transform:uppercase;color:rgb(107,114,128);font-weight:600;padding:2px 0 2px 0;text-align:<?php echo esc_attr($endSide); ?>;border:none;white-space:nowrap;">
                                         <?php echo esc_html__('Tax', 'fluent-cart'); ?>
                                     </td>
                                 </tr>
@@ -499,14 +507,14 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     $emailFoldedColor = !empty($emailFoldedLine['inclusive']) ? '#94a3b8' : '#1e293b';
                                 ?>
                                 <tr>
-                                    <td style="width:58%;font-size:14px;line-height:20px;padding:3px 12px 3px 0;border:none;color:<?php echo esc_attr($emailFoldedColor); ?>;white-space:normal;word-break:break-word;overflow-wrap:break-word;vertical-align:top;">
+                                    <td style="width:58%;font-size:14px;line-height:20px;padding:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('3px 12px 3px 0')); ?>;border:none;color:<?php echo esc_attr($emailFoldedColor); ?>;white-space:normal;word-break:break-word;overflow-wrap:break-word;vertical-align:top;">
                                         <?php echo esc_html($emailFoldedLine['label']); ?>
                                     </td>
-                                    <td style="width:24%;font-size:13px;line-height:20px;padding:3px 12px 3px 0;text-align:right;border:none;color:#94a3b8;white-space:nowrap;vertical-align:top;">
-                                        <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailFoldedLine['base'])); ?>
+                                    <td style="width:24%;font-size:13px;line-height:20px;padding:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('3px 12px 3px 0')); ?>;text-align:<?php echo esc_attr($endSide); ?>;border:none;color:#94a3b8;white-space:nowrap;vertical-align:top;">
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailFoldedLine['base'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     </td>
-                                    <td style="width:18%;font-size:13px;line-height:20px;padding:3px 0 3px 0;text-align:right;border:none;color:<?php echo esc_attr($emailFoldedColor); ?>;white-space:nowrap;vertical-align:top;">
-                                        <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailFoldedLine['tax'])); ?>
+                                    <td style="width:18%;font-size:13px;line-height:20px;padding:3px 0 3px 0;text-align:<?php echo esc_attr($endSide); ?>;border:none;color:<?php echo esc_attr($emailFoldedColor); ?>;white-space:nowrap;vertical-align:top;">
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailFoldedLine['tax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -521,9 +529,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('VAT reversed', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px; border-top:1px solid #e2e8f0; padding-top:4px;">
-                                <?php echo esc_html($rcReversedValue); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount($rcReversedValue); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -534,9 +542,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Total tax', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px; border-top:1px solid #e2e8f0; padding-top:4px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTotalOrderTax)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTotalOrderTax)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -547,9 +555,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('of which included in prices', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:13px; color:#94a3b8; margin:0; line-height:22px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailIncludedInPrices)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailIncludedInPrices)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -561,9 +569,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Payable now (added)', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:6px;">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:6px;">
                             <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px;">
-                                <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailPayableTax)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailPayableTax)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -577,9 +585,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Added on shipping', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px; color:#94a3b8; margin:0; line-height:24px;">
-                                <span style="text-decoration:line-through;opacity:0.6;"><?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($rcReversedShipping)); ?></span>
+                                <span style="text-decoration:line-through;opacity:0.6;"><?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($rcReversedShipping)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
                             </p>
                         </td>
                     </tr>
@@ -590,9 +598,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Tax reversed', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%; text-align:right">
+                        <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px;">
-                                <?php echo esc_html($rcReversedValue); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount($rcReversedValue); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -620,9 +628,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                         <?php echo esc_html($emailTaxRateLine['label']); ?>
                                     </p>
                                 </td>
-                                <td style="width:30%; text-align:right">
+                                <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                     <p style="font-size:14px; font-weight:<?php echo esc_attr($emailTaxRateWeight); ?>; color:<?php echo esc_attr($emailTaxRateColor); ?>; margin:0; line-height:24px;">
-                                        <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxRateLine['order_tax'])); ?>
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxRateLine['order_tax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     </p>
                                 </td>
                             </tr>
@@ -635,9 +643,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Included in item prices', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%; text-align:right">
+                            <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px; color:#94a3b8; margin:0; line-height:24px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['inclusiveTax'])); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['inclusiveTax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -649,9 +657,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Added on products', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%; text-align:right">
+                            <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px; font-weight:600; color:#1e293b; margin:0; line-height:24px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['exclusiveTax'])); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['exclusiveTax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -666,9 +674,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html($emailFeeRow['display_label']); ?>
                                 </p>
                             </td>
-                            <td style="width:30%; text-align:right">
+                            <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px; font-weight:<?php echo esc_attr($emailFeeWeight); ?>; color:<?php echo esc_attr($emailFeeColor); ?>; margin:0; line-height:24px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailFeeRow['tax_amount'])); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailFeeRow['tax_amount'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -686,9 +694,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                             <?php echo esc_html($shLine['label']); ?>
                                         </p>
                                     </td>
-                                    <td style="width:30%; text-align:right">
+                                    <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                         <p style="font-size:14px; font-weight:<?php echo esc_attr($emailShippingWeight); ?>; color:<?php echo esc_attr($emailShippingColor); ?>; margin:0; line-height:24px;">
-                                            <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($shLine['shipping_tax'])); ?>
+                                            <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($shLine['shipping_tax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                         </p>
                                     </td>
                                 </tr>
@@ -700,9 +708,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                         <?php echo esc_html($isShippingInclusive ? __('Included in shipping prices', 'fluent-cart') : __('Added on shipping', 'fluent-cart')); ?>
                                     </p>
                                 </td>
-                                <td style="width:30%; text-align:right">
+                                <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                     <p style="font-size:14px; font-weight:<?php echo esc_attr($emailShippingWeight); ?>; color:<?php echo esc_attr($emailShippingColor); ?>; margin:0; line-height:24px;">
-                                        <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['shippingTax'])); ?>
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['shippingTax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     </p>
                                 </td>
                             </tr>
@@ -715,9 +723,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Total payable tax', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%; text-align:right">
+                            <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; line-height:24px; border-top:1px solid #e2e8f0; padding-top:4px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['payableTax'])); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['payableTax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -729,9 +737,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                     <?php echo esc_html__('Total tax in this order', 'fluent-cart'); ?>
                                 </p>
                             </td>
-                            <td style="width:30%; text-align:right">
+                            <td style="width:30%; text-align:<?php echo esc_attr($endSide); ?>">
                                 <p style="font-size:14px; font-weight:normal; color:#94a3b8; margin:0; line-height:24px;">
-                                    <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['totalOrderTax'])); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\App\Helpers\Helper::toDecimal($emailTaxSummary['totalOrderTax'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             </td>
                         </tr>
@@ -744,8 +752,8 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 </tr>
                 </tbody>
             </table><!-- /Zone B: grey tax box -->
-            <table role="presentation" width="400"
-                   style="margin:12px 0 0 auto; width: 400px; max-width: 100%; border: none;">
+            <table role="presentation" width="<?php echo esc_attr($totalsWidth); ?>"
+                   style="margin:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('12px 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
                 <tbody>
                 <!-- Zone C: plain refund / total / payment -->
                 <?php endif; ?>
@@ -757,9 +765,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->total_refund)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('- ' . \FluentCart\App\Helpers\Helper::toDecimal($order->total_refund)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -775,9 +783,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                             <?php echo esc_html__('Total', 'fluent-cart'); ?>
                         </p>
                     </td>
-                    <td style="width:30%;text-align:right">
+                    <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                         <p style="font-size:14px;font-weight:700;color:rgb(17,24,39);line-height:24px;margin: 0;">
-                            <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($emailDisplayTotal, null, false, true, true)); ?>
+                            <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($emailDisplayTotal, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </p>
                     </td>
                 </tr>
@@ -789,9 +797,9 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                                 <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                             </p>
                         </td>
-                        <td style="width:30%;text-align:right">
+                        <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                             <p style="font-size:14px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                                - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->total_refund)); ?>
+                                <?php echo \FluentCart\App\Services\Email\EmailDirection::amount('- ' . \FluentCart\App\Helpers\Helper::toDecimal($order->total_refund)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </p>
                         </td>
                     </tr>
@@ -803,7 +811,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                             <?php echo esc_html__('Payment Method', 'fluent-cart'); ?>
                         </p>
                     </td>
-                    <td style="width:30%;text-align:right">
+                    <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
                         <p style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;">
                             <?php echo esc_html($transaction ? $transaction->getPaymentMethodText($order) : ''); ?>
                         </p>
@@ -813,7 +821,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
             </table>
             <?php
                 if($order->isReverseChargeTaxOrder()): ?>
-                <div style="text-align: right; font-size: 14px; margin-top: 10px;">
+                <div style="text-align: <?php echo esc_attr($endSide); ?>; font-size: 14px; margin-top: 10px;">
                     <?php echo '*' . esc_html(TaxModule::getReverseChargeNoticeText()); ?>
                 </div>
 

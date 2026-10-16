@@ -246,6 +246,27 @@
   right: clamp(8px, 2%, 12px);
 }
 
+// Swiper's RTL arrow offsets (.swiper-horizontal.swiper-rtl …) outrank the rules above.
+[dir="rtl"] .fct-product-carousel .swiper-button-prev {
+  left: auto;
+  right: clamp(8px, 2%, 12px);
+}
+
+[dir="rtl"] .fct-product-carousel .swiper-button-next {
+  left: clamp(8px, 2%, 12px);
+  right: auto;
+}
+
+[dir="rtl"] .fct-product-carousel .swiper-button-prev svg,
+[dir="rtl"] .fct-product-carousel .swiper-button-next svg {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .fct-product-carousel .swiper-button-prev:hover svg,
+[dir="rtl"] .fct-product-carousel .swiper-button-next:hover svg {
+  transform: scale(-1.1, 1.1);
+}
+
 /* ===============================
    Arrow Sizes - Theme Customizable
 ================================ */
@@ -535,7 +556,7 @@
 
 /* Segment counter */
 .fct-pagination-segmented .segment-counter {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   font-size: 11px;
   font-weight: 600;
   color: var(--fct-carousel-secondary);
@@ -574,13 +595,21 @@
 }
 
 .fct-hover-left {
-  left: 0;
+  inset-inline-start: 0;
   cursor: w-resize;
 }
 
 .fct-hover-right {
-  right: 0;
+  inset-inline-end: 0;
   cursor: e-resize;
+}
+
+[dir="rtl"] .fct-hover-left {
+  cursor: e-resize;
+}
+
+[dir="rtl"] .fct-hover-right {
+  cursor: w-resize;
 }
 
 /* Hide hover zones when showing multiple slides */

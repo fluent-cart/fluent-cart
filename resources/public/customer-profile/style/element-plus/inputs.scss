@@ -9,7 +9,8 @@
         --fct-select-pr: var(--fct-input-padding-x, theme('spacing.3'));
         --fct-select-text-offset: 3px;
         @apply min-h-[38px] border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
-        padding: var(--fct-select-pt) var(--fct-select-pr) var(--fct-select-pb) var(--fct-select-pl);
+        padding-block: var(--fct-select-pt) var(--fct-select-pb);
+        padding-inline: var(--fct-select-pl) var(--fct-select-pr);
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
         &.is-focused{
             @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none;
@@ -20,7 +21,7 @@
     // The value and caret sit above it (Element Plus puts the value at z-index -1).
     &__selection{
         @apply static;
-        padding-left: var(--fct-select-text-offset);
+        padding-inline-start: var(--fct-select-text-offset);
         border-radius: inherit;
     }
     &__input-wrapper:not(.is-hidden){
@@ -28,7 +29,8 @@
         border-radius: inherit;
         .el-select__input{
             @apply h-full w-full #{!important};
-            padding: var(--fct-select-pt) calc(var(--fct-select-pr) + 20px) var(--fct-select-pb) calc(var(--fct-select-pl) + var(--fct-select-text-offset)) !important;
+            padding-block: var(--fct-select-pt) var(--fct-select-pb) !important;
+            padding-inline: calc(var(--fct-select-pl) + var(--fct-select-text-offset)) calc(var(--fct-select-pr) + 20px) !important;
             border-radius: inherit !important;
         }
     }
@@ -121,16 +123,16 @@
     }
     // Icons take the edge padding the input gives up beside them.
     &__prefix{
-        padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+        padding-inline-start: var(--fct-input-padding-x, theme('spacing.4'));
         & ~ .el-input__inner{
-            @apply pl-0 #{!important};
+            @apply ps-0 #{!important};
         }
     }
     &__suffix{
-        padding-right: var(--fct-input-padding-x, theme('spacing.4'));
+        padding-inline-end: var(--fct-input-padding-x, theme('spacing.4'));
     }
     &__inner:has(~ .el-input__suffix){
-        @apply pr-0 #{!important};
+        @apply pe-0 #{!important};
     }
     &--medium{
         .el-input__wrapper{

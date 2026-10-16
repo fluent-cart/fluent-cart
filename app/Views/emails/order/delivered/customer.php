@@ -8,8 +8,8 @@
 <div class="space_bottom_30">
     <p>
         <?php
-            /** translators: %s is the customer name */
             printf(
+                    /* translators: %s is the customer name */
                     esc_html__( 'Hello %s,', 'fluent-cart' ),
                     esc_html($order->customer->full_name)
             );

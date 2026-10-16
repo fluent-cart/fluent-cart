@@ -33,7 +33,7 @@
                       class="fct-goto-customer-pill"
                       :to="{ name: 'view_customer', params: { customer_id: review.customer.id } }"
                   >
-                    {{ translate('Go to Customer') }}<span aria-hidden="true">&rarr;</span>
+                    {{ translate('Go to Customer') }}<span class="rtl:-scale-x-100" aria-hidden="true">&rarr;</span>
                   </router-link>
                 </el-breadcrumb-item>
               </el-breadcrumb>

@@ -660,7 +660,7 @@ onBeforeUnmount(() => {
                 </td>
 
                 <!-- title -->
-                <td class="fct-bulk-product-title-cell sticky-col" :style="{ left: '40px' }">
+                <td class="fct-bulk-product-title-cell sticky-col" :style="{ insetInlineStart: '40px' }">
                   <div class="flex items-center">
                     <!-- Collapse btn -->
                     <button
@@ -845,7 +845,7 @@ onBeforeUnmount(() => {
                 </td>
 
                 <!-- quantity -->
-                <td class="fct-bulk-qty-cell !pl-5" v-if="isColVisible('track_quantity')">
+                <td class="fct-bulk-qty-cell !ps-5" v-if="isColVisible('track_quantity')">
                   <el-switch v-if="group.product?.detail" v-model="group.product.detail.manage_stock" active-value="1" inactive-value="0" :disabled="isRowDisabled(group.product)" @change="bulkInsetModel.syncStockStatus(group.product); onSync('manage_stock', group.product.detail.manage_stock, `p:${group.productId}`)" />
                 </td>
 
@@ -867,7 +867,7 @@ onBeforeUnmount(() => {
                       }"
                   />
 
-                  <span v-else class="text-gray-300 text-sm pl-5">—</span>
+                  <span v-else class="text-gray-300 text-sm ps-5">—</span>
                 </td>
 
                 <!-- actions -->
@@ -929,8 +929,8 @@ onBeforeUnmount(() => {
                           />
                         </td>
 
-                        <td class="fct-bulk-product-title-cell sticky-col" :style="{ left: '40px' }">
-                          <div class="flex items-center gap-1 pl-4">
+                        <td class="fct-bulk-product-title-cell sticky-col" :style="{ insetInlineStart: '40px' }">
+                          <div class="flex items-center gap-1 ps-4">
                             <span class="text-gray-300 text-xs">└</span>
 
                             <el-input
@@ -1066,7 +1066,7 @@ onBeforeUnmount(() => {
 
                       <tr class="bulk-add-variant-row">
                         <td :colspan="filteredColumns.length + 1">
-                          <div class="sticky left-0 inline-block pl-6">
+                          <div class="sticky start-0 inline-block ps-6">
                             <el-button size="small" text type="primary" @click.prevent="bulkInsetModel.addVariationToProduct(group.product)">
                               + {{ $t('Add Variant') }}
                             </el-button>

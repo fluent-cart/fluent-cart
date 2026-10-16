@@ -14,9 +14,9 @@
 .license-meta-list{
   @apply flex items-center #{!important};
   li {
-    @apply flex items-center gap-1 mr-3 pr-3 relative last:mr-0 last:pr-0 last:after:hidden;
+    @apply flex items-center gap-1 me-3 pe-3 relative last:me-0 last:pe-0 last:after:hidden;
     &:after{
-      @apply absolute top-1/2 right-0 w-[1px] h-3 bg-[var(--fct-customer-dashboard-rule-color,#C1C7D1)];
+      @apply absolute top-1/2 end-0 w-[1px] h-3 bg-[var(--fct-customer-dashboard-rule-color,#C1C7D1)];
       content: "";
       transform: translateY(-50%);
     }
@@ -44,7 +44,7 @@
   border-radius: var(--fct-container-radius, theme('borderRadius[3]'));
   padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
   .license-badge{
-    @apply absolute top-5 right-5;
+    @apply absolute top-5 end-5;
   }
 }
 

@@ -260,7 +260,7 @@ class OrderReviewRenderer
         ?>
         <div class="fct-order-review-page">
             <?php
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view template
+            // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view template
             echo App::view()->make('frontend/not-found.php', [
                 'title'       => $title,
                 'text'        => $text,
@@ -268,6 +268,7 @@ class OrderReviewRenderer
                 'notFoundImg' => $notFoundImg,
                 'buttonUrl'   => home_url(),
             ]);
+            // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
             ?>
         </div>
         <?php

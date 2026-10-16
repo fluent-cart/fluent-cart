@@ -189,7 +189,7 @@ onMounted(() => {
     </el-table>
     <div class="mt-2 flex items-center gap-2">
       <el-button size="small" @click="addTier" :disabled="isAddTierDisabled">
-        <DynamicIcon name="Plus" class="w-3 h-3 mr-1"/>
+        <DynamicIcon name="Plus" class="w-3 h-3 me-1"/>
         {{ translate('Add Tier') }}
       </el-button>
       <span v-if="hasUnlimitedTier" class="text-xs text-gray-400">

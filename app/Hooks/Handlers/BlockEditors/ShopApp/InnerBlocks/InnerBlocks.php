@@ -950,7 +950,7 @@ class InnerBlocks
         $ff = Arr::get($block->context, 'fluent-cart/filters', []);
         $paginator = Arr::get($block->context, 'fluent-cart/paginator', 'scroll');
         $productBoxSize = Arr::get($block->context, 'fluent-cart/product_box_grid_size', 4);
-        $perPage = Arr::get($block->context, 'fluent-cart/per_page', 10);
+        $perPage = ShopResource::clampPerPage(Arr::get($block->context, 'fluent-cart/per_page', 10));
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by', 'id');
         $liveFilter = Arr::get($block->context, 'fluent-cart/live_filter', true);
@@ -1339,7 +1339,7 @@ class InnerBlocks
         }
 
         $perPage = Arr::get($block->context, 'fluent-cart/per_page', 10);
-        $perPage = Arr::get($request, 'per_page', $perPage);
+        $perPage = ShopResource::clampPerPage(Arr::get($request, 'per_page', $perPage));
 
         $defaultFilters = Arr::get($block->context, 'fluent-cart/default_filters', []);
         $defaultFilters = Arr::get($request, 'default_filters', $defaultFilters);

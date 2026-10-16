@@ -304,6 +304,8 @@ class ProductVariation extends Model
      */
     public function canPurchase($quantity = 1)
     {
+        // Intended: private products are unlisted but buyable by direct link,
+        // with no capability check. Drafts and other statuses are refused.
         if ($this->item_status !== 'active' || !in_array($this->product->post_status, ['publish', 'private'])) {
             return new \WP_Error('unpublished', __('This product is not available for purchase.', 'fluent-cart'));
         }

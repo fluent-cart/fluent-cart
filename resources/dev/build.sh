@@ -42,6 +42,31 @@ if [[ -z "$PLUGIN_VERSION" ]]; then
     exit 1
 fi
 
+# Refuse to zip stale assets: 2.1.0 shipped a 2.0.0 build because assets/ was
+# never rebuilt. vite.config.mjs stamps every chunk import with FLUENTCART_VERSION.
+CONST_VERSION="$(sed -nE "s/.*define\([[:space:]]*['\"]FLUENTCART_VERSION['\"][[:space:]]*,[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$PLUGIN_FILE" | head -1)"
+if [[ "$CONST_VERSION" != "$PLUGIN_VERSION" ]]; then
+    echo -e "${RED}❌ Header Version (${PLUGIN_VERSION}) does not match FLUENTCART_VERSION (${CONST_VERSION:-missing})${NC}"
+    exit 1
+fi
+
+if [[ ! -f "$SOURCE_DIR/assets/manifest.json" ]]; then
+    echo -e "${RED}❌ assets/manifest.json not found — run vite build first${NC}"
+    exit 1
+fi
+
+ASSET_VERSIONS="$(grep -rhoE '\?ver=[0-9][0-9A-Za-z.+-]*' "$SOURCE_DIR/assets" --include='*.js' | sed 's/?ver=//' | sort -u)"
+if [[ -z "$ASSET_VERSIONS" ]]; then
+    echo -e "${RED}❌ No ?ver= stamps found in assets/ — run vite build first${NC}"
+    exit 1
+fi
+if [[ "$ASSET_VERSIONS" != "$PLUGIN_VERSION" ]]; then
+    echo -e "${RED}❌ assets/ was built for a different version than ${PLUGIN_VERSION}:${NC}"
+    echo "$ASSET_VERSIONS" | sed 's/^/   /'
+    echo -e "${RED}   Rebuild with: npm run build:zip${NC}"
+    exit 1
+fi
+
 OUTPUT_FILE="$BUILDS_DIR/${PLUGIN_SLUG}-${PLUGIN_VERSION}.zip"
 
 mkdir -p "$BUILDS_DIR"

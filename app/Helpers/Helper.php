@@ -620,7 +620,7 @@ class Helper
 
         if (!is_finite($amount) || $amount > 9.0e15 || $amount < -9.0e15) {
             throw new \InvalidArgumentException(
-                'Value is out of the representable cents range: ' . var_export($amount, true)
+                esc_html('Value is out of the representable cents range: ' . (string) $amount)
             );
         }
 
@@ -1445,9 +1445,9 @@ class Helper
             $month = (int) Arr::get($anchor, 'month', 0);
 
             if ($month && $day) {
-                /* translators: %s is a date, e.g. "on Aug 19" */
                 // wp_date(), not gmdate(): gmdate() has no locale, so this month
                 // name stayed English inside an otherwise translated sentence.
+                /* translators: %s is a date, e.g. "on Aug 19" */
                 return sprintf(__('on %s', 'fluent-cart'), wp_date('M', gmmktime(12, 0, 0, $month, 1, 2001), new \DateTimeZone('UTC')) . ' ' . $day);
             }
 

@@ -14,13 +14,13 @@
             @apply flex-1;
         }
         .fct-file-upload-progress-cancel{
-            @apply absolute top-4 right-4 cursor-pointer w-6 h-6 inline-flex items-center justify-center rounded hover:text-system-dark hover:bg-gray-50 dark:hover:bg-dark-600 dark:hover:text-gray-50 dark:text-white;
+            @apply absolute top-4 end-4 cursor-pointer w-6 h-6 inline-flex items-center justify-center rounded hover:text-system-dark hover:bg-gray-50 dark:hover:bg-dark-600 dark:hover:text-gray-50 dark:text-white;
             .icon {
                 @apply w-3 h-3;
             }
         }
         .el-progress{
-            @apply mr-7.5 flex-col;
+            @apply me-7.5 flex-col;
             .el-progress{
                 &-bar{
                     @apply w-full;
@@ -32,7 +32,7 @@
                     }
                 }
                 &__text{
-                    @apply w-full text-right text-system-mid ml-0 mt-2.5 dark:text-gray-300;
+                    @apply w-full text-end text-system-mid ml-0 mt-2.5 dark:text-gray-300;
                     @apply text-[13px] #{!important};
                 }
             }

@@ -1,7 +1,7 @@
 .fct-admin-notice {
   margin: 12px 0;
   padding: 10px 14px;
-  border-left: 4px solid #2271b1;
+  border-inline-start: 4px solid #2271b1;
   background: #f0f6fc;
   font-size: 13px;
 }
@@ -12,5 +12,24 @@
 }
 
 .fct_price_suffix {
-  margin-left: 0.25em;
+  margin-inline-start: 0.25em;
+}
+
+// Toastify call sites hard-code 'right'; mirror the side once here for RTL.
+[dir="rtl"] .toastify-right {
+  right: auto;
+  left: 15px;
+}
+
+[dir="rtl"] .toastify-left {
+  left: auto;
+  right: 15px;
+}
+
+@media only screen and (max-width: 360px) {
+  [dir="rtl"] .toastify-right,
+  [dir="rtl"] .toastify-left {
+    left: 0;
+    right: 0;
+  }
 }

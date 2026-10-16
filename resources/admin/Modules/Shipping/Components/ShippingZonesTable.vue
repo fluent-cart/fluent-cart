@@ -52,7 +52,7 @@
 
       <el-table-column :label="translate('Actions')" width="200" align="right">
         <template #default="scope">
-          <div class="fct-btn-group sm justify-end pr-4">
+          <div class="fct-btn-group sm justify-end pe-4">
             <IconButton size="small"
                          @click="$router.push({ name: 'view_shipping_zone', params: { zone_id: scope.row.id } })"
                          class="cursor-pointer">

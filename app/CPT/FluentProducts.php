@@ -414,7 +414,7 @@ class FluentProducts
 
         add_action('in_admin_header', function () {
             ?>
-            <div style="margin-left: -20px;" class="fc_taxonomy_menu" id="fct_admin_menu_holder">
+            <div style="margin-inline-start: -20px;" class="fc_taxonomy_menu" id="fct_admin_menu_holder">
                 <?php do_action('fluent_cart/admin_menu'); ?>
             </div>
             <?php

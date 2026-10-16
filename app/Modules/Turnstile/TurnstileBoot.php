@@ -51,7 +51,7 @@ class TurnstileBoot
             if ($this->isCheckoutContext()) {
                 wp_enqueue_script(
                     'cloudflare-turnstile',
-                    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+                    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', // phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent -- Cloudflare requires Turnstile api.js from its own host
                     [],
                     null,
                     true

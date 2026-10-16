@@ -1,7 +1,7 @@
 .fct-material-input {
   @apply relative w-full;
   &-label {
-    @apply antialiased text-gray-500 pointer-events-none absolute top-[14px] left-[13px] z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    @apply antialiased text-gray-500 pointer-events-none absolute top-[14px] start-[13px] z-10 m-0 pe-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
     &.is-focus {
       @apply top-[3px] text-[12px];
     }
@@ -31,7 +31,7 @@
 .fct-material-select {
   @apply relative;
   &-label {
-    @apply antialiased text-gray-500 pointer-events-none absolute top-4 left-[13px] z-10 m-0 pr-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
+    @apply antialiased text-gray-500 pointer-events-none absolute top-4 start-[13px] z-10 m-0 pe-0 text-[13px] font-normal transition-all duration-150 ease-in-out;
     &.is-focus {
       @apply top-1.5 text-xs;
     }
@@ -98,7 +98,7 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-r-[0.5px] border-b-[1px] border-t-[0.5px] rounded-bl rounded-tr-none rounded-tl-none rounded-br-none;
+        @apply border-e-[0.5px] border-b-[1px] border-t-[0.5px] rounded-es rounded-tr-none rounded-tl-none rounded-ee-none;
       }
     }
   }
@@ -106,7 +106,7 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-l-[0.5px] border-b-[1px] border-t-[0.5px] rounded-br rounded-tr-none rounded-tl-none rounded-bl-none;
+        @apply border-s-[0.5px] border-b-[1px] border-t-[0.5px] rounded-ee rounded-tr-none rounded-tl-none rounded-es-none;
       }
     }
   }
@@ -127,6 +127,13 @@
     }
   }
 }
+
+[dir="rtl"] .fct-customer-edit-modal {
+  .fct-material-input input[type="email"] {
+    text-align: right;
+  }
+}
+
 .fct-customer-address-business-details {
     @apply mt-5;
     .fct-customer-address-business-details-title {
@@ -137,4 +144,8 @@
     .fct_edit_customer_popup {
         @apply mt-4;
     }
+}
+// The "back" arrow must point toward the start edge, which is the right in RTL.
+[dir="rtl"] .fct-address-back-icon {
+    @apply -scale-x-100;
 }

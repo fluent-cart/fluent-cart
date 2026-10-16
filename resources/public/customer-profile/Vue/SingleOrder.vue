@@ -14,7 +14,7 @@
                 <el-breadcrumb-item :to="{ name: 'purchase-history' }">
                     {{ $t('Purchase History') }}
                 </el-breadcrumb-item>
-                <el-breadcrumb-item aria-current="page">#{{ order?.invoice_no }}</el-breadcrumb-item>
+                <el-breadcrumb-item aria-current="page"><span class="fct-ltr-isolate">#{{ order?.invoice_no }}</span></el-breadcrumb-item>
             </el-breadcrumb>
         </div>
 
@@ -152,7 +152,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="fct-order-total text-right" :aria-label="$t('Subtotal for this item')">
+                                            <div class="fct-order-total text-end" :aria-label="$t('Subtotal for this item')">
                                                 <template v-if="filteredOrderItem.coupon_discount > 0">
                                                     <div class="flex justify-end items-center gap-1">
                                                         <span class="text-xs font-normal leading-tight opacity-60 line-through">{{ formatOrderAmount(filteredOrderItem.subtotal) }}</span>
@@ -182,7 +182,7 @@
                                             </div>
                                         </div>
                                         <div
-                                            class="product-subscription-info flex flex-col gap-1 mt-1 pl-[52px]"
+                                            class="product-subscription-info flex flex-col gap-1 mt-1 ps-[52px]"
                                             v-if="filteredOrderItem.meta_lines && filteredOrderItem.meta_lines.length > 0"
                                         >
                                             <span v-for="(line, lineIndex) in filteredOrderItem.meta_lines"
@@ -257,7 +257,7 @@
                                         <div class="tr fct-customer-tax-simple-line">
                                             <span style="display:flex;align-items:center;gap:6px;">
                                                 <span>{{ order.tax_summary.simpleLine.label }}</span>
-                                                <el-popover v-if="order.tax_summary.simpleLine.hasDetails" placement="bottom-start" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
+                                                <el-popover v-if="order.tax_summary.simpleLine.hasDetails" :placement="taxPopoverPlacement" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
                                                     <template #reference>
                                                         <a href="javascript:void(0)" class="fct-customer-tax-see-details">{{ $t('See details') }} &#9662;</a>
                                                     </template>
@@ -517,6 +517,10 @@ export default {
     computed: {
         ArrowRight() {
             return ArrowRight;
+        },
+        // Popper's "start" is always the left edge.
+        taxPopoverPlacement() {
+            return document.documentElement.dir === 'rtl' ? 'bottom-end' : 'bottom-start';
         },
         productItems() {
             if (!this.order || !this.order.order_items) return [];

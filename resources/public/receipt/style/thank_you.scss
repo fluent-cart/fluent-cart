@@ -55,7 +55,7 @@ body:not(.fluent-cart-no-colors) {
       &-inner {
         @apply bg-[var(--fct-card-bg-color,#ffffff)] p-0;
         .no-print {
-          @apply mb-4 text-left p-0;
+          @apply mb-4 text-start p-0;
           &-title {
             @apply text-[24px] font-semibold leading-[1.2] m-0 mb-[4px] text-[var(--fct-primary-text-color,theme('colors.system.dark'))];
           }
@@ -64,7 +64,7 @@ body:not(.fluent-cart-no-colors) {
           }
         }
         .fct_invoice_tax_content {
-          @apply text-right;
+          @apply text-end;
           p {
             @apply font-semibold text-sm m-0 mb-3;
           }
@@ -76,9 +76,9 @@ body:not(.fluent-cart-no-colors) {
     &-header {
       @apply flex justify-between bg-[var(--fct-secondary-bg-color,#f9fafb)] py-0 px-4;
       &-row {
-        @apply text-xs font-semibold text-[var(--fct-secondary-text-color,#374151)] uppercase leading-[24px] m-0 text-left;
+        @apply text-xs font-semibold text-[var(--fct-secondary-text-color,#374151)] uppercase leading-[24px] m-0 text-start;
         &:last-child {
-          @apply text-right w-[200px];
+          @apply text-end w-[200px];
         }
       }
     }
@@ -99,12 +99,12 @@ body:not(.fluent-cart-no-colors) {
             @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 my-[3px];
           }
           &-price {
-            @apply w-[200px] text-right;
+            @apply w-[200px] text-end;
             &-inner {
               @apply text-sm font-bold text-[var(--fct-primary-text-color,#111827)] m-0 leading-[24px];
             }
             .fct-thank-you-page-order-items-list-price-original {
-                @apply text-[13px] text-system-mid font-normal mr-1;
+                @apply text-[13px] text-system-mid font-normal me-1;
                 text-decoration: line-through;
             }
           }
@@ -129,7 +129,7 @@ body:not(.fluent-cart-no-colors) {
         &-total {
           @apply m-0 w-full mt-4 pt-3 border-0 border-t border-solid border-[color:var(--fct-divider-color,#e5e7eb)];
           > .fct-meta-line {
-            @apply w-full max-w-[400px] ml-auto;
+            @apply w-full max-w-[400px] ms-auto;
           }
 
           > .fct-meta-line + .fct-meta-line {
@@ -160,7 +160,7 @@ body:not(.fluent-cart-no-colors) {
         }
       }
       &-value {
-        @apply text-[13px] text-[var(--fct-primary-text-color,#374151)] m-0 leading-[24px] text-right;
+        @apply text-[13px] text-[var(--fct-primary-text-color,#374151)] m-0 leading-[24px] text-end;
       }
     }
 
@@ -196,7 +196,7 @@ body:not(.fluent-cart-no-colors) {
         border-spacing: 0;
         border: none;
         table-layout: fixed;
-        @apply w-full overflow-hidden mb-0 p-0 pl-2.5;
+        @apply w-full overflow-hidden mb-0 p-0 ps-2.5;
         th {
           border: none;
           @apply border-0;
@@ -220,7 +220,7 @@ body:not(.fluent-cart-no-colors) {
                   }
                 }
                 &-button {
-                  @apply w-[20%] text-right border-0 py-[1px] px-0 align-middle;
+                  @apply w-[20%] text-end border-0 py-[1px] px-0 align-middle;
                   a {
                     @apply inline-block text-sm text-[var(--fct-primary-text-color,theme('colors.system.dark'))] leading-none;
                   }
@@ -246,7 +246,7 @@ body:not(.fluent-cart-no-colors) {
         @apply pt-2;
       }
       &-billing-infos {
-        @apply text-right text-sm;
+        @apply text-end text-sm;
         &-next-billing {
           @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 !mt-[3px];
         }
@@ -282,7 +282,7 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct-thank-you-tax-summary {
-  @apply bg-[var(--fct-secondary-bg-color,#f9fafb)] w-full max-w-[400px] ml-auto my-3;
+  @apply bg-[var(--fct-secondary-bg-color,#f9fafb)] w-full max-w-[400px] ms-auto my-3;
   padding: var(--fct-container-padding-y, theme('spacing.4')) var(--fct-container-padding-x, theme('spacing.4'));
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
@@ -292,6 +292,14 @@ body:not(.fluent-cart-no-colors) {
 
   &-title {
     @apply text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--fct-secondary-text-color,#64748b)];
+    [dir="rtl"] & {
+      letter-spacing: 0;
+    }
+  }
+
+  // Column headers carry inline tracking; Arabic letters must stay joined.
+  [dir="rtl"] & span {
+    letter-spacing: 0 !important;
   }
 
   &-row {
@@ -332,8 +340,8 @@ body:not(.fluent-cart-no-colors) {
 
 .fct-thank-you-tax-floating {
   position: absolute;
-  right: 0;
-  left: auto;
+  inset-inline-end: 0;
+  inset-inline-start: auto;
   top: calc(100% + 6px);
   z-index: 30;
   width: min(420px, 92vw);
@@ -358,7 +366,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   &-tooltip {
-    @apply hidden absolute right-0 bg-[#1e293b] text-white text-[11px] py-1.5 px-2.5 w-[220px] z-10 leading-[1.4];
+    @apply hidden absolute end-0 bg-[#1e293b] text-white text-[11px] py-1.5 px-2.5 w-[220px] z-10 leading-[1.4];
     border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     top: calc(100% + 4px);
   }

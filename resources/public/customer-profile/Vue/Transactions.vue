@@ -9,7 +9,7 @@
 
 
       <div class="fct-single-order-body">
-        <ul class="transaction-lists !pl-3" role="list">
+        <ul class="transaction-lists !ps-3" role="list">
           <template v-for="(transaction, index) in transactions" :key="index">
             <li v-if="transaction.transaction_type !== 'refund' && transaction.meta.reason !== 'renewal'" class="flex items-center gap-1 text-sm" role="listitem">
 
@@ -30,7 +30,7 @@
                 {{ $t('on') }} {{ dateTimeI18(transaction.created_at) }}
               </time>
 
-              <span v-if="transaction.status === 'succeeded'" class="mr-1">{{$t('using')}}</span>
+              <span v-if="transaction.status === 'succeeded'" class="me-1">{{$t('using')}}</span>
 
               <span v-if="transaction.status === 'succeeded'" class="inline-flex gap-1 items-center">
                 <template v-if="transaction.card_last_4">
@@ -38,7 +38,7 @@
                       :src="`${assetsPath}images/credit-card/card.svg`" alt="Credit Card" class="w-4.5 h-4.5"
                       :alt="$t('Credit card ending in') + ' ' + transaction.card_last_4"
                     >
-                    <span aria-hidden="true">**** {{ transaction.card_last_4 }}</span>
+                    <span aria-hidden="true" class="fct-ltr-isolate">**** {{ transaction.card_last_4 }}</span>
                 </template>
               </span>
 
@@ -53,7 +53,7 @@
               <a 
                 :href="receiptUrl(order?.uuid)" 
                 target="_blank" 
-                class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
+                class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ms-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
                 rel="noopener noreferrer"
                 :aria-label="$t('Download receipt for transaction on') + ' ' + dateTimeI18(transaction.created_at)"
               >
@@ -97,7 +97,7 @@
                     :alt="$t('Credit card ending in') + ' ' + firstTxn.card_last_4"
                     loading="lazy"
                   >
-                    <span aria-hidden="true">**** {{ firstTxn.card_last_4 }}</span>
+                    <span aria-hidden="true" class="fct-ltr-isolate">**** {{ firstTxn.card_last_4 }}</span>
                   </template>
                 </span>
 
@@ -111,7 +111,7 @@
 
                 <a 
                     :href="receiptUrl(transaction?.uuid)" target="_blank"
-                    class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ml-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
+                    class="print-order-receipt text-sm p-1 inline-flex items-center gap-1 ms-auto font-semibold text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]"
                     rel="noopener noreferrer"
                     :aria-label="$t('Download receipt for transaction on') + ' ' + dateTimeI18(firstTxn.created_at)"
                 >

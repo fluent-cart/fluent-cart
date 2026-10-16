@@ -301,7 +301,7 @@ const deleteRule = (row) => {
                     placement="bottom-end"
                     @command="(command) => handleCommand(command, scope.row)"
                 >
-                    <button class="more-btn mr-2" type="button" :aria-label="actionsLabel(scope.row)">
+                    <button class="more-btn me-2" type="button" :aria-label="actionsLabel(scope.row)">
                         <DynamicIcon name="More"/>
                     </button>
                     <template #dropdown>

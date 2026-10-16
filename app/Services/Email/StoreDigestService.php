@@ -519,8 +519,8 @@ class StoreDigestService
 
     private static function preheader(array $payload): string
     {
-        /* translators: %1$s: frequency (e.g. daily), %2$s: period label */
         return sprintf(
+            /* translators: %1$s: frequency (e.g. daily), %2$s: period label */
             __('Your %1$s store digest for %2$s', 'fluent-cart'),
             strtolower((string) Arr::get($payload, 'frequency_label', '')),
             (string) Arr::get($payload, 'period_label', '')
@@ -588,8 +588,8 @@ class StoreDigestService
             return date_i18n(DateFormatter::monthYearFormat(), $startTs);
         }
         if ($frequency === 'weekly') {
-            /* translators: %1$s: start date, %2$s: end date */
             return sprintf(
+                /* translators: %1$s: start date, %2$s: end date */
                 __('%1$s – %2$s', 'fluent-cart'),
                 date_i18n(DateFormatter::dateFormat(), $startTs),
                 date_i18n(DateFormatter::dateFormat(), $endTs)
@@ -682,8 +682,8 @@ class StoreDigestService
         $cta = esc_html__('Explore FluentCart Pro →', 'fluent-cart');
 
         if ($variant === 'growth') {
-            /* translators: %1$s: percentage increase, %2$s: opening <strong> tag, %3$s: closing </strong> tag */
             $body = sprintf(
+                /* translators: %1$s: percentage increase, %2$s: opening <strong> tag, %3$s: closing </strong> tag */
                 esc_html__('Your sales are up %1$s%% this period — and you\'re just getting started. %2$sFluentCart Pro%3$s adds premium payment gateways, integrations, and customizations to help you scale what\'s working.', 'fluent-cart'),
                 esc_html(number_format_i18n(round($grossDelta))),
                 '<strong>',
@@ -694,8 +694,8 @@ class StoreDigestService
         }
 
         if ($variant === 'automate') {
-            /* translators: %1$s: number of orders, %2$s: opening <strong> tag, %3$s: closing </strong> tag */
             $body = sprintf(
+                /* translators: %1$s: number of orders, %2$s: opening <strong> tag, %3$s: closing </strong> tag */
                 esc_html__('You handled %1$s orders this period — that\'s a lot of moving parts. %2$sFluentCart Pro%3$s automates the busywork with premium integrations, gateways, and customizations so you can focus on growth.', 'fluent-cart'),
                 esc_html(number_format_i18n($orderCount)),
                 '<strong>',
@@ -706,8 +706,8 @@ class StoreDigestService
         }
 
         if ($variant === 'winback') {
-            /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
             $body = sprintf(
+                /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
                 esc_html__('Every store has slower stretches. %1$sFluentCart Pro%2$s brings premium payment gateways, integrations, and customizations to help you win back momentum and turn more visits into sales.', 'fluent-cart'),
                 '<strong>',
                 '</strong>'
@@ -717,8 +717,8 @@ class StoreDigestService
         }
 
         if ($variant === 'insight') {
-            /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
             $body = sprintf(
+                /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
                 esc_html__('Enjoying these insights? %1$sFluentCart Pro%2$s adds premium payment gateways, integrations, and customizations to help you act on them and grow your store.', 'fluent-cart'),
                 '<strong>',
                 '</strong>'
@@ -728,8 +728,8 @@ class StoreDigestService
         }
 
         if ($variant === 'social') {
-            /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
             $body = sprintf(
+                /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
                 esc_html__('Growing stores run on %1$sFluentCart Pro%2$s — premium payment gateways, integrations, and customizations, all built to help you sell more with less effort.', 'fluent-cart'),
                 '<strong>',
                 '</strong>'
@@ -739,8 +739,8 @@ class StoreDigestService
         }
 
         // 'value' — default evergreen.
-        /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
         $body = sprintf(
+            /* translators: %1$s: opening <strong> tag, %2$s: closing </strong> tag */
             esc_html__('Ready for more? %1$sFluentCart Pro%2$s brings premium payment gateways, integrations, and customizations to help your store grow.', 'fluent-cart'),
             '<strong>',
             '</strong>'

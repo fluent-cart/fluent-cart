@@ -46,7 +46,7 @@ const handleSelectionChange = (selectedRows) => {
             <div class="fct-customer-details">
               <div class="fct-customer-name">
                 {{ scope.row?.full_name || translate("No Name") }}
-                <span class="fct-customer-id">#{{ translateNumber(scope.row?.id) }}</span>
+                <span class="fct-customer-id inline-block">#{{ translateNumber(scope.row?.id) }}</span>
               </div>
               <div class="fct-customer-email">
                 {{ scope.row?.email }}

@@ -572,9 +572,13 @@ export default class FluentCartReviewForm {
             star.addEventListener('keydown', (e) => {
                 const current = parseInt(star.dataset.starValue);
                 let next = null;
-                if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                // Stars run right to left on RTL pages, so left raises the rating.
+                const isRtl = getComputedStyle(star).direction === 'rtl';
+                const upKey = isRtl ? 'ArrowLeft' : 'ArrowRight';
+                const downKey = isRtl ? 'ArrowRight' : 'ArrowLeft';
+                if (e.key === upKey || e.key === 'ArrowUp') {
                     next = Math.min(current + 1, 5);
-                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                } else if (e.key === downKey || e.key === 'ArrowDown') {
                     next = Math.max(current - 1, 1);
                 }
                 if (next !== null) {

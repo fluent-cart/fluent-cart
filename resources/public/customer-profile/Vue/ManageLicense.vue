@@ -11,7 +11,7 @@
                     <el-breadcrumb-item class="cursor-pointer" :to="{ path: '/licenses' }">
                         {{ $t('Licenses') }}
                     </el-breadcrumb-item>
-                    <el-breadcrumb-item>{{ license_key }}</el-breadcrumb-item>
+                    <el-breadcrumb-item><span class="fct-ltr-isolate">{{ license_key }}</span></el-breadcrumb-item>
                 </el-breadcrumb>
             </div>
 

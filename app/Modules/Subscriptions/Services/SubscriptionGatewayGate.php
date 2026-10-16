@@ -264,8 +264,8 @@ class SubscriptionGatewayGate
             $hint = __('Under gateway-managed billing, only gateways with native subscription support can appear here. Enable Manual Fallback in the subscription settings to also allow non-subscription gateways (including offline methods) to fall back to manual billing.', 'fluent-cart');
         }
 
-        /* translators: %1$s: comma-separated payment method names, %2$s: why they were hidden, %3$s: guidance on how to offer more payment methods */
         $adminText = sprintf(
+            /* translators: %1$s: comma-separated payment method names, %2$s: why they were hidden, %3$s: guidance on how to offer more payment methods */
             __('Admin note (only visible to you): %1$s hidden because %2$s. %3$s', 'fluent-cart'),
             implode(', ', $hiddenTitles),
             $reason,

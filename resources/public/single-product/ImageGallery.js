@@ -629,8 +629,9 @@ export default class ImageGallery {
 
     #handleThumbnailKeydown(event) {
         const isVertical = this.container.classList.contains('thumb-pos-left') || this.container.classList.contains('thumb-pos-right');
-        const nextKeys = isVertical ? ['ArrowDown'] : ['ArrowRight'];
-        const prevKeys = isVertical ? ['ArrowUp'] : ['ArrowLeft'];
+        const isRtl = getComputedStyle(this.container).direction === 'rtl';
+        const nextKeys = isVertical ? ['ArrowDown'] : [isRtl ? 'ArrowLeft' : 'ArrowRight'];
+        const prevKeys = isVertical ? ['ArrowUp'] : [isRtl ? 'ArrowRight' : 'ArrowLeft'];
 
         // Support both axes regardless of layout for convenience
         const isNext = nextKeys.includes(event.key) || (!isVertical && event.key === 'ArrowDown');

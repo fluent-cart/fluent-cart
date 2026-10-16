@@ -793,8 +793,13 @@ class CartCurrency
             return '';
         }
 
-        $fingerprint = strtoupper((string) $lock['currency']) . '|' . CurrencySnapshot::normalizeRate($lock['rate']);
-        $rules = PriceConverter::rulesKey($lock);
+        return self::revisionOfQuote($lock);
+    }
+
+    public static function revisionOfQuote(array $quote): string
+    {
+        $fingerprint = strtoupper((string) $quote['currency']) . '|' . CurrencySnapshot::normalizeRate($quote['rate']);
+        $rules = PriceConverter::rulesKey($quote);
         if ($rules !== PriceConverter::rulesKey([])) {
             $fingerprint .= '|' . $rules;
         }
@@ -845,8 +850,8 @@ class CartCurrency
         self::$requestCarts = [];
     }
 
-    private static function pricesUpdatedError(): \WP_Error
+    public static function pricesUpdatedError(array $data = []): \WP_Error
     {
-        return new \WP_Error('fx_prices_updated', __('Prices were updated to today\'s exchange rate. Please review your order total before paying.', 'fluent-cart'));
+        return new \WP_Error('fx_prices_updated', __('Prices were updated to today\'s exchange rate. Please review your order total before paying.', 'fluent-cart'), $data ?: '');
     }
 }

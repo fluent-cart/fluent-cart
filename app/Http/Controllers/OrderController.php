@@ -16,6 +16,7 @@ use FluentCart\App\Helpers\OrderItemHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Http\Requests\CustomerRequest;
+use FluentCart\App\Http\Requests\OrderPriceRequest;
 use FluentCart\App\Http\Requests\OrderRequest;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\CustomerAddresses;
@@ -36,6 +37,8 @@ use FluentCart\App\Models\LabelRelationship;
 use FluentCart\App\Models\OrderDownloadPermission;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencyAdmin;
+use FluentCart\App\Services\AdminOrderPricing;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Reminders\ReminderService;
@@ -74,8 +77,6 @@ class OrderController extends Controller
     public function store(OrderRequest $request)
     {
         $data = $request->getSafe($request->sanitize());
-        // Admin orders in another currency are not released yet
-        unset($data['currency']);
         $type = 'payment';
         $orderItems = Arr::get($data, 'order_items', []);
 
@@ -125,6 +126,34 @@ class OrderController extends Controller
         ]);
     }
 
+    public function price(OrderPriceRequest $request)
+    {
+        $data = $request->getSafe($request->sanitize());
+        $customer = Customer::query()->find((int) Arr::get($data, 'customer_id', 0));
+
+        try {
+            $pricing = AdminOrderPricing::price($data, $customer ? $customer->email : '');
+        } catch (\InvalidArgumentException $e) {
+            return $this->sendError(['message' => $e->getMessage()], 422);
+        }
+
+        if (is_wp_error($pricing)) {
+            return $pricing;
+        }
+
+        return $this->sendSuccess([
+            'currency'              => $pricing['quote']['currency'],
+            'quote_revision'        => $pricing['quote_revision'],
+            'order_items'           => array_values($pricing['items']),
+            'applied_coupons'       => $pricing['applied_coupons'],
+            'shipping_total'        => $pricing['shipping_total'],
+            'subtotal'              => $pricing['subtotal'],
+            'coupon_discount_total' => $pricing['coupon_discount_total'],
+            'manual_discount_total' => $pricing['manual_discount_total'],
+            'total_amount'          => $pricing['total'],
+        ]);
+    }
+
     public static function hasSubscription($orderItems): bool
     {
         foreach ($orderItems as $item) {
@@ -137,7 +166,7 @@ class OrderController extends Controller
     }
 
     /**
-     * The variation row decides whether a line is recurring, so every label the payload
+     * The variation row decides the line's payment type, so every label the payload
      * carries has to agree with it. A recurring line must additionally be labelled in
      * other_info: that is the only copy AdminOrderProcessor reads, and the interval and
      * installment count travel beside it.
@@ -164,6 +193,10 @@ class OrderController extends Controller
                 return $isSubscriptionVariation
                     ? __('Subscription product cannot be placed as a one time item.', 'fluent-cart')
                     : __('One time product cannot be placed as a subscription item.', 'fluent-cart');
+            }
+
+            if (!$isSubscriptionVariation && $label !== 'onetime') {
+                return __('One time product cannot be placed as a fee item.', 'fluent-cart');
             }
         }
 
@@ -396,6 +429,7 @@ class OrderController extends Controller
             $source  = Arr::get($result, 'manual_refund.source');
             if ($source) {
                 $message = sprintf(
+                    /* translators: %s: refund source */
                     __('Refund processed manually. source: %s', 'fluent-cart'),
                     $source
                 );
@@ -408,7 +442,9 @@ class OrderController extends Controller
             $responseData['gateway_refund'] = [
                 'status'  => is_wp_error($vendorRefundId) ? 'failed' : 'success',
                 'message' => !is_wp_error($vendorRefundId)
+                    /* translators: %s: payment method name */
                     ? sprintf(__('Refund processed on %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method))
+                    /* translators: 1: payment method name, 2: error message */
                     : sprintf(__('ERROR processing refund on %s: %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method), $vendorRefundId->get_error_message())
             ];
 
@@ -1359,4 +1395,10 @@ class OrderController extends Controller
         ]);
     }
 
+    public function currencies()
+    {
+        return $this->sendSuccess([
+            'currencies' => MultiCurrencyAdmin::orderCurrencies(),
+        ]);
+    }
 }

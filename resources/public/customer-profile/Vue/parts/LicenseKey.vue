@@ -2,7 +2,7 @@
   <div class="fct-license-key-wrap" role="group" :aria-label="translate('License Key')">
 
     <div class="license-key">
-      <span class="block" id="license-key-value">{{ license_key }}</span>
+      <span class="block fct-ltr-isolate" id="license-key-value">{{ license_key }}</span>
     </div>
 
 

@@ -110,8 +110,8 @@ abstract class BaseParser implements ParserContract
         }
 
 
-        return Arr::get($this->data, $accessor) ??
-            Arr::get($this->data, $template);
+        // Only declared attributes and handlers may read parser data.
+        return null;
     }
 
     /**
@@ -126,7 +126,7 @@ abstract class BaseParser implements ParserContract
      */
     protected function getAttribute(string $code): string
     {
-        $this->instances[$code] = Arr::get($this->data, $this->attributeMap[$code]);
+        $this->instances[$code] = (string) (Arr::get($this->data, $this->attributeMap[$code]) ?? '');
         return $this->instances[$code];
     }
 

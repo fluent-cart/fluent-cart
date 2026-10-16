@@ -1067,7 +1067,7 @@ const handleVariantNavCommand = (command, item) => {
             v-model="groupByGroupId"
         />
 
-        <div class="flex items-center flex-wrap gap-2 ml-auto">
+        <div class="flex items-center flex-wrap gap-2 ms-auto">
           <!-- Collapsed: icon toggle -->
           <button
               v-if="!filtersExpanded"

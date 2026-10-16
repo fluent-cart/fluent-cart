@@ -29,9 +29,9 @@
         :aria-label="$t('Table of activated sites')">
                 <el-table-column :label="$t('Site')" :min-width="270">
                     <template #default="scope">
-                        <span>{{ scope.row.site_url }}</span>
+                        <span class="fct-ltr-isolate">{{ scope.row.site_url }}</span>
                         <span v-if="scope.row.is_local != '0'"
-                            style="margin-left: 10px;"
+                            style="margin-inline-start: 10px;"
                             role="status"
                             :aria-label="$t('local')"
                         >

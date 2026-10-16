@@ -424,7 +424,7 @@ class CustomerProfileHandler extends ShortCode
 
 
         // For supporting subdirectory installations
-        $domainParts = parse_url(home_url('/'));
+        $domainParts = wp_parse_url(home_url('/'));
         // if we have path in domain url, we need to set it as base path
         $basePath = trim(Arr::get($domainParts, 'path', ''), '/');
         if($basePath && $basePath !== '/') {
@@ -468,8 +468,10 @@ class CustomerProfileHandler extends ShortCode
                 'is_legal_registration_id_enabled' => CheckoutFieldsSchema::isLegalRegistrationIdEnabled(),
                 'is_legal_registration_id_required' => CheckoutFieldsSchema::isLegalRegistrationIdRequired()
             ],
+            // Re-declares the page-wide global, so it must match every other copy.
             'fluentCartRestVars'               => [
-                'rest' => Helper::getRestInfo(),
+                'rest'    => Helper::getRestInfo(),
+                'ajaxurl' => admin_url('admin-ajax.php'),
             ],
         ];
     }

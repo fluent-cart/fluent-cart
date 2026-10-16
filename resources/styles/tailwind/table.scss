@@ -2,7 +2,7 @@
 .fct-table-border{
   @apply w-full border-spacing-0 border border-solid border-gray-divider rounded overflow-hidden text-system-dark dark:border-dark-400 dark:text-gray-300;
   >thead>tr th{
-    @apply text-left font-normal;
+    @apply text-start font-normal;
   }
   tr {
     th,
@@ -39,7 +39,7 @@
         }
       }
       td:last-child{
-        @apply text-right;
+        @apply text-end;
       }
     }
     .total-amount-tr{
@@ -62,7 +62,7 @@
         @apply font-semibold text-[15px] pb-3.5;
       }
       td:last-child{
-        @apply text-right;
+        @apply text-end;
       }
     }
   }
@@ -100,19 +100,19 @@
   }
 
   .fct-variant-badge {
-    @apply absolute -top-2 right-1.5;
+    @apply absolute -top-2 end-1.5;
   }
 
   table{
-    @apply w-full border-collapse text-sm text-system-dark text-left font-medium dark:text-gray-50;
+    @apply w-full border-collapse text-sm text-system-dark text-start font-medium dark:text-gray-50;
     thead {
       th{
         @apply bg-gray-25 font-medium py-3 dark:bg-dark-600;
         &:first-child{
-          @apply pl-6;
+          @apply ps-6;
         }
         &:last-child{
-          @apply pr-6;
+          @apply pe-6;
         }
       }
     }
@@ -123,10 +123,10 @@
     td{
       @apply py-4;
       &:first-child{
-        @apply pl-6;
+        @apply ps-6;
       }
       &:last-child{
-        @apply pr-6;
+        @apply pe-6;
       }
     }
     tr{
@@ -136,9 +136,9 @@
       }
     }
     .is-right{
-      @apply text-right;
+      @apply text-end;
       .fct-btn-group{
-        @apply justify-end -mr-2.5;
+        @apply justify-end -me-2.5;
       }
     }
   }

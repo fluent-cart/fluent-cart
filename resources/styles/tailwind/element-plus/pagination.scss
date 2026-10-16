@@ -1,5 +1,5 @@
 .pagination-wrap{
-    @apply flex justify-between items-center flex-wrap pl-6 pr-4 py-6 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400 gap-y-2;
+    @apply flex justify-between items-center flex-wrap ps-6 pe-4 py-6 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400 gap-y-2;
     .pager-wrap {
         @apply flex-wrap gap-1.5;
     }
@@ -101,3 +101,11 @@
     }
 }
 
+
+// The pager itself is flex and mirrors; its prev/next arrows must follow.
+[dir="rtl"] .el-pagination {
+    .btn-prev svg,
+    .btn-next svg {
+        transform: scaleX(-1);
+    }
+}

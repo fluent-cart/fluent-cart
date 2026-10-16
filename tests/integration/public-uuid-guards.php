@@ -148,7 +148,7 @@ foreach ($inventory['routes'] as $index => $route) {
                     );
                     if (count($claimed) === 1) {
                         FcTest::skip(
-                            'KNOWN-FAILURE — CustomerOrderController.php:501-504 '
+                            'KNOWN-FAILURE — CustomerOrderController.php:502-505 '
                             . 'dereferences an unknown transaction before the customer-owned '
                             . 'Order guard; the request changes nothing but raises a PHP warning.'
                         );

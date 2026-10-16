@@ -52,10 +52,10 @@ class S3FileUploader
 
         if ($hasDot) {
             // Path-style URL
-            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}";
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
             // Virtual-hosted style
-            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}";
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         // Opt-in: when enabled the upload is refused instead of replacing an
@@ -235,21 +235,21 @@ class S3FileUploader
     private function getUploadHostOld(): string
     {
         // ✅ Regional host
-        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getUploadHost(): string
     {
         if ($this->bucket === '') {
-            return "s3.{$this->region}.amazonaws.com";
+            return "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         // If bucket contains dot, use path-style host
         if (strpos($this->bucket, '.') !== false) {
-            return "s3.{$this->region}.amazonaws.com";
+            return "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
-        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     /**

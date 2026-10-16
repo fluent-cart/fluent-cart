@@ -34,7 +34,7 @@ const assetsPath = computed(() => {
           class="text"
           :aria-label="$t('Credit card number') + ' ' + (data?.billing_info?.details?.last_4 || data?.card_last_4)"
       >
-          **** {{ data?.billing_info?.details?.last_4 || data?.card_last_4 }}
+          <span class="fct-ltr-isolate">**** {{ data?.billing_info?.details?.last_4 || data?.card_last_4 }}</span>
       </div>
     </template>
 

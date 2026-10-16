@@ -795,7 +795,7 @@ onBeforeUnmount(() => {
                                 />
                               </td>
 
-                              <td class="fct-bulk-product-title-cell sticky-col" :style="{ left: '40px' }">
+                              <td class="fct-bulk-product-title-cell sticky-col" :style="{ insetInlineStart: '40px' }">
                               <div class="flex items-center">
                                   <button
                                     v-if="group.hasVariants"
@@ -967,7 +967,7 @@ onBeforeUnmount(() => {
                               </td>
 
                             <!-- quantity -->
-                              <td v-if="isColVisible('track_quantity')" class="fct-bulk-qty-cell !pl-5">
+                              <td v-if="isColVisible('track_quantity')" class="fct-bulk-qty-cell !ps-5">
                                 <el-switch
                                     v-if="group.product?.detail"
                                     v-model="group.product.detail.manage_stock"
@@ -1065,8 +1065,8 @@ onBeforeUnmount(() => {
                                         />
                                       </td>
 
-                                      <td class="fct-bulk-product-title-cell sticky-col" :style="{ left: '40px' }">
-                                          <div class="flex items-center gap-1 pl-4">
+                                      <td class="fct-bulk-product-title-cell sticky-col" :style="{ insetInlineStart: '40px' }">
+                                          <div class="flex items-center gap-1 ps-4">
                                             <span class="text-gray-300 text-xs">└</span>
 
                                             <el-input
@@ -1237,14 +1237,14 @@ onBeforeUnmount(() => {
 
                       <!-- Loading state (initial load only) -->
                       <div v-else-if="loading" class="flex items-center justify-center py-8">
-                      <el-icon class="is-loading mr-2"><i class="el-icon-loading" /></el-icon>
+                      <el-icon class="is-loading me-2"><i class="el-icon-loading" /></el-icon>
                       <span class="text-system-mid text-sm">{{ $t('Loading products...') }}</span>
                       </div>
                   </div>
 
                   <!-- Infinite scroll loading indicator -->
                   <div v-if="pagination.hasMore && products.length > 0 && loading" class="flex items-center justify-center py-3 border-top">
-                      <el-icon class="is-loading mr-2"><i class="el-icon-loading" /></el-icon>
+                      <el-icon class="is-loading me-2"><i class="el-icon-loading" /></el-icon>
                       <span class="text-system-mid text-sm">{{ $t('Loading') }} {{ nextPageCount }} {{ $t('more...') }}</span>
                   </div>
                 </div>

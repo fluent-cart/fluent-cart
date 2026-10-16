@@ -7,6 +7,8 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\MultiCurrency\Services\CouponCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\PriceConverter;
+use FluentCart\App\Services\AdminOrderPricing;
 use FluentCart\App\Services\Coupon\CouponServiceAdmin;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -214,6 +216,22 @@ class CouponResource extends BaseResourceApi
         return $data;
     }
 
+    /**
+     * The quote coupons are priced at on the admin order screens: an existing
+     * order's frozen rate, or the currency picked on the Create Order screen.
+     * Null prices them in the base currency.
+     */
+    private static function adminCouponQuote($data, $order): ?array
+    {
+        if ($order) {
+            return CouponCurrency::orderQuote($order);
+        }
+
+        $quote = AdminOrderPricing::quoteFor(Arr::get($data, 'currency'));
+
+        return is_wp_error($quote) || PriceConverter::isBaseQuote($quote) ? null : $quote;
+    }
+
     public static function applyCoupon($data, $returnCouponService = true)
     {
         $couponCode = Arr::get($data, 'coupon_code');
@@ -238,7 +256,7 @@ class CouponResource extends BaseResourceApi
         }
 
         $couponService = new CouponServiceAdmin($lineItems, null, $previouslyAppliedCouponCodes->keys()->toArray(), $customerEmail);
-        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
+        $couponService->withCurrencyQuote(static::adminCouponQuote($data, $order ?? null));
         $couponApplied = $couponService->applyCoupon($couponCode);
         if (is_wp_error($couponApplied)) {
             return $couponApplied;
@@ -298,7 +316,7 @@ class CouponResource extends BaseResourceApi
 
 
         $couponService = new CouponServiceAdmin($lineItems, null, $previouslyAppliedCouponCodes->keys()->toArray(), $customerEmail);
-        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
+        $couponService->withCurrencyQuote(static::adminCouponQuote($data, $order ?? null));
 
         $isCancelled = $couponService->cancelCoupon($couponCode);
 
@@ -349,7 +367,7 @@ class CouponResource extends BaseResourceApi
             $couponService = new CouponServiceAdmin($lineItems, $previouslyAppliedCouponCodes, [], $customerEmail);
         }
 
-        $couponService->withCurrencyQuote(CouponCurrency::orderQuote($order ?? null));
+        $couponService->withCurrencyQuote(static::adminCouponQuote($data, $order ?? null));
         $couponService->reapplyCoupons();
 
         $calculated_items = $couponService->getCalculatedLineItems();

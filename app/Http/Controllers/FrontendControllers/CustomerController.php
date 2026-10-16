@@ -357,14 +357,17 @@ class CustomerController extends Controller
                 return $this->validateStateField($value, $rule, $label, $country, $localization);
             case 'postcode':
                 if ($rule === 'required' && empty($value)) {
+                    /* translators: %s: field label */
                     return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
                 }
                 if (!empty($value) && !empty($country) && $localization->postcode->isValid($value, $country) === false) {
+                    /* translators: %s: field label */
                     return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
                 }
                 return [];
             default:
                 if ($rule === 'required' && empty($value)) {
+                    /* translators: %s: field label */
                     return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
                 }
                 return [];
@@ -374,10 +377,12 @@ class CustomerController extends Controller
     private function validateCountryField($value, string $rule, string $label, LocalizationManager $localization): array
     {
         if ($rule === 'required' && empty($value)) {
+            /* translators: %s: field label */
             return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
         }
 
         if (!empty($value) && !Arr::has($localization->countries(), $value)) {
+            /* translators: %s: field label */
             return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
         }
 
@@ -398,10 +403,12 @@ class CustomerController extends Controller
         $stateValues = array_column($states, 'value');
 
         if ($rule === 'required' && empty($value)) {
+            /* translators: %s: field label */
             return ['required' => sprintf(__('%s is required.', 'fluent-cart'), $label)];
         }
 
         if (!empty($value) && !in_array($value, $stateValues)) {
+            /* translators: %s: field label */
             return ['invalid' => sprintf(__('%s is invalid.', 'fluent-cart'), $label)];
         }
 

@@ -34,7 +34,7 @@ class TaxRenderer
             $taxLabel = $taxCountry ? TaxModule::getCountryTaxTitle($taxCountry) : __('Tax', 'fluent-cart');
         }
         ?>
-        <li <?php echo $atts; ?>>
+        <li <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <span class="fct_summary_label">
                 <?php echo esc_html($taxLabel); ?>
             </span>
@@ -71,7 +71,7 @@ class TaxRenderer
             Arr::get($cart->checkout_data, 'tax_data.tax_behavior', 2));
         $isInclusive = $storeBehavior === 2;
         ?>
-        <li data-fct-shipping-tax-row <?php echo $atts; ?>>
+        <li data-fct-shipping-tax-row <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <span class="fct_summary_label">
                 <?php if ($isInclusive) : ?>
                     <?php echo esc_html__('Shipping Tax (Included)', 'fluent-cart'); ?>
@@ -278,10 +278,10 @@ class TaxRenderer
                         <span style="flex:1;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
                             <?php esc_html_e('Rate', 'fluent-cart'); ?>
                         </span>
-                        <span style="min-width:88px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
+                        <span style="min-width:88px;text-align:end;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
                             <?php esc_html_e('Taxable base', 'fluent-cart'); ?>
                         </span>
-                        <span style="min-width:64px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
+                        <span style="min-width:64px;text-align:end;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
                             <?php esc_html_e('Tax', 'fluent-cart'); ?>
                         </span>
                     </div>
@@ -290,10 +290,10 @@ class TaxRenderer
                         <span class="fct_tax_summary_row_label" style="flex:1;">
                             <?php echo esc_html($checkoutRateRow['label']); ?>
                         </span>
-                        <span style="min-width:88px;text-align:right;color:#94a3b8;">
+                        <span style="min-width:88px;text-align:end;color:#94a3b8;">
                             <?php echo esc_html(Helper::toDecimal((int) $checkoutRateRow['base'])); ?>
                         </span>
-                        <span class="fct_tax_summary_row_amount" style="min-width:64px;text-align:right;">
+                        <span class="fct_tax_summary_row_amount" style="min-width:64px;text-align:end;">
                             <?php echo esc_html(Helper::toDecimal((int) $checkoutRateRow['tax'])); ?>
                         </span>
                     </div>

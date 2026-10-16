@@ -130,8 +130,8 @@ body:not(.fluent-cart-no-colors) {
     bottom: 0;
     padding: 0px 8px;
     background: #e4e4e4;
-    left: 0;
-    border-top-right-radius: 8px;
+    inset-inline-start: 0;
+    border-start-end-radius: 8px;
     font-size: 12px;
   }
 
@@ -291,6 +291,10 @@ body:not(.fluent-cart-no-colors) {
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 15px;
+
+    [dir="rtl"] & {
+      background-position: left 10px center;
+    }
   }
 
   input:disabled {
@@ -345,6 +349,14 @@ body:not(.fluent-cart-no-colors) {
   .has-error{
     .fct-input {
       @apply border-red-500;
+    }
+  }
+
+  // Emails, phones, postcodes and codes stay LTR on RTL pages, aligned to the reading side.
+  [dir="rtl"] & {
+    input[type=email], input[type=tel], input[type=url], input[id$="_postcode"], input#coupon, input#fct_billing_tax_id {
+      direction: ltr;
+      text-align: right;
     }
   }
 }
@@ -410,7 +422,7 @@ body:not(.fluent-cart-no-colors) {
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
   .fct_address_modal_open_btn {
-    @apply absolute top-[-40px] right-0 leading-none cursor-pointer text-sm font-medium py-1.5 pl-1.5 pr-0 m-0 inline-flex gap-2 items-center border-0 text-[var(--fct-checkout-primary-text-color)] transition-all duration-200 hover:underline hover:shadow-none hover:bg-transparent shadow-none hover:text-[var(--fct-checkout-primary-text-color)];
+    @apply absolute top-[-40px] end-0 leading-none cursor-pointer text-sm font-medium py-1.5 ps-1.5 pe-0 m-0 inline-flex gap-2 items-center border-0 text-[var(--fct-checkout-primary-text-color)] transition-all duration-200 hover:underline hover:shadow-none hover:bg-transparent shadow-none hover:text-[var(--fct-checkout-primary-text-color)];
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -425,7 +437,7 @@ body:not(.fluent-cart-no-colors) {
   p {
     @apply mt-0 mb-1.5 text-sm text-[var(--fct-checkout-secondary-text-color)] last:mb-0 font-medium leading-[24px] mt-1;
     span {
-      @apply mr-1 inline-block font-medium uppercase text-gray-50 py-0.5 px-2 text-[10px] leading-[16px];
+      @apply me-1 inline-block font-medium uppercase text-gray-50 py-0.5 px-2 text-[10px] leading-[16px];
       border-radius: var(--fct-badge-radius, theme('borderRadius.full'));
       background: var(--fct-checkout-badge-bg-color);
     }
@@ -475,6 +487,10 @@ body:not(.fluent-cart-no-colors) {
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 15px;
+
+    [dir="rtl"] & {
+      background-position: left 10px center;
+    }
   }
 
   .required {
@@ -517,7 +533,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct_address_selector_icon {
-    @apply absolute top-0 left-0 opacity-0;
+    @apply absolute top-0 start-0 opacity-0;
   }
 
   .fct_address_selector_label {
@@ -530,7 +546,7 @@ body:not(.fluent-cart-no-colors) {
   .fct_address_selector_info {
     @apply font-medium leading-[24px] break-words m-0 text-sm text-[var(--fct-checkout-secondary-text-color)];
     span {
-      @apply mr-1 font-medium uppercase bg-[var(--fct-checkout-badge-bg-color)] text-gray-50 py-[1px] px-2 text-[10px] leading-none;
+      @apply me-1 font-medium uppercase bg-[var(--fct-checkout-badge-bg-color)] text-gray-50 py-[1px] px-2 text-[10px] leading-none;
       border-radius: var(--fct-badge-radius, theme('borderRadius.full'));
     }
   }
@@ -554,7 +570,7 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct_address_modal_close_btn {
-  @apply flex items-center justify-center cursor-pointer absolute top-3 right-3 z-10 bg-white border-0 w-7.5 h-7.5 rounded-full text-system-dark p-0 m-0 hover:bg-gray-50 hover:text-system-dark ;
+  @apply flex items-center justify-center cursor-pointer absolute top-3 end-3 z-10 bg-white border-0 w-7.5 h-7.5 rounded-full text-system-dark p-0 m-0 hover:bg-gray-50 hover:text-system-dark ;
   svg {
     @apply w-4.5 h-4.5;
   }
@@ -590,15 +606,15 @@ body:not(.fluent-cart-no-colors) {
       .fct_input_wrapper {
         &:first-child {
           input {
-            @apply border-l border-b-[1px];
-            border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+            @apply border-s border-b-[1px];
+            border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
           }
         }
 
         &:last-child {
           input {
-            @apply border-r border-b-[1px];
-            border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+            @apply border-e border-b-[1px];
+            border-end-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
           }
         }
 
@@ -673,15 +689,15 @@ body:not(.fluent-cart-no-colors) {
 
       &:first-child {
         input {
-          @apply rounded-tr-none rounded-br-none rounded-tl-none border-r-[0.5px];
-          border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+          @apply rounded-se-none rounded-ee-none rounded-ss-none border-e-[0.5px];
+          border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
         }
       }
 
       &:last-child {
         input {
-          @apply rounded-tl-none rounded-tr-none rounded-bl-none border-l-[0.5px];
-          border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+          @apply rounded-ss-none rounded-se-none rounded-es-none border-s-[0.5px];
+          border-end-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
         }
       }
     }
@@ -722,7 +738,7 @@ body:not(.fluent-cart-no-colors) {
     &.fct_2_columns > * + *,
     .fct_2_columns > * + * {
       margin-top: 0;
-      margin-left: -1px;
+      margin-inline-start: -1px;
     }
 
     .fct_input_wrapper,
@@ -750,7 +766,7 @@ body:not(.fluent-cart-no-colors) {
       height: 40px;
       line-height: 38px;
       font-size: 15px;
-      padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+      padding-inline-start: var(--fct-input-padding-x, theme('spacing.4'));
 
       &:focus,
       &.open {
@@ -760,7 +776,7 @@ body:not(.fluent-cart-no-colors) {
   }
 }
 
-// Docked: a filled, unfocused field shows its name small at the right edge. The name
+// Docked: a filled, unfocused field shows its name small at the inline-end edge. The name
 // sits on a fading field-colour box inside the border, so a long value runs under it.
 .fct-field-labels-docked [data-fct-label] {
   &::after {
@@ -768,13 +784,13 @@ body:not(.fluent-cart-no-colors) {
     position: absolute;
     top: 1px;
     bottom: 1px;
-    right: 1px;
+    inset-inline-end: 1px;
     align-content: center;
     // content-box: the 42% cap is for the text, not the fade and padding
     box-sizing: content-box;
     max-width: 42%;
-    padding-left: 20px;
-    padding-right: calc(var(--fct-input-padding-x, theme('spacing.4')) - 1px);
+    padding-inline-start: 20px;
+    padding-inline-end: calc(var(--fct-input-padding-x, theme('spacing.4')) - 1px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -783,11 +799,16 @@ body:not(.fluent-cart-no-colors) {
     color: var(--fct-checkout-secondary-text-color);
     background: linear-gradient(to right, transparent, var(--fct-checkout-input-bg-color, #fff) 16px);
     // same colour as the field, so a square middle field never shows these curves
-    border-top-right-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
-    border-bottom-right-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
+    border-start-end-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
+    border-end-end-radius: max(0px, calc(var(--fct-input-radius, theme('borderRadius.DEFAULT')) - 1px));
     pointer-events: none;
     opacity: 0;
     transition: opacity .15s ease;
+
+    // gradients have no logical direction: fade from the inline start
+    [dir="rtl"] & {
+      background: linear-gradient(to left, transparent, var(--fct-checkout-input-bg-color, #fff) 16px);
+    }
   }
 
   // hidden while focused, so typing gets the full width and the caret is never covered
@@ -795,8 +816,8 @@ body:not(.fluent-cart-no-colors) {
     opacity: 1;
   }
 
-  // an inline action button (EU VAT "Apply"/"Remove") owns the right edge, so the button draws
-  // the name: right: 100% keeps it beside the button at any width or translation
+  // an inline action button (EU VAT "Apply"/"Remove") owns the inline-end edge, so the button draws
+  // the name: inset-inline-end: 100% keeps it beside the button at any width or translation
   &:has(> button) {
     &::after {
       display: none;
@@ -807,10 +828,10 @@ body:not(.fluent-cart-no-colors) {
       position: absolute;
       top: 0;
       bottom: 0;
-      right: 100%;
+      inset-inline-end: 100%;
       align-content: center;
-      padding-left: 20px;
-      padding-right: 12px;
+      padding-inline-start: 20px;
+      padding-inline-end: 12px;
       white-space: nowrap;
       font-size: 12px;
       font-weight: 400;
@@ -820,6 +841,10 @@ body:not(.fluent-cart-no-colors) {
       pointer-events: none;
       opacity: 0;
       transition: opacity .15s ease;
+
+      [dir="rtl"] & {
+        background: linear-gradient(to left, transparent, var(--fct-checkout-input-bg-color, #fff) 16px);
+      }
     }
 
     &:has(> input:not(:placeholder-shown)):not(:focus-within) > button::before {
@@ -830,7 +855,7 @@ body:not(.fluent-cart-no-colors) {
   &[data-fct-field="select"] {
     &::after {
       opacity: 1;
-      right: 36px;
+      inset-inline-end: 36px;
       border-radius: 0;
     }
 
@@ -839,7 +864,7 @@ body:not(.fluent-cart-no-colors) {
     }
 
     > .fct-nice-select {
-      padding-right: 36px;
+      padding-inline-end: 36px;
     }
   }
 }
@@ -878,7 +903,7 @@ body:not(.fluent-cart-no-colors) {
     content: attr(data-fct-label);
     position: absolute;
     top: 24px;
-    left: calc(var(--fct-input-padding-x, theme('spacing.4')) + 1px);
+    inset-inline-start: calc(var(--fct-input-padding-x, theme('spacing.4')) + 1px);
     transform: translateY(-50%);
     max-width: calc(100% - 48px);
     overflow: hidden;
@@ -966,6 +991,10 @@ body:not(.fluent-cart-no-colors) {
       .fct_toggle_content svg {
         transform: rotate(270deg);
       }
+      // collapsed chevron points to inline-end
+      [dir="rtl"] & .fct_toggle_content svg {
+        transform: rotate(90deg);
+      }
       .fct_form_section_body {
         grid-template-rows: 0fr;
         padding-bottom: 0;
@@ -1008,6 +1037,8 @@ body:not(.fluent-cart-no-colors) {
 /*====== items =======*/
 .fct_line_items {
   @apply w-full;
+  container-type: inline-size;
+  container-name: fct-line-items;
 }
 
 .fct_line_item {
@@ -1062,7 +1093,7 @@ body:not(.fluent-cart-no-colors) {
       }
     }
     .fct_setup_fee_price_note{
-      @apply text-right;
+      @apply text-end;
     }
 
 
@@ -1096,7 +1127,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct_line_item_price {
-    @apply text-right flex flex-col;
+    @apply text-end flex flex-col;
   }
 
   .fct_line_item_total {
@@ -1138,7 +1169,7 @@ body:not(.fluent-cart-no-colors) {
     @apply w-full flex justify-between items-start gap-[15px];
   }
   .fct_line_item_footer {
-    @apply w-full pl-[65px];
+    @apply w-full ps-[65px];
   }
   .fct_item_tax_badge_amount {
     @apply text-[11px] font-medium leading-[1.4] flex-shrink-0;
@@ -1178,7 +1209,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden w-[190px] border border-solid p-3 text-left text-xs leading-[1.6] text-[var(--fct-checkout-primary-text-color)];
+    @apply absolute end-0 top-full mt-2 hidden w-[190px] border border-solid p-3 text-start text-xs leading-[1.6] text-[var(--fct-checkout-primary-text-color)];
     border-radius: var(--fct-popup-radius, theme('borderRadius.md'));
     background-color: var(--fct-card-bg-color, #ffffff);
     border-color: var(--fct-checkout-border-color);
@@ -1214,14 +1245,53 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct_item_tax_price_note {
-    @apply w-full text-right text-[11px] leading-[1.4] text-[var(--fct-checkout-secondary-text-color)];
+    @apply w-full text-end text-[11px] leading-[1.4] text-[var(--fct-checkout-secondary-text-color)];
   }
 
   .fct_unit_price_rounding_tooltip {
-    left: 0;
-    right: auto;
+    inset-inline-start: 0;
+    inset-inline-end: auto;
     min-width: 220px;
     width: 220px;
+  }
+}
+
+// The summary column can be narrow even on a wide page (block themes with a
+// small content width), so key off the list's own width, not the page's.
+@container fct-line-items (max-width: 300px) {
+  .fct_line_item {
+    .fct_line_item_body {
+      @apply flex-col gap-2.5;
+    }
+
+    .fct_line_item_info {
+      @apply flex-col gap-2.5;
+    }
+
+    .fct_line_item_price {
+      @apply items-start text-start;
+    }
+
+    .fct_item_price_wrapper {
+      @apply justify-start;
+    }
+
+    .fct_line_item_footer {
+      @apply ps-0;
+    }
+  }
+}
+
+// Keep sign, currency and amount one bidi unit; direction comes from the content like <bdi>.
+[dir="rtl"] {
+  .fct_summary_value,
+  .fct_summary_toggle_total .value,
+  .fct_line_item_total,
+  .fct_coupon_price,
+  .fct_item_tax_badge_amount,
+  .fct_item_quantity,
+  .setup-fee-amount {
+    unicode-bidi: plaintext;
   }
 }
 
@@ -1278,7 +1348,7 @@ ul.fct_summary_items_list {
 
   &.hide-input-icon {
     .fluent-cart-checkout-page-form-input {
-      @apply pl-4;
+      @apply ps-4;
     }
   }
   &.is_coupon_active {
@@ -1296,7 +1366,7 @@ ul.fct_summary_items_list {
   }
 
   .fct_coupon_input {
-    @apply pl-10 !important;
+    @apply ps-10 !important;
     border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     background-color: var(--fct-checkout-input-bg-color);
     color: var(--fct-checkout-input-text-color);
@@ -1304,15 +1374,21 @@ ul.fct_summary_items_list {
     &::placeholder {
       color: var(--fct-checkout-input-placeholder-text-color);
     }
+
+    // input is direction:ltr in RTL, so the icon side is physical right
+    [dir="rtl"] & {
+      padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
+      padding-right: theme('spacing.10') !important;
+    }
   }
 
   .fct_coupon_icon {
-    @apply absolute top-1/2 left-4 z-10 h-4.5 leading-none;
+    @apply absolute top-1/2 start-4 z-10 h-4.5 leading-none;
     transform: translateY(-50%)
   }
 
   button {
-    @apply leading-none absolute top-1/2 right-1.5 py-2 px-4 rounded-[6px] text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 cursor-pointer;
+    @apply leading-none absolute top-1/2 end-1.5 py-2 px-4 rounded-[6px] text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 cursor-pointer;
     background-color: var(--fct-secondary-btn-hover-bg-color, #eaecf0);
     color: var(--fct-primary-text-color, #2f3448);
     transform: translateY(-50%);
@@ -1364,6 +1440,14 @@ ul.fct_summary_items_list {
       }
     }
   }
+
+  // closed triangle points to inline-end; open (down) needs no mirror
+  [dir="rtl"] & .fct-toggle-control svg {
+    transform: scaleX(-1);
+  }
+  [dir="rtl"] &.active .fct-toggle-control svg {
+    transform: rotate(90deg);
+  }
 }
 
 
@@ -1380,7 +1464,7 @@ ul.fct_summary_items_list {
 
 .fct_shipping_methods_item {
   label {
-    @apply m-0 py-3 border border-x-0 border-solid border-[var(--fct-checkout-border-color)] border-t-0 pl-[48px] pr-5 flex items-center justify-between relative text-base font-medium text-[var(--fct-checkout-primary-text-color)] cursor-pointer leading-none flex-wrap gap-1;
+    @apply m-0 py-3 border border-x-0 border-solid border-[var(--fct-checkout-border-color)] border-t-0 ps-[48px] pe-5 flex items-center justify-between relative text-base font-medium text-[var(--fct-checkout-primary-text-color)] cursor-pointer leading-none flex-wrap gap-1;
   }
   .fct_shipping_method_package_info {
     @apply w-full font-normal text-xs text-dark-300;
@@ -1404,7 +1488,7 @@ ul.fct_summary_items_list {
   }
 
   .fct-checkmark {
-    @apply absolute top-[50%] left-5 h-4 w-4 bg-transparent rounded-full border-[1.5px] border-solid border-[var(--fct-checkout-border-color)];
+    @apply absolute top-[50%] start-5 h-4 w-4 bg-transparent rounded-full border-[1.5px] border-solid border-[var(--fct-checkout-border-color)];
     transform: translateY(-50%);
 
     &:after {
@@ -1426,7 +1510,7 @@ ul.fct_summary_items_list {
 
 /*====== tax detail inline base amount =======*/
 .fct_tax_detail {
-  @apply text-xs font-normal text-[var(--fct-checkout-secondary-text-color)] ml-0.5;
+  @apply text-xs font-normal text-[var(--fct-checkout-secondary-text-color)] ms-0.5;
 }
 
 /*====== tax summary box (checkout order summary) =======*/
@@ -1448,10 +1532,20 @@ ul.fct_summary_items_list {
     @apply text-xs font-semibold uppercase;
     color: var(--fct-checkout-secondary-text-color);
     letter-spacing: 0.06em;
+
+    // tracking breaks Arabic letter joining
+    [dir="rtl"] & {
+      letter-spacing: 0;
+    }
   }
 
   .fct_tax_summary_rows {
     @apply grid gap-1;
+  }
+
+  // Column headers carry inline tracking; !important beats it for Arabic.
+  [dir="rtl"] & .fct_tax_summary_row--head > span {
+    letter-spacing: 0 !important;
   }
 
   .fct_tax_summary_row {
@@ -1495,7 +1589,7 @@ ul.fct_summary_items_list {
   }
 
   .fct_item_tax_tooltip {
-    @apply absolute right-0 top-full mt-2 hidden border border-solid p-3 text-left text-xs leading-relaxed;
+    @apply absolute end-0 top-full mt-2 hidden border border-solid p-3 text-start text-xs leading-relaxed;
     border-radius: var(--fct-popup-radius, theme('borderRadius.md'));
     background-color: var(--fct-card-bg-color, #ffffff);
     width: 220px;
@@ -1543,7 +1637,7 @@ ul.fct_summary_items_list {
 .fct_tax_input_wrapper {
   @apply relative;
   button {
-    @apply leading-none absolute top-1/2 right-1.5 bg-gray-100 py-2 px-4 rounded-[6px] text-system-dark text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 hover:bg-gray-200 cursor-pointer #{!important};
+    @apply leading-none absolute top-1/2 end-1.5 bg-gray-100 py-2 px-4 rounded-[6px] text-system-dark text-xs font-semibold shadow-none border-0 min-h-7 max-h-7 hover:bg-gray-200 cursor-pointer #{!important};
     transform: translateY(-50%);
 
     &:hover {
@@ -1662,7 +1756,7 @@ ul.fct_summary_items_list {
   }
 
   label {
-    @apply mb-0 block relative leading-[24px] cursor-pointer text-base text-[var(--fct-checkout-primary-text-color)] select-none pl-12 font-medium py-3 pr-4 max-w-full;
+    @apply mb-0 block relative leading-[24px] cursor-pointer text-base text-[var(--fct-checkout-primary-text-color)] select-none ps-12 font-medium py-3 pe-4 max-w-full;
   }
 
   &:last-child {
@@ -1672,7 +1766,7 @@ ul.fct_summary_items_list {
   }
 
   .checkmark {
-    @apply absolute top-[50%] left-5 h-4 w-4 bg-[var(--fct-checkout-radio-bg-color)] rounded-full border-[1.5px] border-solid border-[var(--fct-checkout-radio-border-color)];
+    @apply absolute top-[50%] start-5 h-4 w-4 bg-[var(--fct-checkout-radio-bg-color)] rounded-full border-[1.5px] border-solid border-[var(--fct-checkout-radio-border-color)];
     transform: translateY(-50%);
 
     &:after {
@@ -1702,7 +1796,7 @@ ul.fct_summary_items_list {
 
   .fct-payment-method-loader {
     position: absolute;
-    right: 14px;
+    inset-inline-end: 14px;
     top: 14px;
     display: none;
   }
@@ -1795,11 +1889,11 @@ ul.fct_summary_items_list {
 }
 
 .fct_order_bump {
-  @apply relative pl-6;
+  @apply relative ps-6;
   .fct_order_bump_checkbox {
-    @apply absolute left-0 top-0;
+    @apply absolute start-0 top-0;
     .fct_order_bump_btn {
-      @apply w-4 h-4 min-h-4 absolute left-0 top-0 opacity-0 cursor-pointer z-10;
+      @apply w-4 h-4 min-h-4 absolute start-0 top-0 opacity-0 cursor-pointer z-10;
       &:checked ~ .fct_order_bump_checkbox_marker {
         @apply bg-primary-500 border-primary-500 opacity-100;
         &:before {
@@ -1809,7 +1903,7 @@ ul.fct_summary_items_list {
     }
 
     .fct_order_bump_checkbox_marker {
-      @apply absolute left-0 top-0 w-4 h-4 border-[1px] border-solid border-[var(--fct-checkout-border-color)] rounded-xs;
+      @apply absolute start-0 top-0 w-4 h-4 border-[1px] border-solid border-[var(--fct-checkout-border-color)] rounded-xs;
       &::before {
         content: '';
         border-bottom: 1.5px solid #fff;
@@ -1914,7 +2008,7 @@ ul.fct_summary_items_list {
 #billing_country_wrapper,
 #shipping_country_wrapper{
   .fluent-cart-checkout-page-form-label{
-    @apply top-1 left-4 absolute text-xs;
+    @apply top-1 start-4 absolute text-xs;
   }
   select{
     @apply pt-5;
@@ -1973,7 +2067,7 @@ ul.fct_summary_items_list {
     input[type="checkbox"] {
       display: inline-block; // override default flex
       margin-top: 0;
-      margin-right: 6px;
+      margin-inline-end: 6px;
       flex-shrink: 0;
       position: relative;
       top: 2px;
@@ -2008,7 +2102,7 @@ ul.fct_summary_items_list {
         @apply inline-flex items-center gap-2 text-sm font-medium text-[var(--fct-checkout-primary-text-color)] cursor-pointer;
     }
     p {
-        @apply text-xs leading-[1.5] opacity-[0.7] ml-6 mb-0 mt-0 text-[var(--fct-checkout-secondary-text-color)];
+        @apply text-xs leading-[1.5] opacity-[0.7] ms-6 mb-0 mt-0 text-[var(--fct-checkout-secondary-text-color)];
     }
 }
 

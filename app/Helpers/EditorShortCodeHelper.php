@@ -275,6 +275,7 @@ class EditorShortCodeHelper
                 '{{order.store_vat_display}}'                    => __('Store VAT Number (formatted)', 'fluent-cart'),
                 '{{order.store_company_name}}'                   => __('Store Company Name', 'fluent-cart'),
                 '{{order.store_company_display}}'                => __('Store Company Name (formatted)', 'fluent-cart'),
+                '{{order.store_seller_name}}'                    => __('Store Seller Name (company, else store name)', 'fluent-cart'),
                 '{{order.store_legal_registration_id}}'          => __('Store Legal Registration ID', 'fluent-cart'),
                 '{{order.store_legal_registration_display}}'     => __('Store Legal Registration ID (formatted)', 'fluent-cart'),
                 '{{order.store_seller_vat_id}}'                  => __('Store Seller VAT ID', 'fluent-cart'),

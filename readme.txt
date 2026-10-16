@@ -4,7 +4,7 @@ Tags: ecommerce, cart, checkout, subscriptions, payments
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -384,6 +384,12 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 
 
 == Changelog ==
+
+= 2.2.0 (Oct 16, 2026) =
+- Adds RTL (Right-to-Left) language support.
+- Adds Multi-currency support for admin orders.
+- Enhances Tax information on PDF receipts.
+- Fixes Regular security audits.
 
 = 2.1.0 (Oct 15, 2026) =
 - Enhances Full Report system with multi-currency support

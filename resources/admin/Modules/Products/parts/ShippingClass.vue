@@ -135,7 +135,7 @@ onMounted(() => {
               </div>
             </el-option>
           </el-select>
-          <div class="pt-1.5 text-right">
+          <div class="pt-1.5 text-end">
             <el-button @click.stop="openAddClassDrawer" size="small" text>
               <DynamicIcon name="Plus" class="w-3 h-3"/> {{ translate('Add Shipping Class') }}
             </el-button>

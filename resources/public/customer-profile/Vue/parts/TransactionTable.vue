@@ -3,7 +3,7 @@
     <el-table :data="transactions" :aria-label="$t('Transactions Table')">
       <el-table-column label="#" :width="150">
         <template #default="scope">
-          <span class="text truncate" :aria-label="$t('Invoice Number') + ' ' + scope.row.invoice_no">#{{ scope.row.invoice_no }}</span>
+          <span class="text truncate fct-ltr-isolate" :aria-label="$t('Invoice Number') + ' ' + scope.row.invoice_no">#{{ scope.row.invoice_no }}</span>
         </template>
       </el-table-column>
 

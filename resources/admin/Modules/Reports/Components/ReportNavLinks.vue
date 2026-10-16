@@ -17,7 +17,7 @@
       <div class="fct-settings-nav-collapse-button-wrapper">
         <el-tooltip
             :content="translate('Toggle reports')"
-            placement="right"
+            :placement="tooltipPlacement"
         >
           <el-button
               @click="toggleCollapse"
@@ -178,6 +178,8 @@ const navLinks = [
 // `icon_img` — plus an optional `icon_img_dark` for dark mode — as image URLs; these render via <img>
 // (like the payment/addon logos), so add-on-supplied icon markup is never executed.
 AppConfig.get('addon_report_sidebar', []).forEach(item => navLinks.push(item));
+// Open toward the report content, away from the WP admin menu
+const tooltipPlacement = document.documentElement.dir === 'rtl' ? 'left' : 'right';
 const isMenuCollapsed = ref(false);
 const isMenuExpanded = ref(false);
 const isDesktopView = ref(window.innerWidth >= 1024);

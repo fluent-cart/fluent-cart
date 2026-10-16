@@ -484,10 +484,19 @@ class WebCheckoutHandler
 
     public function handleUpdateAddressSelectAjax()
     {
-        $customerAddressId = App::request()->get('customer_address_id');
-        $address = CustomerAddressResource::find($customerAddressId, ['with' => App::request()->get('with', [])]);
+        $customer = CustomerResource::getCurrentCustomer();
+        if (!$customer) {
+            return [
+                'message' => __('You are not authorized to view this address', 'fluent-cart')
+            ];
+        }
 
-        if (!$address) {
+        $customerAddressId = App::request()->getSafe('customer_address_id', 'absint');
+        $address = ['address' => CustomerAddressResource::getQuery()
+            ->where('customer_id', $customer->id)
+            ->find($customerAddressId)];
+
+        if (!Arr::get($address, 'address')) {
             return [
                 'message' => __('Address not found', 'fluent-cart')
             ];
@@ -524,15 +533,6 @@ class WebCheckoutHandler
         $cart->checkout_data = $checkoutData;
 
         $cart->save();
-
-        $customerId = Arr::get($address, 'address.customer_id');
-
-        $customer = \FluentCart\Api\Resource\CustomerResource::getCurrentCustomer();
-        if (empty($customer) || $customer->id != $customerId) {
-            return [
-                'message' => __('You are not authorized to view this address', 'fluent-cart')
-            ];
-        }
 
         $formattedAddress = Arr::get($address, 'address.formatted_address');
 
@@ -1250,10 +1250,14 @@ class WebCheckoutHandler
         $productId = App::request()->getSafe('product_id', 'intval');
         $product = Product::query()->find($productId);
 
-        if (!$product) {
-            return $this->sendError([
-                'message' => __('Product not found', 'fluent-cart')
-            ]);
+        // Same visibility as a WordPress single post: drafts never, private only for readers of private posts.
+        $isVisible = $product && (
+            $product->post_status === 'publish'
+            || ($product->post_status === 'private' && current_user_can('read_private_posts'))
+        );
+
+        if (!$isVisible) {
+            return new \WP_Error('product_not_found', __('Product not found', 'fluent-cart'));
         }
         ob_start();
         (new ProductModalRenderer($product))->render();

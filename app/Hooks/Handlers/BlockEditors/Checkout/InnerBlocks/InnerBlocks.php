@@ -573,7 +573,7 @@ class InnerBlocks
 
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             $renderer = new CheckoutRenderer($cart);
             $renderer->renderNameFields();
@@ -603,11 +603,11 @@ class InnerBlocks
         if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
             ob_start();
             ?>
-            <div <?php echo $atts; ?>>
+            <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             foreach ($block->inner_blocks as $inner_block) {
                 if (isset($inner_block->parsed_block)) {
-                    echo $inner_block->render();
+                    echo $inner_block->render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Block::render() output
                 }
             } ?>
             </div>
@@ -630,7 +630,7 @@ class InnerBlocks
 
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CheckoutRenderer($cart))->renderBillingAddressFields($addressTitle);
             ?>
@@ -650,7 +650,7 @@ class InnerBlocks
         }
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CheckoutRenderer($cart))->renderShippingAddressFields($addressTitle);
             ?>
@@ -669,7 +669,7 @@ class InnerBlocks
         }
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CheckoutRenderer($cart))->renderShipToDifferentField([
                     'title'       => $title,
@@ -694,7 +694,7 @@ class InnerBlocks
         ]);
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CheckoutRenderer($cart))->renderShippingOptions();
             ?>
@@ -715,7 +715,7 @@ class InnerBlocks
         ]);
         ob_start(); ?>
         <?php do_action('fluent_cart/before_payment_methods', ['cart' => $cart]); ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CheckoutRenderer($cart))->renderPaymentMethods();
             ?>
@@ -744,7 +744,7 @@ class InnerBlocks
         $atts = get_block_wrapper_attributes();
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
                 (new CheckoutRenderer($cart))->agreeTerms([
                     'title'       => $title,
@@ -779,7 +779,7 @@ class InnerBlocks
         $title = Arr::get($attributes, 'title');
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php (new CheckoutRenderer($cart))->renderOrderNoteField($title); ?>
         </div>
         <?php
@@ -798,7 +798,7 @@ class InnerBlocks
 
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <div class="fct_summary active" data-fluent-cart-checkout-page-checkout-form-order-summary>
                 <?php (new CartSummaryRender($cart))->render(); ?>
             </div>
@@ -819,7 +819,7 @@ class InnerBlocks
         ]);
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CartSummaryRender($cart))->renderItemsLists();
             ?>
@@ -852,7 +852,7 @@ class InnerBlocks
                                 (new CartSummaryRender($cart))->renderFees();
                                 $hasFeeBlock = true;
                             }
-                            echo $inner_block->render();
+                            echo $inner_block->render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Block::render() output
                         }
                     }
                     // Fallback: render fees at the end if no fees block and no coupon block existed
@@ -918,7 +918,7 @@ class InnerBlocks
         ]);
         ob_start();
         ?>
-        <li <?php echo $atts; ?>>
+        <li <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new CartSummaryRender($cart))->showCouponField();
             ?>
@@ -1002,7 +1002,7 @@ class InnerBlocks
         $title = Arr::get($attributes, 'section_title');
         ob_start();
         ?>
-        <div <?php echo $atts; ?>>
+        <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
             (new OrderBumpBoot())->maybeShowBumps([
                 'cart' => $cart,

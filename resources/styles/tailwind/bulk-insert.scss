@@ -29,7 +29,7 @@ body.fct-bulk-page #wpcontent {
   }
 
   th {
-    @apply bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider p-3 text-[13px] font-medium text-system-dark text-left whitespace-nowrap overflow-visible dark:border-dark-400 dark:bg-dark-500 dark:text-gray-50;
+    @apply bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider p-3 text-[13px] font-medium text-system-dark text-start whitespace-nowrap overflow-visible dark:border-dark-400 dark:bg-dark-500 dark:text-gray-50;
   }
 
   td {
@@ -42,19 +42,27 @@ body.fct-bulk-page #wpcontent {
     @apply bg-white sticky z-[65] dark:bg-dark-500;
 
     &::after {
-      @apply absolute top-0 bottom-0 right-[-6px] w-1.5 pointer-events-none;
+      @apply absolute top-0 bottom-0 end-[-6px] w-1.5 pointer-events-none;
 
       content: '';
       background: linear-gradient(to right, rgba(0, 0, 0, 0.06), transparent);
+
+      [dir="rtl"] & {
+        background: linear-gradient(to left, rgba(0, 0, 0, 0.06), transparent);
+      }
     }
   }
 
   th.sticky-col-right,
   td.sticky-col-right {
-    @apply right-0;
+    @apply end-0;
     &::after {
-      @apply left-[-6px] right-auto;
+      @apply start-[-6px] end-auto;
       background: linear-gradient(to left, rgba(0, 0, 0, 0.06), transparent);
+
+      [dir="rtl"] & {
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.06), transparent);
+      }
     }
   }
   .fct-bulk-product-title-cell {
@@ -113,7 +121,7 @@ body.fct-bulk-page #wpcontent {
 // ── Column resizer ───────────────────────────────────────────
 
 .resizer {
-  @apply block w-[9px] absolute right-[-4px] top-0 z-[60];
+  @apply block w-[9px] absolute end-[-4px] top-0 z-[60];
   cursor: col-resize;
   height: var(--resizer-height, 100%);
 
@@ -154,7 +162,7 @@ body.fct-bulk-page #wpcontent {
 
 th.bulk-checkbox-cell,
 td.bulk-checkbox-cell {
-  @apply p-0 text-center align-middle sticky left-0 z-[71] bg-white dark:bg-dark-500;
+  @apply p-0 text-center align-middle sticky start-0 z-[71] bg-white dark:bg-dark-500;
 }
 
 // Row checkboxes are display-only; clicks handled by parent <td>
@@ -245,7 +253,7 @@ input.bulk-cell-input {
 }
 
 .fct-bulk-sub-count {
-  @apply absolute bottom-[-1px] right-[-3px] min-w-[14px] h-[14px] leading-[14px] text-[9px] text-center font-semibold text-white bg-primary-500 rounded-full px-[3px] pointer-events-none;
+  @apply absolute bottom-[-1px] end-[-3px] min-w-[14px] h-[14px] leading-[14px] text-[9px] text-center font-semibold text-white bg-primary-500 rounded-full px-[3px] pointer-events-none;
 }
 
 .bulk-sub-popover {
@@ -321,7 +329,7 @@ input.bulk-cell-input {
 // ── Collapse button & variants block ─────────────────────────
 
 .bulk-collapse-btn {
-  @apply flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 mr-1 w-6.5 h-6.5 text-system-mid hover:text-system-dark dark:text-gray-500 dark:hover:text-gray-50;
+  @apply flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 me-1 w-6.5 h-6.5 text-system-mid hover:text-system-dark dark:text-gray-500 dark:hover:text-gray-50;
   .bulk-collapse-icon {
     transition: transform 0.15s ease;
     transform: rotate(90deg);
@@ -335,7 +343,7 @@ input.bulk-cell-input {
 
 
 .bulk-collapse-count {
-  @apply text-xs font-medium text-system-mid ml-[-2px];
+  @apply text-xs font-medium text-system-mid ms-[-2px];
 }
 
 .bulk-variants-block-row > td {
@@ -350,7 +358,7 @@ input.bulk-cell-input {
   @apply flex items-center justify-center shrink-0 cursor-pointer p-0 transition-colors duration-150;
   width: 20px;
   height: 20px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   background: none;
   color: #189877;
   border: none;
@@ -369,7 +377,7 @@ input.bulk-cell-input {
   @apply flex items-center justify-center shrink-0;
   width: 20px;
   height: 20px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
 
   &.is-syncing { color: #667085; }
   &.is-saved   { color: #12B76A; }
@@ -598,11 +606,11 @@ html.fluent_theme_dark {
     }
 
     th:first-child {
-      @apply rounded-tl rounded-bl;
+      @apply rounded-s;
     }
 
     th:last-child {
-      @apply rounded-tr rounded-br;
+      @apply rounded-e;
     }
   }
 
@@ -623,11 +631,11 @@ html.fluent_theme_dark {
 }
 
 .fmp-thumb-wrap {
-  @apply w-6 h-6 rounded-full border border-solid border-white ml-[-8px] shrink-0 relative inline-block bg-gray-50 overflow-hidden;
+  @apply w-6 h-6 rounded-full border border-solid border-white ms-[-8px] shrink-0 relative inline-block bg-gray-50 overflow-hidden;
 }
 
 .fmp-thumb-wrap:first-child {
-  @apply ml-0;
+  @apply ms-0;
 }
 
 /* Spinner shown behind the image while loading */
@@ -658,7 +666,7 @@ html.fluent_theme_dark {
     @apply rounded w-10 h-10;
   }
   .fmp-count {
-    @apply rounded ml-1;
+    @apply rounded ms-1;
   }
 }
 
@@ -668,7 +676,7 @@ html.fluent_theme_dark {
 }
 
 .fmp-edit-icon {
-  @apply hidden items-center justify-center ml-1 text-system-mid;
+  @apply hidden items-center justify-center ms-1 text-system-mid;
 }
 
 .fct-media-picker:hover .fmp-edit-icon {
@@ -706,7 +714,7 @@ html.fluent_theme_dark {
 }
 
 .fmp-url-delete {
-  @apply shrink-0 w-6 h-6 rounded-full border border-solid border-gray-outline bg-transparent text-system-mid cursor-pointer text-base leading-normal flex items-center justify-center ml-auto transition-all duration-100 hover:border-red-500 hover:text-red-500;
+  @apply shrink-0 w-6 h-6 rounded-full border border-solid border-gray-outline bg-transparent text-system-mid cursor-pointer text-base leading-normal flex items-center justify-center ms-auto transition-all duration-100 hover:border-red-500 hover:text-red-500;
 }
 
 .fmp-url-add {
@@ -789,11 +797,11 @@ html.fluent_theme_dark {
 }
 
 .fmp-featured-tag {
-  @apply absolute bottom-1 left-1 max-w-[calc(100%-8px)] truncate;
+  @apply absolute bottom-1 start-1 max-w-[calc(100%-8px)] truncate;
 }
 
 .fmp-remove-btn {
-  @apply absolute top-1 right-1 w-5.5 h-5.5 rounded-full text-white cursor-pointer text-sm leading-normal flex items-center justify-center opacity-0 transition-opacity duration-100 border-0;
+  @apply absolute top-1 end-1 w-5.5 h-5.5 rounded-full text-white cursor-pointer text-sm leading-normal flex items-center justify-center opacity-0 transition-opacity duration-100 border-0;
   background: rgba(0, 0, 0, 0.6);
 }
 
@@ -801,7 +809,7 @@ html.fluent_theme_dark {
    keyboard. They follow the remove button's reveal, plus focus — otherwise a
    keyboard user would be tabbing through controls they cannot see. */
 .fmp-grid-move {
-  @apply absolute bottom-1 right-1 flex items-center gap-1 opacity-0 transition-opacity duration-100;
+  @apply absolute bottom-1 end-1 flex items-center gap-1 opacity-0 transition-opacity duration-100;
 }
 
 .fmp-move-btn {

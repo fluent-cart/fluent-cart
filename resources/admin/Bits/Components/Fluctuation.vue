@@ -118,7 +118,7 @@ const icon = computed(() => props.fluctuation < 0 ? 'CaretDown' : 'CaretUp');
                 <span>{{ tooltip }}</span>
             </template>
             <span class="cursor-pointer" :class="percentageClass">
-                {{ fluctuationDisplay }}%
+                <span dir="ltr">{{ fluctuationDisplay }}%</span>
                 <template v-if="fluctuationSuffix">{{ fluctuationSuffix }}</template>
             </span>
         </el-tooltip>

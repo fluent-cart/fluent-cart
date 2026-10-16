@@ -301,7 +301,7 @@
         }
 
         .del {
-          @apply line-through pr-1 text-system-dark-light;
+          @apply line-through pe-1 text-system-dark-light;
         }
 
         .fct-unit-price-rounding-icon {
@@ -319,7 +319,7 @@
           .product-details-quantity {
             @apply pt-1 pb-2;
             .del {
-              @apply pr-0 pl-1;
+              @apply pe-0 ps-1;
             }
           }
         }
@@ -331,7 +331,7 @@
         }
 
         &-third {
-          @apply text-right flex flex-col justify-between;
+          @apply text-end flex flex-col justify-between;
           span {
             @apply text-system-dark text-sm dark:text-gray-50;
           }
@@ -381,6 +381,12 @@
 
 .fct-subs-status-wrap {
   @apply flex items-center gap-1 justify-between mb-4;
+}
+
+// Isolate each meta item: otherwise the LTR date and invoice number merge into
+// one LTR run and the items show in reverse order under RTL.
+.single-page-header-text > * {
+  unicode-bidi: isolate;
 }
 
 

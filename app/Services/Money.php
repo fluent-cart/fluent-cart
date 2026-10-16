@@ -138,7 +138,7 @@ class Money
 
         if (self::isThreeDecimal($currency)) {
             throw new \Exception(
-                sprintf('%s is a three-decimal currency and is not supported for payment processing.', $currency)
+                esc_html(sprintf('%s is a three-decimal currency and is not supported for payment processing.', $currency))
             );
         }
 

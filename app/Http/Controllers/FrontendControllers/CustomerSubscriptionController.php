@@ -3,6 +3,7 @@
 namespace FluentCart\App\Http\Controllers\FrontendControllers;
 
 use FluentCart\Api\Resource\CustomerResource;
+use FluentCart\Api\Resource\ShopResource;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\OrderTransaction;
@@ -36,7 +37,7 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
-        $perPage = (int)$request->get('per_page', 10);
+        $perPage = ShopResource::clampPerPage($request->get('per_page', 10));
         $page = (int)$request->get('page', 1);
 
         // Get the current logged-in customer

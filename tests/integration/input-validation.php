@@ -593,49 +593,22 @@ return [
         'id'            => 'validation-bypass-pagination-boundaries',
         'name'          => 'Input-taking list endpoints outside BaseFilter clamp per_page',
         'kind'          => 'behavior',
-        'known_failure' => true,
+        'known_failure' => false,
         'run'           => function () use ($collectKey) {
-            $observed = [];
             $public = FcTest::rest('GET', 'public/products', [
                 'per_page' => 100000,
                 'page'     => 1,
             ]);
             FcTest::assertHealthy($public, '/public/products oversized per_page');
-            $publicValues = array_map(
-                'intval',
-                $collectKey($public['data'], 'per_page')
-            );
-            $observed['public/products'] = $publicValues;
-
-            $allClamped = !empty($observed);
-            $documented = !empty($observed);
-            foreach ($observed as $route => $values) {
-                if (!$values) {
-                    FcTest::fail('/' . $route . ' does not expose pagination metadata');
-                    return;
-                }
-                foreach ($values as $value) {
-                    $allClamped = $allClamped && $value > 0 && $value < 200;
-                    $documented = $documented && $value === 100000;
-                }
+            $values = array_map('intval', $collectKey($public['data'], 'per_page'));
+            if (!$values) {
+                FcTest::fail('/public/products does not expose pagination metadata');
+                return;
             }
-
-            if ($allClamped) {
-                FcTest::fail(
-                    'KNOWN-FAILURE unexpectedly passed; reclassify bypass pagination clamps.'
-                );
-            } elseif ($documented) {
-                FcTest::skip(
-                    'KNOWN-FAILURE — ShopResource.php:262-264 passes raw per_page '
-                    . 'to its paginator; CustomerOrderController.php:62-82 has the '
-                    . 'same source-checked bypass but its installed-data list probe '
-                    . 'is excluded for the documented Order.php:356 diagnostic. '
-                    . 'observed=' . wp_json_encode($observed)
-                );
-            } else {
-                FcTest::fail(
-                    'KNOWN-FAILURE behavior drifted from the documented per_page=100000 bypass.'
-                    . "\n  observed: " . wp_json_encode($observed)
+            foreach ($values as $value) {
+                FcTest::assert(
+                    $value > 0 && $value <= 100,
+                    '/public/products clamps per_page=100000 to 1-100 (ShopController::perPage); observed ' . $value
                 );
             }
         },

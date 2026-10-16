@@ -131,13 +131,13 @@
 
   .fct-media-picker.is-compact {
     .fmp-count {
-        @apply w-[64px] h-[64px] rounded text-sm ml-1.5;
+        @apply w-[64px] h-[64px] rounded text-sm ms-1.5;
     }
     .fmp-edit-icon {
         @apply flex invisible opacity-0;
     }
     .fmp-thumb-wrap {
-        @apply w-[64px] h-[64px] rounded ml-1.5;
+        @apply w-[64px] h-[64px] rounded ms-1.5;
         img {
             @apply rounded;
         }
@@ -214,7 +214,7 @@
   @apply pt-5;
 
   .fct-package-default-check-desc {
-    @apply text-[13px] text-system-mid pl-6 dark:text-gray-300;
+    @apply text-[13px] text-system-mid ps-6 dark:text-gray-300;
   }
 }
 
@@ -271,7 +271,7 @@
         @apply w-4.5 h-4.5 text-system-mid dark:text-gray-300;
     }
     .fct-package-options-dimensions {
-        @apply ml-1 text-sm text-system-mid dark:text-gray-300;
+        @apply ms-1 text-sm text-system-mid dark:text-gray-300;
     }
 }
 .fct-required {
@@ -315,7 +315,7 @@
 
 /* Shared variant nav styles */
 .fct-shared-variant-nav {
-  @apply w-[264px] shrink-0 flex flex-col bg-gray-50 border border-y-0 border-l-0 border-solid border-gray-outline dark:border-dark-400 dark:bg-dark-500;
+  @apply w-[264px] shrink-0 flex flex-col bg-gray-50 border-0 border-e border-solid border-gray-outline dark:border-dark-400 dark:bg-dark-500;
 }
 
 .fct-shared-variant-nav__summary {
@@ -404,7 +404,7 @@
 }
 
 .fct-shared-variant-nav__group-toggle {
-  @apply flex-1 flex items-center gap-2 px-2 py-1.5 bg-transparent border-0 rounded cursor-pointer text-left min-w-0;
+  @apply flex-1 flex items-center gap-2 px-2 py-1.5 bg-transparent border-0 rounded cursor-pointer text-start min-w-0;
 
   &:focus-visible {
     @apply outline-2 outline-offset-2 outline-blue-500;
@@ -473,11 +473,11 @@
 }
 
 .fct-shared-variant-nav__group-body {
-  @apply pl-2.5 mt-1;
+  @apply ps-2.5 mt-1;
 }
 
 .fct-shared-variant-nav__item-shell {
-  @apply flex items-center gap-1 mb-1 pr-0.5 rounded transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-dark-400;
+  @apply flex items-center gap-1 mb-1 pe-0.5 rounded transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-dark-400;
 
   &.is-active {
     @apply bg-white dark:bg-dark-400;
@@ -486,7 +486,7 @@
 }
 
 .fct-shared-variant-nav__item {
-  @apply flex items-center gap-2.5 flex-1 w-full border-0 bg-transparent text-left py-[7px] px-2.5 cursor-pointer relative;
+  @apply flex items-center gap-2.5 flex-1 w-full border-0 bg-transparent text-start py-[7px] px-2.5 cursor-pointer relative;
   &.is-disabled {
     @apply cursor-not-allowed opacity-50 pointer-events-none;
   }
@@ -537,7 +537,7 @@
   width: 8px;
   height: 8px;
   top: -2px;
-  left: -2px;
+  inset-inline-start: -2px;
   border: 1px solid #ffffff;
 }
 
@@ -749,7 +749,7 @@
         @apply text-system-dark dark:text-gray-50;
     }
     .fct-stock-adjuster-trigger {
-        @apply w-7.5 h-7.5 inline-flex items-center justify-center cursor-pointer mr-[-6px] rounded hover:bg-gray-100 dark:hover:bg-dark-400;
+        @apply w-7.5 h-7.5 inline-flex items-center justify-center cursor-pointer me-[-6px] rounded hover:bg-gray-100 dark:hover:bg-dark-400;
     }
 }
 
@@ -758,7 +758,7 @@
 }
 
 .fct-variant-pricing-add-button-wrap {
-    @apply text-right p-4 border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400;
+    @apply text-end p-4 border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400;
 }
 
 @keyframes rotation {

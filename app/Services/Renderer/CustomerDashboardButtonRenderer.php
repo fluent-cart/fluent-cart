@@ -61,7 +61,7 @@ class CustomerDashboardButtonRenderer
         $wrapperAttributes; ?> >
             <?php if ($showIcon): ?>
                 <span class="fct-customer-dashboard-icon">
-                    <?php echo $this->getUserIcon(); ?>
+                    <?php echo $this->getUserIcon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG markup ?>
                 </span>
             <?php endif; ?>
             <span><?php echo wp_kses_post($buttonText); ?></span>

@@ -5,6 +5,8 @@
  * @var array $reminder
  */
 
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+
 $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $dueAt = \FluentCart\Framework\Support\Arr::get($reminder, 'due_at', '');
 $dueDate = \FluentCart\App\Services\DateTime\DateFormatter::format($dueAt, true, $order);
@@ -57,20 +59,20 @@ $ctaText = esc_html__('Your subscription is at risk. Please pay immediately to a
         <tbody>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Order ID', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;">#<?php echo esc_html($order->id); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;">#<?php echo esc_html($order->id); ?></td>
         </tr>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Order Reference', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($orderRef); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($orderRef); ?></td>
         </tr>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Outstanding Amount', 'fluent-cart'); ?></td>
-            <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:right;"><?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($dueAmount, null, false, true, true)); ?></td>
+            <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($dueAmount, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
         </tr>
         <?php if ($dueDate): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Due Date', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:right;"><?php echo esc_html($dueDate); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($dueDate); ?></td>
             </tr>
         <?php endif; ?>
         </tbody>

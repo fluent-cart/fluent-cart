@@ -18,6 +18,12 @@ $wp_footer = !((isset($wp_footer) && $wp_footer == false));
 ?>
 <!DOCTYPE html>
 <html>
+<head>
+<?php // Inside a themed page the theme's head already set these. ?>
+<?php if (!did_action('wp_head')): ?>
+    <meta charset="<?php echo esc_attr(get_bloginfo('charset')); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php endif; ?>
 
 <?php if (!empty($title)): ?>
 
@@ -36,6 +42,7 @@ if (isset($styles) && is_array($styles) && !empty($enqueue_prefix)) {
     Vite::printAllStyles($styles, $enqueue_prefix.'_styles');
 }
 ?>
+</head>
 <body class="<?php echo esc_attr(implode(' ', \FluentCart\App\Services\Theme\FrontendTheme::bodyClasses([]))); ?>">
 
 <div style="width: 100%; box-sizing: border-box">

@@ -661,7 +661,7 @@ class ProductReviewRenderer
             <?php if (!$this->isDefaultStarColor($starColor)) : ?>
                 style="--fct-star-color: <?php echo esc_attr($starColor); ?>"
             <?php endif; ?>
-            <?php echo $extraAttrHtml; ?>
+            <?php echo $extraAttrHtml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- data attributes built with esc_attr() ?>
         >
             <div class="fct-reviews-layout<?php echo $showSummary ? ' fct-reviews-layout--summary-' . esc_attr($summaryMode) : ' fct-reviews-layout--single'; ?>">
                 <?php if ($showSummary) : ?>
@@ -701,8 +701,8 @@ class ProductReviewRenderer
                         <?php if ($showCount) : ?>
                         <h3 class="fct-reviews-section-title">
                             <?php
-                            /* translators: %s - total review count */
                             printf(
+                                /* translators: %s - total review count */
                                 esc_html__('%s Reviews', 'fluent-cart'),
                                 '<span data-reviews-total-count>' . esc_html($displayTotal) . '</span>'
                             );
@@ -736,7 +736,7 @@ class ProductReviewRenderer
                     <?php endif; ?>
 
                     <?php if (!$composedDrew['list']) : ?>
-                    <div class="fct-reviews-list<?php echo $hasColumns ? ' fct-reviews-list--' . $viewMode . ' fct-reviews-list--cols-' . (int) $gridColumns : ''; ?>"
+                    <div class="fct-reviews-list<?php echo $hasColumns ? ' fct-reviews-list--' . esc_attr($viewMode) . ' fct-reviews-list--cols-' . (int) $gridColumns : ''; ?>"
                          <?php if ($hasColumns) : ?>style="--fct-review-columns: <?php echo (int) $gridColumns; ?>"<?php endif; ?>
                          <?php if ($isSlider) : ?>
                              data-reviews-slider="<?php echo (int) $gridColumns; ?>"
@@ -1233,7 +1233,7 @@ class ProductReviewRenderer
                             <?php esc_html_e('Add photos to help other shoppers. Up to 5 images — JPG, PNG, or WEBP.', 'fluent-cart'); ?>
                         </p>
                     <?php endif; ?>
-                    <?php echo $extraFieldsHtml; // Already escaped by Pro renderer ?>
+                    <?php echo $extraFieldsHtml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup printed by fluent_cart/review/form_extra_fields listeners ?>
                     <?php if ($isStepped) : ?>
                         <p class="fct-review-step-hint">
                             <?php esc_html_e('No photos? That\'s fine — you can skip this step.', 'fluent-cart'); ?>
@@ -1314,7 +1314,7 @@ class ProductReviewRenderer
                 <?php for ($i = 1; $i <= 5; $i++) : ?>
                     <button type="button" class="fct-star-select" data-star-value="<?php echo esc_attr($i); ?>"
                             role="radio" aria-checked="false"
-                            aria-label="<?php printf(esc_attr__('%d star', 'fluent-cart'), $i); ?>"
+                            aria-label="<?php /* translators: %d: star rating */ printf(esc_attr__('%d star', 'fluent-cart'), (int) $i); ?>"
                     ><?php echo ReviewThreadMarkup::starSvg(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php
                         // aria-hidden: the button's own aria-label already says
                         // "3 star", and the tooltip would read as a second name
@@ -1537,7 +1537,7 @@ class ProductReviewRenderer
                     <span class="fct-reviews-average-max">/5</span>
                 </div>
                 <div class="fct-reviews-summary-head-meta">
-                <div class="fct-reviews-stars-display" data-reviews-stars role="img" aria-label="<?php printf(esc_attr__('Rated %s out of 5', 'fluent-cart'), esc_attr($summary['average'])); ?>">
+                <div class="fct-reviews-stars-display" data-reviews-stars role="img" aria-label="<?php /* translators: %s: average rating */ printf(esc_attr__('Rated %s out of 5', 'fluent-cart'), esc_attr($summary['average'])); ?>">
                     <?php $this->renderStars($summary['average']); ?>
                 </div>
                 <div class="fct-reviews-total" data-reviews-total>

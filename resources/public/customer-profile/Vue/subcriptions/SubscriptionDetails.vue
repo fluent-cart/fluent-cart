@@ -76,7 +76,7 @@
         </div>
 
 
-        <div class="fct-customer-dashboard-content-table-item pl-3">
+        <div class="fct-customer-dashboard-content-table-item ps-3">
             <div class="left-content grid gap-1">
                 <div class="title">
                     {{ subscription.item_name }}
@@ -103,7 +103,7 @@
 
                     <span 
                         v-if="subscription.billingInfo.details?.last_4" 
-                        class="mr-2.5" 
+                        class="me-2.5 fct-ltr-isolate" 
                         :aria-label="translate('Card ending with') + ' ' + subscription.billingInfo.details?.last_4"
                     >
                         **** {{ subscription.billingInfo.details?.last_4 }}

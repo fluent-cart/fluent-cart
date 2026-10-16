@@ -240,7 +240,7 @@ watch(() => props.countries, (val) => {
                             }}
                         </span>
 
-                        <span v-if="isTaxEnabled && (crossBorderForm.method !== 'specific' || specificCollectingCount > 0)" size="small" type="success" class="ml-3 fct-collecting-badge">
+                        <span v-if="isTaxEnabled && (crossBorderForm.method !== 'specific' || specificCollectingCount > 0)" size="small" type="success" class="ms-3 fct-collecting-badge">
                             <span class="fct-green-dot"></span>
                             <template v-if="crossBorderForm.method === 'specific'">
                                 {{ getSpecificCountriesLabel() }}
@@ -250,7 +250,7 @@ watch(() => props.countries, (val) => {
                             </template>
                         </span>
 
-                        <span v-if="!isTaxEnabled" class="ml-3 text-sm text-system-mid dark:text-gray-400">
+                        <span v-if="!isTaxEnabled" class="ms-3 text-sm text-system-mid dark:text-gray-400">
                             {{ translate('Tax disabled') }}
                         </span>
                     </div>

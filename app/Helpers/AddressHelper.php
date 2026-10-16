@@ -42,10 +42,14 @@ class AddressHelper
         $type = Arr::get($address, 'type', false);
 
         if ($addressId !== null) {
-            $address = CustomerAddressResource::find($addressId);
-            $address = Arr::get($address, 'address');
-            if ($address) {
-                $address = $address->toArray();
+            $customerId = Order::query()->where('id', $orderId)->value('customer_id');
+            $savedAddress = $customerId ? CustomerAddresses::query()
+                ->where('id', $addressId)
+                ->where('customer_id', $customerId)
+                ->first() : null;
+
+            if ($savedAddress) {
+                $address = $savedAddress->toArray();
                 if ($type) {
                     $address['type'] = $type;
                 }

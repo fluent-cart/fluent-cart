@@ -8,11 +8,14 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\DateTime\DateFormatter;
+use FluentCart\App\Services\Email\EmailDirection;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\TemplateService;
+use FluentCart\App\Services\Renderer\Receipt\StoreBusinessInfoHelper;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\Framework\Database\Orm\Model;
 use FluentCart\Framework\Support\Arr;
@@ -61,6 +64,7 @@ class OrderParser extends BaseParser
         'store_vat_display'                => 'getStoreVatDisplay',
         'store_company_name'               => 'getStoreCompanyName',
         'store_company_display'            => 'getStoreCompanyDisplay',
+        'store_seller_name'                => 'getStoreSellerName',
         'store_legal_registration_id'      => 'getStoreLegalRegistrationId',
         'store_legal_registration_display' => 'getStoreLegalRegistrationDisplay',
         'store_seller_vat_id'              => 'getStoreSellerVatId',
@@ -81,6 +85,24 @@ class OrderParser extends BaseParser
         'status'     => 'order.status',
         'created_at' => 'order.created_at',
         'updated_at' => 'order.updated_at',
+        'parent_id' => 'order.parent_id',
+        'invoice_no' => 'order.invoice_no',
+        'fulfillment_type' => 'order.fulfillment_type',
+        'type' => 'order.type',
+        'customer_id' => 'order.customer_id',
+        'payment_method' => 'order.payment_method',
+        'payment_status' => 'order.payment_status',
+        'currency' => 'order.currency',
+        'rate' => 'order.rate',
+        'note' => 'order.note',
+        'ip_address' => 'order.ip_address',
+        'completed_at' => 'order.completed_at',
+        'refunded_at' => 'order.refunded_at',
+        'uuid' => 'order.uuid',
+        'customer.email' => 'order.customer.email',
+        'customer.first_name' => 'order.customer.first_name',
+        'customer.last_name' => 'order.customer.last_name',
+        'customer.full_name' => 'order.customer.full_name',
     ];
 
     protected array $centColumns = [
@@ -539,13 +561,13 @@ class OrderParser extends BaseParser
         }
 
         $rowStyle  = 'padding:3px 0;font-size:11px;font-weight:600;color:#525866;';
-        $valueStyle = 'text-align:right;';
+        $valueStyle = 'text-align:' . EmailDirection::end() . ';';
         $rows = '';
 
         foreach ($feeItems as $feeItem) {
             $rows .= '<tr>'
                    . '<td style="' . $rowStyle . '">' . esc_html((string) $feeItem->title) . '</td>'
-                   . '<td style="' . $rowStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml((int) $feeItem->subtotal, $currency) . '</td>'
+                   . '<td style="' . $rowStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml((int) $feeItem->subtotal, $currency)) . '</td>'
                    . '</tr>';
         }
 
@@ -569,7 +591,8 @@ class OrderParser extends BaseParser
         $mutedStyle    = 'padding:3px 0;font-size:11px;color:#94a3b8;';
         $normalStyle   = 'padding:3px 0;font-size:11px;font-weight:600;color:#525866;';
         $totalStyle    = 'padding:6px 0 3px;font-size:11px;font-weight:700;color:#0E121B;border-top:1px solid #e2e8f0;';
-        $valueStyle    = 'text-align:right;';
+        $endSide       = EmailDirection::end();
+        $valueStyle    = 'text-align:' . $endSide . ';';
 
         $rows = '';
 
@@ -577,7 +600,7 @@ class OrderParser extends BaseParser
         $isRcOrder        = !empty($summary['isReverseCharge']);
         $rcReversedTotal  = isset($summary['reversedTaxTotal']) ? (int) $summary['reversedTaxTotal'] : 0;
         $rcReversedValue  = $rcReversedTotal > 0
-            ? esc_html(Helper::toDecimal($rcReversedTotal))
+            ? EmailDirection::amount(Helper::toDecimal($rcReversedTotal))
             : esc_html__('Charge reversed', 'fluent-cart');
         $includedInPrices = (int) Arr::get($summary, 'includedInPrices', 0);
         $opFeeRows        = Arr::get($summary, 'feeTaxLineRows', []);
@@ -597,7 +620,7 @@ class OrderParser extends BaseParser
         if ($isSimplifiedMode && !empty($summary['simpleLine'])) {
             $rows .= '<tr>'
                    . '<td style="' . $normalStyle . '">' . esc_html((string) $summary['simpleLine']['label']) . '</td>'
-                   . '<td style="' . $normalStyle . $valueStyle . '">' . esc_html((string) $summary['simpleLine']['value']) . '</td>'
+                   . '<td style="' . $normalStyle . $valueStyle . '">' . EmailDirection::amount((string) $summary['simpleLine']['value']) . '</td>'
                    . '</tr>';
 
             // Simplified mode: single tax line only, skip the detailed breakdown below.
@@ -605,9 +628,9 @@ class OrderParser extends BaseParser
         }
 
         if (!empty($foldedRateLines)) {
-            $colHeadStyle     = 'width:58%;padding:3px 8px 3px 0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;vertical-align:top;';
-            $colHeadBaseStyle = 'width:24%;padding:3px 8px 3px 0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;text-align:right;white-space:nowrap;vertical-align:top;';
-            $colHeadTaxStyle  = 'width:18%;padding:3px 0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;text-align:right;white-space:nowrap;vertical-align:top;';
+            $colHeadStyle     = 'width:58%;padding:' . EmailDirection::sides('3px 8px 3px 0') . ';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;vertical-align:top;';
+            $colHeadBaseStyle = 'width:24%;padding:' . EmailDirection::sides('3px 8px 3px 0') . ';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;text-align:' . $endSide . ';white-space:nowrap;vertical-align:top;';
+            $colHeadTaxStyle  = 'width:18%;padding:3px 0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;text-align:' . $endSide . ';white-space:nowrap;vertical-align:top;';
 
             $rows .= '<tr><td colspan="2" style="padding:5px 0 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;">'
                    . esc_html__('Tax breakdown by rate', 'fluent-cart')
@@ -624,9 +647,9 @@ class OrderParser extends BaseParser
                 $foldedStyle  = !empty($foldedRow['inclusive']) ? $mutedStyle : $normalStyle;
                 $foldedStyleR = $foldedStyle . $valueStyle;
                 $nestedTable .= '<tr>'
-                              . '<td style="width:58%;' . $foldedStyle . 'padding-right:8px;white-space:normal;word-break:break-word;overflow-wrap:break-word;vertical-align:top;">' . esc_html((string) $foldedRow['label']) . '</td>'
-                              . '<td style="width:24%;' . $foldedStyleR . 'padding-right:8px;white-space:nowrap;vertical-align:top;">' . CurrencySettings::getPriceHtml((int) $foldedRow['base'], $currency) . '</td>'
-                              . '<td style="width:18%;' . $foldedStyleR . 'white-space:nowrap;vertical-align:top;">' . CurrencySettings::getPriceHtml((int) $foldedRow['tax'], $currency) . '</td>'
+                              . '<td style="width:58%;' . $foldedStyle . 'padding-' . $endSide . ':8px;white-space:normal;word-break:break-word;overflow-wrap:break-word;vertical-align:top;">' . esc_html((string) $foldedRow['label']) . '</td>'
+                              . '<td style="width:24%;' . $foldedStyleR . 'padding-' . $endSide . ':8px;white-space:nowrap;vertical-align:top;">' . EmailDirection::amount(CurrencySettings::getPriceHtml((int) $foldedRow['base'], $currency)) . '</td>'
+                              . '<td style="width:18%;' . $foldedStyleR . 'white-space:nowrap;vertical-align:top;">' . EmailDirection::amount(CurrencySettings::getPriceHtml((int) $foldedRow['tax'], $currency)) . '</td>'
                               . '</tr>';
             }
             $nestedTable .= '</table>';
@@ -635,7 +658,7 @@ class OrderParser extends BaseParser
 
             if ($isRcOrder) {
                 $rcReversedTotalValue = $rcReversedTotal > 0
-                    ? CurrencySettings::getPriceHtml($rcReversedTotal, $currency)
+                    ? EmailDirection::amount(CurrencySettings::getPriceHtml($rcReversedTotal, $currency))
                     : esc_html__('Charge reversed', 'fluent-cart');
                 $rows .= '<tr>'
                        . '<td style="' . $totalStyle . '">' . esc_html__('VAT reversed', 'fluent-cart') . '</td>'
@@ -646,13 +669,13 @@ class OrderParser extends BaseParser
 
             $rows .= '<tr>'
                    . '<td style="' . $totalStyle . '">' . esc_html__('Total tax', 'fluent-cart') . '</td>'
-                   . '<td style="' . $totalStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml((int) $summary['totalOrderTax'], $currency) . '</td>'
+                   . '<td style="' . $totalStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml((int) $summary['totalOrderTax'], $currency)) . '</td>'
                    . '</tr>';
 
             if ($includedInPrices > 0) {
                 $rows .= '<tr>'
                        . '<td style="' . $mutedStyle . '">' . esc_html__('of which included in prices', 'fluent-cart') . '</td>'
-                       . '<td style="' . $mutedStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($includedInPrices, $currency) . '</td>'
+                       . '<td style="' . $mutedStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($includedInPrices, $currency)) . '</td>'
                        . '</tr>';
             }
 
@@ -660,7 +683,7 @@ class OrderParser extends BaseParser
                 $payableStyle = $totalStyle;
                 $rows .= '<tr>'
                        . '<td style="' . $payableStyle . '">' . esc_html__('Payable now (added)', 'fluent-cart') . '</td>'
-                       . '<td style="' . $payableStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml((int) $summary['payableTax'], $currency) . '</td>'
+                       . '<td style="' . $payableStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml((int) $summary['payableTax'], $currency)) . '</td>'
                        . '</tr>';
             }
 
@@ -687,7 +710,7 @@ class OrderParser extends BaseParser
                 $taxLineStyle = !empty($taxLine['inclusive']) ? $mutedStyle : $normalStyle;
                 $rows .= '<tr>'
                        . '<td style="' . $taxLineStyle . '">' . esc_html($taxLine['label']) . '</td>'
-                       . '<td style="' . $taxLineStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($taxLine['order_tax'], $currency) . '</td>'
+                       . '<td style="' . $taxLineStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($taxLine['order_tax'], $currency)) . '</td>'
                        . '</tr>';
             }
         }
@@ -695,14 +718,14 @@ class OrderParser extends BaseParser
         if (empty($taxRateLines) && $summary['inclusiveTax'] > 0 && $shouldShowBreakdown) {
             $rows .= '<tr>'
                    . '<td style="' . $mutedStyle . '">' . esc_html__('Included in item prices', 'fluent-cart') . '</td>'
-                   . '<td style="' . $mutedStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($summary['inclusiveTax'], $currency) . '</td>'
+                   . '<td style="' . $mutedStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($summary['inclusiveTax'], $currency)) . '</td>'
                    . '</tr>';
         }
 
         if (empty($taxRateLines) && $summary['exclusiveTax'] > 0 && $shouldShowBreakdown) {
             $rows .= '<tr>'
                    . '<td style="' . $normalStyle . '">' . esc_html__('Added on products', 'fluent-cart') . '</td>'
-                   . '<td style="' . $normalStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($summary['exclusiveTax'], $currency) . '</td>'
+                   . '<td style="' . $normalStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($summary['exclusiveTax'], $currency)) . '</td>'
                    . '</tr>';
         }
 
@@ -711,7 +734,7 @@ class OrderParser extends BaseParser
                 $feeLineStyle = $feeRow['inclusive'] ? $mutedStyle : $normalStyle;
                 $rows .= '<tr>'
                        . '<td style="' . $feeLineStyle . '">' . esc_html($feeRow['display_label']) . '</td>'
-                       . '<td style="' . $feeLineStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($feeRow['tax_amount'], $currency) . '</td>'
+                       . '<td style="' . $feeLineStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($feeRow['tax_amount'], $currency)) . '</td>'
                        . '</tr>';
             }
         }
@@ -723,7 +746,7 @@ class OrderParser extends BaseParser
                 foreach ($shippingTaxLines as $shippingTaxLine) {
                     $rows .= '<tr>'
                            . '<td style="' . $shippingRowStyle . '">' . esc_html($shippingTaxLine['label']) . '</td>'
-                           . '<td style="' . $shippingRowStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($shippingTaxLine['shipping_tax'], $currency) . '</td>'
+                           . '<td style="' . $shippingRowStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($shippingTaxLine['shipping_tax'], $currency)) . '</td>'
                            . '</tr>';
                 }
             } else {
@@ -732,7 +755,7 @@ class OrderParser extends BaseParser
                     : esc_html__('Added on shipping', 'fluent-cart');
                 $rows .= '<tr>'
                        . '<td style="' . $shippingRowStyle . '">' . $shippingRowLabel . '</td>'
-                       . '<td style="' . $shippingRowStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($summary['shippingTax'], $currency) . '</td>'
+                       . '<td style="' . $shippingRowStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($summary['shippingTax'], $currency)) . '</td>'
                        . '</tr>';
             }
         }
@@ -740,14 +763,14 @@ class OrderParser extends BaseParser
         if ($summary['payableTax'] > 0) {
             $rows .= '<tr>'
                    . '<td style="' . $totalStyle . '">' . esc_html__('Total payable tax', 'fluent-cart') . '</td>'
-                   . '<td style="' . $totalStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($summary['payableTax'], $currency) . '</td>'
+                   . '<td style="' . $totalStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($summary['payableTax'], $currency)) . '</td>'
                    . '</tr>';
         }
 
         if ($summary['inclusiveTax'] > 0 || !empty($summary['inclusiveFeeTax'])) {
             $rows .= '<tr>'
                    . '<td style="' . $mutedStyle . '">' . esc_html__('Total tax in this order', 'fluent-cart') . '</td>'
-                   . '<td style="' . $mutedStyle . $valueStyle . '">' . CurrencySettings::getPriceHtml($summary['totalOrderTax'], $currency) . '</td>'
+                   . '<td style="' . $mutedStyle . $valueStyle . '">' . EmailDirection::amount(CurrencySettings::getPriceHtml($summary['totalOrderTax'], $currency)) . '</td>'
                    . '</tr>';
         }
 
@@ -756,7 +779,7 @@ class OrderParser extends BaseParser
 
     /**
      * Wrap the accumulated tax-breakdown rows in their own grey rounded box,
-     * right-aligned to a fixed 400px column.
+     * aligned to the end side in a fixed 400px column.
      *
      * The tax breakdown is the only thing that lives inside the grey box; the
      * surrounding Subtotal/Discount/Shipping/Fees rows (above) and Refund/Total/
@@ -782,7 +805,7 @@ class OrderParser extends BaseParser
                      . '</table>';
 
         return '<tr><td colspan="2" style="padding:8px 0 0 0;">'
-             . '<table align="right" width="400" cellpadding="0" cellspacing="0" style="width:400px;max-width:100%;border:none;border-collapse:collapse;margin:0 0 0 auto;">'
+             . '<table align="' . EmailDirection::end() . '" width="400" cellpadding="0" cellspacing="0" style="width:400px;max-width:100%;border:none;border-collapse:collapse;margin:' . EmailDirection::sides('0 0 0 auto') . ';">'
              . '<tr><td style="' . $boxStyle . '">' . $nestedTable . '</td></tr>'
              . '</table>'
              . '</td></tr>';
@@ -918,16 +941,28 @@ class OrderParser extends BaseParser
         if (!$this->order) {
             return '';
         }
-        $snapshot = $this->order->getMeta('store_business_info', false);
-        if ($snapshot !== false && isset($snapshot[$field])) {
-            return (string) $snapshot[$field];
-        }
-        return (string) $this->storeSettings->get($field, '');
+        return (string) Arr::get($this->order->getStoreBusinessInfo(), $field, '');
+    }
+
+    private function formatStoreIdLine(string $field, string $value): string
+    {
+        $labels = TaxModule::getBusinessIdLabels($this->getStoreBusinessField('store_country'));
+
+        return sprintf($labels[$field], $value);
     }
 
     public function getStoreCompanyName(): string
     {
         return esc_html($this->getStoreBusinessField('company_name'));
+    }
+
+    public function getStoreSellerName(): string
+    {
+        $storeName = (string) $this->storeSettings->get('store_name', '');
+        if (!$this->order) {
+            return esc_html($storeName);
+        }
+        return esc_html(StoreBusinessInfoHelper::getCompanyName($this->order, $storeName));
     }
 
     public function getStoreCompanyDisplay(): string
@@ -951,8 +986,7 @@ class OrderParser extends BaseParser
         if (empty($val)) {
             return '';
         }
-        /* translators: %1$s: store legal registration ID */
-        return esc_html(sprintf(__('Reg. ID: %1$s', 'fluent-cart'), $val));
+        return esc_html($this->formatStoreIdLine('legal_registration_id', $val));
     }
 
     public function getStoreSellerVatId(): string
@@ -966,8 +1000,7 @@ class OrderParser extends BaseParser
         if (empty($val)) {
             return '';
         }
-        /* translators: %1$s: store seller VAT ID */
-        return esc_html(sprintf(__('VAT ID: %1$s', 'fluent-cart'), $val));
+        return esc_html($this->formatStoreIdLine('seller_vat_id', $val));
     }
 
     public function getStoreSellerTaxId(): string
@@ -981,8 +1014,7 @@ class OrderParser extends BaseParser
         if (empty($val)) {
             return '';
         }
-        /* translators: %1$s: store seller tax ID */
-        return esc_html(sprintf(__('Tax ID: %1$s', 'fluent-cart'), $val));
+        return esc_html($this->formatStoreIdLine('seller_tax_id', $val));
     }
 
 }

@@ -16,7 +16,7 @@
             .fct-material-input{
                 .el-input__wrapper,
                 .el-select__wrapper {
-                    @apply rounded-bl-none border-b-[0.5px] border-r-[1px] !important;
+                    @apply rounded-es-none border-b-[0.5px] border-e-[1px] !important;
                 }
             }
         }
@@ -24,8 +24,8 @@
             .fct-material-input{
                 .el-input__wrapper,
                 .el-select__wrapper {
-                    @apply border-b-[1px] border-l-[1px] !important;
-                    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+                    @apply border-b-[1px] border-s-[1px] !important;
+                    border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
                 }
             }
         }

@@ -51,19 +51,19 @@ table.el-table__body {
 
       &:first-child {
         .cell {
-          @apply pl-5;
+          padding-inline-start: theme('spacing.5');
         }
       }
 
       &:last-child {
         .cell {
-          @apply pr-5;
+          padding-inline-end: theme('spacing.5');
         }
       }
 
       &.el-table-fixed-column--right {
         .cell {
-          @apply pl-6;
+          @apply ps-6;
         }
       }
     }
@@ -75,19 +75,19 @@ table.el-table__body {
 
       &:first-child {
         .cell {
-          @apply pl-5;
+          padding-inline-start: theme('spacing.5');
         }
       }
 
       &:last-child {
         .cell {
-          @apply pr-5;
+          padding-inline-end: theme('spacing.5');
         }
       }
 
       &.el-table-fixed-column--right {
         .cell {
-          @apply pl-5;
+          @apply ps-5;
         }
       }
     }
@@ -268,7 +268,7 @@ table.el-table__body {
       .el-table__cell {
         &.el-table-column--selection {
           .cell {
-            @apply pl-5;
+            @apply ps-5;
           }
         }
       }
@@ -287,11 +287,11 @@ table.el-table__body {
 }
 
 .compact-table .el-table__body-wrapper table tr td:first-child .table-cell {
-  @apply pl-5 !important;
+  padding-inline-start: theme('spacing.5') !important;
 }
 
 .compact-table .el-table__body-wrapper table tr td:last-child .table-cell {
-  @apply pr-5 !important;
+  padding-inline-end: theme('spacing.5') !important;
 }
 
 .compact-table .el-table__body-wrapper .el-table__expanded-cell .el-table__cell{
@@ -301,7 +301,7 @@ table.el-table__body {
 .fct-popover-box{
   @apply w-full relative;
   &-action{
-    @apply cursor-pointer max-w-full overflow-hidden whitespace-nowrap absolute left-0 top-1/2 translate-y-[-50%] py-1 px-2 hover:bg-gray-100 dark:hover:bg-dark-500 rounded-xs;
+    @apply cursor-pointer max-w-full overflow-hidden whitespace-nowrap absolute start-0 top-1/2 translate-y-[-50%] py-1 px-2 hover:bg-gray-100 dark:hover:bg-dark-500 rounded-xs;
     span{
       @apply max-w-[96%];
     }
@@ -309,11 +309,33 @@ table.el-table__body {
 }
 
 .fct-popover-box-action-icon{
-  @apply opacity-0 right-1.5 top-1/2 translate-y-[-50%] absolute;
+  @apply opacity-0 end-1.5 top-1/2 translate-y-[-50%] absolute;
   svg{
     @apply w-2.5 h-2.5;
   }
 }
+
+// Element Plus hard-codes left/right cell alignment; logical values keep LTR as-is and mirror in RTL.
+// align="right" columns are row-trailing (actions, status), so they belong at the row end.
+.el-table .el-table__cell:not(.is-center):not(.is-right) {
+  text-align: start;
+}
+
+.el-table .el-table__cell.is-right {
+  text-align: end;
+}
+
+// Element Plus pins sticky columns with an inline physical offset; in RTL the
+// fixed column sits on the opposite edge, so pin that edge too (single fixed column only).
+[dir="rtl"] .el-table {
+  .el-table-fixed-column--right {
+    left: 0;
+  }
+  .el-table-fixed-column--left {
+    right: 0;
+  }
+}
+
 
 
 //  Responsive
@@ -429,4 +451,8 @@ table.el-table__body {
 
 .fct-inventory-cell-text {
     @apply text-system-dark-light dark:text-gray-500;
+}
+
+[dir="rtl"] .el-table__expand-icon:not(.el-table__expand-icon--expanded) {
+  transform: scaleX(-1);
 }

@@ -924,7 +924,7 @@
 .fct-reverse-charge-price-mode {
     @apply flex flex-col gap-3 w-full items-start;
     .el-radio {
-        @apply mr-0 items-start h-auto;
+        @apply me-0 items-start h-auto;
     }
     .el-radio__label {
         @apply mt-[-3px];

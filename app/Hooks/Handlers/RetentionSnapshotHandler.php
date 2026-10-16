@@ -60,7 +60,6 @@ class RetentionSnapshotHandler
                 ]);
             }
 
-            error_log('FluentCart: Retention snapshot generation error - ' . $e->getMessage());
             throw $e; // Re-throw so Action Scheduler marks it as failed
         }
     }

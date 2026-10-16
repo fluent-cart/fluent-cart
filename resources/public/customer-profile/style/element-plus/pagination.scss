@@ -1,6 +1,6 @@
 .el-pagination{
     .el-select {
-        @apply text-left w-[106px] m-0 font-medium text-[var(--fct-customer-dashboard-paginator-text-color,#565865)] #{!important};
+        @apply text-start w-[106px] m-0 font-medium text-[var(--fct-customer-dashboard-paginator-text-color,#565865)] #{!important};
         .el-input {
            @apply w-auto #{!important};
         }
@@ -28,7 +28,7 @@
     }
     .el-input{
         &__inner {
-            @apply text-left w-[90px] m-0 font-medium text-[var(--fct-customer-dashboard-text-color,#565865)];
+            @apply text-start w-[90px] m-0 font-medium text-[var(--fct-customer-dashboard-text-color,#565865)];
         }
         &__suffix-inner{
             .el-icon{
@@ -52,6 +52,9 @@
             }
             svg{
                 @apply w-4 h-4 #{!important};
+                [dir="rtl"] & {
+                    transform: scaleX(-1);
+                }
             }
             .el-icon{
                 @apply h-auto leading-none #{!important};

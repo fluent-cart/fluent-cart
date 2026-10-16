@@ -59,7 +59,7 @@
       </div>
       <div v-if="isEditAddress" class="edit_address">
         <el-button text @click="() => isEditAddress = false" style="margin-bottom: 16px;">
-          <el-icon>
+          <el-icon class="fct-address-back-icon">
             <Back/>
           </el-icon>
           {{ translate('Manage address') }}

@@ -62,7 +62,7 @@ const props = defineProps({
         <DynamicIcon name="CreditCard" class="w-4 h-4 text-gray-400" :class="{'text-primary-500 dark:text-gray-200': model === 'logo'}"/>
         <span class="bg-gray-200 dark:bg-gray-700 h-2 w-full rounded"/>
       </div>
-      <DynamicIcon name="CheckCircleFill" class="w-3 h-3 absolute top-2 right-2 text-primary-500 dark:text-gray-50" v-if="model === 'logo'"/>
+      <DynamicIcon name="CheckCircleFill" class="w-3 h-3 absolute top-2 end-2 text-primary-500 dark:text-gray-50" v-if="model === 'logo'"/>
     </div>
 
     <div @click="model = 'radio'"
@@ -73,7 +73,7 @@ const props = defineProps({
         <DynamicIcon name="RadioSelector" class="w-4 h-4 text-gray-400" :class="{'text-primary-500 dark:text-gray-200': model === 'radio'}"/>
         <span class="bg-gray-200 dark:bg-gray-700 h-2 w-full rounded"/>
       </div>
-      <DynamicIcon name="CheckCircleFill" class="w-3 h-3 absolute top-2 right-2 text-primary-500 dark:text-gray-50" v-if="model === 'radio'"/>
+      <DynamicIcon name="CheckCircleFill" class="w-3 h-3 absolute top-2 end-2 text-primary-500 dark:text-gray-50" v-if="model === 'radio'"/>
     </div>
   </div>
 </template>

@@ -92,7 +92,7 @@
                   <div class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800">
                     <div>
                       <strong>{{ zone.name }}</strong>
-                      <span class="text-gray-500 ml-2">({{ zone.formatted_region }})</span>
+                      <span class="text-gray-500 ms-2">({{ zone.formatted_region }})</span>
                     </div>
                     <div class="flex items-center gap-1">
                       <el-popconfirm

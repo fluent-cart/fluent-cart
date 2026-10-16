@@ -1,12 +1,12 @@
 .fct-add-coupon{
     &-wrap{
-        @apply flex gap-2.5 flex-col text-left;
+        @apply flex gap-2.5 flex-col text-start;
     }
     &-input{
         &-wrap{
             @apply relative;
             .el-button{
-                @apply absolute top-[50%] right-2;
+                @apply absolute top-[50%] end-2;
                 transform: translateY(-50%);
                 &.el-button--info{
                     &[soft]{

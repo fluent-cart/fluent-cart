@@ -244,7 +244,7 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct-gallery-thumb-control-button {
-  @apply w-[92px] h-[92px] border border-solid border-[var(--fct-single-product-border-color)] transition-all duration-100 flex-shrink-0 hover:border-[var(--fct-single-product-border-color)] first:ml-0 overflow-hidden flex-none bg-transparent outline-none hover:bg-transparent focus:bg-transparent hover:shadow-none p-0;
+  @apply w-[92px] h-[92px] border border-solid border-[var(--fct-single-product-border-color)] transition-all duration-100 flex-shrink-0 hover:border-[var(--fct-single-product-border-color)] first:ms-0 overflow-hidden flex-none bg-transparent outline-none hover:bg-transparent focus:bg-transparent hover:shadow-none p-0;
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
   &.is-hidden{
     @apply hidden;
@@ -306,6 +306,11 @@ body:not(.fluent-cart-no-colors) {
 .fct-product-prices {
   @apply flex flex-wrap items-center gap-2 text-lg leading-[28px] text-[var(--fct-single-product-primary-text-color)];
   margin-bottom: var(--fct-section-spacing, theme('spacing.5'));
+
+  // Keep each amount its own bidi run inside RTL text.
+  > span {
+    unicode-bidi: isolate;
+  }
 }
 
 .fct-product-title {
@@ -350,6 +355,9 @@ body:not(.fluent-cart-no-colors) {
     }
     .fct-product-sku__value {
         @apply text-[15px] text-[var(--fct-single-product-secondary-text-color)];
+        // Codes read left to right even on RTL pages.
+        direction: ltr;
+        unicode-bidi: isolate;
     }
     &.is-hidden {
         @apply hidden;
@@ -363,6 +371,10 @@ body:not(.fluent-cart-no-colors) {
   .fct-stock-badge {
     @apply inline-block text-xs font-medium tracking-wide px-2 py-1 leading-[1.1];
     border-radius: var(--fct-badge-radius, theme('borderRadius.sm'));
+    // Tracking breaks Arabic letter joining.
+    [dir="rtl"] & {
+      letter-spacing: 0;
+    }
   }
 
   .fct_status_badge_in-stock {
@@ -391,7 +403,7 @@ body:not(.fluent-cart-no-colors) {
     @apply w-full text-[13px] border-collapse border-0 border-none;
 
     th, td {
-      @apply py-1.5 px-0 text-left border-0 border-b border-solid border-[var(--fct-single-product-divider-color)];
+      @apply py-1.5 px-0 text-start border-0 border-b border-solid border-[var(--fct-single-product-divider-color)];
     }
 
     th {
@@ -475,8 +487,11 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct-product-variant-price {
-    @apply absolute top-1/2 right-4 inline-flex flex-shrink-0 items-center gap-1 text-base font-semibold leading-[1.2] text-[var(--fct-single-product-primary-text-color)];
+    @apply absolute top-1/2 end-4 inline-flex flex-shrink-0 items-center gap-1 text-base font-semibold leading-[1.2] text-[var(--fct-single-product-primary-text-color)];
     transform: translateY(-50%);
+    > div {
+      unicode-bidi: isolate;
+    }
     .fct-product-variant-compare-price {
       @apply text-[13px] text-system-mid font-normal;
     }
@@ -638,7 +653,7 @@ button.out-of-stock {
     @apply w-auto;
   }
   .fct-product-variant-item .fct-product-variant-price {
-    @apply top-auto right-auto transform-none;
+    @apply top-auto end-auto transform-none;
     position: inherit;
   }
 }
@@ -747,5 +762,36 @@ body:not(.fluent-cart-no-colors) {
     .fct-product-gallery-video.is-active {
       @apply flex items-center justify-center;
     }
+  }
+}
+
+/*======== RTL lightbox (vendored lightbox.css is physical) =========*/
+[dir="rtl"] .fct-lightbox {
+  .lb-nav a.lb-prev {
+    left: auto;
+    right: 12px;
+    float: right;
+    transform: translateY(-50%) scaleX(-1);
+  }
+
+  .lb-nav a.lb-next {
+    right: auto;
+    left: 12px;
+    float: left;
+    transform: translateY(-50%) scaleX(-1);
+  }
+
+  .lb-closeContainer {
+    right: auto;
+    left: 10px;
+  }
+
+  .lb-data .lb-details {
+    float: right;
+    text-align: right;
+  }
+
+  .lb-data .lb-number {
+    clear: right;
   }
 }

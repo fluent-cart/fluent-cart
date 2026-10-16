@@ -20,7 +20,7 @@ const isColumnVisible = (column) => {
   <el-table class="w-full compact-table responsive" :data="[1,2,3,4,5,6,7,8,9,10]">
     <el-table-column v-if="isColumnVisible('selection')" type="selection" width="45"/>
     <el-table-column :width="140" :label="translate('# Date')">
-      <div class="min-h-[72px] px-2 pl-6 flex flex-col justify-center">
+      <div class="min-h-[72px] px-2 ps-6 flex flex-col justify-center">
         <el-skeleton animated>
           <template #template>
             <el-skeleton-item varient="p" class="w-3/5" />

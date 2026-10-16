@@ -51,7 +51,7 @@ class StoreLogoRenderer
         }
 
         ?>
-            <div <?php echo $wrapperAttributes; ?>>
+            <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RenderHelper::getBlockWrapperAttributes() escapes each attribute ?>>
                 <?php
                     if ($isLink) {
                         $this->renderWithLink($atts);

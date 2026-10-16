@@ -294,12 +294,12 @@
         @apply m-0;
     }
     .fct-applied-filter {
-        @apply m-0 min-h-7 flex gap-1 items-center bg-gray-25 rounded-sm text-[13px] text-system-dark pl-2 pr-1 border border-solid border-gray-outline leading-none dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400;
+        @apply m-0 min-h-7 flex gap-1 items-center bg-gray-25 rounded-sm text-[13px] text-system-dark ps-2 pe-1 border border-solid border-gray-outline leading-none dark:bg-dark-600 dark:text-gray-50 dark:border-dark-400;
         &-date,
         &-select{
-            @apply pr-0 overflow-hidden;
+            @apply pe-0 overflow-hidden;
             .fct-applied-filter-value{
-                @apply border-r-0;
+                @apply border-e-0;
             }
         }
         &-compare-to {
@@ -344,15 +344,15 @@
             @apply w-[15px] h-[15px] text-system-light hover:text-system-dark dark:hover:text-gray-50;
         }
         .el-select__wrapper{
-            @apply border-0 rounded-none -mx-2 py-0 pl-0 pr-1.5 bg-transparent min-h-[auto] text-[13px];
+            @apply border-0 rounded-none -mx-2 py-0 ps-0 pe-1.5 bg-transparent min-h-[auto] text-[13px];
             input{
                 @apply hidden;
             }
         }
         .el-select__selection{
-            @apply py-[3px] pl-2 gap-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-500;
+            @apply py-[3px] ps-2 gap-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-500;
             &.is-near {
-                @apply gap-1 ml-0;
+                @apply gap-1 ms-0;
                 .el-tag {
                     @apply bg-gray-100 dark:bg-dark-500;
                 }

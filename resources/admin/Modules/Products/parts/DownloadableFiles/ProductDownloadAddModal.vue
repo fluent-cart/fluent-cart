@@ -22,7 +22,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
   <div class="add-download-btn"
        :class="productDownloadableModel.hasVariationOption(product) ? 'px-6 py-3 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400' : ''">
 
-    <div class="text-right" v-if="productDownloadableModel.hasVariationOption(product)">
+    <div class="text-end" v-if="productDownloadableModel.hasVariationOption(product)">
       <el-button text type="primary" @click="()=>{
             productDownloadableModel.openAddModal()
           }">
@@ -56,7 +56,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
               @click="productDownloadableModel.deleteInsertableFile(index)"
               size="small"
               plain
-              class="absolute right-2 top-2 p-0 border-none hover:text-red-500"
+              class="absolute end-2 top-2 p-0 border-none hover:text-red-500"
           >
             <DynamicIcon name="Delete"/>
           </el-button>

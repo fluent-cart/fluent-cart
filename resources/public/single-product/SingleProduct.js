@@ -280,8 +280,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const radios = Array.from(radiogroup.querySelectorAll('[role="radio"]'));
                     const currentIndex = radios.indexOf(button);
                     let targetIndex = -1;
+                    let key = event.key;
 
-                    switch (event.key) {
+                    // Left/right swap meaning on RTL pages.
+                    if (getComputedStyle(button).direction === 'rtl' && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+                        key = key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
+                    }
+
+                    switch (key) {
                         case 'Enter':
                         case ' ':
                             event.preventDefault();

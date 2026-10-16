@@ -98,7 +98,7 @@
               <!-- Current Comparison Info Tag -->
               <div
                   v-if="canShowComparison"
-                  class="comparison-mode ml-auto inline-flex items-center h-6 px-2.5 bg-gray-50 rounded-[12px] dark:bg-primary-500"
+                  class="comparison-mode ms-auto inline-flex items-center h-6 px-2.5 bg-gray-50 rounded-[12px] dark:bg-primary-500"
               >
                 <span class="text-xs font-medium text-gray-500">
                   {{ translate('Comparing %s with %s', primaryLabel, comparisonLabel) }}
@@ -108,7 +108,7 @@
               <!-- Current Selection Info Tag (when no comparison) -->
               <div
                   v-else-if="primaryYear"
-                  class="comparison-mode ml-auto inline-flex items-center h-6 px-2.5 bg-gray-50 rounded-[12px] dark:bg-primary-500"
+                  class="comparison-mode ms-auto inline-flex items-center h-6 px-2.5 bg-gray-50 rounded-[12px] dark:bg-primary-500"
               >
                 <span class="text-xs font-medium text-gray-500">
                   {{ translate('Viewing %s', primaryLabel) }}
@@ -121,11 +121,11 @@
               <!-- Legend for the dual-color bar -->
               <div class="legend flex items-center gap-4 mb-4">
                 <div class="flex items-center">
-                  <div class="w-3 h-3 primary-legend rounded-sm mr-1.5"></div>
+                  <div class="w-3 h-3 primary-legend rounded-sm me-1.5"></div>
                   <span class="text-xs text-gray-600">{{ primaryLabel }}</span>
                 </div>
                 <div class="flex items-center">
-                  <div class="w-3 h-3 comparison-legend rounded-sm mr-1.5"></div>
+                  <div class="w-3 h-3 comparison-legend rounded-sm me-1.5"></div>
                   <span class="text-xs text-gray-600">{{ comparisonLabel }}</span>
                 </div>
               </div>
@@ -135,17 +135,17 @@
                   <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-primary-500">
                   <tr>
                     <th
-                        class="w-[50%] text-left font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
+                        class="w-[50%] text-start font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
                     >
                       {{ translate("Product") }}
                     </th>
                     <th
-                        class="w-[40%] text-left font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
+                        class="w-[40%] text-start font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
                     >
                       {{ translate("Sales") }}
                     </th>
                     <th
-                        class="w-[10%] text-right font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
+                        class="w-[10%] text-end font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
                     >
                       {{ translate("Change") }}
                     </th>
@@ -208,10 +208,11 @@
                     </td>
 
                     <!-- Growth Rate -->
-                    <td class="py-3 text-right">
+                    <td class="py-3 text-end">
                       <div
                           class="growth-pill"
                           :class="getGrowthClass(product.growthRate)"
+                          dir="ltr"
                       >
                         {{
                           product.growthRate > 0 ? "+" : ""
@@ -235,7 +236,7 @@
             <div v-else-if="primaryYear && currentPeriodData.length > 0" class="current-period-data">
               <div class="legend flex items-center gap-4 mb-4">
                 <div class="flex items-center">
-                  <div class="w-3 h-3 primary-legend rounded-sm mr-1.5"></div>
+                  <div class="w-3 h-3 primary-legend rounded-sm me-1.5"></div>
                   <span class="text-xs text-gray-600">{{ primaryLabel }}</span>
                 </div>
               </div>
@@ -245,12 +246,12 @@
                   <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-primary-500">
                   <tr>
                     <th
-                        class="w-[50%] text-left font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
+                        class="w-[50%] text-start font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
                     >
                       {{ translate("Product") }}
                     </th>
                     <th
-                        class="w-[50%] text-left font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
+                        class="w-[50%] text-start font-medium text-system-dark border-0 border-b-[1px] border-solid border-gray-divider dark:border-dark-400 px-2.5 py-2 text-uppercase dark:text-gray-50"
                     >
                       {{ translate("Sales") }}
                     </th>

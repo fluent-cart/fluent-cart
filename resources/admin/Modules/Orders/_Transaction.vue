@@ -265,6 +265,6 @@ span.fct_card_brand {
     color: white;
     border-radius: 3px;
     font-size: 13px;
-    margin-right: 9px;
+    margin-inline-end: 9px;
 }
 </style>

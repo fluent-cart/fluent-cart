@@ -138,14 +138,14 @@
           <template v-for="(address, id) in shippingAddress">
             <div class="fct-address-copy-wrap" v-if="address.is_primary === '1'">
               <span class="text">
-                <strong v-if="address.name" class="pr-1">{{
+                <strong v-if="address.name" class="pe-1">{{
                     address.name
                   }}</strong>
                 <span
                     v-html="getOrderAddress(address, 'shipping', true)"
                 ></span>
                 <span v-if="address.phone" class="mt-3">
-                   <strong class="pr-1">{{ translate("Phone") }}:</strong>
+                   <strong class="pe-1">{{ translate("Phone") }}:</strong>
                   <a :href="'tel:' + address.phone" class="text-system-mid dark:text-gray-50 hover:underline">
                      {{ address.phone }}
                    </a>
@@ -177,13 +177,13 @@
           <template v-for="(address, id) in billingAddress">
             <div class="fct-address-copy-wrap" v-if="address.is_primary === '1'">
               <span class="text">
-                <strong v-if="address.name" class="pr-1">{{
+                <strong v-if="address.name" class="pe-1">{{
                     address.name
                   }}</strong>
                 <span v-html="getOrderAddress(address, 'billing', true)"></span>
 
                 <span v-if="address.phone" class="mt-3">
-                   <strong class="pr-1">{{ translate("Phone") }}:</strong>
+                   <strong class="pe-1">{{ translate("Phone") }}:</strong>
                   <a :href="'tel:' + address.phone" class="text-system-mid dark:text-gray-50 hover:underline">
                      {{ address.phone }}
                    </a>
@@ -247,7 +247,7 @@
             }
           "
         >
-          <el-icon>
+          <el-icon class="fct-address-back-icon">
             <Back/>
           </el-icon>
           {{ $t("Manage address") }}

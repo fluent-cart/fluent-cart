@@ -517,7 +517,7 @@ onMounted(() => {
                 class="fct-address-copy-wrap"
             >
               <span class="text">
-                <strong v-if="currentShippingAddress.name" class="pr-1">{{
+                <strong v-if="currentShippingAddress.name" class="pe-1">{{
                     currentShippingAddress.name
                   }}</strong>
                 <span
@@ -533,7 +533,7 @@ onMounted(() => {
                   "
                 ></span>
                 <span v-if="currentShippingAddress?.meta?.other_data?.phone" class="mt-3">
-                   <strong class="pr-1">{{ translate("Phone") }}:</strong>
+                   <strong class="pe-1">{{ translate("Phone") }}:</strong>
                    <a :href="'tel:' + currentShippingAddress.meta.other_data.phone" class="text-system-mid dark:text-gray-50 hover:underline">
                      {{ currentShippingAddress.meta.other_data.phone }}
                    </a>
@@ -585,7 +585,7 @@ onMounted(() => {
                 ></span>
 
                 <span v-if="currentBillingAddress?.meta?.other_data?.phone" class="mt-3">
-                   <strong class="pr-1">{{ translate("Phone") }}:</strong>
+                   <strong class="pe-1">{{ translate("Phone") }}:</strong>
                   <a :href="'tel:' + currentBillingAddress.meta.other_data.phone" class="text-system-mid dark:text-gray-50 hover:underline">
                     {{ currentBillingAddress.meta.other_data.phone }}
                   </a>

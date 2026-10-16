@@ -6,6 +6,8 @@
  * @var array $reminder
  */
 
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+
 $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $trialEndDate = \FluentCart\Framework\Support\Arr::get($reminder, 'trial_end_date',
     !empty($subscription->trial_ends_at) ? $subscription->trial_ends_at : $subscription->next_billing_date
@@ -13,6 +15,7 @@ $trialEndDate = \FluentCart\Framework\Support\Arr::get($reminder, 'trial_end_dat
 $trialEndLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($trialEndDate, true, $order);
 $stage = \FluentCart\Framework\Support\Arr::get($reminder, 'stage', '');
 $daysBefore = preg_replace('/[^0-9]/', '', $stage);
+/* translators: %d: number of days */
 $daysText = !empty($daysBefore) ? sprintf(__('%d days', 'fluent-cart'), $daysBefore) : '';
 $renewalAmount = $subscription->recurring_total ?? 0;
 $billingInterval = $subscription->billing_interval ?? '';
@@ -41,25 +44,25 @@ $billingInterval = $subscription->billing_interval ?? '';
         <tbody>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Subscription', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->display_item_name); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($subscription->display_item_name); ?></td>
         </tr>
         <?php if ($daysText): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Trial Ends In', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($daysText); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($daysText); ?></td>
             </tr>
         <?php endif; ?>
         <?php if ($trialEndLabel): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Trial End Date', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($trialEndLabel); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($trialEndLabel); ?></td>
             </tr>
         <?php endif; ?>
         <?php if ($renewalAmount): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Amount After Trial', 'fluent-cart'); ?></td>
-                <td style="font-size:14px;color:#111827;font-weight:700;padding:0;text-align:right;">
-                    <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); ?>
+                <td style="font-size:14px;color:#111827;font-weight:700;padding:0;text-align:<?php echo esc_attr($endSide); ?>;">
+                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <?php if ($billingInterval): ?>
                         <span style="font-size:12px;font-weight:400;color:#6b7280;">(<?php echo esc_html($billingInterval); ?>)</span>
                     <?php endif; ?>

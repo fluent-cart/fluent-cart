@@ -542,7 +542,7 @@ watch(shouldShowLabels, () => {
       </Card.Header>
       <Card.Body class="p-0 pt-0 relative">
         <!-- World Map Controls -->
-        <div v-if="chartType === 'world'" class="fct-world-map-action-btns absolute top-5 right-5 flex flex-col gap-1 z-10">
+        <div v-if="chartType === 'world'" class="fct-world-map-action-btns absolute top-5 end-5 flex flex-col gap-1 z-10">
           <IconButton tag="button" size="small" @click="zoomIn">
             <DynamicIcon name="Plus" />
           </IconButton>

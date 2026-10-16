@@ -125,7 +125,7 @@
 .fct-license-activation-limit-actions{
     @apply flex items-center;
     .icon-button{
-        @apply text-success-500 focus:text-success-500 first:rounded-tr-none first:rounded-br-none first:mr-[-0.5px] last:rounded-tl-none last:rounded-bl-none last:ml-[-0.5px];
+        @apply text-success-500 focus:text-success-500 first:rounded-e-none first:me-[-0.5px] last:rounded-s-none last:ms-[-0.5px];
         .cross{
             @apply text-red-500 focus:text-red-500;
         }
@@ -202,7 +202,7 @@
         @apply py-3 px-5;
     }
 
-    @apply inline-flex mt-1.5 items-center pr-[36px] relative;
+    @apply inline-flex mt-1.5 items-center pe-[36px] relative;
 }
 .fct-license-key-inner {
     @apply truncate max-w-[260px];
@@ -228,13 +228,13 @@
         @apply text-system-mid text-[13px] dark:text-gray-300;
     }
     .icon{
-        @apply ml-auto;
+        @apply ms-auto;
     }
     .fct-license-key {
-        @apply pr-0 mt-0 w-full;
+        @apply px-0 mt-0 w-full;
     }
     .fct-license-key-inner {
-        @apply max-w-full pr-0;
+        @apply max-w-full px-0;
     }
 }
 
@@ -264,7 +264,24 @@
 
 .fct_licenses_table{
     .product-name-inner{
-        @apply pr-0;
+        @apply pe-0;
+    }
+}
+// Restates the template's physical pr-1/pr-2 on the end side so RTL mirrors.
+#fct_admin_app_wrapper .fct_licenses_table {
+    .fct-license-key {
+        padding-left: 0;
+        padding-right: 0;
+        padding-inline-end: theme('spacing.1');
+    }
+    .fct-license-key-inner {
+        padding-left: 0;
+        padding-right: 0;
+        padding-inline-end: theme('spacing.2');
+    }
+    // The order link is nudged 16px toward the start edge; mirror the nudge.
+    [dir="rtl"] & .order_id .link {
+        --tw-translate-x: calc(-50% + 16px);
     }
 }
 .fct-single-customer-license-table {
@@ -296,7 +313,7 @@
             }
         }
         .el-button {
-            @apply p-2.5 ml-auto;
+            @apply p-2.5 ms-auto;
             .icon {
                 svg {
                     @apply w-5 h-5;

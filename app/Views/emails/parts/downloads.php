@@ -1,6 +1,7 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php use FluentCart\App\Helpers\Helper;
 $showNotice = $show_notice ?? true;
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
 if (isset($heading)): ?>
     <p style="font-size:16px;font-weight:600;color:rgb(44,62,80);margin: 16px 0 0 0;line-height:24px;">
         <?php echo esc_html($heading); ?>
@@ -9,7 +10,7 @@ if (isset($heading)): ?>
 
 <?php endif; ?>
 
-<table role="presentation" style="width: 100%;overflow:hidden;margin-bottom: 0;border-spacing: 0;border:none;padding: 0 0 0 10px;">
+<table role="presentation" style="width: 100%;overflow:hidden;margin-bottom: 0;border-spacing: 0;border:none;padding: <?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('0 0 0 10px')); ?>;">
     <tbody>
     <tr>
         <td style="border:none;padding: 0;">
@@ -33,7 +34,7 @@ if (isset($heading)): ?>
                                                     <?php endif; ?>
                                                 </p>
                                             </td>
-                                            <td style="width: 20%;text-align:right;vertical-align: middle;border:none;padding: 1px 0;">
+                                            <td style="width: 20%;text-align:<?php echo esc_attr($endSide); ?>;vertical-align: middle;border:none;padding: 1px 0;">
                                                 <a style="display: inline-block;font-size: 14px;color:#000;line-height: 1;"
                                                    href="<?php echo esc_url($download['download_url'] ?? ''); ?>">
                                                     <?php echo esc_html__('Download','fluent-cart'); ?>

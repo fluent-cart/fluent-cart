@@ -234,7 +234,7 @@ class CartSummaryRender
     public function renderSubtotal($atts = '')
     {
         ?>
-        <li <?php echo $atts; ?>>
+        <li <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <span class="fct_summary_label"> <?php esc_html_e('Subtotal', 'fluent-cart'); ?></span>
             <span class="fct_summary_value" data-fluent-cart-checkout-subtotal>
                  <?php echo esc_html(Helper::toDecimal($this->cart->getItemsSubtotal())); ?>
@@ -246,7 +246,7 @@ class CartSummaryRender
     public function renderShipping($atts = '')
     {
         if ($atts) {
-            echo '<li ' . $atts . '>';
+            echo '<li ' . $atts . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute
         } else {
             echo '<li class="' . ($this->cart->getShippingTotal() === 0 ? 'shipping-charge-hidden' : '') . '" data-fluent-cart-checkout-shipping-amount-wrapper>';
         }
@@ -282,8 +282,8 @@ class CartSummaryRender
     public function renderTotal($atts = '')
     {
         ?>
-        <li <?php echo empty($atts) ? ' class="fct_summary_items_total" data-fluent-cart-checkout-page-current-total' : $atts; ?>>
-            <span class="fct_summary_label"><?php _e('Total','fluent-cart'); ?></span>
+        <li <?php echo empty($atts) ? ' class="fct_summary_items_total" data-fluent-cart-checkout-page-current-total' : $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
+            <span class="fct_summary_label"><?php esc_html_e('Total', 'fluent-cart'); ?></span>
             <span class="fct_summary_value" data-fluent-cart-checkout-estimated-total>
                 <?php
                 echo esc_html(Helper::toDecimal($this->cart->getEstimatedTotal()));

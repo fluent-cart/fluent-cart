@@ -22,9 +22,9 @@ return [
         [
             'surface'        => 'Product update',
             'source_file'    => 'app/Http/Controllers/ProductController.php',
-            'method_line'    => 509,
+            'method_line'    => 510,
             'method_needle'  => 'function update(ProductUpdateRequest $request',
-            'sanitize_line'  => 511,
+            'sanitize_line'  => 512,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -49,9 +49,9 @@ return [
         [
             'surface'        => 'Order create',
             'source_file'    => 'app/Http/Controllers/OrderController.php',
-            'method_line'    => 74,
+            'method_line'    => 77,
             'method_needle'  => 'function store(OrderRequest $request)',
-            'sanitize_line'  => 76,
+            'sanitize_line'  => 79,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -63,10 +63,9 @@ return [
             // re-verified unchanged: OrderRequest guard + getSafe(sanitize()).
             // 215 → 216: getSafe() result now keyed to the sent fields via
             // array_intersect_key(), so unsent columns are left unchanged.
-            // 204/216 → 206/218: 3a5ae335e3 and f6d51d68d3 added lines above.
-            'method_line'    => 206,
+            'method_line'    => 239,
             'method_needle'  => 'function updateOrder(OrderRequest $request',
-            'sanitize_line'  => 218,
+            'sanitize_line'  => 251,
             'sanitize_needle'=> '$request->getSafe($request->sanitize())',
             'coverage'       => 'validation-request-guard-wiring',
         ],
@@ -142,7 +141,7 @@ return [
         [
             'surface'     => 'GET orders',
             'source_file' => 'app/Http/Controllers/OrderController.php',
-            'source_line' => 60,
+            'source_line' => 63,
             'needle'      => 'OrderFilter::fromRequest($request)->paginate()',
             'coverage'    => [
                 'validation-list-ordering-select-shaped-fallback',
@@ -195,17 +194,22 @@ return [
                 [
                     'source_file' => 'app/Http/Controllers/ShopController.php',
                     'source_line' => 72,
-                    'needle'      => "getSafe('per_page', Sanitizer::SANITIZE_TEXT_FIELD)",
+                    'needle'      => '$this->perPage($request)',
                 ],
                 [
                     'source_file' => 'api/Resource/ShopResource.php',
-                    'source_line' => 262,
-                    'needle'      => "cursorPaginate(Arr::get(\$params, 'per_page', 10)",
+                    'source_line' => 76,
+                    'needle'      => 'min($perPage, 100)',
                 ],
                 [
                     'source_file' => 'api/Resource/ShopResource.php',
-                    'source_line' => 264,
-                    'needle'      => "simplePaginate(Arr::get(\$params, 'per_page', 10)",
+                    'source_line' => 271,
+                    'needle'      => "cursorPaginate(static::clampPerPage(Arr::get(\$params, 'per_page', 10))",
+                ],
+                [
+                    'source_file' => 'api/Resource/ShopResource.php',
+                    'source_line' => 273,
+                    'needle'      => "simplePaginate(static::clampPerPage(Arr::get(\$params, 'per_page', 10))",
                 ],
             ],
             'coverage'    => [
@@ -215,17 +219,17 @@ return [
         [
             'surface'     => 'GET customer-profile/orders',
             'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-            'source_line' => 44,
+            'source_line' => 45,
             'needle'      => 'function getOrders(Request $request)',
             'source_checks' => [
                 [
                     'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-                    'source_line' => 61,
-                    'needle'      => "\$perPage = (int)\$request->get('per_page', 10)",
+                    'source_line' => 62,
+                    'needle'      => "\$perPage = ShopResource::clampPerPage(\$request->get('per_page', 10))",
                 ],
                 [
                     'source_file' => 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php',
-                    'source_line' => 81,
+                    'source_line' => 82,
                     'needle'      => '->paginate($perPage',
                 ],
             ],
@@ -234,7 +238,7 @@ return [
             ],
             'skip_reason' => 'The installed pre-existing customer Order payload raises '
                 . 'an unrelated Order.php:356 null-trim deprecation while serializing the '
-                . 'list. Phase 10 source-checks the raw per_page flow but does not suppress '
+                . 'list. Phase 10 source-checks the clamped per_page flow but does not suppress '
                 . 'that diagnostic or mutate real Orders to manufacture a clean probe.',
         ],
     ],
@@ -257,12 +261,12 @@ return [
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 308,
+            'source_line' => 310,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [
             'source_file' => 'resources/admin/Modules/Products/parts/ProductsTable.vue',
-            'source_line' => 311,
+            'source_line' => 313,
             'needle'      => 'v-html="Arr.get(scope.row, column.accessor)"',
         ],
         [

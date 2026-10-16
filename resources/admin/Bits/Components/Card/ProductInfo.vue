@@ -13,7 +13,7 @@
       <div class="fct-product-info-name">
         <span class="product-name">
           <span class="product-name-inner">{{ product?.post_title || translate('No Name') }}</span>
-          <a v-if="!hideViewIcon" class="view-link right-1" target="_blank" :href="product?.view_url" @click.stop>
+          <a v-if="!hideViewIcon" class="view-link end-1" target="_blank" :href="product?.view_url" @click.stop>
             <DynamicIcon class="w-5 h-5" name="Eye"/>
           </a>
         </span>

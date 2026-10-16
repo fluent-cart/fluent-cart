@@ -172,15 +172,18 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
   &-info {
     @apply flex items-center mb-1.5;
     .back-arrow {
-      @apply text-system-dark mr-1 w-6 h-6 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 dark:text-gray-50 dark:hover:bg-dark-600;
+      [dir="rtl"] & svg {
+        transform: scaleX(-1);
+      }
+      @apply text-system-dark me-1 w-6 h-6 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 dark:text-gray-50 dark:hover:bg-dark-600;
     }
 
     .product-name {
-      @apply max-w-[700px] whitespace-nowrap overflow-hidden text-ellipsis text-sm font-semibold text-system-dark mr-3 dark:text-gray-50;
+      @apply max-w-[700px] whitespace-nowrap overflow-hidden text-ellipsis text-sm font-semibold text-system-dark me-3 dark:text-gray-50;
     }
 
     .product-id {
-      @apply text-xs font-medium text-system-dark mr-3 dark:text-gray-50;
+      @apply text-xs font-medium text-system-dark me-3 dark:text-gray-50;
     }
   }
 
@@ -263,7 +266,7 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
 #wpbody-content {
   #fct_admin_menu_holder {
     .fct_admin_menu_wrap {
-      @apply fixed top-8 w-[calc(100%-160px)] z-[2000] right-0 transition-all duration-300 ease-in-out;
+      @apply fixed top-8 w-[calc(100%-160px)] z-[2000] end-0 transition-all duration-300 ease-in-out;
       box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
       &.is-shadowless{
         box-shadow: none;

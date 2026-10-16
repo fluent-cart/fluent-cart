@@ -53,7 +53,7 @@
                     <div class="content-title">
                       <div class="title">{{ product.post_title }}</div>
                       <small v-if="product?.other_info?.payment_type === 'subscription' && product.other_info?.billing_summary !== ''" class="text-gray-500 dark:text-gray-400">
-                        {{product.other_info?.billing_summary}}
+                        {{ priceQuote ? billingSummary(product) : product.other_info?.billing_summary }}
                       </small>
                       <div class="text" v-if="isAlreadyAdded(product.object_id)">
                         {{ $t('Item already added') }}
@@ -73,11 +73,11 @@
                   <div class="fct-collapsible-value-wrapper">
                     <span v-if="product?.children?.length > 0">
                       {{
-                        product.min_price != product.max_price ? formatNumber(product.min_price) + ' - ' + formatNumber(product.max_price) : formatNumber(product.min_price)
+                        product.min_price != product.max_price ? pickerPrice(product.min_price) + ' - ' + pickerPrice(product.max_price) : pickerPrice(product.min_price)
                       }}
                     </span>
                     <span v-else>
-                      {{ formatNumber(product.price) }}
+                      {{ pickerPrice(product.price) }}
                     </span>
                   </div>
                 </div><!-- .fct-collapsible-item -->
@@ -108,7 +108,10 @@
                           <div class="content-title">
                             <div class="title title--wrap">{{ productChildren.variation_display_title || productChildren.title }}</div>
                             <small v-if="productChildren?.other_info?.payment_type === 'subscription' && productChildren.other_info?.billing_summary !== ''" class="text">
-                              {{CurrencyFormatter.currencySign}} {{productChildren.other_info?.billing_summary}}
+                              <template v-if="priceQuote">{{ billingSummary(productChildren) }}</template>
+                              <template v-else>
+                                {{CurrencyFormatter.currencySign}} {{productChildren.other_info?.billing_summary}}
+                              </template>
 
                               <span v-if="productChildren.other_info?.trial_days > 0">
                                 <br>
@@ -137,7 +140,7 @@
                           </span>
                         </div>
                         <div class="fct-collapsible-value-wrapper">
-                          {{ formatNumber(productChildren.price) }}
+                          {{ pickerPrice(productChildren.price) }}
                         </div>
                       </div><!-- .fct-collapsible-item -->
                     </li>
@@ -193,7 +196,7 @@ import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 
 export default {
   components: {BundleProducts, Empty, Pagination, Badge, DynamicIcon},
-  props: ['searchQueryParent', 'orderParent', 'order_id'],
+  props: ['searchQueryParent', 'orderParent', 'order_id', 'currencyQuote'],
   data() {
     return {
       loading: false,
@@ -218,6 +221,13 @@ export default {
     Asset() {
       return Asset
     },
+    // The list holds base prices; preview them in the order's currency
+    priceQuote() {
+      if (this.order_id) {
+        return orderQuote(this.order);
+      }
+      return this.currencyQuote && !this.currencyQuote.is_base ? this.currencyQuote : null;
+    },
     order: {
       get() {
         return this.orderParent;
@@ -239,6 +249,21 @@ export default {
     this.initializeCollapsedStates();
   },
   methods: {
+    pickerPrice(cents) {
+      if (!this.priceQuote) {
+        return this.formatNumber(cents);
+      }
+      return this.formatNumberForOrder(toPrice(cents, this.priceQuote), this.priceQuote.code || this.priceQuote.currency);
+    },
+    // The stored billing_summary carries the base price, so rebuild it at the quoted rate
+    billingSummary(item) {
+      const info = item.other_info || {};
+      if (!info.repeat_interval) {
+        return '';
+      }
+      const occurrence = parseInt(info.times) > 0 ? translate('for %s Times', info.times) : translate('Until Cancel');
+      return `${this.pickerPrice(item.price)} ${info.repeat_interval} ${occurrence}`;
+    },
     translate,
     translateNumber,
     initializeCollapsedStates() {

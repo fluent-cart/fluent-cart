@@ -108,7 +108,7 @@ const actionMenuHandler = (command) => {
 
 <template>
   <div class="fct-product-button-and-drawer-wrap">
-    <div v-if="props.modeType == 'add'" class="fct-product-add-more-price-wrap text-right pr-6">
+    <div v-if="props.modeType == 'add'" class="fct-product-add-more-price-wrap text-end pe-6">
       <el-button
         v-if="product.detail.variation_type !== 'simple'"
         text type="primary"

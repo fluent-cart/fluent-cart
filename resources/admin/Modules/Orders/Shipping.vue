@@ -20,7 +20,7 @@
         <del>{{ formatNumberForOrder(order.shipping_total, order) }}</del>
         {{ translate("Free") }}
     </span>
-      <span v-if="shouldEnableEditing && !hasFreeShipping()" class="max-w-[120px] block ml-auto text-right">
+      <span v-if="shouldEnableEditing && !hasFreeShipping()" class="max-w-[120px] block ms-auto text-end">
       <el-input v-model="total_shipping" @change="value => {order.shipping_total = value * 100}" type="number">
         <template #prefix>
           {{ currency }}

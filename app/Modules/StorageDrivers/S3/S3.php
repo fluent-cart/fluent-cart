@@ -731,10 +731,10 @@ class S3 extends BaseStorageDriver
         //$url = "https://{$bucket}.s3.amazonaws.com"; // The global endpoint
         if (strpos($bucket, '.') !== false) {
             // If bucket contains dot, use path-style (required for SSL)
-            $url = "https://s3.amazonaws.com/{$bucket}";
+            $url = "https://s3.amazonaws.com/{$bucket}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
             // Normal bucket: use virtual-hosted style
-            $url = "https://{$bucket}.s3.amazonaws.com";
+            $url = "https://{$bucket}.s3.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
 

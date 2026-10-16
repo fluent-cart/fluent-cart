@@ -162,3 +162,19 @@
 .el-tabs__item{
     @apply dark:hover:text-gray-50;
 }
+// Element Plus zeroes the first item's left and last item's right padding;
+// in RTL that removes the only gap between two tabs.
+[dir="rtl"] .demo-tabs.el-tabs--top > .el-tabs__header .el-tabs__item.is-top {
+    &:nth-child(2) {
+        @apply pl-5 pr-0;
+    }
+    &:last-child {
+        @apply pl-0 pr-5;
+    }
+    &:nth-child(2):last-child {
+        @apply px-0;
+    }
+    &:not(:nth-child(2)):not(:last-child) {
+        @apply px-5;
+    }
+}

@@ -9,7 +9,7 @@ if (isset($heading)): ?>
     </p>
 <?php endif; ?>
 
-<table role="presentation" style="width: 100%;overflow:hidden;margin-bottom: 0;border-spacing: 0;border:none;padding: 0 0 0 10px;">
+<table role="presentation" style="width: 100%;overflow:hidden;margin-bottom: 0;border-spacing: 0;border:none;padding: <?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('0 0 0 10px')); ?>;">
     <tbody>
     <tr>
         <td style="border:none;padding: 0;">

@@ -15,7 +15,7 @@
         }
     }
     &-save-action{
-        @apply mt-7.5 text-right;
+        @apply mt-7.5 text-end;
     }
     &-confirmation-content{
         @apply flex flex-col gap-5;
@@ -240,14 +240,14 @@
 .fct-payment-setting-radio-box {
     @apply grid grid-cols-2 gap-5;
     .el-radio {
-        @apply items-start mr-0 border border-solid border-gray-divider rounded p-4 text-sm dark:text-gray-300 dark:border-dark-400;
+        @apply items-start me-0 border border-solid border-gray-divider rounded p-4 text-sm dark:text-gray-300 dark:border-dark-400;
     }
     .el-radio__label {
         @apply pl-0 flex gap-3 text-system-dark dark:text-gray-50;
         white-space: break-spaces;
     }
     .el-radio__input{
-        @apply absolute top-4 right-4;
+        @apply absolute top-4 end-4;
     }
     .options-name {
         @apply block;
@@ -424,7 +424,7 @@
     }
 }
 .fct-setting-container {
-    @apply fixed w-full h-[calc(100vh-96px)] bottom-0 right-0 z-50;
+    @apply fixed w-[calc(100%-160px)] h-[calc(100vh-96px)] bottom-0 end-0 z-50;
     height: calc(100dvh - 96px);
     .setting-html-wrapper {
         .setting-label {
@@ -497,7 +497,7 @@
             @apply relative;
         }
         .form-section-save-action-top{
-            @apply absolute top-3 right-5 z-10 inline-flex items-center gap-3;
+            @apply absolute top-3 end-5 z-10 inline-flex items-center gap-3;
         }
         @media (max-width: 767px) {
             @apply mb-12.5;
@@ -611,7 +611,7 @@
 
 .fct-setting-container.is-collapsed {
   .fct-settings-nav-content {
-    @apply pl-[230px];
+    @apply ps-[72px];
   }
   .setting-wrap-inner {
     max-width: 100%;
@@ -640,14 +640,17 @@
 
 // folded settings menu
 .folded {
+  .fct-setting-container {
+    @apply w-[calc(100%-36px)];
+  }
   .fct-settings-nav-container {
-    left: 36px;
+    inset-inline-start: 0;
   }
   .fct-settings-nav-content {
-    padding-left: 296px;
+    padding-inline-start: 260px;
   }
   .fct-setting-container.is-collapsed .fct-settings-nav-content {
-    padding-left: 106px;
+    padding-inline-start: 72px;
   }
 }
 
@@ -759,7 +762,9 @@
 }
 
 .fct-settings-nav-container {
-  @apply absolute top-0 left-[160px] z-[1024] bg-white w-[260px] flex-shrink-0 transition-all duration-300 ease-in-out h-[calc(100vh-96px)] rounded-none border-0 border-r-[1px] border-solid border-gray-divider dark:border-dark-400 dark:bg-dark-700;
+  @apply absolute top-0 z-[1024] bg-white w-[260px] flex-shrink-0 transition-all duration-300 ease-in-out h-[calc(100vh-96px)] rounded-none border-0 border-solid border-gray-divider dark:border-dark-400 dark:bg-dark-700;
+  inset-inline-start: 0;
+  border-inline-end-width: 1px;
   height: calc(100dvh - 96px);
 }
 .fct-settings-nav {
@@ -788,7 +793,7 @@
       }
     }
     .fct-settings-nav-link-icon{
-      @apply absolute top-[50%] right-4 opacity-0 duration-300 transition-all;
+      @apply absolute top-[50%] end-4 opacity-0 duration-300 transition-all;
 
       transform: translateY(-50%);
       svg{
@@ -802,16 +807,16 @@
     .fct-settings-nav-link {
       @apply bg-primary-25 text-system-dark dark:bg-dark-400 dark:text-gray-50;
       .fct-settings-nav-link-icon {
-        @apply opacity-100 right-3;
+        @apply opacity-100 end-3;
       }
     }
   }
 
   .fct-settings-nav-child-wrap {
-    @apply relative pl-6.5 my-1;
+    @apply relative ps-6.5 my-1;
     &::before {
       content: '';
-      @apply absolute left-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+      @apply absolute start-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
     }
 
     .fct-settings-nav-item {
@@ -819,7 +824,7 @@
         @apply bg-transparent text-system-mid hover:bg-primary-25 hover:text-primary-500 dark:text-gray-300 dark:hover:bg-dark-600 dark:hover:text-gray-50;
         &::before {
           content: "";
-          @apply absolute top-2 left-[-8px] w-0 h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
+          @apply absolute top-2 start-[-8px] w-0 h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
         }
         &.router-link-exact-active {
           @apply bg-transparent font-medium dark:bg-transparent;
@@ -842,7 +847,7 @@
 }
 
 .fct-settings-nav-content {
-  @apply flex-1 z-[100] overflow-x-hidden pl-[418px] transition-all duration-300 ease-in-out;
+  @apply flex-1 z-[100] overflow-x-hidden ps-[260px] transition-all duration-300 ease-in-out;
 }
 
 .fct-settings-nav-content-inner {
@@ -999,23 +1004,23 @@
     }
   }
   .fct-setting-container {
-    @apply relative h-auto;
+    @apply relative w-full h-auto;
   }
   .folded .fct-settings-nav-container {
-    left: -100%
+    inset-inline-start: -100%;
   }
 
   .fct-settings-nav-container {
-    @apply -left-[100%];
+    inset-inline-start: -100%;
 
     box-shadow: 0 0 20px rgba(28, 39, 50, 0.08);
     &.is-nav-open {
-      left: 0;
+      inset-inline-start: 0;
     }
   }
 
   .fct-settings-nav-content {
-    @apply pl-0 #{!important};
+    @apply ps-0 #{!important};
   }
 
 }
@@ -1558,4 +1563,17 @@
     .fct-mc-history-muted{
         @apply block whitespace-nowrap text-xs text-system-mid dark:text-gray-300;
     }
+}
+
+// The nav collapses toward the admin menu and its active chevron points into the content; both flip in RTL.
+[dir="rtl"] {
+  .fct-settings-nav-collapse-button-wrapper .el-button {
+    cursor: e-resize;
+  }
+  .fct-settings-nav-container.is-collapsed .fct-settings-nav-collapse-button-wrapper .el-button {
+    cursor: w-resize;
+  }
+  .fct-settings-nav-link-icon svg {
+    transform: scaleX(-1);
+  }
 }

@@ -18,8 +18,8 @@ $darkLogoSvg  = file_get_contents($logoDir . 'logo-full.svg');
             <a aria-label="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"
                title="<?php echo esc_html__('FluentCart Logo', 'fluent-cart'); ?>"
                href="<?php echo esc_url(admin_url('admin.php?page=fluent-cart#/')); ?>">
-                <span class="logo-light"><?php echo $lightLogoSvg; ?></span>
-                <span class="logo-dark"><?php echo $darkLogoSvg; ?></span>
+                <span class="logo-light"><?php echo $lightLogoSvg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled plugin SVG file ?></span>
+                <span class="logo-dark"><?php echo $darkLogoSvg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled plugin SVG file ?></span>
             </a>
         </div><!-- .fct_admin_logo_wrap -->
 

@@ -69,7 +69,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div v-if="appReady" class="fct-content-card-list-item py-4 px-6">
+    <div v-if="appReady" class="fct-content-card-list-item py-4 ps-6 pe-[80px]">
         <div class="fct-content-card-list-head">
             <div class="flex items-start gap-2 flex-row">
                 <h4 class="mb-0">{{ field.title }}</h4>
@@ -117,7 +117,7 @@ onMounted(() => {
         </div>
 
         <div class="fct-content-card-list-action">
-            <div class="pr-4">
+            <div class="pe-4">
                 <el-switch active-value="yes" inactive-value="no" v-model="isActive" @change="(value)=>{
         if(!model || typeof model !== 'object'){
           model = {}

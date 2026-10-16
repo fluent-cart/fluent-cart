@@ -167,19 +167,19 @@ const handleManageStockChange = (value) => {
 
               <el-table-column :label="translate('Available')" width="100">
                 <template #default="scope">
-                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.available) }}</span>
+                  <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.available) }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column :label="translate('On hold')" width="100">
                 <template #default="scope">
-                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.on_hold) }}</span>
+                  <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.on_hold) }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column :label="translate('Delivered')" width="100">
                 <template #default="scope">
-                  <span class="fct-inventory-cell-text pl-5">{{ translateNumber(scope.row.committed) }}</span>
+                  <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.committed) }}</span>
                 </template>
               </el-table-column>
             </el-table>

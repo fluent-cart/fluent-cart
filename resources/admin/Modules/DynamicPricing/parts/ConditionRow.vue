@@ -130,7 +130,7 @@ const isCurrency = computed(() => selectedAttribute.value?.input_type === 'curre
             />
         </td>
 
-        <td class="w-[40px] text-right fct-conditions-action">
+        <td class="w-[40px] text-end fct-conditions-action">
             <IconButton
                 size="x-small"
                 bg="info"

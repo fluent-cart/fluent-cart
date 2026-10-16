@@ -1181,6 +1181,7 @@ class TaxModule
             'legal_registration_id' => (string) $storeSettings->get('legal_registration_id', ''),
             'seller_vat_id'         => (string) $storeSettings->get('seller_vat_id', ''),
             'seller_tax_id'         => (string) $storeSettings->get('seller_tax_id', ''),
+            'store_country'         => (string) $storeSettings->get('store_country', ''),
         ]);
 
         $checkoutData = $cart->checkout_data;
@@ -1915,6 +1916,58 @@ class TaxModule
             'SE' => __('VAT', 'fluent-cart'), // Sweden
         ]);
 
+    }
+
+    public static function businessIdLabelLists(): array
+    {
+        // Legal abbreviations an invoice in that country must show, so they are not translated.
+        /**
+         * Seller ID labels per store country on receipts, the thank-you page,
+         * order emails and the {{order.store_*_display}} shortcodes. Add or
+         * change a country by setting any of legal_registration_id,
+         * seller_tax_id or seller_vat_id. Unset fields keep the generic label.
+         *
+         * @param array $countries Country code => [field => sprintf format with %1$s for the ID].
+         */
+        return apply_filters('fluent_cart/tax/country_business_id_labels', [
+            'SK' => [
+                'legal_registration_id' => 'IČO: %1$s',
+                'seller_tax_id'         => 'DIČ: %1$s',
+                'seller_vat_id'         => 'IČ DPH: %1$s',
+            ],
+            'CZ' => [
+                'legal_registration_id' => 'IČO: %1$s',
+                'seller_tax_id'         => 'DIČ: %1$s',
+            ],
+            'DE' => [
+                'seller_tax_id' => 'St.-Nr.: %1$s',
+                'seller_vat_id' => 'USt-IdNr.: %1$s',
+            ],
+        ]);
+    }
+
+    /**
+     * Label formats for the seller ID lines on receipts, emails and PDFs.
+     *
+     * @return array{legal_registration_id: string, seller_tax_id: string, seller_vat_id: string}
+     */
+    public static function getBusinessIdLabels(string $countryCode = ''): array
+    {
+        $labels = [
+            /* translators: %1$s: store legal registration ID */
+            'legal_registration_id' => __('Reg. ID: %1$s', 'fluent-cart'),
+            /* translators: %1$s: store seller tax ID */
+            'seller_tax_id'         => __('Tax ID: %1$s', 'fluent-cart'),
+            /* translators: %1$s: store seller VAT ID */
+            'seller_vat_id'         => __('VAT ID: %1$s', 'fluent-cart'),
+        ];
+
+        $lists = self::businessIdLabelLists();
+        $countryCode = strtoupper($countryCode);
+        $countryLabels = isset($lists[$countryCode]) ? $lists[$countryCode] : [];
+
+        // Keys a filter adds beyond the three fields are ignored.
+        return array_merge($labels, array_intersect_key((array) $countryLabels, $labels));
     }
 
     public static function getCountryTaxTitle($countryCode = '')

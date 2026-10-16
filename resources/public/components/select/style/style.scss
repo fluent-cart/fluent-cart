@@ -12,10 +12,10 @@
         @apply relative bg-white rounded-none transition-all duration-[300ms] border-[0.5px] border-solid border-gray-200;
         .select {
             &-input {
-                @apply w-full pr-10 text-sm border-none outline-none bg-transparent pointer-events-none;
+                @apply w-full pe-10 text-sm border-none outline-none bg-transparent pointer-events-none;
                 padding-top: var(--fct-input-padding-y, theme('spacing.3'));
                 padding-bottom: var(--fct-input-padding-y, theme('spacing.3'));
-                padding-left: var(--fct-input-padding-x, theme('spacing.4'));
+                padding-inline-start: var(--fct-input-padding-x, theme('spacing.4'));
                 &:focus {
                     @apply cursor-text;
                 }
@@ -24,7 +24,7 @@
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
                 border-top: 4px solid;
-                @apply absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-primary-200 transition-transform duration-300 ease-in-out pointer-events-none;
+                @apply absolute end-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-primary-200 transition-transform duration-300 ease-in-out pointer-events-none;
             }
             &-option {
                 transition: background-color 0.2s ease;
@@ -80,7 +80,7 @@
 
         .clear-btn {
             position: absolute;
-            right: 35px;
+            inset-inline-end: 35px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
@@ -188,8 +188,8 @@
 .fct-nice-select {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: all .2s ease-in-out;
-    @apply w-full h-9.5 pr-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
-    padding-left: var(--fct-input-padding-x, theme('spacing[4.5]'));
+    @apply w-full h-9.5 pe-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
+    padding-inline-start: var(--fct-input-padding-x, theme('spacing[4.5]'));
 
     &:after {
         content: "";
@@ -198,7 +198,7 @@
         transform-origin: 66% 66%;
         transform: rotate(45deg);
         transition: all 0.15s ease-in-out;
-        @apply block w-[5px] h-[5px] mt-[-4px] pointer-events-none absolute right-4 top-1/2;
+        @apply block w-[5px] h-[5px] mt-[-4px] pointer-events-none absolute end-4 top-1/2;
     }
     .fct-nice-select-dropdown {
         @apply w-full;
@@ -248,7 +248,7 @@
         @apply h-auto py-[7px] px-3 min-h-9 leading-[22px];
         span {
             &.current {
-                @apply border-[1px] border-solid border-[var(--fct-checkout-input-border-color)] bg-[#eee] py-0 px-2.5 inline-block leading-[24px] text-sm mb-[3px] mr-[3px];
+                @apply border-[1px] border-solid border-[var(--fct-checkout-input-border-color)] bg-[#eee] py-0 px-2.5 inline-block leading-[24px] text-sm mb-[3px] me-[3px];
                 border-radius: var(--fct-badge-radius, theme('borderRadius[0.75]'));
             }
         }
@@ -293,7 +293,7 @@
     }
 
     .option {
-        @apply cursor-pointer font-normal leading-[40px] list-none outline-none pl-4.5 pr-[29px] text-left transition-all duration-200;
+        @apply cursor-pointer font-normal leading-[40px] list-none outline-none ps-4.5 pe-[29px] text-start transition-all duration-200;
         &.selected.focus,
         &.focus,
         &:hover {
@@ -307,7 +307,7 @@
         }
     }
     .extra {
-        @apply float-right;
+        @apply float-end;
     }
     .optgroup {
         @apply font-bold;
@@ -321,8 +321,8 @@
             @apply pointer-events-none;
             &:before {
                 content: 'Loading...';
-                @apply absolute top-0 left-0 w-full h-full bg-white pr-7.5 text-[#acb5c2];
-                padding-left: var(--fct-input-padding-x, theme('spacing[4.5]'));
+                @apply absolute top-0 left-0 w-full h-full bg-white pe-7.5 text-[#acb5c2];
+                padding-inline-start: var(--fct-input-padding-x, theme('spacing[4.5]'));
             }
         }
     }
@@ -353,7 +353,7 @@
         border-[1px] border-[#aaa]
         box-border
         inline-block
-        ml-[5px]
+        ms-[5px]
         mt-[5px]
         py-[2px]
         px-[5px]

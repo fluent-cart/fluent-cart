@@ -1,9 +1,12 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; 
 
-use FluentCart\App\Modules\Tax\TaxModule;?>
+use FluentCart\App\Modules\Tax\TaxModule;
+use FluentCart\App\Services\Renderer\Receipt\StoreBusinessInfoHelper;
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+?>
 
 <?php if(!empty($order)): ?>
-<table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
+<table dir="<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::dir()); ?>" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
        style="margin-left:auto;margin-right:auto;max-width:620px;margin-bottom:20px;border: none;">
     <tbody>
     <tr style="width:100%">
@@ -11,20 +14,20 @@ use FluentCart\App\Modules\Tax\TaxModule;?>
             <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: none;">
                 <tbody style="width:100%">
                 <tr style="width:100%">
-                    <td style="width:60%">
+                    <td style="width:60%;padding-<?php echo esc_attr($endSide); ?>:12px;">
                         <h1 style="font-size:24px;font-weight:700;color:rgb(17,24,39);margin:0px">
                             {{ settings.store_brand }}
                         </h1>
                     </td>
-                    <td style="vertical-align: middle; width: 15%; text-align: right; border: 0;padding-right: 10px;">
-                        <p style="white-space: nowrap; color: #94a3b8; text-align: right; margin: 0;font-size:12px;"><?php echo esc_html__('Order Date', 'fluent-cart'); ?></p>
-                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: right; margin: 0;font-size:15px;">{{order.created_at}}</p>
+                    <td style="vertical-align: middle; width: 15%; text-align: <?php echo esc_attr($endSide); ?>; border: 0;padding-<?php echo esc_attr($endSide); ?>: 10px;">
+                        <p style="white-space: nowrap; color: #94a3b8; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:12px;"><?php echo esc_html__('Order Date', 'fluent-cart'); ?></p>
+                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:15px;">{{order.created_at}}</p>
                     </td>
-                    <td style="width:15%;text-align:right">
-                        <p style="white-space: nowrap; color: #94a3b8; text-align: right; margin: 0;font-size:12px;">
+                    <td style="width:15%;text-align:<?php echo esc_attr($endSide); ?>">
+                        <p style="white-space: nowrap; color: #94a3b8; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:12px;">
                             <?php echo esc_html__('Order #', 'fluent-cart'); ?>
                         </p>
-                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: right; margin: 0;font-size:14px;">
+                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:14px;">
                             <?php echo esc_html($order->invoice_no); ?>
                         </p>
                     </td>
@@ -33,13 +36,17 @@ use FluentCart\App\Modules\Tax\TaxModule;?>
             </table>
             <?php 
             $orderTaxRates = $order->orderTaxRates->first();
-            if ($orderTaxRates): ?>
-                <div class="fct_invoice_tax_content" style="text-align: right;">
+            $idLines = StoreBusinessInfoHelper::getIdLines($order);
+            if ($orderTaxRates || $idLines): ?>
+                <div class="fct_invoice_tax_content" style="text-align: <?php echo esc_attr($endSide); ?>;">
                     <?php
                     $storeVatNumber = isset($orderTaxRates->meta['store_vat_number']) ? $orderTaxRates->meta['store_vat_number'] : '';
                     $taxcountry = isset($orderTaxRates->meta['tax_country']) ? $orderTaxRates->meta['tax_country'] : '';
                     if ($storeVatNumber !== '') {
                         echo '<p style="font-weight: 600; font-size: 14px;margin-bottom:12px;">' . esc_html(TaxModule::getCountryTaxTitle($taxcountry)) . ': ' . esc_html($storeVatNumber) . '</p>';
+                    }
+                    foreach ($idLines as $idLine) {
+                        echo '<p style="font-size: 14px;margin: 0 0 4px;">' . esc_html($idLine) . '</p>';
                     }
                     ?>
                 </div>

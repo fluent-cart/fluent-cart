@@ -454,11 +454,11 @@ class AdvancedVariationService
             self::DEFAULT_MAX_GROUPS_PER_SAVE
         );
         if (count($realGroups) > $maxGroups) {
-            throw new \RuntimeException(sprintf(
+            throw new \RuntimeException(esc_html(sprintf(
                 'Real attribute group count (%d) exceeds the limit of %d.',
                 count($realGroups),
                 $maxGroups
-            ));
+            )));
         }
         $maxCombinations = (int) apply_filters(
             'fluent_cart/advanced_variation/max_combinations',
@@ -473,11 +473,11 @@ class AdvancedVariationService
             }
         }
         if ($realProjection > $maxCombinations) {
-            throw new \RuntimeException(sprintf(
+            throw new \RuntimeException(esc_html(sprintf(
                 'Real cartesian combination count (%d) exceeds the limit of %d.',
                 $realProjection,
                 $maxCombinations
-            ));
+            )));
         }
 
         // Generate the cartesian from REAL groups. Identifiers are made
@@ -499,10 +499,10 @@ class AdvancedVariationService
             // truncated identifier on non-STRICT MySQL, creating
             // hard-to-debug duplicate variants.
             if (strlen($identifier) > self::VARIATION_IDENTIFIER_MAX_LENGTH) {
-                throw new \RuntimeException(
+                throw new \RuntimeException(esc_html(
                     'Generated variation_identifier exceeds the ' . self::VARIATION_IDENTIFIER_MAX_LENGTH
                     . '-char column limit. Reduce the number of attribute groups or contact support.'
-                );
+                ));
             }
             $normalized[$index] = [
                 'identifier' => $identifier,

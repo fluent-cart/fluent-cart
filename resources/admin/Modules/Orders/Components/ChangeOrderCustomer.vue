@@ -114,7 +114,7 @@ const handleBack = () => {
 
     <div v-if="showCreateCustomerForm" @click="handleBack" style="margin-bottom: 10px">
       <el-button text style="margin-top: 0;">
-        <DynamicIcon name="ArrowLeft"/>
+        <DynamicIcon name="ArrowLeft" class="fct-address-back-icon"/>
         {{ translate('Back') }}
       </el-button>
     </div>

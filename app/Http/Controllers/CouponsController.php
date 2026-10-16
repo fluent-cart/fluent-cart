@@ -185,6 +185,7 @@ class CouponsController extends Controller
             'order_uuid'        => 'sanitize_text_field',
             'applied_coupons.*' => 'intval',
             'customer_email'    => 'sanitize_email',
+            'currency'          => 'sanitize_text_field',
         ]);
         $data['order_items'] = Arr::except(Arr::get($request->all(), 'order_items', []), ['*']);
 

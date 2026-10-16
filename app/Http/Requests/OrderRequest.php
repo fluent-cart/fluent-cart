@@ -24,6 +24,7 @@ class OrderRequest extends RequestGuard
             'payment_method_title'  => 'nullable|sanitizeText|maxLength:50',
             'payment_status'        => 'nullable|sanitizeText|maxLength:50',
             'currency'              => 'nullable|sanitizeText|maxLength:10',
+            'quote_revision'        => 'nullable|sanitizeText|maxLength:32',
             'subtotal'              => 'numeric',
             'discount_tax'          => 'numeric',
             'manual_discount_total' => 'numeric',
@@ -69,6 +70,7 @@ class OrderRequest extends RequestGuard
             "order_items.*.rate"            => 'nullable|numeric',
             "order_items.*.line_meta"       => 'nullable|array',
             "order_items.*.other_info"      => 'nullable|array',
+            "order_items.*.has_custom_price" => 'nullable',
 
             "discount.type"   => 'nullable|sanitizeText|maxLength:100',
             "discount.value"  => 'nullable|numeric',
@@ -170,6 +172,7 @@ class OrderRequest extends RequestGuard
             'payment_method_title'  => 'sanitize_text_field',
             'payment_status'        => 'sanitize_text_field',
             'currency'              => 'sanitize_text_field',
+            'quote_revision'        => 'sanitize_text_field',
             'subtotal'              => 'floatval',
             'discount_tax'          => 'floatval',
             'manual_discount_total' => 'floatval',
@@ -224,6 +227,7 @@ class OrderRequest extends RequestGuard
             "order_items.*.other_info"      => function ($value) {
                 return is_array($value) ? $value : [];
             },
+            "order_items.*.has_custom_price" => 'rest_sanitize_boolean',
 
             "discount.type"   => 'sanitize_text_field',
             "discount.value"  => 'floatval',

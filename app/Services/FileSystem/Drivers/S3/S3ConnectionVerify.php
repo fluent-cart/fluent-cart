@@ -183,6 +183,7 @@ class S3ConnectionVerify
 
                  // Check specific AWS error codes
                  if ($awsCode === 'NoSuchBucket') {
+                     /* translators: %s: bucket name */
                      $msg = $awsMessage ?: sprintf(__('Bucket (%s) does not exist.', 'fluent-cart'), $this->bucket);
                      return new \WP_Error('bucket_not_found', $msg);
                  }
@@ -190,6 +191,7 @@ class S3ConnectionVerify
                  if ($awsCode === 'PermanentRedirect') {
                      $error_message = $awsMessage ?: __('The bucket you are attempting to access must be addressed using the specified endpoint.', 'fluent-cart');
                      if ($detectedRegion) {
+                         /* translators: %s: detected bucket region */
                          $error_message .= ' ' . sprintf(__('Correct Region: %s', 'fluent-cart'), $detectedRegion);
                      }
                      return new \WP_Error('region_mismatch', $error_message);
@@ -200,6 +202,7 @@ class S3ConnectionVerify
                       if (!$this->bucket) {
                           $error_message = $awsMessage ?: __('Invalid S3 credentials', 'fluent-cart');
                       } else {
+                          /* translators: %s: bucket name */
                           $error_message = $awsMessage ?: sprintf(__('Access forbidden to the configured bucket (%s). Check permissions.', 'fluent-cart'), $this->bucket);
                           $errorCode = 'bucket_forbidden';
                       }
@@ -219,10 +222,12 @@ class S3ConnectionVerify
         // If we didn't get XML or couldn't parse it, fallback to status codes
         if ($this->bucket) {
             if ($responseCode == 404) {
+                /* translators: %s: bucket name */
                 return new \WP_Error('bucket_not_found', sprintf(__('Media cannot be offloaded because a bucket with the configured name (%s) does not exist.', 'fluent-cart'), $this->bucket));
             }
             if ($responseCode == 403 && $errorCode === 'invalid_credentials') {
                  // Use more specific error if we haven't already
+                  /* translators: %s: bucket name */
                   return new \WP_Error('bucket_forbidden', sprintf(__('Access forbidden to the configured bucket (%s). Check permissions.', 'fluent-cart'), $this->bucket));
             }
         }
@@ -303,6 +308,7 @@ class S3ConnectionVerify
                  $awsMessage = isset($xml->Message) ? (string) $xml->Message : '';
 
                  if ($awsCode === 'NoSuchBucket') {
+                     /* translators: %s: bucket name */
                      $msg = $awsMessage ?: sprintf(__('Bucket (%s) does not exist.', 'fluent-cart'), $this->bucket);
                      return new \WP_Error('bucket_not_found', $msg);
                  }
@@ -312,12 +318,14 @@ class S3ConnectionVerify
                      $error_message = $awsMessage ?: __('The bucket you are attempting to access must be addressed using the specified endpoint.', 'fluent-cart');
                      // We should ideally tell the user the correct region if we know it
                      if ($detectedRegion) {
+                         /* translators: %s: detected bucket region */
                          $error_message .= ' ' . sprintf(__('Correct Region: %s', 'fluent-cart'), $detectedRegion);
                      }
                      return new \WP_Error('region_mismatch', $error_message);
                  }
 
                  if ($awsCode === 'AccessDenied' || $responseCode == 403) {
+                      /* translators: %s: bucket name */
                       $error_message = $awsMessage ?: sprintf(__('Access forbidden to the configured bucket (%s). Check permissions.', 'fluent-cart'), $this->bucket);
                  }
 
@@ -328,6 +336,7 @@ class S3ConnectionVerify
         }
 
         if ($responseCode == 404) {
+            /* translators: %s: bucket name */
             return new \WP_Error('bucket_not_found', sprintf(__('Bucket (%s) does not exist.', 'fluent-cart'), $this->bucket));
         }
 
@@ -402,14 +411,12 @@ class S3ConnectionVerify
         $this->httpMethod = 'PUT';
 
         $setting = $enable ? 'true' : 'false';
-        $this->payloadBody = <<<XML
-<PublicAccessBlockConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-   <BlockPublicAcls>{$setting}</BlockPublicAcls>
-   <IgnorePublicAcls>{$setting}</IgnorePublicAcls>
-   <BlockPublicPolicy>{$setting}</BlockPublicPolicy>
-   <RestrictPublicBuckets>{$setting}</RestrictPublicBuckets>
-</PublicAccessBlockConfiguration>
-XML;
+        $this->payloadBody = '<PublicAccessBlockConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' . "\n" // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
+            . '   <BlockPublicAcls>' . $setting . '</BlockPublicAcls>' . "\n"
+            . '   <IgnorePublicAcls>' . $setting . '</IgnorePublicAcls>' . "\n"
+            . '   <BlockPublicPolicy>' . $setting . '</BlockPublicPolicy>' . "\n"
+            . '   <RestrictPublicBuckets>' . $setting . '</RestrictPublicBuckets>' . "\n"
+            . '</PublicAccessBlockConfiguration>';
 
         $this->signature = $this->generateSignature();
         $headers = $this->getHeaders();
@@ -547,7 +554,7 @@ XML;
         // BucketOwnerPreferred = ACLs enabled
         $setting = $enforce ? 'BucketOwnerEnforced' : 'BucketOwnerPreferred';
 
-        $this->payloadBody = '<OwnershipControls xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Rule><ObjectOwnership>' . $setting . '</ObjectOwnership></Rule></OwnershipControls>';
+        $this->payloadBody = '<OwnershipControls xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Rule><ObjectOwnership>' . $setting . '</ObjectOwnership></Rule></OwnershipControls>'; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
 
         // Set Content-MD5 property for signature generation
         $this->contentMD5 = base64_encode(md5($this->payloadBody, true));
@@ -606,8 +613,8 @@ XML;
     private function getServiceListUrl(): string
     {
         $host = $this->region === self::DEFAULT_REGION
-            ? 's3.amazonaws.com'
-            : "s3.{$this->region}.amazonaws.com";
+            ? 's3.amazonaws.com' // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
+            : "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
 
         return 'https://' . $host . '/?list-type=2&encoding-type=url&max-keys=1';
     }
@@ -619,13 +626,13 @@ XML;
         }
 
         if (strpos($this->bucket, '.') !== false) {
-            $host = $region === self::DEFAULT_REGION ? 's3.amazonaws.com' : "s3.{$region}.amazonaws.com";
+            $host = $region === self::DEFAULT_REGION ? 's3.amazonaws.com' : "s3.{$region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
             return 'https://' . $host . '/' . $this->bucket . '/';
         }
 
         $host = $region === self::DEFAULT_REGION
-            ? "{$this->bucket}.s3.amazonaws.com"
-            : "{$this->bucket}.s3.{$region}.amazonaws.com";
+            ? "{$this->bucket}.s3.amazonaws.com" // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
+            : "{$this->bucket}.s3.{$region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
 
         return 'https://' . $host;
     }
@@ -745,7 +752,7 @@ XML;
     private function getHost(): string
     {
         // Parse host from the request URL to support virtual hosted style buckets
-        return parse_url($this->requestUrl, PHP_URL_HOST) ?: "s3.amazonaws.com";
+        return wp_parse_url($this->requestUrl, PHP_URL_HOST) ?: "s3.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getContentHash(): string

@@ -145,7 +145,7 @@
      */
     .fct-cascader-button,
     .fct-cascader-item {
-        @apply w-full text-left border-0 shadow-none;
+        @apply w-full text-start border-0 shadow-none;
         appearance: none;
         background-color: transparent;
     }
@@ -187,7 +187,7 @@
         }
 
         .fct-conditions-action {
-            @apply ml-auto;
+            @apply ms-auto;
         }
     }
 

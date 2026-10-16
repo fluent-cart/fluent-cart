@@ -252,7 +252,7 @@ const getTermLabel = (termValue) => {
     <!--      ></el-option>-->
     <!--    </el-select>-->
 
-    <div class="pt-1.5 text-right">
+    <div class="pt-1.5 text-end">
       <el-button text @click="toggleInputView" size="small">
         <span class="relative w-3 h-3">
           <Animation :visible="showInput" fade>

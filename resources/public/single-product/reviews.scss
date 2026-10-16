@@ -740,7 +740,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 }
 
 .fct-reviews-slider-pagination-wrap .segment-counter {
-    margin-left: 8px;
+    margin-inline-start: 8px;
     color: var(--fct-review-subtle-text-color, #4b5563);
     font-size: 11px;
     font-weight: 600;
@@ -819,11 +819,11 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
    that alignment. */
 .fct-reviews-slider-frame.is-arrows-overlap {
     .fct-reviews-slider-prev {
-        left: calc(-1 * var(--fct-arrow-half));
+        inset-inline-start: calc(-1 * var(--fct-arrow-half));
     }
 
     .fct-reviews-slider-next {
-        right: calc(-1 * var(--fct-arrow-half));
+        inset-inline-end: calc(-1 * var(--fct-arrow-half));
     }
 }
 
@@ -834,11 +834,11 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     padding-inline: 52px;
 
     .fct-reviews-slider-prev {
-        left: 0;
+        inset-inline-start: 0;
     }
 
     .fct-reviews-slider-next {
-        right: 0;
+        inset-inline-end: 0;
     }
 }
 
@@ -863,11 +863,11 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 /* Inside the track, at the product carousel's own offset, overlapping the
    first and last card the way its arrows overlap the first and last product. */
 .fct-reviews-slider-prev {
-    left: 10px;
+    inset-inline-start: 10px;
 }
 
 .fct-reviews-slider-next {
-    right: 10px;
+    inset-inline-end: 10px;
 }
 
 .fct-arrows-sm {
@@ -1050,7 +1050,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     }
 
     .fct-reviews-summary-head-meta {
-        @apply pl-0 ml-0 border-0;
+        @apply ps-0 ms-0 border-0;
     }
 
     .fct-reviews-summary-right {
@@ -1077,6 +1077,12 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     border-color: var(--fct-review-divider-color, #EAECF0);
 }
 
+// "4.5/5" keeps its LTR order inside RTL text.
+.fct-reviews-average {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
 .fct-reviews-average-number {
     @apply text-[40px] leading-[48px] font-medium;
     color: var(--fct-review-heading-color, #1f2937);
@@ -1088,7 +1094,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 }
 
 .fct-reviews-summary-head-meta {
-    @apply pl-4 ml-2.5 border border-solid border-r-0 border-y-0;
+    @apply ps-4 ms-2.5 border-0 border-s border-solid;
     border-color: var(--fct-review-divider-color, #EAECF0);
 }
 .fct-reviews-total {
@@ -1332,7 +1338,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     &::before {
         content: '';
         position: absolute;
-        right: 10px;
+        inset-inline-end: 10px;
         top: 50%;
         transform: translateY(-50%);
         width: 0;
@@ -1352,7 +1358,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
         /* The caret is drawn by ::before at right:10px and is 8px wide, so
            the text needs to stop clear of it. A symmetric px-2.5 let the
            longest option — Highest Rating — run underneath the arrow. */
-        @apply h-auto text-sm cursor-pointer shadow-none leading-none pl-2.5 pr-7 border border-solid focus:outline-none;
+        @apply h-auto text-sm cursor-pointer shadow-none leading-none ps-2.5 pe-7 border border-solid focus:outline-none;
         padding-top: var(--fct-input-padding-y, theme('spacing.2'));
         padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
@@ -1407,13 +1413,18 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     vertical-align: -0.125em;
 }
 
+[dir="rtl"] .fct-nav-arrow-svg,
+[dir="rtl"] .fct-review-reply-icon {
+    transform: scaleX(-1);
+}
+
 .fct-star-half-empty {
     color: var(--fct-review-star-empty-color, #d1d5db);
 }
 
 .fct-star-half-fill {
     position: absolute;
-    left: 0;
+    inset-inline-start: 0;
     top: 0;
     overflow: hidden;
     width: 50%;
@@ -1630,7 +1641,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
         display: inline-block;
         width: 17px;
         height: 17px;
-        margin-right: 2px;
+        margin-inline-end: 2px;
         vertical-align: middle;
         background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.75358 3.81504C7.87761 3.53147 6.92534 3.92591 6.50643 4.74584L6.00282 5.73158C5.94298 5.8487 5.84772 5.94396 5.7306 6.00379L4.74487 6.50741C3.92493 6.92631 3.53049 7.87858 3.81406 8.75456L4.15497 9.80768C4.19548 9.93281 4.19548 10.0676 4.15497 10.1927L3.81406 11.2458C3.53049 12.1218 3.92493 13.0741 4.74487 13.493L5.7306 13.9966C5.84772 14.0564 5.94298 14.1517 6.00282 14.2688L6.50643 15.2546C6.92534 16.0745 7.87761 16.4689 8.75358 16.1854L9.80671 15.8444C9.93183 15.8039 10.0666 15.8039 10.1917 15.8444L11.2448 16.1854C12.1208 16.4689 13.0731 16.0745 13.492 15.2546L13.9956 14.2688C14.0555 14.1517 14.1507 14.0564 14.2678 13.9966L15.2536 13.493C16.0735 13.0741 16.468 12.1218 16.1844 11.2458L15.8435 10.1927C15.803 10.0676 15.803 9.93281 15.8435 9.80768L16.1844 8.75456C16.468 7.87858 16.0735 6.92631 15.2536 6.50741L14.2678 6.00379C14.1507 5.94396 14.0555 5.8487 13.9956 5.73158L13.492 4.74584C13.0731 3.92591 12.1208 3.53147 11.2448 3.81504L10.1917 4.15595C10.0666 4.19645 9.93183 4.19646 9.80671 4.15595L8.75358 3.81504ZM6.72406 9.84849L7.60795 8.96456L9.37571 10.7324L12.9113 7.19684L13.7951 8.08072L9.37571 12.5001L6.72406 9.84849Z' fill='%23189877'/%3E%3C/svg%3E") no-repeat center;
         background-size: contain;
@@ -1707,7 +1718,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 .fct-review-item .fct-vote-label {
     font-size: 13px;
     color: var(--fct-review-subtle-text-color, #4b5563);
-    margin-right: 2px;
+    margin-inline-end: 2px;
 }
 
 .fct-review-item .fct-vote-btn {
@@ -1777,6 +1788,11 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     text-transform: uppercase;
     letter-spacing: 0.02em;
+
+    // Tracking breaks Arabic letter joining.
+    [dir="rtl"] & {
+        letter-spacing: 0;
+    }
 }
 
 .fct-review-reply-meta {
@@ -1825,7 +1841,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     flex-direction: column;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
     .fct-review-modal-close {
-        @apply absolute top-1/2 right-4 w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
+        @apply absolute top-1/2 end-4 w-6 h-6 rounded-full p-0 flex items-center justify-center border-0 shadow-none text-lg;
         background-color: var(--fct-review-control-bg, #ffffff);
         color: var(--fct-review-secondary-text-color, #565865);
 
@@ -1841,7 +1857,8 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 16px 56px 16px 20px;
+    padding-block: 16px;
+    padding-inline: 20px 56px;
     border-bottom: 1px solid var(--fct-review-separator-color, #e5e7eb);
     min-height: 56px;
 }
@@ -1851,7 +1868,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     font-weight: 600;
     color: var(--fct-review-text-color, #1f2937);
     margin: 0;
-    text-align: left;
+    text-align: start;
 }
 
 .fct-review-modal-author-row {
@@ -1968,7 +1985,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 .fct-review-modal-empty {
     // Left-aligned: it sits in the replies column as body copy, not as a
     // centred placeholder card.
-    text-align: left;
+    text-align: start;
     // #6b7280 (Tailwind gray-500) — ~4.83:1 against white, passes WCAG AA;
     // #9ca3af was ~2.54:1 and failed the 4.5:1 minimum for body text.
     color: var(--fct-review-muted-text-color, #6b7280);
@@ -2177,6 +2194,12 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
     transform: translateX(100%);
     transition: transform 0.3s ease;
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+
+    // flex-end puts the panel on the left in RTL, so it slides in from there.
+    [dir="rtl"] & {
+        transform: translateX(-100%);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+    }
 
     /* Same flag, same reason as .fct-cart-drawer.admin_bar_enabled: the
        admin bar is also position:fixed; top:0, at a higher z-index than
@@ -2521,7 +2544,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 
 .fct-char-count {
     display: block;
-    text-align: right;
+    text-align: end;
     font-size: 12px;
     color: var(--fct-review-muted-text-color, #6b7280);
     margin-top: 4px;
@@ -3153,7 +3176,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 .fct-review-media-more.is-overlay {
     position: absolute;
     top: 10px;
-    right: 10px;
+    inset-inline-end: 10px;
     gap: 6px;
     min-height: 0;
     padding: 5px 11px;
@@ -3385,7 +3408,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 .fct-review-photo-only .fct-review-item-body[class] {
     .fct-review-media-more.is-overlay {
         top: 6px;
-        right: 6px;
+        inset-inline-end: 6px;
         gap: 4px;
         padding: 3px 8px;
         font-size: 11px;

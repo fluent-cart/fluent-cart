@@ -30,6 +30,18 @@
   opacity: 0.8;
 }
 
+[dir="rtl"] .fct-role-assignment-modal {
+  .el-dialog__body,
+  .el-form-item__label,
+  .el-select__wrapper,
+  .el-select__selection,
+  .el-select__placeholder,
+  .el-select__selected-item,
+  .el-select__input {
+    text-align: right;
+  }
+}
+
 .select-use-option{
   @apply flex justify-between w-full text-system-dark dark:text-gray-50;
   span:last-child{

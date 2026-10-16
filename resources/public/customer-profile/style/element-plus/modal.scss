@@ -28,6 +28,7 @@
       @apply p-5;
     }
     &__footer{
+      text-align: end;
       @apply p-5 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-b-0 border-x-0;
     }
     .fct-table-style-two{

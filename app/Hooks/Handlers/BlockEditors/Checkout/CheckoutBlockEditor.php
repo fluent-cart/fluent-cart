@@ -191,7 +191,7 @@ class CheckoutBlockEditor extends BlockEditor
                     foreach ($block->inner_blocks as $inner_block) {
                         if (isset($inner_block->parsed_block)) { ?>
                             <div class="fluent-cart-checkout-block-child-wrap">
-                                <?php echo $inner_block->render(); ?>
+                                <?php echo $inner_block->render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Block::render() output ?>
                             </div>
                             <?php
                         }

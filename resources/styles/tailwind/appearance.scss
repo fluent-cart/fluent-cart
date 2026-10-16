@@ -59,6 +59,11 @@
     }
 }
 
+[dir="rtl"] .fct-appearance-source-card .fct-appearance-source-icon,
+[dir="rtl"] .fct-appearance-colors .fct-reset-color-btn {
+    @apply right-auto left-4;
+}
+
 .fct-appearance-colors {
     @apply px-4 pb-4 pt-4 border-0 border-t border-x-0 border-solid border-gray-divider relative dark:border-dark-400;
     .fct-reset-color-btn {

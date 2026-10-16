@@ -573,7 +573,7 @@ class Product extends Model
         ])->find($productId);
 
         if (!$originalProduct) {
-            throw new \RuntimeException(\__('Product not found', 'fluent-cart'), 404);
+            throw new \RuntimeException(\esc_html__('Product not found', 'fluent-cart'), 404);
         }
 
         return $originalProduct->performDuplicate($options);

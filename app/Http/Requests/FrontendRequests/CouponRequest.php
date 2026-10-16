@@ -47,6 +47,7 @@ class CouponRequest extends RequestGuard
             'applied_coupons' => 'nullable|array',
 
             'customer_email' => 'nullable|sanitizeText|email',
+            'currency'       => 'nullable|sanitizeText|maxLength:3',
 
         ];
     }
@@ -109,6 +110,7 @@ class CouponRequest extends RequestGuard
 
                 return sanitize_email($value);
             },
+            'currency'       => 'sanitize_text_field',
         ];
     }
 }

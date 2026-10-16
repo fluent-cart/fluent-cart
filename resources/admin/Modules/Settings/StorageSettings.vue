@@ -39,7 +39,7 @@
                     />
                   </div>
 
-                  <div class="flex-1 min-w-0 pl-15">
+                  <div class="flex-1 min-w-0 ps-15">
                     <div class="fct-content-card-list-head">
                       <div class="title-wrap">
                         <h6>{{ storage.title }}</h6>

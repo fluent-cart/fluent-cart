@@ -711,7 +711,7 @@ class SubscriptionService
     /**
      * Resume a paused subscription
      *
-     * For manual subscriptions, this updates status back to active.
+     * Store-billed subscriptions resume as active or past_due based on the billing date.
      * For automatic subscriptions, delegates to the gateway.
      *
      * @param Subscription $subscription
@@ -730,7 +730,9 @@ class SubscriptionService
         // Store-billed (manual/system) subscriptions: local status update.
         if ($subscription->usesRenewalEngine()) {
             $oldStatus = $subscription->status;
-            $subscription->status = Status::SUBSCRIPTION_ACTIVE;
+            $subscription->status = $subscription->shouldSubscriptionActiveLocally()
+                ? Status::SUBSCRIPTION_ACTIVE
+                : Status::SUBSCRIPTION_PAST_DUE;
             $subscription->save();
 
             SystemChargeService::restoreScheduledChargesForSubscription($subscription);
@@ -955,6 +957,20 @@ class SubscriptionService
         $updates = [];
         $changes = [];
         $logChanges = [];
+        $isResuming = $subscription->status === Status::SUBSCRIPTION_PAUSED
+            && Arr::get($data, 'status') === Status::SUBSCRIPTION_ACTIVE;
+
+        if (Arr::get($data, 'status') === Status::SUBSCRIPTION_PAUSED
+            && $subscription->status !== Status::SUBSCRIPTION_PAUSED
+            && !$subscription->canPause()) {
+            return new \WP_Error('cannot_pause', __('This subscription cannot be paused.', 'fluent-cart'));
+        }
+
+        if ($isResuming) {
+            // Resolve resume after explicit dates and interval-derived dates are prepared.
+            unset($data['status']);
+            $data['status'] = Status::SUBSCRIPTION_ACTIVE;
+        }
 
         foreach ($data as $key => $value) {
             if (!in_array($key, $allowedFields)) {
@@ -992,6 +1008,7 @@ class SubscriptionService
                     return new \WP_Error(
                         'invalid_value',
                         sprintf(
+                            /* translators: %d: number of payments already made */
                             __('bill_times cannot be less than the number of payments already made (%d).', 'fluent-cart'),
                             $subscription->bill_count
                         )
@@ -1042,6 +1059,14 @@ class SubscriptionService
             }
 
             if ($key === 'status') {
+                if ($isResuming) {
+                    $resumingSubscription = clone $subscription;
+                    $resumingSubscription->next_billing_date = Arr::get($updates, 'next_billing_date', $subscription->next_billing_date);
+                    $value = $resumingSubscription->shouldSubscriptionActiveLocally()
+                        ? Status::SUBSCRIPTION_ACTIVE
+                        : Status::SUBSCRIPTION_PAST_DUE;
+                }
+
                 $validStatuses = [
                     Status::SUBSCRIPTION_ACTIVE,
                     Status::SUBSCRIPTION_PAUSED,
@@ -1083,16 +1108,6 @@ class SubscriptionService
                         sprintf('Subscription marked as %s by admin.', $value)
                     );
                 }
-
-                // Same contract as pauseSubscription(): pausing retires the open
-                // invoice (and its queued system charge) so nothing collects while
-                // the subscription is paused.
-                if ($value === Status::SUBSCRIPTION_PAUSED && $subscription->status !== Status::SUBSCRIPTION_PAUSED) {
-                    self::voidPendingRenewals(
-                        $subscription,
-                        __('Subscription paused; open renewal order voided.', 'fluent-cart')
-                    );
-                }
             }
 
             $updates[$key] = $value;
@@ -1112,6 +1127,20 @@ class SubscriptionService
         }
 
         $oldStatus = $subscription->status;
+
+        if (Arr::get($updates, 'status') === Status::SUBSCRIPTION_PAUSED) {
+            // Date and interval edits can make an otherwise eligible pause overdue.
+            $pausingSubscription = clone $subscription;
+            $pausingSubscription->next_billing_date = Arr::get($updates, 'next_billing_date', $subscription->next_billing_date);
+            if (!$pausingSubscription->canPause()) {
+                return new \WP_Error('cannot_pause', __('This subscription cannot be paused.', 'fluent-cart'));
+            }
+
+            self::voidPendingRenewals(
+                $subscription,
+                __('Subscription paused; open renewal order voided.', 'fluent-cart')
+            );
+        }
 
         foreach ($updates as $key => $value) {
             $subscription->{$key} = $value;
@@ -1246,7 +1275,7 @@ class SubscriptionService
                 self::dispatchStatusEvent($subscription, 'paused', ['old_status' => $oldStatus]);
             }
 
-            if ($subscription->status === Status::SUBSCRIPTION_ACTIVE && $oldStatus === Status::SUBSCRIPTION_PAUSED) {
+            if ($isResuming) {
                 SystemChargeService::restoreScheduledChargesForSubscription($subscription);
                 self::dispatchStatusEvent($subscription, 'resumed', ['old_status' => $oldStatus]);
             }

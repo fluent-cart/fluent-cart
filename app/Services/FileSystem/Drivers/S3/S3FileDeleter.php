@@ -32,9 +32,9 @@ class S3FileDeleter
         $hasDot = strpos($this->bucket, '.') !== false;
         $encodedFilePath = $this->encodeS3ObjectKey($this->s3FilePath);
         if ($hasDot) {
-            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}";
+            $this->requestUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$encodedFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
-            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}";
+            $this->requestUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$encodedFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
         $this->signature = $this->generateSignature();
     }
@@ -112,10 +112,10 @@ class S3FileDeleter
     private function getHost(): string
     {
         if (strpos($this->bucket, '.') !== false) {
-            return "s3.{$this->region}.amazonaws.com";
+            return "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
-        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getContentHash(): string

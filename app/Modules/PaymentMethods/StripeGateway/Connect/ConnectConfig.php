@@ -19,7 +19,7 @@ class ConnectConfig
     {
         // Permission check - only administrators can perform Stripe connect
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have permission to perform this action.', 'fluent-cart'), __('Security Check Failed', 'fluent-cart'), ['response' => 403]);
+            wp_die(esc_html__('You do not have permission to perform this action.', 'fluent-cart'), esc_html__('Security Check Failed', 'fluent-cart'), ['response' => 403]);
         }
 
         $intent = Arr::get($data, 'intent', '');
@@ -27,7 +27,7 @@ class ConnectConfig
         // Nonce verification for connect intent (initiated from admin)
         if ($intent == 'connect') {
             if (!isset($_REQUEST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])), 'fluentcart')) {
-                wp_die(__('Security check failed. Please try again.', 'fluent-cart'), __('Security Check Failed', 'fluent-cart'), ['response' => 403]);
+                wp_die(esc_html__('Security check failed. Please try again.', 'fluent-cart'), esc_html__('Security Check Failed', 'fluent-cart'), ['response' => 403]);
             }
         }
 

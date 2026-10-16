@@ -199,6 +199,14 @@ export function resolveYearAwareFormat(dateObject) {
     return dateObject.year() === storeNow().year() ? 'date_short' : 'date';
 }
 
+// FSI/PDI keep a price or date one unit inside RTL text; no-op on LTR pages.
+export function bidiIsolate(str) {
+    if (!str || typeof document === 'undefined' || document.documentElement.dir !== 'rtl') {
+        return str;
+    }
+    return '\u2068' + str + '\u2069';
+}
+
 export function dateTimeI18(dateTime, format = 'date_short') {
 
     const dateObject = toStoreTimezone(dateTime);
@@ -225,7 +233,7 @@ export function dateTimeI18(dateTime, format = 'date_short') {
         }
     }).format(resolveDateFormat(format));
 
-    return getDateTimeStringI18(date, 'mNumber');
+    return bidiIsolate(getDateTimeStringI18(date, 'mNumber'));
 }
 
 export const getDateTimeStringI18 = function (str, type) {

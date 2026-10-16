@@ -351,6 +351,7 @@ class ProductsCollection extends Custom_Render_Element
                 'label'       => esc_html__('Show empty', 'fluent-cart'),
                 'type'        => 'checkbox',
                 'inline'      => true,
+                /* translators: %1$s: taxonomy name */
                 'description' => sprintf(esc_html__('Display %1$s even if they have no products.', 'fluent-cart'), $taxonomyName),
                 'required'    => [
                     ['enableFilter', '=', true],

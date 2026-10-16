@@ -60,7 +60,7 @@ class ReceiptRenderer
         style="background-color: #fff;max-width: 620px;margin-left: auto;margin-right: auto;border: 1px solid #e7eaee;padding: 10px;border-radius: 8px;">
         <div
         class="fct-receipt-page-inner"
-        style=" border-radius: 5px;" id="receipt">
+        style=" border-radius: 5px;" id="receipt"<?php echo is_rtl() ? ' dir="rtl"' : ''; ?>>
         <div class="fct-email-template-content email-template-content"
         style="font-family: Arial, Helvetica, sans-serif; margin: 0 auto; padding: 0px; width: 100%;">
         <div class="fct-email-template-content-inner" style="font-size: 13px;line-height: 1.4;color: #333;padding: 20px;">
@@ -149,6 +149,37 @@ class ReceiptRenderer
                 border-bottom: none !important;
                 padding-bottom: 0 !important;
             }
+
+            /* The nowrap date and invoice cells don't fit beside the store name, so stack them. */
+            @media (max-width: 480px) {
+                .fct-receipt-header,
+                .fct-receipt-header tbody,
+                .fct-receipt-header tr {
+                    display: block;
+                    width: 100% !important;
+                }
+
+                .fct-receipt-header td {
+                    display: block;
+                    width: auto !important;
+                    padding-inline-end: 0 !important;
+                }
+
+                .fct-receipt-header .fct-receipt-header-date,
+                .fct-receipt-header .fct-receipt-header-invoice-no {
+                    display: inline-block;
+                    vertical-align: top !important;
+                    margin-top: 12px;
+                }
+
+                .fct-receipt-header .fct-receipt-header-date {
+                    padding-inline-end: 24px !important;
+                }
+
+                .fct-receipt-header p {
+                    text-align: start !important;
+                }
+            }
         </style>
 
         <?php if (!$hideWrapper) {
@@ -188,7 +219,7 @@ class ReceiptRenderer
                 style="width: 100%;border-collapse: collapse;margin-bottom: 10px;border: none;">
             <tbody style="width:100%">
             <tr style="width:100%">
-                <td style="width:60%;border: none;">
+                <td style="width:60%;border: none;padding-inline-end: 12px;">
                     <?php $this->renderHeaderLogo(); ?>
 
                     <!-- show tax content -->
@@ -196,12 +227,12 @@ class ReceiptRenderer
                 </td>
                 <td
                         class="fct-receipt-header-date"
-                        style="vertical-align: middle; width: 15%; text-align: right; border: none;padding-right: 10px;">
+                        style="vertical-align: middle; width: 15%; text-align: end; border: none;padding-inline-end: 10px;">
                     <?php $this->renderHeaderOrderDate(); ?>
                 </td>
                 <td
                         class="fct-receipt-header-invoice-no"
-                        style="width:15%;text-align:right;border:none;vertical-align:baseline;">
+                        style="width:15%;text-align:end;border:none;vertical-align:baseline;">
                     <?php $this->renderHeaderInvoiceNo(); ?>
                 </td>
             </tr>
@@ -249,10 +280,10 @@ class ReceiptRenderer
     {
         $order = Arr::get($this->config, 'order', null);
         ?>
-        <p style="white-space: nowrap; color: #94a3b8; text-align: right; margin: 0;font-size:12px;print-color-adjust: exact;">
+        <p style="white-space: nowrap; color: #94a3b8; text-align: end; margin: 0;font-size:12px;print-color-adjust: exact;">
             <?php echo esc_html__('Order At', 'fluent-cart'); ?>
         </p>
-        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: right; margin: 0;font-size:14px;">
+        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: end; margin: 0;font-size:14px;">
             <?php
                 // Through DateFormatter so the store's format and timezone settings
                 // reach this too; orderTz is only consulted on the Browser source.
@@ -271,11 +302,11 @@ class ReceiptRenderer
     {
         $order = Arr::get($this->config, 'order', null);
         ?>
-        <p style="white-space: nowrap; color: #94a3b8; text-align: right; margin: 0;font-size:12px;print-color-adjust: exact;">
+        <p style="white-space: nowrap; color: #94a3b8; text-align: end; margin: 0;font-size:12px;print-color-adjust: exact;">
             <?php echo esc_html__('Invoice number #', 'fluent-cart'); ?>
         </p>
         <p id="fct-order-invoice-no"
-           style="white-space: nowrap; font-weight: bold; color: #000; text-align: right; margin: 0;font-size:14px;">
+           style="white-space: nowrap; font-weight: bold; color: #000; text-align: end; margin: 0;font-size:14px;">
             <?php echo esc_html($order->invoice_no); ?>
         </p>
         <?php
@@ -314,18 +345,19 @@ class ReceiptRenderer
     public function renderStoreAddress($title_border = false)
     {
         $order = Arr::get($this->config, 'order', null);
+        $sellerName = StoreBusinessInfoHelper::getCompanyName($order, (string) $this->settings->get('store_name'));
         ?>
         <?php if ($title_border) : ?>
         <h5
                 class="fct-receipt-page-store-address-name"
                 style="font-weight: bold;font-size: 14px;margin: 0 0 10px 0;color: #495057;border-bottom: 1px solid #dee2e6;padding-bottom: 5px;">
-            <?php echo esc_html($this->settings->get('store_name')); ?>
+            <?php echo esc_html($sellerName); ?>
         </h5>
     <?php else: ?>
         <div
                 class="fct-receipt-page-store-address-name"
                 style="font-size: 18px;font-weight: bold;margin-bottom: 8px;">
-            <?php echo esc_html($this->settings->get('store_name')); ?>
+            <?php echo esc_html($sellerName); ?>
         </div>
     <?php endif; ?>
         <div
@@ -344,6 +376,11 @@ class ReceiptRenderer
                 <?php echo esc_html(TaxModule::getCountryTaxTitle($taxCountry)) . ': ' . esc_html($storeVatNumber); ?>
             </div>
         <?php endif;
+        foreach (StoreBusinessInfoHelper::getIdLines($order) as $idLine): ?>
+            <div class="fct-receipt-page-store-address-business-id" style="margin-top: 3px;">
+                <?php echo esc_html($idLine); ?>
+            </div>
+        <?php endforeach;
     }
 
     public function renderBillToAddress()
@@ -501,19 +538,19 @@ class ReceiptRenderer
         if ($order->order_items) : ?>
             <table
                     class="fct-receipt-page-order-items-table"
-                    style="margin-top: 20px;margin-bottom: 10px;width: 100%;text-align: left;border-spacing: 0;border-collapse: collapse;border: none;">
+                    style="margin-top: 20px;margin-bottom: 10px;width: 100%;text-align: start;border-spacing: 0;border-collapse: collapse;border: none;">
                 <thead>
                 <tr>
                     <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;print-color-adjust: exact;border: none;">
                         <?php echo esc_html__('Description', 'fluent-cart'); ?>
                     </th>
-                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: right;print-color-adjust: exact;border: none;">
+                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: end;print-color-adjust: exact;border: none;">
                         <?php echo esc_html__('Qty', 'fluent-cart'); ?>
                     </th>
-                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: right;print-color-adjust: exact;border: none;">
+                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: end;print-color-adjust: exact;border: none;">
                         <?php echo esc_html__('Unit price', 'fluent-cart'); ?>
                     </th>
-                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: right;print-color-adjust: exact;border: none;">
+                    <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;width: 80px;text-align: end;print-color-adjust: exact;border: none;">
                         <?php echo esc_html__('Amount', 'fluent-cart'); ?>
                     </th>
                 </tr>
@@ -551,14 +588,14 @@ class ReceiptRenderer
                                 </small>
                             <?php endif; ?>
                         </td>
-                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: right; vertical-align: top;">
+                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: end; vertical-align: top;">
                             <?php echo esc_html(Helper::translateNumber($item['quantity'])); ?>
                         </td>
                         <?php $couponDiscount = (int) Arr::get($item['line_meta'] ?? [], 'coupon_discount', 0); ?>
-                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: right; vertical-align: top;">
+                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: end; vertical-align: top;">
                             <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($item['unit_price'], null, false, true, true)); ?>
                         </td>
-                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: right; vertical-align: top;">
+                        <td style="padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;text-align: end; vertical-align: top;">
                             <?php if ($couponDiscount > 0): ?>
                                 <span style="text-decoration:line-through;opacity:0.5;font-size:11px;display:block;">
                                     <?php echo esc_html(Helper::toDecimal($item['subtotal'])); ?>
@@ -570,7 +607,7 @@ class ReceiptRenderer
                     <?php if ($fctReceiptTaxDisplayMode !== 'simplified' && !empty($itemRates)) : ?>
                     <tr>
                         <td colspan="4" style="padding:0 8px 8px 8px;border:none;border-bottom:1px solid #dee2e6;">
-                            <?php echo $this->renderTaxRatePills($itemRates, $isReversed, $rcMode); ?>
+                            <?php echo $this->renderTaxRatePills($itemRates, $isReversed, $rcMode); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- renderTaxRatePills() escapes every value it adds ?>
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -589,7 +626,7 @@ class ReceiptRenderer
                 style="margin-top: 20px;">
             <table
                     class="fct-receipt-page-order-items-footer-table"
-                    style="max-width: 250px;width: 100%;margin-left: auto;border-collapse: collapse;background: #f8f9fa;print-color-adjust: exact;border: none; border-radius: 8px;">
+                    style="max-width: 250px;width: 100%;margin-inline-start: auto;border-collapse: collapse;background: #f8f9fa;print-color-adjust: exact;border: none; border-radius: 8px;">
                 <tbody>
                 <?php $this->renderSubtotal(); ?>
                 <?php $this->renderDiscount(); ?>
@@ -611,10 +648,10 @@ class ReceiptRenderer
         $order = Arr::get($this->config, 'order', null);
         if ($order->subtotal != ($order->total_amount - $order->total_refund) || $order->tax_total > 0): ?>
             <tr>
-                <td style="text-align: right;border: none; padding-top: 20px;">
+                <td style="text-align: end;border: none; padding-top: 20px;">
                     <?php echo esc_html__('Subtotal', 'fluent-cart'); ?>
                 </td>
-                <td style="font-weight:700; padding-right: 8px; padding-top: 20px;width: 100px;text-align: right;border: none;">
+                <td style="font-weight:700; padding-inline-end: 8px; padding-top: 20px;width: 100px;text-align: end;border: none;">
                     <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->subtotal));
                     ?>
                 </td>
@@ -633,29 +670,29 @@ class ReceiptRenderer
 
         if ($order->manual_discount_total + $order->coupon_discount_total > 0): ?>
         <tr>
-            <td style="text-align: right;border: none;">
+            <td style="text-align: end;border: none;">
                 <?php echo $onlyProrateCredit ? esc_html__('Prorate Credit', 'fluent-cart') : esc_html__('Discount', 'fluent-cart'); ?>
             </td>
-            <td style="padding-right:8px; width: 100px;text-align: right;border: none;">
+            <td style="padding-inline-end:8px; width: 100px;text-align: end;border: none;">
                 - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); ?>
             </td>
         </tr>
         <?php if ($prorateCredit > 0 && $upgradeDiscount > 0): ?>
         <tr>
-            <td style="padding-left:20px;text-align: right;border: none;font-size:12px;color:rgb(107,114,128);">
+            <td style="padding-inline-start:20px;text-align: end;border: none;font-size:12px;color:rgb(107,114,128);">
                 <?php echo esc_html__('Upgrade Discount', 'fluent-cart'); ?>
             </td>
-            <td style="padding-right:8px;width: 100px;text-align: right;border: none;font-size:12px;color:rgb(107,114,128);">
+            <td style="padding-inline-end:8px;width: 100px;text-align: end;border: none;font-size:12px;color:rgb(107,114,128);">
                 <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($upgradeDiscount)); ?>
             </td>
         </tr>
         <?php endif; ?>
         <?php if ($prorateCredit > 0 && !$onlyProrateCredit): ?>
         <tr>
-            <td style="padding-left:20px;text-align: right;border: none;font-size:12px;color:rgb(107,114,128);">
+            <td style="padding-inline-start:20px;text-align: end;border: none;font-size:12px;color:rgb(107,114,128);">
                 <?php echo esc_html__('Prorate Credit', 'fluent-cart'); ?>
             </td>
-            <td style="padding-right:8px;width: 100px;text-align: right;border: none;font-size:12px;color:rgb(107,114,128);">
+            <td style="padding-inline-end:8px;width: 100px;text-align: end;border: none;font-size:12px;color:rgb(107,114,128);">
                 <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($prorateCredit)); ?>
             </td>
         </tr>
@@ -684,7 +721,7 @@ class ReceiptRenderer
         $shippingMethodTitle = (string) Arr::get($order->config, 'shipping_method_title', '');
         ?>
         <tr>
-            <td style="padding: 8px 20px 8px 0;text-align: right;border: none;">
+            <td style="padding-block: 8px; padding-inline: 0 20px;text-align: end;border: none;">
                 <?php echo esc_html__('Shipping', 'fluent-cart'); ?>
                 <?php if ($shippingMethodTitle): ?>
                     <span style="display:block;font-size:12px;color:rgb(107,114,128);line-height:18px;">
@@ -692,7 +729,7 @@ class ReceiptRenderer
                     </span>
                 <?php endif; ?>
             </td>
-            <td style="padding: 8px 8px 8px 0;width: 100px;text-align: right;border: none;">
+            <td style="padding-block: 8px; padding-inline: 0 8px;width: 100px;text-align: end;border: none;">
                 <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($displayShipping)); ?>
             </td>
         </tr>
@@ -708,10 +745,10 @@ class ReceiptRenderer
         $feeItems = $order->feeItems()->get();
         foreach ($feeItems as $feeItem): ?>
             <tr>
-                <td style="padding: 8px 20px 8px 0;text-align: right;border: none;">
+                <td style="padding-block: 8px; padding-inline: 0 20px;text-align: end;border: none;">
                     <?php echo esc_html($feeItem->title); ?>
                 </td>
-                <td style="padding: 8px 8px 8px 0;width: 100px;text-align: right;border: none;">
+                <td style="padding-block: 8px; padding-inline: 0 8px;width: 100px;text-align: end;border: none;">
                     <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($feeItem->subtotal)); ?>
                 </td>
             </tr>
@@ -723,10 +760,10 @@ class ReceiptRenderer
         $order = Arr::get($this->config, 'order', null);
         if ($order->total_refund > 0): ?>
             <tr style="font-weight: bold;font-size: 14px;">
-                <td style="font-weight:500;padding: 8px 20px 8px 0;text-align: right;border:none;">
+                <td style="font-weight:500;padding-block: 8px; padding-inline: 0 20px;text-align: end;border:none;">
                     <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                 </td>
-                <td style="padding: 8px 8px 8px 0;width: 100px;text-align: right;border:none;">
+                <td style="padding-block: 8px; padding-inline: 0 8px;width: 100px;text-align: end;border:none;">
                     - <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal($order->total_refund)); ?>
                 </td>
             </tr>
@@ -745,10 +782,10 @@ class ReceiptRenderer
         }
         ?>
         <tr style="font-weight: bold;font-size: 14px;">
-            <td style="font-weight:500;text-align: right;border:none;">
+            <td style="font-weight:500;text-align: end;border:none;">
                 <?php echo esc_html__('Total', 'fluent-cart'); ?>
             </td>
-            <td style="width: 100px;text-align: right;border:none;  padding-right: 8px;">
+            <td style="width: 100px;text-align: end;border:none;  padding-inline-end: 8px;">
                 <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($displayTotal, null, false, true, true)); ?>
             </td>
         </tr>
@@ -760,10 +797,10 @@ class ReceiptRenderer
         $order = Arr::get($this->config, 'order', null);
         ?>
         <tr style="font-weight: bold;font-size: 14px;">
-            <td style="font-weight:500;text-align: right;border:none; padding-bottom: 20px">
+            <td style="font-weight:500;text-align: end;border:none; padding-bottom: 20px">
                 <?php echo esc_html__('Amount Paid', 'fluent-cart'); ?>
             </td>
-            <td style="width: 100px;text-align: right;border:none;padding-bottom: 20px; padding-right: 8px;">
+            <td style="width: 100px;text-align: end;border:none;padding-bottom: 20px; padding-inline-end: 8px;">
                 <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice(($order->total_paid - $order->total_refund), null, false, true, true)); ?>
             </td>
         </tr>
@@ -775,7 +812,7 @@ class ReceiptRenderer
         $order = Arr::get($this->config, 'order', null);
         if ($order->isReverseChargeTaxOrder()): ?>
 
-            <div style="text-align: right; font-size: 14px; margin-top: 10px;">
+            <div style="text-align: end; font-size: 14px; margin-top: 10px;">
                 <?php echo '*' . esc_html(TaxModule::getReverseChargeNoticeText()); ?>
             </div>
 
@@ -797,7 +834,7 @@ class ReceiptRenderer
                     <?php echo esc_html__('Payment history', 'fluent-cart'); ?>
                 </div>
                 <table class="fct-transaction-table"
-                       style="margin-top: 10px;width: 100%;text-align: left;border-spacing: 0;border-collapse: collapse;border: none;">
+                       style="margin-top: 10px;width: 100%;text-align: start;border-spacing: 0;border-collapse: collapse;border: none;">
                     <thead>
                     <tr>
                         <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold;print-color-adjust: exact;border:none;">
@@ -806,7 +843,7 @@ class ReceiptRenderer
                         <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold; text-align: center;print-color-adjust: exact;border:none;">
                             <?php echo esc_html__('Date', 'fluent-cart'); ?>
                         </th>
-                        <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold; text-align: right;print-color-adjust: exact;border:none;">
+                        <th style="background-color: #f8f9fa;padding: 12px 8px;font-weight: bold; text-align: end;print-color-adjust: exact;border:none;">
                             <?php echo esc_html__('Amount', 'fluent-cart'); ?>
                         </th>
                     </tr>
@@ -833,7 +870,7 @@ class ReceiptRenderer
                                     echo esc_html(Helper::translateNumber($date));
                                 ?>
                             </td>
-                            <td style="padding: 10px;border:none;border-bottom: 1px solid #dee2e6;text-align: right;">
+                            <td style="padding: 10px;border:none;border-bottom: 1px solid #dee2e6;text-align: end;">
                                 <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($transaction->total, null, false, true, true)); ?>
                             </td>
                         </tr>
@@ -856,7 +893,7 @@ class ReceiptRenderer
                 padding: 30px;
                 border-radius: 9px;
                 box-shadow: 1px 1px 5px 0px #ccc;
-                border-left: 3px solid red;
+                border-inline-start: 3px solid red;
             }
         </style>
         <div class="fluent_cart_confirmation_failed">
@@ -880,8 +917,8 @@ class ReceiptRenderer
             $shouldStrike = $isReversed && (!$isInclusive || $rcMode === 'dynamic');
             $amountStyle  = 'color:' . esc_attr($textColor) . ';font-size:11px;font-weight:500;'
                           . ($shouldStrike ? 'text-decoration:line-through;opacity:0.6;' : '');
-            /* translators: %1$s: formatted tax amount (e.g. $12.00) */
             $amountDisplay = $isInclusive
+                /* translators: %1$s: formatted tax amount (e.g. $12.00) */
                 ? esc_html(sprintf(__('incl. %1$s', 'fluent-cart'), Helper::toDecimal($rate['tax_amount'])))
                 : esc_html(Helper::toDecimal($rate['tax_amount']));
             $html .= '<table width="100%" cellpadding="0" cellspacing="0" style="border:none;margin-top:3px;">';
@@ -889,7 +926,7 @@ class ReceiptRenderer
             $html .= '<td style="padding:0;border:none;">';
             $html .= '<span style="background-color:' . esc_attr($badgeBg) . ';color:' . esc_attr($textColor) . ';font-size:11px;padding:2px 7px;border-radius:4px;display:inline-block;">' . esc_html($rate['label']) . ' (' . esc_html(number_format((float) $rate['rate_percent'], 0)) . '%)</span>';
             $html .= '</td>';
-            $html .= '<td style="text-align:right;padding:0;border:none;white-space:nowrap;">';
+            $html .= '<td style="text-align:end;padding:0;border:none;white-space:nowrap;">';
             $html .= '<span style="' . $amountStyle . '">' . $amountDisplay . '</span>';
             $html .= '</td>';
             $html .= '</tr>';
@@ -910,21 +947,21 @@ class ReceiptRenderer
             <td colspan="2" style="padding: 6px 8px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0; border-radius:6px; border-collapse:separate; background:#ffffff; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
                 <tr>
-                <td style="padding:6px 8px 6px 0;">
+                <td style="padding-block:6px; padding-inline:0 8px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;">
                     <?php if (($summary['displayMode'] ?? '') === 'simplified' && !empty($summary['simpleLine'])): ?>
                     <tr>
-                        <td style="padding:4px 0 3px 8px; font-size:11px; font-weight:600; color:#1e293b; text-align:left;">
+                        <td style="padding-block:4px 3px; padding-inline:8px 0; font-size:11px; font-weight:600; color:#1e293b; text-align:start;">
                             <?php echo esc_html($summary['simpleLine']['label']); ?>
                         </td>
-                        <td style="padding:4px 0 3px; font-size:11px; font-weight:600; color:#1e293b; text-align:right;">
+                        <td style="padding:4px 0 3px; font-size:11px; font-weight:600; color:#1e293b; text-align:end;">
                             <?php echo esc_html($summary['simpleLine']['value']); ?>
                         </td>
                     </tr>
                     <?php endif; ?>
                     <?php if (($summary['displayMode'] ?? '') !== 'simplified'): ?>
                     <tr>
-                        <td colspan="2" style="padding:0 0 3px 0; font-size:10px; font-weight:600;
+                        <td colspan="2" style="padding-block:0 3px; padding-inline:8px 0; font-size:10px; font-weight:600;
                                                text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">
                             <?php if (!empty(Arr::get($summary, 'foldedRateLines', []))): ?>
                                 <?php echo esc_html__('Tax breakdown by rate', 'fluent-cart'); ?>
@@ -946,28 +983,29 @@ class ReceiptRenderer
                     <?php if (!empty($foldedRateLines)): ?>
                             <tr>
                                 <td colspan="2" style="padding:2px 0 0 0;">
-                                    <table width="100%" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;table-layout:fixed;">
+                                    <?php // Auto layout: the totals table is 250px wide, too narrow for fixed % columns. ?>
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;">
                                         <tr>
                                             <td style="width:58%;padding:3px 8px 3px 8px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; vertical-align:top;">
                                                 <?php echo esc_html__('Rate', 'fluent-cart'); ?>
                                             </td>
-                                            <td style="width:24%;padding:3px 8px 3px 0; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; text-align:right; white-space:nowrap; vertical-align:top;">
+                                            <td style="width:24%;padding-block:3px; padding-inline:0 8px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; text-align:end; white-space:nowrap; vertical-align:top;">
                                                 <?php echo esc_html__('Taxable base', 'fluent-cart'); ?>
                                             </td>
-                                            <td style="width:18%;padding:3px 0 3px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; text-align:right; white-space:nowrap; vertical-align:top;">
+                                            <td style="width:18%;padding:3px 0 3px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; text-align:end; white-space:nowrap; vertical-align:top;">
                                                 <?php echo esc_html__('Tax', 'fluent-cart'); ?>
                                             </td>
                                         </tr>
                                         <?php foreach ($foldedRateLines as $foldedRow):
                                             $foldedColor = !empty($foldedRow['inclusive']) ? '#94a3b8' : '#334155'; ?>
                                             <tr>
-                                                <td style="width:58%;padding:3px 8px 3px 8px; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:left; white-space:normal; word-break:break-word; overflow-wrap:break-word; vertical-align:top;">
+                                                <td style="width:58%;padding:3px 8px 3px 8px; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:start; white-space:normal; word-break:break-word; overflow-wrap:break-word; vertical-align:top;">
                                                     <?php echo esc_html($foldedRow['label']); ?>
                                                 </td>
-                                                <td style="width:24%;padding:3px 8px 3px 0; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:right; white-space:nowrap; vertical-align:top;">
+                                                <td style="width:24%;padding-block:3px; padding-inline:0 8px; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:end; white-space:nowrap; vertical-align:top;">
                                                     <?php echo esc_html(Helper::toDecimal((int) $foldedRow['base'])); ?>
                                                 </td>
-                                                <td style="width:18%;padding:3px 0 3px; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:right; white-space:nowrap; vertical-align:top;">
+                                                <td style="width:18%;padding:3px 0 3px; font-size:11px; color:<?php echo esc_attr($foldedColor); ?>; text-align:end; white-space:nowrap; vertical-align:top;">
                                                     <?php echo esc_html(Helper::toDecimal((int) $foldedRow['tax'])); ?>
                                                 </td>
                                             </tr>
@@ -977,38 +1015,38 @@ class ReceiptRenderer
                             </tr>
                             <?php if ($rcIsReverseCharge): ?>
                             <tr>
-                                <td style="padding:3px 0 4px 8px; font-size:11px; font-weight:600; color:#1e293b; text-align: left;">
+                                <td style="padding-block:3px 4px; padding-inline:8px 0; font-size:11px; font-weight:600; color:#1e293b; text-align: start;">
                                     <?php echo esc_html__('VAT reversed', 'fluent-cart'); ?>
                                 </td>
-                                <td style="padding:3px 0 4px; font-size:11px; text-align:right; font-weight:600; color:#1e293b;">
+                                <td style="padding:3px 0 4px; font-size:11px; text-align:end; font-weight:600; color:#1e293b;">
                                     <?php echo esc_html($rcReversedValue); ?>
                                 </td>
                             </tr>
                             <?php else: ?>
                             <tr>
-                                <td style="padding:4px 0 3px 8px; font-size:11px; font-weight:600; color:#1e293b; border-top:1px solid #e2e8f0; text-align:left;">
+                                <td style="padding-block:4px 3px; padding-inline:8px 0; font-size:11px; font-weight:600; color:#1e293b; border-top:1px solid #e2e8f0; text-align:start;">
                                     <?php echo esc_html__('Total tax', 'fluent-cart'); ?>
                                 </td>
-                                <td style="padding:4px 0 3px; font-size:11px; font-weight:600; color:#1e293b; border-top:1px solid #e2e8f0; text-align:right;">
+                                <td style="padding:4px 0 3px; font-size:11px; font-weight:600; color:#1e293b; border-top:1px solid #e2e8f0; text-align:end;">
                                     <?php echo esc_html(Helper::toDecimal((int) $summary['totalOrderTax'])); ?>
                                 </td>
                             </tr>
                             <?php if ($includedInPrices > 0): ?>
                             <tr>
-                                <td style="padding:3px 0 3px 8px; font-size:11px; color:#94a3b8; text-align:left;">
+                                <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:#94a3b8; text-align:start;">
                                     <?php echo esc_html__('of which included in prices', 'fluent-cart'); ?>
                                 </td>
-                                <td style="padding:3px 0 3px; font-size:11px; color:#94a3b8; text-align:right;">
+                                <td style="padding:3px 0 3px; font-size:11px; color:#94a3b8; text-align:end;">
                                     <?php echo esc_html(Helper::toDecimal($includedInPrices)); ?>
                                 </td>
                             </tr>
                             <?php endif; ?>
                             <?php if ($summary['payableTax'] > 0 && $includedInPrices > 0): ?>
                             <tr>
-                                <td style="padding:3px 0 4px 8px; font-size:11px; color:#334155; text-align:left; border-top:1px solid #e2e8f0; padding-top:6px;">
+                                <td style="padding-block:3px 4px; padding-inline:8px 0; font-size:11px; color:#334155; text-align:start; border-top:1px solid #e2e8f0; padding-top:6px;">
                                     <?php echo esc_html__('Payable now (added)', 'fluent-cart'); ?>
                                 </td>
-                                <td style="padding:3px 0 4px; font-size:11px; color:#334155; text-align:right; border-top:1px solid #e2e8f0; padding-top:6px;">
+                                <td style="padding:3px 0 4px; font-size:11px; color:#334155; text-align:end; border-top:1px solid #e2e8f0; padding-top:6px;">
                                     <?php echo esc_html(Helper::toDecimal((int) $summary['payableTax'])); ?>
                                 </td>
                             </tr>
@@ -1017,19 +1055,19 @@ class ReceiptRenderer
                     <?php elseif ($rcIsReverseCharge): ?>
                         <?php if ($summary['showRcShippingRow'] && $rcReversedShipping > 0): ?>
                         <tr>
-                            <td style="padding:3px 0 3px 8px; font-size:11px; color:#94a3b8;">
+                            <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:#94a3b8;">
                                 <?php echo esc_html__('Added on shipping', 'fluent-cart'); ?>
                             </td>
-                            <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:#94a3b8;">
+                            <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:#94a3b8;">
                                 <span style="text-decoration:line-through;opacity:0.6;"><?php echo esc_html(Helper::toDecimal($rcReversedShipping)); ?></span>
                             </td>
                         </tr>
                         <?php endif; ?>
                         <tr>
-                            <td style="padding:3px 0 4px 8px; font-size:11px; font-weight:600; color:#1e293b; text-align: left;">
+                            <td style="padding-block:3px 4px; padding-inline:8px 0; font-size:11px; font-weight:600; color:#1e293b; text-align: start;">
                                 <?php echo esc_html__('Tax reversed', 'fluent-cart'); ?>
                             </td>
-                            <td style="padding:3px 0 4px; font-size:11px; text-align:right; font-weight:600; color:#1e293b;">
+                            <td style="padding:3px 0 4px; font-size:11px; text-align:end; font-weight:600; color:#1e293b;">
                                 <?php echo esc_html($rcReversedValue); ?>
                             </td>
                         </tr>
@@ -1051,10 +1089,10 @@ class ReceiptRenderer
                                 <?php foreach ($taxRateLines as $taxLine):
                                     $taxLineColor = !empty($taxLine['inclusive']) ? '#94a3b8' : '#334155'; ?>
                                     <tr>
-                                        <td style="padding:3px 0 3px 8px; font-size:11px; color:<?php echo esc_attr($taxLineColor); ?>; text-align: left;">
+                                        <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:<?php echo esc_attr($taxLineColor); ?>; text-align: start;">
                                             <?php echo esc_html($taxLine['label']); ?>
                                         </td>
-                                        <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:<?php echo esc_attr($taxLineColor); ?>;">
+                                        <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:<?php echo esc_attr($taxLineColor); ?>;">
                                             <?php echo esc_html(Helper::toDecimal($taxLine['order_tax'])); ?>
                                         </td>
                                     </tr>
@@ -1062,20 +1100,20 @@ class ReceiptRenderer
                             <?php endif; ?>
                             <?php if (empty($taxRateLines) && $summary['inclusiveTax'] > 0 && $shouldShowBreakdown): ?>
                                 <tr>
-                                    <td style="padding:3px 0 3px 8px; font-size:11px; color:#94a3b8;">
+                                    <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:#94a3b8;">
                                         <?php echo esc_html__('Included in item prices', 'fluent-cart'); ?>
                                     </td>
-                                    <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:#94a3b8;">
+                                    <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:#94a3b8;">
                                         <?php echo esc_html(Helper::toDecimal($summary['inclusiveTax'])); ?>
                                     </td>
                                 </tr>
                             <?php endif; ?>
                             <?php if (empty($taxRateLines) && $summary['exclusiveTax'] > 0 && $shouldShowBreakdown): ?>
                                 <tr>
-                                    <td style="padding:3px 0 3px 8px; font-size:11px; color:#334155; text-align: left;">
+                                    <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:#334155; text-align: start;">
                                         <?php echo esc_html__('Added on products', 'fluent-cart'); ?>
                                     </td>
-                                    <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:#334155;">
+                                    <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:#334155;">
                                         <?php echo esc_html(Helper::toDecimal($summary['exclusiveTax'])); ?>
                                     </td>
                                 </tr>
@@ -1084,10 +1122,10 @@ class ReceiptRenderer
                             <?php foreach ($rcFeeRows as $feeRow) :
                                 $feeRowColor = $feeRow['inclusive'] ? '#94a3b8' : '#334155'; ?>
                                 <tr>
-                                    <td style="padding:3px 0 3px 8px; font-size:11px; color:<?php echo esc_attr($feeRowColor); ?>; text-align: left;">
+                                    <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:<?php echo esc_attr($feeRowColor); ?>; text-align: start;">
                                         <?php echo esc_html($feeRow['display_label']); ?>
                                     </td>
-                                    <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:<?php echo esc_attr($feeRowColor); ?>;">
+                                    <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:<?php echo esc_attr($feeRowColor); ?>;">
                                         <?php echo esc_html(Helper::toDecimal($feeRow['tax_amount'])); ?>
                                     </td>
                                 </tr>
@@ -1099,20 +1137,20 @@ class ReceiptRenderer
                                 if (!empty($shippingTaxLines)):
                                     foreach ($shippingTaxLines as $shLine): ?>
                                         <tr>
-                                            <td style="padding:3px 0 3px 8px; font-size:11px; color:<?php echo esc_attr($shippingRowColor); ?>;">
+                                            <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:<?php echo esc_attr($shippingRowColor); ?>;">
                                                 <?php echo esc_html($shLine['label']); ?>
                                             </td>
-                                            <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:<?php echo esc_attr($shippingRowColor); ?>;">
+                                            <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:<?php echo esc_attr($shippingRowColor); ?>;">
                                                 <?php echo esc_html(Helper::toDecimal($shLine['shipping_tax'])); ?>
                                             </td>
                                         </tr>
                                     <?php endforeach;
                                 else: ?>
                                     <tr>
-                                        <td style="padding:3px 0 3px 8px; font-size:11px; color:<?php echo esc_attr($shippingRowColor); ?>;">
+                                        <td style="padding-block:3px; padding-inline:8px 0; font-size:11px; color:<?php echo esc_attr($shippingRowColor); ?>;">
                                             <?php echo esc_html($isShippingInclusive ? __('Included in shipping prices', 'fluent-cart') : __('Added on shipping', 'fluent-cart')); ?>
                                         </td>
-                                        <td style="padding:3px 0 3px; font-size:11px; text-align:right; color:<?php echo esc_attr($shippingRowColor); ?>;">
+                                        <td style="padding:3px 0 3px; font-size:11px; text-align:end; color:<?php echo esc_attr($shippingRowColor); ?>;">
                                             <?php echo esc_html(Helper::toDecimal($summary['shippingTax'])); ?>
                                         </td>
                                     </tr>
@@ -1120,11 +1158,11 @@ class ReceiptRenderer
                             <?php endif; ?>
                             <?php if ($summary['payableTax'] > 0): ?>
                             <tr>
-                                <td style="padding:4px 0 4px 8px; font-size:11px; font-weight:600; color:#1e293b;
-                                           border-top:1px solid #e2e8f0; text-align: left;">
+                                <td style="padding-block:4px; padding-inline:8px 0; font-size:11px; font-weight:600; color:#1e293b;
+                                           border-top:1px solid #e2e8f0; text-align: start;">
                                     <?php echo esc_html__('Total payable tax', 'fluent-cart'); ?>
                                 </td>
-                                <td style="padding:4px 0 4px; font-size:11px; text-align:right; font-weight:600; color:#1e293b;
+                                <td style="padding:4px 0 4px; font-size:11px; text-align:end; font-weight:600; color:#1e293b;
                                            border-top:1px solid #e2e8f0;">
                                     <?php echo esc_html(Helper::toDecimal($summary['payableTax'])); ?>
                                 </td>
@@ -1132,10 +1170,10 @@ class ReceiptRenderer
                             <?php endif; ?>
                             <?php if ($summary['inclusiveTax'] > 0 || $summary['inclusiveFeeTax'] > 0): ?>
                                 <tr>
-                                    <td style="padding:3px 0 4px 8px; font-size:11px; color:#94a3b8;">
+                                    <td style="padding-block:3px 4px; padding-inline:8px 0; font-size:11px; color:#94a3b8;">
                                         <?php echo esc_html__('Total tax in this order', 'fluent-cart'); ?>
                                     </td>
-                                    <td style="padding:3px 0 4px; font-size:11px; text-align:right; color:#94a3b8;">
+                                    <td style="padding:3px 0 4px; font-size:11px; text-align:end; color:#94a3b8;">
                                         <?php echo esc_html(Helper::toDecimal($summary['totalOrderTax'])); ?>
                                     </td>
                                 </tr>

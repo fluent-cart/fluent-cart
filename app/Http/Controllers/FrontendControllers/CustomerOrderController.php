@@ -5,6 +5,7 @@ namespace FluentCart\App\Http\Controllers\FrontendControllers;
 //use FluentCart\Api\Resource\FrontendResource\CustomerResource;
 use FluentCart\Api\Resource\CustomerAddressResource;
 use FluentCart\Api\Resource\CustomerResource;
+use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\Resource\OrderDownloadPermissionResource;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
@@ -58,7 +59,7 @@ class CustomerOrderController extends BaseFrontendController
             ]);
         }
 
-        $perPage = (int)$request->get('per_page', 10);
+        $perPage = ShopResource::clampPerPage($request->get('per_page', 10));
         $page = (int)$request->get('page', 1);
         $search = $request->getSafe('search', 'sanitize_text_field');
 

@@ -23,6 +23,11 @@ class AdminFooter
 
     public function filterFooterText($text): string
     {
+        // Return false (e.g. from Pro) to keep the default WordPress footer text.
+        if (!apply_filters('fluent_cart/admin/footer/show_text', true)) {
+            return (string)$text;
+        }
+
         return sprintf(
             '<span id="footer-thankyou">%s</span>',
             sprintf(

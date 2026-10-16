@@ -3,6 +3,7 @@
 namespace FluentCart\App\Modules\MultiCurrency\Services;
 
 use FluentCart\App\Helpers\CurrenciesHelper;
+use FluentCart\App\Services\Money;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -15,9 +16,10 @@ class MultiCurrencyAdmin
 {
     /**
      * Currencies an admin-created order can be priced in: the base, then each
-     * enabled currency with its current rate. Empty when multi-currency is off.
+     * enabled currency with its current rate and pricing rules. Empty when
+     * multi-currency is off.
      *
-     * @return array<int, array{code: string, sign: string, rate: string, is_base: bool}>
+     * @return array<int, array{code: string, sign: string, rate: string, is_base: bool, rounding?: string, charm?: string, adjustment?: string, decimals?: int}>
      */
     public static function orderCurrencies(): array
     {
@@ -39,10 +41,14 @@ class MultiCurrencyAdmin
                 continue;
             }
             $list[] = [
-                'code'    => $code,
-                'sign'    => html_entity_decode(CurrenciesHelper::getCurrencySign($code)),
-                'rate'    => $quote['rate'],
-                'is_base' => false,
+                'code'       => $code,
+                'sign'       => html_entity_decode(CurrenciesHelper::getCurrencySign($code)),
+                'rate'       => $quote['rate'],
+                'is_base'    => false,
+                'rounding'   => $quote['rounding'],
+                'charm'      => $quote['charm'],
+                'adjustment' => $quote['adjustment'],
+                'decimals'   => (int) Money::getDecimals($code),
             ];
         }
 

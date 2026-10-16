@@ -195,7 +195,9 @@ class TemplateActions
         $productsQuery = (new ProductQuery([
             'is_main_query' => true,
             'paginate'      => 'simple',
-            'with'          => ['detail', 'variants']
+            'with'          => ['detail', 'variants'],
+            // Same cap as the renderer and AJAX pages, or page 2 repeats products.
+            'per_page'      => ShopResource::clampPerPage(get_option('posts_per_page')),
         ]));
 
         $publicTaxonomies = Taxonomy::getTaxonomies();

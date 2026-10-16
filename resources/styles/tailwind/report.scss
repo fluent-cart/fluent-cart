@@ -1,5 +1,6 @@
 .fct-reports-view {
-  @apply w-full fixed bottom-0 right-0 z-50;
+  /* Sits beside the WP admin menu, which flips sides in RTL */
+  @apply w-[calc(100%-160px)] fixed bottom-0 end-0 z-50;
 
   /* 100vh ignores iOS Safari's collapsible toolbar; dvh tracks the visible viewport */
   height: calc(100vh - 96px);
@@ -12,8 +13,8 @@
 
 
 .folded {
-  .fct-reports-view-inner {
-    @apply pl-[6px];
+  .fct-reports-view {
+    @apply w-[calc(100%-36px)];
   }
 }
 
@@ -51,7 +52,7 @@
   overscroll-behavior: contain;
   scrollbar-width: none;
 
-  @apply flex-1 pl-[420px] overflow-x-hidden max-h-[calc(100vh-106px)] min-h-[calc(100vh-106px)] transition-all duration-300 ease-in-out;
+  @apply flex-1 ps-[260px] overflow-x-hidden max-h-[calc(100vh-106px)] min-h-[calc(100vh-106px)] transition-all duration-300 ease-in-out;
 
   /* dvh override — the vh values above stay as fallback for older browsers */
   max-height: calc(100dvh - 106px);
@@ -194,7 +195,7 @@
       @apply flex items-center gap-2.5;
     }
     .list-right-content{
-      @apply text-right grid gap-0.5;
+      @apply text-end grid gap-0.5;
     }
     .list-title{
       @apply text-sm text-system-dark font-normal dark:text-gray-50;
@@ -227,7 +228,7 @@
   .list-value{
     @apply flex items-center text-system-dark font-semibold text-[15px] leading-[22px] dark:text-gray-50;
     .percentage{
-      @apply text-xs flex gap-1 ml-2;
+      @apply text-xs flex gap-1 ms-2;
     }
   }
 }
@@ -244,7 +245,7 @@
       @apply flex items-center gap-3.5;
     }
     .list-right-content{
-      @apply text-right grid gap-0.5 flex-shrink-0;
+      @apply text-end grid gap-0.5 flex-shrink-0;
     }
     .list-image{
       @apply h-10 w-10 overflow-hidden rounded-sm flex-shrink-0;
@@ -291,7 +292,7 @@
       }
     }
     &:after{
-      @apply absolute top-0 -right-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
+      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
       content: "";
     }
     &:last-child{
@@ -369,7 +370,7 @@
     .fct-custom-legend-controls {
       @apply border bg-white py-2.5 px-0 border-solid border-gray-divider border-x-0 border-b-0 sticky bottom-0 z-10 dark:border-dark-400 dark:bg-dark-600;
       button{
-        @apply text-xs bg-white mr-2 py-1 cursor-pointer border border-solid border-gray-divider rounded-sm text-system-dark dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
+        @apply text-xs bg-white me-2 py-1 cursor-pointer border border-solid border-gray-divider rounded-sm text-system-dark dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
       }
     }
   }
@@ -421,12 +422,12 @@
   .summary-item {
     @apply p-3 rounded transition-all duration-150 relative hover:bg-gray-50 dark:hover:bg-dark-500;
     .summary-checkbox {
-      @apply flex-shrink-0 mr-2 inline-flex;
+      @apply flex-shrink-0 me-2 inline-flex;
     }
     .value{
       @apply text-[15px] flex-wrap font-semibold flex items-center text-system-dark dark:text-gray-50;
       .inner-value {
-        @apply flex items-center mr-2;
+        @apply flex items-center me-2;
       }
     }
     .title{
@@ -442,7 +443,7 @@
       @apply text-xs font-semibold flex gap-0.5 items-center;
     }
     &:after{
-      @apply absolute top-0 -right-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
+      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
       content: "";
     }
     &:last-child{
@@ -477,21 +478,11 @@
 
 .fct-reports-view.is-collapsed {
   .fct-report-body {
-    @apply pl-[232px];
+    @apply ps-[72px];
   }
 }
-
-// folded settings menu
-.folded {
-  .fct-reports-view.is-collapsed .fct-report-body {
-    padding-left: 102px;
-    .fct-layout-width{
-        max-width: 100%;
-    }
-  }
-  .fct-reports-view .fct-report-body {
-    padding-left: 284px;
-  }
+.folded .fct-reports-view.is-collapsed .fct-report-body .fct-layout-width {
+  max-width: 100%;
 }
 
 
@@ -506,7 +497,7 @@
   }
 
   &__toggle.el-button {
-    @apply ml-1 align-baseline;
+    @apply ms-1 align-baseline;
   }
 
   &__error {
@@ -691,6 +682,11 @@
     }
   }
 
+  .fct-reports-view,
+  .folded .fct-reports-view {
+    @apply w-full;
+  }
+
   .fct-reports-view {
     .fct-report-header {
       overflow: inherit;
@@ -711,7 +707,7 @@
   }
 
   .fct-reports-view-inner .fct-report-body {
-    @apply pl-0 #{!important};
+    @apply ps-0 #{!important};
   }
 }
 

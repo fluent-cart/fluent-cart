@@ -3,6 +3,7 @@
 namespace FluentCart\Database\Migrations;
 
 use FluentCart\App\App;
+use FluentCart\Framework\Database\Schema;
 
 class RetentionSnapshotsMigrator extends Migrator
 {
@@ -90,7 +91,7 @@ class RetentionSnapshotsMigrator extends Migrator
             return;
         }
 
-        if (!App::db()->table(static::$tableName)->exists()) {
+        if (!Schema::hasTable(static::$tableName) || !App::db()->table(static::$tableName)->exists()) {
             return;
         }
 

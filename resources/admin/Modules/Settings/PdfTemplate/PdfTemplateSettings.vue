@@ -154,7 +154,7 @@ onMounted(() => {
                 >
                     <strong>{{ translate('Store country is not configured.') }}</strong>
                     {{ translate('ZUGFeRD XML cannot be embedded in PDFs until your store country is set.') }}
-                    <a v-if="storeSettingsUrl" :href="storeSettingsUrl" class="underline ml-1">
+                    <a v-if="storeSettingsUrl" :href="storeSettingsUrl" class="underline ms-1">
                         {{ translate('Go to Store Settings') }}
                     </a>
                 </div>

@@ -290,7 +290,7 @@ routes.value.push({
 
 routes.value.push({
   name: translate('Compliance'),
-  icon: 'ShieldCheck',
+  icon: 'Compliance',
   permission: ['store/settings'],
   url: '/settings/compliance'
 });

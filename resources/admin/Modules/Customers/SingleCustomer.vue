@@ -45,7 +45,7 @@
                       tag="button"
                       size="small"
                       @click="showSearch = !showSearch"
-                      class="icon-button-show-on-mobile ml-2"
+                      class="icon-button-show-on-mobile ms-2"
                   >
                     <DynamicIcon v-if="showSearch" name="Cross"/>
                     <DynamicIcon v-else name="Search"/>

@@ -2,13 +2,20 @@
   @apply text-system-dark #{!important};
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT')) !important;
   .el-alert__icon{
-    @apply self-start w-auto mr-2 relative #{!important};
+    @apply self-start w-auto me-2 relative #{!important};
+    [dir="rtl"] & {
+      margin-right: 0 !important;
+    }
     svg{
       @apply w-4.5 h-4.5;
     }
   }
   .el-alert__close-btn{
     @apply top-3.5;
+    [dir="rtl"] & {
+      right: auto;
+      left: 16px;
+    }
     svg{
       @apply hidden;
     }

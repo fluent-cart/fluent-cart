@@ -319,7 +319,8 @@ class ThankYouRender
         $order = Arr::get($this->config, 'order', null);
 
         $orderTaxRates = $order->getPrimaryOrderTaxRate();
-        if ($order->tax_total > 0 || $orderTaxRates): ?>
+        $idLines = StoreBusinessInfoHelper::getIdLines($order);
+        if ($order->tax_total > 0 || $orderTaxRates || $idLines): ?>
             <div class="fct_invoice_tax_content">
                 <?php
                 if ($orderTaxRates) {
@@ -328,6 +329,9 @@ class ThankYouRender
                     if ($storeVatNumber !== '') {
                         echo '<p>' . esc_html(TaxModule::getCountryTaxTitle($taxcountry)) . ': ' . esc_html($storeVatNumber) . '</p>';
                     }
+                }
+                foreach ($idLines as $idLine) {
+                    echo '<p>' . esc_html($idLine) . '</p>';
                 }
                 ?>
             </div>
@@ -488,7 +492,7 @@ class ThankYouRender
     {
         $order = Arr::get($this->config, 'order', null);
         if ($order->isReverseChargeTaxOrder()): ?>
-            <div style="text-align: right; font-size: 14px; margin-top: 10px;">
+            <div style="text-align: end; font-size: 14px; margin-top: 10px;">
                 <?php echo '*' . esc_html(TaxModule::getReverseChargeNoticeText()) ?>
             </div>
         <?php
@@ -523,11 +527,11 @@ class ThankYouRender
                 <?php echo $onlyProrateCredit ? esc_html__('Prorate Credit', 'fluent-cart') : esc_html__('Discount', 'fluent-cart'); ?>
             </div>
             <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
-                - <?php echo esc_html(Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); ?>
+                <bdi dir="ltr">- <?php echo esc_html(Helper::toDecimal($order->manual_discount_total + $order->coupon_discount_total)); ?></bdi>
             </div>
         </div>
         <?php if ($prorateCredit > 0 && $upgradeDiscount > 0): ?>
-        <div class="fct-meta-line" style="padding-left:12px;">
+        <div class="fct-meta-line" style="padding-inline-start:12px;">
             <div class="fct-meta-line-label" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html__('Upgrade Discount', 'fluent-cart'); ?>
             </div>
@@ -537,7 +541,7 @@ class ThankYouRender
         </div>
         <?php endif; ?>
         <?php if ($prorateCredit > 0 && !$onlyProrateCredit): ?>
-        <div class="fct-meta-line" style="padding-left:12px;">
+        <div class="fct-meta-line" style="padding-inline-start:12px;">
             <div class="fct-meta-line-label" style="font-size:12px;color:var(--fct-secondary-text-color, rgb(107,114,128));">
                 <?php echo esc_html__('Prorate Credit', 'fluent-cart'); ?>
             </div>
@@ -600,7 +604,7 @@ class ThankYouRender
                 <?php echo esc_html__('Shipping Discount', 'fluent-cart'); ?>
             </div>
             <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
-                - <?php echo esc_html(Helper::toDecimal($shippingDiscount)); ?>
+                <bdi dir="ltr">- <?php echo esc_html(Helper::toDecimal($shippingDiscount)); ?></bdi>
             </div>
         </div>
         <div class="fct-meta-line fct-thank-you-page-order-items-total-shipping-after-discount">
@@ -643,7 +647,7 @@ class ThankYouRender
                     <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                 </div>
                 <div class="fct-meta-line-value fct-thank-you-page-order-items-total-value">
-                    - <?php echo esc_html(Helper::toDecimal($order->total_refund)); ?>
+                    <bdi dir="ltr">- <?php echo esc_html(Helper::toDecimal($order->total_refund)); ?></bdi>
                 </div>
             </div>
         <?php endif;
@@ -730,9 +734,9 @@ class ThankYouRender
                                         echo sprintf(
                                         /* translators: 1: Next billing date */
                                                 esc_html__('- Auto renews on %1$s', 'fluent-cart'),
-                                                esc_html(
+                                                '<bdi>' . esc_html(
                                                         \FluentCart\App\Services\DateTime\DateFormatter::format($subs->next_billing_date, true, $order)
-                                                )
+                                                ) . '</bdi>'
                                         );
                                         ?>
                                     </p>
@@ -895,7 +899,7 @@ class ThankYouRender
                                     <td class="fct-thank-you-page-order-items-licenses-table-file">
                                         <p>
                                             <?php  echo esc_html($license->productVariant->variation_title); ?>:
-                                            <?php echo esc_html($license->license_key); ?>
+                                            <bdi dir="ltr"><?php echo esc_html($license->license_key); ?></bdi>
                                         </p>
                                     </td>
                                 </tr>
@@ -1257,14 +1261,14 @@ class ThankYouRender
                 ?>
                 <div style="display:grid;grid-template-columns:minmax(0,1fr) 92px 64px;column-gap:12px;align-items:start;">
                     <span style="min-width:0;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;"><?php echo esc_html__('Rate', 'fluent-cart'); ?></span>
-                    <span style="text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;white-space:nowrap;"><?php echo esc_html__('Taxable base', 'fluent-cart'); ?></span>
-                    <span style="text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;white-space:nowrap;"><?php echo esc_html__('Tax', 'fluent-cart'); ?></span>
+                    <span style="text-align:end;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;white-space:nowrap;"><?php echo esc_html__('Taxable base', 'fluent-cart'); ?></span>
+                    <span style="text-align:end;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;white-space:nowrap;"><?php echo esc_html__('Tax', 'fluent-cart'); ?></span>
                 </div>
                 <?php foreach ($tyFoldedRateLines as $tyFoldedLine): ?>
                     <div class="fct-thank-you-tax-summary-row<?php echo !empty($tyFoldedLine['inclusive']) ? ' fct-thank-you-tax-summary-row--muted' : ''; ?>" style="display:grid;grid-template-columns:minmax(0,1fr) 92px 64px;column-gap:12px;align-items:start;">
                         <span style="min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;"><?php echo esc_html($tyFoldedLine['label']); ?></span>
-                        <span style="text-align:right;color:#94a3b8;white-space:nowrap;"><?php echo esc_html(Helper::toDecimal($tyFoldedLine['base'])); ?></span>
-                        <span style="text-align:right;white-space:nowrap;"><?php echo esc_html(Helper::toDecimal($tyFoldedLine['tax'])); ?></span>
+                        <span style="text-align:end;color:#94a3b8;white-space:nowrap;"><?php echo esc_html(Helper::toDecimal($tyFoldedLine['base'])); ?></span>
+                        <span style="text-align:end;white-space:nowrap;"><?php echo esc_html(Helper::toDecimal($tyFoldedLine['tax'])); ?></span>
                     </div>
                 <?php endforeach; ?>
                 <?php if ($tyIsReverseCharge): ?>
@@ -1413,7 +1417,7 @@ class ThankYouRender
                     <?php if ($isInclusive): ?>
                         <?php echo esc_html__('incl.', 'fluent-cart'); ?> <?php echo esc_html(Helper::toDecimal($taxAmount)); ?>
                     <?php else: ?>
-                        + <?php echo esc_html(Helper::toDecimal($taxAmount)); ?>
+                        <bdi dir="ltr">+ <?php echo esc_html(Helper::toDecimal($taxAmount)); ?></bdi>
                     <?php endif; ?>
                 </span>
             </div>
@@ -1459,7 +1463,7 @@ class ThankYouRender
             <div class="fct-item-tax-pill-row">
                 <span class="fct-item-tax-pill-amount<?php echo esc_attr($reversedClass); ?>"><?php
                     /* translators: %1$s: formatted setup fee tax amount */
-                    echo sprintf(esc_html__('Setup fee tax: %1$s', 'fluent-cart'), esc_html(Helper::toDecimal($signupFeeTax)));
+                    echo sprintf(esc_html__('Setup fee tax: %1$s', 'fluent-cart'), '<bdi>' . esc_html(Helper::toDecimal($signupFeeTax)) . '</bdi>');
                     ?></span>
             </div>
         </div>
@@ -1485,7 +1489,7 @@ class ThankYouRender
                         <?php if ($rate['inclusive']): ?>
                             <?php echo esc_html__('incl.', 'fluent-cart'); ?> <?php echo esc_html(Helper::toDecimal($rate['tax_amount'])); ?>
                         <?php else: ?>
-                            + <?php echo esc_html(Helper::toDecimal($rate['tax_amount'])); ?>
+                            <bdi dir="ltr">+ <?php echo esc_html(Helper::toDecimal($rate['tax_amount'])); ?></bdi>
                         <?php endif; ?>
                     </span>
                 </div>

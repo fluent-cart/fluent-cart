@@ -262,6 +262,16 @@
     }
 }
 
+[dir="rtl"] .fct-input-dropdown-popover-wrap {
+    @apply text-right;
+    .el_pop_data_headings {
+        @apply mr-0 ml-5;
+    }
+    .el_pop_data_body ul li:hover {
+        @apply pl-0 pr-1.5;
+    }
+}
+
 .mce-menu-item,
 .mce-container, 
 .mce-container *, 

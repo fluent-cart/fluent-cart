@@ -30,10 +30,10 @@
 			@apply w-full flex relative h-10;
 			.fluent-cart-search-bar-app-input-clear,
 			.fluent-cart-search-bar-app-input-search {
-				@apply text-system-mid w-10 absolute top-0 left-0 h-10 flex items-center justify-center;
+				@apply text-system-mid w-10 absolute top-0 start-0 h-10 flex items-center justify-center;
 			}
 			.fluent-cart-search-bar-app-input-clear {
-				@apply hidden left-auto right-[-1px] cursor-pointer transform-none rounded-tr rounded-br bg-transparent border-0;
+				@apply hidden start-auto end-[-1px] cursor-pointer transform-none rounded-se rounded-ee bg-transparent border-0;
 			}
 			input {
 				@apply text-sm w-full bg-white shadow-none outline-none border border-solid border-gray-outline px-[36px] m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};
@@ -52,7 +52,7 @@
 			@apply text-lg font-semibold mb-4 mt-0;
 		}
 		.fluent-cart-search-bar-app-list-wrapper {
-			@apply m-0 p-0 list-none ml-[-3px];
+			@apply m-0 p-0 list-none ms-[-3px];
 			li {
 				@apply mb-1 transition rounded-sm p-1.5 hover:bg-gray-50;
 				&:last-child {

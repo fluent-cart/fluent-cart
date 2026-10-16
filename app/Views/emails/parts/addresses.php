@@ -5,6 +5,9 @@
  */
 use FluentCart\Framework\Support\Arr;
 
+$startSide = \FluentCart\App\Services\Email\EmailDirection::start();
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+
 $billingAddress = $order->billing_address;
 $shippingAddress = $order->shipping_address;
 
@@ -21,7 +24,7 @@ if(!$billingAddress && !$shippingAddress) {
             <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
                 <tbody style="width:100%; vertical-align: top;">
                 <tr style="width:100%">
-                    <td style="width:50%;padding-left: 0;padding-right: 10px;">
+                    <td style="width:50%;padding-<?php echo esc_attr($startSide); ?>: 0;padding-<?php echo esc_attr($endSide); ?>: 10px;">
                         <p style="font-size:12px;color:rgb(127,140,141);margin:0px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
                             <?php echo esc_html__('Billing Address', 'fluent-cart'); ?>
                         </p>
@@ -47,7 +50,7 @@ if(!$billingAddress && !$shippingAddress) {
                             if ($phone !== ''):
                             ?>
                                 <p style="font-size:12px;margin:0px;margin-top:8px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
-                                    <?php echo esc_html($phone); ?>
+                                    <?php echo \FluentCart\App\Services\Email\EmailDirection::ltr($phone); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </p>
                             <?php endif;
 
@@ -96,7 +99,7 @@ if(!$billingAddress && !$shippingAddress) {
                             endif;
                         ?>
                     </td>
-                    <td style="width:50%;padding-right: 0;padding-left: 10px;">
+                    <td style="width:50%;padding-<?php echo esc_attr($endSide); ?>: 0;padding-<?php echo esc_attr($startSide); ?>: 10px;">
                         <?php if ($order->fulfillment_type !== 'digital'): ?>
                             <p style="font-size:12px;color:rgb(127,140,141);margin:0px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
                                 <?php echo esc_html__('Shipping Address', 'fluent-cart'); ?>
@@ -112,7 +115,7 @@ if(!$billingAddress && !$shippingAddress) {
                                 if ($phone !== ''):
                                 ?>
                                     <p style="font-size:12px;margin:0px;margin-top:8px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
-                                        <?php echo esc_html($phone); ?>
+                                        <?php echo \FluentCart\App\Services\Email\EmailDirection::ltr($phone); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                     </p>
                                 <?php endif; ?>
                             </p>

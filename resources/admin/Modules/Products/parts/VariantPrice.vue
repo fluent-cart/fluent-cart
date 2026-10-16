@@ -411,7 +411,7 @@ const getIntervalShortcode = (interval) => {
                                         {{ translate('This feature is available in pro version only.') }}
                                     </template>
 
-                                    <DynamicIcon name="Crown" class="fct-pro-icon" style="margin-left: 5px;"/>
+                                    <DynamicIcon name="Crown" class="fct-pro-icon" style="margin-inline-start: 5px;"/>
                                 </el-tooltip>
                             </template>
                             <ValidationError :validation-errors="productEditModel.validationErrors"
@@ -504,7 +504,7 @@ const getIntervalShortcode = (interval) => {
                                             <DynamicIcon
                                                 name="Crown"
                                                 class="fct-pro-icon"
-                                                style="margin-left: 5px;"
+                                                style="margin-inline-start: 5px;"
                                             />
                                         </el-tooltip>
                                     </span>

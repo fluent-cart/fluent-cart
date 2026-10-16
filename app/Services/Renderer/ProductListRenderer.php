@@ -46,10 +46,6 @@ class ProductListRenderer
             return '';
         }
 
-        $columns = $this->columns
-        ? 'style="--fct-product-list-columns: ' . $this->columns . ';"'
-        : '';
-
         ?>
         <section class="fct-product-list-container <?php echo esc_attr($this->wrapperClass); ?>" aria-label="<?php echo esc_attr($this->listTitle ?: __('Product List', 'fluent-cart')); ?>">
             <?php $this->renderTitle(); ?>
@@ -58,7 +54,7 @@ class ProductListRenderer
                 role="list"
                 aria-live="polite"
                 aria-busy="false"
-                <?php echo $columns; ?>
+                style="--fct-product-list-columns: <?php echo (int) $this->columns; ?>;"
             >
                 <?php $this->renderProductList(); ?>
             </div>

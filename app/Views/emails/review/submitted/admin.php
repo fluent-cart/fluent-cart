@@ -69,13 +69,13 @@ $adminUrl = admin_url('admin.php?page=fluent-cart#/reviews/' . (int) $review->id
             <?php if ($rating > 0) : ?>
                 <?php // Filled and hollow glyphs, and the number in words, so the rating reads without colour. ?>
                 <p style="margin:0 0 12px;font-size:22px;line-height:1;letter-spacing:2px;">
-                    <span style="color:<?php echo esc_attr(\FluentCart\App\Services\Renderer\ProductReviewRenderer::starColors()['filled']); ?>;"><?php echo str_repeat('&#9733;', $rating); ?></span><span style="color:<?php echo esc_attr(\FluentCart\App\Services\Renderer\ProductReviewRenderer::starColors()['empty']); ?>;"><?php echo str_repeat('&#9734;', 5 - $rating); ?></span>
+                    <span style="color:<?php echo esc_attr(\FluentCart\App\Services\Renderer\ProductReviewRenderer::starColors()['filled']); ?>;"><?php echo str_repeat('&#9733;', (int) $rating); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static HTML entities repeated an integer number of times ?></span><span style="color:<?php echo esc_attr(\FluentCart\App\Services\Renderer\ProductReviewRenderer::starColors()['empty']); ?>;"><?php echo str_repeat('&#9734;', 5 - (int) $rating); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static HTML entities repeated an integer number of times ?></span>
                     <span style="font-size:13px;letter-spacing:0;color:#6b7280;vertical-align:middle;">
                         <?php
                         printf(
                             /* translators: 1: the rating given, out of five */
                             esc_html__('%1$d out of 5', 'fluent-cart'),
-                            $rating
+                            (int) $rating
                         );
                         ?>
                     </span>
@@ -128,7 +128,7 @@ $adminUrl = admin_url('admin.php?page=fluent-cart#/reviews/' . (int) $review->id
     <tr>
         <td>
             <a href="<?php echo esc_url($adminUrl); ?>" target="_blank" style="display:inline-block;background-color:#0f172a;color:#ffffff;padding:14px 28px;border-radius:8px;font-size:16px;font-weight:600;text-decoration:none;">
-                <?php $isPending ? esc_html_e('Moderate review', 'fluent-cart') : esc_html_e('View review', 'fluent-cart'); ?> &rarr;
+                <?php $isPending ? esc_html_e('Moderate review', 'fluent-cart') : esc_html_e('View review', 'fluent-cart'); ?> <?php echo \FluentCart\App\Services\Email\EmailDirection::forwardArrow(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </a>
         </td>
     </tr>

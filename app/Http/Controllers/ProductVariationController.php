@@ -653,8 +653,8 @@ class ProductVariationController extends Controller
             'variants' => $batchData,
         ]);
 
-        /* translators: %1$s: number of variants updated */
         return $this->sendSuccess([
+            /* translators: %1$s: number of variants updated */
             'message' => sprintf(__('%1$s variants updated successfully.', 'fluent-cart'), count($variantIds)),
             'updated' => count($variantIds),
         ]);

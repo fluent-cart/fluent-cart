@@ -150,7 +150,7 @@ defineExpose({
         >
             <el-table-column v-if="table && table.data.showDeleteBulkAction" type="selection" width="45"/>
 
-            <el-table-column :width="140" :label="translate('Date')">
+            <el-table-column :width="140" :label="translate('Date')" class-name="fct-orders-date-column">
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
@@ -166,7 +166,7 @@ defineExpose({
                 </template>
             </el-table-column>
 
-            <el-table-column v-if="isColumnVisible('customer')" :width="130" :label="translate('Customer')">
+            <el-table-column v-if="isColumnVisible('customer')" :width="130" :label="translate('Customer')" class-name="fct-orders-customer-column">
                 <template #default="scope">
                     <CustomerInfoPopover
                         v-if="scope.row.customer"
@@ -177,7 +177,7 @@ defineExpose({
                 </template>
             </el-table-column>
 
-            <el-table-column v-if="isColumnVisible('order_items')" :min-width="200" :label="translate('Items')">
+            <el-table-column v-if="isColumnVisible('order_items')" :min-width="200" :label="translate('Items')" class-name="fct-orders-items-column">
                 <template #default="scope">
                     <div class="fct-popover-box">
                         <el-popover
@@ -217,12 +217,12 @@ defineExpose({
                             <template #reference>
                                 <div class="fct-popover-box-action">
                                     <template v-if="getFilteredItems(scope.row.order_items).length === 1">
-                                        <span class="block w-full truncate mr-4">
+                                        <span class="block w-full truncate me-4">
                                            {{ getFilteredItems(scope.row.order_items)[0]?.post_title }}
                                         </span>
                                     </template>
                                     <template v-else>
-                                      <span class="block w-full truncate mr-4">
+                                      <span class="block w-full truncate me-4">
                                          {{ translateNumber(getFilteredItems(scope.row.order_items).length) }} {{ $t("items") }}
                                       </span>
                                     </template>
@@ -241,14 +241,14 @@ defineExpose({
                 </template>
             </el-table-column>
 
-            <el-table-column :width="150" :label="translate('Total')">
+            <el-table-column :width="150" :label="translate('Total')" class-name="fct-orders-total-column">
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
                         <span v-if="!parseInt(scope.row.total_refund)" v-html="CurrencyFormatter.formatNumber(scope.row.total_amount, true, false, scope.row.currency)"></span>
                         <template v-else>
                             <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatNumber(scope.row.total_amount, true, false, scope.row.currency)"></span>
-                            <span style="margin-left: 5px;" v-if="scope.row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(scope.row.total_amount) - parseInt(scope.row.total_refund)), true, false, scope.row.currency)"></span>
+                            <span style="margin-inline-start: 5px;" v-if="scope.row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(scope.row.total_amount) - parseInt(scope.row.total_refund)), true, false, scope.row.currency)"></span>
                         </template>
                     </RouteCell>
                 </template>

@@ -448,7 +448,7 @@ class EmailNotificationMailer
 
                 // Clean up temp PDF file after sending
                 if ($pdfPath && file_exists($pdfPath)) {
-                    @unlink($pdfPath);
+                    wp_delete_file($pdfPath);
                 }
             }
         }
@@ -491,7 +491,7 @@ class EmailNotificationMailer
         $mailer->send(true);
 
         if ($pdfPath && file_exists($pdfPath)) {
-            @unlink($pdfPath);
+            wp_delete_file($pdfPath);
         }
     }
 

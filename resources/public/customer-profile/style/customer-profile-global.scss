@@ -256,7 +256,7 @@ body:not(.fluent-cart-no-colors) {
 
 // .fct-customer-dashboard-customer-info
 .fct-customer-dashboard-customer-info {
-  @apply relative flex gap-3 py-3 pl-5 pr-3 border-0 border-b-[1px] border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+  @apply relative flex gap-3 py-3 ps-5 pe-3 border-0 border-b-[1px] border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
   @media (max-width: 806px) {
     @apply hidden;
   }
@@ -278,6 +278,12 @@ body:not(.fluent-cart-no-colors) {
     }
     p {
       @apply m-0 text-xs leading-4 text-[var(--fct-customer-dashboard-secondary-text-color,#565865)] !important;
+      // The email reads LTR on RTL pages.
+      [dir="rtl"] & {
+        direction: ltr;
+        unicode-bidi: isolate;
+        text-align: right;
+      }
     }
 
   }
@@ -311,11 +317,11 @@ body:not(.fluent-cart-no-colors) {
   border-radius: inherit;
 
   .fct-customer-loader-left {
-    @apply box-border flex-none w-[272px] border-0 border-r border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
+    @apply box-border flex-none w-[272px] border-0 border-e border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
   }
 
   .fct-customer-loader-head {
-    @apply box-border flex items-center gap-3 h-[65px] py-3 pl-5 pr-3 border-0 border-b border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+    @apply box-border flex items-center gap-3 h-[65px] py-3 ps-5 pe-3 border-0 border-b border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
 
     .el-skeleton__circle {
       @apply flex-none w-10 h-10;
@@ -405,7 +411,7 @@ body:not(.fluent-cart-no-colors) {
      product it belongs to. The card's inner row is items-start, which would
      otherwise pin the button to the top of a three-line block. */
   .fct-my-reviews-item-action {
-    @apply flex-shrink-0 self-center ml-auto;
+    @apply flex-shrink-0 self-center ms-auto;
 
     /* The tab locks every trigger while a form is being fetched, and the
        shared button carries no disabled state of its own. */

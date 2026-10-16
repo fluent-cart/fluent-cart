@@ -18,3 +18,16 @@
 .el-cascader-node:not(.is-disabled):focus, .el-cascader-node:not(.is-disabled):hover{
   @apply dark:bg-dark-500;
 }
+
+// Covers every cascader panel (advanced filters, pricing-rule conditions).
+[dir="rtl"] .el-cascader-menu {
+  .el-cascader-node__label {
+    text-align: right;
+  }
+
+  .el-cascader-node__postfix {
+    left: 10px;
+    right: auto;
+    transform: rotate(180deg);
+  }
+}

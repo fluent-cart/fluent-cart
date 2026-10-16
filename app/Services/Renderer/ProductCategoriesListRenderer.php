@@ -96,7 +96,7 @@ class ProductCategoriesListRenderer
         $dropdownClasses = $displayStyle === 'dropdown' ? ' fct-product-categories-list--dropdown' : '';
 
         ?>
-        <div <?php echo $wrapperAttributes; ?>>
+        <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RenderHelper::getBlockWrapperAttributes() escapes each attribute ?>>
             <div class="fct-product-categories-list <?php echo esc_attr($dropdownClasses); ?>">
                 <?php if ($displayStyle === 'dropdown') : ?>
                     <?php $this->renderDropdown($categories, $atts); ?>
@@ -151,16 +151,16 @@ class ProductCategoriesListRenderer
 
         foreach ($categories as $category) {
             $indent = str_repeat('— ', $depth);
-            $label  = $indent . esc_html($category->name);
+            $label  = $indent . $category->name;
 
             if ($showCount) {
-                $label .= ' (' . $category->count . ')';
+                $label .= ' (' . (int) $category->count . ')';
             }
 
             $link = get_term_link($category);
 
             if (!is_wp_error($link)) {
-                echo '<option value="' . esc_url($link) . '">' . $label . '</option>';
+                echo '<option value="' . esc_url($link) . '">' . esc_html($label) . '</option>';
             }
 
             // Render children if hierarchy is enabled
@@ -253,7 +253,7 @@ class ProductCategoriesListRenderer
     public function renderEmpty(string $wrapperAttributes = '')
     {
         ?>
-            <div <?php echo $wrapperAttributes; ?>>
+            <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RenderHelper::getBlockWrapperAttributes() escapes each attribute ?>>
                 <div class="fct-product-categories-list fct-product-categories-list--empty">
                     <p><?php echo esc_html__('No categories found.', 'fluent-cart'); ?></p>
                 </div>

@@ -84,7 +84,7 @@ const averageResults = ref([
                 class="w-2"
                 name="CaretDown"
               />
-              {{ formatNumber(reportData.fluctuations[card.key]) }}%
+              <span dir="ltr">{{ formatNumber(reportData.fluctuations[card.key]) }}%</span>
             </div>
           </div>
           <div class="title">

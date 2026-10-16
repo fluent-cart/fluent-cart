@@ -6,6 +6,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Services\AuthService;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\Framework\Support\Arr;
 
 class OrderPaid
@@ -39,6 +40,12 @@ class OrderPaid
             return;
         }
 
+        // Payment proves this order, not ownership of the customer's other orders.
+        $hasOtherOrders = $customer->orders()->where('id', '!=', $order->id)->exists();
+        if ($hasOtherOrders && !EmailVerificationService::isEnabled()) {
+            return;
+        }
+
         $createdUserId = \FluentCart\App\Services\AuthService::createUserFromCustomer($customer, true);
         if (is_wp_error($createdUserId)) {
             /* translators: %1$s: account creation error. */
@@ -53,7 +60,7 @@ class OrderPaid
         $message = sprintf(__('User account has been created automatically on payment success. Created User ID: %1$s', 'fluent-cart'), $createdUserId);
         $order->addLog(__('User created successfully', 'fluent-cart'), $message, 'info');
         $action = App::request()->get('fluent-cart') ?? '';
-        if (!get_current_user_id() && empty($action) && (new StoreSettings())->get('auto_login_after_account_creation') === 'yes') {
+        if ((!$hasOtherOrders || EmailVerificationService::isEnabled()) && !get_current_user_id() && empty($action) && (new StoreSettings())->get('auto_login_after_account_creation') === 'yes') {
             // this is a browser request. So we can make the user logged in automatically
             $user = get_user_by('ID', $createdUserId);
             if ($user) {

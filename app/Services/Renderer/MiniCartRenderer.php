@@ -64,10 +64,10 @@ class MiniCartRenderer
 
 
         ?>
-        <div <?php echo $wrapperAttributes; ?>>
+        <div <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RenderHelper::getBlockWrapperAttributes() escapes each attribute ?>>
             <button class="fct-mini-cart-button <?php echo esc_attr($buttonClass); ?>" data-fluent-cart-cart-expand-button
                     aria-label="<?php esc_attr_e('Open Shopping Cart', 'fluent-cart'); ?>">
-                    <span class="fct-mini-cart-wrap" <?php echo $iconStyle; ?>>
+                    <span class="fct-mini-cart-wrap" <?php echo $iconStyle; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- style attribute built with esc_attr() on the colour ?>>
                         <?php $this->renderCartIcon($cartIcon); ?>
 
                         <?php if ($showBadge) : ?>
@@ -75,7 +75,7 @@ class MiniCartRenderer
                                 class="fct-mini-cart-badge"
                                 data-cart-badge-count
                                 data-cart-count-mode="<?php echo esc_attr($this->countMode); ?>"
-                                <?php echo $countStyle; ?>
+                                <?php echo $countStyle; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- style attribute built with esc_attr() on the colour ?>
                             >
                                 <?php
                                 if ($this->itemCount > 0) {
@@ -94,7 +94,7 @@ class MiniCartRenderer
                         class="fct-mini-cart-amount"
                         aria-live="polite"
                         aria-label="<?php echo esc_attr($aria_label); ?>"
-                                <?php echo $priceStyle; ?>
+                                <?php echo $priceStyle; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- style attribute built with esc_attr() on the colour ?>
                         >
                              <?php echo esc_html($subtotal); ?>
                         </span>

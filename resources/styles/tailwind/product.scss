@@ -8,7 +8,7 @@
   li {
     @apply text-system-mid flex mb-0 p-4 justify-between text-center cursor-pointer border border-solid border-gray-outline rounded-[12px] text-base font-semibold flex-1 transition-all dark:border-dark-400 dark:text-gray-50;
     svg {
-      @apply w-5 h-5 mr-2.5;
+      @apply w-5 h-5 me-2.5;
     }
 
     &.active {
@@ -51,7 +51,7 @@
 }
 
 .fct-new-price-block .el-form-item .el-form-item__label {
-  @apply pt-0 pr-3 pb-0 pl-0 #{!important};
+  @apply pt-0 pe-3 pb-0 ps-0 #{!important};
 }
 
 .fca_menu_items {
@@ -122,7 +122,7 @@
     }
 
     .el-button {
-      @apply py-1 px-2 whitespace-normal max-w-[160px] text-right;
+      @apply py-1 px-2 whitespace-normal max-w-[160px] text-end;
       word-break: break-word;
 
       span {
@@ -291,7 +291,7 @@
     }
 
     .content-collapsible-btn {
-      @apply mr-1 w-6.5 h-7.5 inline-flex items-center cursor-pointer flex-shrink-0;
+      @apply me-1 w-6.5 h-7.5 inline-flex items-center cursor-pointer flex-shrink-0;
       .icon {
         @apply w-4 h-4 text-system-dark dark:text-gray-100;
         transition: 0.3s ease-in-out;
@@ -301,6 +301,11 @@
         .icon {
           @apply rotate-90;
         }
+      }
+
+      // CaretRight points into the reading direction; in RTL that is left.
+      [dir="rtl"] &:not(.is-collapsed) .icon {
+        @apply rotate-180;
       }
     }
   }
@@ -329,11 +334,11 @@
       &-inner {
         @apply m-0 overflow-hidden;
         li {
-          @apply m-0 border-t border-b-0 pl-6;
+          @apply m-0 border-t border-b-0 ps-6;
         }
 
         .fct-collapsible-content-wrapper {
-          @apply pl-[20px];
+          @apply ps-[20px];
         }
 
         .fct-collapsible-content-wrapper {
@@ -352,7 +357,7 @@
     flex: 0 0 auto;
 
     .content-img {
-      @apply w-10 h-10 mr-5 flex-shrink-0;
+      @apply w-10 h-10 me-5 flex-shrink-0;
       img {
         @apply aspect-square w-full rounded-md;
       }
@@ -363,7 +368,7 @@
     }
 
     .content-checkbox {
-      @apply mr-3;
+      @apply me-3;
     }
 
     .content-title {
@@ -387,12 +392,12 @@
   }
 
   &-stock-wrapper {
-    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-right dark:text-gray-300;
+    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-end dark:text-gray-300;
     flex: 0 0 auto;
   }
 
   &-value-wrapper {
-    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-right dark:text-gray-300;
+    @apply text-sm font-normal text-system-mid w-[calc((100%-40px)*.2)] text-end dark:text-gray-300;
     flex: 0 0 auto;
   }
 
@@ -427,7 +432,7 @@
             &:after {
               content: "*";
               color: var(--el-color-danger);
-              margin-left: 4px;
+              margin-inline-start: 4px;
             }
           }
         }
@@ -457,7 +462,7 @@
 
 .fct-product-variation-select {
   .el-button {
-    @apply w-[140px] block text-left;
+    @apply w-[140px] block text-start;
     //@apply hover:bg-white dark:hover:bg-dark-500 #{!important};
     //box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03);
     span {
@@ -483,7 +488,7 @@
 }
 
 .fct-product-add-more-price-wrap {
-  @apply py-5 pl-6 border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400;
+  @apply py-5 ps-6 border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400;
 }
 
 .fct-product {
@@ -598,7 +603,7 @@
 }
 
 .fct-adjust-by-action {
-  @apply text-right mt-3;
+  @apply text-end mt-3;
 }
 
 .fct-product-inventory-wrap,
@@ -644,10 +649,10 @@
      run under the badge and look chopped off. */
   .fct-inventory-title-cell--has-badge {
     .el-input__wrapper {
-      @apply pr-[58px];
+      @apply pe-[58px];
     }
     .fct-variant-badge {
-        @apply absolute -top-4 right-1.5 opacity-0 transition;
+        @apply absolute -top-4 end-1.5 opacity-0 transition;
     }
   }
   .el-table__row {
@@ -684,7 +689,7 @@
 .fct-browse-product-form-group {
   @apply flex items-center gap-3 relative;
   .el-button {
-    @apply absolute top-1 right-1;
+    @apply absolute top-1 end-1;
   }
 }
 
@@ -734,7 +739,7 @@
   }
 
   .fct-variant-badge {
-    @apply absolute -top-2 right-1.5;
+    @apply absolute -top-2 end-1.5;
   }
 }
 
@@ -748,7 +753,7 @@
   }
 
   .fct-repeat-interval-badge {
-    @apply absolute -top-2 right-1.5 bg-white border border-solid border-gray-outline text-primary-500 rounded-xs dark:bg-primary-700 dark:text-gray-50 dark:border-primary-500
+    @apply absolute -top-2 end-1.5 bg-white border border-solid border-gray-outline text-primary-500 rounded-xs dark:bg-primary-700 dark:text-gray-50 dark:border-primary-500
   }
 
   tr:hover .fct-repeat-interval-badge {
@@ -775,12 +780,12 @@ input[type="number"] {
   transform: translate(-50%, -50%);
 
   .el-button {
-    @apply m-0 font-normal first:border-r-[0.5px] first:rounded-tr-none first:rounded-br-none last:rounded-tl-none last:rounded-bl-none last:border-l-[0.5px];
+    @apply m-0 font-normal first:border-e-[0.5px] first:rounded-e-none last:rounded-s-none last:border-s-[0.5px];
   }
 }
 
 .fct-downloadable-variation-selector {
-    @apply flex gap-10 justify-between w-full pr-7.5;
+    @apply flex gap-10 justify-between w-full pe-7.5;
     .price-info{
         @apply flex gap-2;
     }
@@ -906,10 +911,10 @@ input[type="number"] {
 .fct-bundle-product-condition {
   @apply grid gap-0.5;
   .el-checkbox__label {
-    @apply pl-3;
+    @apply ps-3;
   }
   .condition-text {
-    @apply text-xs text-system-mid pl-[28px];
+    @apply text-xs text-system-mid ps-[28px];
   }
 }
 
@@ -1021,7 +1026,7 @@ input[type="number"] {
         }
     }
     .el-button--primary {
-        @apply text-success-500 border border-solid border-y-0 border-l-0 border-gray-outline dark:border-dark-400 dark:text-success-500;
+        @apply text-success-500 border-0 border-e border-solid border-gray-outline dark:border-dark-400 dark:text-success-500;
         span {
             @apply text-success-500 dark:text-success-500;
         }

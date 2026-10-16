@@ -6,6 +6,8 @@
  * @var array $reminder
  */
 
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+
 $reminder = (isset($reminder) && is_array($reminder)) ? $reminder : [];
 $billingDate = \FluentCart\Framework\Support\Arr::get($reminder, 'billing_date', $subscription->next_billing_date);
 $billingLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($billingDate, true, $order);
@@ -36,13 +38,13 @@ $billingInterval = $subscription->billing_interval ?? '';
         <tbody>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Subscription', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->display_item_name); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($subscription->display_item_name); ?></td>
         </tr>
         <?php if ($renewalAmount): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Renewal Amount', 'fluent-cart'); ?></td>
-                <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:right;">
-                    <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); ?>
+                <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;">
+                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <?php if ($billingInterval): ?>
                         <span style="font-size:12px;font-weight:400;color:#6b7280;">(<?php echo esc_html($billingInterval); ?>)</span>
                     <?php endif; ?>
@@ -52,7 +54,7 @@ $billingInterval = $subscription->billing_interval ?? '';
         <?php if ($billingLabel): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Next Billing Date', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:right;"><?php echo esc_html($billingLabel); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($billingLabel); ?></td>
             </tr>
         <?php endif; ?>
         </tbody>

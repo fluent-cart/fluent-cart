@@ -96,9 +96,9 @@
     }
 
     .fluent-cart-pricing-table-variant-badge {
-      @apply absolute top-1.5 right-[-1px] bg-[var(--fluent-cart-pricing-table-badge-bg)] py-1 px-2.5 leading-none text-xs font-medium rounded-tl-full rounded-bl-full text-[var(--fluent-cart-pricing-table-badge-color)];
+      @apply absolute top-1.5 end-[-1px] bg-[var(--fluent-cart-pricing-table-badge-bg)] py-1 px-2.5 leading-none text-xs font-medium rounded-ss-full rounded-es-full text-[var(--fluent-cart-pricing-table-badge-color)];
       &.left {
-        @apply left-[-1px] right-auto rounded-bl-none rounded-tl-none rounded-tr-full rounded-br-full;
+        @apply start-[-1px] end-auto rounded-es-none rounded-ss-none rounded-se-full rounded-ee-full;
       }
 
       &.center {
@@ -149,6 +149,14 @@
 
     .fluent-cart-pricing-table-variant-compare-price {
       @apply text-[var(--fluent-cart-pricing-table-card-compare-price-color)] font-normal flex items-center line-through relative bottom-[-3px] opacity-[0.5];
+    }
+
+    // Sign, amount and interval are separate flex items; keep their PHP order in RTL.
+    .fluent-cart-pricing-table-variant-price,
+    .fluent-cart-pricing-table-variant-compare-price {
+      [dir="rtl"] & {
+        direction: ltr;
+      }
     }
 
     .fluent-cart-pricing-table-variant-features {

@@ -217,7 +217,7 @@
                       @command="handleCommand"
                       placement="bottom-end"
                   >
-                    <span class="more-btn mr-2" :aria-label="translate('Review actions')">
+                    <span class="more-btn me-2" :aria-label="translate('Review actions')">
                       <DynamicIcon name="More"/>
                     </span>
                     <template #dropdown>

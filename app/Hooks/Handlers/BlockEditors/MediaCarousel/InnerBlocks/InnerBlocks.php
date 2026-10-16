@@ -178,7 +178,7 @@ class InnerBlocks
 
         ob_start();
         ?>
-        <div <?php echo $wrapper_attributes; ?>>
+        <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <a
                 class="fct-product-image-link"
                 href="<?php echo esc_url($image['link'] ?? '#'); ?>"

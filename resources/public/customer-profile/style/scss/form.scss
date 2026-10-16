@@ -46,7 +46,7 @@
 .form-input-group{
   @apply relative;
   label{
-    @apply cursor-text text-[15px] font-normal text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] absolute left-4 top-1/2 transition-all duration-150 ease-in-out m-0 leading-none pointer-events-none;
+    @apply cursor-text text-[15px] font-normal text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] absolute start-4 top-1/2 transition-all duration-150 ease-in-out m-0 leading-none pointer-events-none;
     transform: translateY(-50%);
   }
   input,
@@ -62,9 +62,12 @@
     background-position: right 16px center;
     background-repeat: no-repeat;
     background-size: 11px 11px;
+    [dir="rtl"] & {
+      background-position: left 16px center;
+    }
   }
   img{
-    @apply absolute top-1/2 right-4 pointer-events-none;
+    @apply absolute top-1/2 end-4 pointer-events-none;
     transform: translateY(-50%);
   }
   &.is-focused{

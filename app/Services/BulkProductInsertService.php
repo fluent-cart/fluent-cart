@@ -203,6 +203,7 @@ class BulkProductInsertService
             if (!empty($sku)) {
                 if (in_array($sku, $skus, true)) {
                     $skuErrors["variants.$i.sku"] = sprintf(
+                        /* translators: %s: SKU */
                         __('Duplicate SKU "%s" within this product.', 'fluent-cart'),
                         $sku
                     );
@@ -228,7 +229,7 @@ class BulkProductInsertService
         $postExcerpt = sanitize_textarea_field(Arr::get($productData, 'post_excerpt', ''));
 
         if (empty($postTitle)) {
-            throw new \RuntimeException(__('Product title is required', 'fluent-cart'));
+            throw new \RuntimeException(__('Product title is required', 'fluent-cart')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
         }
 
         // Map 'published' status to 'publish' for WordPress
@@ -249,7 +250,7 @@ class BulkProductInsertService
         $createdPostId = wp_insert_post($postData);
 
         if (is_wp_error($createdPostId)) {
-            throw new \RuntimeException($createdPostId->get_error_message());
+            throw new \RuntimeException($createdPostId->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
         }
 
         $detail = Arr::get($productData, 'detail', []);
@@ -266,7 +267,7 @@ class BulkProductInsertService
         ]);
 
         if (!$createdDetail) {
-            throw new \RuntimeException(__('Failed to create product detail', 'fluent-cart'));
+            throw new \RuntimeException(__('Failed to create product detail', 'fluent-cart')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
         }
 
         $variants = Arr::get($productData, 'variants', []);
@@ -393,7 +394,8 @@ class BulkProductInsertService
             $existingSku = ProductVariation::query()->where('sku', $sku)->first();
             if ($existingSku) {
                 throw new \RuntimeException(
-                    sprintf(__('SKU "%s" is already in use.', 'fluent-cart'), $sku)
+                    /* translators: %s: SKU */
+                    sprintf(__('SKU "%s" is already in use.', 'fluent-cart'), $sku) // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
                 );
             }
         }
@@ -450,7 +452,8 @@ class BulkProductInsertService
             $existingSku = ProductVariation::query()->where('sku', $sku)->first();
             if ($existingSku) {
                 throw new \RuntimeException(
-                    sprintf(__('SKU "%s" is already in use.', 'fluent-cart'), $sku)
+                    /* translators: %s: SKU */
+                    sprintf(__('SKU "%s" is already in use.', 'fluent-cart'), $sku) // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
                 );
             }
         }

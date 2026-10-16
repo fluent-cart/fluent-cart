@@ -222,6 +222,17 @@
     }
 }
 
+[dir="rtl"] .fct-integrations-table-wrap {
+    .el-table {
+        th.el-table__cell,
+        td.el-table__cell {
+            .cell {
+                text-align: start;
+            }
+        }
+    }
+}
+
 .fct-vat-excluded-inclusive-wrap {
     @apply pl-[42px];
 }

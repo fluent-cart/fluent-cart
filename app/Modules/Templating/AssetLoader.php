@@ -250,6 +250,7 @@ class AssetLoader
                 'show_less'         => __('Show less', 'fluent-cart'),
                 'load_error'        => __('Unable to load reviews. Please try again later.', 'fluent-cart'),
                 'edit_review'       => __('Edit your review', 'fluent-cart'),
+                /* translators: %d: star rating */
                 'rated_out_of'      => __('Rated %d out of 5', 'fluent-cart'),
                 /* translators: 1: current step, 2: total steps */
                 'step_x_of_y'       => __('Step %1$s of %2$s', 'fluent-cart'),

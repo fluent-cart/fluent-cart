@@ -257,7 +257,6 @@ class ModalCheckoutRenderer
 
                 <?php $this->renderSummaryGroup(); ?>
 
-                <?php //$this->renderCheckoutReviews();?>
             </div>
         <?php
     }
@@ -328,6 +327,7 @@ class ModalCheckoutRenderer
                             if (empty($limit) || (int) $limit === 0) {
                                 echo esc_html__('Unlimited Activation', 'fluent-cart');
                             } else {
+                                /* translators: %d: license activation limit */
                                 echo esc_html(sprintf(__('Activation limit %d', 'fluent-cart'), $limit));
                             }
                             ?>
@@ -487,49 +487,6 @@ class ModalCheckoutRenderer
 
         <?php
     }
-
-    public function renderCheckoutReviews() {
-        ?>
-        <div class="fct-modal-checkout-reviews-wrap">
-            <div class="fct-modal-checkout-reviews">
-                <div class="fct-reviews-picture">
-                    <img width="40" height="40" src="https://images.pexels.com/photos/23885849/pexels-photo-23885849.jpeg" alt="">
-                </div>
-                <div class="fct-reviews-content">
-                    <div class="fct-reviews-text">
-                        I got the annual unlimited websites premium version and I'm upgrading to the Lifetime Unlimited Websites plan real soon. Building WordPress website
-                    </div>
-                    <div class="fct-reviews-meta">
-                        <div class="fct-review-stars">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                <path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/>
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                <path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/>
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                <path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/>
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                <path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/>
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                <path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/>
-                            </svg>
-                        </div>
-                        <div class="fct-review-author-info">
-                            <span class="fct-author-name">Bryson Suleiman,</span>
-                            <span class="fct-author-role">Founder and WordPress Expert at Webbryson</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <?php
-
-    }
-
 
     /**
      * First/Last name inputs for the modal. Enabling either in Checkout Fields

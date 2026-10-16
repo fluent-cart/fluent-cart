@@ -405,13 +405,14 @@ $variation($ordersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$orderDetailsId = $declare($api, 569, 'orders/{order_id}', ['needs' => 'order']);
+$declare($api, 561, 'orders/currencies');
+$orderDetailsId = $declare($api, 577, 'orders/{order_id}', ['needs' => 'order']);
 $variation($orderDetailsId, 'single order widgets relation', [
     'with' => ['widgets'],
 ], 'resources/admin/Modules/Orders/SingleOrder.vue', 1619, ['needs' => 'order']);
-$declare($api, 607, 'orders/{order}/transactions', ['needs' => 'order']);
-$declare($api, 615, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
-$shippingMethodsId = $declare($api, 637, 'orders/shipping_methods', [
+$declare($api, 615, 'orders/{order}/transactions', ['needs' => 'order']);
+$declare($api, 623, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
+$shippingMethodsId = $declare($api, 645, 'orders/shipping_methods', [
     'params' => ['country_code' => 'US', 'order_items' => []],
 ]);
 $variation($shippingMethodsId, 'country and state selection', [
@@ -428,16 +429,16 @@ $variation($shippingMethodsId, 'create-order item-aware shipping quote', [
         'discount_total' => 0,
     ]],
 ], 'resources/admin/Modules/Orders/CreateOrder.vue', 715, ['needs' => 'variation']);
-$renewalsId = $declare($api, 648, 'renewals', ['params' => ['page' => 1]]);
+$renewalsId = $declare($api, 656, 'renewals', ['params' => ['page' => 1]]);
 $variation($renewalsId, 'payment, parent, and customer filters', [
     'payment_status' => 'pending',
     'parent_id'      => '{order_id}',
     'customer_id'    => 0,
 ], 'app/Http/Controllers/RenewalController.php', 27, ['needs' => 'order']);
-$declare($api, 652, 'renewals/{id}', ['needs' => 'renewal']);
-$declare($api, 666, 'labels');
+$declare($api, 660, 'renewals/{id}', ['needs' => 'renewal']);
+$declare($api, 674, 'labels');
 
-$customersId = $declare($api, 678, 'customers', [
+$customersId = $declare($api, 686, 'customers', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -479,14 +480,14 @@ $variation($customersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 686, 'customers/get-stats/{customer}', ['needs' => 'customer']);
-$declare($api, 690, 'customers/attachable-user');
-$customerDetailsId = $declare($api, 702, 'customers/{customerId}', ['needs' => 'customer']);
+$declare($api, 694, 'customers/get-stats/{customer}', ['needs' => 'customer']);
+$declare($api, 698, 'customers/attachable-user');
+$customerDetailsId = $declare($api, 710, 'customers/{customerId}', ['needs' => 'customer']);
 $variation($customerDetailsId, 'single customer relations', [
     'with' => ['shipping_address', 'billing_address', 'labels', 'subscriptions'],
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 274, ['needs' => 'customer']);
-$declare($api, 706, 'customers/{customerId}/order', ['needs' => 'customer']);
-$customerOrdersId = $declare($api, 722, 'customers/{customerId}/orders', ['needs' => 'customer']);
+$declare($api, 714, 'customers/{customerId}/order', ['needs' => 'customer']);
+$customerOrdersId = $declare($api, 730, 'customers/{customerId}/orders', ['needs' => 'customer']);
 $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'per_page'  => 10,
     'page'      => 1,
@@ -495,7 +496,7 @@ $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'order_by'  => 'id',
     'order_type'=> 'DESC',
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 307, ['needs' => 'customer']);
-$customerAddressId = $declare($api, 726, 'customers/{customerId}/address', ['needs' => 'customer']);
+$customerAddressId = $declare($api, 734, 'customers/{customerId}/address', ['needs' => 'customer']);
 $variation($customerAddressId, 'billing address type', [
     'type' => 'billing',
 ], 'resources/admin/Modules/Customers/Modals/AddOrEditAddressModal.vue', 296, ['needs' => 'customer']);
@@ -503,16 +504,16 @@ $variation($customerAddressId, 'shipping address type', [
     'type' => 'shipping',
 ], 'resources/admin/Modules/Customers/Modals/ManageOrderAddressModal.vue', 199, ['needs' => 'customer']);
 
-$declare($api, 755, 'onboarding');
-$declare($api, 762, 'email-notification');
-$declare($api, 763, 'email-notification/get-short-codes');
-$declare($api, 764, 'email-notification/get-settings');
-$declare($api, 766, 'email-notification/reminders');
-$declare($api, 768, 'email-notification/digest-settings');
-$declare($api, 774, 'email-notification/{notification}', ['needs' => 'notification']);
-$declare($api, 780, 'templates/print-templates');
-$declare($api, 786, 'coupons/listCoupons');
-$couponsId = $declare($api, 790, 'coupons', [
+$declare($api, 763, 'onboarding');
+$declare($api, 770, 'email-notification');
+$declare($api, 771, 'email-notification/get-short-codes');
+$declare($api, 772, 'email-notification/get-settings');
+$declare($api, 774, 'email-notification/reminders');
+$declare($api, 776, 'email-notification/digest-settings');
+$declare($api, 782, 'email-notification/{notification}', ['needs' => 'notification']);
+$declare($api, 788, 'templates/print-templates');
+$declare($api, 794, 'coupons/listCoupons');
+$couponsId = $declare($api, 798, 'coupons', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -552,9 +553,9 @@ $variation($couponsId, 'table code search and expiry ordering', [
     'search'      => '__fc_smoke__',
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 793, 'coupons/getSettings');
-$declare($api, 796, 'coupons/{id}', ['needs' => 'coupon']);
-$filesId = $declare($api, 830, 'files', [
+$declare($api, 801, 'coupons/getSettings');
+$declare($api, 804, 'coupons/{id}', ['needs' => 'coupon']);
+$filesId = $declare($api, 838, 'files', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}', 'search' => ''],
 ]);
@@ -564,17 +565,17 @@ $variation($filesId, 'storage file search', [
 ], 'resources/admin/Bits/Components/DownloadableFileSelector/StorageDriverModel.js', 110, [
     'needs' => 'local_storage',
 ]);
-$declare($api, 832, 'files/bucket-list', [
+$declare($api, 840, 'files/bucket-list', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}'],
 ]);
-$declare($api, 843, 'app/init');
-$declare($api, 844, 'app/attachments', [
+$declare($api, 851, 'app/init');
+$declare($api, 852, 'app/attachments', [
     'ok' => [200, 423],
     'empty_response' => ['status' => 422, 'message' => 'No Images Found'],
 ]);
 
-$activityId = $declare($api, 849, 'activity', [
+$activityId = $declare($api, 857, 'activity', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -609,7 +610,7 @@ $variation($activityId, 'table content search and date ordering', [
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$taxesId = $declare($api, 855, 'taxes', [
+$taxesId = $declare($api, 863, 'taxes', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -650,20 +651,20 @@ $variation($taxesId, 'table country ordering and advanced filter', [
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$declare($api, 860, 'address-info/countries');
-$countryInfoId = $declare($api, 861, 'address-info/get-country-info', [
+$declare($api, 868, 'address-info/countries');
+$countryInfoId = $declare($api, 869, 'address-info/get-country-info', [
     'params' => ['country_code' => 'US'],
 ]);
 $variation($countryInfoId, 'store/customer address country selection', [
     'country_code' => 'GB',
 ], 'resources/admin/Bits/Components/Address/AddressComponent.vue', 55);
-$declare($api, 867, 'products/{product_id}/integrations/{integration_name}/settings', [
+$declare($api, 875, 'products/{product_id}/integrations/{integration_name}/settings', [
     'needs' => 'product_integration',
 ]);
-$declare($api, 883, 'products/{productId}/integrations', ['needs' => 'product']);
-$declare($api, 893, 'tax/classes');
-$declare($api, 904, 'tax/rates');
-$taxCountryRatesId = $declare($api, 907, 'tax/rates/country/rates/{country_code}', [
+$declare($api, 891, 'products/{productId}/integrations', ['needs' => 'product']);
+$declare($api, 901, 'tax/classes');
+$declare($api, 912, 'tax/rates');
+$taxCountryRatesId = $declare($api, 915, 'tax/rates/country/rates/{country_code}', [
     'route' => 'tax/rates/country/rates/US',
 ]);
 $variation($taxCountryRatesId, 'tax class rate selection', [
@@ -671,17 +672,17 @@ $variation($taxCountryRatesId, 'tax class rate selection', [
 ], 'resources/admin/Modules/Tax/Components/EUVatTaxOverrideModal.vue', 137, [
     'route' => 'tax/rates/country/rates/US',
 ]);
-$declare($api, 928, 'tax/country-tax-id/{country_code}', [
+$declare($api, 936, 'tax/country-tax-id/{country_code}', [
     'route' => 'tax/country-tax-id/US',
 ]);
-$declare($api, 936, 'tax/product-overrides/{country_code}', [
+$declare($api, 944, 'tax/product-overrides/{country_code}', [
     'route' => 'tax/product-overrides/US',
 ]);
-$declare($api, 949, 'tax/configuration/rates');
-$declare($api, 955, 'tax/configuration/settings');
-$declare($api, 967, 'tax/configuration/settings/eu-vat/product-overrides');
-$declare($api, 970, 'tax/configuration/settings/eu-vat/oss-rates');
-$declare($api, 979, 'checkout-fields/get-fields');
+$declare($api, 957, 'tax/configuration/rates');
+$declare($api, 963, 'tax/configuration/settings');
+$declare($api, 975, 'tax/configuration/settings/eu-vat/product-overrides');
+$declare($api, 978, 'tax/configuration/settings/eu-vat/oss-rates');
+$declare($api, 987, 'checkout-fields/get-fields');
 
 $reports = 'app/Http/Routes/reports.php';
 $reportParams = [
@@ -908,11 +909,11 @@ $declare($advance, 25, 'forms/search_options', [
     'params' => ['search_by' => '__fc_smoke__', 'search_for' => 'store_country'],
 ]);
 
-$declare($api, 985, 'reviews', [
+$declare($api, 993, 'reviews', [
     'params' => ['per_page' => 10, 'page' => 1],
 ]);
-$declare($api, 988, 'reviews/stats');
-$declare($api, 991, 'reviews/{id}', ['needs' => 'review']);
+$declare($api, 996, 'reviews/stats');
+$declare($api, 999, 'reviews/{id}', ['needs' => 'review']);
 
 $frontend = 'app/Http/Routes/frontend_routes.php';
 $publicProductsId = $declare($frontend, 21, 'public/products', [

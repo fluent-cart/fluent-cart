@@ -6,6 +6,8 @@
  * @var string $reason
  */
 
+$endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+
 $renewalAmount = $subscription->recurring_total ?? 0;
 $billingInterval = $subscription->billing_interval ?? '';
 $accessUntilLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($subscription->next_billing_date, false, $order);
@@ -17,17 +19,17 @@ $accessUntilLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($sub
         <tbody>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Customer', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->customer->full_name); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($subscription->customer->full_name); ?></td>
         </tr>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Subscription', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($subscription->display_item_name); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($subscription->display_item_name); ?></td>
         </tr>
         <?php if ($renewalAmount): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Amount', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;">
-                    <?php echo esc_html(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); ?>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;">
+                    <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($renewalAmount, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <?php if ($billingInterval): ?>
                         <span style="font-size:12px;font-weight:400;color:#6b7280;">(<?php echo esc_html($billingInterval); ?>)</span>
                     <?php endif; ?>
@@ -37,13 +39,13 @@ $accessUntilLabel = \FluentCart\App\Services\DateTime\DateFormatter::format($sub
         <?php if (!empty($reason)): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Reason', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:right;"><?php echo esc_html($reason); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($reason); ?></td>
             </tr>
         <?php endif; ?>
         <?php if ($accessUntilLabel): ?>
             <tr>
                 <td style="font-size:13px;color:#6b7280;padding:0;"><?php esc_html_e('Access Until', 'fluent-cart'); ?></td>
-                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:right;"><?php echo esc_html($accessUntilLabel); ?></td>
+                <td style="font-size:13px;color:#111827;font-weight:600;padding:0;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($accessUntilLabel); ?></td>
             </tr>
         <?php endif; ?>
         </tbody>

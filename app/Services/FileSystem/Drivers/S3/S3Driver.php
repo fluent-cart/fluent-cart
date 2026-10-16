@@ -114,7 +114,7 @@ class S3Driver extends BaseDriver
         $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->secretKey, true));
         $queryParams['Signature'] = $signature;
 
-        $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$filePath}";
+        $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$filePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         $queryString = http_build_query($queryParams);
 
         return $url . '?' . $queryString;
@@ -155,10 +155,10 @@ class S3Driver extends BaseDriver
         // For dotted buckets, use path-style: include bucket in canonical URI
         if ($hasDot) {
             $canonicalUri = '/' . $this->bucket . $encodedFilePath;
-            $host = "s3.{$this->region}.amazonaws.com";
+            $host = "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
             $canonicalUri = $encodedFilePath;
-            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         $canonicalQueryString = [
@@ -280,9 +280,9 @@ class S3Driver extends BaseDriver
         $hasDot = strpos($this->bucket, '.') !== false;
 
         if ($hasDot) {
-            $url = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$downloadableFilePath}";
+            $url = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}/{$downloadableFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
-            $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$downloadableFilePath}";
+            $url = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$downloadableFilePath}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         $date = gmdate('D, d M Y H:i:s T');

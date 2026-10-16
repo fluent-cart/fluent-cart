@@ -224,7 +224,7 @@
 // Store replies — tinted cards indented to the review's content column
 // (avatar 36px + 14px gap)
 .fct-thread-reply-group {
-  @apply pl-[50px] pb-5;
+  @apply ps-[50px] pb-5;
 }
 
 
@@ -263,7 +263,7 @@
 }
 
 .fct-thread-status-pill {
-  @apply gap-1.5 pr-1.5 cursor-pointer;
+  @apply gap-1.5 pe-1.5 cursor-pointer;
 }
 
 .fct-thread-status-caret {
@@ -389,7 +389,7 @@
   font-size: 13px;
   color: #4b5563;
   transition: background 0.15s;
-  text-align: left;
+  text-align: start;
 
   &:hover:not(:disabled) {
     background: #f3f4f6;
@@ -601,7 +601,7 @@
 // Photo Reviews) - stepped in under it so the dependency reads.
 .fct-review-settings {
   .fct-setting-form-row.is-child .fct-setting-form-content {
-    @apply pl-7;
+    @apply ps-7;
   }
 
   // A row whose only control is a switch or a number box on the right edge
@@ -622,7 +622,7 @@
 .fct-review-stacked-radios {
   @apply flex flex-col gap-3 w-full items-start;
   .el-radio {
-    @apply mr-0 items-start h-auto;
+    @apply me-0 items-start h-auto;
   }
   .el-radio__label {
     @apply mt-[-3px];
@@ -641,7 +641,7 @@
 // any two-class rule and the pill would keep --el-text-color-regular in
 // both themes.
 #fct_admin_app_wrapper .fct-single-review-page .fct-goto-customer-pill {
-  @apply inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-gray-100 text-system-mid text-xs font-normal align-middle select-none transition-colors dark:bg-dark-400 dark:text-gray-300;
+  @apply inline-flex items-center gap-1 ms-2 px-2 py-0.5 rounded-full bg-gray-100 text-system-mid text-xs font-normal align-middle select-none transition-colors dark:bg-dark-400 dark:text-gray-300;
 
   &:hover {
     @apply bg-gray-200 text-system-dark dark:bg-dark-300 dark:text-gray-50;
@@ -968,7 +968,7 @@
   /* Indented and lighter than the heading above them: children of a product,
      not a flat list that happens to have captions in it. */
   .el-select-group .el-select-dropdown__item {
-    @apply pl-7 font-normal text-system-mid dark:text-gray-300;
+    @apply ps-7 font-normal text-system-mid dark:text-gray-300;
 
     &.is-selected {
       @apply font-medium;
@@ -1022,7 +1022,7 @@
 }
 
 .fct-add-review-upgrade {
-  @apply ml-1 underline text-blue-500 dark:text-blue-300;
+  @apply ms-1 underline text-blue-500 dark:text-blue-300;
 }
 
 /* Verified-purchase toggle in the single-review sidebar. */
@@ -1067,7 +1067,7 @@
 }
 
 .fct-add-review-media-remove {
-  @apply absolute top-1 right-1 w-5.5 h-5.5 flex items-center justify-center p-0 cursor-pointer;
+  @apply absolute top-1 end-1 w-5.5 h-5.5 flex items-center justify-center p-0 cursor-pointer;
   @apply rounded-full border-0 text-white text-sm leading-normal transition-opacity duration-100;
   background: rgba(0, 0, 0, 0.6);
 

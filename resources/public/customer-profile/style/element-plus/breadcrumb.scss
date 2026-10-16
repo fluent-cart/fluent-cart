@@ -1,3 +1,13 @@
+// Element Plus floats items left and points the separator right.
+[dir="rtl"] {
+  .el-breadcrumb__item {
+    float: right;
+  }
+  .el-breadcrumb__separator svg {
+    transform: scaleX(-1);
+  }
+}
+
 .el-breadcrumb__inner{
   @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-medium #{!important};
 }

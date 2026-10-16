@@ -181,3 +181,16 @@
     @apply no-underline;
 }
 
+
+// Element Plus spaces adjacent buttons and icon labels with physical margin-left.
+.el-button + .el-button {
+    margin-left: 0;
+    margin-inline-start: 12px;
+}
+[dir="rtl"] .el-button [class*='el-icon'] + span {
+    margin-left: 0;
+    margin-right: 6px;
+}
+[dir="rtl"] .el-button--small [class*='el-icon'] + span {
+    margin-right: 4px;
+}

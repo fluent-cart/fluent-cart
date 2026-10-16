@@ -37,7 +37,7 @@
                 padding: var(--fct-container-padding-y, theme('spacing.5')) var(--fct-container-padding-x, theme('spacing.5'));
             }
             .license-badge{
-                @apply absolute top-5 right-5;
+                @apply absolute top-5 end-5;
             }
         }
     }

@@ -34,12 +34,12 @@
        whole discount the parent row is labeled "Prorate Credit" directly instead. -->
   <template v-if="order.config && order.config.prorate_credit > 0 && order.manual_discount_total - order.config.prorate_credit > 0">
     <tr style="font-size:12px;color:rgb(107,114,128);">
-      <td style="padding-left:16px;">{{ translate('Upgrade Discount') }}</td>
+      <td style="padding-inline-start:16px;">{{ translate('Upgrade Discount') }}</td>
       <td></td>
       <td>{{ formatNumberForOrder(order.manual_discount_total - order.config.prorate_credit, order) }}</td>
     </tr>
     <tr style="font-size:12px;color:rgb(107,114,128);">
-      <td style="padding-left:16px;">{{ translate('Prorate Credit') }}</td>
+      <td style="padding-inline-start:16px;">{{ translate('Prorate Credit') }}</td>
       <td></td>
       <td>{{ formatNumberForOrder(order.config.prorate_credit, order) }}</td>
     </tr>

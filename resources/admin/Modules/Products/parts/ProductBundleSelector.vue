@@ -70,7 +70,7 @@ const getBundleInfo = () => {
               <el-table-column :label="translate('Title')" v-if="product.detail.variation_type !== 'simple'"
                                width="140">
                 <template #default="scope">
-                  <div class="space-x-5">
+                  <div class="space-x-5 rtl:space-x-reverse">
                     <span>{{ scope.row.variation_title }}</span>
 
                     <span v-if="scope.row.other_info?.payment_type === 'subscription'"

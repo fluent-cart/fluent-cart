@@ -44,7 +44,7 @@
    chevron button shown only while the card is expanded (rotated down).
    Clicking it (or anywhere on the header) folds the card back up. */
 .fct-option-card-toggle {
-  @apply flex items-center justify-center shrink-0 ml-auto w-8 h-8 rounded-md border border-solid border-gray-outline bg-white text-system-mid cursor-pointer transition-all duration-200;
+  @apply flex items-center justify-center shrink-0 ms-auto w-8 h-8 rounded-md border border-solid border-gray-outline bg-white text-system-mid cursor-pointer transition-all duration-200;
   @apply dark:bg-dark-500 dark:border-dark-400 dark:text-gray-400;
 
   &:hover {
@@ -183,7 +183,8 @@
   @apply flex items-center;
 
   .el-button + .el-button {
-    margin-left: 6px;
+    margin-left: 0;
+    margin-inline-start: 6px;
   }
 }
 
@@ -236,7 +237,7 @@
 
 .fct-adv-var-loading-card:nth-child(3n + 2) .fct-adv-var-loading-title { width: 45%; }
 .fct-adv-var-loading-card:nth-child(3n)     .fct-adv-var-loading-title { width: 55%; }
-.fct-adv-var-loading-badge  { @apply h-5 w-[64px] rounded flex-shrink-0 ml-auto; }
+.fct-adv-var-loading-badge  { @apply h-5 w-[64px] rounded flex-shrink-0 ms-auto; }
 
 /* V3 — Empty-state container shown when the product has zero options yet but the
    library has groups available. The "+ Add option" button (rendered separately
@@ -334,7 +335,7 @@ html body {
     }
 
     .fct-select-all-header {
-      padding-left: 30px;
+      padding-inline-start: 30px;
     }
 
     /* Inline term-creation form in the #footer slot — must not exceed the
@@ -474,7 +475,7 @@ html body .fct-option-name-select {
     @apply flex-shrink-0 text-[13px] font-medium text-system-dark dark:text-gray-50;
   }
   .fct-adv-bulk-clear {
-    @apply text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer bg-transparent border-0 underline mr-auto;
+    @apply text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer bg-transparent border-0 underline me-auto;
 
     &:focus-visible {
       @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
@@ -607,19 +608,19 @@ html body .fct-option-name-select {
   }
 
   thead th {
-    @apply py-2.5 px-3 text-[13px] font-medium text-system-dark text-left bg-gray-50 dark:bg-dark-500 dark:text-gray-300;
+    @apply py-2.5 px-3 text-[13px] font-medium text-system-dark text-start bg-gray-50 dark:bg-dark-500 dark:text-gray-300;
     border-bottom: 1px solid var(--fct-adv-border-color);
 
     &.is-right {
-      @apply text-right pr-5;
+      @apply text-end pe-5;
     }
   }
 
   tbody td {
-    @apply py-1.5 pl-3 pr-1.5 bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider dark:bg-primary-600 dark:border-dark-400;
+    @apply py-1.5 ps-3 pe-1.5 bg-gray-25 border border-solid border-x-0 border-t-0 border-gray-divider dark:bg-primary-600 dark:border-dark-400;
 
     &.is-right {
-      @apply text-right pr-5;
+      @apply text-end pe-5;
     }
   }
 
@@ -710,14 +711,14 @@ html body .fct-option-name-select {
        branch (└ instead of ├). */
     &::before {
       content: '';
-      @apply absolute left-[52px] top-0 bottom-0 border border-y-0 border-r-0 border-solid border-gray-outline dark:border-dark-400;
+      @apply absolute start-[52px] top-0 bottom-0 border-0 border-s border-solid border-gray-outline dark:border-dark-400;
     }
 
     /* Horizontal branch — links the trunk across to the row's image. Reaches a
        little past the col1/col2 boundary so it meets the 16px-nudged child image. */
     &::after {
       content: '';
-      @apply absolute left-[52px] top-1/2 w-[44px] border border-x-0 border-b-0 border-solid border-gray-outline dark:border-dark-400;
+      @apply absolute start-[52px] top-1/2 w-[44px] border border-x-0 border-b-0 border-solid border-gray-outline dark:border-dark-400;
     }
   }
 
@@ -736,7 +737,7 @@ html body .fct-option-name-select {
      indented under their group — children stay aligned with each other, the
      group thumbnail keeps its position. */
   .fct-media-picker {
-    @apply ml-4;
+    @apply ms-4;
   }
 }
 
@@ -781,7 +782,7 @@ html body .fct-option-name-select {
 }
 
 .fct-adv-group-edit-btn {
-  @apply mr-3;
+  @apply me-3;
 }
 
 .fct-adv-group-chevron-btn {
@@ -895,7 +896,7 @@ html body .fct-option-name-select {
 }
 
 .fct-adv-filter-count {
-  @apply text-xs text-gray-500 dark:text-gray-400 ml-auto;
+  @apply text-xs text-gray-500 dark:text-gray-400 ms-auto;
 }
 
 .fct-adv-filter-popover {
@@ -952,7 +953,7 @@ html body .fct-option-name-select {
 
 /* Sticky save bar for inline variant edits */
 .fct-adv-variant-sticky-bar {
-  @apply fixed bottom-0 right-0 w-[calc(100%-160px)] z-[2008] bg-white dark:bg-dark-600 border-t border-solid border-gray-divider dark:border-dark-400 py-3 px-5;
+  @apply fixed bottom-0 end-0 w-[calc(100%-160px)] z-[2008] bg-white dark:bg-dark-600 border-t border-solid border-gray-divider dark:border-dark-400 py-3 px-5;
   box-shadow: 0 -4px 16px -2px rgba(27, 37, 51, 0.06);
 
   &__inner {
@@ -1083,7 +1084,7 @@ body.folded .fct-adv-variant-sticky-bar {
     @apply block mt-0.5 text-[12px] font-medium text-system-mid dark:text-gray-300;
 
     .fct-adv-variant-compare {
-      @apply mr-1.5 line-through text-gray-400 dark:text-dark-300 font-normal;
+      @apply me-1.5 line-through text-gray-400 dark:text-dark-300 font-normal;
     }
   }
 }

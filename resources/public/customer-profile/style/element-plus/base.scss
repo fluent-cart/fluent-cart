@@ -23,8 +23,9 @@
 /*@import '../../../../node_modules/element-plus/theme-chalk/el-menu-item.css';*/
 @import '../../../../node_modules/element-plus/theme-chalk/el-header.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-color-picker.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-color-picker-panel.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-form.css';
-/*@import '../../../../node_modules/element-plus/theme-chalk/el-form-item.css';*/
+@import '../../../../node_modules/element-plus/theme-chalk/el-form-item.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-radio-group.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-radio.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-switch.css';
@@ -68,3 +69,41 @@
 @import '../../../../node_modules/element-plus/theme-chalk/el-skeleton-item.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-tree-select.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-breadcrumb.css';
+@import '../../../../node_modules/element-plus/theme-chalk/el-breadcrumb-item.css';
+
+// Element Plus ships physical-side rules only; mirror the ones the portal shows.
+[dir="rtl"] {
+  .el-button + .el-button {
+    margin-left: 0;
+    margin-right: 12px;
+  }
+  .el-button-group > .el-button + .el-button {
+    margin-right: 0;
+  }
+  .el-checkbox,
+  .el-radio {
+    margin-right: 0;
+    margin-left: 30px;
+    &:last-of-type,
+    &:last-child {
+      margin-left: 0;
+    }
+  }
+  .el-checkbox__label,
+  .el-radio__label {
+    padding-left: 0;
+    padding-right: 8px;
+  }
+  .el-input__prefix-inner > :last-child {
+    margin-right: 0;
+    margin-left: 8px;
+  }
+  .el-input__suffix-inner > :first-child {
+    margin-left: 0;
+    margin-right: 8px;
+  }
+  .el-tag .el-tag__close {
+    margin-left: 0;
+    margin-right: 6px;
+  }
+}

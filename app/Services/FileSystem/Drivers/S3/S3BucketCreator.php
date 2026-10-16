@@ -54,7 +54,7 @@ class S3BucketCreator
         
         $body = '';
         if ($this->region !== 'us-east-1') {
-            $body = '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' .
+            $body = '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' . // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
                     '<LocationConstraint>' . $this->region . '</LocationConstraint>' .
                     '</CreateBucketConfiguration>';
         }
@@ -88,6 +88,7 @@ class S3BucketCreator
             
             return new \WP_Error(
                 'bucket_creation_failed',
+                /* translators: 1: error message, 2: error code */
                 sprintf(__('Failed to create bucket: %s (%s)', 'fluent-cart'), $message, $code)
             );
         }
@@ -144,14 +145,14 @@ class S3BucketCreator
 
     private function getHost(): string
     {
-        return parse_url($this->getBucketBaseUrl(), PHP_URL_HOST) ?: "{$this->bucket}.s3.amazonaws.com";
+        return wp_parse_url($this->getBucketBaseUrl(), PHP_URL_HOST) ?: "{$this->bucket}.s3.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getBucketBaseUrl(): string
     {
         $host = $this->region === self::DEFAULT_REGION
-            ? "{$this->bucket}.s3.amazonaws.com"
-            : "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            ? "{$this->bucket}.s3.amazonaws.com" // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
+            : "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
 
         return 'https://' . $host;
     }

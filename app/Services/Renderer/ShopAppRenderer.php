@@ -66,7 +66,7 @@ class ShopAppRenderer
         $this->config = $config;
         $this->viewMode = !empty($config['view_mode']) ? $config['view_mode'] : 'grid';
         $this->isFilterEnabled = $enableFilter;
-        $this->per_page = Arr::get($config, 'per_page', Arr::get($defaultFilters, 'per_page', 10));
+        $this->per_page = ShopResource::clampPerPage(Arr::get($config, 'per_page', Arr::get($defaultFilters, 'per_page', 10)));
         $this->order_type = Arr::get($defaultFilters, 'sort_type', 'DESC');
         $this->order_by = Arr::get($defaultFilters, 'sort_by', 'id');
         $this->liveFilter = Arr::get($this->customFilters, 'live_filter', true);

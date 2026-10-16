@@ -48,13 +48,13 @@ class S3FileList
 
         // Base S3 endpoint
         if ($this->bucket === '') {
-            $baseUrl = "https://s3.{$this->region}.amazonaws.com";
+            $baseUrl = "https://s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } elseif ($hasDot) {
             // Path-style (required for dotted buckets)
-            $baseUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}";
+            $baseUrl = "https://s3.{$this->region}.amazonaws.com/{$this->bucket}"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         } else {
             // Virtual-hosted style
-            $baseUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            $baseUrl = "https://{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         $this->requestUrl = "{$baseUrl}/?encoding-type=url&list-type=2&max-keys={$this->maxKeys}";
@@ -210,22 +210,22 @@ class S3FileList
     private function getHostOld(): string
     {
         return $this->bucket === ''
-            ? "s3.{$this->region}.amazonaws.com"
-            : "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            ? "s3.{$this->region}.amazonaws.com" // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
+            : "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getHost(): string
     {
         if ($this->bucket === '') {
-            return "s3.{$this->region}.amazonaws.com";
+            return "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
         // If bucket contains dot, use path-style host
         if (strpos($this->bucket, '.') !== false) {
-            return "s3.{$this->region}.amazonaws.com";
+            return "s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
         }
 
-        return "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+        return "{$this->bucket}.s3.{$this->region}.amazonaws.com"; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- S3 API endpoint for the configured bucket, called server-side
     }
 
     private function getContentHash(): string

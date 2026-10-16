@@ -1,6 +1,5 @@
 export default class SingleProductModal {
     #loadingModal = false;
-    #baseUrl = window.fluentCartRestVars.rest.url;
     #singleProductViewUrl = '/public/single-product-views';
     #fadeTimeOut = 700;
     #currentModal = null; // Track the currently open modal
@@ -86,6 +85,16 @@ export default class SingleProductModal {
 
         const view = await ref.#fetchModalView(productId);
 
+        // Refused (e.g. product no longer visible): drop the spinner overlay
+        // so the page and other product modals keep working.
+        if (!view) {
+            modalElementParent.remove();
+            ref.#currentModal = null;
+            if (element) {
+                element.classList.remove('loading');
+            }
+            return;
+        }
 
         if (view) {
             // Create modal element and append to body
@@ -153,23 +162,31 @@ export default class SingleProductModal {
         }
         this.#loadingModal = true;
 
-        const {request, controller} = window.fluentCartAjax.get({
-            action: 'fluent_cart_checkout_routes',
-            fc_checkout_action: 'get_product_modal_view',
-            product_id: productId
-        }, true);
+        try {
+            const {request} = window.fluentCartAjax.get({
+                action: 'fluent_cart_checkout_routes',
+                fc_checkout_action: 'get_product_modal_view',
+                product_id: productId
+            }, true);
 
-        const response = await request;
-        const view = response.view;
+            const response = await request;
+            const view = response && response.view;
+            if (!view) {
+                return null;
+            }
 
-        SingleProductModal.cachedView[productId] = view;
-        const keys = Object.keys(SingleProductModal.cachedView);
-        if (keys.length > SingleProductModal.cacheThreshold) {
-            delete SingleProductModal.cachedView[keys[0]];
+            SingleProductModal.cachedView[productId] = view;
+            const keys = Object.keys(SingleProductModal.cachedView);
+            if (keys.length > SingleProductModal.cacheThreshold) {
+                delete SingleProductModal.cachedView[keys[0]];
+            }
+
+            return view;
+        } catch (e) {
+            return null;
+        } finally {
+            this.#loadingModal = false;
         }
-        this.#loadingModal = false;
-
-        return view;
     }
 
     #bindModalClosingAction() {

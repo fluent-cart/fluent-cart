@@ -106,8 +106,8 @@ class ReceiptHandler
                 header('Content-Length: ' . filesize($pdfPath));
                 header('Cache-Control: no-cache');
                 header('X-Content-Type-Options: nosniff');
-                readfile($pdfPath);
-                @unlink($pdfPath);
+                readfile($pdfPath); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streams the generated PDF download
+                wp_delete_file($pdfPath);
                 die();
             }
             // If PDF generation failed, fall through to render HTML receipt

@@ -25,6 +25,7 @@
 
           <el-button
               @click="applyCoupon"
+              :disabled="busy || applying"
               type="info"
               soft
               class="el-button--x-small"
@@ -59,7 +60,7 @@
             border="transparent"
             tag="a"
             size="x-small"
-            @click.prevent="cancelCoupon(coupon.id, coupon)"
+            @click.prevent="!busy && cancelCoupon(coupon.id, coupon)"
             class="coupon-delete-btn"
         >
           <DynamicIcon name="Delete"/>
@@ -71,6 +72,7 @@
             icon-color="#626AEF"
             :title="translate('Are you sure to cancel this coupon? This action is not recoverable')"
             @confirm="cancelCoupon(coupon.id, coupon)"
+            :disabled="applying"
             width="250"
         >
           <template #reference>
@@ -132,6 +134,14 @@ export default {
       type: Boolean,
       default: true
     },
+    priceCoupons: {
+      type: Function,
+      default: null
+    },
+    busy: {
+      type: Boolean,
+      default: false
+    },
   },
   data() {
     return {
@@ -140,6 +150,9 @@ export default {
       availableCoupons: [],
       newCoupon: "",
       coupons: [...this.couponsAttributes],
+      couponRequest: 0,
+      reapplyRequest: 0,
+      applying: false,
     };
   },
   mounted() {
@@ -182,6 +195,10 @@ export default {
           });
     },
     applyCoupon() {
+      if (this.applying) {
+        return;
+      }
+
       if (this.coupons) {
         if (this.coupons.find(coupon => coupon.code === this.newCoupon)) {
           Notify.error(this.translate('Coupon already applied'));
@@ -189,37 +206,82 @@ export default {
         }
       }
 
+      if (this.priceCoupons) {
+        const code = this.newCoupon;
+        this.priceCoupons(applied => ({...applied, [code]: {}})).then((priced) => {
+          if (priced && this.newCoupon === code) {
+            this.newCoupon = '';
+          }
+        });
+        return;
+      }
+
+      const request = this.startCouponRequest();
+      const currency = this.order.currency;
       this.$post("coupons/apply", {
         coupon_code: this.newCoupon,
         order_items: this.order.order_items,
         order_uuid: this.order.uuid,
-        applied_coupons: this.appliedCoupons
+        applied_coupons: this.appliedCoupons,
+        currency: currency
       })
           .then((response) => {
-
+            if (!this.isLatest(request, currency)) {
+              return;
+            }
+            this.reapplyRequest++;
             this.processCoupon(response);
             this.newCoupon = '';
           })
           .catch((errors) => {
+            if (!this.isLatest(request, currency)) {
+              return;
+            }
             if (errors.status_code == '422') {
               Notify.validationErrors(errors);
             } else {
               Notify.error(errors.data?.message);
             }
+          })
+          .finally(() => {
+            this.applying = false;
           });
     },
     cancelCoupon(id, coupon) {
+      if (this.applying) {
+        return;
+      }
+
+      if (this.priceCoupons) {
+        this.priceCoupons((applied) => {
+          const appliedCoupon = {...applied};
+          delete appliedCoupon[coupon.code];
+          return appliedCoupon;
+        });
+        return;
+      }
+
+      const request = this.startCouponRequest();
+      const currency = this.order.currency;
       this.$post("coupons/cancel", {
         id: coupon.id,
         coupon_code: coupon.code,
         order_uuid: this.order.uuid,
         applied_coupons: this.appliedCoupons,
         order_items: this.order.order_items,
+        currency: currency,
       })
           .then((response) => {
+            if (!this.isLatest(request, currency)) {
+              return;
+            }
+            this.reapplyRequest++;
             this.processCoupon(response);
           })
           .catch((errors) => {
+            if (!this.isLatest(request, currency)) {
+              return;
+            }
             if (errors.status_code == '422') {
               Notify.validationErrors(errors);
             } else {
@@ -227,18 +289,28 @@ export default {
             }
           })
           .finally(() => {
+            this.applying = false;
           });
     },
     reApplyCoupon() {
-      this.$post("coupons/re-apply", {
+      const request = ++this.reapplyRequest;
+      const currency = this.order.currency;
+      return this.$post("coupons/re-apply", {
         order_items: this.order.order_items,
         order_uuid: this.order.uuid,
-        applied_coupons: this.appliedCoupons
+        applied_coupons: this.appliedCoupons,
+        currency: currency
       })
           .then((response) => {
+            if (!this.isLatestReapply(request, currency)) {
+              return;
+            }
             this.processCoupon(response);
           })
           .catch((errors) => {
+            if (!this.isLatestReapply(request, currency)) {
+              return;
+            }
             if (errors.status_code == '422') {
               Notify.validationErrors(errors);
             } else {
@@ -248,22 +320,38 @@ export default {
           .finally(() => {
           });
     },
-    processCoupon(response) {
-
-
+    startCouponRequest() {
+      this.applying = true;
+      this.reapplyRequest++;
+      return ++this.couponRequest;
+    },
+    isLatest(request, currency) {
+      return request === this.couponRequest && currency === this.order.currency;
+    },
+    isLatestReapply(request, currency) {
+      return request === this.reapplyRequest && currency === this.order.currency;
+    },
+    invalidate() {
+      this.reapplyRequest++;
+    },
+    setCoupons(appliedCoupons) {
       this.coupons = [];
       this.appliedCoupons = [];
 
-      for (let code in response.applied_coupons) {
+      for (let code in appliedCoupons) {
 
         this.coupons.push({
-          id: response.applied_coupons[code].id,
+          id: appliedCoupons[code].id,
           code: code,
-          amount: response.applied_coupons[code].discount,
+          amount: appliedCoupons[code].discount,
         });
 
-        this.appliedCoupons.push(response.applied_coupons[code].id)
+        this.appliedCoupons.push(appliedCoupons[code].id)
       }
+      this.hasCoupon = this.coupons.length > 0;
+    },
+    processCoupon(response) {
+      this.setCoupons(response.applied_coupons);
 
       let totalAmount = 0;
       let discountTotal = 0;

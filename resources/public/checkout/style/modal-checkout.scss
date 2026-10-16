@@ -45,7 +45,7 @@
   .fct-checkout-modal-close {
     position: absolute;
     top: 8px;
-    right: 8px;
+    inset-inline-end: 8px;
     width: 30px;
     height: 30px;
     display: flex;

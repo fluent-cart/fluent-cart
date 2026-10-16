@@ -191,6 +191,7 @@ class AddonManager
         return new \WP_Error(
             'not_supported',
             sprintf(
+                /* translators: %s: add-on source type */
                 __('Update check for source type "%s" is not currently available.', 'fluent-cart'),
                 $sourceType
             )
@@ -313,6 +314,7 @@ class AddonManager
         return new \WP_Error(
             'not_supported',
             sprintf(
+                /* translators: %s: add-on source type */
                 __('Update for source type "%s" is not currently available.', 'fluent-cart'),
                 $sourceType
             )

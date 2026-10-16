@@ -24,7 +24,7 @@ const byNullableNumber = (key) => (a, b) => {
 <script>
 
 export default {
-  name: "Revenue",
+  name: "RevenueReport",
   props: {
     revenueReport: {
       type: Array,
@@ -121,11 +121,6 @@ export default {
         change_percent: this.changePercent(row.net_revenue, row.compare_revenue),
       }));
     }
-  },
-  data() {
-    return {
-
-    };
   },
   methods: {
     formatDate(date) {
@@ -318,7 +313,7 @@ export default {
                 :sort-method="byNullableNumber('change_percent')"
               >
                 <template #default="scope">
-                  <span :class="changeClass(scope.row.change_percent)">
+                  <span dir="ltr" :class="changeClass(scope.row.change_percent)">
                     {{ scope.row.change_percent === null ? 'n/a' : scope.row.change_percent.toFixed(2) + '%' }}
                   </span>
                 </template>
@@ -431,7 +426,7 @@ export default {
           :sort-method="byNullableNumber('change_percent')"
         >
           <template #default="scope">
-            <span :class="changeClass(scope.row.change_percent)">
+            <span dir="ltr" :class="changeClass(scope.row.change_percent)">
               {{ scope.row.change_percent === null ? 'n/a' : scope.row.change_percent.toFixed(2) + '%' }}
             </span>
           </template>

@@ -4,8 +4,8 @@
       <template #template>
         <div class="fct-form-container">
           <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] mr-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] mr-5"/>
+            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
+            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
           </div>
 
           <div class="form-right">
@@ -15,8 +15,8 @@
         </div>
         <div class="fct-form-container">
           <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] mr-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] mr-5"/>
+            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
+            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
           </div>
 
           <div class="form-right">
@@ -26,8 +26,8 @@
         </div>
         <div class="fct-form-container">
           <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] mr-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] mr-5"/>
+            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
+            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
           </div>
 
           <div class="form-right">
@@ -56,7 +56,7 @@
                       @delete-address="deleteAddress"/>
     
       <!--    Save button disabling now -->
-      <footer class="fct-form-footer text-right">
+      <footer class="fct-form-footer text-end">
         <el-button
             type="primary"
             size="small"

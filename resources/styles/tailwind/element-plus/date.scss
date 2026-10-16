@@ -283,3 +283,35 @@
         @apply text-gray-300;
     }
 }
+
+// Element Plus anchors the shortcut sidebar and panel gutters by physical side; mirror them for RTL.
+.el-picker-panel__sidebar+.el-picker-panel__body {
+    margin-left: 0;
+    margin-inline-start: 160px;
+}
+.el-date-range-picker.has-sidebar .el-picker-panel__sidebar {
+    inset-inline-start: 0;
+    border-right-width: 0;
+    border-inline-end: 1px solid;
+    @apply rounded-none rounded-ss rounded-es border-gray-divider dark:border-dark-400;
+    .el-picker-panel__shortcut {
+        text-align: start;
+    }
+}
+.el-date-range-picker__content.is-left {
+    border-right-width: 0;
+    border-inline-end: 1px solid var(--el-datepicker-inner-border-color);
+}
+
+// Months run right to left in RTL, so "previous" sits on the right and points right.
+[dir="rtl"] .el-date-range-picker__header {
+    [class*='arrow-left'] {
+        float: right;
+    }
+    [class*='arrow-right'] {
+        float: left;
+    }
+    .el-picker-panel__icon-btn::before {
+        transform: scaleX(-1);
+    }
+}

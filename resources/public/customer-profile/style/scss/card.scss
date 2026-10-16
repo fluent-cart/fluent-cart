@@ -41,7 +41,7 @@
 }
 
 .fct-order-item-tax-rate {
-    @apply flex items-center justify-between gap-2 pl-[52px];
+    @apply flex items-center justify-between gap-2 ps-[52px];
 
     .fct-tax-badge {
         @apply text-[11px] px-[7px] py-0.5 font-medium leading-none flex-shrink-0;
@@ -86,7 +86,7 @@
     .setup-fee{
         position: absolute;
         bottom: 16px;
-        left: 12px;
+        inset-inline-start: 12px;
     }
 }
 

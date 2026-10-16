@@ -1,5 +1,6 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
-<html dir="ltr" lang="en">
+<?php $fctEmailDir = \FluentCart\App\Services\Email\EmailDirection::dir(); ?>
+<html dir="<?php echo esc_attr($fctEmailDir); ?>" lang="<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::lang()); ?>">
 <head>
     <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
     <meta name="x-apple-disable-message-reformatting">
@@ -46,7 +47,7 @@
         }
     </style>
 </head>
-<body>
+<body dir="<?php echo esc_attr($fctEmailDir); ?>">
 <?php if (!empty($preheader)): ?>
     <div style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0"
          data-skip-in-text="true">
@@ -58,7 +59,7 @@
     <?php echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>
 <?php endif; ?>
 
-<table class="email_wrap" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
+<table class="email_wrap" dir="<?php echo esc_attr($fctEmailDir); ?>" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
        style="background-color:rgb(255,255,255);margin-left:auto;margin-right:auto;padding-left:32px;padding-right:32px;padding-top:32px;padding-bottom:32px;max-width:620px">
     <tbody>
     <tr style="width:100%">
@@ -70,7 +71,7 @@
 </table>
 
 <?php if (!empty($emailFooter)): ?>
-    <table class="email_footer" align="center" width="100%" border="0" cellpadding="0" cellspacing="0"
+    <table class="email_footer" dir="<?php echo esc_attr($fctEmailDir); ?>" align="center" width="100%" border="0" cellpadding="0" cellspacing="0"
            role="presentation"
            style="padding-top:20px;border-top-width:0px;border-style:solid;border-color:rgb(236,240,241); text-align:center">
         <tbody>

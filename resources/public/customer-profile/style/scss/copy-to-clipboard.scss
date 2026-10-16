@@ -2,9 +2,9 @@
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-tr-none rounded-br-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
-    border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
-    border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-se-none rounded-ee-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
+    border-start-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
+    border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
     padding-right: var(--fct-input-padding-x, theme('spacing.3')) !important;
     width: calc(100% - 70px);
@@ -27,9 +27,9 @@
     }
   }
   .fct-copy-btn{
-    @apply min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-l-0 h-full hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)] dark:bg-dark-500 dark:border-dark-400 dark:text-gray-300 dark:hover:bg-dark-400;
-    border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
-    border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+    @apply min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-s-0 h-full hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)] dark:bg-dark-500 dark:border-dark-400 dark:text-gray-300 dark:hover:bg-dark-400;
+    border-start-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
+    border-end-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
     &:disabled{
       @apply pointer-events-none bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] dark:bg-dark-400;
     }
@@ -74,6 +74,6 @@
     @apply inline-flex;
   }
   .el-tooltip__trigger{
-    @apply ml-1 text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)];
+    @apply ms-1 text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)];
   }
 }

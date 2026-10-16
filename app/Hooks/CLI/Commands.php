@@ -1256,7 +1256,7 @@ class Commands
         // Save debug HTML file
         $debugDir = FLUENTCART_PLUGIN_PATH . '.debug-emails';
         if (!is_dir($debugDir)) {
-            mkdir($debugDir, 0755, true);
+            wp_mkdir_p($debugDir);
         }
         $debugFile = $debugDir . '/' . $emailName . '.html';
         file_put_contents($debugFile, $body);
@@ -1366,7 +1366,7 @@ class Commands
         if (!$outPath) {
             $debugDir = FLUENTCART_PLUGIN_PATH . '.debug-emails';
             if (!is_dir($debugDir)) {
-                mkdir($debugDir, 0755, true);
+                wp_mkdir_p($debugDir);
             }
             $outPath = $debugDir . '/render_blocks.html';
         }

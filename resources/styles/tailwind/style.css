@@ -103,7 +103,7 @@
 }
 
 #fct_admin_app_wrapper {
-    @apply -ml-5 flex flex-col gap-7.5 min-h-screen w-[calc(100%+20px)];
+    @apply -ms-5 flex flex-col gap-7.5 min-h-screen w-[calc(100%+20px)];
 }
 
 .fct-disabled{
@@ -113,18 +113,18 @@
     @apply flex items-center p-0 m-0 list-none;
 }
 .fct-btn-group .el-button+.el-button {
-   @apply ml-2.5;
+   @apply ms-2.5;
 }
 .fct-btn-group > *{
-    @apply ml-2.5 first:ml-0;
+    @apply ms-2.5 first:ms-0;
 }
 .fct-btn-group.sm .el-button+.el-button,
 .fct-btn-group.sm > * {
-    @apply ml-2 first:ml-0;
+    @apply ms-2 first:ms-0;
 }
 .fct-btn-group.xs .el-button+.el-button,
 .fct-btn-group.xs > * {
-    @apply ml-1 first:ml-0;
+    @apply ms-1 first:ms-0;
 }
 .error{
     @apply text-red-500 block;

@@ -59,6 +59,7 @@ class AddonGatewaySettings extends BaseGatewaySettings
             if (empty($config[$key])) {
                 return new \WP_Error(
                     'missing_config',
+                    /* translators: %s: configuration key */
                     sprintf(__('Missing required configuration key: %s', 'fluent-cart'), $key)
                 );
             }

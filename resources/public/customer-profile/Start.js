@@ -1,4 +1,4 @@
-import {createApp, nextTick} from 'vue'
+import {nextTick} from 'vue'
 import Dashboard from "./Vue/Dashboard.vue";
 import PurchaseHistory from "./Vue/PurchaseHistory.vue";
 import Licenses from "./Vue/Licenses.vue";
@@ -11,13 +11,13 @@ import UserProfile from "./Vue/UserProfile/UserProfile.vue";
 import MyReviews from "./Vue/MyReviews.vue";
 
 import SingleOrder from "./Vue/SingleOrder.vue";
-import App from "./Vue/App.vue";
+import fctCreatePortalApp from "./fctCreatePortalApp";
 import {createRouter, createWebHistory} from "vue-router";
 import Rest from "@/utils/http/Rest";
 import ElementPlus, {ElMessageBox, ElNotification, ElLoadingDirective} from 'element-plus';
 import {useElementPlusComponents} from "./mixin/useElementPlusComponents";
 import translate from "./translator/Translator";
-import {translateNumber} from "./translator/Translator";
+import {translateNumber, bidiIsolate} from "./translator/Translator";
 import {formatDate} from "@/Bits/common";
 
 const routes = [
@@ -165,7 +165,7 @@ if (containers && containers.length > 0) {
 
     const container = containers[0];
 
-    const app = createApp({});
+    const app = fctCreatePortalApp();
 
     useElementPlusComponents(app);
 
@@ -219,7 +219,7 @@ if (containers && containers.length > 0) {
                     return formatted;
                 }
 
-                return currencyPosition === 'before' ? `${currency}${formatted}` : `${formatted}${currency}`;
+                return bidiIsolate(currencyPosition === 'before' ? `${currency}${formatted}` : `${formatted}${currency}`);
             },
             $t: translate,
             handleError(response) {
@@ -359,7 +359,7 @@ if (containers && containers.length > 0) {
         locale: locale
     })
 
-    app.use(router).component('app', App).mount(container);
+    app.use(router).mount(container);
 }
 
 

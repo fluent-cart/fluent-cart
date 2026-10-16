@@ -69,7 +69,7 @@ class ShopController extends Controller
             "filters"            => $filters,
             'taxonomy_filters'   => $mergedTermIds,
             'allow_out_of_stock' => $allowOutOfStock,
-            "per_page"           => $request->getSafe('per_page', Sanitizer::SANITIZE_TEXT_FIELD) ?: 10,
+            "per_page"           => $this->perPage($request),
             'paginate_using'     => $request->getSafe('paginate_using', Sanitizer::SANITIZE_TEXT_FIELD),
             'include_ids'        => $includeIds,
             'exclude_ids'        => $excludeIds,
@@ -123,7 +123,7 @@ class ShopController extends Controller
         // $products = $this->getProducts($request)['products'];
         // $products = $products->toArray();
         $page = Arr::get($request->all(), 'current_page', 1);
-        $perPage = Arr::get($request->all(), 'per_page', 10);
+        $perPage = $this->perPage($request);
 
         $products = $this->getProducts($request);
         $total = Arr::get($products, 'products.total', 0);
@@ -159,7 +159,7 @@ class ShopController extends Controller
                     'products' => [
                         'views'        => $preLoadedView,
                         'current_page' => $page,
-                        'last_page'    => max((int)ceil($total / $request->get('per_page', 10)), 1),
+                        'last_page'    => max((int)ceil($total / $perPage), 1),
                         'total'        => $total,
                         'per_page'     => $perPage,
                         'from'         => $from,
@@ -202,7 +202,7 @@ class ShopController extends Controller
                 'products' => [
                     'views'        => $view,
                     'current_page' => $page,
-                    'last_page'    => max((int)ceil($total / $request->get('per_page', 10)), 1),
+                    'last_page'    => max((int)ceil($total / $perPage), 1),
                     'total'        => $total,
                     'per_page'     => $perPage,
                     'from'         => $from,
@@ -223,7 +223,7 @@ class ShopController extends Controller
 
         $total = $products['products']['total'];
 
-        $perPage = $request->get('per_page', 10);
+        $perPage = $this->perPage($request);
         $products['total'] = $total;
         $products['last_page'] = max((int)ceil($total / $perPage), 1);
         $hideExcerpt = filter_var($request->get('hide_excerpt', false), FILTER_VALIDATE_BOOLEAN);
@@ -265,6 +265,11 @@ class ShopController extends Controller
         return [
             'products' => $products
         ];
+    }
+
+    private function perPage(Request $request): int
+    {
+        return ShopResource::clampPerPage($request->get('per_page', 10));
     }
 
     public function getTermIdsFromDefaultFilter($defaultFilters): array

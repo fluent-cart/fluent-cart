@@ -14,10 +14,10 @@ class ModuleImportMap
     public static function imports(): array
     {
         $imports = [
-            '@fluent-cart/vue'     => static::sharedUrl('module-vue.js'),
-            '@fluent-cart/dayjs'   => static::sharedUrl('module-dayjs.js'),
-            '@fluent-cart/echarts' => static::sharedUrl('module-echarts.js'),
-            '@fluent-cart/ui'      => static::sharedUrl('module-ui.js'),
+            '@fluent-cart/vue'     => self::sharedUrl('module-vue.js'),
+            '@fluent-cart/dayjs'   => self::sharedUrl('module-dayjs.js'),
+            '@fluent-cart/echarts' => self::sharedUrl('module-echarts.js'),
+            '@fluent-cart/ui'      => self::sharedUrl('module-ui.js'),
         ];
 
         $imports = apply_filters('fluent_cart/admin/module_import_map', $imports);

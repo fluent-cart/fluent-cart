@@ -873,7 +873,7 @@ class ProductRenderer
                     </div>
                 </div>',
                 $wrapper_attributes, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                $labelHtml,
+                $labelHtml, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- label passed through esc_html() above
                 esc_html($variant->sku)
             );
             return;
@@ -890,10 +890,10 @@ class ProductRenderer
                         %s<span class="fct-product-sku__value" data-fluent-cart-product-sku>%s</span>
                     </div>
                 </div>',
-                $isHidden,
+                $isHidden, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal class name or empty
                 esc_attr($v->id),
                 $wrapper_attributes, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                $labelHtml,
+                $labelHtml, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- label passed through esc_html() above
                 esc_html($v->sku)
             );
         }
@@ -1547,7 +1547,7 @@ class ProductRenderer
             )
             : $buyButtonText;
         ?>
-        <a <?php echo $wrapperAttributes; ?> aria-label="<?php echo esc_attr($buyNowAriaLabel); ?>">
+        <a <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes escaped by renderAttributes() or getBlockWrapperAttributes() ?> aria-label="<?php echo esc_attr($buyNowAriaLabel); ?>">
             <?php echo wp_kses_post($buyButtonText); ?>
         </a>
         <?php
@@ -1641,7 +1641,7 @@ class ProductRenderer
                 'product' => $this->product
         ]);
         ?>
-        <a <?php echo($wrapperAttributes); ?> aria-label="<?php echo esc_attr($buyButtonText); ?>">
+        <a <?php echo($wrapperAttributes); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes escaped by renderAttributes() or getBlockWrapperAttributes() ?> aria-label="<?php echo esc_attr($buyButtonText); ?>">
             <?php echo wp_kses_post($buyButtonText); ?>
         </a>
         <?php
@@ -1725,7 +1725,7 @@ class ProductRenderer
                 )
                 : $addToCartText;
             ?>
-            <button <?php echo $wrapperAttributes; ?>
+            <button <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes escaped by renderAttributes() or getBlockWrapperAttributes() ?>
                     aria-label="<?php echo esc_attr($addToCartAriaLabel); ?>">
                 <span class="text">
                     <?php echo wp_kses_post($addToCartText); ?>
@@ -1821,7 +1821,7 @@ class ProductRenderer
 
         ?>
 
-            <button <?php echo $wrapperAttributes; ?>
+            <button <?php echo $wrapperAttributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes escaped by renderAttributes() or getBlockWrapperAttributes() ?>
                     aria-label="<?php echo esc_attr($addToCartText); ?>">
                 <span class="text">
                     <?php echo wp_kses_post($addToCartText); ?>

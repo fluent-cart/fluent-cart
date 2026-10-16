@@ -410,7 +410,10 @@ class Customer extends Model
      */
     public function wpUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->select([
+            'ID', 'user_login', 'user_nicename', 'user_email', 'user_url',
+            'user_registered', 'user_status', 'display_name',
+        ]);
     }
 
     /**

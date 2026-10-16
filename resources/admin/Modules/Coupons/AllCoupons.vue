@@ -197,7 +197,7 @@
                       @command="handleCommand"
                       placement="bottom-end"
                   >
-                    <span class="more-btn mr-2">
+                    <span class="more-btn me-2">
                       <DynamicIcon name="More"/>
                     </span>
                     <template #dropdown>

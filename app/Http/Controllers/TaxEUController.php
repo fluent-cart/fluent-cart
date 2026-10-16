@@ -108,8 +108,8 @@ class TaxEUController extends Controller
 
         foreach ($requestedClassSlugs as $classSlug) {
             if (!$taxClasses->has($classSlug)) {
-                /* translators: %1$s: tax class slug (e.g. standard, reduced) */
                 $rateErrors['rates.' . $classSlug] = sprintf(
+                    /* translators: %1$s: tax class slug (e.g. standard, reduced) */
                     __('Tax class "%1$s" could not be found. Create the class first and try again.', 'fluent-cart'),
                     $classSlug
                 );

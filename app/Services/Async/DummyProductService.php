@@ -124,11 +124,11 @@ class DummyProductService
         $resolved = [];
         if ($isAdvanced) {
             if (empty($attributeOptions)) {
-                throw new \Exception(__('No attribute options defined for advanced variation.', 'fluent-cart'));
+                throw new \Exception(esc_html__('No attribute options defined for advanced variation.', 'fluent-cart'));
             }
             $resolved = $this->resolveAttributeOptions($attributeOptions);
             if (empty($resolved['options'])) {
-                throw new \Exception(__('Failed to resolve attribute options for advanced variation.', 'fluent-cart'));
+                throw new \Exception(esc_html__('Failed to resolve attribute options for advanced variation.', 'fluent-cart'));
             }
         }
 

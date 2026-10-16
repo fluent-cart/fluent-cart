@@ -736,6 +736,7 @@ class ProductResource extends BaseResourceApi
                             'new_product_ids' => $newProductIds
                         ],
                         sprintf(
+                            /* translators: %s: comma-separated product IDs */
                             esc_html__(
                                 'Some products could not be duplicated (Product ID: %s). Remaining selected products have been duplicated as drafts.',
                                 'fluent-cart'
@@ -747,6 +748,7 @@ class ProductResource extends BaseResourceApi
                         [
                             'code'    => 400,
                             'message' => sprintf(
+                                /* translators: %s: comma-separated product IDs */
                                 esc_html__(
                                     'Selected products could not be duplicated (Product ID: %s).',
                                     'fluent-cart'

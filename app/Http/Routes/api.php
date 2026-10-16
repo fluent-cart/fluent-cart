@@ -554,6 +554,14 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
         'permissions' => 'orders/create'
     ]);
 
+    $router->post('/price', [OrderController::class, 'price'])->meta([
+        'permissions' => 'orders/create'
+    ]);
+
+    $router->get('/currencies', [OrderController::class, 'currencies'])->meta([
+        'permissions' => 'orders/create'
+    ]);
+
     $router->post('/do-bulk-action', [OrderController::class, 'handleBulkActions'])->meta([
         'permissions' => 'orders/delete' // every accepted action deletes orders — same gate as DELETE /{order_id}
     ]);

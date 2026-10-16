@@ -1,5 +1,6 @@
 <template>
   <el-dialog
+      class="fct-role-assignment-modal"
       :title="title"
       v-model="modelValue"
       @closed="closeModal"

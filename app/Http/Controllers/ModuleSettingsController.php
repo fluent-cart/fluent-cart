@@ -219,7 +219,7 @@ class ModuleSettingsController extends Controller
             ]);
         }
 
-        $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+        $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [ // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- server-side Turnstile token verification
             'body'    => [
                 'secret'   => $secretKey,
                 'response' => $token,

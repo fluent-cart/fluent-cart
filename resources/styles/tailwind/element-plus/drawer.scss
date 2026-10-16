@@ -120,3 +120,43 @@
     @apply absolute bottom-0 left-0 right-0 -mx-5 bg-gray-neutral p-5 dark:bg-dark-600 dark:border dark:border-solid dark:border-dark-400 dark:border-x-0 dark:border-b-0;
   }
 }
+
+// Element Plus names drawer sides physically ("rtl" slides in from the right). In an RTL
+// page mirror them, so drawers open from the end edge, clear of the WP admin menu.
+[dir="rtl"] {
+  .el-drawer.rtl {
+    right: auto;
+    left: 0;
+    > .el-drawer__dragger {
+      left: auto;
+      right: 0;
+      &::before {
+        left: auto;
+        right: -2px;
+      }
+    }
+  }
+
+  .el-drawer.ltr {
+    left: auto;
+    right: 0;
+    > .el-drawer__dragger {
+      right: auto;
+      left: 0;
+      &::before {
+        right: auto;
+        left: -2px;
+      }
+    }
+  }
+
+  .el-drawer-fade-enter-from,
+  .el-drawer-fade-leave-to {
+    .rtl {
+      transform: translateX(-100%);
+    }
+    .ltr {
+      transform: translateX(100%);
+    }
+  }
+}

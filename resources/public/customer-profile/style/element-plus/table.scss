@@ -10,12 +10,12 @@
         }
         &:first-child{
             .cell{
-                @apply pl-5;
+                @apply ps-5;
             }
         }
         &:last-child{
             .cell{
-                @apply pr-5;
+                @apply pe-5;
             }
         }
         .cell {
@@ -28,12 +28,12 @@
         }
         &:first-child{
             .cell{
-                @apply pl-5;
+                @apply ps-5;
             }
         }
         &:last-child{
             .cell{
-                @apply pr-5;
+                @apply pe-5;
             }
         }
     }
@@ -57,7 +57,7 @@
     tr{
         .el-table-fixed-column--right{
             .cell{
-                @apply pl-4.5 #{!important};
+                @apply ps-4.5 #{!important};
             }
         }
         &:last-child{
@@ -77,6 +77,13 @@
     }
     a{
         @apply no-underline hover:underline;
+    }
+    // Element Plus aligns cells with physical left/right.
+    .el-table__cell {
+        text-align: start;
+        &.is-right {
+            text-align: end;
+        }
     }
 }
 

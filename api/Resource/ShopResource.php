@@ -67,6 +67,15 @@ class ShopResource extends BaseResourceApi
      *     'page' => (int) Optional. Page number for pagination
      * ];
      */
+    // Shop pages are public: cap like WordPress REST collections (100). Keep it
+    // positive too, since callers divide by it for last_page.
+    public static function clampPerPage($perPage, int $default = 10): int
+    {
+        $perPage = (int) $perPage;
+
+        return $perPage > 0 ? min($perPage, 100) : $default;
+    }
+
     public static function get(array $params = []): array
     {
         $shopAppDefaultFilters = Arr::get($params, 'shop_app_default_filters');
@@ -259,9 +268,9 @@ class ShopResource extends BaseResourceApi
         }
 
         if (Arr::get($params, 'paginate_using') === 'cursor') {
-            $products = $query->cursorPaginate(Arr::get($params, 'per_page', 10), ['*'], 'cursor', Arr::get($params, 'cursor'));
+            $products = $query->cursorPaginate(static::clampPerPage(Arr::get($params, 'per_page', 10)), ['*'], 'cursor', Arr::get($params, 'cursor'));
         } else {
-            $products = $query->simplePaginate(Arr::get($params, 'per_page', 10), ['*'], 'current_page', Arr::get($params, 'page'));
+            $products = $query->simplePaginate(static::clampPerPage(Arr::get($params, 'per_page', 10)), ['*'], 'current_page', Arr::get($params, 'page'));
         }
 
         static::primePostCaches($products);

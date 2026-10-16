@@ -4,7 +4,7 @@
         :isActive="changes_made > 0 ? 'is-active' : ''"
         @discard="reloadOrder"
         @save="update"
-        :loading="loading"
+        :loading="loading || calculating"
     />
 
     <div class="single-page-header">
@@ -37,7 +37,7 @@
                   />
                 </el-select>
                 <span v-if="selectedOrderCurrency && !selectedOrderCurrency.is_base">
-                  {{ translate('Enter prices in %1$s; they are converted at 1 %1$s = %2$s %3$s when the order is created.', baseOrderCurrency, trimRate(selectedOrderCurrency.rate), selectedOrderCurrency.code) }}
+                  {{ translate('Enter prices in %1$s. Rate: 1 %2$s = %3$s %1$s.', selectedOrderCurrency.code, baseOrderCurrency, trimRate(selectedOrderCurrency.rate)) }}
                 </span>
               </div>
             </Card.Body>
@@ -143,15 +143,15 @@
 
 
                         <div class="mt-1">
-                          {{ formatNumber(scope.row.price) }}
+                          {{ formatNumberForOrder(scope.row.price, order) }}
                           <span
-                              class="line-through mr-3"
+                              class="line-through me-3"
                               v-if="
                               parseInt(scope.row.unit_price) >
                               parseInt(scope.row.price)
                             "
                           >
-                            {{ formatNumber(scope.row.unit_price) }}
+                            {{ formatNumberForOrder(scope.row.unit_price, order) }}
                           </span>
                           <!--{{ formatNumber(scope.row.discount_total) }}-->
                           <div
@@ -163,7 +163,7 @@
                             <span
                             >{{ scope.row.other_info.signup_fee_name }} :
                               {{
-                                formatNumber(scope.row.other_info.signup_fee)
+                                formatNumberForOrder(scope.row.other_info.signup_fee, order)
                               }}</span
                             >
                             <span
@@ -201,7 +201,7 @@
                   >
                     <template #default="scope">
                       <div>
-                        {{ formatNumber(scope.row.line_total) }}
+                        {{ formatNumberForOrder(scope.row.line_total, order) }}
                       </div>
                       <div
                           v-if="
@@ -217,15 +217,16 @@
                         >
                           <span
                           >{{
-                              formatNumber(
+                              formatNumberForOrder(
                                   scope.row.other_info.signup_fee *
-                                  scope.row.quantity
+                                  scope.row.quantity,
+                                  order
                               )
                             }}
                           </span>
                         </span>
                         <span v-else>{{
-                            formatNumber(scope.row.other_info.signup_fee)
+                            formatNumberForOrder(scope.row.other_info.signup_fee, order)
                           }}</span>
                       </div>
                     </template>
@@ -297,7 +298,7 @@
                       >
                   </td>
                   <td>
-                    {{ formatNumber(order.subtotal) }}
+                    {{ formatNumberForOrder(order.subtotal, order) }}
                   </td>
                 </tr>
                 <Coupon
@@ -308,7 +309,8 @@
                     :appliedCouponsAttributes="[]"
                     action="create_order"
                     :shouldManageCoupon="true"
-                    @update:coupons="updateCoupons"
+                    :priceCoupons="priceCoupons"
+                    :busy="calculating"
                     ref="reApplyCouponRef"
                 />
                 <CustomDiscount
@@ -329,7 +331,7 @@
                   />
                 </template>
                 <tr v-if="selectedCustomerCountry && order.order_items.length > 0">
-                  <td colspan="3" style="text-align:right; font-style:italic; opacity:0.65; font-size:0.85em;">
+                  <td colspan="3" style="text-align:end; font-style:italic; opacity:0.65; font-size:0.85em;">
                     {{ $t('Tax will be calculated on save') }}
                   </td>
                 </tr>
@@ -339,7 +341,7 @@
                   <td>{{ $t("Total") }}</td>
                   <td></td>
                   <td>
-                    {{ formatNumber(order.total_amount) }}
+                    {{ formatNumberForOrder(order.total_amount, order) }}
                   </td>
                 </tr>
                 </tfoot>
@@ -398,6 +400,7 @@
           ref="productItemModal"
           :searchQueryParent="searchQuery"
           :orderParent="order"
+          :currencyQuote="selectedOrderCurrency"
           @update:searchQuery="updateSearchQuery"
       />
 
@@ -470,7 +473,6 @@ import Shipping from "./Shipping.vue";
 import Arr from "@/utils/support/Arr";
 import Asset from "@/utils/support/Asset";
 import Rest from "@/utils/http/Rest";
-import AppConfig from "@/utils/Config/AppConfig";
 import Notify from "@/utils/Notify";
 import dayjs from "dayjs";
 
@@ -493,6 +495,11 @@ export default {
       orderCurrency: '',
       loading: false,
       calculating: false,
+      repriceTimer: null,
+      repriceRequest: 0,
+      pendingCoupons: null,
+      orderCurrencies: [],
+      priceFailed: false,
       customModal: false,
       cartItems: {},
       discount: {},
@@ -506,6 +513,8 @@ export default {
       timeout: "",
       widgets: [],
       order: {
+        currency: '',
+        quote_revision: '',
         applied_coupon: [],
         customer_id: "",
         customer: {
@@ -555,11 +564,15 @@ export default {
       },
       deep: true,
     },
+    orderCurrency(currency) {
+      this.order.currency = currency;
+      this.calculateLine();
+    },
+    orderLineQuantities() {
+      this.scheduleReprice();
+    },
   },
   computed: {
-    orderCurrencies() {
-      return AppConfig.get('admin_order_currencies', []) || [];
-    },
     baseOrderCurrency() {
       const base = this.orderCurrencies.find(currency => currency.is_base);
       return base ? base.code : '';
@@ -570,6 +583,9 @@ export default {
     beforeRouteLeave(to, from, next) {
       this.redirectRouteName = to.name;
       this.changes_made ? (this.outerVisible = true) : next();
+    },
+    orderLineQuantities() {
+      return this.order.order_items.map(item => item.object_id + ':' + item.quantity).join();
     },
     hasSubscriptionItem() {
       return this.order.order_items.some(item => item.payment_type === 'subscription');
@@ -616,11 +632,108 @@ export default {
       this.calculateLine();
     },
     calculateLine() {
-      if (this.hasCoupon) {
-        // return this.reapplyCoupon();
-        return this.$refs.reApplyCouponRef.reApplyCoupon();
+      recalculatePayout(this.order, this.hasCoupon);
+      this.scheduleReprice();
+    },
+    fetchCurrencies() {
+      Rest.get("orders/currencies")
+          .then((response) => {
+            this.orderCurrencies = response.currencies || [];
+          })
+          .catch((errors) => {
+            Notify.error(errors.data?.message);
+          });
+    },
+    scheduleReprice() {
+      clearTimeout(this.repriceTimer);
+      this.repriceRequest++;
+      this.$refs.reApplyCouponRef && this.$refs.reApplyCouponRef.invalidate();
+      if (!this.order.order_items.length) {
+        this.calculating = false;
+        this.order.applied_coupon = [];
+        this.pendingCoupons = null;
+        this.coupons = [];
+        this.appliedCoupons = [];
+        this.hasCoupon = false;
+        return;
       }
-      return recalculatePayout(this.order, this.hasCoupon);
+      this.calculating = true;
+      this.repriceTimer = setTimeout(() => this.reprice(), 300);
+    },
+    priceCoupons(change) {
+      const appliedCoupon = change(this.pendingCoupons || this.order.applied_coupon);
+      clearTimeout(this.repriceTimer);
+      this.calculating = true;
+      this.pendingCoupons = appliedCoupon;
+      return this.reprice(appliedCoupon);
+    },
+    reprice(appliedCoupon = this.pendingCoupons || this.order.applied_coupon) {
+      const request = ++this.repriceRequest;
+      const currency = this.orderCurrency;
+
+      return Rest.post("orders/price", {
+        currency: currency || undefined,
+        customer_id: this.order.customer_id || undefined,
+        order_items: this.order.order_items,
+        applied_coupon: appliedCoupon,
+        discount: this.discount,
+        shipping_total: this.order.shipping_total,
+      })
+          .then((response) => {
+            if (request !== this.repriceRequest) {
+              return false;
+            }
+            response.order_items.forEach((priced, index) => {
+              const item = this.order.order_items[index];
+              if (!item) {
+                return;
+              }
+              item.unit_price = priced.unit_price;
+              item.price = priced.price;
+              item.subtotal = priced.subtotal;
+              item.discount_total = priced.discount_total;
+              item.coupon_discount = priced.coupon_discount;
+              item.manual_discount = priced.manual_discount;
+              item.line_total = priced.subtotal - priced.discount_total;
+              item.other_info = priced.other_info;
+            });
+            this.order.currency = response.currency;
+            const couponRef = this.$refs.reApplyCouponRef;
+            if (couponRef) {
+              couponRef.setCoupons(response.applied_coupons);
+              this.coupons = couponRef.coupons;
+              this.appliedCoupons = couponRef.appliedCoupons;
+              this.hasCoupon = couponRef.hasCoupon;
+            }
+            this.order.quote_revision = response.quote_revision;
+            this.priceFailed = false;
+            this.order.applied_coupon = response.applied_coupons;
+            this.pendingCoupons = null;
+            this.order.shipping_total = response.shipping_total;
+            this.order.subtotal = response.subtotal;
+            this.order.coupon_discount_total = response.coupon_discount_total;
+            this.order.manual_discount_total = response.manual_discount_total;
+            this.order.total_amount = response.total_amount;
+            return true;
+          })
+          .catch((errors) => {
+            if (request !== this.repriceRequest) {
+              return false;
+            }
+            this.priceFailed = true;
+            this.pendingCoupons = null;
+            if (errors.status_code == '422') {
+              Notify.validationErrors(errors);
+            } else {
+              Notify.error(errors.data?.message);
+            }
+            return false;
+          })
+          .finally(() => {
+            if (request === this.repriceRequest) {
+              this.calculating = false;
+            }
+          });
     },
     deleteProduct(index, product) {
       /**
@@ -639,8 +752,24 @@ export default {
       this.customModal = false;
       this.calculateLine();
     },
-    update() {  
-      delete this.order.customer.orders;  
+    async update() {
+      if (this.calculating) {
+        return;
+      }
+      if (this.priceFailed) {
+        clearTimeout(this.repriceTimer);
+        this.$refs.reApplyCouponRef && this.$refs.reApplyCouponRef.invalidate();
+        const shownTotal = Number(this.order.total_amount);
+        this.calculating = true;
+        if (!(await this.reprice())) {
+          return;
+        }
+        if (Number(this.order.total_amount) !== shownTotal) {
+          Notify.info(translate('Total updated. Review it and save again.'));
+          return;
+        }
+      }
+      delete this.order.customer.orders;
       this.loading = true;
 
       const orderData = {...this.order};
@@ -665,6 +794,9 @@ export default {
             }, 300);
           })
           .catch((errors) => {
+            if (errors.data?.code === 'fx_prices_updated') {
+              this.scheduleReprice();
+            }
             if (errors.status_code == '422') {
               Notify.validationErrors(errors);
             } else {
@@ -694,11 +826,7 @@ export default {
     updateCustomDiscount(discount) {
       this.discount = discount;
       this.changes_made++;
-    },
-    updateCoupons(coupons, appliedCoupons, hasCoupon) {
-      this.coupons = coupons;
-      this.appliedCoupons = appliedCoupons;
-      this.hasCoupon = hasCoupon;
+      this.scheduleReprice();
     },
     updateShipping(order_items, shipping_total) {
       // this.shippingSettings = shipping;
@@ -760,6 +888,7 @@ export default {
   },
   mounted() {
     this.fetchShippingMethods();
+    this.fetchCurrencies();
     window.onbeforeunload = () => {
       if (this.changes_made > 0) {
         return true;

@@ -149,7 +149,7 @@ class ShopAppHandler
             }
         }
 
-        $this->shortcodeAttributes['per_page'] = is_numeric($this->shortcodeAttributes['per_page']) ? (int) $this->shortcodeAttributes['per_page'] : 10;
+        $this->shortcodeAttributes['per_page'] = ShopResource::clampPerPage($this->shortcodeAttributes['per_page']);
 
         $viewMode = $this->shortcodeAttributes['view_mode'];
 

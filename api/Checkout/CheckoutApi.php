@@ -511,6 +511,11 @@ class CheckoutApi
 
         $currentCustomer = is_user_logged_in() ? ApiCustomerResource::getCurrentCustomer() : null;
 
+        // An email match assigns the order's customer but does not prove address ownership.
+        if (!$currentCustomer) {
+            unset($data['billing_address'], $data['shipping_address']);
+        }
+
         $shipToDifferent = Arr::get($data, 'ship_to_different', 'no');
 
         $datKeys = ['country', 'address_1', 'address_2', 'city', 'state', 'postcode', 'phone', 'label', 'company_name', 'vat_number', 'legal_registration_id'];
@@ -885,6 +890,8 @@ class CheckoutApi
 
     public static function validateData($data, Cart $cart, CheckoutService $cartCheckoutService, $prevOrder)
     {
+        $data = static::stripSmartCodes($data);
+
         $shippingRequired = $cart->requireShipping();
         $isDifferentShipping = $shippingRequired && Arr::get($data, 'ship_to_different', 'no') === 'yes';
         $fulfillmentType = $shippingRequired ? 'physical' : 'digital';
@@ -1228,6 +1235,22 @@ class CheckoutApi
 
         if (count($errors) > 0) {
             return new \Wp_Error('validation_error', __('Validation error', 'fluent-cart'), $errors);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Checkout inputs are customer-typed: a {{...}} smartcode pasted into one is
+     * removed before validation, so it never reaches stored order data. Only the
+     * brace form is stripped — # and ## appear legitimately in street addresses.
+     */
+    private static function stripSmartCodes(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value) && strpos($value, '{{') !== false) {
+                $data[$key] = trim((string) preg_replace('/\{\{.*?\}\}/s', '', $value));
+            }
         }
 
         return $data;

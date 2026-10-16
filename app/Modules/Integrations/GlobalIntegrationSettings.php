@@ -9,6 +9,10 @@ use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Services\PluginInstaller\BackgroundInstaller;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 // Load necessary WordPress files for filesystem and plugin installation
 require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
 require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
