@@ -18,7 +18,7 @@ class CartItemRenderer
 
     public function __construct($item = [], ?Cart $cart = null)
     {
-        $this->item = $item;
+        $this->item = apply_filters('fluent_cart/cart/display_item', $item);
         $this->cart = $cart;
     }
 
