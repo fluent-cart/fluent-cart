@@ -17,6 +17,7 @@ return [
         'license'      => Parsers\LicenseParser::class,
         'download'     => Parsers\DownloadParser::class,
         'subscription' => Parsers\SubscriptionParser::class,
+        'shipment'     => Parsers\ShipmentParser::class,
         'review'       => Parsers\ReviewParser::class,
     ],
     'parser_references'   => [

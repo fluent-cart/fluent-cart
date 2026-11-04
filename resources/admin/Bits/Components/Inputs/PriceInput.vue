@@ -1,5 +1,8 @@
 <template>
+  <!-- el-input reads its slots in computeds that never re-run, so remount it when one comes or goes.
+       Read in the template: a computed here would cache the slots the same way. -->
   <el-input
+      :key="`${showCurrencySign}-${!!$slots.suffix}-${!!$slots.append}`"
       :class="errorClass"
       :id="id"
       :size="size"
@@ -10,7 +13,7 @@
       @blur="onBlur"
       @input="onInput"
       @keydown="onKeydown">
-    <template #prefix>
+    <template v-if="showCurrencySign" #prefix>
       <span v-html="currencySign"></span>
     </template>
     <template v-if="$slots.suffix" #suffix>
@@ -84,6 +87,22 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // ISO code the amount is in (e.g. an order's or a carrier's). Empty keeps
+  // the store currency, so existing callers are unchanged.
+  currency: {
+    type: String,
+    default: '',
+  },
+  // Off while the amount's currency is not known yet, so no sign is guessed.
+  showCurrencySign: {
+    type: Boolean,
+    default: true,
+  },
+  // Show all of the currency's decimals ("13.70", not "13.7") when not typing.
+  fixedDecimals: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // `change` carries native change semantics: it fires on blur only when the
@@ -95,7 +114,25 @@ const props = defineProps({
 // are not reachable through attribute fallthrough.
 const emit = defineEmits(['update:modelValue', 'change', 'focus', 'blur']);
 
-const currencySign = computed(() => AppConfig.get('shop.currency_sign', '$'));
+const currencyCode = computed(() => (props.currency || '').toUpperCase());
+
+// Same lookup as CurrencyFormatter, but an unknown code shows the code itself
+// rather than the store's sign.
+const currencySign = computed(() => {
+  if (!currencyCode.value) {
+    return AppConfig.get('shop.currency_sign', '$');
+  }
+  const signs = AppConfig.get('currency_signs', {}) || {};
+  return signs[currencyCode.value] || currencyCode.value;
+});
+
+const fractionDigits = computed(() => {
+  if (!currencyCode.value) {
+    return 2;
+  }
+  const decimals = (AppConfig.get('currency_decimals', {}) || {})[currencyCode.value];
+  return typeof decimals === 'number' ? decimals : 2;
+});
 
 const separators = computed(() => resolveSeparators(
   AppConfig.get('shop.decimal_separator', ''),
@@ -137,8 +174,8 @@ const formatViewValue = (value) => {
   }
 
   return parsed.toLocaleString(shopLocale.value, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: props.fixedDecimals ? fractionDigits.value : 0,
+    maximumFractionDigits: fractionDigits.value,
   });
 };
 

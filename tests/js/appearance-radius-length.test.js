@@ -8,7 +8,7 @@ import {isValidRadius, normalizeRadius} from '../../resources/admin/Bits/Compone
  * The Appearance → Border radius fields accept a typed length: a bare number
  * means pixels, px, rem and em keep their unit. The admin must agree with
  * RadiusPalette::sanitizeOwnerLength(), or a value the field calls valid is
- * silently dropped on save. Spec: dev/wp-browser/tests/Cases/storefront-colours.md [252], [253].
+ * silently dropped on save. Spec: tests/codeception/Cases/storefront-colours.md [252], [253].
  */
 describe('border radius field', () => {
     it.each([

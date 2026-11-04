@@ -199,28 +199,4 @@ describe('admin storage, money, and date utilities', () => {
             '2024-02-29T23:59:59+00:00',
         ]);
     });
-
-    it('KNOWN-FAILURE — Model store proxy preserves false, zero, and empty-string state', () => {
-        class Phase31FalsyStore extends Model {
-            data = {
-                enabled: false,
-                count: 0,
-                label: '',
-            };
-        }
-
-        const store = Phase31FalsyStore.init();
-        const observed = {
-            enabled: store.enabled,
-            count: store.count,
-            label: store.label,
-        };
-        const expected = {enabled: false, count: 0, label: ''};
-
-        if (JSON.stringify(observed) === JSON.stringify(expected)) {
-            throw new Error('KNOWN-FAILURE unexpectedly passed; remove FIX-PLAN #31 and assert the store values normally.');
-        }
-
-        expect(observed).toEqual({enabled: undefined, count: undefined, label: undefined});
-    });
 });

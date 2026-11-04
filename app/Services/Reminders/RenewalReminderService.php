@@ -434,7 +434,7 @@ class RenewalReminderService extends ReminderService
             return (string)$order->invoice_no;
         }
 
-        return '#' . (string)$order->id;
+        return (string)$order->uuid;
     }
 
     protected function resolveEventName(string $stage): string

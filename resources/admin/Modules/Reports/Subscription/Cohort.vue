@@ -7,56 +7,74 @@
                 {{ translate('Subscription Cohorts') }}
 
                 <el-tooltip popper-class="fct-tooltip"
-                            :content="translate('A cohort is considered churned either when it went on hold or when it officially ended (factoring in the end date).')"
+                            :content="translate('SubRpt_Row_Customers')"
                             placement="top">
-                  <DynamicIcon class="text-gray-500 w-4 h-4 cursor-pointer" name="InformationFill" />
+                  <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this report')">
+                    <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+                  </button>
                 </el-tooltip>
               </h1>
             </template>
+            <template #action>
+              <div class="flex items-center gap-3">
+                <!-- The data source sits with the page, not with one table -->
+                <span v-if="cohortData.generated_at" class="text-xs text-gray-500 dark:text-gray-400">{{ generatedText }}</span>
+                <el-button size="small" @click="generateSnapshots" :loading="generating">
+                  <template v-if="generating && buildProgress">
+                    <!-- translators: %1$s is the finished step count, %2$s is the total step count -->
+                    {{ translate('Building snapshots %1$s/%2$s', buildProgress.step, buildProgress.steps) }}
+                  </template>
+                  <template v-else>{{ translate('Generate Snapshots') }}</template>
+                </el-button>
+                <!-- Mixed stores read each billing interval apart: a monthly plan churns monthly, a yearly one at renewal -->
+                <el-select v-if="isFull && intervals.length > 1" v-model="billingInterval" size="small" class="w-[160px]"
+                           :aria-label="translate('Billing interval')" @change="fetchData()">
+                  <el-option value="all" :label="translate('All intervals')" />
+                  <el-option v-for="key in intervals" :key="key" :value="key" :label="intervalLabel(key)" />
+                </el-select>
+              </div>
+            </template>
           </PageHeading>
+
+          <el-alert v-if="!loading && isStale" type="warning" :closable="false" show-icon class="mb-4">
+            <template #title>
+              {{ staleText }}
+              <el-button link type="primary" class="ms-1" @click="generateSnapshots">{{ translate('Generate now') }}</el-button>
+            </template>
+          </el-alert>
 
           <Card.Container class="overflow-hidden">
             <Card.Header>
               <div class="fct-cohort-settings">
                 <div class="fct-cohort-settings-group">
-                  <el-button-group>
-                    <el-button :type="groupBy === 'year' ? 'primary' : ''" size="small" @click="groupBy = 'year'">
-                      {{ translate('Year') }}
-                    </el-button>
-                    <el-button :type="groupBy === 'month' ? 'primary' : ''" size="small" @click="groupBy = 'month'">
-                      {{ translate('Month') }}
-                    </el-button>
-                  </el-button-group>
+                  <el-radio-group v-model="groupBy" size="small" @change="fetchData()">
+                    <el-radio-button value="year">{{ translate('Yearly') }}</el-radio-button>
+                    <el-radio-button value="month">{{ translate('Monthly') }}</el-radio-button>
+                  </el-radio-group>
 
-                  <el-button-group>
-                    <el-button :type="metric === 'subscribers' ? 'primary' : ''" size="small" @click="metric = 'subscribers'">
-                      {{ translate('Subscriptions') }}
-                    </el-button>
-                    <el-button :type="metric === 'mrr' ? 'primary' : ''" size="small" @click="metric = 'mrr'">
-                      {{ translate('MRR') }}
-                    </el-button>
-                  </el-button-group>
+                  <el-radio-group v-if="isFull" v-model="metric" size="small">
+                    <el-radio-button value="subscribers">{{ translate('Customers') }}</el-radio-button>
+                    <el-radio-button value="mrr">{{ translate('MRR') }}</el-radio-button>
+                  </el-radio-group>
 
-                  <el-select v-model="displayMode" size="small" class="w-[150px]">
-                    <el-option value="percent" :label="translate('% of total')"></el-option>
-                    <el-option value="percent_previous" :label="translate('% of previous')"></el-option>
-                    <el-option value="value" :label="translate('Total Value')"></el-option>
-                    <el-option value="percent_ended" :label="translate('% of total ended')"></el-option>
-                  </el-select>
+                  <el-radio-group v-model="displayMode" size="small">
+                    <el-radio-button value="percent">{{ translate('% of start') }}</el-radio-button>
+                    <el-radio-button value="value">{{ translate('Values') }}</el-radio-button>
+                  </el-radio-group>
+
+                  <div v-if="isFull" class="flex items-center gap-1.5">
+                    <el-switch v-model="rebuyAdjusted" size="small" :aria-label="translate('Count rebuys as retained')" @change="fetchData()" />
+                    <span class="text-sm text-system-dark dark:text-gray-300">{{ translate('Count rebuys as retained') }}</span>
+                    <el-tooltip popper-class="fct-tooltip" placement="top"
+                                :content="translate('SubRpt_Customer_Whose')">
+                      <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this setting')">
+                        <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
+                      </button>
+                    </el-tooltip>
+                  </div>
                 </div>
 
-                <div class="flex gap-2 items-center">
-                  <span v-if="cohortData.generated_at" class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ translate('Last generated %s', dateTimeI18(cohortData.generated_at, 'date_time')) }}
-                  </span>
-                  <el-button size="small" @click="generateSnapshots" :loading="loading">
-                    {{ translate('Generate Snapshots') }}
-                  </el-button>
-                  <ExportReport
-                      :data="exportData"
-                      :filename="'subscription_cohorts.csv'"
-                  />
-                </div>
+                <ExportReport :data="exportData" :filename="'subscription_cohorts.csv'" />
               </div>
             </Card.Header>
             <Card.Body class="px-0 pb-0">
@@ -65,431 +83,270 @@
               </div>
 
               <div v-if="!loading && hasError" class="text-center pb-6">
-                <Empty
-                    icon="Empty/ListView"
-                    :has-dark="true"
-                    :text="translate('This report could not be loaded.')"
-                    class="fct-report-empty-state"
-                />
+                <Empty icon="Empty/ListView" :has-dark="true" :text="translate('This report could not be loaded.')" class="fct-report-empty-state" />
                 <el-button size="small" @click="fetchData()">{{ translate('Retry') }}</el-button>
               </div>
 
-              <el-table
-                  v-if="!loading && !hasError && !isEmpty"
-                  :data="tableData"
-                  border
-                  class="fct-cohort-el-table"
-                  :cell-style="cellStyleHandler"
-                  :row-class-name="rowClassName"
-                  :span-method="spanMethod"
-              >
-                <el-table-column
-                    prop="cohort_label"
-                    :label="translate('Subscribed')"
-                    fixed="left"
-                    width="150"
-                >
+              <el-table v-if="!loading && !hasError && !isEmpty" :data="tableData" border class="fct-cohort-el-table text-sm"
+                        :cell-style="cellStyle" :span-method="spanMethod">
+                <el-table-column prop="cohort_label" :label="translate('First paid')" fixed="left" width="130">
                   <template #default="scope">
-                                <span :class="{ 'font-bold': scope.row.is_weighted_avg }">
-                                    {{ scope.row.cohort_label }}
-                                </span>
+                    <span :class="{ 'font-bold': scope.row.is_average }">{{ scope.row.cohort_label }}</span>
                   </template>
                 </el-table-column>
 
-                <el-table-column
-                    prop="start_value"
-                    :label="translate('Start')"
-                    align="right"
-                >
-                  <template #default="scope">
-                                <span :class="{ 'font-bold': scope.row.is_weighted_avg }">
-                                    {{ scope.row.start_value }}
-                                </span>
-                  </template>
-                </el-table-column>
+                <el-table-column prop="start_value" :label="_x('Start', 'Cohort column: starting count')" align="right" width="110" />
 
-                <el-table-column
-                    v-for="i in maxPeriods"
-                    :key="i"
-                    :prop="'period_' + i"
-                    :label="getPeriodLabel(i)"
-                    width="120"
-                    align="center"
-                >
+                <el-table-column v-for="i in maxPeriods" :key="i" :label="periodLabel(i)" min-width="96" align="center">
                   <template #default="scope">
-                    <el-tooltip
-                        v-if="scope.row['period_' + i + '_tooltip']"
-                        placement="top"
-                        popper-class="fct-tooltip"
-                    >
-                      <template #content>
-                        <div class="text-sm" v-html="scope.row['period_' + i + '_tooltip']"></div>
-                      </template>
-                      <span :class="{ 'font-bold': scope.row.is_weighted_avg }">
-                                        {{ scope.row['period_' + i] }}
-                                    </span>
+                    <el-tooltip v-if="scope.row['tip_' + i]" placement="top" popper-class="fct-tooltip" :content="scope.row['tip_' + i]">
+                      <span :class="{ 'font-bold': scope.row.is_average, 'text-white': isDark(scope.row['rate_' + i]) }">{{ scope.row['cell_' + i] }}</span>
                     </el-tooltip>
-                    <span v-else :class="{ 'font-bold': scope.row.is_weighted_avg }">
-                                    {{ scope.row['period_' + i] || '' }}
-                                </span>
+                    <span v-else :class="{ 'font-bold': scope.row.is_average, 'text-white': isDark(scope.row['rate_' + i]) }">{{ scope.row['cell_' + i] }}</span>
                   </template>
                 </el-table-column>
               </el-table>
 
-              <Empty
-                  v-if="!loading && !hasError && isEmpty"
-                  icon="Empty/ListView"
-                  :has-dark="true"
-                  :text="translate('Click Generate Snapshots above to view cohort data.')"
-                  class="fct-report-empty-state"
-              />
+              <Empty v-if="!loading && !hasError && isEmpty" icon="Empty/ListView" :has-dark="true"
+                     :text="cohortData.generated_at ? translate('No cohorts to show.') : translate('Click Generate Snapshots above to view cohort data.')"
+                     class="fct-report-empty-state" />
             </Card.Body>
           </Card.Container>
+
+          <CohortCurve v-if="loading || isFull" class="mt-6" :averages="cohortData.weighted_averages || []" :metric="metric" :group-by="groupBy" :loading="loading" />
+          <ProReportPreview
+              v-else
+              class="mt-6"
+              :title="translate('See how revenue holds up, not just customers')"
+              :text="translate('SubRpt_Switch_Cohorts')"
+              :bullets="[translate('MRR cohorts'), translate('Retention curve'), translate('Monthly and yearly plans apart'), translate('Count rebuys as retained')]"
+              placement="feature_lock_report_cohorts"
+          >
+            <ProReportSample
+                :title="translate('Retention curve')"
+                :columns="[translate('Period'), translate('Customers'), translate('MRR')]"
+                :rows="[['1', '90%', '92%'], ['2', '80%', '85%'], ['3', '72%', '78%']]"
+            />
+          </ProReportPreview>
+
+          <ExtensionComponent name="reports.subscriptions.rebuys" class="mt-6" :report-filter="reportFilter" :billing-interval="billingInterval === 'all' ? '' : billingInterval">
+            <ProReportPreview
+                class="mt-6"
+                :title="translate('Spot customers who cancel and buy again')"
+                :text="translate('SubRpt_See_Let')"
+                :bullets="[translate('Rebuys per period'), translate('Discount given on the new purchase')]"
+                placement="feature_lock_report_rebuys"
+            >
+              <ProReportSample
+                  :title="translate('Cancel and rebuy')"
+                  :columns="[translate('Period'), translate('Ended'), translate('Rebought')]"
+                  :rows="[[translate('Jan'), '100', '10'], [translate('Feb'), '100', '12'], [translate('Mar'), '100', '8']]"
+              />
+            </ProReportPreview>
+          </ExtensionComponent>
         </div>
-
-
-
-        <!-- Cohort Table -->
-<!--         <Card.Container v-if="loading">-->
-<!--            <Card.Body class="px-0 pb-0 hidden">-->
-<!--                <el-skeleton animated :rows="10" class="p-4" />-->
-<!--            </Card.Body>-->
-<!--         </Card.Container>-->
-        <!-- <Card.Container>
-            <Card.Body class="px-0 pb-0"> -->
-                <!-- <el-skeleton v-if="loading" animated :rows="10" class="p-4" /> -->
-
-<!--                <template v-else-if="!isEmpty">-->
-<!--                    <el-table -->
-<!--                        :data="tableData" -->
-<!--                        border -->
-<!--                        class="fct-cohort-el-table hidden"-->
-<!--                        :cell-style="cellStyleHandler"-->
-<!--                        :row-class-name="rowClassName"-->
-<!--                        :span-method="spanMethod"-->
-<!--                    >-->
-<!--                        <el-table-column -->
-<!--                            prop="cohort_label" -->
-<!--                            :label="translate('Subscribed')" -->
-<!--                            fixed="left"-->
-<!--                            width="150"-->
-<!--                        >-->
-<!--                            <template #default="scope">-->
-<!--                                <span :class="{ 'font-bold': scope.row.is_weighted_avg }">-->
-<!--                                    {{ scope.row.cohort_label }}-->
-<!--                                </span>-->
-<!--                            </template>-->
-<!--                        </el-table-column>-->
-
-<!--                        <el-table-column -->
-<!--                            prop="start_value" -->
-<!--                            :label="translate('Start')" -->
-<!--                            align="right"-->
-<!--                        >-->
-<!--                            <template #default="scope">-->
-<!--                                <span :class="{ 'font-bold': scope.row.is_weighted_avg }">-->
-<!--                                    {{ scope.row.start_value }}-->
-<!--                                </span>-->
-<!--                            </template>-->
-<!--                        </el-table-column>-->
-
-<!--                        <el-table-column -->
-<!--                            v-for="i in maxPeriods" -->
-<!--                            :key="i"-->
-<!--                            :prop="'period_' + i"-->
-<!--                            :label="getPeriodLabel(i)"-->
-<!--                            width="120"-->
-<!--                            align="center"-->
-<!--                        >-->
-<!--                            <template #default="scope">-->
-<!--                                <el-tooltip -->
-<!--                                    v-if="scope.row['period_' + i + '_tooltip']" -->
-<!--                                    placement="top" -->
-<!--                                    popper-class="fct-tooltip"-->
-<!--                                >-->
-<!--                                    <template #content>-->
-<!--                                        <div class="text-sm" v-html="scope.row['period_' + i + '_tooltip']"></div>-->
-<!--                                    </template>-->
-<!--                                    <span :class="{ 'font-bold': scope.row.is_weighted_avg }">-->
-<!--                                        {{ scope.row['period_' + i] }}-->
-<!--                                    </span>-->
-<!--                                </el-tooltip>-->
-<!--                                <span v-else :class="{ 'font-bold': scope.row.is_weighted_avg }">-->
-<!--                                    {{ scope.row['period_' + i] || '' }}-->
-<!--                                </span>-->
-<!--                            </template>-->
-<!--                        </el-table-column>-->
-
-<!--                        <template #empty>-->
-<!--                            <el-empty :text="translate('No data available')" />-->
-<!--                        </template>-->
-<!--                    </el-table>-->
-<!--                </template>-->
-
-<!--                <Empty v-else icon="Empty/ListView" :has-dark="true"-->
-<!--                    :text="translate('No cohort data available for the selected period.')" -->
-<!--                    class="fct-report-empty-state" />-->
-            <!-- </Card.Body>
-        </Card.Container> -->
     </UserCan>
 </template>
 
 <script setup>
-/**
- * ----------------------------------------------------------------------------
- * Imports
- * ----------------------------------------------------------------------------
- */
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { ElMessage } from "element-plus";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import Empty from "@/Bits/Components/Table/Empty.vue";
-import translate from "@/utils/translator/Translator";
-import {dateTimeI18} from "@/utils/Utils";
+import translate, {_x} from "@/utils/translator/Translator";
+import { dateTimeI18 } from "@/utils/Utils";
 import Rest from "@/utils/http/Rest";
 import ExportReport from "../ExportReport.vue";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
-import {handleError, handleSuccess, handleResponse, $confirm} from "@/Bits/common";
+import { handleError, handleSuccess, $confirm } from "@/Bits/common";
+import { prepareLabel } from "@/Modules/Reports/Utils/decorator";
+import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
+import CohortCurve from "./CohortCurve.vue";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import ProReportPreview from "../Components/ProReportPreview.vue";
+import ProReportSample from "../Components/ProReportSample.vue";
 
-/**
- * ----------------------------------------------------------------------------
- * Props and Data
- * ----------------------------------------------------------------------------
- */
 const props = defineProps({
-    reportFilter: {
-        type: Object,
-        required: true,
-    },
+    reportFilter: {type: Object, required: true},
 });
+
+// Snapshots are rebuilt on demand; past this age the page asks for a new build
+const STALE_DAYS = 7;
+const INTERVALS = {
+    daily: translate("Daily"), weekly: translate("Weekly"), monthly: translate("Monthly"),
+    quarterly: translate("Quarterly"), half_yearly: translate("Half-yearly"), yearly: translate("Yearly"),
+};
 
 const reportFilter = props.reportFilter;
-const cohortData = ref({
-    cohorts: [],
-    weighted_averages: [],
-    group_by: 'year',
-    metric: 'subscribers'
-});
+const cohortData = ref({cohorts: [], weighted_averages: [], intervals: [], full: false});
+// FluentCart Pro serves MRR cohorts, billing intervals, rebuy-adjusted retention and the curve
+const isFull = computed(() => !!cohortData.value.full);
 const loading = ref(true);
+const generating = ref(false);
+// Step N of M of the build the page is running
+const buildProgress = ref(null);
 const hasError = ref(false);
 let requestSeq = 0;
-const groupBy = ref('year');
-const metric = ref('subscribers');
-const displayMode = ref('percent');
-const maxPeriods = ref(12); // Will be updated from API response
+const groupBy = ref("year");
+const metric = ref("subscribers");
+const displayMode = ref("percent");
+const billingInterval = ref("all");
+const rebuyAdjusted = ref(false);
+const maxPeriods = ref(12);
 
-/**
- * ----------------------------------------------------------------------------
- * Computed Properties
- * ----------------------------------------------------------------------------
- */
-const isEmpty = computed(() => {
-    return !cohortData.value.cohorts || cohortData.value.cohorts.length === 0;
+const intervals = computed(() => cohortData.value.intervals || []);
+const intervalLabel = (key) => INTERVALS[key] || key;
+const isEmpty = computed(() => !cohortData.value.cohorts || cohortData.value.cohorts.length === 0);
+const money = (value) => new DOMParser().parseFromString(reportFilter.formatAmount(value || 0), "text/html").documentElement.textContent;
+const isMrr = computed(() => metric.value === "mrr");
+
+const generatedAt = computed(() => {
+    const value = cohortData.value.generated_at;
+    return value ? Date.parse(String(value).replace(" ", "T") + "Z") : null;
 });
-
-/**
- * Export data - flattens cohort data into CSV-friendly format
- */
-const exportData = computed(() => {
-    if (isEmpty.value) return [];
-    
-    const rows = [];
-    
-    cohortData.value.cohorts.forEach(cohort => {
-        const row = {
-            cohort: cohort.cohort,
-            start_value: metric.value === 'mrr' ? cohort.start_mrr : cohort.start_count
-        };
-        
-        // Add each period's data
-        cohort.periods.forEach((period, index) => {
-            const periodNum = index + 1;
-            const periodLabel = groupBy.value === 'year' ? `year_${periodNum}` : `month_${periodNum}`;
-            
-            if (metric.value === 'mrr') {
-                row[`${periodLabel}_retained`] = period.retained_mrr;
-                row[`${periodLabel}_retention_rate`] = period.retention_rate_mrr;
-            } else {
-                row[`${periodLabel}_retained`] = period.retained_count;
-                row[`${periodLabel}_retention_rate`] = period.retention_rate_count;
-            }
-        });
-        
-        rows.push(row);
-    });
-    
-    // Add weighted average row
-    if (cohortData.value.weighted_averages?.length > 0) {
-        const avgRow = {
-            cohort: 'Weighted Average',
-            start_value: '-'
-        };
-        
-        cohortData.value.weighted_averages.forEach((avg, index) => {
-            const periodNum = index + 1;
-            const periodLabel = groupBy.value === 'year' ? `year_${periodNum}` : `month_${periodNum}`;
-            
-            avgRow[`${periodLabel}_retained`] = '-';
-            avgRow[`${periodLabel}_retention_rate`] = metric.value === 'mrr' 
-                ? avg.weighted_avg_mrr 
-                : avg.weighted_avg_count;
-        });
-        
-        rows.push(avgRow);
+const isStale = computed(() => !generatedAt.value || Date.now() - generatedAt.value > STALE_DAYS * 86400000);
+const generatedText = computed(() => {
+    /* translators: %1$s - date and time the cohort data was last generated */
+    return translate("Last generated %1$s", dateTimeI18(cohortData.value.generated_at, "date_time"));
+});
+const staleText = computed(() => {
+    if (!generatedAt.value) {
+        return translate("Cohort data has not been generated yet.");
     }
-    
-    return rows;
+    /* translators: %1$s - date and time the cohort data was last generated */
+    return translate('SubRpt_Cohort_Data', dateTimeI18(cohortData.value.generated_at, "date_time"));
 });
 
-/**
- * Table data - transforms cohort data into flat rows for el-table
- */
+const periodLabel = (i) => {
+    if (groupBy.value === "year") {
+        /* translators: %1$s - number of years since the cohort first paid */
+        return translate("Year %1$s", i);
+    }
+    /* translators: %1$s - number of months since the cohort first paid */
+    return translate("Month %1$s", i);
+};
+
+const rate = (period) => (isMrr.value ? period.retention_rate_mrr : period.retention_rate_count);
+// A monthly cell marked partial is the store's current month, still running (the server decides, in store time)
+const isRunning = (period) => groupBy.value === "month" && !!period.partial;
+const cellText = (period, cohort) => {
+    if (rate(period) === null || rate(period) === undefined) return "";
+    const text = displayMode.value === "percent"
+        ? `${rate(period)}%`
+        : (isMrr.value ? money(period.retained_mrr) : formatNumber(period.retained_count));
+    // A year cell only some monthly cohorts have reached yet, or the month still running
+    return period.partial ? `${text}*` : text;
+};
+const cellTip = (period, cohort) => {
+    if (rate(period) === null || rate(period) === undefined) return "";
+    if (isRunning(period)) {
+        /* translators: %1$s - retention percent so far in the month still running */
+        return translate("%1$s so far: this month has not ended yet", `${rate(period)}%`);
+    }
+    if (period.partial) {
+        /* translators: %1$s - retention percent, %2$s - cohorts that reached this year, %3$s - all monthly cohorts of the row */
+        return translate("%1$s, from the %2$s of %3$s monthly cohorts that have reached this point", `${rate(period)}%`, period.matured_cohorts, period.total_cohorts);
+    }
+    if (isMrr.value) {
+        /* translators: %1$s - retention percent, %2$s - MRR still coming in, %3$s - the cohort's starting MRR */
+        return translate("%1$s: %2$s of %3$s MRR still coming in", `${period.retention_rate_mrr}%`, money(period.retained_mrr), money(cohort.start_mrr));
+    }
+    /* translators: %1$s - retention percent, %2$s - customers still subscribed, %3$s - customers in the cohort */
+    return translate("%1$s: %2$s of %3$s customers still subscribed", `${period.retention_rate_count}%`, formatNumber(period.retained_count), formatNumber(cohort.start_count));
+};
+
 const tableData = computed(() => {
     if (isEmpty.value) return [];
-    
-    const rows = [];
-    
-    // Add cohort rows
-    cohortData.value.cohorts.forEach(cohort => {
+    const rows = cohortData.value.cohorts.map((cohort) => {
         const row = {
-            cohort: cohort.cohort,
-            cohort_label: formatCohortLabel(cohort.cohort),
-            start_value: formatStartValue(cohort),
-            start_mrr: cohort.start_mrr,
-            start_count: cohort.start_count,
-            is_weighted_avg: false
+            cohort_label: prepareLabel(String(cohort.cohort)),
+            start_value: isMrr.value ? money(cohort.start_mrr) : formatNumber(cohort.start_count),
+            is_average: false,
         };
-        
-        // Add each period's data
         cohort.periods.forEach((period, index) => {
-            const periodNum = index + 1;
-            const displayValue = getDisplayValue(period);
-            row[`period_${periodNum}`] = displayValue && period.partial ? `${displayValue}*` : displayValue;
-            row[`period_${periodNum}_data`] = period;
-
-            // Build tooltip content
-            if (displayValue) {
-                let tooltipContent = '';
-                if (metric.value === 'mrr') {
-                    const baseMrr = period.base_mrr ?? cohort.start_mrr;
-                    tooltipContent = `<strong>${period.retention_rate_mrr}%</strong> (${formatCurrency(period.retained_mrr)}) of ${formatCurrency(baseMrr)} remains`;
-                } else {
-                    const baseCount = period.base_count ?? cohort.start_count;
-                    tooltipContent = `<strong>${period.retention_rate_count}%</strong> (${period.retained_count}) of ${baseCount} remains`;
-                }
-                if (period.churned_mrr > 0 || period.churned_count > 0) {
-                    const churnedValue = metric.value === 'mrr' ? formatCurrency(period.churned_mrr) : period.churned_count;
-                    tooltipContent += `<div class="mt-1 text-gray-400">${churnedValue} churned in this period</div>`;
-                }
-                if (period.partial) {
-                    tooltipContent += `<div class="mt-1 text-gray-400">${translate('Partial: %1$s of %2$s monthly cohorts have reached this point', period.matured_cohorts, period.total_cohorts)}</div>`;
-                }
-                row[`period_${periodNum}_tooltip`] = tooltipContent;
-            }
+            row["cell_" + (index + 1)] = cellText(period, cohort);
+            row["tip_" + (index + 1)] = cellTip(period, cohort);
+            row["rate_" + (index + 1)] = rate(period);
         });
-        
-        rows.push(row);
+        return row;
     });
-    
-    // Add weighted average row
-    if (cohortData.value.weighted_averages?.length > 0) {
-        const avgRow = {
-            cohort: 'weighted_avg',
-            cohort_label: translate('Weighted Avg. Retained'),
-            start_value: '',
-            is_weighted_avg: true
-        };
-        
-        cohortData.value.weighted_averages.forEach((avg, index) => {
-            const periodNum = index + 1;
-            avgRow[`period_${periodNum}`] = getWeightedDisplayValue(avg);
-            avgRow[`period_${periodNum}_data`] = avg;
-            avgRow[`period_${periodNum}_is_weighted`] = true;
+
+    if (cohortData.value.weighted_averages?.length) {
+        const average = {cohort_label: translate("Weighted average"), start_value: "", is_average: true};
+        cohortData.value.weighted_averages.forEach((avg) => {
+            const value = isMrr.value ? avg.weighted_avg_mrr : avg.weighted_avg_count;
+            average["cell_" + avg.offset] = `${value}%`;
+            average["rate_" + avg.offset] = value;
         });
-        
-        rows.push(avgRow);
+        rows.push(average);
     }
-    
     return rows;
 });
 
-/**
- * ----------------------------------------------------------------------------
- * Methods
- * ----------------------------------------------------------------------------
- */
-
-/**
- * Cell style handler for el-table - applies heatmap coloring
- */
-const cellStyleHandler = ({ row, column, rowIndex, columnIndex }) => {
-    // Skip first two columns (cohort label and start value)
-    // if (columnIndex < 2) {
-    //     if (row.is_weighted_avg) {
-    //         return { backgroundColor: '#f3f4f6', fontWeight: 'bold' };
-    //     }
-    //     return {};
-    // }
-    
-    const periodNum = columnIndex - 1; // Adjust for the two fixed columns
-    const periodData = row[`period_${periodNum}_data`];
-    
-    if (!periodData) return {};
-    
-    if (row.is_weighted_avg) {
-        return getWeightedCellStyle(periodData);
+const exportData = computed(() => tableData.value.map((row) => {
+    const out = {cohort: row.cohort_label, start: row.start_value};
+    for (let i = 1; i <= maxPeriods.value; i++) {
+        out[periodLabel(i)] = row["cell_" + i] || "";
     }
-    
-    return getCellStyle(periodData);
-};
+    return out;
+}));
 
-/**
- * Row class name for el-table
- */
-const rowClassName = ({ row, rowIndex }) => {
-    if (row.is_weighted_avg) {
-        return 'weighted-average-row';
-    }
-    return 'cohort-row';
-};
-
-/**
- * Span method for el-table - makes weighted avg row's first column span 2
- */
-const spanMethod = ({ row, column, rowIndex, columnIndex }) => {
-    if (row.is_weighted_avg) {
-        if (columnIndex === 0) {
-            // First column spans 2 columns
-            return { rowspan: 1, colspan: 2 };
-        } else if (columnIndex === 1) {
-            // Second column is hidden (absorbed by first)
-            return { rowspan: 0, colspan: 0 };
+// Heat map over the table's own range: retention often sits within a few points, which a 0-100 scale paints alike
+const range = computed(() => {
+    const values = [];
+    tableData.value.forEach((row) => {
+        for (let i = 1; i <= maxPeriods.value; i++) {
+            const value = row["rate_" + i];
+            if (value !== null && value !== undefined) values.push(Number(value));
         }
-    }
-    return { rowspan: 1, colspan: 1 };
+    });
+    return values.length ? [Math.min(...values), Math.max(...values)] : [0, 100];
+});
+const shade = (value) => {
+    const [low, high] = range.value;
+    return high > low ? 0.15 + 0.85 * (Number(value) - low) / (high - low) : 0.6;
+};
+const isDark = (value) => value !== null && value !== undefined && shade(value) > 0.55;
+const cellStyle = ({row, columnIndex}) => {
+    const value = row["rate_" + (columnIndex - 1)];
+    if (columnIndex < 2 || value === null || value === undefined || value <= 0) return {};
+    return {backgroundColor: `rgba(51, 92, 255, ${shade(value)})`};
 };
 
-const fetchData = (filters = null) => {
+const spanMethod = ({row, columnIndex}) => {
+    if (row.is_average && columnIndex === 0) return {rowspan: 1, colspan: 2};
+    if (row.is_average && columnIndex === 1) return {rowspan: 0, colspan: 0};
+    return {rowspan: 1, colspan: 1};
+};
+
+const fetchData = () => {
     const seq = ++requestSeq;
     loading.value = true;
     hasError.value = false;
-    
-    const params = reportFilter.applicableFilters.params;
 
-    Rest.get('reports/subscription-cohorts', {
+    Rest.get("reports/subscription-cohorts", {
         params: {
-            ...params,
+            ...reportFilter.applicableFilters.params,
             groupBy: groupBy.value,
-            metric: metric.value
-        }
-    }).then(response => {
+            metric: metric.value,
+            billingInterval: billingInterval.value === "all" ? "" : billingInterval.value,
+            rebuyAdjusted: rebuyAdjusted.value ? 1 : 0,
+        },
+    }).then((response) => {
         if (seq !== requestSeq) return;
         cohortData.value = response;
-        // Update maxPeriods from server response
+        // An update changed the snapshot rules: rebuild once, without asking
+        if (response.rebuild_needed && !generating.value) {
+            runBuild({auto: true});
+        }
         if (response.max_periods) {
             maxPeriods.value = response.max_periods;
+        }
+        // A currency without the chosen interval hides the switch; never keep filtering on a value it no longer offers
+        if (billingInterval.value !== "all" && !(response.intervals || []).includes(billingInterval.value)) {
+            billingInterval.value = "all";
+            fetchData();
         }
     }).catch(() => {
         if (seq !== requestSeq) return;
@@ -500,300 +357,48 @@ const fetchData = (filters = null) => {
     });
 };
 
-const getPeriodLabel = (index) => {
-    const labels = {
-        'month': `Month ${index}`,
-        'week': `Week ${index}`,
-        'year': `Year ${index}`
-    };
-    return labels[groupBy.value] || `Period ${index}`;
-};
-
-/**
- * Get the last day (Sunday) of a given ISO week
- * @param {number} year - The year
- * @param {number} week - The ISO week number
- * @returns {Date} - The last day (Sunday) of that week
- */
-const getLastDayOfWeek = (year, week) => {
-    // ISO week 1 is the week containing the first Thursday of the year
-    const jan4 = new Date(year, 0, 4); // Jan 4 is always in week 1
-    const dayOfWeek = jan4.getDay() || 7; // Convert Sunday (0) to 7
-    const mondayOfWeek1 = new Date(jan4);
-    mondayOfWeek1.setDate(jan4.getDate() - dayOfWeek + 1);
-    
-    // Calculate the Monday of the target week
-    const targetMonday = new Date(mondayOfWeek1);
-    targetMonday.setDate(mondayOfWeek1.getDate() + (week - 1) * 7);
-    
-    // Get Sunday (last day of the week)
-    const sunday = new Date(targetMonday);
-    sunday.setDate(targetMonday.getDate() + 6);
-    
-    return sunday;
-};
-
-const formatCohortLabel = (cohort) => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Format based on groupBy
-    if (groupBy.value === 'month') {
-        const [year, month] = cohort.split('-');
-        return `${monthNames[parseInt(month) - 1]} ${year}`;
-    } else if (groupBy.value === 'week') {
-        // Format: "2024-35" → "Aug 31, 2024" (last day of week 35)
-        const [year, week] = cohort.split('-');
-        const lastDay = getLastDayOfWeek(parseInt(year), parseInt(week));
-        const monthName = monthNames[lastDay.getMonth()];
-        const day = lastDay.getDate();
-        return `${monthName} ${day}, ${lastDay.getFullYear()}`;
-    }
-    
-    return cohort;
-};
-
-const formatStartValue = (cohort) => {
-    if (metric.value === 'mrr') {
-        return formatCurrency(cohort.start_mrr);
-    }
-    return cohort.start_count.toLocaleString();
-};
-
-const formatCurrency = (value) => {
-    return reportFilter.formatAmount(value);
-};
-
-const getDisplayValue = (period) => {
-    if (displayMode.value === 'percent') {
-        const rate = metric.value === 'mrr' ? period.retention_rate_mrr : period.retention_rate_count;
-        if (rate === null || rate === undefined) return '';
-        return `${rate}%`;
-    } else if (displayMode.value === 'percent_previous') {
-        const rate = metric.value === 'mrr' ? period.retention_rate_previous_mrr : period.retention_rate_previous_count;
-        if (rate === null || rate === undefined) return '';
-        return `${rate}%`;
-    } else if (displayMode.value === 'value') {
-        const value = metric.value === 'mrr' ? period.retained_mrr : period.retained_count;
-        if (value === null || value === undefined) return '';
-        if (metric.value === 'mrr') {
-            return formatCurrency(value);
-        }
-        return value.toLocaleString();
-    } else if (displayMode.value === 'percent_ended') {
-        const rate = metric.value === 'mrr' ? period.churn_rate_total_mrr : period.churn_rate_total_count;
-        if (rate === null || rate === undefined) return '';
-        return `${rate}%`;
-    }
-    
-    return '';
-};
-
-const getWeightedDisplayValue = (avg) => {
-    if (displayMode.value === 'percent') {
-        const rate = metric.value === 'mrr' ? avg.weighted_avg_mrr : avg.weighted_avg_count;
-        return `${rate}%`;
-    } else if (displayMode.value === 'percent_previous') {
-        const rate = metric.value === 'mrr' ? avg.weighted_avg_prev_mrr : avg.weighted_avg_prev_count;
-        return `${rate}%`;
-    } else if (displayMode.value === 'value') {
-        // For value mode, we still show retention % in the weighted average row
-        const rate = metric.value === 'mrr' ? avg.weighted_avg_mrr : avg.weighted_avg_count;
-        return `${rate}%`;
-    } else if (displayMode.value === 'percent_ended') {
-        const rate = metric.value === 'mrr' ? avg.weighted_avg_churn_mrr : avg.weighted_avg_churn_count;
-        return `${rate}%`;
-    }
-    return '-';
-};
-
-const getCellClass = (period) => {
-    let rate;
-    
-    if (displayMode.value === 'percent_ended') {
-        // For churn rate, lower is better (green), higher is worse (red/low retention color)
-        // But we want to visualize churn, so high churn = dark color? 
-        // Usually cohort charts visualize retention. If showing churn, maybe inverse?
-        // Let's keep the "heat map" logic: higher value = darker color.
-        rate = metric.value === 'mrr' ? period.churn_rate_total_mrr : period.churn_rate_total_count;
-    } else if (displayMode.value === 'percent_previous') {
-        rate = metric.value === 'mrr' ? period.retention_rate_previous_mrr : period.retention_rate_previous_count;
-    } else if (displayMode.value === 'value') {
-        // For value, we can't easily use fixed percentages. 
-        // We'll use the retention rate as a proxy for the heat map intensity
-        rate = metric.value === 'mrr' ? period.retention_rate_mrr : period.retention_rate_count;
-    } else {
-        rate = metric.value === 'mrr' ? period.retention_rate_mrr : period.retention_rate_count;
-    }
-    
-    if (rate === 0) return 'retention-0';
-    if (rate >= 90) return 'retention-high';
-    if (rate >= 70) return 'retention-medium';
-    return 'retention-low';
-};
-
-const getCellStyle = (period) => {
-    let rate;
-    
-    if (displayMode.value === 'percent_ended') {
-        rate = metric.value === 'mrr' ? period.churn_rate_total_mrr : period.churn_rate_total_count;
-    } else if (displayMode.value === 'percent_previous') {
-        rate = metric.value === 'mrr' ? period.retention_rate_previous_mrr : period.retention_rate_previous_count;
-    } else if (displayMode.value === 'value') {
-        // Use retention rate for opacity
-        rate = metric.value === 'mrr' ? period.retention_rate_mrr : period.retention_rate_count;
-    } else {
-        rate = metric.value === 'mrr' ? period.retention_rate_mrr : period.retention_rate_count;
-    }
-    
-    // Handle null/undefined (future periods) or 0 (no retention)
-    if (rate === null || rate === undefined || rate === 0) return {};
-    
-    // Calculate opacity in 5% steps
-    const step = Math.floor(rate / 5) * 5;
-    const opacity = step / 100;
-    
-    // Base color: #335CFF (RGB: 51, 92, 255) - Information Base Blue
-    return {
-        backgroundColor: `rgba(51, 92, 255, ${opacity})`,
-        color: opacity > 0.5 ? '#ffffff' : '#1f2937'
-    };
-};
-
-const getWeightedCellClass = (avg) => {
-    let rate;
-    
-    if (displayMode.value === 'percent_ended') {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_churn_mrr : avg.weighted_avg_churn_count;
-    } else if (displayMode.value === 'percent_previous') {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_prev_mrr : avg.weighted_avg_prev_count;
-    } else {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_mrr : avg.weighted_avg_count;
-    }
-    
-    if (rate >= 90) return 'retention-high';
-    if (rate >= 70) return 'retention-medium';
-    return 'retention-low';
-};
-
-const getWeightedCellStyle = (avg) => {
-    let rate;
-    
-    if (displayMode.value === 'percent_ended') {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_churn_mrr : avg.weighted_avg_churn_count;
-    } else if (displayMode.value === 'percent_previous') {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_prev_mrr : avg.weighted_avg_prev_count;
-    } else {
-        rate = metric.value === 'mrr' ? avg.weighted_avg_mrr : avg.weighted_avg_count;
-    }
-    
-    // Calculate opacity in 5% steps
-    const step = Math.floor(rate / 5) * 5;
-    const opacity = step / 100;
-    
-    return {
-        backgroundColor: `rgba(51, 92, 255, ${opacity})`,
-        color: opacity > 0.5 ? '#ffffff' : '#1f2937'
-    };
-};
-
-/**
- * Generate retention snapshots
- */
-const generateSnapshots = async () => {
+const generateSnapshots = () => {
     $confirm(
-        translate('This will regenerate all retention snapshots. This may take 30-60 seconds.'),
-        translate('Please confirm'),
-        {
-            confirmButtonText: translate('Continue'),
-            cancelButtonText: translate('Cancel'),
-            type: 'warning'
-        }
-    )
-        .then(async () => {
-            loading.value = true;
-            try {
-                const response = await Rest.post('reports/retention-snapshots/generate');
-                
-                if (response.success && response.mode === 'background') {
-                    // Background job queued - poll for status
-                    handleResponse(translate('Snapshot generation started in background!'));
-                    pollJobStatus(response.job_id);
-                } else if (response.success && response.mode === 'synchronous') {
-                    // Completed synchronously
-                    handleSuccess(translate('Snapshots generated successfully!'));
-                    loading.value = false;
-                    await fetchData();
-                } else {
-                    handleError(response.message || translate('Failed to generate snapshots!'));
-                    loading.value = false;
-                }
-            } catch (error) {
-                handleError(translate('Error generating snapshots'));
-                loading.value = false;
-            }
-        })
-        .catch(() => {
-            // User cancelled
-        });
+        translate('SubRpt_Rebuilds_Cohort'),
+        translate("Please confirm"),
+        {confirmButtonText: translate("Continue"), cancelButtonText: translate("Cancel"), type: "warning"}
+    ).then(runBuild).catch(() => {});
 };
 
-/**
- * Poll job status until completion
- */
-const pollJobStatus = async (jobId) => {
-    const maxAttempts = 10; // Poll for up to 100 seconds
-    let attempts = 0;
-
-    const checkStatus = async () => {
-        try {
-            const response = await Rest.get('reports/retention-snapshots/status', {
-                params: { job_id: jobId }
-            });
-
-            if (response.success && response.status === 'completed') {
-                handleSuccess(translate('Snapshots generated successfully!'));
-                loading.value = false;
-                await fetchData();
-                return;
-            }
-
-            if (response.success && response.status === 'failed') {
-                handleError(response.message || translate('Snapshot generation failed!'));
-                loading.value = false;
-                return;
-            }
-
-            // Still running - poll again
-            attempts++;
-            if (attempts < maxAttempts) {
-                setTimeout(checkStatus, 10000); // Check every 10 seconds
-            } else {
-                handleResponse(translate('Job is still running. Please refresh the page in a moment!'));
-                loading.value = false;
-            }
-        } catch (error) {
-            handleError(translate('Error checking job status!'));
-            loading.value = false;
+// The browser runs the build: one short request per step, so no background job, WP-Cron or long request is needed.
+// The old snapshots stay until the last step publishes the new ones.
+const runBuild = async (options) => {
+    generating.value = true;
+    buildProgress.value = null;
+    try {
+        const started = await Rest.post("reports/retention-snapshots/generate");
+        // Another visitor's rebuild is publishing; the next visit shows its result
+        if (options && options.auto && started.code === "already_running") {
+            return;
         }
-    };
-
-    checkStatus();
+        if (!started.success) {
+            handleError(started.message || translate("Failed to generate snapshots!"));
+            return;
+        }
+        let step = {done: false, step: 0, steps: started.steps};
+        while (!step.done) {
+            buildProgress.value = {step: step.step, steps: step.steps};
+            step = await Rest.post("reports/retention-snapshots/step", {token: started.token});
+            if (!step.success) {
+                handleError(step.message || translate("Failed to generate snapshots!"));
+                return;
+            }
+        }
+        handleSuccess(translate("Snapshots generated successfully!"));
+        fetchData();
+    } catch (error) {
+        handleError(translate("Error generating snapshots"));
+    } finally {
+        generating.value = false;
+        buildProgress.value = null;
+    }
 };
 
-/**
- * ----------------------------------------------------------------------------
- * Watchers
- * ----------------------------------------------------------------------------
- */
-watch([groupBy], () => {
-    fetchData();
-});
-
-/**
- * ----------------------------------------------------------------------------
- * Hooks
- * ----------------------------------------------------------------------------
- */
 onMounted(() => {
     fetchData();
     reportFilter.addListener("cohort-report", fetchData);
@@ -803,10 +408,3 @@ onUnmounted(() => {
     reportFilter.removeListener("cohort-report");
 });
 </script>
-
-<style scoped>
-/* El-table cohort styling */
-.fct-cohort-el-table {
-    font-size: 13px;
-}
-</style>

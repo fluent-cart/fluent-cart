@@ -13,6 +13,7 @@ export default [
             'vendor/**',
             'node_modules/**',
             'dev/**',
+            'tests/**',
             'resources/admin/BlockEditor/**',   // React — separate config if needed
             'resources/public/**/*.min.js',
             'resources/public/lib/**',

@@ -2,6 +2,7 @@ import Model from "@/utils/model/Model";
 import dayjs from "dayjs";
 import Storage from "@/utils/Storage.js";
 import dateShortcuts from "../../Modules/Reports/Utils/dateShortCuts";
+import { presetRange, siteToday } from "../../Modules/Reports/Utils/datePresets";
 import Rest from "@/utils/http/Rest";
 import DateUtil from "@/utils/support/Date";
 import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
@@ -21,18 +22,29 @@ export const CONVERTED_CURRENCY = '__all__';
  * Every other report reads one currency.
  */
 export const CONVERTED_CURRENCY_ROUTES = [
-    'reports_sales', 'reports_orders', 'reports_revenue', 'reports_refunds', 'reports_products', 'reports_sources',
+    'reports_orders', 'reports_revenue', 'reports_refunds', 'reports_products', 'reports_sources', 'reports_coupons',
+    'reports_customer', 'reports_payment_methods', 'reports_locations',
     'reports_products_compare',
-    'subscriptions-retention', 'future_renewals',
+    'subscriptions-retention', 'future_renewals', 'reports_installments',
 ];
+
+/**
+ * Reports that ignore the date range (snapshots over all time) list every
+ * currency that has orders, not only those inside the range.
+ */
+export const ALL_TIME_CURRENCY_ROUTES = ['reports_installments', 'subscriptions-cohorts', 'future_renewals'];
+
+/**
+ * Subscription pages: their own product selector (subscription variants only) replaces the Filters menu,
+ * so a product picked on another report does not apply here unseen.
+ */
+export const SUBSCRIPTION_PRODUCT_ROUTES = ['reports_subscriptions', 'subscriptions-retention', 'subscriptions-cohorts', 'future_renewals'];
 
 class ReportFilterModel extends Model {
     filterState = null;
 
     data = {
-        orderStatus: ['all'],
         orderTypes: ['all'],
-        paymentStatus: ['all'],
         currencies: [],
         baseCurrency: '',
         convertedExcludedOrders: 0,
@@ -40,27 +52,29 @@ class ReportFilterModel extends Model {
         defaultCurrency: "",
         currencySign: "",
         dateRange: [
-            DateUtil.withTimezone(dayjs().subtract(1, "month").format("YYYY-MM-DD 00:00:00")),
-            DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
+            DateUtil.withTimezone(siteToday().subtract(1, "month").format("YYYY-MM-DD 00:00:00")),
+            DateUtil.withTimezone(siteToday().format("YYYY-MM-DD 23:59:59")),
         ],
         rangeKey: "",
         dateDiff: 0,
         minDate: "",
         variation_ids: [],
+        subscriptionVariationIds: [],
         active_tab: "",
-        filterMode: "",
-        storeMode: "",
         firstOrderDate: "",
-        compareDate: DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
+        compareDate: DateUtil.withTimezone(siteToday().format("YYYY-MM-DD 23:59:59")),
         compareType: "previous_period",
         subscriptionType: "",
         reportRoute: "",
+        // True while a route switch reloads the currency list; ReportsView holds the page until then
+        currencyScopeLoading: false,
         compareRange: null,
         compareRanges: null,
     };
 
     storageKey = "report-filter";
     currencyStorageKey = `${this.storageKey}_currencies`;
+    subscriptionVariationsKey = `${this.storageKey}_subscription_variations`;
 
     beforeInit() {
         this.filterState = useFilterState();
@@ -76,8 +90,6 @@ class ReportFilterModel extends Model {
         const data = Storage.get(this.storageKey);
         const currencies = Storage.get(this.currencyStorageKey);
 
-        this.data.paymentStatus = data.paymentStatus ?? this.data.paymentStatus;
-        this.data.orderStatus = data.orderStatus ?? this.data.orderStatus;
         this.data.orderTypes = data.orderTypes ?? this.data.orderTypes;
         this.data.compareType = data.compareType ? data.compareType : this.data.compareType;
         this.data.compareDate = data.compareDate ?? this.data.compareDate;
@@ -91,9 +103,26 @@ class ReportFilterModel extends Model {
         ];
         this.data.currencies = currencies ?? this.data.currencies;
         this.data.rangeKey = data.rangeKey;
+        // Free filters saved before every range opened up hold this month's fixed dates with no key
+        if (!this.data.rangeKey && !AppConfig.get('app_config.isProActive')) {
+            this.data.rangeKey = 'this_month';
+        }
+        // A saved preset is relative to today, not to the day it was picked
+        const preset = presetRange(this.data.rangeKey);
+        if (preset) {
+            this.data.dateRange = [
+                DateUtil.withTimezone(preset[0].format("YYYY-MM-DD 00:00:00")),
+                DateUtil.withTimezone(preset[1].format("YYYY-MM-DD 23:59:59")),
+            ];
+        }
         this.data.variation_ids = data.variation_ids ? data.variation_ids : this.data.variation_ids;
-        this.data.filterMode = data.filterMode ?? this.data.filterMode;
-        this.data.storeMode = data.storeMode ?? this.data.storeMode;
+        this.data.subscriptionVariationIds = Storage.get(this.subscriptionVariationsKey) || [];
+    }
+
+    setSubscriptionVariations(ids) {
+        this.data.subscriptionVariationIds = ids || [];
+        Storage.set(this.subscriptionVariationsKey, this.data.subscriptionVariationIds);
+        this.onFilterChange();
     }
 
     // Counters in an object: the Model proxy writes unknown props into data,
@@ -120,7 +149,14 @@ class ReportFilterModel extends Model {
         // The default belongs to a range: none is known until this one resolves
         this.data.defaultCurrency = '';
 
-        return Rest.get("reports/fetch-report-meta", this.applicableFilters)
+        const allTime = ALL_TIME_CURRENCY_ROUTES.includes(this.data.reportRoute);
+        const filters = this.applicableFilters;
+        const metaFilters = allTime
+            // Rest drops null values; undefined would be sent as the string "undefined"
+            ? {...filters, params: {...filters.params, startDate: null, endDate: null}}
+            : filters;
+
+        return Rest.get("reports/fetch-report-meta", metaFilters)
             .then((response) => {
                 if (request !== this.requests.meta) {
                     return; // a newer range is loading
@@ -128,7 +164,8 @@ class ReportFilterModel extends Model {
                 this.data.currencies = response.currencies || {};
                 this.data.baseCurrency = response.base_currency || '';
                 this.data.convertedExcludedOrders = response.converted_excluded_orders || 0;
-                if (adoptMinDate) {
+                // An all-time list says nothing about the range the other reports use
+                if (adoptMinDate && !allTime) {
                     this.data.dateRange[0] = response.min_date;
                 }
                 const codes = Object.keys(this.data.currencies);
@@ -141,8 +178,7 @@ class ReportFilterModel extends Model {
                 this.normalizeConvertedCurrency();
                 this.data.currencySign = this.data.currencies[this.data.currency] || '';
                 this.syncCurrencyChip();
-                this.data.storeMode = response.storeMode;
-                this.data.firstOrderDate = dayjs(response.first_order_date || dayjs().startOf("month")).format(
+                this.data.firstOrderDate = dayjs(response.first_order_date || siteToday().startOf("month")).format(
                     "YYYY-MM-DD 00:00:00"
                 );
                 this.syncStorage();
@@ -152,6 +188,10 @@ class ReportFilterModel extends Model {
             })
             .finally(() => {
                 this.data.loading = false;
+                // Only the newest currency list releases a page held by a route switch, whatever started it
+                if (request === this.requests.meta) {
+                    this.data.currencyScopeLoading = false;
+                }
             });
     }
 
@@ -167,7 +207,14 @@ class ReportFilterModel extends Model {
      * converted mode never shows "All currencies" over single-currency numbers.
      */
     setReportRoute(name) {
+        const wasAllTime = ALL_TIME_CURRENCY_ROUTES.includes(this.data.reportRoute);
         this.data.reportRoute = name || '';
+        // Moving between a dated and an all-time report changes which currencies apply. Reload the list
+        // before the page mounts, so it fetches once and in the right currency.
+        if (this.requests.meta && wasAllTime !== ALL_TIME_CURRENCY_ROUTES.includes(this.data.reportRoute)) {
+            this.data.currencyScopeLoading = true;
+            this.loadMeta(false).then(() => this.syncStorage());
+        }
         compareRangeSeq++;
         this.data.compareRange = null;
         this.data.compareRanges = null;
@@ -284,13 +331,14 @@ class ReportFilterModel extends Model {
         }
     }
 
-    onModeChange(mode) {
-        this.data.filterMode = mode;
-        this.syncStorage();
-    }
-
     syncStorage() {
-        Storage.set(this.storageKey, this.applicableFilters.params);
+        // The global filters, not the subscription pages' swapped ones
+        Storage.set(this.storageKey, {
+            ...this.applicableFilters.params,
+            variation_ids: this.data.variation_ids,
+            subscriptionType: this.data.subscriptionType,
+            orderTypes: this.data.orderTypes,
+        });
         Storage.set(this.currencyStorageKey, this.data.currencies);
     }
 
@@ -305,8 +353,12 @@ class ReportFilterModel extends Model {
         );
 
         let startDate, endDate;
+        const preset = presetRange(this.data.rangeKey);
 
-        if (dateShortcut) {
+        if (preset) {
+            startDate = DateUtil.withTimezone(preset[0].format("YYYY-MM-DD 00:00:00"));
+            endDate = DateUtil.withTimezone(preset[1].format("YYYY-MM-DD 23:59:59"));
+        } else if (dateShortcut) {
             const [start, end] = dateShortcut.value();
             startDate =
                 this.data.rangeKey === "All Time"
@@ -318,20 +370,13 @@ class ReportFilterModel extends Model {
             endDate = DateUtil.withTimezone(dayjs(this.data.dateRange[1]).format("YYYY-MM-DD 23:59:59"));
         }
 
+        // No order/payment status or live/test mode: every report uses the fixed report statuses
         const params = {
-            orderStatus: this.data.orderStatus,
-            paymentStatus: this.data.paymentStatus,
             currency: this.data.currency,
-            startDate: AppConfig.get('app_config.isProActive')
-                ? startDate
-                : DateUtil.withTimezone(dayjs().startOf("month").format("YYYY-MM-DD 00:00:00")),
-            endDate: AppConfig.get('app_config.isProActive')
-                ? endDate
-                : DateUtil.withTimezone(dayjs().endOf("month").format("YYYY-MM-DD 23:59:59")),
+            startDate,
+            endDate,
             rangeKey: this.data.rangeKey,
             variation_ids: this.data.variation_ids,
-            filterMode: this.data.filterMode,
-            storeMode: this.data.storeMode,
             firstOrderDate: this.data.firstOrderDate,
             compareType: this.data.compareType,
             compareDate: this.data.compareDate,
@@ -339,7 +384,10 @@ class ReportFilterModel extends Model {
         };
 
         let orderTypes = this.data.orderTypes;
-        if (!orderTypes.includes('all')) {
+        if (SUBSCRIPTION_PRODUCT_ROUTES.includes(this.data.reportRoute)) {
+            params.variation_ids = this.data.subscriptionVariationIds;
+            params.subscriptionType = '';
+        } else if (!orderTypes.includes('all')) {
             params['orderTypes'] = orderTypes;
         }
 
@@ -355,15 +403,15 @@ class ReportFilterModel extends Model {
     }
 
     resetFiltersToDefault() {
-        this.data.orderStatus = ['all'];
+        // A kept preset key would override the reset dates
+        this.data.rangeKey = "";
         this.data.orderTypes = ['all'];
-        this.data.paymentStatus = ['all'];
         this.data.compareType = "previous_period";
-        this.data.compareDate = DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59"));
+        this.data.compareDate = DateUtil.withTimezone(siteToday().format("YYYY-MM-DD 23:59:59"));
         this.data.variation_ids = [];
         this.data.dateRange = [
-            DateUtil.withTimezone(dayjs().subtract(1, "month").format("YYYY-MM-DD 00:00:00")),
-            DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
+            DateUtil.withTimezone(siteToday().subtract(1, "month").format("YYYY-MM-DD 00:00:00")),
+            DateUtil.withTimezone(siteToday().format("YYYY-MM-DD 23:59:59")),
         ];
         this.data.subscriptionType = "";
         this.data.currency = "";
@@ -378,7 +426,7 @@ class ReportFilterModel extends Model {
             this.data.compareType = "previous_period";
         }
         if (key === "compareDate") {
-            this.data.compareDate = DateUtil.withTimezone(dayjs().subtract(1, "month").format("YYYY-MM-DD 00:00:00"));
+            this.data.compareDate = DateUtil.withTimezone(siteToday().subtract(1, "month").format("YYYY-MM-DD 00:00:00"));
         }
         if (key === "subscriptionType") {
             this.data.subscriptionType = "";
@@ -386,16 +434,14 @@ class ReportFilterModel extends Model {
         if (key === "orderTypes") {
             this.data.orderTypes = ['all'];
         }
-        if (key === "orderStatus" || key === "paymentStatus") {
-            this.data[key] = ['all'];
-        }
         if (key === "variation_ids") {
             this.data.variation_ids = [];
         }
         if (key === "dateRange") {
+            this.data.rangeKey = "";
             this.data[key] = [
-                DateUtil.withTimezone(dayjs().startOf("month").format("YYYY-MM-DD 00:00:00")),
-                DateUtil.withTimezone(dayjs().format("YYYY-MM-DD 23:59:59")),
+                DateUtil.withTimezone(siteToday().startOf("month").format("YYYY-MM-DD 00:00:00")),
+                DateUtil.withTimezone(siteToday().format("YYYY-MM-DD 23:59:59")),
             ];
         }
     }

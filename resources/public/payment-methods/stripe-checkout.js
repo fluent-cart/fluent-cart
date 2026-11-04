@@ -21,6 +21,7 @@ let stripeValidateCheckoutHandler = null;
 let stripePreparedSubmission = null;
 let stripePreparedElements = null;
 let stripeSaveCardConsentHandler = null;
+let stripePaymentConfigRequest = 0;
 // Confirm re-inits (payment-method switch / fragments) must not leave a
 // MutationObserver from a previous confirm live — it would hide loaders on
 // an unrelated iframe (PayPal, next Stripe mount) the same way stacked
@@ -143,79 +144,21 @@ class StripeCheckout {
         return translations[string] || string;
     }
 
-    /**
-     * Keep the Elements config in step with the "save my card" checkbox.
-     *
-     * Elements runs in deferred-intent mode, so Stripe rejects the confirmation
-     * unless the PaymentIntent created at place-order carries the SAME
-     * setup_future_usage the Elements instance was configured with. The server
-     * resolves its half from the checkbox posted with the order, so this half has
-     * to track the same checkbox — otherwise ticking the box after the element
-     * mounted is a guaranteed "setup_future_usage does not match" failure.
-     *
-     * elements.update() is used rather than re-fetching the payment config,
-     * because the checkbox renders BELOW the card element: a re-mount would
-     * discard whatever the buyer had already typed.
-     *
-     * The checkbox is rendered by an add-on (saved payment methods). When no
-     * add-on renders it, there is nothing to bind and the config stays as the
-     * server sent it.
-     */
-    bindSaveCardConsent(elements) {
-        // Drop the previous instance's handler first: only the live Elements
-        // instance may be updated, and a checkout that re-inits into a mode this
-        // does not manage (subscription) must leave no stale handler behind.
+    bindSaveCardConsent() {
         stripeSaveCardConsentHandler = null;
 
         const saveBox = this.form.querySelector('input[name="save_payment_method"]');
-        if (!saveBox || !elements || typeof elements.update !== 'function') {
+        if (!saveBox || this.data.system_consent || this.intent?.mode === 'subscription' || this.intent?.mode === 'setup') {
             return;
         }
 
-        // A subscription checkout resolves its own vaulting mode server-side and
-        // must not be driven from here. This mirrors the server half exactly: it
-        // returns the value core chose whenever the cart has a subscription, and
-        // only consults consent for a plain one-time checkout. A store-managed
-        // subscription charged as a one-time payment still reports mode
-        // 'payment', so the mode check alone would miss it.
-        const hasSubscription = window.fluentcart_checkout_info?.has_subscription === 'yes';
-        if (hasSubscription || this.intent?.mode === 'subscription' || this.intent?.mode === 'setup') {
-            return;
-        }
-
-        stripeSaveCardConsentHandler = (box) => {
-            // Map the checkbox straight to a value — never fall back to the value
-            // the config was fetched with. On a one-time checkout that value is
-            // itself consent-derived (the config request carries the checkbox), so
-            // restoring it would leave Elements vaulting after the buyer unticks,
-            // while the posted order asks the server not to vault. That mismatch
-            // is exactly the Stripe confirmation failure this is here to prevent.
-            //
-            // off_session (not on_session): a saved card is charged later without
-            // the buyer present — one-tap checkout and renewals. null clears it.
-            const next = box.checked ? 'off_session' : null;
-
-            try {
-                elements.update({setupFutureUsage: next});
-            } catch (e) {
-                // If this Stripe.js build will not accept the update, fall back to
-                // a full re-fetch so the two halves still agree. The buyer loses
-                // typed card details, which is worse UX but never a failed payment.
-                this.paymentLoader?.load('stripe');
-            }
+        // Re-fetch the server's vaulting mode instead of guessing it from consent.
+        stripeSaveCardConsentHandler = () => {
+            stripePreparedSubmission = null;
+            stripePreparedElements = null;
+            window.is_stripe_ready = false;
+            this.paymentLoader?.load('stripe');
         };
-
-        // The config request reads the checkbox, but the fetch, elements() and
-        // mount() that follow are all async — a toggle inside that window fires
-        // before any handler is installed and is otherwise lost, leaving the
-        // element on the old config while the order posts the new consent.
-        // Sync once, and only when the two actually differ: a redundant update()
-        // that threw would hit the catch above and re-enter load(), which lands
-        // back here, and the guard is what stops that looping.
-        const mounted = this.intent?.setup_future_usage || null;
-        if ((saveBox.checked ? 'off_session' : null) !== mounted) {
-            stripeSaveCardConsentHandler(saveBox);
-        }
     }
 
     async init() {
@@ -271,7 +214,7 @@ class StripeCheckout {
         const paymentElement = await elements.create('payment', paymentElementOptions);
         paymentElement.mount('.fluent-cart-checkout_embed_payment_container_stripe');
 
-        this.bindSaveCardConsent(elements);
+        this.bindSaveCardConsent();
 
         // System (auto-charged) subscription checkout: card-network rules require an
         // explicit save-and-auto-charge disclosure next to the payment element. The
@@ -887,6 +830,12 @@ class StripeCheckout {
 }
 
 window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
+    const requestId = ++stripePaymentConfigRequest;
+    const saveCardChecked = Boolean(e.detail.form.querySelector('input[name="save_payment_method"]')?.checked);
+    stripeSaveCardConsentHandler = null;
+    stripePreparedSubmission = null;
+    stripePreparedElements = null;
+    window.is_stripe_ready = false;
 
     window.dispatchEvent(new CustomEvent('fluent_cart_payment_method_loading', {
         detail: {
@@ -906,7 +855,22 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
         },
         credentials: 'include'
     }).then(async (response) => {
-        response = await response.json();
+        const result = await response.json();
+        if (requestId !== stripePaymentConfigRequest) {
+            return;
+        }
+        const method = e.detail.form.querySelector('input[name="_fct_pay_method"]:checked');
+        if (method && method.value !== 'stripe') {
+            return;
+        }
+        if (saveCardChecked !== Boolean(e.detail.form.querySelector('input[name="save_payment_method"]')?.checked)) {
+            e.detail.paymentLoader.load('stripe');
+            return;
+        }
+        if (!response.ok) {
+            throw new Error(result?.message || response.statusText);
+        }
+        response = result;
 
         if (response?.status === 'failed') {
             displayErrorMessage(response?.message);
@@ -933,15 +897,18 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
             return;
         }
 
-        new StripeCheckout(e.detail.form, response, e.detail.paymentLoader).init();
+        return new StripeCheckout(e.detail.form, response, e.detail.paymentLoader).init();
     }).catch(error => {
+        if (requestId !== stripePaymentConfigRequest) {
+            return;
+        }
         const translations = window.fct_stripe_data?.translations || {};
 
         function $t(string) {
             return translations[string] || string;
         }
 
-        displayErrorMessage($t('An error occurred while parsing the response.'));
+        displayErrorMessage(error.message || $t('An error occurred while parsing the response.'));
         window.dispatchEvent(new CustomEvent('fluent_cart_payment_method_loading_failed', {
             detail: {
                 payment_method: 'stripe'

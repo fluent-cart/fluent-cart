@@ -4,15 +4,10 @@ namespace FluentCart\App\Http\Controllers\Reports;
 
 use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
-use FluentCart\Api\Resource\OrderItemResource;
-use FluentCart\Api\Resource\OrderResource;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\CurrenciesHelper;
-use FluentCart\App\Helpers\CustomerHelper;
-use FluentCart\App\Helpers\Status;
 use FluentCart\App\Http\Controllers\Controller;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Modules\ReportingModule\OrdersReport;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Report\DashBoardReportService;
 use FluentCart\App\Services\Report\ReportHelper;
@@ -21,75 +16,15 @@ use FluentCart\Framework\Support\Arr;
 
 class ReportingController extends Controller
 {
-    public function getOrderQuickStats(Request $request): array
-    {
-        $compare = true;
-        $fromRange = $request->get('day_range', '-0 days');
-        if ($fromRange == 'this_month') {
-            $fromDate = gmdate('Y-m-01 00:00:00');
-        } else if ($fromRange == 'all_time') {
-            $fromDate = false;
-            $compare = false;
-        } else {
-            $fromDate = gmdate('Y-m-d 00:00:00', strtotime($fromRange));
-        }
-
-        return [
-            'stats' => (new OrdersReport())->getOrderStats($fromDate, false, $compare),
-            'from_date' => $fromDate,
-            'to_date' => gmdate('Y-m-d 23:59:59', current_time('timestamp'))
-        ];
-    }
-
-    /**
-     * @deprecated since v1.4. Use GET reports/overview (OverviewReportController::getOverview) instead.
-     */
-    public function getReportOverview(Request $request): array
-    {
-        _deprecated_function(__METHOD__, '1.4', 'GET /fluent-cart/v2/reports/overview');
-
-        $params = $request->get('params');
-        $params["status"] = ["column" => "status", "operator" => "in", "value" => Status::getOrderSuccessStatuses()];
-        $queryParam = Arr::only($params, ['created_at', 'status', 'payment_status']);
-
-        $reportOverview = OrderResource::reportOverview($queryParam);
-
-        $ordersByPaymentMethod = OrderResource::orderSummaryByPayment($queryParam);
-
-        return [
-            '_deprecated'             => 'This endpoint is deprecated since v1.4 and will be removed in a future release. Use GET /fluent-cart/v2/reports/overview instead.',
-            'data'                    => $reportOverview,
-            'orders_by_payment_method' => $ordersByPaymentMethod,
-        ];
-    }
-
-    public function searchRepeatCustomer(Request $request): array
-    {
-        $params = $request->get('params');
-
-        return [
-            'repeat_customers' => CustomerHelper::getRepeatCustomerBySearch($params)->paginate(Arr::get($params, 'per_page'), ['*'], 'page', Arr::get($params, 'current_page'))
-        ];
-    }
-
-    /**
-     * @deprecated since v1.4. Use GET reports/fetch-top-sold-products (DefaultReportController::getTopSoldProducts) instead.
-     */
-    public function getTopProductsSold(Request $request): array
-    {
-        _deprecated_function(__METHOD__, '1.4', 'GET /fluent-cart/v2/reports/fetch-top-sold-products');
-
-        return [
-            '_deprecated'      => 'This endpoint is deprecated since v1.4 and will be removed in a future release. Use GET /fluent-cart/v2/reports/fetch-top-sold-products instead.',
-            'top_products_sold' => OrderItemResource::topProductsSold($request->get('params')),
-        ];
-    }
 
     public function getReportMeta(Request $request): array
     {
 
         $startDate = $request->get('params.startDate', null);
         $endDate = $request->get('params.endDate', null);
+        // Store days, compared as UTC against the GMT column (see ReportHelper::processParams)
+        $startDate = $startDate ? ReportHelper::toGmt(ReportHelper::siteDay($startDate)->startOfDay())->format('Y-m-d H:i:s') : null;
+        $endDate = $endDate ? ReportHelper::toGmt(ReportHelper::siteDay($endDate)->endOfDay())->format('Y-m-d H:i:s') : null;
 
         $orderCurrencies = ReportCurrency::orderCurrencies($startDate, $endDate);
 
@@ -125,30 +60,28 @@ class ReportingController extends Controller
             $excludedOrders = ReportCurrency::excludedOrderCount($startDate, $endDate);
         }
 
+        $firstOrder = Order::query()->min('created_at');
+
         return [
             'currencies' => $currencyWithSign,
             'currency_order_counts' => array_column($orderCurrencies, 'order_count', 'currency'),
             'default_currency' => $currencyCodes[0],
             'base_currency' => $baseCurrency,
             'converted_excluded_orders' => $excludedOrders,
-            'min_date' => $min_created_at,
+            // The admin reads these as store dates
+            'min_date' => ReportHelper::local(new DateTime($min_created_at))->format('Y-m-d H:i:s'),
             'storeMode' => (new StoreSettings())->get('order_mode'),
-            'first_order_date' => Order::query()->min('created_at')
+            'first_order_date' => $firstOrder ? ReportHelper::local(new DateTime($firstOrder))->format('Y-m-d H:i:s') : null
         ];
 
     }
 
     //Dashboard Report Controllers
 
-    public function getDashBoardSummary(Request $request)
-    {
-
-        return DashBoardReportService::getSummary();
-    }
     public function getRecentOrders(Request $request)
     {
 
-        return DashBoardReportService::getRecentOrders();
+        return DashBoardReportService::getRecentOrders(ReportHelper::canSeeCustomers());
     }
 
     public function getRecentActivities(Request $request)
@@ -165,21 +98,15 @@ class ReportingController extends Controller
         ];
         $startDate = $request->get('params.startDate', null);
         $endDate = $request->get('params.endDate', null);
-//
-//        $startDate = null;
-//        $endDate = null;
 
+        // Store days in the site timezone; the service compares them as UTC against the GMT column
         if (empty($startDate) && empty($endDate)) {
-            // Retrieve the first order's created_at date and set the start date
-            $firstOrder = Order::query()->orderBy('created_at', 'asc')->first();
-
-            $startDate = $firstOrder ? new DateTime($firstOrder->created_at) : null;
-
-            // Set the end date to the current date
-            $endDate = new DateTime();
+            $firstOrder = Order::query()->min('created_at');
+            $startDate = $firstOrder ? ReportHelper::local(new DateTime($firstOrder))->startOfDay() : null;
+            $endDate = ReportHelper::local(new DateTime())->endOfDay();
         } else {
-            $startDate = !empty($startDate) ? new DateTime($startDate) : null;
-            $endDate = !empty($endDate) ? new DateTime($endDate) : null;
+            $startDate = !empty($startDate) ? ReportHelper::siteDay($startDate)->startOfDay() : null;
+            $endDate = !empty($endDate) ? ReportHelper::siteDay($endDate)->endOfDay() : null;
         }
 
         if (!$startDate || !$endDate) {
@@ -229,7 +156,8 @@ class ReportingController extends Controller
 
     public function getSalesGrowthChart(Request $request): array
     {
-        $params = ReportHelper::processParams($request->get('params'), ['orderStatus'], true);
+        // Same order scope as the Sales report: unpaid orders add no revenue and must not add orders either
+        $params = ReportHelper::processParams($request->get('params'), ['orderStatus', 'paymentStatus'], true);
 
         $service = DashBoardReportService::make();
 
@@ -240,7 +168,6 @@ class ReportingController extends Controller
 
     public function getCountryHeatMap(Request $request)
     {
-
 
         $filters = [
             'currency' => $request->get('params.currency', null),

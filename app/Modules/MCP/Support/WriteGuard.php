@@ -140,8 +140,9 @@ class WriteGuard
 
         $result = $fn();
 
-        // Only cache successful, serializable results.
-        if (!is_wp_error($result)) {
+        // Cache successful results, and a refund the gateway made but FluentCart could not
+        // record, so a same-key retry cannot refund again.
+        if (!is_wp_error($result) || $result->get_error_code() === 'refund_not_recorded') {
             set_transient($cacheKey, $result, self::IDEM_TTL);
         }
 

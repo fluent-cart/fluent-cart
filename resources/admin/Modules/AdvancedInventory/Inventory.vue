@@ -239,7 +239,7 @@ const dispatchStockSave = (save, state) => {
 
             // An older backend may omit `message` — never let the toast throw
             // inside .then, where it would be misreported as a request failure.
-            Notify.success(response.message ? translate(response.message) : translate('Stock updated successfully'));
+            Notify.success(response.message || translate('Stock updated successfully'));
         })
         .catch((errors) => {
             // A queued successor for this variant supersedes this request —

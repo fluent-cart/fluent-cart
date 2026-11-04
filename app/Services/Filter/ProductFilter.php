@@ -178,6 +178,7 @@ class ProductFilter extends BaseFilter
             'detail',
             'variants',
             'variants.media',
+            'variants.simpleProductGallery',
         ]);
     }
 
@@ -210,6 +211,7 @@ class ProductFilter extends BaseFilter
             'detail',
             'variants',
             'variants.media',
+            'variants.simpleProductGallery',
         ]);
     }
 
@@ -241,6 +243,7 @@ class ProductFilter extends BaseFilter
             'detail',
             'detail.variants',
             'detail.variants.media',
+            'detail.variants.simpleProductGallery',
             'detail.variants.bundleChildren',
         ]);
     }

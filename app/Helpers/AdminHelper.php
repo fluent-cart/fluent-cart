@@ -4,10 +4,12 @@ namespace FluentCart\App\Helpers;
 
 use FluentCart\Api\ModuleSettings;
 use FluentCart\App\App;
+use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Http\Controllers\ProductController;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Filter\OrderFilter;
+use FluentCart\App\Services\Permission\PermissionManager;
 use FluentCart\App\Services\URL;
 
 class AdminHelper
@@ -77,11 +79,13 @@ class AdminHelper
         $menu = [
             'label'      => __('Products', 'fluent-cart'),
             'link'       => $baseUrl . 'products',
-            // Any-of: a reviews-only role (reviews/manage without
-            // products/view) must still see the parent, or its authorized
-            // Reviews child could never render. Children gate individually —
-            // including on the reviews module being switched on at all.
-            'permission' => ['products/view', 'reviews/manage']
+            // Any-of, covering every permission a child is gated on: a role
+            // holding only one of them (reviews/manage for Reviews,
+            // products/create or products/edit for the taxonomy rows) must
+            // still see the parent, or its authorized children could never
+            // render. Children gate individually — including on the reviews
+            // module being switched on at all.
+            'permission' => ['products/view', 'reviews/manage', 'products/create', 'products/edit']
         ];
 
         $children = [];
@@ -122,9 +126,66 @@ class AdminHelper
             ];
         }
 
+        if (PermissionManager::hasPermission(['products/create', 'products/edit'])) {
+            $taxonomies = get_taxonomies([
+                'object_type' => [FluentProducts::CPT_NAME],
+                'public'      => true,
+            ], 'objects');
+
+            foreach ($taxonomies as $taxonomy) {
+                $children[$taxonomy->name] = [
+                    'label' => $taxonomy->label,
+                    'link'  => admin_url('edit-tags.php?taxonomy=' . $taxonomy->name . '&post_type=' . FluentProducts::CPT_NAME),
+                    'group' => 'taxonomies',
+                ];
+            }
+        }
+
         $menu['children'] = $children;
 
         return $menu;
+    }
+
+    /**
+     * Order dropdown children by group and tag each one with its group, which
+     * admin_menu.php draws a divider for when it changes.
+     *
+     * @param array  $children Dropdown items keyed by slug.
+     * @param array  $groups   Group name => slugs it claims, in display order.
+     * @param string $fallback Group for items that name none and no group claims.
+     * @return array
+     */
+    private static function groupChildren(array $children, array $groups, $fallback)
+    {
+        $buckets = array_fill_keys(array_keys($groups), []);
+
+        // Claimed items first, in the order their group lists them.
+        foreach ($groups as $name => $slugs) {
+            foreach ($slugs as $slug) {
+                if (isset($children[$slug]) && is_array($children[$slug])) {
+                    $buckets[$name][$slug] = $children[$slug];
+                    $buckets[$name][$slug]['group'] = $name;
+                    unset($children[$slug]);
+                }
+            }
+        }
+
+        foreach ($children as $slug => $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+
+            $group = isset($child['group']) && isset($buckets[$child['group']]) ? $child['group'] : $fallback;
+            $child['group'] = $group;
+            $buckets[$group][$slug] = $child;
+        }
+
+        $ordered = [];
+        foreach ($buckets as $items) {
+            $ordered += $items;
+        }
+
+        return $ordered;
     }
 
     public static function getAdminMenu($echo = false, $activeNav = '')
@@ -199,14 +260,6 @@ class AdminHelper
                 'link'       => $baseUrl . 'taxes',
                 'permission' => ['store/settings', 'store/sensitive'],
             ] : false,
-            'categories'   => [
-                'label' => __('Categories', 'fluent-cart'),
-                'link'  => admin_url('edit-tags.php?taxonomy=product-categories&post_type=fluent-products')
-            ],
-            'brands'       => [
-                'label' => __('Brands', 'fluent-cart'),
-                'link'  => admin_url('edit-tags.php?taxonomy=product-brands&post_type=fluent-products')
-            ],
             'logs'         => [
                 'label' => __('Logs', 'fluent-cart'),
                 'link'  => $baseUrl . 'logs',
@@ -222,10 +275,28 @@ class AdminHelper
             ];
         }
 
+        if (isset($menuItems['products']['children']) && is_array($menuItems['products']['children'])) {
+            $menuItems['products']['children'] = self::groupChildren(
+                $menuItems['products']['children'],
+                ['products' => [], 'taxonomies' => []],
+                'products'
+            );
+        }
+
+        // Add-on items no group claims join Store, after its listed items.
+        $moreGroups = apply_filters('fluent_cart/admin_menu/more_item_groups', [
+            'marketing' => ['coupons', 'order_bump', 'dynamic_pricing'],
+            'store'     => ['taxes', 'integrations', 'withdrawal_requests', 'logs'],
+        ]);
+        if (!is_array($moreGroups) || !$moreGroups) {
+            $moreGroups = ['store' => []];
+        }
+        $moreFallback = isset($moreGroups['store']) ? 'store' : array_key_last($moreGroups);
+
         $menuItems['more'] = [
             'label'    => __('More', 'fluent-cart'),
             'link'     => '#',
-            'children' => $moreItems,
+            'children' => self::groupChildren($moreItems, $moreGroups, $moreFallback),
         ];
 
 

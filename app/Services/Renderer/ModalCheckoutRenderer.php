@@ -358,12 +358,12 @@ class ModalCheckoutRenderer
                     </span>
 
                     <span>
-                        <?php echo wp_kses($subscriptionInfo, ['del' => true]); ?>&#44;
+                        <?php echo wp_kses($subscriptionInfo, ['del' => true]); ?><?php echo esc_html(rtrim(wp_get_list_item_separator())); ?>
                     </span>
 
                     <?php if ($trialInfo): ?>
                         <span class="trial-days">
-                            <?php echo esc_html($trialInfo); ?>&#44;
+                            <?php echo esc_html($trialInfo); ?><?php echo esc_html(rtrim(wp_get_list_item_separator())); ?>
                         </span>
                     <?php endif; ?>
 
@@ -706,7 +706,7 @@ class ModalCheckoutRenderer
         $checkoutMethodStyle = $this->storeSettings->get('checkout_method_style', 'logo');
 
         ?>
-        <div id="fluent_payment_methods" class="fct_modal_payment_methods fluent_payment_methods">
+        <div id="fluent_payment_methods" class="fct_modal_payment_methods fluent_payment_methods fct-collapse__inner">
             <!-- Payment Methods -->
             <div class="fct_payment_methods_list fct_payment_method_mode_<?php echo esc_attr($checkoutMethodStyle); ?>">
                 <?php if (!empty($activePaymentMethods)): ?>

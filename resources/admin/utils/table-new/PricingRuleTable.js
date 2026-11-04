@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 class PricingRuleTable extends Table {
 
@@ -11,8 +11,8 @@ class PricingRuleTable extends Table {
     getTabs() {
         return {
             all: translate("All"),
-            active: translate("Active"),
-            inactive: translate("Inactive"),
+            active: _x('Active', 'Pricing rule status'),
+            inactive: _x('Inactive', 'Pricing rule status'),
         };
     }
 

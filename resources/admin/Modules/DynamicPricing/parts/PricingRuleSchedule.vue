@@ -61,7 +61,7 @@ const clearEndDate = (enabled) => {
                         />
 
                         <div class="form-note mt-2">
-                            <p>{{ translate('Time at which the dynamic price becomes active and starts being applied at checkout.') }}</p>
+                            <p>{{ translate('Pricing_Time_Dynamic') }}</p>
                         </div>
                     </el-form-item>
 

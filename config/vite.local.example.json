@@ -1,0 +1,8 @@
+{
+  "protocol": "https://",
+  "host": "fluentcart.test",
+  "vite_protocol": "wss",
+  "public_port": 443,
+  "listen_host": "127.0.0.1",
+  "hmr_path": "/__vite_hmr"
+}

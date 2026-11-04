@@ -1,9 +1,7 @@
-import Model from "@/utils/model/Model";
-import TableManager from "@/utils/table/TableManager";
-import Rest from "@/utils/http/Rest";
+import ReportRequestModel from "./ReportRequestModel";
 import AppConfig from "@/utils/Config/AppConfig";
 
-class DashBoardReportModel extends Model {
+class DashBoardReportModel extends ReportRequestModel {
     get controllerKey() {
         return "ReportingController";
     }
@@ -32,33 +30,6 @@ class DashBoardReportModel extends Model {
         },
     };
 
-    makeRequest(endPoint, query, accessor, key) {
-        this.data.isBusy[key] = true;
-
-        if (typeof query !== "object") {
-            query = {};
-        }
-        const request = Rest.get(`reports/${endPoint}`, query);
-        this.resolvePromiseResponse(request, accessor, key);
-        return request;
-    }
-
-    resolvePromiseResponse(promise, accessor = null, key = null) {
-        promise
-            .then((response) => {
-                //console.log(response);
-                if (!(key == null || accessor == null)) {
-                    this.data[key] = response[accessor];
-                }
-            })
-            .catch((error) => {
-                //console.log(error, "error");
-            })
-            .finally(() => {
-                this.data.isBusy[key] = false;
-            });
-    }
-
     getDashboardStats(query = {}) {
         return this.makeRequest(
             "dashboard-stats",
@@ -67,7 +38,6 @@ class DashBoardReportModel extends Model {
             "dashBoardStats"
         );
     }
-
 
     getSalesGrowthChart(query = {}) {
         return this.makeRequest(
@@ -102,15 +72,6 @@ class DashBoardReportModel extends Model {
             query,
             "recentActivities",
             "recentActivities"
-        );
-    }
-
-    getSummary(query = {}) {
-        return this.makeRequest(
-            "get-dashboard-summary",
-            query,
-            "summaryData",
-            "summaryData"
         );
     }
 

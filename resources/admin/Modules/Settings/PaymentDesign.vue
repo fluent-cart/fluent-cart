@@ -25,7 +25,7 @@
       <Card.Container>
         <Card.Header :title="$t('Customization')" border_bottom>
           <template #action>
-            <el-button @click="goBack" type="text" class="cursor-pointer border-none p-0">
+            <el-button @click="goBack" link class="cursor-pointer border-none p-0">
               <el-icon class="text-gray-500 cursor-pointer" @click="goBack"> <ArrowLeft />
               </el-icon> {{ $t('Back to Gateway Settings') }} </el-button>
           </template>
@@ -49,7 +49,7 @@
             <!-- gap 10px -->
             <div class="h-10"></div>
             <el-form-item label-position="top">
-              <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Thank you page Instruction will be displayed on the thank you page receipt section.')"/>
+              <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Settings_Thank_Page')"/>
               <WpEditor
                   v-model="thank_you_page_instructions"
                   @update="(val) => { thank_you_page_instructions = val; }"

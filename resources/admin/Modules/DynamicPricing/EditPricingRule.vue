@@ -1,7 +1,7 @@
 <script setup>
 import {computed, onMounted, ref, watch} from "vue";
 import {useRoute} from "vue-router";
-import translate from "@/utils/translator/Translator";
+import translate, {splitPlaceholders} from "@/utils/translator/Translator";
 import {ArrowRight} from "@element-plus/icons-vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import AppliesToOptions, {appliesToOptions} from "@/Modules/DynamicPricing/parts/AppliesToOptions.vue";
@@ -83,31 +83,31 @@ const summary = computed(() => {
         fee: {text: translate('%1$s Fee', amount).trim(), type: 'info'},
     };
 
-    const whenPhrases = {
-        every: translate('every purchase'),
-        first: translate('first purchase only'),
-        renewals: translate('store managed renewals'),
-        upgrades: translate('upgrades & downgrades'),
+    // A whole sentence per option: the preposition decides the grammar of what follows it
+    const sentences = {
+        /* translators: %1$s: discount or fee badge, %2$s: target badge, e.g. Checkout */
+        every: translate('Apply %1$s to %2$s on every purchase'),
+        /* translators: %1$s: discount or fee badge, %2$s: target badge, e.g. Checkout */
+        first: translate('Apply %1$s to %2$s on first purchase only'),
+        /* translators: %1$s: discount or fee badge, %2$s: target badge, e.g. Checkout */
+        renewals: translate('Apply %1$s to %2$s on store managed renewals'),
+        /* translators: %1$s: discount or fee badge, %2$s: target badge, e.g. Checkout */
+        upgrades: translate('Apply %1$s to %2$s on upgrades & downgrades'),
     };
 
     // Conditions are stored as groups of rows; every row is one condition.
     const groups = Array.isArray(config.conditions) ? config.conditions : [];
     const count = groups.reduce((total, group) => total + (Array.isArray(group) ? group.length : 0), 0);
 
-    let conditions = '';
-    if (count === 1) {
-        conditions = translate('1 condition');
-    } else if (count > 1) {
-        /* translators: %1$s: number of conditions */
-        conditions = translate('%1$s conditions', count);
-    }
+    /* translators: %1$s: number of conditions */
+    const conditions = count > 0 ? translate('Conditions: %1$s', count) : '';
 
     const appliesTo = appliesToOptions.find((option) => option.value === rule.value?.applies_to);
 
     return {
         priceType: priceTypes[rule.value?.price_type] || null,
         appliesTo: appliesTo || null,
-        when: whenPhrases[config.when_to_apply] || whenPhrases.every,
+        parts: splitPlaceholders(sentences[config.when_to_apply] || sentences.every),
         conditions,
     };
 });
@@ -312,24 +312,21 @@ onMounted(() => {
 
             <div class="fct-pricing-rule-summary">
                 <p class="fct-pricing-rule-summary-text">
-                    {{ translate('Apply') }}
-                    <Badge
-                        v-if="summary.priceType"
-                        :type="summary.priceType.type"
-                        :text="summary.priceType.text"
-                        icon="Tag"
-                    />
-                    {{ translate('to') }}
-                    <Badge
-                        v-if="summary.appliesTo"
-                        type="blue"
-                        :text="summary.appliesTo.label"
-                        :icon="summary.appliesTo.icon"
-                    />
-                    {{ translate('on') }}
-                    <span class="text-system-dark font-medium dark:text-gray-400">
-                        {{ summary.when }}
-                    </span>
+                    <template v-for="(part, index) in summary.parts" :key="index">
+                        <Badge
+                            v-if="part.slot === 1 && summary.priceType"
+                            :type="summary.priceType.type"
+                            :text="summary.priceType.text"
+                            icon="Tag"
+                        />
+                        <Badge
+                            v-else-if="part.slot === 2 && summary.appliesTo"
+                            type="blue"
+                            :text="summary.appliesTo.summaryLabel"
+                            :icon="summary.appliesTo.icon"
+                        />
+                        <template v-else-if="part.text">{{ part.text }}</template>
+                    </template>
                     <span v-if="summary.conditions" class="text-system-mid dark:text-gray-400">
                         · {{ summary.conditions }}
                     </span>

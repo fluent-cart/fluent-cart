@@ -173,6 +173,13 @@ describe('dateTimeI18 through the store timezone', () => {
         // 22:30 UTC is already the next day in Berlin.
         expect(dateTimeI18('2026-08-16 22:30:00', 'date')).toBe('2026-08-17');
     });
+
+    // An ended installment plan has no next billing date: the cell stays empty, not "Invalid Date"
+    it('renders an empty value as an empty string', () => {
+        useTimezone('wordpress', 'Europe/Berlin', {date: 'YYYY-MM-DD'});
+
+        expect([dateTimeI18(null, 'date'), dateTimeI18('', 'date'), dateTimeI18(undefined, 'date')]).toEqual(['', '', '']);
+    });
 });
 
 /**

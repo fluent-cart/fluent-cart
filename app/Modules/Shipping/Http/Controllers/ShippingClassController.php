@@ -3,6 +3,8 @@
 namespace FluentCart\App\Modules\Shipping\Http\Controllers;
 
 use FluentCart\App\Http\Controllers\Controller;
+use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Modules\Shipping\Http\Requests\ShippingClassRequest;
 use FluentCart\Framework\Http\Request\Request;
@@ -21,6 +23,7 @@ class ShippingClassController extends Controller
     public function store(ShippingClassRequest $request)
     {
         $data = $request->getSafe($request->sanitize());
+        $data['per_item'] = (int) $data['per_item'];
 
         $shippingClass = ShippingClass::create($data);
 
@@ -42,6 +45,10 @@ class ShippingClassController extends Controller
     public function update(ShippingClassRequest $request, $id)
     {
         $data = $request->getSafe($request->sanitize());
+        // getSafe() fills an unsent per_item with null; keep the stored value.
+        if ($data['per_item'] === null) {
+            unset($data['per_item']);
+        }
 
         $shippingClass = ShippingClass::findOrFail($id);
         $shippingClass->update($data);
@@ -66,6 +73,13 @@ class ShippingClassController extends Controller
                 \FluentCart\App\Models\ShippingZone::whereIn('id', $zoneIds)->delete();
             }
 
+            // Unassign the class from products, or their next save fails class validation.
+            // One set-based update, so a widely used class doesn't load the catalog into memory.
+            ProductDetail::query()
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(other_info, '$.shipping_class')) = ?", [(string) (int) $id])
+                ->update(['other_info' => $DB->raw("JSON_SET(other_info, '$.shipping_class', '')")]);
+            ProductVariation::query()->where('shipping_class', (int) $id)->update(['shipping_class' => null]);
+
             $shippingClass->delete();
             $DB->commit();
         } catch (\Exception $e) {
@@ -77,15 +91,6 @@ class ShippingClassController extends Controller
 
         return $this->sendSuccess([
             'message' => __('Shipping class has been deleted successfully', 'fluent-cart')
-        ]);
-    }
-
-    public function getProfile($id)
-    {
-        $shippingClass = ShippingClass::with('zones.methods')->findOrFail($id);
-
-        return $this->sendSuccess([
-            'shipping_class' => $shippingClass
         ]);
     }
 
@@ -125,6 +130,8 @@ class ShippingClassController extends Controller
                 'dimension_unit' => in_array(Arr::get($package, 'dimension_unit'), $validDimUnits) ? Arr::get($package, 'dimension_unit') : 'cm',
                 'weight'         => max(0, floatval(Arr::get($package, 'weight', 0))),
                 'weight_unit'    => in_array(Arr::get($package, 'weight_unit'), $validWeightUnits) ? Arr::get($package, 'weight_unit') : 'kg',
+                // Contents capacity in weight_unit, 0 = unlimited.
+                'max_weight'     => max(0, floatval(Arr::get($package, 'max_weight', 0))),
                 'is_default'     => (bool) Arr::get($package, 'is_default', false),
             ];
         }

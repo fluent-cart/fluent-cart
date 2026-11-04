@@ -8,6 +8,8 @@ import ChartTab from '@/Bits/Components/ChartTab.vue';
 import CopyToClipboard from '@/Bits/Components/CopyToClipboard.vue';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
 import Empty from '@/Bits/Components/Table/Empty.vue';
+import Fluctuation from '@/Bits/Components/Fluctuation.vue';
+import ExportReport from '@/Modules/Reports/ExportReport.vue';
 import ExportDialog from '@/Bits/Components/ExportDialog.vue';
 import Heading from '@/Bits/Components/Layout/Heading.vue';
 import IconButton from '@/Bits/Components/Buttons/IconButton.vue';
@@ -16,7 +18,11 @@ import OrderUpDownIndicator from '@/Bits/Components/OrderUpDownIndicator.vue';
 import PageHeading from '@/Bits/Components/Layout/PageHeading.vue';
 import Pagination from '@/Bits/Components/Pagination.vue';
 import ProductInfo from '@/Bits/Components/Card/ProductInfo.vue';
+import ProductSalesChart from '@/Modules/Reports/Product/ProductSalesChart.vue';
+import ReportSummary from '@/Bits/Components/ReportSummary.vue';
 import RouteCell from '@/Bits/Components/TableNew/RouteCell.vue';
+import Screenshot from '@/Bits/Components/Screenshot.vue';
+import SummaryLoader from '@/Modules/Reports/Components/SummaryLoader.vue';
 import TableWrapper from '@/Bits/Components/TableNew/TableWrapper.vue';
 import UserCan from '@/Bits/Components/Permission/UserCan.vue';
 import WpEditor from '@/Bits/Components/Inputs/WpEditor.vue';
@@ -34,6 +40,8 @@ export {
     DynamicIcon,
     Empty,
     ExportDialog,
+    ExportReport,
+    Fluctuation,
     Heading,
     IconButton,
     Label,
@@ -44,14 +52,19 @@ export {
     PageHeading,
     Pagination,
     ProductInfo,
+    ProductSalesChart,
+    ReportSummary,
     RouteCell,
+    Screenshot,
+    SummaryLoader,
     TableWrapper,
     UpgradePlan,
     UserCan,
     WpEditor,
 };
 
-export {default as translate, translateNumber} from '@/utils/translator/Translator';
+export {default as translate, translateNumber, pluralizeTranslate} from '@/utils/translator/Translator';
+export {default as Notify} from '@/utils/Notify';
 export {default as Rest} from '@/utils/http/Rest';
 export {default as AppConfig} from '@/utils/Config/AppConfig';
 export {default as Storage} from '@/utils/Storage';
@@ -64,8 +77,14 @@ export {default as Model} from '@/utils/model/Model';
 export {default as Table} from '@/utils/table-new/Table';
 export {default as Permission} from '@/utils/permission/Permission';
 export {useExport} from '@/utils/export/useExport';
-export {resolveDateFormat, fluentDayjsLocale} from '@/utils/Utils';
-export {formatDate, isValidURL, handleError} from '@/Bits/common';
+export {resolveDateFormat, fluentDayjsLocale, chartAxisPointer, chartTooltipPosition, chartTooltipAmount, dateTimeI18} from '@/utils/Utils';
+export {formatDate, isValidURL, handleError, handleSuccess, handleResponse, $confirm} from '@/Bits/common';
 export {paymentMethodAdminTitle} from '@/utils/paymentMethodAdminTitle';
 export {monthNames} from '@/Modules/Reports/Utils/monthNames';
+export {formatNumber} from '@/Modules/Reports/Utils/formatNumber';
+export {prepareLabel, axisDayLabel, storeTimeNote, tooltipSuffix, makeXAxisLabels, getEmphasisColor, getXAxisConfig} from '@/Modules/Reports/Utils/decorator';
+export {default as ChartTypeFilter} from '@/Models/Reports/ChartTypeFilterModel';
+export {exportCSVWithColumns, csvSafe} from '@/utils/Export';
+export {completeRows, headlineRow, periodLabel} from '@/Modules/Reports/Subscription/Retention/retentionRows';
+export {averageRate, expectedLifetimeMonths} from '@/Modules/Reports/Utils/retentionAverages';
 export {default as dateShortcuts} from '@/Modules/Reports/Utils/dateShortCuts';

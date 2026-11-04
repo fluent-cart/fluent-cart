@@ -9,9 +9,9 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\Events\Order\OrderCreated;
 use FluentCart\App\Events\Order\OrderDeleting;
 use FluentCart\App\Events\Order\OrderDeleted;
+use FluentCart\App\Events\Order\OrderPaid;
 use FluentCart\App\Events\Order\RenewalOrderDeleted;
 use FluentCart\App\Helpers\CartHelper;
-use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\OrderItemHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
@@ -29,6 +29,7 @@ use FluentCart\App\Models\OrderOperation;
 use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
+use FluentCart\App\Models\Shipment;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Models\Activity;
 use FluentCart\App\Models\AppliedCoupon;
@@ -39,10 +40,12 @@ use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencyAdmin;
 use FluentCart\App\Services\AdminOrderPricing;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Reminders\ReminderService;
 use FluentCart\App\Services\Payments\Refund;
+use FluentCart\App\Services\Payments\RefundPlanner;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
@@ -367,8 +370,8 @@ class OrderController extends Controller
      * Refund against an order transaction.
      *
      * `refund_info.amount` is in CENTS, matching every money value in a read response and
-     * the stored column. So {"amount": 2500} refunds $25.00. roundCent() below only
-     * normalizes float artifacts; it does not scale. See dev-docs/PRICING-AND-TAX.md §6.
+     * the stored column. So {"amount": 2500} refunds $25.00. RefundPlanner::plan() rejects a fraction of
+     * the currency's smallest unit with 422; it does not scale. See dev-docs/PRICING-AND-TAX.md §6.
      *
      * @throws ValidationException
      */
@@ -382,39 +385,48 @@ class OrderController extends Controller
             ], 400);
         }
 
-        $refundInfo = (array)$request->get('refund_info', []);
+        $response = Refund::withOrderRefundLock($order->id, 0, function () use ($request, $order) {
+            return $this->refundOrderUnderLock($request, $order);
+        });
 
-        // $this->validate() reports failures only by exception, and outside a
-        // REST_REQUEST context the framework swallows that exception (no
-        // handle_exception listener) — execution would continue and crash on
-        // $refundInfo['transaction_id'] below. Fail closed: run the validator
-        // directly and return the per-field 422 payload in every context.
-        $validator = $this->app->validator->make($refundInfo, [
-            'transaction_id' => 'required',
-            'amount'         => 'required',
-        ], [
-            'transaction_id.required' => __('Transaction ID is required', 'fluent-cart'),
-            'amount.required'         => __('Refund amount is required', 'fluent-cart'),
-        ]);
+        return is_wp_error($response) ? $this->refundInProgressError() : $response;
+    }
 
-        if ($validator->validate()->fails()) {
-            return $this->sendError($validator->errors(), 422);
+    private function refundOrderUnderLock(Request $request, Order $order)
+    {
+        $plan = RefundPlanner::plan($order, $request->get('refund_info', []), $request->get('refunded_items', []));
+        if (is_wp_error($plan)) {
+            // Sent raw so the client keys messages by field.
+            $errorData = $plan->get_error_data();
+            if ($plan->get_error_code() === 'validation_failed' && is_array($errorData)) {
+                return $this->sendError($errorData, 422);
+            }
+            return $this->sendError(['message' => $plan->get_error_message()], 422);
         }
 
-        $transaction = OrderTransaction::query()->where('order_id', $orderId)->findOrFail($refundInfo['transaction_id']);
-        $refundAmount = Helper::roundCent($refundInfo['amount']);
+        $refundInfo = $plan['refund_info'];
+        $transaction = OrderTransaction::query()->where('order_id', $order->id)->findOrFail($refundInfo['transaction_id']);
 
-        // refund on our end
-        $result = (new Refund())->processRefund($transaction, $refundAmount, $refundInfo);
+        $result = (new Refund())->processRefund($transaction, $plan['refund_amount'], $refundInfo, $plan['refund_intent']);
 
         if (is_wp_error($result)) {
+            $errorData = $result->get_error_data();
+            if (is_array($errorData) && !empty($errorData['can_force_local'])) {
+                return $this->sendError(array_merge($errorData, [
+                    'code'    => $result->get_error_code(),
+                    /* translators: %1$s: payment gateway name */
+                    'message' => sprintf(__('Refund failed on %1$s.', 'fluent-cart'), $errorData['gateway']),
+                    'impact'  => RefundPlanner::previewForcedLocalRefund($order, $plan),
+                ]), 422);
+            }
+
             return $this->sendError([
                 'message' => $result->get_error_message()
             ]);
         }
 
-        $vendorRefundId = $result['vendor_refund_id'];
-        $isManuallyRefunded = Arr::get($result, 'manual_refund.status', 'no');
+        $refundRoute = Arr::get($result, 'refund_route');
+        $gatewayName = PaymentHelper::getMethodAdminTitle($transaction->payment_method);
 
         $responseData = [
             'fluent_cart_refund' => [
@@ -423,62 +435,100 @@ class OrderController extends Controller
             ],
         ];
 
+        if (!empty($result['needs_resync'])) {
+            $responseData['local_sync'] = [
+                'status'  => 'warning',
+                'message' => __('Refund completed, but updating item and shipping records failed. Please re-check the order.', 'fluent-cart')
+            ];
+        }
 
-        if ($isManuallyRefunded === 'yes') {
+        if (Arr::get($result, 'manual_refund.status') === 'yes') {
             $message = __('Refund processed manually.', 'fluent-cart');
             $source  = Arr::get($result, 'manual_refund.source');
             if ($source) {
-                $message = sprintf(
-                    /* translators: %s: refund source */
-                    __('Refund processed manually. source: %s', 'fluent-cart'),
-                    $source
-                );
+                /* translators: %1$s: refund source identifier */
+                $message = sprintf(__('Refund processed manually. source: %1$s', 'fluent-cart'), $source);
             }
             $responseData['gateway_refund'] = [
                 'status'  => 'success',
                 'message' => $message
             ];
+        } elseif ($refundRoute === Refund::ROUTE_FORCED_LOCAL) {
+            $responseData['gateway_refund'] = [
+                'status'  => 'warning',
+                /* translators: %1$s: payment gateway name */
+                'message' => sprintf(__('Recorded locally only. No money was returned through %1$s.', 'fluent-cart'), $gatewayName)
+            ];
+        } elseif ($refundRoute === Refund::ROUTE_LOCAL) {
+            $responseData['gateway_refund'] = [
+                'status'  => 'success',
+                /* translators: %1$s: payment gateway name */
+                'message' => sprintf(__('Refund recorded on FluentCart. Return the money through %1$s yourself.', 'fluent-cart'), $gatewayName)
+            ];
         } else {
             $responseData['gateway_refund'] = [
-                'status'  => is_wp_error($vendorRefundId) ? 'failed' : 'success',
-                'message' => !is_wp_error($vendorRefundId)
-                    /* translators: %s: payment method name */
-                    ? sprintf(__('Refund processed on %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method))
-                    /* translators: 1: payment method name, 2: error message */
-                    : sprintf(__('ERROR processing refund on %s: %s', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($transaction->payment_method), $vendorRefundId->get_error_message())
+                'status'  => 'success',
+                /* translators: %1$s: payment gateway name */
+                'message' => sprintf(__('Refund processed on %1$s', 'fluent-cart'), $gatewayName)
             ];
-
-            if (is_wp_error($vendorRefundId)) {
-                fluent_cart_warning_log('Refund failed on ' . $transaction->payment_method, $vendorRefundId->get_error_message(), [
-                    'module_name' => 'order',
-                    'module_id'   => $order->id,
-                    'log_type'    => 'api'
-                ]);
-            }
         }
 
         $cancelSubscription = Arr::get($refundInfo, 'cancelSubscription') == 'true';
 
-        if ($cancelSubscription && $transaction->subscription_id && $transaction->subscription) {
+        if ($cancelSubscription && $refundRoute !== Refund::ROUTE_FORCED_LOCAL && $transaction->subscription_id && $transaction->subscription) {
             $vendorSubscriptionCancelled = $transaction->subscription->cancelRemoteSubscription([
-                'reason' => 'refunded',
+                'reason'         => 'refunded',
                 'effective_from' => 'immediately'
             ]);
             if (is_wp_error($vendorSubscriptionCancelled)) {
-                $responseData['subscription_cancel']['status'] = 'failed';
+                $responseData['subscription_cancel']['status']  = 'failed';
                 $responseData['subscription_cancel']['message'] = $vendorSubscriptionCancelled->get_error_message();
             } else {
                 $vendorResult = $vendorSubscriptionCancelled['vendor_result'];
-                $responseData['subscription_cancel']['status'] = is_wp_error($vendorResult) ? 'failed' : 'success';
+                $responseData['subscription_cancel']['status']  = is_wp_error($vendorResult) ? 'failed' : 'success';
                 $responseData['subscription_cancel']['message'] = is_wp_error($vendorResult)
                     ? $vendorResult->get_error_message()
                     : __('Subscription cancelled successfully', 'fluent-cart');
             }
         }
 
-        return $this->sendSuccess(
-            $responseData
-        );
+        return $this->sendSuccess($responseData);
+    }
+
+    private function refundInProgressError()
+    {
+        return $this->sendError([
+            'message' => __('Another refund is currently being processed for this order. Please try again in a moment.', 'fluent-cart')
+        ], 409);
+    }
+
+    /**
+     * Finish a refund row saved without its item and shipping writes. Never calls the gateway.
+     */
+    public function resyncRefund(Request $request, $orderId, $transactionId)
+    {
+        /** @var Order $order */
+        $order = Order::query()->findOrFail($orderId);
+
+        $refundTxn = OrderTransaction::query()
+            ->where('order_id', $orderId)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->findOrFail($transactionId);
+
+        $result = Refund::resync($order, $refundTxn);
+        if (is_wp_error($result)) {
+            if ($result->get_error_code() === 'refund_lock_timeout') {
+                return $this->refundInProgressError();
+            }
+
+            return $this->sendError([
+                'message' => $result->get_error_message()
+            ], (int) Arr::get((array) $result->get_error_data(), 'status', 500));
+        }
+
+        return $this->sendSuccess([
+            'message' => __('Refund re-synced successfully.', 'fluent-cart')
+        ]);
     }
 
 
@@ -708,6 +758,7 @@ class OrderController extends Controller
         OrderMeta::query()->whereIn('order_id', $orderIds)->delete();
         OrderTaxRate::query()->whereIn('order_id', $orderIds)->delete();
         OrderOperation::query()->whereIn('order_id', $orderIds)->delete();
+        Shipment::query()->whereIn('order_id', $orderIds)->delete();
         AppliedCoupon::query()->whereIn('order_id', $orderIds)->delete();
         Cart::query()->whereIn('order_id', $orderIds)->delete();
         OrderDownloadPermission::query()->whereIn('order_id', $orderIds)->delete();
@@ -769,6 +820,12 @@ class OrderController extends Controller
         unset($data['order']['customer_tax_number']);
 
         $data['can_send_payment_reminder'] = (new ReminderService())->canSendPaymentReminder($data['order']);
+
+        if (is_array($data['order']) && !empty($data['order']['customer'])) {
+            $data['order']['customer']['unverified_email'] = EmailVerificationService::unverifiedEmail(
+                Arr::get($data, 'order.customer.user_id')
+            );
+        }
 
         return $data;
     }
@@ -957,7 +1014,7 @@ class OrderController extends Controller
             throw $e;
         }
 
-        (new StatusHelper($locked))->syncOrderStatuses($transaction);
+        (new StatusHelper($locked))->setPaymentSource(OrderPaid::SOURCE_ADMIN)->syncOrderStatuses($transaction);
 
         $paymentNote = sanitize_textarea_field($request->get('mark_paid_note', ''));
         if ($paymentNote) {
@@ -1152,7 +1209,7 @@ class OrderController extends Controller
         if ($newStatus === Status::TRANSACTION_SUCCEEDED) {
             // 'succeeded' is a transaction word, not an order payment status: derive the
             // order's paid state and total_paid from its transactions, as mark-as-paid does.
-            (new StatusHelper($order))->syncOrderStatuses($transaction);
+            (new StatusHelper($order))->setPaymentSource(OrderPaid::SOURCE_ADMIN)->syncOrderStatuses($transaction);
         } else {
             $order->updatePaymentStatus($newStatus);
         }
@@ -1382,7 +1439,7 @@ class OrderController extends Controller
             ], 404);
         }
 
-        (new StatusHelper($order))->syncOrderStatuses($latestTransaction);
+        (new StatusHelper($order))->setPaymentSource(OrderPaid::SOURCE_ADMIN)->syncOrderStatuses($latestTransaction);
 
         // Reload order to get updated data
         $order = Order::query()->find($order->id);

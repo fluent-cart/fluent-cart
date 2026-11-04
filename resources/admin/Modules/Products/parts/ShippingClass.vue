@@ -100,7 +100,7 @@ onMounted(() => {
       <Card.Header border_bottom>
         <div class="flex items-center gap-1 justify-between w-full">
           <LabelHint :title="translate('Shipping Class')"
-                     :content="translate('Use a shipping class to group products with similar shipping requirements. This allows you to set specific shipping rates for different types of items, such as \'Bulky Items\', \'Fragile Goods\'. Select an existing class from the search box or click + Add to create a new one. If no class is assigned, the product will use your store\'s default shipping rates.')" />
+                     :content="translate('Product_Shipping_Class')" />
 
           <a :href="shippingClassesUrl" class="focus:outline-none focus:shadow-none w-4 h-4 inline-flex items-center justify-center" target="_blank">
             <DynamicIcon name="Redirect" class="w-3 h-3 text-primary-500 dark:text-gray-200" />

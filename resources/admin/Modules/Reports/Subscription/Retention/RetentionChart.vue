@@ -74,10 +74,11 @@ import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
+import { periodLabel } from "./retentionRows";
 import {
-    makeXAxisLabels,
     getEmphasisColor,
     getXAxisConfig,
+  axisDayLabel,
 } from '@/Modules/Reports/Utils/decorator';
 
 /**
@@ -148,12 +149,13 @@ const createSeries = (name, type, yAxisIndex, data, color) => {
 };
 
 const initChart = () => {
-    if (chartInstance) {
-        chartInstance.dispose();
-        chartInstance = null;
-    }
-
     nextTick(() => {
+        // Dispose here: two calls in one tick would both init the same element
+        if (chartInstance) {
+            chartInstance.dispose();
+            chartInstance = null;
+        }
+
         if (chartRef.value) {
             chartInstance = echarts.init(chartRef.value);
             updateChart();
@@ -164,7 +166,8 @@ const initChart = () => {
 const updateChart = () => {
     if (!chartInstance) return;
 
-    const labels = makeXAxisLabels(retentionData.value);
+    // The period still running reads "(so far)"
+    const labels = retentionData.value.map((row) => periodLabel(row));
 
     const option = {
         title: {
@@ -222,6 +225,7 @@ const updateChart = () => {
             type: "category",
             data: labels, // Use group for x-axis
             axisLabel: {
+                formatter: axisDayLabel,
                 color: isDarkTheme.value ? "#ffffff" : "#000000",
                 fontSize: 12,
                 interval: xAxisConfig.value.interval,

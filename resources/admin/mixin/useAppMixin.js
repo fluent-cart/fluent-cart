@@ -61,7 +61,13 @@ export function useAppMixin(app) {
                 return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currency);
             },
             formatNumberForOrder(amount, orderOrCurrency, withCurrency = true, hideEmpty = false) {
-                return CurrencyFormatter.formatForOrder(amount, orderOrCurrency, withCurrency, hideEmpty);
+                let currency = null;
+                if (typeof orderOrCurrency === 'string') {
+                    currency = orderOrCurrency || null;
+                } else if (orderOrCurrency && orderOrCurrency.currency) {
+                    currency = orderOrCurrency.currency;
+                }
+                return CurrencyFormatter.formatFixed(amount, withCurrency, hideEmpty, currency);
             },
             getAddress(object, type = 'billing') {
                 let address = [
@@ -101,7 +107,7 @@ export function useAppMixin(app) {
                     errorMessage = this.convertToText(response);
                 }
 
-                if (!errorMessage) {
+                if (!String(errorMessage).replace(/<br \/>/g, '').trim()) {
                     errorMessage = 'Something is wrong!';
                 }
 

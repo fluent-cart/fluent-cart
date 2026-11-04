@@ -3,7 +3,7 @@ import {ref} from "vue";
 import {useRouter} from "vue-router";
 import dayjs from "dayjs";
 import translate from "@/utils/translator/Translator";
-import {$confirm, formatDate} from "@/Bits/common";
+import {$confirm, formatDate, formatSentenceDate} from "@/Bits/common";
 import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
@@ -95,11 +95,9 @@ const ruleNote = (row) => {
     const groups = Array.isArray(config.conditions) ? config.conditions : [];
     const count = groups.reduce((total, group) => total + (Array.isArray(group) ? group.length : 0), 0);
 
-    if (count === 1) {
-        notes.push(translate('1 condition'));
-    } else if (count > 1) {
+    if (count > 0) {
         /* translators: %1$s: number of conditions */
-        notes.push(translate('%1$s conditions', count));
+        notes.push(translate('Conditions: %1$s', count));
     }
 
     return notes.join(' · ');
@@ -112,7 +110,7 @@ const ruleNote = (row) => {
  */
 const createdLabel = (row) => {
     /* translators: %1$s: date the rule was created */
-    return translate('Created %1$s', formatDate(row.created_at));
+    return translate('Created %1$s', formatSentenceDate(row.created_at));
 };
 
 const scheduleLabel = (row) => {
@@ -122,7 +120,7 @@ const scheduleLabel = (row) => {
 
     if (end && end.isBefore(now)) {
         /* translators: %1$s: end date */
-        return translate('Ended %1$s', formatDate(row.end_date));
+        return translate('Ended %1$s', formatSentenceDate(row.end_date));
     }
 
     if (start && start.isAfter(now)) {
@@ -288,7 +286,7 @@ const deleteRule = (row) => {
                     :aria-label="statusToggleLabel(scope.row)"
                     @change="toggleStatus(scope.row)"
                 />
-                <Badge v-else :status="scope.row.status"/>
+                <Badge v-else :status="scope.row.status" kind="pricing_rule"/>
             </template>
         </el-table-column>
 

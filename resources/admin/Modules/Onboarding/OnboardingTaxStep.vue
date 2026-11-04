@@ -40,11 +40,11 @@ const noticeText = computed(() => {
     if (props.countryName) {
         /* translators: %1$s: store country name */
         return translate(
-            'A standard tax class will be created for %1$s. Add your rates in Tax → Tax Rates after setup.',
+            'Onboard_Standard_Tax',
             props.countryName
         )
     }
-    return translate('A standard tax class will be created. Add your rates in Tax → Tax Rates after setup.')
+    return translate('Onboard_Standard_Tax_Class')
 })
 
 const setSmartDefaults = (country) => {

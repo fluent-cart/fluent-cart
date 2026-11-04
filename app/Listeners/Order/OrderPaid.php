@@ -6,7 +6,6 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Services\AuthService;
-use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\Framework\Support\Arr;
 
 class OrderPaid
@@ -42,25 +41,21 @@ class OrderPaid
 
         // Payment proves this order, not ownership of the customer's other orders.
         $hasOtherOrders = $customer->orders()->where('id', '!=', $order->id)->exists();
-        if ($hasOtherOrders && !EmailVerificationService::isEnabled()) {
-            return;
-        }
 
         $createdUserId = \FluentCart\App\Services\AuthService::createUserFromCustomer($customer, true);
         if (is_wp_error($createdUserId)) {
-            /* translators: %1$s: account creation error. */
-            $order->addLog(sprintf(__('User creation failed: %1$s', 'fluent-cart'), $createdUserId->get_error_message()), 'error');
+            $order->addLog(__('User creation failed', 'fluent-cart'), $createdUserId->get_error_message(), 'error');
             return;
         }
 
-        // AuthService links the source customer when verification is disabled.
-        // Otherwise inbox proof is still required, even with auto-login enabled.
+        // AuthService links the customer. With other orders on this email the buyer is
+        // not signed in: the set-password email reaches the inbox owner, who alone can.
 
         /* translators: %1$s: newly created WordPress user ID. */
         $message = sprintf(__('User account has been created automatically on payment success. Created User ID: %1$s', 'fluent-cart'), $createdUserId);
         $order->addLog(__('User created successfully', 'fluent-cart'), $message, 'info');
         $action = App::request()->get('fluent-cart') ?? '';
-        if ((!$hasOtherOrders || EmailVerificationService::isEnabled()) && !get_current_user_id() && empty($action) && (new StoreSettings())->get('auto_login_after_account_creation') === 'yes') {
+        if (!$hasOtherOrders && !get_current_user_id() && empty($action) && (new StoreSettings())->get('auto_login_after_account_creation') === 'yes') {
             // this is a browser request. So we can make the user logged in automatically
             $user = get_user_by('ID', $createdUserId);
             if ($user) {

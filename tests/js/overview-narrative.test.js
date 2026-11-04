@@ -15,11 +15,11 @@ vi.mock('@/utils/Config/AppConfig', () => ({
     },
 }));
 
-vi.mock('@/utils/translator/Translator', () => ({
-    default: (string, ...args) => {
+vi.mock('@/utils/translator/Translator', async () => ({
+    default: (await import('./support/reserved-words.js')).withReserved((string, ...args) => {
         let next = 0;
         return string.replace(/%(\d+)\$s|%s/g, (match, position) => String(position ? args[position - 1] : args[next++]));
-    },
+    }),
     translateNumber: (value) => value,
 }));
 

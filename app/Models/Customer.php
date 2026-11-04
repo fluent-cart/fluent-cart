@@ -503,6 +503,21 @@ class Customer extends Model
         return get_user_by('ID', $this->user_id);
     }
 
+    public function addLog($title, $description = '', $type = 'info', $by = '')
+    {
+        $logData = [
+            'module_type' => self::class,
+            'module_id'   => $this->id,
+            'module_name' => 'customer',
+        ];
+
+        if ($by) {
+            $logData['created_by'] = $by;
+        }
+
+        fluent_cart_add_log($title, $description, $type, $logData);
+    }
+
     public function scopeSearchByFullName ($query, $data) {
 
         $operator = Arr::get($data, 'operator', 'like_all');

@@ -8,20 +8,17 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Activity;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Services\Report\Concerns\CanParseAddressField;
 use FluentCart\App\Services\Report\Concerns\HasRange;
 use FluentCart\Framework\Database\Orm\Builder;
-use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\DateTime;
 
 class DashBoardReportService extends ReportService
 {
-    use HasRange, CanParseAddressField;
+    use HasRange;
 
     protected $salesGrowthChart = [];
 
     protected $dashBoardStats = [];
-
 
     protected $totalOrders = 0;
 
@@ -30,7 +27,6 @@ class DashBoardReportService extends ReportService
     protected $totalOrderItems = 0;
 
     protected $totalOrderValue = 0;
-
 
     protected function modifyQuery(Builder $query): Builder
     {
@@ -45,7 +41,6 @@ class DashBoardReportService extends ReportService
             ])
             ->orderBy('created_at');
     }
-
 
     public function getModel(): string
     {
@@ -88,51 +83,34 @@ class DashBoardReportService extends ReportService
 
         $currency = $this->filters['currency'] ?? null;
         $currencyFilter = $currency ? 'AND currency = ?' : '';
+        // The report statuses, as Revenue counts them: a partly or fully refunded order still took its payment
+        $paid = "'" . implode("', '", array_map('esc_sql', Status::getReportStatuses())) . "'";
 
         $query = "
         SELECT
             COUNT(*) AS total_orders,
-            SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) AS paid_orders,
+            SUM(CASE WHEN payment_status IN ({$paid}) THEN 1 ELSE 0 END) AS paid_orders,
             (SELECT COUNT(*) FROM {$wpdb->prefix}fct_order_items WHERE order_id IN (
-                SELECT id FROM {$wpdb->prefix}fct_orders WHERE payment_status = 'paid'
+                SELECT id FROM {$wpdb->prefix}fct_orders WHERE payment_status IN ({$paid})
                 AND created_at BETWEEN ? AND ?
                 {$currencyFilter}
             )) AS total_paid_order_items,
-            SUM(CASE WHEN payment_status = 'paid' THEN total_paid ELSE 0 END) AS total_paid_amounts
+            SUM(CASE WHEN payment_status IN ({$paid}) THEN total_paid ELSE 0 END) AS total_paid_amounts
         FROM {$wpdb->prefix}fct_orders
         WHERE created_at BETWEEN ? AND ?
         {$currencyFilter}
     ";
 
-        $currentBindings = [
-            $startDate->format('Y-m-d'),
-            $endDate->format('Y-m-d 23:59:59'),
-        ];
-        if ($currency) {
-            $currentBindings[] = $currency;
-        }
-        $currentBindings[] = $startDate->format('Y-m-d');
-        $currentBindings[] = $endDate->format('Y-m-d 23:59:59');
-        if ($currency) {
-            $currentBindings[] = $currency;
-        }
+        // The bounds are store-day instants; GMT columns compare against their UTC time
+        $bindings = function ($from, $to) use ($currency) {
+            $range = [ReportHelper::toGmt($from)->format('Y-m-d H:i:s'), ReportHelper::toGmt($to)->format('Y-m-d H:i:s')];
+            $currencyBinding = $currency ? [$currency] : [];
 
-        $currentStats = App::db()->select($query, $currentBindings)[0];
+            return array_merge($range, $currencyBinding, $range, $currencyBinding);
+        };
 
-        $previousBindings = [
-            $previousStartDate->format('Y-m-d'),
-            $previousEndDate->format('Y-m-d 23:59:59'),
-        ];
-        if ($currency) {
-            $previousBindings[] = $currency;
-        }
-        $previousBindings[] = $previousStartDate->format('Y-m-d');
-        $previousBindings[] = $previousEndDate->format('Y-m-d 23:59:59');
-        if ($currency) {
-            $previousBindings[] = $currency;
-        }
-
-        $previousStats = App::db()->select($query, $previousBindings)[0];
+        $currentStats = App::db()->select($query, $bindings($startDate, $endDate))[0];
+        $previousStats = App::db()->select($query, $bindings($previousStartDate, $previousEndDate))[0];
         $this->dashBoardStats = [
             'total_orders'           => [
                 'title'         => __('All Orders', 'fluent-cart'),
@@ -171,17 +149,14 @@ class DashBoardReportService extends ReportService
             $params['startDate'], $params['endDate'], $params['groupKey']
         );
 
-        $query = ReportCurrency::ordersTable($params)
+        $netSql = ReportHelper::netSalesSql($params);
+
+        $query = ReportHelper::joinShippingRefund(ReportCurrency::ordersTable($params), $params)
             ->selectRaw("{$group['field']},
 
                 COUNT(o.id) AS orders,
 
-                SUM(
-                    o.total_paid
-                    - o.total_refund
-                    - o.tax_total
-                    - o.shipping_tax
-                ) / 100 AS net_revenue")
+                SUM({$netSql}) / 100 AS net_revenue")
             ->groupByRaw($group['by'])
             ->orderByRaw($group['by']);
 
@@ -208,13 +183,12 @@ class DashBoardReportService extends ReportService
 
     public function getCountryHeatMap()
     {
-        $results = App::db()->table('fct_order_addresses as ao')
-            ->select('ao.country', App::db()->raw('COUNT(ao.id) as value'))
-            ->join('fct_orders as o', 'ao.order_id', '=', 'o.id')
-            ->where('ao.type', 'billing')
+        // One billing address per order, so an order with retry duplicates counts once
+        $results = ReportHelper::joinOrderAddress(App::db()->table('fct_orders as o'), 'billing', 'ao')
+            ->select('ao.country', App::db()->raw('COUNT(o.id) as value'))
+            ->whereNotNull('ao.id')
             ->groupBy('ao.country')
             ->get();
-
 
         //$results = $wpdb->get_results($query);
 
@@ -243,7 +217,7 @@ class DashBoardReportService extends ReportService
         ];
     }
 
-    public static function getRecentOrders()
+    public static function getRecentOrders(bool $showCustomers = true)
     {
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static query with no variables
@@ -264,10 +238,18 @@ class DashBoardReportService extends ReportService
             ->orderBy('o.created_at', 'desc')
             ->limit(10)
             ->get()
-            ->map(fn($item) => (array)$item) // convert each object to array
+            ->map(function ($item) use ($showCustomers) {
+                $item = (array) $item;
+                if (!$showCustomers) {
+                    $item['customer_name'] = '';
+                }
+
+                return $item;
+            })
             ->toArray();
         return [
-            'recentOrders' => $recentOrders
+            'recentOrders'     => $recentOrders,
+            'customers_hidden' => !$showCustomers,
         ];
     }
 
@@ -278,17 +260,18 @@ class DashBoardReportService extends ReportService
 
         // Apply date conditions based on the groupKey
         switch ($groupKey) {
+            // Store days, compared as UTC against the GMT column
             case 'today':
-                $query->whereDate('created_at', DateTime::now()->today());
+                $today = ReportHelper::local(DateTime::now());
+                $query->whereBetween('created_at', self::gmtBounds($today->copy()->startOfDay(), $today->copy()->endOfDay()));
                 break;
             case 'yesterday':
-                $query->whereDate('created_at', DateTime::now()->subDays(1));
+                $yesterday = ReportHelper::local(DateTime::now())->subDays(1);
+                $query->whereBetween('created_at', self::gmtBounds($yesterday->copy()->startOfDay(), $yesterday->copy()->endOfDay()));
                 break;
             case 'this_week':
-                $query->whereBetween('created_at', [
-                    DateTime::now()->startOfWeek(),
-                    DateTime::now()->endOfWeek()
-                ]);
+                $week = ReportHelper::local(DateTime::now());
+                $query->whereBetween('created_at', self::gmtBounds($week->copy()->startOfWeek(), $week->copy()->endOfWeek()));
                 break;
             case 'all':
             default:
@@ -307,55 +290,9 @@ class DashBoardReportService extends ReportService
         ];
     }
 
-    public static function getSummary()
+    private static function gmtBounds($from, $to): array
     {
-
-        $postsSummary = App::db()->table("posts")
-            ->select([
-                App::db()->raw("COUNT(*) AS total_products"),
-                App::db()->raw("SUM(CASE WHEN post_status = 'draft' THEN 1 ELSE 0 END) AS draft_products"),
-            ])
-            ->where('post_type', 'fluent-products')
-            ->first(); // single row as object
-
-
-        $postsSummary = (array)$postsSummary;
-
-        // Query to count active and expired coupons from the fct_coupons table
-        $couponsSummary = App::db()->table("fct_coupons")
-            ->select([
-                App::db()->raw("
-            SUM(
-                CASE 
-                    WHEN (end_date IS NULL OR end_date = '0000-00-00 00:00:00' OR end_date >= CURDATE()) 
-                     AND status = 'active' 
-                    THEN 1 ELSE 0 
-                END
-            ) AS active_coupons
-        "),
-                App::db()->raw("
-            SUM(
-                CASE 
-                    WHEN (end_date < CURDATE() AND end_date != '0000-00-00 00:00:00' 
-                          AND status IN ('expired', 'disabled')) 
-                    THEN 1 ELSE 0 
-                END
-            ) AS expired_coupons
-        "),
-            ])
-            ->first();
-
-        $couponsSummary = (array)$couponsSummary;
-
-
-
-        return [
-            'summaryData' => [
-                'total_products'  => (int)Arr::get($postsSummary, 'total_products', 0),
-                'draft_products'  => (int)Arr::get($postsSummary, 'draft_products', 0),
-                'active_coupons'  => (int)Arr::get($couponsSummary, 'active_coupons', 0),
-                'expired_coupons' => (int)Arr::get($couponsSummary, 'expired_coupons', 0),
-            ]
-        ];
+        return [ReportHelper::toGmt($from)->format('Y-m-d H:i:s'), ReportHelper::toGmt($to)->format('Y-m-d H:i:s')];
     }
+
 }

@@ -12,30 +12,42 @@ export default function blocktranslate(string) {
 
     string = translations[string] || string;
 
-    // Prepare the arguments, excluding the first one (the string itself)
-    const args = Array.prototype.slice.call(arguments, 1);
+    return applyPlaceholders(string, Array.prototype.slice.call(arguments, 1));
+}
 
+// Fill %s, %d, %1$s style placeholders; a missing argument keeps its placeholder.
+function applyPlaceholders(string, args) {
     if (args.length === 0) {
         return string;
     }
 
-    // Regular expression to match %s, %d, or %1s, %2s,  %1$s etc.
-    const regex = /%(\d*\$?)s|%d/g;
-
-    // Replace function to handle each match found by the regex
-    let argIndex = 0; // Keep track of the argument index for non-numbered placeholders
-    string = string.replace(regex, (match, number) => {
-        // If it's a numbered placeholder, use the number to find the corresponding argument
+    let argIndex = 0;
+    return string.replace(/%(\d*\$?)s|%d/g, (match, number) => {
         if (number) {
-            const index = parseInt(number, 10) - 1; // Convert to zero-based index
-            return index < args.length ? args[index] : match; // Replace or keep the placeholder
-        } else {
-            // For non-numbered placeholders, use the next argument in the array
-            return argIndex < args.length ? args[argIndex++] : match; // Replace or keep the placeholder
+            const index = parseInt(number, 10) - 1;
+            return index < args.length ? args[index] : match;
         }
+        return argIndex < args.length ? args[argIndex++] : match;
     });
+}
 
-    return string;
+/**
+ * Contextual lookup, the counterpart of PHP's _x(). The map keys these entries
+ * as "context\x04text", the same shape the admin translator reads; placeholder
+ * arguments follow the context.
+ */
+export function _x(string, context) {
+    const translations = window['fluent_cart_block_translation'];
+    const args = Array.prototype.slice.call(arguments, 2);
+
+    if (typeof translations !== 'object' || !translations) {
+        return applyPlaceholders(string, args);
+    }
+
+    const translated = translations[context + '\u0004' + string] || string;
+
+    // Falls back to the plain entry until translators fill in the contextual one
+    return applyPlaceholders(translated === string ? (translations[string] || string) : translated, args);
 }
 
 

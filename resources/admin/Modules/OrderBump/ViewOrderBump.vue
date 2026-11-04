@@ -170,7 +170,7 @@ onMounted(() => {
                                         <div class="form-note">
                                             <p>
                                                 {{
-                                                    translate('Optionally add a description that will get your customers excited about the offer. You can use html as well.')
+                                                    translate('Bump_Optionally_Add')
                                                 }}
                                             </p>
                                         </div>

@@ -7,7 +7,7 @@
  */
 ?>
 <?php if (isset($heading)): ?>
-    <p style="font-size:16px;font-weight:500;color:rgb(44,62,80);line-height:24px;margin: 0 0 16px;">
+    <p style="font-size:17px;font-weight:700;color:rgb(17,24,39);line-height:24px;margin: 0 0 12px;">
         <?php echo esc_html($heading); ?>
     </p>
 <?php endif; ?>
@@ -29,51 +29,56 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
     $isReversed = $order->isReverseChargeTaxOrder();
     $rcMode = $order->getOrderRcMode();
     $fctEmailDisplayMode = ($order instanceof \FluentCart\App\Models\Order) ? TaxSummaryHelper::getTaxDisplayMode() : 'itemized';
-    // In RTL the totals span the row so their labels line up under the item column.
-    $isRtlTotals = \FluentCart\App\Services\Email\EmailDirection::isRtl();
-    $totalsWidth = $isRtlTotals ? '100%' : '400';
-    $totalsWidthCss = $isRtlTotals ? '100%' : '400px';
+    // The totals span the row so their labels and amounts line up with the item column.
+    $totalsWidth = '100%';
+    $totalsWidthCss = '100%';
     $startSide = \FluentCart\App\Services\Email\EmailDirection::start();
     $endSide = \FluentCart\App\Services\Email\EmailDirection::end();
 
 ?>
 
-<table role="presentation" style="border-spacing:0;padding: 0; width: 100%;border: none">
+<?php
+    $fctIsRtl = \FluentCart\App\Services\Email\EmailDirection::isRtl();
+    $fctHeadStartRadius = $fctIsRtl ? '0 8px 8px 0' : '8px 0 0 8px';
+    $fctHeadEndRadius = $fctIsRtl ? '8px 0 0 8px' : '0 8px 8px 0';
+    $fctHeadLabelStyle = 'font-size:11px;font-weight:700;color:rgb(75,85,99);text-transform:uppercase;letter-spacing:0.08em;line-height:16px;margin:0;';
+    $fctItemIndex = 0;
+?>
+<table role="presentation" cellpadding="0" cellspacing="0" style="border-spacing:0;border-collapse:separate;padding: 0; width: 100%;border: none">
     <thead>
     <tr>
-        <th style="background-color:rgb(249,250,251); padding-<?php echo esc_attr($startSide); ?>: 16px">
-            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: <?php echo esc_attr($startSide); ?>">
-                <?php echo esc_html__('Item', 'fluent-cart'); ?>
-            </p>
+        <th style="background-color:rgb(243,244,246);padding:10px 16px;border-radius:<?php echo esc_attr($fctHeadStartRadius); ?>;text-align:<?php echo esc_attr($startSide); ?>;">
+            <p style="<?php echo esc_attr($fctHeadLabelStyle); ?>text-align:<?php echo esc_attr($startSide); ?>;"><?php echo esc_html__('Item', 'fluent-cart'); ?></p>
         </th>
-
-        <th style="background-color:rgb(249,250,251); width: 50px"></th>
-
-        <th style="background-color:rgb(249,250,251); padding-<?php echo esc_attr($endSide); ?>: 16px; width: 200px;">
-            <p style="font-size:12px;font-weight:600;color:rgb(55,65,81);text-transform:uppercase;line-height:24px;margin: 0;text-align: <?php echo esc_attr($endSide); ?>">
-                <?php echo esc_html__('Total', 'fluent-cart'); ?>
-            </p>
+        <th style="background-color:rgb(243,244,246);padding:10px 8px;width:60px;text-align:center;">
+            <p style="<?php echo esc_attr($fctHeadLabelStyle); ?>text-align:center;"><?php echo esc_html__('Qty', 'fluent-cart'); ?></p>
+        </th>
+        <th style="background-color:rgb(243,244,246);padding:10px 16px;border-radius:<?php echo esc_attr($fctHeadEndRadius); ?>;width:1%;white-space:nowrap;text-align:<?php echo esc_attr($endSide); ?>;">
+            <p style="<?php echo esc_attr($fctHeadLabelStyle); ?>text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html__('Total', 'fluent-cart'); ?></p>
         </th>
     </tr>
     </thead>
     <tbody style="width:100%">
-    <?php foreach ($orderItems as $item): ?>
+    <?php foreach ($orderItems as $item):
+        // A line between items, none above the first one under the header.
+        $fctItemBorder = $fctItemIndex++ > 0 ? 'border-top:1px solid rgb(238,240,243);' : '';
+    ?>
         <tr>
-            <td style="padding-<?php echo esc_attr($startSide); ?>: 16px;padding-top: 8px;padding-bottom: 8px;" colspan="2">
-                <p style="font-size: 15px; color: #2F3448; font-weight: 500; overflow: hidden; line-height: 18px; margin-top: 0; margin-bottom: 5px;">
+            <td style="padding:16px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;">
+                <p style="font-size: 15px; color: rgb(17,24,39); font-weight: 600; overflow: hidden; line-height: 20px; margin-top: 0; margin-bottom: 6px;">
 
                     <?php echo esc_html($item['post_title']); ?>
-                    <?php if ($item['quantity'] > 1): ?>
-                        <span style="font-size:12px;font-weight:400;color:rgb(75,85,99)">x <?php echo esc_html($item['quantity']); ?></span>
-                    <?php endif; ?>
 
-                <p style="margin: 0; font-size: 14px; color: #758195; font-weight: 400; line-height: 15px;">
-                    - <?php echo esc_html(!empty($item['variation_display_title']) ? $item['variation_display_title'] : $item['title']); ?>
+                <?php $itemVariantTitle = !empty($item['variation_display_title']) ? $item['variation_display_title'] : $item['title']; ?>
+                <?php if ($itemVariantTitle && $itemVariantTitle !== $item['post_title']): ?>
+                <p style="margin: 0 0 6px; line-height: 20px;">
+                    <span style="display:inline-block;background-color:rgb(241,243,246);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(55,65,81);line-height:18px;"><?php echo esc_html($itemVariantTitle); ?></span>
                 </p>
+                <?php endif; ?>
 
                 <?php if ($item['payment_type'] === 'subscription' && !empty($item['payment_info'])): ?>
-                    <p style="font-size:12px;color:rgb(75,85,99);line-height:20px;margin: 3px 0 0 0;">
-                        <?php echo wp_kses_post($item['payment_info']) ?>
+                    <p style="margin: 2px 0 0 0; line-height: 20px;">
+                        <span style="display:inline-block;background-color:rgb(238,242,255);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(67,56,202);line-height:18px;"><?php echo wp_kses_post($item['payment_info']) ?></span>
                     </p>
                 <?php endif; ?>
 
@@ -93,8 +98,11 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php endif; ?>
                 </p>
             </td>
-            <td style="padding-<?php echo esc_attr($endSide); ?>: 16px;text-align:<?php echo esc_attr($endSide); ?>">
-                <p style="font-size:14px;font-weight:700;color:rgb(17,24,39);margin:0;line-height:24px;">
+            <td style="padding:16px 8px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;text-align:center;">
+                <p style="font-size:15px;color:rgb(55,65,81);margin:0;line-height:20px;"><?php echo esc_html($item['quantity']); ?></p>
+            </td>
+            <td style="padding:16px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;text-align:<?php echo esc_attr($endSide); ?>;">
+                <p style="font-size:15px;font-weight:600;color:rgb(17,24,39);margin:0;line-height:20px;">
                     <?php if ((int) Arr::get($item, 'discount_total', 0) > 0): ?>
                         <span style="text-decoration:line-through;color:rgb(107,114,128);font-weight:400;margin-<?php echo esc_attr($endSide); ?>:4px;">
                             <?php echo esc_html(\FluentCart\App\Helpers\Helper::toDecimal(Arr::get($item, 'subtotal', 0))); ?>
@@ -283,22 +291,16 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
     <?php endforeach; ?>
     </tbody>
 </table>
-<table style="border-spacing:0;padding: 0; width: 100%;border: none;margin-top:8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="border-spacing:0;border-collapse:separate;padding: 0; width: 100%;border: none;margin-top:12px;margin-bottom:20px;">
     <tr>
-        <td colspan="2" style="border-top:1px solid #e5e7eb;padding-top:12px;font-size:0;line-height:0;">&nbsp;</td>
-    </tr>
-    <tr>
-<?php if (!$isRtlTotals): ?>
-        <td style="width: 50%;"></td>
-<?php endif; ?>
-        <td style="width: 100%;">
-            <table role="presentation" width="<?php echo esc_attr($totalsWidth); ?>"
-                   style="margin: <?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('0 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
+        <td style="width: 100%;background-color:rgb(248,250,252);border:1px solid rgb(238,240,243);border-radius:10px;padding:16px 20px;">
+            <table class="fct-email-totals" role="presentation" cellpadding="0" cellspacing="0" width="<?php echo esc_attr($totalsWidth); ?>"
+                   style="border-spacing:0;border-collapse:collapse;margin: <?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('0 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
                 <tbody>
                 <!-- Zone A: plain subtotal / shipping / fees / discount -->
                 <?php if ($order->subtotal != $order->total_amount): ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html__('Subtotal', 'fluent-cart'); ?>
                             </p>
@@ -324,7 +326,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                     $emailShippingDiscount = (int) \FluentCart\Framework\Support\Arr::get($order->config, 'shipping_discount', 0);
                 ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html__('Shipping', 'fluent-cart'); ?>
 
@@ -343,7 +345,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                     </tr>
                     <?php if ($emailShippingDiscount > 0): ?>
                         <tr style="width:100%">
-                            <td style="width:70%">
+                            <td style="width:70%;padding:4px 0 6px;">
                                 <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                     <?php echo esc_html__('Shipping Discount', 'fluent-cart'); ?>
                                 </p>
@@ -355,7 +357,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                             </td>
                         </tr>
                         <tr style="width:100%">
-                            <td style="width:70%">
+                            <td style="width:70%;padding:4px 0 6px;">
                                 <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                     <?php echo esc_html__('Shipping after discount', 'fluent-cart'); ?>
                                 </p>
@@ -370,7 +372,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php endif; ?>
                 <?php foreach ($feeItems as $feeItem): ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html($feeItem['title']); ?>
                             </p>
@@ -391,7 +393,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 ?>
                 <?php if ($order->manual_discount_total + $order->coupon_discount_total > 0): ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo $onlyProrateCredit ? esc_html__('Prorate Credit', 'fluent-cart') : esc_html__('Discount', 'fluent-cart'); ?>
                             </p>
@@ -445,11 +447,11 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 </tbody>
             </table><!-- /Zone A -->
             <!-- Zone B: tax breakdown inside its own grey box -->
-            <table role="presentation" align="<?php echo esc_attr($endSide); ?>" width="<?php echo esc_attr($totalsWidth); ?>"
+            <table class="fct-email-totals" role="presentation" cellpadding="0" cellspacing="0" align="<?php echo esc_attr($endSide); ?>" width="<?php echo esc_attr($totalsWidth); ?>"
                    style="border-spacing:0;border-collapse:collapse;margin:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('12px 0 0 auto')); ?>;width:<?php echo esc_attr($totalsWidthCss); ?>;max-width:100%;border:none;">
                 <tbody>
                 <tr>
-                    <td style="background-color:rgb(249,250,251);padding:16px;border-radius:8px;">
+                    <td style="background-color:rgb(255,255,255);border:1px solid rgb(238,240,243);padding:16px;border-radius:8px;">
             <table role="presentation" width="100%"
                    style="width:100%;border-spacing:0;border-collapse:collapse;border:none;">
                 <tbody>
@@ -752,15 +754,15 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 </tr>
                 </tbody>
             </table><!-- /Zone B: grey tax box -->
-            <table role="presentation" width="<?php echo esc_attr($totalsWidth); ?>"
-                   style="margin:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('12px 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
+            <table class="fct-email-totals" role="presentation" cellpadding="0" cellspacing="0" width="<?php echo esc_attr($totalsWidth); ?>"
+                   style="border-spacing:0;border-collapse:collapse;margin:<?php echo esc_attr(\FluentCart\App\Services\Email\EmailDirection::sides('12px 0 0 auto')); ?>; width: <?php echo esc_attr($totalsWidthCss); ?>; max-width: 100%; border: none;">
                 <tbody>
                 <!-- Zone C: plain refund / total / payment -->
                 <?php endif; ?>
 
                 <?php if ($order->total_refund > 0 && $isRefund): ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                             </p>
@@ -778,13 +780,13 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                         - (int) \FluentCart\Framework\Support\Arr::get($emailTaxSummaryEarly ?? [], 'rcTotalAdjustment', 0));
                 ?>
                 <tr style="width:100%">
-                    <td style="width:70%"><p
+                    <td style="width:70%;border-top:1px dashed rgb(209,213,219);padding-top:12px;padding-bottom:12px;vertical-align:middle;"><p
                                 style="font-size:16px;font-weight:700;color:rgb(17,24,39);line-height:24px;margin: 0;">
                             <?php echo esc_html__('Total', 'fluent-cart'); ?>
                         </p>
                     </td>
-                    <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
-                        <p style="font-size:14px;font-weight:700;color:rgb(17,24,39);line-height:24px;margin: 0;">
+                    <td style="width:30%;border-top:1px dashed rgb(209,213,219);padding-top:12px;padding-bottom:12px;vertical-align:middle;text-align:<?php echo esc_attr($endSide); ?>">
+                        <p style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:rgb(17,24,39);line-height:28px;margin: 0;">
                             <?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($emailDisplayTotal, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </p>
                     </td>
@@ -792,7 +794,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 
                 <?php if ($order->total_refund > 0 && !$isRefund): ?>
                     <tr style="width:100%">
-                        <td style="width:70%">
+                        <td style="width:70%;padding:4px 0 6px;">
                             <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
                                 <?php echo esc_html__('Refund', 'fluent-cart'); ?>
                             </p>
@@ -805,15 +807,25 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                     </tr>
                 <?php endif; ?>
 
+                <?php
+                    $emailCardBrand = $transaction ? (string) $transaction->card_brand : '';
+                    $emailCardLast4 = $transaction ? (string) $transaction->card_last_4 : '';
+                    $emailIsCard = $emailCardBrand !== '' && $emailCardLast4 !== '';
+                ?>
                 <tr style="width:100%">
-                    <td style="width:70%">
-                        <p style="font-size:14px;color:rgb(55,65,81);line-height:24px;margin: 0;">
+                    <td style="width:70%;border-top:1px solid rgb(229,231,235);padding-top:12px;">
+                        <p style="font-size:14px;color:rgb(75,85,99);line-height:24px;margin: 0;">
                             <?php echo esc_html__('Payment Method', 'fluent-cart'); ?>
                         </p>
                     </td>
-                    <td style="width:30%;text-align:<?php echo esc_attr($endSide); ?>">
-                        <p style="text-transform:uppercase;font-size:13px;color:rgb(55,65,81);margin:0;line-height:24px;">
-                            <?php echo esc_html($transaction ? $transaction->getPaymentMethodText($order) : ''); ?>
+                    <td style="width:30%;border-top:1px solid rgb(229,231,235);padding-top:12px;text-align:<?php echo esc_attr($endSide); ?>">
+                        <p style="margin:0;line-height:24px;">
+                            <?php if ($emailIsCard): ?>
+                                <span style="display:inline-block;max-width:100%;background-color:rgb(224,231,255);border-radius:6px;padding:1px 8px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgb(30,58,138);line-height:20px;"><?php echo esc_html($emailCardBrand); ?></span>
+                                <span style="font-size:13px;color:rgb(55,65,81);padding-<?php echo esc_attr($startSide); ?>:6px;"><?php echo \FluentCart\App\Services\Email\EmailDirection::ltr('•••• ' . $emailCardLast4); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+                            <?php elseif ($transaction): ?>
+                                <span style="display:inline-block;max-width:100%;background-color:rgb(220,252,231);border-radius:6px;padding:1px 8px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgb(22,101,52);line-height:20px;"><?php echo esc_html($transaction->getPaymentMethodText($order)); ?></span>
+                            <?php endif; ?>
                         </p>
                     </td>
                 </tr>

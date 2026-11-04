@@ -158,8 +158,8 @@ class LicenseSiteFilter extends BaseFilter
                         'type'        => 'selections',
                         'filter_type' => 'custom',
                         'options'     => [
-                            'active'   => __('Active', 'fluent-cart'),
-                            'inactive' => __('Inactive', 'fluent-cart'),
+                            'active'   => _x('Active', 'License site status', 'fluent-cart'),
+                            'inactive' => _x('Inactive', 'License site status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true,

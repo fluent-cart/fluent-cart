@@ -18,7 +18,9 @@ let resourcesDir = [
     path.join('resources/order-bump'),
     path.join('resources/addon-assets'),
     path.join('resources/attributes'),
-    path.join('resources/accounting-export')
+    path.join('resources/accounting-export'),
+    // Served by PHP and compiled at runtime against this map
+    path.join('app/Modules/StorageDrivers/S3/VueTemplates')
 ];
 let phpFile = path.join('app/Services/Translations/admin-translation.php');
 
@@ -27,12 +29,8 @@ let excludeDirs = ['BlockEditor'];
 const excludeFiles = [];
 let translationRegex = /\$t\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|\$t\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|\$t\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|translate\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|translate\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|translate\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|\{\{\s*\$t\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*\$t\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*\$t\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}|\{\{\s*translate\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*translate\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*translate\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}/g;
 
-// Contextual `_x('text', 'context')` calls. Kept as its own pattern rather than
-// another branch of translationRegex above, because that one collapses all its
-// capture groups into a single msgid and has no room to carry a second value.
-// Captures the msgid in group 2 and the context in group 4. The lookbehind
-// stops it matching an identifier that merely ends in _x (e.g. `foo_x(`).
-let contextRegex = /(?<![\w$.])_x\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1\s*,\s*(['"`])((?:\\.|(?!\3)[^\\])*)\3/g;
+// Contextual `_x('text', 'context')` calls.
+let contextRegex = TranslationHelper.makeContextRegex();
 
 // Check if --debug flag is passed
 const includeSource = TranslationHelper.hasFlag('debug');
@@ -46,8 +44,7 @@ if (isBlock) {
     phpFile = path.join('app/Services/Translations/block-editor-translation.php');
 // Exclude specific directories and files
     excludeDirs = [];
-    // Only the admin translator resolves through wp.i18n and exposes _x().
-    contextRegex = null;
+    // contextRegex stays on: BlockEditorTranslator exports _x() too.
     translationRegex = /\$t\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|\$t\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|\$t\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|blocktranslate\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|blocktranslate\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|blocktranslate\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|\{\{\s*\$t\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*\$t\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*\$t\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}|\{\{\s*blocktranslate\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*blocktranslate\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*blocktranslate\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}/g;
 }
 
@@ -55,8 +52,6 @@ if (isCustomer) {
     resourcesDir = path.join('resources/public/customer-profile');
     phpFile = path.join('app/Services/Translations/customer-profile-translation.php');
     excludeDirs = [];
-    // Only the admin translator resolves through wp.i18n and exposes _x().
-    contextRegex = null;
 }
 
 let commentsArray = {};
@@ -68,4 +63,7 @@ let commentsArray = {};
 const {translations, comments, contexts} = TranslationHelper.extractTranslations(resourcesDir, translationRegex, excludeDirs, excludeFiles, contextRegex, TranslationHelper.makePluralRegex());
 
 commentsArray = comments;
-TranslationHelper.updatePhpTranslations(translations, {}, phpFile, includeSource, comments, contexts);
+// Long admin sentences live in reservedWords.json under a short key, so the bundle and the printed map carry the key
+const reserved = (isBlock || isCustomer) ? {} : JSON.parse(fs.readFileSync(path.join('reservedWords.json'), 'utf8'));
+
+TranslationHelper.updatePhpTranslations(translations, {}, phpFile, includeSource, comments, contexts, reserved);

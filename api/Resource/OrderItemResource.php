@@ -5,6 +5,7 @@ namespace FluentCart\Api\Resource;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\AttributeHelper;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
@@ -313,7 +314,6 @@ class OrderItemResource extends BaseResourceApi
                 $itemData['line_total'] = $itemData['subtotal'] - Arr::get($item, 'discount_total', 0);
                 $fulfillment_type = Arr::get($item, 'fulfillment_type', 'physical');
 
-
                 if (empty($isExist)) {
                     unset($itemData['id']);
 
@@ -366,7 +366,10 @@ class OrderItemResource extends BaseResourceApi
                     $newItems[] = $item;
                 } else {
                     $existingData = Arr::only($itemData, ['id', 'quantity', 'unit_price', 'cost', 'subtotal', 'tax_amount', 'discount_total', 'line_total', 'shipping_charge']) + ['updated_at' => DateTime::now()];
-                    $existingData['fulfilled_quantity'] = $fulfillment_type === 'physical' ? Arr::get($item, 'fulfilled_quantity', 0) : Arr::get($item, 'quantity', 0);
+                    // Shipments own a physical item's fulfilled_quantity; never take it from the request.
+                    if ($orderItem->fulfillment_type !== Status::FULFILLMENT_TYPE_PHYSICAL) {
+                        $existingData['fulfilled_quantity'] = $fulfillment_type === 'physical' ? Arr::get($item, 'fulfilled_quantity', 0) : Arr::get($item, 'quantity', 0);
+                    }
                     $incomingLineMeta = Arr::get($item, 'line_meta');
                     if (is_array($incomingLineMeta) && array_key_exists('coupon_discount', $incomingLineMeta)) {
                         $incomingLineMeta['coupon_discount'] = (int) $incomingLineMeta['coupon_discount'];
@@ -385,9 +388,11 @@ class OrderItemResource extends BaseResourceApi
                 $filteredData = Arr::only($filteredItem, ['id', 'quantity', 'unit_price', 'cost', 'subtotal', 'tax_amount', 'discount_total', 'line_total', 'shipping_charge']
                 );
 
-                $filteredData['fulfilled_quantity'] = $fulfillment_type === 'physical'
-                    ? Arr::get($item, 'fulfilled_quantity', 0)
-                    : Arr::get($item, 'quantity', 0);
+                if (!$oldItem || $oldItem->fulfillment_type !== Status::FULFILLMENT_TYPE_PHYSICAL) {
+                    $filteredData['fulfilled_quantity'] = $fulfillment_type === 'physical'
+                        ? Arr::get($item, 'fulfilled_quantity', 0)
+                        : Arr::get($item, 'quantity', 0);
+                }
 
                 $existingItems[] = $filteredData;
             }
@@ -414,44 +419,6 @@ class OrderItemResource extends BaseResourceApi
             '',
             __('Order items updated.', 'fluent-cart')
         );
-    }
-
-    /**
-     * Retrieve the top-selling products based on the total quantity sold.
-     *
-     * @param array $params Optional. Additional parameters for retrieving top-selling products.
-     *        [
-     *            'created_at'   => (array) Optional. Filter results by creation date.
-     *                      [ "created_at" => [
-     *                          "column"       => "created_at",
-     *                          "operator"     => "between",
-     *                          "value"        => "Date range e.g. start_date,end_date ]
-     *                      ],
-     *            'operator'     => (string) Optional. Operator for the 'total_sold' condition.
-     *                              (e.g., '>', '=', '<', etc.)
-     *            'total_sold'   => (int) Optional. Total quantity sold condition.
-     *        ]
-     *
-     */
-    public static function topProductsSold($params = [])
-    {
-        $params = is_array($params) ? $params : [];
-
-        return OrderItem::search(Arr::only($params, ['created_at']))
-            ->select('post_id')
-            ->selectRaw('SUM(quantity) as total_sold')
-            ->groupBy('post_id')
-            ->orderBy(sanitize_sql_orderby('total_sold'), sanitize_sql_orderby('DESC'))
-            ->having('total_sold', Arr::get($params, 'operator'), Arr::get($params, 'total_sold'))
-            // ->with([
-            //     'product' => function(Builder $query){
-            //         return $query->select('ID','post_title');
-            //     }
-            // ])
-            ->withWhereHas('product', function ($query) {
-                $query->select('ID', 'post_title');
-            })
-            ->lazy()->forPage(1, 5);
     }
 
     public static function bulkDeleteByOrderIds($ids, $params = [])

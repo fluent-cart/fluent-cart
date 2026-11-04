@@ -20,7 +20,7 @@
             <p class="fct-alert-text">
               {{ translate('You are about to permanently delete') }}
               <strong>{{ productCount }} </strong>
-              {{ translate(productCount === 1 ? 'product' : 'products') }}.
+              {{ productCount === 1 ? translate('product') : translate('products') }}.
             </p>
             <p class="fct-alert-subtext">
               {{ translate('This action cannot be undone.') }}
@@ -32,10 +32,10 @@
       <!-- Info Section (Duplicate Only) -->
       <div v-if="isDuplicateAction" class="product-info">
         <div class="info-text">
-          {{ translate(isBulk ? 'You are about to duplicate' : 'Select which settings to import from') }}
+          {{ isBulk ? translate('You are about to duplicate') : translate('Select which settings to import from') }}
           <strong v-if="isBulk">{{ productCount }} </strong>
           <strong v-else>{{ productName }} </strong>
-          <span v-if="isBulk">{{ translate(productCount === 1 ? 'product' : 'products') }}</span>
+          <span v-if="isBulk">{{ productCount === 1 ? translate('product') : translate('products') }}</span>
         </div>
       </div>
 
@@ -79,7 +79,7 @@
           type="warning"
           icon="InformationFill"
       >
-        <span>{{ translate(isBulk ? 'All duplicated products will be created as drafts' : 'The duplicated product will be created as a draft') }}</span>
+        <span>{{ isBulk ? translate('All duplicated products will be created as drafts') : translate('The duplicated product will be created as a draft') }}</span>
       </Alert>
 
       <!-- Product List Preview (Bulk Delete Only) -->
@@ -102,7 +102,7 @@
             :status="progressStatus"
         />
         <p class="progress-text">
-          {{ translate(isDeleteAction ? 'Deleting' : 'Duplicating') }} {{ processedCount }} / {{ productCount }}
+          {{ isDeleteAction ? translate('Deleting') : translate('Duplicating') }} {{ processedCount }} / {{ productCount }}
         </p>
       </div>
 
@@ -110,14 +110,14 @@
       <div v-if="isBulk && showResults" class="results-section">
         <el-alert
             v-if="successCount > 0"
-            :title="translate(isDeleteAction ? 'Successfully deleted %s product(s)' : 'Successfully duplicated %s product(s)', successCount)"
+            :title="isDeleteAction ? translate('Successfully deleted %s product(s)', successCount) : translate('Successfully duplicated %s product(s)', successCount)"
             type="success"
             :closable="false"
             show-icon
         />
         <el-alert
             v-if="failedCount > 0"
-            :title="translate(isDeleteAction ? 'Failed to delete %s product(s)' : 'Failed to duplicate %s product(s)', failedCount)"
+            :title="isDeleteAction ? translate('Failed to delete %s product(s)', failedCount) : translate('Failed to duplicate %s product(s)', failedCount)"
             type="error"
             :closable="false"
             show-icon
@@ -225,16 +225,16 @@ const productCount = computed(() => {
 
 const modalTitle = computed(() => {
   if (isBulk.value) {
-    return translate(isDuplicateAction.value ? 'Bulk Duplicate Products' : 'Bulk Delete Products');
+    return isDuplicateAction.value ? translate('Bulk Duplicate Products') : translate('Bulk Delete Products');
   }
-  return translate(isDuplicateAction.value ? 'Duplicate Product' : 'Delete Product');
+  return isDuplicateAction.value ? translate('Duplicate Product') : translate('Delete Product');
 });
 
 const actionButtonText = computed(() => {
   if (isDeleteAction.value) {
-    return translate(isBulk.value ? 'Delete Products' : 'Delete Product');
+    return isBulk.value ? translate('Delete Products') : translate('Delete Product');
   }
-  return translate(isBulk.value ? 'Duplicate Products' : 'Duplicate Product');
+  return isBulk.value ? translate('Duplicate Products') : translate('Duplicate Product');
 });
 
 const productsPreviewed = computed(() => {

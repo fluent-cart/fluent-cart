@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 class LogTable extends Table {
 
@@ -10,7 +10,7 @@ class LogTable extends Table {
             success: translate("Success"),
             warning: translate('Warning'),
             error: translate('Error'),
-            failed: translate('Failed'),
+            failed: _x('Failed', 'Log status'),
             info: translate('Info'),
             api: translate('API Only'),
         }

@@ -57,7 +57,7 @@
                 </el-breadcrumb-item>
               </el-breadcrumb>
               <div class="single-page-header-status-wrap">
-                <Badge :status="order.status"/>
+                <Badge :status="order.status" kind="order"/>
                 <Badge v-if="order.is_b2b_order" type="blue" :text="translate('B2B')"/>
                 <OrderUpDownIndicator :order="order"/>
               </div>
@@ -142,12 +142,21 @@
                     <h2 class="fct-card-header-title is-small">
                       {{ translate("Order items") }}
                       <Badge
-                          v-if="order?.fulfillment_type === 'physical'"
+                          v-if="order?.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL"
                           :status="order?.shipping_status"
                       >
                         {{ order?.shipping_status }}
                       </Badge>
                     </h2>
+                  </template>
+                  <!-- Must match POST .../shipments (orders/manage_statuses). -->
+                  <template v-if="canCreateShipment" #action>
+                    <UserCan permission="orders/manage_statuses">
+                      <el-button size="small" @click="showShipmentForm = true">
+                        <DynamicIcon name="Truck" class="w-4 h-4 mr-1"/>
+                        {{ translate('Create shipment') }}
+                      </el-button>
+                    </UserCan>
                   </template>
                 </Card.Header>
                 <Card.Body>
@@ -209,7 +218,7 @@
                                       class="link"
                                   >
                                     <img
-                                        :src="product.featured_media != null ? product.featured_media : getImageUrl(product)"
+                                        :src="getImageUrl(product)"
                                         :alt="product.title"
                                         :class="getClass(product)"
                                         class="h-full object-contain rounded"
@@ -225,7 +234,7 @@
                                   }"
                                   >
                                     <img
-                                        :src="product.featured_media != null ? product.featured_media : getImageUrl(product)"
+                                        :src="getImageUrl(product)"
                                         :alt="product.title"
                                         :class="getClass(product)"
                                         class="h-full object-contain rounded"
@@ -269,6 +278,13 @@
                                     <div v-if="(product?.variation_display_title || product?.title) && product?.title !== product?.post_title"
                                          class="product-variation-title m-0">
                                       &#8211; {{ product?.variation_display_title || product?.title }}
+                                    </div>
+
+                                    <div
+                                        v-if="order.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL && product.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL && itemShippedKept(product) > 0"
+                                        class="text-xs text-system-mid dark:text-gray-300 mt-1"
+                                    >
+                                      {{ fulfilledLabel(product) }}
                                     </div>
 
 
@@ -323,7 +339,8 @@
                                           formatNumber(product.unit_price)
                                         }}</span>
                                       <span>x</span>
-                                      <span>{{ translateNumber(product.quantity) }}</span>
+                                      <span v-if="itemUnitsRefunded(product)" class="del line-through opacity-60 text-xs mr-0.5">{{ translateNumber(product.quantity) }}</span>
+                                      <span>{{ translateNumber(product.quantity - itemUnitsRefunded(product)) }}</span>
                                     </div><!-- .product-details-quantity -->
                                   </div><!-- .product-details-price-mobile -->
 
@@ -343,11 +360,21 @@
                                   >{{ formatNumber(product.line_meta.original_unit_price) }}</span>
                                   <span>{{ formatNumber(product.unit_price) }}</span>
                                   <span>×</span>
-                                  <span>{{ translateNumber(product.quantity) }}</span>
+                                  <span v-if="itemUnitsRefunded(product)" class="del line-through opacity-60 text-xs mr-0.5">{{ translateNumber(product.quantity) }}</span>
+                                  <span>{{ translateNumber(product.quantity - itemUnitsRefunded(product)) }}</span>
                                   <template v-if="product?.other_info?.item_status !== 'adjusted'">
                                     <span class="text-system-mid">·</span>
-                                    <span v-if="product.coupon_discount > 0" class="del">{{ formatNumber(product.subtotal) }}</span>
-                                    <span>{{ formatNumber(getItemDisplayLineTotal(product)) }}</span>
+                                    <span v-if="product.coupon_discount > 0 || itemRefunded(product)" class="del">{{ formatNumber(itemStruckTotal(product)) }}</span>
+                                    <span>{{ formatNumber(itemTotalLeft(product)) }}</span>
+                                    <el-tooltip
+                                        v-if="itemRefundedWithoutUnits(product)"
+                                        effect="dark"
+                                        :content="translate('Part of the price was refunded. The customer kept the items.')"
+                                        placement="top"
+                                        popper-class="fct-tooltip"
+                                    >
+                                      <el-icon class="text-system-dark dark:text-gray-300 opacity-75 cursor-help"><InfoFilled /></el-icon>
+                                    </el-tooltip>
                                   </template>
                                 </div>
 
@@ -378,11 +405,12 @@
                                         formatNumber(product.unit_price)
                                       }}</span>
                                     <span>x</span>
-                                    <span>{{ translateNumber(product.quantity) }}</span>
+                                    <span v-if="itemUnitsRefunded(product)" class="del line-through opacity-60 text-xs mr-0.5">{{ translateNumber(product.quantity) }}</span>
+                                    <span>{{ translateNumber(product.quantity - itemUnitsRefunded(product)) }}</span>
                                     <el-tooltip
                                         v-if="shouldShowUnitPriceRoundingTooltip(product)"
                                         effect="dark"
-                                        :content="translate('Unit price is rounded for display. The line total is calculated at full precision.')"
+                                        :content="translate('Order_Unit_Price')"
                                         placement="top"
                                         popper-class="fct-tooltip"
                                     >
@@ -400,13 +428,22 @@
                                 >
                                   <template v-if="product?.other_info?.item_status !== 'adjusted'">
                                     <div
-                                        v-if="product.coupon_discount > 0"
+                                        v-if="product.coupon_discount > 0 || itemRefunded(product)"
                                         class=" flex items-center"
                                     >
                                       <span class="del line-through text-xs font-normal opacity-60 leading-tight">
-                                      {{ formatNumber(product.subtotal) }}
+                                      {{ formatNumber(itemStruckTotal(product)) }}
                                     </span></div>
-                                    <span>{{ formatNumber(getItemDisplayLineTotal(product)) }}</span>
+                                    <span>{{ formatNumber(itemTotalLeft(product)) }}</span>
+                                    <el-tooltip
+                                        v-if="itemRefundedWithoutUnits(product)"
+                                        effect="dark"
+                                        :content="translate('Part of the price was refunded. The customer kept the items.')"
+                                        placement="top"
+                                        popper-class="fct-tooltip"
+                                    >
+                                      <el-icon class="text-system-dark dark:text-gray-300 opacity-75 cursor-help"><InfoFilled /></el-icon>
+                                    </el-tooltip>
                                   </template>
                                 </div>
                               </td>
@@ -424,10 +461,11 @@
                                     <span class="fct-tax-badge">{{ formatTaxRateBadge(rate) }}</span>
                                   </td>
                                   <td class="text-end">
-                                    <span class="fct-tax-amount" :class="{'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!product.line_meta?.tax_config?.inclusive || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
+                                    <span class="fct-tax-amount" :class="{'line-through opacity-60': itemFullyRefunded(product), 'fct-tax-amount--reversed': order.is_reverse_charge_tax_order && (!product.line_meta?.tax_config?.inclusive || orderSettings?.reverse_charge_price_mode === 'dynamic')}">
                                       <template v-if="product.line_meta && product.line_meta.tax_config && product.line_meta.tax_config.inclusive">{{ translate('incl.') }} </template>
                                       <template v-else>+</template>
-                                      {{ formatNumber(rate.tax_amount) }}
+                                      <span v-if="itemPartlyRefunded(product)" class="line-through opacity-60 mr-0.5">{{ formatNumber(rate.tax_amount) }}</span>
+                                      {{ formatNumber(itemPartlyRefunded(product) ? itemRateTaxLeft(product, idx) : rate.tax_amount) }}
                                     </span>
                                   </td>
                                 </tr>
@@ -436,8 +474,8 @@
                                   v-else-if="product.tax_amount > 0"
                                   class="text-xs text-system-mid dark:text-gray-300 opacity-70"
                               >
-                                <td class="pb-2">
-                                  {{ translate('Tax') }}: {{ formatNumber(product.tax_amount) }}
+                                <td class="pb-2" :class="{'line-through': itemFullyRefunded(product)}">
+                                  {{ translate('Tax') }}: <span v-if="itemPartlyRefunded(product)" class="line-through mr-0.5">{{ formatNumber(product.tax_amount) }}</span>{{ formatNumber(itemPartlyRefunded(product) ? itemTaxLeft(product, product.tax_amount) : product.tax_amount) }}
                                 </td>
                               </tr>
                             </template>
@@ -528,15 +566,40 @@
                       {{ translate("No items found.") }}
                     </p>
                   </div>
+
+                  <!-- The header button stays mounted so the drawer can return focus to it. -->
+                  <UserCan permission="orders/manage_statuses">
+                    <ShipmentForm
+                        v-if="shipmentFormOpen"
+                        :order="order"
+                        @created="handleShipmentCreated"
+                        @unconfirmed="setUnconfirmed($event)"
+                        @close="handleShipmentFormClosed"
+                    />
+                  </UserCan>
                 </Card.Body>
               </Card.Container>
+
+              <Shipments
+                  v-if="order && order.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL"
+                  :order="order"
+                  :void-warning="shipmentVoidWarning"
+                  @shipment-deleted="handleShipmentChanged"
+                  @shipment-updated="handleShipmentChanged"
+                  @void-warning="shipmentVoidWarning = $event"
+                  @dismiss-void-warning="shipmentVoidWarning = ''"
+                  :recheck-notice="shipmentRecheckNotice"
+                  @unconfirmed="setUnconfirmed($event)"
+                  @label-not-found="shipmentRecheckNotice = $event"
+                  @dismiss-recheck-notice="shipmentRecheckNotice = ''"
+              />
 
               <Card.Container class="fct-order-payment-card">
                 <Card.Header border_bottom>
                   <template v-slot:title>
                     <h2 class="fct-card-header-title is-small">
                       <span>{{ translate("Payment") }} </span>
-                      <Badge :status="order.payment_status" size="small"/>
+                      <Badge :status="order.payment_status" kind="payment" size="small"/>
                     </h2>
                   </template>
                 </Card.Header>
@@ -709,7 +772,6 @@
                         {{ translate("Collect Payments") }}
                         <DynamicIcon name="ChevronDown"/>
                       </el-button>
-                      <DynamicIcon name="More"/>
                       <template #dropdown>
                         <el-dropdown-menu>
                           <el-dropdown-item command="custom-payment-link">
@@ -1037,6 +1099,7 @@
 
 <script setup>
 import {ref} from "vue";
+import {FULFILLMENT_TYPE_PHYSICAL, TERMINAL_SHIPPING_STATUSES} from "@/utils/orderConstants";
 import AddProductItemModal from "./Modals/AddProductItemModal.vue";
 import Refund from "./Modals/Refund.vue";
 import {
@@ -1105,9 +1168,12 @@ import TaxBreakdownBox from "@/Modules/Orders/Components/TaxBreakdownBox.vue";
 import OrderUpDownIndicator from "@/Bits/Components/OrderUpDownIndicator.vue";
 import TransactionMobile from "./_TransactionMobile.vue";
 import AppConfig from "@/utils/Config/AppConfig";
-import {formatOrderItems} from "@/Bits/common";
+import {formatOrderItems, getOrderItemImageUrl} from "@/Bits/common";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
+import Shipments from "@/Modules/Orders/Components/Shipments.vue";
+import ShipmentForm from "@/Modules/Orders/Components/ShipmentForm.vue";
+import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 
 export default {
   name: "SingleOrder",
@@ -1131,7 +1197,10 @@ export default {
     OrderUpDownIndicator,
     TransactionMobile,
     BundleProducts,
-    Promotion
+    Promotion,
+    Shipments,
+    ShipmentForm,
+    UserCan
   },
 
   provide() {
@@ -1148,6 +1217,8 @@ export default {
         route: "",
       },
       warningMessage: "",
+      shipmentVoidWarning: "",
+      shipmentRecheckNotice: "",
       loading: false,
       calculating: false,
       customModal: false,
@@ -1206,6 +1277,10 @@ export default {
       sendingPaymentReminder: false,
       canSendPaymentReminderFlag: false,
       isMobile: window.innerWidth < 768,
+      // Lives in data(), not in <script setup>: the Options-API methods below
+      // (enableItemEditing) have to be able to reset it, and a setup ref is not
+      // reachable through `this`.
+      showShipmentForm: false,
     };
   },
   watch: {
@@ -1219,6 +1294,7 @@ export default {
       handler(newVal, oldVal) {
         this.changeTitle("Order #" + newVal);
         this.changes_made = 0;
+        this.shipmentVoidWarning = "";
         this.fetch();
       },
     },
@@ -1258,6 +1334,31 @@ export default {
     feeItems() {
       if (!this.order || !this.order.order_items) return [];
       return this.order.order_items.filter(item => item.payment_type === 'fee');
+    },
+    hasUnshippedItems() {
+      if (!this.order || !Array.isArray(this.order.order_items)) return false;
+      return this.order.order_items.some((item) => {
+        if (item.fulfillment_type !== FULFILLMENT_TYPE_PHYSICAL) return false;
+        return this.itemUnitsLeft(item) - this.itemShippedKept(item) > 0;
+      });
+    },
+    // "delivered" and "unshippable" are statuses the admin set deliberately. The API
+    // rejects a shipment against either (ShipmentService::isTerminalShippingStatus),
+    // because it would move fulfilled_quantity while the status stayed frozen — so the
+    // affordance is not offered for them here.
+    canCreateShipment() {
+      if (!this.order) return false;
+      return this.order.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL
+          && !TERMINAL_SHIPPING_STATUSES.includes(this.order.shipping_status)
+          && this.hasUnshippedItems
+          && !this.isEditingItem;
+    },
+    // ONE predicate drives both the form and the item list. They used to be
+    // separate (`v-show="!showShipmentForm"` vs `v-if="... && !isEditingItem"`),
+    // so hitting Edit while the form was open unmounted the form without
+    // emitting `close` and left the card body empty.
+    shipmentFormOpen() {
+      return this.canCreateShipment && this.showShipmentForm;
     },
     taxSummary() {
       const s = this.order.tax_summary || {};
@@ -1435,26 +1536,19 @@ export default {
       this.adjustItem = product;
     },
     getImageUrl(product) {
-      const media = product?.variants?.media;
-      if (
-          media &&
-          Array.isArray(media.meta_value) &&
-          media.meta_value[0]?.url
-      ) {
-        return media.meta_value[0].url;
-      }
-
-      const featuredMedia = product?.variants?.product_detail?.featured_media;
-      if (
-          !media &&
-          featuredMedia &&
-          typeof featuredMedia === "object" &&
-          featuredMedia !== null
-      ) {
-        return featuredMedia.url;
-      }
-
-      return this.placeholderImage;
+      return getOrderItemImageUrl(product, this.placeholderImage);
+    },
+    fulfilledLabel(product) {
+      /* translators: %1$s: quantity already fulfilled, %2$s: total quantity ordered */
+      return translate('Fulfilled: %1$s/%2$s', this.itemShippedKept(product), this.itemUnitsLeft(product));
+    },
+    itemUnitsLeft(product) {
+      return Math.max(0, parseInt(product.quantity || 0) - this.itemUnitsRefunded(product));
+    },
+    // Mirrors OrderItem::shippedUnitsKept().
+    itemShippedKept(product) {
+      const shippedRefunded = Number(product.line_meta?.refunded_shipped_quantity) || 0;
+      return Math.min(Math.max(0, (Number(product.fulfilled_quantity) || 0) - shippedRefunded), this.itemUnitsLeft(product));
     },
     getClass(product) {
       let thumbnail = null;
@@ -1475,15 +1569,20 @@ export default {
       if (this.order.config?.upgraded_to) {
         return false;
       }
-      const totalPaid = parseInt(this.order.total_paid / 100);
+      // Refundable as long as the order isn't fully refunded/pending and a paid balance remains
+      // (e.g. only shipping left after every item was refunded). Compared in cents, no truncation.
+      const refundable = parseInt(this.order.total_paid || 0) - parseInt(this.order.total_refund || 0);
       return (
           this.order.payment_status !== "refunded" &&
-          totalPaid > 0 &&
-          totalPaid >= parseInt(this.order.total_refund / 100)
+          this.order.payment_status !== "pending" &&
+          refundable > 0
       );
     },
     enableItemEditing() {
       this.isEditingItem = true;
+      // Editing and the shipment form can't share the card body — drop the form
+      // so re-opening it later starts from a clean state.
+      this.showShipmentForm = false;
       this.fetchShippingMethods();
     },
     disableItemEditing() {
@@ -1496,6 +1595,34 @@ export default {
         this.showRefundModal = true;
       } else if (action === "create_next_invoice") {
         this.nextInvoiceModal = true;
+      }
+    },
+
+    // `fetch()` replaces `this.order` wholesale (shipments included, they are
+    // eager-loaded), so there is nothing to patch in optimistically here.
+    handleShipmentCreated() {
+      // fetch() swaps the page for its loader, unmounting the drawer before it emits close.
+      this.showShipmentForm = false;
+      this.fetch();
+    },
+    // Deleting a shipment, or changing one's status, can both move the order's
+    // derived shipping_status — refetch rather than trying to re-derive it here.
+    handleShipmentChanged() {
+      this.fetch();
+    },
+    // Server data, not an edit: undo the deep watcher's bump so the Update bar stays put.
+    setUnconfirmed(list) {
+      const made = this.changes_made;
+      this.order.unconfirmed_shipments = list;
+      nextTick(() => {
+        this.changes_made = made;
+      });
+    },
+    // No refetch while the drawer is open: it would unmount it.
+    handleShipmentFormClosed(stale) {
+      this.showShipmentForm = false;
+      if (stale) {
+        this.fetch();
       }
     },
 
@@ -1892,12 +2019,95 @@ export default {
       return !!meta.inclusive;
     },
     getItemDisplayLineTotal(product) {
-      return Math.max(0, parseInt(product.line_total || 0));
+      const lineTotal = parseInt(product.line_total || 0);
+      if (this.itemTaxInLineTotal(product) && !this.itemTaxInclusive(product)) {
+        return Math.max(0, lineTotal - parseInt(product.tax_amount || 0));
+      }
+      return Math.max(0, lineTotal);
+    },
+    itemUnitsRefunded(product) {
+      return Math.min(parseInt(product.quantity || 0), parseInt(product.line_meta?.refunded_quantity || 0));
+    },
+    itemRefunded(product) {
+      return parseInt(product.refund_total || 0) > 0;
+    },
+    itemStruckTotal(product) {
+      return product.coupon_discount > 0 ? product.subtotal : this.getItemDisplayLineTotal(product);
+    },
+    itemTaxInclusive(product) {
+      const inclusive = product.line_meta?.tax_config?.inclusive;
+      if (inclusive !== undefined && inclusive !== null) {
+        return inclusive === true || inclusive === 'true' || inclusive === 1 || inclusive === '1';
+      }
+      const inclusion = product.other_info?.tax_inclusion;
+      if (inclusion === 'included' || inclusion === 'excluded') {
+        return inclusion === 'included';
+      }
+      return parseInt(this.order.tax_behavior) === 2;
+    },
+    itemTaxInLineTotal(product) {
+      const inclusive = product.line_meta?.tax_config?.inclusive;
+      const inclusion = product.other_info?.tax_inclusion;
+      if (this.order.type !== 'renewal' || (inclusive !== undefined && inclusive !== null) || inclusion === 'included' || inclusion === 'excluded') {
+        return false;
+      }
+      // Renewal lines store line_total with the tax already in it and no tax_config
+      const tax = parseInt(product.tax_amount || 0);
+      return tax > 0 && parseInt(product.line_total || 0) === parseInt(product.subtotal || 0) - parseInt(product.discount_total || 0) + tax;
+    },
+    itemFullyRefunded(product) {
+      if (!this.itemRefunded(product)) {
+        return false;
+      }
+      return this.itemUnitsRefunded(product) >= parseInt(product.quantity || 0) || this.itemTotalLeft(product) === 0;
+    },
+    itemPartlyRefunded(product) {
+      return this.itemRefunded(product) && !this.itemFullyRefunded(product);
+    },
+    itemTaxLeft(product, taxAmount) {
+      const charged = this.itemCharged(product);
+      const refunded = Math.min(parseInt(product.refund_total || 0), charged);
+      if (!charged) {
+        return parseInt(taxAmount || 0);
+      }
+      return Math.max(0, Math.round(parseInt(taxAmount || 0) * (charged - refunded) / charged));
+    },
+    itemRateTaxLeft(product, idx) {
+      const rates = this.getItemTaxRates(product);
+      if (idx < rates.length - 1) {
+        return this.itemTaxLeft(product, rates[idx].tax_amount);
+      }
+      const others = rates.slice(0, -1).reduce((sum, rate) => sum + this.itemTaxLeft(product, rate.tax_amount), 0);
+      return Math.max(0, this.itemTaxLeft(product, product.tax_amount) - others);
+    },
+    itemCharged(product) {
+      return this.getItemDisplayLineTotal(product) + (this.itemTaxInclusive(product) ? 0 : parseInt(product.tax_amount || 0));
+    },
+    itemTotalLeft(product) {
+      const lineTotal = this.getItemDisplayLineTotal(product);
+      const charged = this.itemCharged(product);
+      const refunded = Math.min(parseInt(product.refund_total || 0), charged);
+      if (!refunded || !charged) {
+        return lineTotal;
+      }
+      // refund_total includes tax added on top; take only the line's pre-tax share
+      return Math.max(0, Math.round(lineTotal - refunded * lineTotal / charged));
+    },
+    itemRefundedWithoutUnits(product) {
+      const quantity = parseInt(product.quantity || 0);
+      const unitsLeft = quantity - this.itemUnitsRefunded(product);
+      if (!this.itemRefunded(product) || !quantity || unitsLeft <= 0) {
+        return false;
+      }
+      // item refunds round each unit (to a whole unit in zero-decimal currencies)
+      const wholeUnits = AppConfig.get('currency_decimals', {})[String(this.order.currency || '').toUpperCase()] === 0;
+      const tolerance = Math.ceil(this.itemUnitsRefunded(product) * (wholeUnits ? 100 : 1) / 2) + 1;
+      return this.itemTotalLeft(product) < Math.round(this.getItemDisplayLineTotal(product) * unitsLeft / quantity) - tolerance;
     },
     shouldShowUnitPriceRoundingTooltip(product) {
       var quantity = parseInt(product.quantity || 1);
       var unitPrice = parseInt(product.unit_price || 0);
-      var lineTotal = parseInt(product.line_total || 0);
+      var lineTotal = this.getItemDisplayLineTotal(product);
       if (quantity < 2 || unitPrice <= 0 || lineTotal <= 0) {
         return false;
       }

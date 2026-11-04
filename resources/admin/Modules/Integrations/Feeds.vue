@@ -2,7 +2,7 @@
     <div class="setting-wrap">
         <Card.Container class="overflow-hidden">
             <Card.Header :title="$t('Global Integrations Feeds')"
-                         :text="$t('These integration feeds will be applied globally across all your orders and related actions.')"
+                         :text="$t('Integration_Integration_Feeds')"
             >
                 <template #action>
                     <div
@@ -47,7 +47,7 @@
                          class="fct-empty-integration-wrap text-center max-w-[600px] mx-auto mb-5">
                         <p class="text-base">
                             {{
-                                $t("You don't have any integration module enabled. Please go to integration modules and enable and configured from available modules")
+                                $t('Integration_Don_Integration')
                             }}
                         </p>
                         <el-button

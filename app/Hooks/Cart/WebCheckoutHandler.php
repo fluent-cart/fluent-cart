@@ -99,6 +99,9 @@ class WebCheckoutHandler
             case 'get_shipping_methods_list_view':
                 $result = $this->handleGetShippingMethodsListViewAjax();
                 break;
+            case 'get_shipping_rate_source':
+                $result = $this->handleGetShippingRateSourceAjax();
+                break;
             case 'fluent_cart_cart_update':
                 $result = $this->handleCartUpdateAjax();
                 break;
@@ -164,28 +167,26 @@ class WebCheckoutHandler
             $shippingMethodId = Arr::get($cart->checkout_data, 'shipping_data.shipping_method_id');
         }
 
-        $shippingMethod = ShippingMethod::query()->find($shippingMethodId);
-
         $charge = 0;
-        if (!empty($shippingMethod)) {
+        if ($shippingMethodId) {
             // The address the order ships to: the shipping fields only with ship-to-different on,
             // otherwise billing, the same rule place-order validates the method against.
             $shippingAddress = $cart->getShippingAddress();
-            $shippingCountry = Arr::get($shippingAddress, 'country');
-            $shippingState = Arr::get($shippingAddress, 'state');
 
-            $lists = AddressHelper::getAvailableShippingMethodLists(['country_code' => $shippingCountry, 'state' => $shippingState]);
+            $rate = AddressHelper::resolveSelectedRate(
+                Arr::get($shippingAddress, 'country'),
+                Arr::get($shippingAddress, 'state'),
+                (array) $cart->cart_data,
+                $shippingMethodId,
+                $shippingAddress
+            );
 
-            if (isset($lists['available_shipping_methods'])) {
-                $availableShippingMethods = Arr::get($lists, 'available_shipping_methods', []);
-                $shippingMethodIds = Arr::pluck($availableShippingMethods, 'id');
-
-                if (in_array($shippingMethodId, $shippingMethodIds)) {
-                    $shippingMethod = ShippingMethod::query()->find($shippingMethodId);
-                    if (!empty($shippingMethod)) {
-                        $charge = CartHelper::calculateShippingMethodCharge($shippingMethod);
-                    }
-                }
+            if ($rate) {
+                $isZoneMethod = Arr::get($rate, 'carrier') === 'manual' && is_numeric(Arr::get($rate, 'id'));
+                $shippingMethod = $isZoneMethod ? ShippingMethod::query()->find(Arr::get($rate, 'id')) : null;
+                $charge = $shippingMethod
+                    ? CartHelper::calculateShippingMethodCharge($shippingMethod)
+                    : Helper::roundCent(Arr::get($rate, 'cost', 0));
             }
             // Read-only: gateways call this on load to size their payment amount. A method this
             // address can't use adds no shipping, but the cart is left alone. Resetting it here
@@ -632,11 +633,12 @@ class WebCheckoutHandler
 
         $cart = CartHelper::getCart();
 
-        if (!$cart) {
+        if (!$cart || !$cart->requireShipping()) {
             return new \WP_Error('no_cart', __('No active cart found', 'fluent-cart'));
         }
 
-        $availableShippingMethods = AddressHelper::getShippingMethods($data['country_code'], $data['state'], $data['timezone']);
+        $availableShippingMethods = AddressHelper::getShippingMethods($data['country_code'], $data['state'], $data['timezone'], (array) $cart->cart_data);
+        $rateSources = AddressHelper::rateSourceState();
 
         ob_start();
 
@@ -644,15 +646,8 @@ class WebCheckoutHandler
 
         $selectedId = CartHelper::resolveAutoSelectShippingMethod($cart, $availableShippingMethods ?: [], $selectedId);
 
-        if (!$availableShippingMethods || is_wp_error($availableShippingMethods)) {
-            (new ShippingMethodsRender($availableShippingMethods, $selectedId))->render();
-        } else {
-            foreach ($availableShippingMethods as $method) {
-                $method->charge_amount = CartHelper::calculateShippingMethodCharge($method, $cart->cart_data);
-            }
-
-            (new ShippingMethodsRender($availableShippingMethods, $selectedId))->render();
-        }
+        // Rates carry their cost, priced against this cart in the checkout currency.
+        (new ShippingMethodsRender($availableShippingMethods, $selectedId, $rateSources))->render();
 
         $shippingMethodsView = ob_get_clean();
 
@@ -668,6 +663,32 @@ class WebCheckoutHandler
             'country_code' => $data['country_code'],
             'shipping_method_id' => $selectedId ?: null,
         ];
+    }
+
+    /**
+     * Quotes one carrier rate source the shown list left pending. The address and
+     * cart are the session's own; only the carrier's declared sources are called.
+     */
+    public function handleGetShippingRateSourceAjax()
+    {
+        $cart = CartHelper::getCart();
+        if (!$cart || !$cart->requireShipping()) {
+            return new \WP_Error('no_cart', __('No active cart found', 'fluent-cart'));
+        }
+
+        $carrier = App::request()->get('carrier');
+        $source = App::request()->get('source');
+        if (!is_string($carrier) || !is_string($source)) {
+            return new \WP_Error('invalid_rate_source', __('Invalid shipping rate source.', 'fluent-cart'));
+        }
+
+        $carrier = sanitize_key($carrier);
+        $source = mb_substr(sanitize_text_field($source), 0, 64);
+        if ($carrier === '' || $source === '') {
+            return new \WP_Error('invalid_rate_source', __('Invalid shipping rate source.', 'fluent-cart'));
+        }
+
+        return (new CheckoutRenderer($cart))->getRateSourceFragment($carrier, $source);
     }
 
     public function handleCartStatusAjax()
@@ -870,7 +891,7 @@ class WebCheckoutHandler
             ];
         }
 
-        $normalizeData = $this->normalizeCheckoutChangeData($normalizeData, $allData);
+        $normalizeData = $this->normalizeCheckoutChangeData($normalizeData, $allData, $cart);
 
         // Validate these data and filter out invalid data points and also push the
         // address data into this array.
@@ -1162,7 +1183,7 @@ class WebCheckoutHandler
     }
 
 
-    public function normalizeCheckoutChangeData($changedData, $allData): array
+    public function normalizeCheckoutChangeData($changedData, $allData, $cart = null): array
     {
 
         $sanitizedData = [];
@@ -1210,17 +1231,32 @@ class WebCheckoutHandler
                     $errors[$dataKey] = __('Invalid payment method.', 'fluent-cart');
                 }
                 $sanitizedData[$dataKey] = $value;
+            } else if ($dataKey === 'shipping_method_id' && $cart && !$cart->requireShipping()) {
+                // Nothing to ship: never quote carriers for it.
+                $sanitizedData[$dataKey] = null;
             } else if ($dataKey === 'shipping_method_id') {
                 $shipToDifferent = ((Arr::get($allData, 'ship_to_different', 'no') === 'yes') == 'yes');
-                $countryKey = $shipToDifferent ? 'shipping_country' : 'billing_country';
-                $stateKey = $shipToDifferent ? 'shipping_state' : 'billing_state';
+                $prefix = $shipToDifferent ? 'shipping_' : 'billing_';
+                $countryKey = $prefix . 'country';
+                $stateKey = $prefix . 'state';
                 $shippingCountry = Arr::has($changedData, $countryKey) ? Arr::get($changedData, $countryKey) : Arr::get($allData, $countryKey);
                 $shippingState = Arr::has($changedData, $stateKey) ? Arr::get($changedData, $stateKey) : Arr::get($allData, $stateKey);
-                $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState);
+                $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState, null, null, [
+                    'postcode' => Arr::has($changedData, $prefix . 'postcode') ? Arr::get($changedData, $prefix . 'postcode') : Arr::get($allData, $prefix . 'postcode'),
+                    'city'     => Arr::has($changedData, $prefix . 'city') ? Arr::get($changedData, $prefix . 'city') : Arr::get($allData, $prefix . 'city'),
+                ] + AddressHelper::quoteContact(array_merge($allData, $changedData)));
+
+                // WP_Error's $errors/$error_data are public, so foreach happily walks
+                // them and warns on every element. The "no methods" branches return
+                // WP_Error, and disabling the manual carrier makes that reachable on
+                // an ordinary physical checkout rather than only a misconfigured store.
+                if (is_wp_error($availableShippingMethods)) {
+                    $availableShippingMethods = [];
+                }
 
                 $found = false;
                 foreach ($availableShippingMethods as $method) {
-                    if ($method->id == $dataValue) {
+                    if (is_scalar($dataValue) && (string) Arr::get($method, 'id') === (string) $dataValue) {
                         $found = true;
                         break;
                     }
@@ -1234,6 +1270,14 @@ class WebCheckoutHandler
                 }
             } else {
                 $sanitizedData[$dataKey] = sanitize_text_field($dataValue);
+            }
+        }
+
+        // A card number typed into a name field must not reach the cart row.
+        // Place order then shows the field error from CheckoutApi::validateData().
+        foreach (['billing_full_name', 'shipping_full_name', 'billing_first_name', 'billing_last_name'] as $nameKey) {
+            if (isset($sanitizedData[$nameKey]) && CheckoutApi::containsCardNumber($sanitizedData[$nameKey])) {
+                $sanitizedData[$nameKey] = '';
             }
         }
 

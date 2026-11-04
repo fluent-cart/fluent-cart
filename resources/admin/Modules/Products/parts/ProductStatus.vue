@@ -82,7 +82,7 @@ const handleProductStatusDropdown = function () {
 };
 
 /* translators: %s is the URL */
-const customizeUrlTooltip = translate('Customize the product\'s URL ending. Remember, this will affect SEO and readability. The URL will be activated when publish. Check Google\'s %s Structure Best Practices.','<a href="https://developers.google.com/search/docs/crawling-indexing/url-structure">'+translate('URL')+'</a>');
+const customizeUrlTooltip = translate('Product_Customize_Product','<a href="https://developers.google.com/search/docs/crawling-indexing/url-structure">'+translate('URL')+'</a>');
 
 
 const hasVariations = () => {
@@ -101,7 +101,7 @@ const handleStatusChange = (value) => {
 };
 
 const getStatusTooltip = () => {
-  return translate('Status controls the product\'s visibility on the public page and its purchasability. \'Publish\' indicates that it is live and can be purchased, \'Draft\' signifies that it is in private editing, and \'Schedule\' means it will be publish on a specified date. \'Private\' means,  Only visible to adminstrators but can be purchased via direct purchase link. The status can only be changed once pricing is set.');
+  return translate('Product_Status_Controls');
 }
 
 const defaultOtherInfo = {
@@ -172,7 +172,7 @@ onMounted(() => {
                   </div>
                     <div v-else-if="product.post_status === 'private'">
                         <p class="text-sm text-gray-500 mt-4">
-                            {{ translate('Note: Private products are only visible to administrators but can be purchased via direct purchase link.') }}
+                            {{ translate('Product_Note_Private') }}
                         </p>
                     </div>
                 </div>
@@ -240,7 +240,7 @@ onMounted(() => {
             <span class="fct-admin-summary-item-title">
               <LabelHint
                 :title="translate('Default Variant')"
-                :content="translate('Select the default variant that users will see pre-selected on the product page.')"
+                :content="translate('Product_Select_Default')"
               />
             </span>
 
@@ -267,7 +267,7 @@ onMounted(() => {
             <span class="fct-admin-summary-item-title">
               <LabelHint
                 :title="translate('Pricing Table Layout')"
-                :content="translate('Organize product variations by repeat interval (Monthly, Yearly) or payment term (One time, Subscription).')"
+                :content="translate('Product_Organize_Product')"
               />
             </span>
 

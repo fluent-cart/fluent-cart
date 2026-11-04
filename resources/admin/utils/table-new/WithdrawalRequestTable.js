@@ -1,12 +1,12 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 class WithdrawalRequestTable extends Table {
 
     getTabs() {
         return {
             all: translate("All"),
-            pending: translate("Pending"),
+            pending: _x('Pending', 'Withdrawal request status'),
             accepted: translate("Accepted"),
             declined: translate("Declined"),
             unverified: translate("Unverified"),

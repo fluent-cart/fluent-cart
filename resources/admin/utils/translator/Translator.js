@@ -177,6 +177,33 @@ export function _x(string, context) {
     return applyPlaceholders(translated, Array.prototype.slice.call(arguments, 2));
 }
 
+/**
+ * Split a translated sentence on its %1$s-style markers, so a template can put a
+ * link, input or badge where the translator placed each marker.
+ *
+ * @returns {Array<{text: string}|{slot: number}>}
+ */
+export function splitPlaceholders(text) {
+    const parts = [];
+    const regex = /%(\d+)\$s/g;
+    let last = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > last) {
+            parts.push({text: text.slice(last, match.index)});
+        }
+        parts.push({slot: parseInt(match[1], 10)});
+        last = regex.lastIndex;
+    }
+
+    if (last < text.length) {
+        parts.push({text: text.slice(last)});
+    }
+
+    return parts;
+}
+
 export function pluralizeTranslate(singular, plural, count, empty = null) {
     let number = parseInt(count.toString().replace(/,/g, ''), 10);
     if (number > 1) {
@@ -190,7 +217,8 @@ export function pluralizeTranslate(singular, plural, count, empty = null) {
 
 export function translateNumber(number) {
     const config = AppConfig.get('datei18');
-    number = number.toString();
+    // Callers pass counts that may not be loaded yet
+    number = String(number ?? '');
     const numbers = config.numericSystem || '0_1_2_3_4_5_6_7_8_9';
     const numberArr = numbers.split('_');
     const translated = number.split('').map((s) => {

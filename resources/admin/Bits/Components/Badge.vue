@@ -21,7 +21,23 @@
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Str from "../../utils/support/Str";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
+
+// Status words several record types share, per record type: gendered languages need a
+// different form (fr: commande "Terminée", abonnement "Terminé"). Literal _x() calls,
+// so the string extractor can read every pair.
+const KIND_LABELS = {
+    order: () => ({completed: _x('Completed', 'Order status'), canceled: _x('Canceled', 'Order status'), failed: _x('Failed', 'Order status')}),
+    payment: () => ({paid: _x('Paid', 'Payment status'), pending: _x('Pending', 'Payment status'), failed: _x('Failed', 'Payment status'), refunded: _x('Refunded', 'Payment status'), authorized: _x('Authorized', 'Payment status')}),
+    transaction: () => ({succeeded: _x('Succeeded', 'Transaction status'), paid: _x('Paid', 'Transaction status'), pending: _x('Pending', 'Transaction status'), failed: _x('Failed', 'Transaction status'), refunded: _x('Refunded', 'Transaction status'), authorized: _x('Authorized', 'Transaction status')}),
+    subscription: () => ({active: _x('Active', 'Subscription status'), pending: _x('Pending', 'Subscription status'), expired: _x('Expired', 'Subscription status'), canceled: _x('Canceled', 'Subscription status'), completed: _x('Completed', 'Subscription status')}),
+    coupon: () => ({active: _x('Active', 'Coupon status'), expired: _x('Expired', 'Coupon status'), disabled: _x('Disabled', 'Coupon status')}),
+    order_bump: () => ({active: _x('Active', 'Order bump status')}),
+    pricing_rule: () => ({active: _x('Active', 'Pricing rule status'), inactive: _x('Inactive', 'Pricing rule status')}),
+    review: () => ({pending: _x('Pending', 'Review status')}),
+    log: () => ({failed: _x('Failed', 'Log status')}),
+    withdrawal: () => ({succeeded: _x('Succeeded', 'Withdrawal request status'), pending: _x('Pending', 'Withdrawal request status'), failed: _x('Failed', 'Withdrawal request status')}),
+};
 
 export default {
   name: "Badge",
@@ -45,7 +61,9 @@ export default {
       default: false
     },
     type: String,
-    icon: String
+    icon: String,
+    // Record type of the status (order, payment, subscription …), see KIND_LABELS
+    kind: String
   },
   computed: {
     Str() {
@@ -61,6 +79,7 @@ export default {
         case 'active':
         case 'publish':
         case 'shipped':
+        case 'delivered':
         case 'success':
         case 'licensed':
         case 'succeeded':
@@ -68,6 +87,7 @@ export default {
           return 'success';
 
         case 'failed':
+        case 'returned':
         case 'error':
         case 'canceled':
         case 'expired':
@@ -79,8 +99,19 @@ export default {
 
         case 'blue':
         case 'partially_paid':
+        case 'partially_shipped':
+        case 'in_transit':
         case 'intended':
           return 'blue';
+
+        // Terminal "this order will never ship" — a dark neutral, so it reads
+        // as settled rather than as the light grey of a pending `unshipped`.
+        case 'unshippable':
+          return 'primary';
+
+        case 'unshipped':
+        case 'dispatched':
+          return 'info';
 
         case 'scheduled':
         case 'on-hold':
@@ -107,6 +138,11 @@ export default {
   },
   methods: {
     getStatusText() {
+      const kindLabel = KIND_LABELS[this.kind] && KIND_LABELS[this.kind]()[this.computedStatus];
+      if (kindLabel) {
+        return kindLabel;
+      }
+
       switch (this.computedStatus) {
         case 'completed':
           return translate('Completed');
@@ -118,8 +154,22 @@ export default {
           return translate('Published');
         case 'draft':
           return translate('Draft');
+        case 'unshipped':
+          return translate('Unshipped');
+        case 'partially_shipped':
+          return translate('Partially Shipped');
         case 'shipped':
           return translate('Shipped');
+        case 'delivered':
+          return translate('Delivered');
+        case 'dispatched':
+          return translate('Dispatched');
+        case 'in_transit':
+          return translate('In Transit');
+        case 'returned':
+          return translate('Returned');
+        case 'unshippable':
+          return translate('Unshippable');
         case 'success':
           return translate('Success');
         case 'licensed':

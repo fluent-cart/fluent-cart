@@ -200,6 +200,17 @@ class DateFormatter
     }
 
     /**
+     * The store's day-and-month pattern with a short month, e.g. 'M j' or 'j. M'.
+     *
+     * Same derivation as DayjsFormatter's `date_short`, so PHP text and admin
+     * table columns agree.
+     */
+    public static function shortDateFormat(): string
+    {
+        return DayjsFormatter::abbreviateMonth(DayjsFormatter::withoutYear(static::dateFormat()));
+    }
+
+    /**
      * The store's hour-only pattern for an hour-of-day axis, 'H' or 'g A'.
      *
      * Derived from the store's time format: if it asks for a 24-hour clock

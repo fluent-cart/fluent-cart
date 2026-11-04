@@ -39,8 +39,8 @@ class OrderBumpFilter extends BaseFilter
     public function tabsMap(): array
     {
         return [
-            'active'   => __('Active', 'fluent-cart'),
-            'inactive' => __('Inactive', 'fluent-cart'),
+            'active'   => _x('Active', 'Order bump status', 'fluent-cart'),
+            'inactive' => _x('Inactive', 'Order bump status', 'fluent-cart'),
         ];
     }
 
@@ -184,9 +184,9 @@ class OrderBumpFilter extends BaseFilter
                         'filter_type' => 'column',
                         'column'      => 'status',
                         'options'     => [
-                            Status::LICENSE_ACTIVE   => __('Active', 'fluent-cart'),
-                            Status::LICENSE_DISABLED => __('Disabled', 'fluent-cart'),
-                            Status::LICENSE_EXPIRED  => __('Expired', 'fluent-cart'),
+                            Status::LICENSE_ACTIVE   => _x('Active', 'License status', 'fluent-cart'),
+                            Status::LICENSE_DISABLED => _x('Disabled', 'License status', 'fluent-cart'),
+                            Status::LICENSE_EXPIRED  => _x('Expired', 'License status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true

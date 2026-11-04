@@ -117,6 +117,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
         const [products, setProducts] = useState([]);
         const [isLoading, setIsLoading] = useState(false);
+        const [hasFetchError, setHasFetchError] = useState(false);
         const slidesToShow = Math.max(1, Number(attributes.carousel_settings.slidesToShow || 4));
         const infinite = attributes.carousel_settings.infinite === 'yes';
 
@@ -169,6 +170,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             if(!hasIds) return;
             
             setIsLoading(true);
+            setHasFetchError(false);
 
             const url = rest.url + '/products/fetchProductsByIds';
 
@@ -193,10 +195,8 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
 
 
                 setSelectedProduct(products);
-
-                console.log('api response', selectedProduct)
-
-
+            }).catch(() => {
+                setHasFetchError(true);
             }).finally(() => {
                 setIsLoading(false);
             });
@@ -271,10 +271,20 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                         {isLoading || !selectedProduct.length ? (
                             <>
                                 <div className="fluent-cart-empty">
-                                    <div className="fct-loading-header">
-                                        <div className="fct-loading-spinner"></div>
-                                        <span>{blocktranslate("Loading products...")}</span>
-                                    </div>
+                                    {isLoading ? (
+                                        <div className="fct-loading-header" role="status">
+                                            <div className="fct-loading-spinner"></div>
+                                            <span>{blocktranslate("Loading products...")}</span>
+                                        </div>
+                                    ) : hasFetchError ? (
+                                        <div className="fct-loading-header" role="alert">
+                                            <span>{blocktranslate("Products could not be loaded. Reload the editor to try again.")}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="fct-loading-header">
+                                            <span>{blocktranslate("Select products in the block settings to show them here.")}</span>
+                                        </div>
+                                    )}
                                     <div
                                         className="dummy-grid"
                                         style={{ '--fct-slides-per-view': slidesToShow }}

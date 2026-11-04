@@ -67,6 +67,15 @@ if [[ "$ASSET_VERSIONS" != "$PLUGIN_VERSION" ]]; then
     exit 1
 fi
 
+# A chunk that imports a missing or wrong-case file blanks its screen. --record
+# adds this release's names to dev/shipped-assets.txt; commit it with the release.
+if ! node "$SOURCE_DIR/dev/audit-asset-files.mjs" --dir "$SOURCE_DIR/assets" \
+    --shipped "$SOURCE_DIR/dev/shipped-assets.txt" \
+    --import-map "$SOURCE_DIR/app/Hooks/Handlers/ModuleImportMap.php" --record; then
+    echo -e "${RED}❌ Asset audit failed. Fix the files above before zipping.${NC}"
+    exit 1
+fi
+
 OUTPUT_FILE="$BUILDS_DIR/${PLUGIN_SLUG}-${PLUGIN_VERSION}.zip"
 
 mkdir -p "$BUILDS_DIR"

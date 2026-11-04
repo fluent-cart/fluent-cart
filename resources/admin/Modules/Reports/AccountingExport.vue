@@ -69,7 +69,7 @@ onMounted(() => {
     <Card.Container>
       <Card.Header
           :title="translate('Accounting export')"
-          :text="translate('Every sale and refund with its tax line, currency and exchange rates, for your accounting or tax software.')"
+          :text="translate('Report_Every_Sale')"
           border_bottom
       />
       <Card.Body>
@@ -132,7 +132,7 @@ onMounted(() => {
           </el-form>
 
           <p class="mt-4 mb-0 text-xs">
-            {{ translate('Refunds are negative rows; their tax is estimated in proportion to the order and marked in the Tax estimated column. ECB rates are units of the order currency per 1 EUR, for the transaction date and the last day of its quarter.') }}
+            {{ translate('Report_Refunds_Negative') }}
           </p>
         </template>
       </Card.Body>

@@ -215,7 +215,7 @@ class EditorShortCodeHelper
     public static function getOrderShortCodes(): array
     {
         return [
-            'title'      => __('Order', 'fluent-cart'),
+            'title'      => _x('Order', 'Purchase order', 'fluent-cart'),
             'key'        => 'order',
             'shortcodes' => [
                 '{{order.id}}'                      => __('Order ID', 'fluent-cart'),
@@ -246,6 +246,7 @@ class EditorShortCodeHelper
                 '{{order.shipping_tax_formatted}}'           => __('Order Shipping Tax (Formatted)', 'fluent-cart'),
                 '{{order.shipping_total}}'                   => __('Order Shipping Total', 'fluent-cart'),
                 '{{order.shipping_total_formatted}}'         => __('Order Shipping Total (Formatted)', 'fluent-cart'),
+                '{{order.shipments}}'                        => __('Order Shipments (All)', 'fluent-cart'),
                 '{{order.tax_total}}'                        => __('Order Tax Total', 'fluent-cart'),
                 '{{order.tax_total_formatted}}'              => __('Order Tax Total (Formatted)', 'fluent-cart'),
                 '{{order.tax_breakdown}}'                    => __('Order Tax Breakdown', 'fluent-cart'),
@@ -296,6 +297,7 @@ class EditorShortCodeHelper
             'transaction'  => static::getTransactionShortCodes(),
             'settings'     => static::getSettingsShortCodes(),
             'license'      => static::getLicenseShortCodes(),
+            'shipment'     => static::getShipmentShortCodes(),
         ];
         return apply_filters('fluent_cart/editor_shortcodes', $shortCodes);
     }
@@ -327,6 +329,27 @@ class EditorShortCodeHelper
                 '{{item.subtotal_formatted}}'   => __('Subtotal (Formatted)', 'fluent-cart'),
                 '{{item.payment_info}}' => __('Payment Info', 'fluent-cart'),
                 '{{item.payment_type}}' => __('Payment Type', 'fluent-cart'),
+            ],
+        ];
+    }
+
+    public static function getShipmentShortCodes(): array
+    {
+        return [
+            'title'      => __('Shipment', 'fluent-cart'),
+            'key'        => 'shipment',
+            'shortcodes' => [
+                '{{shipment.id}}'              => __('Shipment ID', 'fluent-cart'),
+                '{{shipment.carrier_name}}'    => __('Carrier Name', 'fluent-cart'),
+                '{{shipment.service_name}}'    => __('Service Name', 'fluent-cart'),
+                '{{shipment.tracking_number}}' => __('Tracking Number', 'fluent-cart'),
+                '{{shipment.tracking_url}}'    => __('Tracking URL', 'fluent-cart'),
+                '{{shipment.tracking_link}}'   => __('Tracking Link (clickable)', 'fluent-cart'),
+                '{{shipment.status}}'          => __('Status', 'fluent-cart'),
+                '{{shipment.shipped_at}}'      => __('Shipped Date', 'fluent-cart'),
+                '{{shipment.notes}}'           => __('Shipment Notes', 'fluent-cart'),
+                '{{shipment.item_count}}'      => __('Item Count', 'fluent-cart'),
+                '{{shipment.items}}'           => __('Shipment Items (table)', 'fluent-cart'),
             ],
         ];
     }

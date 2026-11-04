@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import CartCheckoutHelper from "./CheckoutHelper";
 import LocalizationService from "./LocalizationService";
+import {saveResponseSequence, startCheckoutSave} from "./shippingDestination";
 
 export default class AddressField {
     static #instance = null;
@@ -319,7 +320,7 @@ export default class AddressField {
     }
 
     initStateSelect(element, response = null) {
-        const label = response?.address_locale?.state?.label || 'State';
+        const label = response?.address_locale?.state?.label || this.translate('State');
         return SearchableSelect.init(element, {
             placeholder: false,
             onChange: (value) => {
@@ -329,7 +330,7 @@ export default class AddressField {
     }
 
     initStateSelect2(element, response = null) {
-        const label = response?.address_locale?.state?.label || 'State';
+        const label = response?.address_locale?.state?.label || this.translate('State');
         return new NiceSelect(element, {
             placeholder: false,
             onChange: (value) => {
@@ -409,7 +410,7 @@ export default class AddressField {
             return;
         }
         const isRequired = /\s\*$/.test(wrapper.dataset.fctLabel);
-        const stateLabel = response?.address_locale?.state?.label || 'State';
+        const stateLabel = response?.address_locale?.state?.label || this.translate('State');
         wrapper.dataset.fctLabel = stateLabel + (isRequired ? ' *' : '');
         wrapper.dataset.fctField = response?.states?.length ? 'select' : 'input';
     }
@@ -783,6 +784,9 @@ export default class AddressField {
 
 
         window.fluent_cart_checkout_ui_service.setLoading('shippingMethodsWrapper');
+        const shipToDifferent = !!this.#checkoutHandler.form?.querySelector('input[name="ship_to_different"]')?.checked;
+        const save = startCheckoutSave(params, column, value, shipToDifferent, window.fluent_cart_checkout_ui_service);
+        let stored = false;
 
         fetch(url, {
             method: "POST",
@@ -794,8 +798,10 @@ export default class AddressField {
             credentials: 'include',
             body: params
         }).then((response) => {
+            stored = response.ok;
             return response.json();
         }).then(data => {
+            save.settled(stored);
             if (data?.changes) {
                 if(data?.changes?.billing_address_id) {
                     const addressId = document.querySelector('#billing_address_id');
@@ -828,14 +834,18 @@ export default class AddressField {
                     }
                 }
             }
-            if (data?.fragments) {
+            if (data?.fragments && saveResponseSequence.shouldApply(save.sequence, data)) {
                 CheckoutHelper.handleFragments(data.fragments);
             }
             if (data?.shipping_charge_changes || data?.tax_total_Changes) {
                 this.checkoutHandler.handleCheckoutAmountChanges();
             }
+        }).catch((error) => {
+            save.settled(false);
+            throw error;
         }).finally(() => {
             window.fluent_cart_checkout_ui_service.finishLoading('shippingMethodsWrapper');
+            save.release();
         });
 
     }

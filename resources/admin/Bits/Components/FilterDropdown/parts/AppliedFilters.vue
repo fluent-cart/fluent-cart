@@ -164,7 +164,6 @@ const shouldRenderCompareToFilter = computed(() => {
     "reports_products", 
     "reports_products_compare",
     "reports_customer", 
-    "reports_sales",
     'reports_orders',
     "reports_refunds",
     "reports_sources",
@@ -174,7 +173,7 @@ const shouldRenderCompareToFilter = computed(() => {
 const selectedFilters = computed(() => {
   return Object.keys(filter.data.selectedFilters)
   .filter(key => !(key === "orderTypes" && router.name === 'reports_subscriptions'))
-  .filter(key => !(key === "subscriptionType" && router.name === 'reports_sources'))
+  .filter(key => !(key === "subscriptionType" && ['reports_sources', 'reports_coupons', 'reports_payment_methods', 'reports_locations'].includes(router.name)))
   .reduce((acc, key) => {
     acc[key] = filter.data.selectedFilters[key];
     return acc;

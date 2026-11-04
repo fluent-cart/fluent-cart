@@ -26,7 +26,6 @@ class CustomerHelper
         return $customer;
     }
 
-
     /**
      * @return Boolean
      * 
@@ -37,7 +36,6 @@ class CustomerHelper
      * @return Boolean Check the request owner has right permission 
      * or throw new \Exception('You don\'t have permission!')
      */
-
 
     public function updateCustomer($id, $data)
     {
@@ -91,29 +89,6 @@ class CustomerHelper
 
         throw new \Exception(__('Selected action is invalid', 'fluent-cart'));
     }*/
-
-    public static function getRepeatCustomerBySearch($params)
-    {
-       $params["status"] = [ "column" => "status", "operator" => "in", "value" => [Arr::get($params, 'order_status')] ];
-    //    $params["payment_status"] = [ "column" => "payment_status", "operator" => "in", "value" => Status::getTransactionSuccessStatuses() ];
-       $param = Arr::only($params, ['created_at', 'status', 'payment_status']);
-        
-        return Customer::query()
-            ->when($params["search"], function ($query) use ($params) {
-                return $query->search($params["search"]);
-            })
-            ->whereHas('orders', function ($query) use($param){
-                $query->when($param, function ($query) use ($param) {
-                    return $query->search($param);
-                })->havingRaw('COUNT(*) > 1');
-            })
-            ->with(['orders' => function ($query) use($param){
-                $query->select('id', 'customer_id', 'status')
-                ->when($param, function ($query) use ($param) {
-                    return $query->search($param);
-                });
-            }]);
-    }
 
     public static function checkDownloadPermissionAndStoreLog($params)
     {

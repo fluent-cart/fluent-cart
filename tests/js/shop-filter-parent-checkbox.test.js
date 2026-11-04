@@ -152,23 +152,26 @@ describe('shop filter parent checkbox', () => {
         expect(() => filter.syncChildCheckboxes(loose)).not.toThrow();
     });
 
-    // The ordering half of the bug is not observable through syncChildCheckboxes
-    // itself — it lives in how the handler sequences the sync against the read.
     it('syncs descendants before the form is read for the request', () => {
-        const handlerStart = filterSource.indexOf('\n    listenForFilterValueChange() {');
-        expect(handlerStart).toBeGreaterThan(-1);
+        const listeners = [];
+        const parent = {
+            matches: (selector) => selector === '[data-parent-checkbox]',
+            addEventListener: (type, callback) => listeners.push({type, callback}),
+        };
+        const calls = [];
+        const live = Object.assign(Object.create(Filter.prototype), {
+            filterForm: {querySelectorAll: () => [parent]},
+            liveFilter: true,
+            isReseting: false,
+            syncChildCheckboxes: () => calls.push('sync'),
+            applyFilter: () => calls.push('apply'),
+            appendSearchParamToUrl: () => {},
+        });
 
-        const handler = filterSource.slice(
-            handlerStart,
-            filterSource.indexOf('syncChildCheckboxes(parentCheckbox)')
-        );
+        live.listenForFilterValueChange();
+        listeners.filter(({type}) => type === 'change').forEach(({callback}) => callback({target: parent}));
 
-        const syncAt = handler.indexOf('this.syncChildCheckboxes(input)');
-        const applyAt = handler.indexOf('this.applyFilter()');
-
-        expect(syncAt).toBeGreaterThan(-1);
-        expect(applyAt).toBeGreaterThan(-1);
-        expect(syncAt).toBeLessThan(applyAt);
+        expect(calls).toEqual(['sync', 'apply']);
     });
 
     it('does not re-introduce a second change listener bound after the generic one', () => {

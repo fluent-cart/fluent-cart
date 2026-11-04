@@ -11,6 +11,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\Relations\BundleChildrenRelation;
+use FluentCart\App\Models\WpModels\PostMeta;
 use FluentCart\App\Services\PlanUpgradeService;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -83,6 +84,9 @@ class ProductVariation extends Model
     ];
 
     protected $appends = ['thumbnail'];
+
+    // Only feeds the thumbnail fallback; keep it out of API responses.
+    protected $hidden = ['simpleProductGallery'];
 
 
     public function getOtherInfoAttribute($value)
@@ -207,6 +211,21 @@ class ProductVariation extends Model
         return $this->hasOne(ProductMeta::class, 'object_id', 'id')->select('id', 'object_id', 'meta_value')->where('meta_key', 'product_thumbnail');
     }
 
+    /**
+     * Product gallery meta, only for a simple product. Eager-load it with the
+     * variants of a list so the thumbnail fallback costs no query per row.
+     */
+    public function simpleProductGallery()
+    {
+        return $this->hasOne(PostMeta::class, 'post_id', 'post_id')
+            ->where('postmeta.meta_key', 'fluent-products-gallery-image')
+            ->whereIn('postmeta.post_id', function ($query) {
+                $query->select('post_id')
+                    ->from('fct_product_details')
+                    ->where('variation_type', Helper::PRODUCT_TYPE_SIMPLE);
+            });
+    }
+
     public function product_downloads(): \FluentCart\Framework\Database\Orm\Relations\HasMany
     {
         return $this
@@ -246,17 +265,25 @@ class ProductVariation extends Model
 
     public function getThumbnailAttribute()
     {
-        if (empty($this->media) || !is_array($this->media->meta_value)) {
-            return null;
+        if (!empty($this->media) && is_array($this->media->meta_value) && !empty($this->media->meta_value[0]['url'])) {
+            return $this->media->meta_value[0]['url'];
         }
-        // Ensure the first element exists and has a non-empty 'url' key
-        if (empty($this->media->meta_value[0]['url'])) {
+
+        // A simple product keeps its image in the product gallery. Variable products
+        // stay null: variant swatches read null as "no image of its own".
+        $gallery = $this->simpleProductGallery;
+        if (!$gallery || !is_array($gallery->meta_value)) {
             return null;
         }
 
-        return $this->media->meta_value[0]['url'];
+        return Arr::get($gallery->meta_value, '0.url') ?: null;
     }
 
+    /**
+     * @deprecated Unused and broken: looks the class id up as a shipping method id
+     *             and returns a fresh query. Kept for back-compat; read
+     *             ProductDetail other_info.shipping_class instead.
+     */
     public function scopeGetWithShippingClass(Builder $query)
     {
         $variations = $query->get();

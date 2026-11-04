@@ -10,6 +10,8 @@ use FluentCart\App\Http\Requests\CustomerAddressRequest;
 use FluentCart\App\Http\Requests\CustomerRequest;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\User;
+use FluentCart\App\Services\CustomerIdentity\EmailClaimService;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Filter\CustomerFilter;
 use FluentCart\App\Services\Filter\OrderFilter;
 use FluentCart\App\Services\Permission\PermissionManager;
@@ -73,6 +75,8 @@ class CustomerController extends Controller
         // gate below it was decorative.
         $labels = $customer->relationLoaded('labels') ? $customer->getRelation('labels') : [];
         $selectedLabels = Collection::make($labels)->pluck('label_id');
+
+        $customer['unverified_email'] = EmailVerificationService::unverifiedEmail($customer->user_id);
 
         if ($request->get('params.customer_only') === 'yes') {
             return $this->sendSuccess(['customer' => $customer]);
@@ -497,6 +501,62 @@ class CustomerController extends Controller
                 'message' => __('Can not detach user', 'fluent-cart')
             ]);
         }
+    }
+
+    /**
+     * Staff vouch for an account email the holder set without inbox proof. This links the
+     * guest records on that email, so the UI asks staff to confirm ownership first.
+     */
+    public function markEmailVerified(Request $request, $customerId): \WP_REST_Response
+    {
+        $customer = Customer::query()->find((int) $customerId);
+        $user = $customer && $customer->user_id ? get_userdata((int) $customer->user_id) : false;
+
+        if (!$user) {
+            return $this->sendError([
+                'message' => __('This customer has no linked WordPress user.', 'fluent-cart')
+            ], 404);
+        }
+
+        if (!EmailVerificationService::isUnverified((int) $user->ID)) {
+            return $this->sendSuccess([
+                'message' => __('The email is already verified.', 'fluent-cart')
+            ]);
+        }
+
+        $status = EmailClaimService::confirmAdminChange((int) $user->ID, $user->user_email);
+
+        if ($status === 'conflict') {
+            return $this->sendError([
+                'message' => __('Another linked customer already uses this email.', 'fluent-cart')
+            ], 409);
+        }
+
+        $messages = [
+            'confirmed'  => __('Email marked as verified.', 'fluent-cart'),
+            'recovering' => __('Email verified. Older orders are being linked in the background.', 'fluent-cart'),
+            'incomplete' => __('Email verified, but some guest records could not be linked.', 'fluent-cart'),
+        ];
+
+        if (!isset($messages[$status])) {
+            return $this->sendError([
+                'message' => __('The email could not be verified. Please try again.', 'fluent-cart')
+            ], 422);
+        }
+
+        // The log stores the acting staff user, so this is the audit trail.
+        $customer->addLog(
+            __('Email marked as verified', 'fluent-cart'),
+            sprintf(
+                /* translators: %1$s: customer email. */
+                __('Staff marked %1$s as verified without an inbox check.', 'fluent-cart'),
+                $user->user_email
+            )
+        );
+
+        return $this->sendSuccess([
+            'message' => $messages[$status]
+        ]);
     }
 
     public function recalculateLtv(Request $request, $customerId): \WP_REST_Response

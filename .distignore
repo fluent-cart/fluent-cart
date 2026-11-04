@@ -15,6 +15,7 @@ vendor/fakerphp/
 dist/
 builds/
 dev/
+tests/
 
 # Logs
 logs/

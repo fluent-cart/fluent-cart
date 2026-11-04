@@ -53,7 +53,9 @@ class ContextTools
         'payment_statuses'      => ['pending', 'paid', 'partially_paid', 'failed', 'refunded', 'partially_refunded', 'authorized', 'payment_scheduled'],
         // 'none' = no shipping required (e.g. digital orders); reported when the
         // stored value is empty. It is read-only — change-order-status won't set it.
-        'shipping_statuses'     => ['none', 'unshipped', 'shipped', 'delivered', 'unshippable'],
+        // 'partially_shipped' is likewise read-only: it is derived from the order's
+        // shipment records, so it is filterable but not settable.
+        'shipping_statuses'     => ['none', 'unshipped', 'shipped', 'partially_shipped', 'delivered', 'unshippable'],
         'order_types'           => ['payment', 'renewal', 'subscription'],
         'subscription_statuses' => ['pending', 'active', 'failing', 'paused', 'expired', 'expiring', 'canceled', 'trialing', 'intended', 'past_due', 'completed'],
         // installment = fixed-term split-pay plan (a lifetime license paid off in
@@ -371,16 +373,15 @@ class ContextTools
             'fluent-cart/get-product'                => ['load', 'One product with variations; include[] sales / downloads.'],
             'fluent-cart/get-subscription'           => ['load', 'One subscription; include[] transactions / labels.'],
             'fluent-cart/get-product-financials'     => ['load', 'One product\'s money: one-time + installment + recurring, MRR / ARR, payment schedule.'],
-            'fluent-cart/get-sales-report'           => ['analytics', 'The headline revenue number for a period, against the prior period.'],
-            'fluent-cart/get-sales-trend'            => ['analytics', 'Revenue / order time series by hour / day / week / month.'],
-            'fluent-cart/get-top-products'           => ['analytics', 'Best sellers by revenue or units.'],
-            'fluent-cart/get-refund-report'          => ['analytics', 'Refund count, rate and amount for a period.'],
+            'fluent-cart/get-sales-report'           => ['analytics', 'The Revenue report for a period against the prior one; interval adds a trend.'],
+            'fluent-cart/get-refund-report'          => ['analytics', 'The Refunds report: refunds, rates, reasons, days to refund.'],
+            'fluent-cart/get-report'                 => ['analytics', 'Installments, subscription retention, or cohorts.'],
             'fluent-cart/get-upcoming-payments'      => ['analytics', 'Forward renewal cohort and at-risk revenue.'],
-            'fluent-cart/query-orders'               => ['analytics', 'Flexible order metrics by dimension — revenue by payment_status / order_type / month.'],
-            'fluent-cart/query-products'             => ['analytics', 'Product-line analytics — discount / margin leakage, by product / variation / order_type.'],
-            'fluent-cart/query-customers'            => ['analytics', 'Customer analytics by country / state / status / cohort.'],
-            'fluent-cart/query-subscriptions'        => ['analytics', 'Subscription analytics — contract vs recurring value, churn basis.'],
-            'fluent-cart/query-sources'              => ['analytics', 'UTM attribution — revenue by source / medium / campaign.'],
+            'fluent-cart/query-orders'               => ['analytics', 'Order metrics by dimension; view=payment_methods / coupons for those reports.'],
+            'fluent-cart/query-products'             => ['analytics', 'Products page figures and best sellers, by product / variation / order_type.'],
+            'fluent-cart/query-customers'            => ['analytics', 'Customer analytics by country / status / cohort; view=overview for new vs returning.'],
+            'fluent-cart/query-subscriptions'        => ['analytics', 'Subscription counts and contract value; view=overview for MRR and churn.'],
+            'fluent-cart/query-sources'              => ['analytics', 'The Sources report by UTM grouping; view=channels for customers won.'],
             'fluent-cart/change-order-status'        => ['write', 'Set an order or shipping status.'],
             'fluent-cart/add-order-note'             => ['write', 'Add an internal note to an order.'],
             'fluent-cart/refund-order'               => ['write', 'Refund via the gateway — call dry_run first.'],

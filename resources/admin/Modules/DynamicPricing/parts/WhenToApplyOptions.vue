@@ -53,7 +53,7 @@ const options = [
         <el-radio
             v-for="option in options"
             :key="option.value"
-            :label="option.value"
+            :value="option.value"
         >
             <span class="fct-pricing-rule-when-title">{{ option.label }}</span>
             <Animation :visible="modelValue === option.value" accordion>

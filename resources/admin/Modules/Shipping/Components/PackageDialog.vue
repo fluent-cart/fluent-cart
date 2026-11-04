@@ -30,6 +30,7 @@ const defaultForm = () => ({
   dimension_unit: 'cm',
   weight: null,
   weight_unit: 'kg',
+  max_weight: null,
   is_default: false
 });
 
@@ -229,6 +230,27 @@ const handleClose = () => {
                     </template>
                 </el-input>
             </div>
+
+            <div class="fct-package-max-weight-field">
+                <label class="fct-package-label" for="fct-package-max-weight">
+                    {{ translate('Max weight (contents)') }}
+                </label>
+                <el-input
+                    id="fct-package-max-weight"
+                    v-model="form.max_weight"
+                    type="number"
+                    :min="0"
+                    :step="0.1"
+                    placeholder="0"
+                    size="default"
+                    aria-describedby="fct-package-max-weight-hint"
+                >
+                    <template #append>{{ form.weight_unit }}</template>
+                </el-input>
+                <div id="fct-package-max-weight-hint" class="fct-package-max-weight-hint">
+                    {{ translate('Contents only. 0 = no limit.') }}
+                </div>
+            </div>
         </div>
       </div>
 
@@ -247,7 +269,7 @@ const handleClose = () => {
           {{ translate('Use as default package') }}
         </el-checkbox>
         <div class="fct-package-default-check-desc">
-          {{ translate('Used to calculate rates at checkout and pre-selected when assigning packages to products') }}
+          {{ translate('Ship_Calculate_Rates') }}
         </div>
       </div>
     </div>

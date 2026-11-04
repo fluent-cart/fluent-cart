@@ -217,6 +217,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class, 'order_id', 'id');
     }
 
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class, 'order_id', 'id');
+    }
+
     /**
      * Get only product order items (excludes fees, signup fees, and other non-product items).
      * Use this in all display contexts where product line items are shown.
@@ -674,8 +679,8 @@ class Order extends Model
                 // The order's own currency — admin (base) and the customer
                 // portal (visitor's currency) read this label too
                 $displayLabel .= ' ' . sprintf(
-                    /* translators: %s: formatted amount the tax is calculated on */
-                    __('on %s', 'fluent-cart'),
+                    /* translators: %1$s: formatted amount the tax is calculated on */
+                    _x('on %1$s', 'tax calculated on amount', 'fluent-cart'),
                     html_entity_decode(Helper::toDecimal($displayBase, true, $this->currency ?: null), ENT_QUOTES, 'UTF-8')
                 );
             }
@@ -891,9 +896,27 @@ class Order extends Model
         return max(0, $amount - $this->getMoRVatRemovedAmount());
     }
 
+    /**
+     * What the customer paid for shipping: shipping_total, plus shipping_tax when it was added on top.
+     */
+    public function shippingChargedTotal(): int
+    {
+        if (TaxSummaryHelper::isShippingTaxInclusive($this)) {
+            return (int) $this->shipping_total;
+        }
+
+        return (int) $this->shipping_total + (int) $this->shipping_tax;
+    }
+
     public function getTotalRefundAmount()
     {
-        return $this->transactions()->where('status', Status::TRANSACTION_REFUNDED)->sum('total');
+        return $this->transactions()
+            ->where('status', Status::TRANSACTION_REFUNDED)
+            ->get()
+            ->filter(function ($transaction) {
+                return !$transaction->isAwaitingResync();
+            })
+            ->sum('total');
     }
 
     public function recountTotalPaidAndRefund()
@@ -933,59 +956,133 @@ class Order extends Model
         return $this;
     }
 
+    /**
+     * Spread an amount refund over the given lines (all lines when none are given), weighted by what is
+     * left of each line's charge, and record it in refund_total.
+     *
+     * @param int[] $refundedItemIds order item ids
+     * @param int   $refundedAmount  cents
+     *
+     * @return int cents no line had room for
+     */
     public function updateRefundedItems($refundedItemIds, $refundedAmount)
     {
-        // these are order item ids
-        $totalItems = count($refundedItemIds);
-
-        if ($totalItems === 1) {
-            $orderItem = OrderItem::find($refundedItemIds[0]);
-            $orderItem->refund_total += $refundedAmount;
-            $orderItem->save();
-            return;
+        $query = OrderItem::query()->where('order_id', $this->id);
+        if ($refundedItemIds) {
+            $query->whereIn('id', $refundedItemIds);
         }
 
-        if ($totalItems === 0) {
-            // get all order items
-            $refundedItemIds = $this->order_items->pluck('id')->toArray();
-            $totalItems = count($refundedItemIds);
-        }
+        /** @var OrderItem[] $orderItems */
+        $orderItems = $query->get();
 
-
-        // Calculate remaining amount for each item
-        $items = [];
-        $totalRemain = 0;
-        foreach ($refundedItemIds as $itemId) {
-            $orderItem = OrderItem::find($itemId);
-            $remain = max(0, $orderItem->line_total - $orderItem->refund_total);
-            $items[] = [
-                'model'  => $orderItem,
-                'remain' => $remain
-            ];
-            $totalRemain += $remain;
-        }
-
-        if ($totalRemain == 0) {
-            // nothing to refund
-            return;
-        }
-
-        if ($totalRemain < $refundedAmount) {
-            $refundedAmount = $totalRemain;
-        }
-
-        // Distribute refund proportionally
-        $distributed = 0;
-        foreach ($items as $index => $item) {
-            if ($index === count($items) - 1) {
-                // Assign the rest to the last item to avoid rounding issues
-                $amount = $refundedAmount - $distributed;
-            } else {
-                $amount = round($refundedAmount * ($item['remain'] / $totalRemain), 2);
-                $distributed += $amount;
+        $remaining = [];
+        foreach ($orderItems as $orderItem) {
+            $left = $orderItem->chargedTotal($this) - (int) $orderItem->refund_total;
+            if ($left > 0) {
+                $remaining[$orderItem->id] = $left;
             }
-            $item['model']->refund_total += $amount;
-            $item['model']->save();
+        }
+
+        $totalRemain = array_sum($remaining);
+        $overflow = max(0, (int) $refundedAmount - $totalRemain);
+        if ($totalRemain <= 0) {
+            return $overflow;
+        }
+
+        // Largest remainder: floored shares never exceed a line's remaining, so +1 cent still fits.
+        $refundedAmount = min((int) $refundedAmount, $totalRemain);
+        $amounts = [];
+        $fractions = [];
+        foreach ($remaining as $itemId => $left) {
+            $amounts[$itemId] = intdiv($refundedAmount * $left, $totalRemain);
+            $fractions[$itemId] = ($refundedAmount * $left) % $totalRemain;
+        }
+
+        arsort($fractions);
+        $leftover = $refundedAmount - array_sum($amounts);
+        foreach (array_slice(array_keys($fractions), 0, $leftover) as $itemId) {
+            $amounts[$itemId]++;
+        }
+
+        $this->addItemRefunds($amounts);
+
+        return $overflow;
+    }
+
+    /**
+     * Count the part of an amount refund that no line had room for as a shipping refund. Only when the
+     * lines and shipping make up the whole order total, so another order-level charge is never called shipping.
+     *
+     * @param int $amount cents
+     */
+    public function addRefundOverflowToShipping(int $amount)
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $shippingCharged = $this->shippingChargedTotal();
+        $linesCharged = 0;
+        foreach (OrderItem::query()->where('order_id', $this->id)->get() as $orderItem) {
+            /** @var OrderItem $orderItem */
+            $linesCharged += $orderItem->chargedTotal($this);
+        }
+
+        if ($linesCharged + $shippingCharged !== (int) $this->total_amount) {
+            return;
+        }
+
+        $this->addShippingRefund(min($amount, $shippingCharged - (int) $this->getMeta('shipping_refunded_amount')));
+    }
+
+    /**
+     * Add to the refunded shipping, and flag shipping refunded once it covers what was charged.
+     *
+     * @param int $amount cents
+     */
+    public function addShippingRefund(int $amount)
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $refunded = (int) $this->getMeta('shipping_refunded_amount') + $amount;
+        $this->updateMeta('shipping_refunded_amount', $refunded);
+        if ($refunded >= $this->shippingChargedTotal()) {
+            $this->updateMeta('shipping_refunded', '1');
+        }
+    }
+
+    /**
+     * Add refunded amounts to the lines' refund_total, each capped at what is left of the line's charge.
+     *
+     * @param array<int, int> $amountByItemId order item id => cents
+     */
+    public function addItemRefunds(array $amountByItemId)
+    {
+        if (!$amountByItemId) {
+            return;
+        }
+
+        $orderItems = OrderItem::query()
+            ->where('order_id', $this->id)
+            ->whereIn('id', array_keys($amountByItemId))
+            ->get();
+
+        // The cap is applied inside the UPDATE so a concurrent refund on the same line cannot push it past the charge.
+        foreach ($orderItems as $orderItem) {
+            $amount = (int) $amountByItemId[$orderItem->id];
+            if ($amount <= 0) {
+                continue;
+            }
+
+            OrderItem::query()->where('id', $orderItem->id)->update([
+                'refund_total' => App::db()->raw(sprintf(
+                    'GREATEST(refund_total, LEAST(refund_total + %d, %d))',
+                    $amount,
+                    $orderItem->chargedTotal($this)
+                )),
+            ]);
         }
     }
 

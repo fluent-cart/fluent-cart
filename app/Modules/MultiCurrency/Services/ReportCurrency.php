@@ -70,6 +70,8 @@ class ReportCurrency
      */
     public static function orderCurrencies($startDate = null, $endDate = null): array
     {
+        $endDate = self::endOfDay($endDate);
+
         $rows = Order::query()
             ->select('currency')
             ->selectRaw('COUNT(*) as order_count')
@@ -153,8 +155,18 @@ class ReportCurrency
     public static function joinOrderItems($query, array $filters)
     {
         return self::isConverted($filters)
-            ? $query->joinSub(self::convertedChildren('fct_order_items', self::ITEM_MONEY_COLUMNS), 'oi', 'oi.order_id', '=', 'o.id')
+            ? $query->joinSub(self::convertedOrderItems(), 'oi', 'oi.order_id', '=', 'o.id')
             : $query->join('fct_order_items as oi', 'oi.order_id', '=', 'o.id');
+    }
+
+    /**
+     * fct_order_items with money columns in base-currency cents at each order's rate, trusted rates only.
+     *
+     * @return \FluentCart\Framework\Database\Query\Builder
+     */
+    public static function convertedOrderItems()
+    {
+        return self::convertedChildren('fct_order_items', self::ITEM_MONEY_COLUMNS);
     }
 
     /**
@@ -200,6 +212,21 @@ class ReportCurrency
     }
 
     /**
+     * ->join('fct_subscriptions as $alias', "$alias.parent_order_id", '=', $orderIdSql)
+     *
+     * @param \FluentCart\Framework\Database\Query\Builder $query
+     * @param string $orderIdSql trusted SQL for the order id a subscription row hangs off
+     */
+    public static function joinSubscriptions($query, array $filters, string $alias, string $orderIdSql)
+    {
+        $orderId = App::db()->raw($orderIdSql);
+
+        return self::isConverted($filters)
+            ? $query->joinSub(self::convertedSubscriptions(), $alias, $alias . '.parent_order_id', '=', $orderId)
+            : $query->join('fct_subscriptions as ' . $alias, $alias . '.parent_order_id', '=', $orderId);
+    }
+
+    /**
      * @return \FluentCart\Framework\Database\Query\Builder
      */
     private static function convertedSubscriptions()
@@ -234,6 +261,8 @@ class ReportCurrency
      */
     public static function excludedOrderCount($startDate = null, $endDate = null): int
     {
+        $endDate = self::endOfDay($endDate);
+
         [$trusted, $bindings] = BaseAmountSql::trustedRate();
 
         return (int) Order::query()
@@ -301,6 +330,14 @@ class ReportCurrency
         }
 
         return self::$columns[$table];
+    }
+
+    /**
+     * A date-only end date means the whole day; compared as is, it would stop at 00:00:00.
+     */
+    private static function endOfDay($endDate)
+    {
+        return is_string($endDate) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate) ? $endDate . ' 23:59:59' : $endDate;
     }
 
     /**

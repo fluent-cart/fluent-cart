@@ -4,6 +4,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import advancedFormat from 'dayjs/plugin/advancedFormat.js';
 import weekOfYear from 'dayjs/plugin/weekOfYear.js';
 import AppConfig from "@/utils/Config/AppConfig";
+import translate from "@/utils/translator/Translator";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -176,4 +177,34 @@ export function resolveYearAwareFormat(dateObject) {
     }
 
     return dateObject.year() === storeNow().year() ? 'date_short' : 'date';
+}
+
+/**
+ * A recent past date as its time: earlier today "2:50 PM", yesterday within the last 24 hours "Yesterday, 11:30 PM".
+ * Null for an older or future date, or none, so the caller keeps its date. "Today" is the store's day.
+ *
+ * @param {object|string} dateTime A Day.js instance already in the store timezone, or a stored GMT date
+ */
+export function recentDateText(dateTime) {
+    if (!dateTime) {
+        return null;
+    }
+    const date = dayjs.isDayjs(dateTime) ? dateTime : toStoreTimezone(dateTime);
+    const now = storeNow();
+    if (!date.isValid() || date.isAfter(now)) {
+        return null;
+    }
+
+    const time = date.locale(fluentDayjsLocale()).format(resolveDateFormat('time'));
+    if (date.format('YYYY-MM-DD') === now.format('YYYY-MM-DD')) {
+        return time;
+    }
+
+    // The previous calendar day too: a spring-forward night is 23 hours, so 24 hours can reach two days back
+    const yesterday = dayjs.utc(now.format('YYYY-MM-DD')).subtract(1, 'day').format('YYYY-MM-DD');
+
+    return date.format('YYYY-MM-DD') === yesterday && now.diff(date, 'minute') <= 24 * 60
+        /* translators: %1$s - a time, e.g. 11:30 PM */
+        ? translate('Yesterday, %1$s', time)
+        : null;
 }

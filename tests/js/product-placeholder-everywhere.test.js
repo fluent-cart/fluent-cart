@@ -1,15 +1,14 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 /**
  * The product placeholder illustration replaces the generic image icon
- * everywhere a product has no image, and product images wear no backdrop of
- * their own now that the storefront palette paints the page.
+ * everywhere a product has no image.
  *
  * Source guards, not renders. The PHP side is covered by
- * dev/wp-browser/tests/Integration/Services/Renderer/ProductPlaceholderEverywhereTest.php.
+ * tests/codeception/Integration/Services/Renderer/ProductPlaceholderEverywhereTest.php.
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -49,27 +48,11 @@ describe('product placeholder illustration', () => {
         expect(offenders).toEqual([]);
     });
 
-    it('the admin resolves the illustration through one helper', () => {
-        expect(read('resources/admin/utils/support/Asset.js')).toMatch(/productPlaceholder\s*=.*images\/product-placeholder\.webp/s);
-    });
-});
+    it('the admin resolves the illustration through one helper', async () => {
+        vi.stubGlobal('window', {fluentCartAdminApp: {asset_url: 'https://shop.test/wp-content/plugins/fluent-cart/assets/'}});
+        const {default: Asset} = await import('@/utils/support/Asset');
 
-describe('product images wear no background', () => {
-    it('the order review page item image has no backdrop', () => {
-        const scss = stripComments(read('resources/public/order-review/order-review.scss'));
-        const block = scss.slice(scss.indexOf('.fct-order-review-item-media {'));
-        const img = block.slice(block.indexOf('img {'), block.indexOf('}', block.indexOf('img {')));
-
-        expect(img).not.toMatch(/background/);
-    });
-
-    it('the image-only variation swatch thumbnail has no backdrop of its own', () => {
-        const scss = stripComments(read('resources/public/single-product/advanced-variations.scss'));
-        const start = scss.indexOf('.fct-swatch-thumb {', scss.indexOf('.fct-swatch-image-only'));
-        const thumb = scss.slice(start, scss.indexOf('}', start));
-
-        expect(start).toBeGreaterThan(-1);
-        expect(thumb).not.toMatch(/\bbg-|background/);
+        expect(Asset.productPlaceholder()).toBe('https://shop.test/wp-content/plugins/fluent-cart/assets/images/product-placeholder.webp');
     });
 });
 

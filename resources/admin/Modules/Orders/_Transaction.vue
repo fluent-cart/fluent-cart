@@ -68,35 +68,56 @@
                         >
                             <Badge
                                 v-if="scope.row?.meta?.disputed == 'yes' && scope.row?.meta?.dispute_resolved == 'no'"
-                                :status="(scope.row.status)">
+                                :status="(scope.row.status)" kind="transaction">
                                 {{ scope.row.status }}
                                 {{ scope?.row?.transaction_type }}
                             </Badge>
-                            <Badge v-else :status="(scope.row.status)">
+                            <Badge v-else :status="(scope.row.status)" kind="transaction">
                                 {{ scope.row.status }}
                             </Badge>
                         </el-tooltip>
-                        <Badge v-else :status="(scope.row.status)">
+                        <Badge v-else :status="(scope.row.status)" kind="transaction">
                             {{ scope.row.status }}
                         </Badge>
                     </template>
                 </el-table-column>
-                <el-table-column v-if="hasDisputedTransaction(transactions) || hasSyncableTransaction(transactions)" :label="translate('Actions')" width="140">
+                <el-table-column v-if="hasRowActions(transactions)" :label="''" width="60" align="center">
                     <template #default="scope">
-                        <el-button type="warning" v-if="scope.row.transaction_type == 'dispute' && scope.row.status == 'succeeded'" size="small" @click="handleDispute(scope.row)">
-                            {{ translate('Handle dispute') }}
-                        </el-button>
-                        <el-tooltip
-                            v-if="scope.row.transaction_type == 'charge' && scope.row.status == 'pending' && scope.row.vendor_charge_id"
-                            effect="dark"
-                            :placement="'top'"
-                            :content="translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method))"
-                            popper-class="fct-tooltip"
+                        <el-dropdown
+                            v-if="rowHasActions(scope.row)"
+                            trigger="click"
+                            class="fct-more-option-wrap"
+                            popper-class="fct-dropdown"
+                            @command="(cmd) => handleRowCommand(cmd, scope.row)"
                         >
-                            <el-button size="small" :aria-label="translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method))" :loading="syncing_transaction === scope.row.id" @click="syncTransaction(scope.row)">
-                                <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
-                            </el-button>
-                        </el-tooltip>
+                            <span class="more-btn">
+                                <DynamicIcon name="More"/>
+                            </span>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item
+                                        v-if="scope.row.transaction_type == 'dispute' && scope.row.status == 'succeeded'"
+                                        command="dispute"
+                                    >
+                                        {{ translate('Handle dispute') }}
+                                    </el-dropdown-item>
+                                    <el-dropdown-item
+                                        v-if="isSyncable(scope.row)"
+                                        command="sync"
+                                        :disabled="syncing_transaction === scope.row.id"
+                                    >
+                                        {{ translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method)) }}
+                                    </el-dropdown-item>
+                                    <el-dropdown-item
+                                        v-if="isResyncPending(scope.row)"
+                                        command="resync"
+                                        :disabled="resyncingId === scope.row.id"
+                                    >
+                                        {{ translate('Re-sync refund') }}
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
                     </template>
                 </el-table-column>
             </el-table>
@@ -112,7 +133,7 @@
                 </el-form-item>    
             <el-form-item>
                 <div class="text-sm text-gray-700">
-                    {{ translate('You may either counter the dispute by providing evidence to prove that the cardholder is the legitimate purchaser, or you can accept this dispute immediately to refund the cardholder and close the dispute.') }}
+                    {{ translate('Order_Either_Counter') }}
                 </div>
             </el-form-item>
             <el-form :model="disputeForm" label-position="top" v-if="disputeTransaction?.meta?.is_dispute_actionable">
@@ -123,7 +144,7 @@
             <el-form-item v-if="disputeTransaction?.meta?.is_charge_refundable">
                 <div class="text-sm flex gap-2">
                     <DynamicIcon class="w-6 h-6" name="Information"/>
-                    {{ translate('This dispute has refundable action, so you may refund the charge to the customer for a dispute resolution.') }}
+                    {{ translate('Order_Dispute_Refundable') }}
                 </div>
             </el-form-item>
             <template #footer>
@@ -182,6 +203,7 @@ export default {
             },
             disputeTransaction: null,
             loadingDisputeAction: false,
+            resyncingId: null,
             syncing_transaction: null
         }
     },
@@ -212,11 +234,32 @@ export default {
                     this.loadingDisputeAction = false;
                 });
         },
-        hasDisputedTransaction(transactions) {
-            return transactions.some(transaction => transaction.transaction_type == 'dispute' && transaction.status == 'succeeded');
+        isResyncPending(transaction) {
+            return transaction.transaction_type == 'refund'
+                && transaction.status == 'refunded'
+                && transaction?.meta?.local_sync == 'pending';
         },
-        hasSyncableTransaction(transactions) {
-            return transactions.some(transaction => transaction.transaction_type == 'charge' && transaction.status == 'pending' && transaction.vendor_charge_id);
+        isSyncable(transaction) {
+            return transaction.transaction_type == 'charge'
+                && transaction.status == 'pending'
+                && !!transaction.vendor_charge_id;
+        },
+        rowHasActions(transaction) {
+            return (transaction.transaction_type == 'dispute' && transaction.status == 'succeeded')
+                || this.isSyncable(transaction)
+                || this.isResyncPending(transaction);
+        },
+        hasRowActions(transactions) {
+            return transactions.some(transaction => this.rowHasActions(transaction));
+        },
+        handleRowCommand(command, transaction) {
+            if (command === 'dispute') {
+                this.handleDispute(transaction);
+            } else if (command === 'sync') {
+                this.syncTransaction(transaction);
+            } else if (command === 'resync') {
+                this.resyncRefund(transaction);
+            }
         },
         syncTransaction(transaction) {
             if (this.syncing_transaction) {
@@ -233,6 +276,20 @@ export default {
                 })
                 .finally(() => {
                     this.syncing_transaction = null;
+                });
+        },
+        resyncRefund(transaction) {
+            this.resyncingId = transaction.id;
+            this.$post('orders/' + this.order_id + '/refund/' + transaction.id + '/resync')
+                .then(response => {
+                    this.$notify.success(response.message);
+                    this.$emit('reload');
+                })
+                .catch(errors => {
+                    this.$notify.error(errors?.data?.message || translate('Something went wrong!'));
+                })
+                .finally(() => {
+                    this.resyncingId = null;
                 });
         }
         // changeStatus(newStatus) {

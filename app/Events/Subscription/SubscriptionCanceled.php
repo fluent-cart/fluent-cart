@@ -63,4 +63,16 @@ class SubscriptionCanceled extends EventDispatcher
         return true;
     }
 
+    public function getEventInfoForActivity(): array
+    {
+        return [
+            'content' => sprintf(
+                /* translators: %s is the cancellation reason */
+                __('Subscription canceled. Reason: %s', 'fluent-cart'),
+                $this->reason ?: __('canceled on customer request', 'fluent-cart')
+            ),
+            'status'  => 'info',
+        ];
+    }
+
 }

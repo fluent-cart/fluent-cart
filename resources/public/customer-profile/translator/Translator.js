@@ -19,30 +19,38 @@ export default function translate(string) {
     // crash every Badge / status component on the page.
     string = window.fluentcart_customer_profile_vars?.trans?.[string] || string;
 
-    // Prepare the arguments, excluding the first one (the string itself)
-    const args = Array.prototype.slice.call(arguments, 1);
+    return applyPlaceholders(string, Array.prototype.slice.call(arguments, 1));
+}
 
+/**
+ * Contextual lookup, the counterpart of PHP's _x(). The map keys these entries
+ * as "context\x04text"; placeholder arguments follow the context.
+ */
+export function _x(string, context) {
+    const trans = window.fluentcart_customer_profile_vars?.trans || {};
+
+    // Falls back to the plain entry until translators fill in the contextual one.
+    const translated = trans[context + '\u0004' + string] || trans[string] || string;
+
+    return applyPlaceholders(translated, Array.prototype.slice.call(arguments, 2));
+}
+
+// Fill %s, %d, %1$s style placeholders; a missing argument keeps its placeholder.
+function applyPlaceholders(string, args) {
     if (args.length === 0) {
         return string;
     }
 
-    // Regular expression to match %s, %d, or %1s, %2s,  %1$s etc.
     const regex = /%(\d*\$?)s|%d/g;
 
-    // Replace function to handle each match found by the regex
-    let argIndex = 0; // Keep track of the argument index for non-numbered placeholders
-    string = string.replace(regex, (match, number) => {
-        // If it's a numbered placeholder, use the number to find the corresponding argument
+    let argIndex = 0;
+    return string.replace(regex, (match, number) => {
         if (number) {
-            const index = parseInt(number, 10) - 1; // Convert to zero-based index
-            return index < args.length ? args[index] : match; // Replace or keep the placeholder
-        } else {
-            // For non-numbered placeholders, use the next argument in the array
-            return argIndex < args.length ? args[argIndex++] : match; // Replace or keep the placeholder
+            const index = parseInt(number, 10) - 1;
+            return index < args.length ? args[index] : match;
         }
+        return argIndex < args.length ? args[argIndex++] : match;
     });
-
-    return string;
 }
 
 
@@ -208,6 +216,10 @@ export function bidiIsolate(str) {
 }
 
 export function dateTimeI18(dateTime, format = 'date_short') {
+    // No date: nothing, not "Invalid Date" or today
+    if (!dateTime) {
+        return '';
+    }
 
     const dateObject = toStoreTimezone(dateTime);
 
@@ -262,3 +274,30 @@ export const getDateTimeStringI18 = function (str, type) {
     return str;
 }
 
+/**
+ * A recent past date as its time: earlier today "2:50 PM", yesterday within the last 24 hours "Yesterday, 11:30 PM".
+ * Null for an older or future date, or none, so the caller keeps its date. "Today" is the store's day.
+ */
+export function recentDateText(dateTime) {
+    if (!dateTime) {
+        return null;
+    }
+    const date = toStoreTimezone(dateTime);
+    const now = storeNow();
+    if (!date.isValid() || date.isAfter(now)) {
+        return null;
+    }
+
+    const time = dateTimeI18(dateTime, 'time');
+    if (date.format('YYYY-MM-DD') === now.format('YYYY-MM-DD')) {
+        return time;
+    }
+
+    // The previous calendar day too: a spring-forward night is 23 hours, so 24 hours can reach two days back
+    const yesterday = dayjs.utc(now.format('YYYY-MM-DD')).subtract(1, 'day').format('YYYY-MM-DD');
+
+    return date.format('YYYY-MM-DD') === yesterday && now.diff(date, 'minute') <= 24 * 60
+        /* translators: %1$s - a time, e.g. 11:30 PM */
+        ? translate('Yesterday, %1$s', time)
+        : null;
+}

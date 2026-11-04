@@ -173,7 +173,7 @@ class ProductDownloadablesController extends Controller
 
 
         return $this->sendSuccess([
-            'url' => Helper::generateDownloadFileLink($productDownload, null, 60 * 60 * 24 * 7, true)
+            'url' => Helper::generateDownloadFileLink($productDownload, null, 60 * 24 * 7, true)
         ]);
 
 

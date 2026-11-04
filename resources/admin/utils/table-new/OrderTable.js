@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 
 class OrderTable extends Table {
@@ -8,13 +8,17 @@ class OrderTable extends Table {
     getTabs() {
         return {
             all: translate('All'),
-            completed: translate('Completed'),
+            completed: _x('Completed', 'Order status'),
             processing: translate('Processing'),
             "on-hold": translate('On Hold'),
-            paid: translate('Paid'),
+            paid: _x('Paid', 'Payment status'),
             subscription: translate('Subscription'),
             renewal: translate('Renewal'),
-            refunded: translate('Refunded'),
+            installment: {
+                title: translate('Installments'),
+                description: translate('Installment sign-ups and installment payments')
+            },
+            refunded: _x('Refunded', 'Payment status'),
             partially_refunded: translate('Partially Refunded'),
             upgraded_from: {
                 title: translate('Upgraded From'),

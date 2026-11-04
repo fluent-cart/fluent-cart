@@ -15,11 +15,11 @@ if (!$dueAmount) {
     $dueAmount = max(((int)$order->total_amount - (int)$order->total_paid), 0);
 }
 $paymentLink = \FluentCart\Framework\Support\Arr::get($reminder, 'payment_link', \FluentCart\App\Services\Payments\PaymentHelper::getCustomPaymentLink($order->uuid));
-$orderRef = !empty($order->invoice_no) ? $order->invoice_no : '#' . $order->id;
+$orderRef = !empty($order->invoice_no) ? $order->invoice_no : $order->uuid;
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
         printf(
             /* translators: %s is the customer name */
@@ -40,13 +40,15 @@ $orderRef = !empty($order->invoice_no) ? $order->invoice_no : '#' . $order->id;
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin:12px 0 0;">
         <tbody>
         <tr>
-            <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Order ID', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;">#<?php echo esc_html($order->id); ?></td>
+            <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Order #', 'fluent-cart'); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($order->uuid); ?></td>
         </tr>
+        <?php if (!empty($order->invoice_no)) : ?>
         <tr>
-            <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Order Reference', 'fluent-cart'); ?></td>
-            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($orderRef); ?></td>
+            <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Receipt #', 'fluent-cart'); ?></td>
+            <td style="font-size:13px;color:#111827;font-weight:600;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo esc_html($order->invoice_no); ?></td>
         </tr>
+        <?php endif; ?>
         <tr>
             <td style="font-size:13px;color:#6b7280;padding:0 0 6px;"><?php esc_html_e('Amount Due', 'fluent-cart'); ?></td>
             <td style="font-size:14px;color:#111827;font-weight:700;padding:0 0 6px;text-align:<?php echo esc_attr($endSide); ?>;"><?php echo \FluentCart\App\Services\Email\EmailDirection::amount(\FluentCart\Api\CurrencySettings::getFormattedPrice($dueAmount, null, false, true, true)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>

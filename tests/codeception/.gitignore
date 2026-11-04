@@ -1,0 +1,6 @@
+/vendor/
+/_wordpress/
+/_output/
+/.env
+/Support/_generated/
+.idea/

@@ -7,6 +7,7 @@ import timezone from "dayjs/plugin/timezone";
 import CheckoutHelper from "./CheckoutHelper";
 import Url from "../../admin/utils/support/Url";
 import ShippingService from "./ShippingService";
+import ProgressiveShippingRates from "./ProgressiveShippingRates";
 import AddressService from "./AddressService";
 import DataWatcher from "./DataWatcher";
 import CheckoutUIService from "./CheckoutUIService";
@@ -112,6 +113,10 @@ class FluentCartCheckoutHandler {
 
         new AddressField(this).init();
         new CouponService(this.form).init();
+
+        if (!this.isAllDigital) {
+            ProgressiveShippingRates.init(this.form);
+        }
 
         AddressService.init(this, () => {
 
@@ -404,19 +409,15 @@ class FluentCartCheckoutHandler {
         }
 
         try {
-            const formData = this.prepareFormData();
+            let data = await this.#submitWithSecurityToken();
 
-            if (!await this.#turnstileHandler.handleCheckoutSecurityVerification(formData)) {
-                return false;
+            // An expired or reused token is refused before any order exists, so one retry is safe.
+            if (data?.code === 'turnstile_invalid') {
+                data = await this.#submitWithSecurityToken();
             }
 
-            this.removeValidationErrors();
-            const response = await this.submitCheckoutForm(formData);
-            const data = await response.json();
-
-            // Reset Turnstile widget for next verification
-            if (this.#turnstileHandler) {
-                this.#turnstileHandler.reset();
+            if (data === false) {
+                return false;
             }
 
             if (data.status === 'success') {
@@ -461,6 +462,26 @@ class FluentCartCheckoutHandler {
             this.cleanupAfterProcessing();
             return false;
         }
+    }
+
+    // Resolves to the response data, or false when no security token could be obtained.
+    async #submitWithSecurityToken() {
+        const formData = this.prepareFormData();
+
+        if (!await this.#turnstileHandler.handleCheckoutSecurityVerification(formData)) {
+            return false;
+        }
+
+        this.removeValidationErrors();
+        const response = await this.submitCheckoutForm(formData);
+        const data = await response.json();
+
+        // Reset Turnstile widget for next verification
+        if (this.#turnstileHandler) {
+            this.#turnstileHandler.reset();
+        }
+
+        return data;
     }
 
     handleErrorMessage(errors, fieldKey) {
@@ -631,11 +652,17 @@ class FluentCartCheckoutHandler {
     async handleSuccessfulResponse(data) {
 
         const callbacks = window.fluentCartCheckout?.afterCheckoutCallbacks;
+        let completedCallbacks = 0;
 
         if (Array.isArray(callbacks)) {
             for (let callback of callbacks) {
                 if (typeof callback === "function") {
-                    await callback(data);
+                    try {
+                        await callback(data);
+                        completedCallbacks++;
+                    } catch (error) {
+                        // The order is placed; a failing extension must not block the receipt redirect.
+                    }
                 }
             }
         }
@@ -681,6 +708,11 @@ class FluentCartCheckoutHandler {
                 // Normal redirect
                 window.location.href = data?.payment_args?.checkout_url;
             }
+        } else if (!data?.redirect_to && !completedCallbacks) {
+            // Nothing will navigate away, so the overlay would spin forever.
+            // A completed after-checkout callback may own navigation; leave it be.
+            this.cleanupAfterProcessing();
+            this.showProductValidationError(this.translate("Something went wrong"));
         }
     }
 

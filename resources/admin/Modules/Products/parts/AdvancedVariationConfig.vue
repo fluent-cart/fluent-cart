@@ -913,7 +913,7 @@ const generateVariations = ({silent = false} = {}) => {
 
   if (identifierTooLong.value) {
     /* translators: %1$s: maximum allowed identifier length */
-    if (!silent) Notify.error(translate('These options would create variant identifiers longer than %1$s characters. Use fewer attribute groups.', MAX_IDENTIFIER_LENGTH));
+    if (!silent) Notify.error(translate('Product_Options_Create', MAX_IDENTIFIER_LENGTH));
     isPersisting.value = false;
     return;
   }
@@ -2117,13 +2117,13 @@ const termCreatingIsDone = (newTerm) => {
         <div class="fct-adv-var-generate-info fct-adv-var-generate-error" v-else-if="combinationsExceeded">
           <span>{{
             /* translators: %1$s: current combinations count, %2$s: maximum allowed combinations */
-            translate('Too many combinations (%1$s). Maximum allowed is %2$s. Remove some option values.', totalCombinations, MAX_COMBINATIONS)
+            translate('Product_Too_Many', totalCombinations, MAX_COMBINATIONS)
           }}</span>
         </div>
         <div class="fct-adv-var-generate-info fct-adv-var-generate-error" v-else-if="identifierTooLong">
           <span>{{
             /* translators: %1$s: maximum allowed identifier length */
-            translate('These options would create variant identifiers longer than %1$s characters. Use fewer attribute groups.', MAX_IDENTIFIER_LENGTH)
+            translate('Product_Options_Create', MAX_IDENTIFIER_LENGTH)
           }}</span>
         </div>
       </div>

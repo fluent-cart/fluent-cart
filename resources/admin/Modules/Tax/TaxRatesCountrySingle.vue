@@ -256,7 +256,7 @@ const createCustomClass = (title) => {
 const deleteClass = (taxClass) => {
   const wasActiveClass = activeClassId.value === taxClass.id;
   $confirm(
-      translate('All rates for this class will be deleted. Products using it will default to Standard.'),
+      translate('Tax_Rates_Class'),
       translate('Delete') + ' ' + taxClass.title + '?',
       {
         confirmButtonText: translate('Yes, Delete'),
@@ -1079,7 +1079,7 @@ onMounted(() => {
             <Alert
                 type="warning"
                 icon="AlertTriangle"
-                :content="translate('Tax is currently disabled. Enable tax from the Tax Settings page to start collecting tax.')"
+                :content="translate('Tax_Tax_Currently')"
             />
         </div>
 
@@ -1117,8 +1117,7 @@ onMounted(() => {
             <Alert type="info">
                 <template #content>
                     <span>
-                        {{ translate('Rates are pre-filled for convenience and may not reflect current laws — verify with a tax advisor before going live. If you sell products taxed at different rates (e.g. food, books, digital goods), use the') }} + 
-                        {{ translate('button to add tax classes.') }}
+                        {{ translate('Tax_Rates_Pre') }}
                     </span>
                 </template>
             </Alert>

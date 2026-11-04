@@ -16,53 +16,76 @@ const props = defineProps({
   },
 });
 
+// The sales breakdown, in Shopify's order: each line leads to the next
 const summaryCards = [
-  { 
+  {
     title: translate("Gross Sales"),
-    key: "gross_sale", 
-    info: translate("Total paid on paid, partially paid and refunded orders created in this period, including tax and shipping. Discounts are already applied. Refunds are not deducted.") 
+    key: "gross_sales",
+    info: translate('RevenueRpt_Product_Sales'),
   },
-  { 
+  {
+    title: translate("Discounts"),
+    key: "discounts",
+    operator: "−",
+    liability: true,
+    info: translate("Coupon and manual discounts on these orders."),
+  },
+  {
     title: translate("Refunds"),
-    key: "total_refunded_amount", 
+    key: "refunds",
+    operator: "−",
     liability: true,
-    info: translate("Amount refunded on orders created in this period. Deducted from gross sales to calculate revenue.") 
+    info: translate('RevenueRpt_Refunds_Orders'),
   },
-  { 
-    title: translate("Taxes"),
-    key: "tax_total", 
-    liability: true,
-    info: translate("Tax collected on orders created in this period, including tax on shipping. Deducted from gross sales to calculate revenue.") 
+  {
+    title: translate("Net Sales"),
+    key: "net_sales",
+    operator: "=",
+    info: translate('RevenueRpt_Gross_Sales'),
   },
-  { 
+  {
     title: translate("Shipping"),
-    key: "shipping_total", 
-    liability: true,
-    info: translate("Shipping charged on orders created in this period, before shipping tax. Not deducted when calculating revenue.") 
+    key: "shipping_net",
+    operator: "+",
+    optional: true,
+    info: translate("Shipping charged on these orders, less refunded shipping, before shipping tax."),
   },
-  { 
-    title: translate("Revenue"),
-    key: "net_revenue", 
-    info: translate("Gross sales less refunds and taxes. Shipping charges and payment fees are not deducted.") 
+  {
+    title: translate("Fees"),
+    key: "fees",
+    operator: "+",
+    optional: true,
+    info: translate("Payment and other fees charged on these orders, less refunded fees."),
+  },
+  {
+    title: translate("Taxes"),
+    key: "taxes_net",
+    operator: "+",
+    optional: true,
+    info: translate('RevenueRpt_Tax_Collected'),
+  },
+  {
+    title: translate("Total Sales"),
+    key: "total_collected",
+    operator: "=",
+    info: translate("Net sales plus shipping, fees and taxes: what customers paid, less refunds."),
   },
 ];
 
 const summaryData = computed(() => {
-  return summaryCards.map((card) => ({
-    key: card.key,
-    title: card.title,
-    value: revenueReport.data.summary[card.key] || 0,
-    fluctuation: revenueReport.data.fluctuations[card.key] || 0,
-    liability: card.liability || false,
-    info: card.info,
-  }))
-  .filter(item => {
-    if (['tax_total', 'shipping_total'].includes(item.key)) {
-      return item.value !== 0;
-    }
+  const summary = revenueReport.data.summary || {};
+  const hasExtras = ["shipping_net", "fees", "taxes_net"].some(key => Number(summary[key]) !== 0);
 
-    return true;
-  });
+  return summaryCards
+    // Shipping, fees and tax show only when the store has them; without any, total sales equals net sales
+    .filter(card => (card.optional ? Number(summary[card.key]) !== 0 : true))
+    .filter(card => card.key !== "total_collected" || hasExtras)
+    .map((card) => ({
+      ...card,
+      value: summary[card.key] || 0,
+      fluctuation: revenueReport.data.fluctuations[card.key] ?? null,
+      liability: card.liability || false,
+    }));
 });
 
 const dataLoader = computed(() => {
@@ -82,7 +105,8 @@ const dataLoader = computed(() => {
             <ReportSummary :amount="maybeLiability(summary.value, summary.liability, reportFilter.reportCurrency)" :title="summary.title" />
           </div>
 
-          <Fluctuation 
+          <Fluctuation
+            v-if="summary.fluctuation !== null"
             :fluctuation="summary.fluctuation" 
             :amount="revenueReport.data.previousSummary[summary.key]"
             :is-liability="summary.liability"
@@ -90,6 +114,7 @@ const dataLoader = computed(() => {
         </div>
 
         <div class="title">
+          <span v-if="summary.operator" class="text-system-light dark:text-gray-400" aria-hidden="true">{{ summary.operator }}</span>
           {{ summary.title }}
 
           <el-tooltip :content="summary.info" placement="top"

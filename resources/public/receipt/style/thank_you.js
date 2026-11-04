@@ -7,9 +7,8 @@ import fontSize from "../../../styles/tailwind/extends/fontSize";
 module.exports = {
     darkMode: ['selector', '.fluent_theme_dark'],
     // important: '.fluent-cart-single-product-card',
-    content: [
-        // './app/FC/Template/DefaultTemplate/Views/shop/**/*.{html,php,js}',
-    ],
+    // Nothing to scan; non-empty only to stop the empty-content warning.
+    content: ['./resources/public/receipt/style/thank_you.js'],
     plugins: [
         require('@tailwindcss/container-queries'),
     ],

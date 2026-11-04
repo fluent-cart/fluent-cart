@@ -42,6 +42,20 @@
       &.active_admin_menu > a {
         @apply bg-dark-25 text-dark-500 dark:bg-dark-600 dark:text-white;
       }
+      // Inset line with room on both sides, so a hovered row never touches it.
+      &.fct_menu_child_item_group_start {
+        position: relative;
+        margin-top: 13px;
+        &::before {
+          content: '';
+          position: absolute;
+          top: -7px;
+          left: 8px;
+          right: 8px;
+          height: 1px;
+          @apply bg-gray-divider dark:bg-dark-400;
+        }
+      }
     }
   }
   &.has-child {

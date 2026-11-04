@@ -1,5 +1,5 @@
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import blocktranslate, {_x} from "@/BlockEditor/BlockEditorTranslator";
 const { useBlockProps } = wp.blockEditor;
 const ProductButtonBlock = {
     edit: (props) => {
@@ -11,7 +11,7 @@ const ProductButtonBlock = {
 
         if (!singleProductData.product) {
             return <button {...props} {...blockProps}>
-                {blocktranslate('View')}
+                {_x('View', 'Product button')}
             </button>;
         }
 
@@ -39,7 +39,7 @@ const ProductButtonBlock = {
             if (hasSubscription) {
                 buttonText = blocktranslate('Buy Now');
             } else {
-                buttonText = blocktranslate('View');
+                buttonText = _x('View', 'Product button');
             }
         }
 

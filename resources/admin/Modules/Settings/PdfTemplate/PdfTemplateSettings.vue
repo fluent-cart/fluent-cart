@@ -162,7 +162,7 @@ onMounted(() => {
                 <Card.Container>
                     <Card.Header
                         :title="translate('E-Invoice Configuration')"
-                        :text="translate('Configure ZUGFeRD / Factur-X e-invoice encoding and seller details for your PDFs.')"
+                        :text="translate('Settings_Configure_Zugferd')"
                         border_bottom
                     >
                         <template #action>

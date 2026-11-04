@@ -23,44 +23,4 @@ class DefaultReportController extends Controller
         return $service->fetchTopSoldProducts($params);
     }
 
-    public function getTopSoldVariants(Request $request): array
-    {
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-
-        $service = DefaultReportService::make();
-
-        return $service->fetchTopSoldVariants($params);
-    }
-
-    public function getSalesReport(Request $request)
-    {
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-        $compareRanges = ReportHelper::formatCompareRanges($params);
-
-        $service = DefaultReportService::make([]);
-
-        $currentMetrics = $service->getAllGraphMetricsSeparate($params);
-
-        $fluctuations = [];
-        $previousMetrics = ['summary' => []];
-
-        if ($params['comparePeriod']) {
-            $params['startDate'] = $params['comparePeriod'][0];
-            $params['endDate'] = $params['comparePeriod'][1];
-            $previousMetrics = $service->getAllGraphMetricsSeparate($params);
-
-            $fluctuations = $service->calculateFluctuations(
-                $currentMetrics['summary'], $previousMetrics['summary']
-            );
-        }
-        
-        return [
-            'graphs'          => $currentMetrics['metrics'],
-            'summaryData'     => $currentMetrics['summary'],
-            'previousSummary' => $previousMetrics['summary'],
-            'fluctuations'    => $fluctuations,
-            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
-            'compare_ranges'  => $compareRanges,
-        ];
-    }
 }

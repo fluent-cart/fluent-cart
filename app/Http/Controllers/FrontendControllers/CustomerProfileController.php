@@ -372,6 +372,14 @@ class CustomerProfileController extends BaseFrontendController
         // Get the current logged-in customer
         $customer = CustomerResource::getCurrentCustomer(true);
 
+        // Null when the account's email is unproven and a guest already holds it: there is
+        // no customer to attach an address to until the email is confirmed.
+        if (!$customer) {
+            return $this->sendError([
+                'message' => __('Please verify your email before saving an address.', 'fluent-cart')
+            ], 403);
+        }
+
         // Sanitize and retrieve the request data
         $data = CustomerAddressResource::normalizeBusinessFields($request->getSafe($request->sanitize()));
 

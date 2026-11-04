@@ -1,15 +1,17 @@
 <script setup>
 import * as Card from "@/Bits/Components/Card/Card.js";
-import ExportReport from "../ExportReport.vue";
-import { computed, onMounted, ref, watch } from "vue";
-import { formatNumber } from "../Utils/formatNumber";
+import {computed, ref} from "vue";
+import {formatNumber} from "../Utils/formatNumber";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
+import Notify from "@/utils/Notify";
+import {exportCSVWithColumns} from "@/utils/Export";
 import orderReport from "@/Models/Reports/OrderReportModel";
 
 const props = defineProps({
   tableData: {
-    type: Object,
+    type: Array,
     required: true,
   },
   reportFilter: {
@@ -17,204 +19,100 @@ const props = defineProps({
   },
 });
 
-const groupKeys = [
-  { label: "Year", value: "year" },
-  { label: "Month", value: "month" },
-  { label: "Day", value: "day" },
-];
-const selectedGroupKey = ref("number");
 const isCheckedPercentage = ref(false);
 
 const customerTypeLabels = {
   New: translate("New"),
   Returning: translate("Returning"),
   Renewal: translate("Renewal"),
+  "Installment payment": translate("Installment payment"),
+  "Free order": translate("Free order"),
   Guest: translate("Guest"),
 };
+const customerTypeLabel = (type) => customerTypeLabels[type] ?? type;
 
-const customerTypeLabel = (type) => {
-  return customerTypeLabels[type] ?? type;
+const dataLoader = computed(() => orderReport.data.isBusy.newVsReturning);
+
+// Shares of the column total; an average has no meaningful share, so it stays an amount
+const SHARE_KEYS = ['customer_count', 'order_count', 'net_sales'];
+const totals = computed(() => {
+  const sums = {};
+  SHARE_KEYS.forEach((key) => {
+    sums[key] = (props.tableData || []).reduce((sum, row) => sum + (parseFloat(row[key]) || 0), 0);
+  });
+  return sums;
+});
+const share = (row, key) => {
+  const total = totals.value[key];
+  return (total ? Math.round((parseFloat(row[key]) || 0) * 1000 / total) / 10 : 0) + '%';
 };
+const money = (value) => props.reportFilter.formatAmount(value || 0);
 
-const dataLoader = computed(() => {
-  return orderReport.data.isBusy.newVsReturning;
-});
-
-const dataSource = computed(() => {
-  if (isCheckedPercentage.value === true) {
-    const metrics = [
-      'customer_count',
-      'order_count',
-      'net_sales',
-      'average_net',
-      'gross_sales',
-      'average_gross',
-    ];
-
-    const rows = props.tableData || [];
-    const totals = {};
-
-    metrics.forEach((key) => {
-      totals[key] = rows.reduce((sum, row) => sum + (parseFloat(row[key]) || 0), 0);
-    });
-
-    return rows.map((row) => {
-      const result = { customer_type: row.customer_type };
-
-      metrics.forEach((key) => {
-        const value = parseFloat(row[key]) || 0;
-        result[key] = totals[key] ? (value * 100) / totals[key] : 0;
-      });
-
-      return result;
-    });
-  }
-
-  return props.tableData;
-});
-
-const currencySign = computed(() => {
-  return props.reportFilter.currentCurrencySign;
-});
-
-onMounted(() => {});
-
-const formatPercentage = (value) => {
-  return `${parseFloat(value).toFixed(2)}%`;
+const exportCsv = () => {
+  const columns = [
+    {header: translate('Type'), accessor: 'customer_type', formatter: customerTypeLabel},
+    ...['customer_count', 'order_count', 'net_sales', 'average_net', 'gross_sales', 'average_gross']
+      .map(key => ({header: key, accessor: key})),
+  ];
+  exportCSVWithColumns(props.tableData || [], columns, 'new-vs-returning-customers.csv').catch(error => Notify.error(error.message));
 };
 </script>
 
 <template>
   <Card.Container class="overflow-hidden" id="chartContainer">
-    <Card.Header title_size="small">
+    <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h5 class="fct-card-header-title is-small">{{
-            translate("New vs. Returning Customers")
-          }}</h5>
+          <h5 class="fct-card-header-title is-small">{{ translate("New vs. Returning Customers") }}</h5>
           <el-tooltip
-            popper-class="fct-tooltip"
-            :content="
-              translate(
-                'New: the order is the customer\'s first paid order. Returning: the customer had an earlier paid order. Renewal: subscription renewal orders. Guest: orders without a customer account.'
-              )
-            "
-            placement="top"
+              popper-class="fct-tooltip"
+              :content="translate('OrderRpt_New_Customer')"
+              placement="top"
+              :trigger="['hover', 'focus']"
           >
-            <DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4 cursor-pointer" />
+            <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
+              <DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/>
+            </button>
           </el-tooltip>
         </div>
       </template>
       <template #action>
-        <div class="fct-btn-group sm">
-          <el-checkbox v-model="isCheckedPercentage">
-            {{ translate("Show Percentages") }}
-          </el-checkbox>
-          <ExportReport :data="dataSource" :filename="'order_report.csv'" />
+        <div class="flex items-center gap-3">
+          <el-checkbox v-model="isCheckedPercentage">{{ translate("Show Percentages") }}</el-checkbox>
+          <div class="fct-btn-group sm">
+            <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+              <IconButton tag="button" :disabled="dataLoader || !(tableData || []).length" :aria-label="translate('Export CSV')" @click="exportCsv">
+                <DynamicIcon name="Download"/>
+              </IconButton>
+            </el-tooltip>
+          </div>
         </div>
       </template>
     </Card.Header>
     <Card.Body class="px-0 pb-0">
-      <el-skeleton v-if="dataLoader" animated :rows="3" class="p-3" />
+      <el-skeleton v-if="dataLoader" animated :rows="3" class="p-3"/>
 
-      <el-table v-else :data="dataSource" border>
-        <el-table-column prop="customer_type" :label="translate('Type')" min-width="90">
-          <template #default="scope">
-            {{ customerTypeLabel(scope.row.customer_type) }}
-          </template>
+      <el-table v-else :data="tableData">
+        <el-table-column :label="translate('Type')" min-width="170">
+          <template #default="{row}">{{ customerTypeLabel(row.customer_type) }}</template>
         </el-table-column>
-
-        <el-table-column
-          prop="customer_count"
-          :label="translate('Customer Count')"
-          min-width="120"
-        >
-          <template #default="scope">
-            {{
-              isCheckedPercentage
-                ? formatPercentage(scope.row.customer_count)
-                : scope.row.customer_count
-            }}
-          </template>
+        <el-table-column :label="translate('Customers')" min-width="120">
+          <template #default="{row}">{{ isCheckedPercentage ? share(row, 'customer_count') : formatNumber(row.customer_count) }}</template>
         </el-table-column>
-
-        <el-table-column
-          prop="order_count"
-          :label="translate('Order Count')"
-          min-width="150"
-        >
-          <template #default="scope">
-            {{
-              isCheckedPercentage
-                ? formatPercentage(scope.row.order_count)
-                : scope.row.order_count
-            }}
-          </template>
+        <el-table-column :label="translate('Orders')" min-width="120">
+          <template #default="{row}">{{ isCheckedPercentage ? share(row, 'order_count') : formatNumber(row.order_count) }}</template>
         </el-table-column>
-
-        <el-table-column
-          prop="gross_sales"
-          :label="translate('Gross Sales')"
-          min-width="150"
-        >
-          <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage
-                  ? formatPercentage(scope.row.gross_sales)
-                  : reportFilter.formatAmount(scope.row.gross_sales)">
-
-            </div>
-          </template>
+        <el-table-column :label="translate('Net Sales')" min-width="140">
+          <template #default="{row}">{{ isCheckedPercentage ? share(row, 'net_sales') : money(row.net_sales) }}</template>
         </el-table-column>
-
-        <el-table-column
-          prop="average_gross"
-          :label="translate('Average Gross Sales')"
-          min-width="150"
-        >
-          <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_gross) : reportFilter.formatAmount(scope.row.average_gross)">
-
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column
-          prop="net_sales"
-          :label="translate('Revenue')"
-          min-width="150"
-        >
-          <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage
-                  ? formatPercentage(scope.row.net_sales)
-                  : reportFilter.formatAmount(scope.row.net_sales)">
-
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column
-          prop="average_net"
-          :label="translate('Average Revenue')"
-          min-width="150"
-        >
-          <template #default="scope">
-            <div class="inline-flex" v-html="isCheckedPercentage ? formatPercentage(scope.row.average_net) : reportFilter.formatAmount(scope.row.average_net)">
-
-            </div>
-          </template>
+        <el-table-column :label="translate('Average Order (Net)')" min-width="160">
+          <template #default="{row}">{{ money(row.average_net) }}</template>
         </el-table-column>
 
         <template #empty>
-          <el-empty :text="translate('No data available')" />
+          <el-empty :description="translate('No data available')"/>
         </template>
       </el-table>
     </Card.Body>
   </Card.Container>
 </template>
-
-<style scoped>
-.el-table th,
-.el-table td {
-  text-align: center;
-}
-</style>

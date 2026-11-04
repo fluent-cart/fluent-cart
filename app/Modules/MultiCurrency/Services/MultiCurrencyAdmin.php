@@ -19,7 +19,7 @@ class MultiCurrencyAdmin
      * enabled currency with its current rate and pricing rules. Empty when
      * multi-currency is off.
      *
-     * @return array<int, array{code: string, sign: string, rate: string, is_base: bool, rounding?: string, charm?: string, adjustment?: string, decimals?: int}>
+     * @return array<int, array{code: string, name: string, sign: string, rate: string, is_base: bool, rounding?: string, charm?: string, adjustment?: string, decimals?: int}>
      */
     public static function orderCurrencies(): array
     {
@@ -30,6 +30,7 @@ class MultiCurrencyAdmin
         $base = BaseCurrency::get();
         $list = [[
             'code'    => $base,
+            'name'    => CurrenciesHelper::getCurrencies($base),
             'sign'    => html_entity_decode(CurrenciesHelper::getCurrencySign($base)),
             'rate'    => CurrencySnapshot::normalizeRate(1),
             'is_base' => true,
@@ -42,6 +43,7 @@ class MultiCurrencyAdmin
             }
             $list[] = [
                 'code'       => $code,
+                'name'       => CurrenciesHelper::getCurrencies($code),
                 'sign'       => html_entity_decode(CurrenciesHelper::getCurrencySign($code)),
                 'rate'       => $quote['rate'],
                 'is_base'    => false,

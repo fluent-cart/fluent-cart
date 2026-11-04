@@ -15,6 +15,7 @@ use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\StockManagement\StockManagement;
 use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
@@ -145,6 +146,14 @@ class OrderService
             ->keyBy('id')
             ->toArray();
 
+        $heldUnits = [];
+        if ($prevOrder) {
+            $heldUnits = StockManagement::heldUnitsByVariation(
+                $prevOrder->order_items,
+                OrderMeta::where('order_id', $prevOrder->id)->where('meta_key', 'stock_movement')->value('meta_value')
+            );
+        }
+
         foreach ($products as $product) {
             // Custom item validation occurs during cart insertion.
             // If the validation hook is missing or fails, the item is not added to the cart 
@@ -155,8 +164,9 @@ class OrderService
             if(!Arr::get($product, 'is_custom', false)) {
                 static::validateProductAvailability($product, $currentVariations);
                 static::validateSubscriptionQuantity($product);
-                static::validateStockStatus($product, $currentVariations, $prevOrder);
-                static::validateStockQuantity($product, $currentVariations, $prevOrder);
+                $held = (int)Arr::get($heldUnits, $product['object_id'], 0);
+                static::validateStockStatus($product, $currentVariations, $held);
+                static::validateStockQuantity($product, $currentVariations, $held);
             }
         }
     }
@@ -193,7 +203,7 @@ class OrderService
         }
     }
 
-    private static function validateStockStatus($product, $currentVariations, $prevOrder = null)
+    private static function validateStockStatus($product, $currentVariations, $heldUnits = 0)
     {
         if (!ModuleSettings::isActive('stock_management')) {
             return;
@@ -201,81 +211,24 @@ class OrderService
 
         $currentVariation = $currentVariations[$product['object_id']] ?? null;
 
-        // check if $prevOrder is not null.
-        if ($prevOrder) {
+        // The order's own hold can be what emptied the shelf; the quantity check counts it.
+        if ($heldUnits > 0) {
+            return;
+        }
 
-            // get order_items from OrderItems
-            $orderItems = $prevOrder->order_items;
-
-            // filter payment_type is not signup_fee or fee
-            $orderItems = $orderItems->filter(function ($item) {
-                return !in_array($item->payment_type, ['signup_fee', 'fee']);
-            });
-
-            $stockMovement = OrderMeta::where('order_id', $prevOrder->id)
-                ->where('meta_key', 'stock_movement')
-                ->value('meta_value');
-
-            // Decode stock movement if it's JSON
-            $stockMovementData = $stockMovement ?? [];
-
-            // Check if the current product variation is already on hold in stock movement
-            $isStockOnHold = false;
-
-            if (!empty($stockMovementData)) {
-
-                // Find the order item that matches this variation ID
-                foreach ($orderItems as $item) {
-                    if ($item->object_id == Arr::get($currentVariation, 'id')) {
-                        $orderItemId = $item->id;
-
-                        // Check if this order item has stock on hold
-                        // Structure: {"95":{"committed":10,"on_hold":0}} where 95 is order item ID
-                        if (isset($stockMovementData[$orderItemId]['on_hold']) &&
-                            $stockMovementData[$orderItemId]['on_hold'] > 0) {
-                            $isStockOnHold = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-
-            // If stock is already on hold for this variation, skip stock validation
-            if ($isStockOnHold) {
-                // Stock is already reserved for this order, no need to check
-                return;
-            }
-
-            // If stock is NOT on hold, perform normal stock validation
-            if (
-                Arr::get($currentVariation, 'stock_status') !== "in-stock" &&
-                Arr::get($currentVariation, 'manage_stock') == 1
-            ) {
-                throw new \Exception(sprintf(
-                    /* translators: %s: product title */
-                    esc_html__('[%s] is out of stock.', 'fluent-cart'),
-                    esc_html(Arr::get($product, 'title'))
-                ));
-            }
-
-        } else {
-
-            // No previous order, perform normal stock validation
-            if (
-                Arr::get($currentVariation, 'stock_status') !== "in-stock" &&
-                Arr::get($currentVariation, 'manage_stock') == 1
-            ) {
-                throw new \Exception(sprintf(
+        if (
+            Arr::get($currentVariation, 'stock_status') !== "in-stock" &&
+            Arr::get($currentVariation, 'manage_stock') == 1
+        ) {
+            throw new \Exception(sprintf(
                 /* translators: %s: product title */
-                    esc_html__('[%s] is out of stock.', 'fluent-cart'),
-                    esc_html(Arr::get($product, 'title'))
-                ));
-            }
+                esc_html__('[%s] is out of stock.', 'fluent-cart'),
+                esc_html(Arr::get($product, 'title'))
+            ));
         }
     }
 
-    private static function validateStockQuantity($product, $currentVariations, $prevOrder = null)
+    private static function validateStockQuantity($product, $currentVariations, $heldUnits = 0)
     {
         if (!ModuleSettings::isActive('stock_management')) {
             return;
@@ -283,54 +236,9 @@ class OrderService
         $currentVariation = $currentVariations[$product['object_id']] ?? null;
         $productQuantity = (int)Arr::get($product, 'quantity');
 
-        // check if $prevOrder is not null
-        if ($prevOrder) {
+        // A retried order may take back the units it already holds, and no more.
+        $currentVariation['available'] = (int)Arr::get($currentVariation, 'available') + $heldUnits;
 
-            // get order_items from OrderItems
-            $orderItems = $prevOrder->order_items;
-
-
-            $orderItems = $orderItems->filter(function ($item) {
-                return !in_array($item->payment_type, ['signup_fee', 'fee']);
-            });
-
-            // get stock movement for this order
-            $stockMovement = OrderMeta::where('order_id', $prevOrder->id)
-                ->where('meta_key', 'stock_movement')
-                ->value('meta_value');
-
-            // Decode stock movement if it's JSON
-            $stockMovementData = $stockMovement ?? [];
-
-            // Check if the current product variation is already on hold in stock movement
-            $isStockOnHold = false;
-
-            if (!empty($stockMovementData)) {
-
-                // Find the order item that matches this variation ID
-                foreach ($orderItems as $item) {
-                    if ($item->object_id == Arr::get($currentVariation, 'id')) {
-                        $orderItemId = $item->id;
-
-                        // Check if this order item has stock on hold
-                        // Structure: {"95":{"committed":10,"on_hold":0}} where 95 is order item ID
-                        if (isset($stockMovementData[$orderItemId]['on_hold']) &&
-                            $stockMovementData[$orderItemId]['on_hold'] > 0) {
-                            $isStockOnHold = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // If stock is already on hold for this variation, skip quantity validation
-            if ($isStockOnHold) {
-                // Stock is already reserved for this order, no need to check quantity
-                return;
-            }
-        }
-
-        // Perform normal quantity validation if no previous order OR stock is not on hold
         if (!static::allowItemToOrder($currentVariation, $productQuantity)) {
             $note = sprintf(
                 /* translators: %s: product title */

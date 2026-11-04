@@ -3,11 +3,12 @@ import {ref, computed} from 'vue';
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Animation from "@/Bits/Components/Animation.vue";
 import PackageDialog from "@/Modules/Shipping/Components/PackageDialog.vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
 import Rest from "@/utils/http/Rest";
 import {ElMessage} from "element-plus";
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
+import {syncShippingPackagesConfig} from "@/Modules/Shipping/shippingPackagesConfig";
 
 const props = defineProps({
     variant: Object,
@@ -19,7 +20,8 @@ const props = defineProps({
 
 const showPackageDialog = ref(false);
 const savingPackage = ref(false);
-const shippingPackages = ref(AppConfig.get('shop.shipping_packages') || []);
+// A copy: the create flow edits this list before the save, which must not leak into the shared config.
+const shippingPackages = ref(JSON.parse(JSON.stringify(AppConfig.get('shop.shipping_packages') || [])));
 
 const weightUnits = [
     {label: 'kg', value: 'kg'},
@@ -96,6 +98,7 @@ const onPackageCreated = (packageData) => {
     Rest.post('shipping/packages', {packages: shippingPackages.value})
         .then(response => {
             shippingPackages.value = response.packages || shippingPackages.value;
+            syncShippingPackagesConfig(shippingPackages.value);
             showPackageDialog.value = false;
             onPackageChange(packageData.slug);
         })
@@ -148,7 +151,7 @@ const onPackageCreated = (packageData) => {
                 <el-col :xs="24" :sm="14" :lg="14">
                     <el-form-item>
                         <template #label>
-                            {{ translate('Package') }}
+                            {{ _x('Package', 'Shipping box') }}
                         </template>
                         <el-select
                             v-model="variant.other_info.package_slug"

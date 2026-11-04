@@ -167,7 +167,7 @@ function removeRegClass(cls) {
 
     $confirm(
         /* translators: %1$s: tax class name (e.g. Reduced) */
-        translate('This will permanently delete the "%1$s" tax class and all its rates across every country (not just EU). Products using this class will fall back to Standard. Continue?', cls.title),
+        translate('Tax_Permanently_Delete', cls.title),
         translate('Delete Tax Class'),
         { confirmButtonText: translate('Delete'), cancelButtonText: translate('Cancel'), type: 'warning' }
     ).then(() => {

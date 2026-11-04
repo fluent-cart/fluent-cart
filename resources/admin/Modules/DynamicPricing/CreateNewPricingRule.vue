@@ -277,7 +277,7 @@ const createRule = () => {
                                         <el-radio
                                             v-for="ruleType in ruleTypes"
                                             :key="ruleType.value"
-                                            :label="ruleType.value"
+                                            :value="ruleType.value"
                                         >
                                             <DynamicIcon
                                                 class="fct-rule-template-icon"

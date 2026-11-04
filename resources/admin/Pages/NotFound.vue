@@ -6,7 +6,7 @@
         <h5>
           {{ data.message }}
         </h5>
-        <p>{{ translate('Please check the URL and try again, or use the search bar to find what you need.') }}</p>
+        <p>{{ translate('NotFound_Check_Url') }}</p>
         <el-button tag="router-link" type="primary" :to="data.route">
           {{ data.buttonText }}
         </el-button>

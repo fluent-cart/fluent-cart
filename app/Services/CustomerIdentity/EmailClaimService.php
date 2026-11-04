@@ -22,7 +22,7 @@ class EmailClaimService
     const SIGNING_CONTEXT = 'fluent_cart_email_claim_v1';
 
     /** User meta holding the pending claim's nonce hash: only the newest link works, and once. */
-    const META_KEY = EmailVerificationService::PENDING_CLAIM_META_KEY;
+    const META_KEY = '_fct_email_claim';
 
     const QUERY_TOKEN = 'fct_email_claim';
 
@@ -39,8 +39,7 @@ class EmailClaimService
          *
          * @param bool $enabled
          */
-        $enabled = (bool) apply_filters('fluent_cart/customer/enable_email_claim', true);
-        return EmailVerificationService::isEnabled() && $enabled;
+        return (bool) apply_filters('fluent_cart/customer/enable_email_claim', true);
     }
 
     /**
@@ -239,10 +238,13 @@ class EmailClaimService
         }
     }
 
-    /** Called only after a successful password reset with validated inbox proof. */
-    public static function confirmPasswordReset(int $userId, string $email): string
+    /**
+     * Called only with validated inbox proof: a password reset, or a FluentAuth magic link
+     * or email code. A trusted email has nothing to confirm; the portal links guest records.
+     */
+    public static function confirmInboxProof(int $userId, string $email): string
     {
-        if (!static::isEnabled()) {
+        if (!EmailVerificationService::isUnverified($userId)) {
             return 'unavailable';
         }
 
@@ -331,7 +333,7 @@ class EmailClaimService
         }
 
         $customer->recountStat();
-        EmailVerificationService::markVerified($userId, $email);
+        EmailVerificationService::markVerified($userId);
         return $queued ? 'recovering' : ($incomplete ? 'incomplete' : 'confirmed');
     }
 

@@ -7,90 +7,250 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\Database\Migrations\RetentionSnapshotsMigrator;
+use FluentCart\Framework\Database\Schema;
+use FluentCart\App\Services\Payments\SubscriptionHelper;
 
 class RetentionSnapshotService
 {
     /**
      * Active statuses
      */
+    // The live statuses of SubscriptionReportService::leftAtSql(): their expire_at is not kept up to date
     protected array $activeStatuses = [
         Status::SUBSCRIPTION_ACTIVE,
+        Status::SUBSCRIPTION_EXPIRING,
         Status::SUBSCRIPTION_TRIALING,
     ];
 
+    /** @var array<int, string> last paid renewal (GMT) by parent order id: when a canceled plan's paid term ends */
+    protected array $lastPaidDates = [];
+
+    /** @var array<int, int>|null price paid now by simulated-trial subscription id, in cents; read once per request */
+    protected $paidNow = null;
+
     protected ?\DateTime $now = null;
 
+    const LOCK_OPTION = 'fluent_cart_retention_snapshot_lock';
+    // Each step renews it; a build left behind (a closed tab) frees the lock after this long
+    const LOCK_SECONDS = 300;
+    const BUILD_TABLE = 'fct_retention_snapshots_build';
+    /** Set when the snapshot rules changed (a plugin update): the Cohorts page rebuilds on its next visit */
+    const STALE_OPTION = 'fluent_cart_retention_snapshots_stale';
+
+    /** @var int customer ids per build step */
+    protected $customersPerStep = 2000;
+
     /**
-     * Generate retention snapshots
-     * 
-     * @param int|null $productIdFilter Optional product ID to filter by
-     * @param callable|null $progressCallback Optional callback for progress updates: fn(string $message, string $level = 'info')
-     * @return array Result with 'success', 'message', and 'stats'
+     * The whole build in one go, for WP-CLI and tests. The admin page runs start() and step() itself, one short
+     * request at a time.
+     *
+     * @param callable|null $progressCallback fn(string $message, string $level = 'info')
+     * @return array success, message, stats (and code when it could not run)
      */
-    public function generate(?int $productIdFilter = null, ?callable $progressCallback = null): array
+    public function generate(?callable $progressCallback = null): array
     {
-        try {
-            $this->log('Starting retention snapshot generation...', 'info', $progressCallback);
+        $started = $this->start();
+        if (empty($started['success'])) {
+            $this->log($started['message'], 'warning', $progressCallback);
 
-            // Step 1: Ensure table exists
-            $this->log('Step 1: Ensuring database table exists...', 'info', $progressCallback);
-            $this->ensureTableExists();
-            $this->log('Table ready.', 'success', $progressCallback);
+            return $started;
+        }
 
-            // Step 2: Truncate existing data
-            $this->log('Step 2: Clearing existing data...', 'info', $progressCallback);
-            $this->truncateTable();
-            $this->log('Data cleared.', 'success', $progressCallback);
+        do {
+            $step = $this->step($started['token']);
+            if (empty($step['success'])) {
+                $this->log($step['message'], 'error', $progressCallback);
 
-            // Step 3: Get all customer-product pairs
-            $this->log('Step 3: Fetching customer-product pairs...', 'info', $progressCallback);
-            $pairs = $this->getCustomerProductPairs($productIdFilter);
-            $totalPairs = count($pairs);
-            $this->log("Found {$totalPairs} unique customer-product pairs.", 'success', $progressCallback);
-
-            if ($totalPairs === 0) {
-                $this->log('No data to process. Exiting.', 'warning', $progressCallback);
-                return [
-                    'success' => false,
-                    'message' => __('No data to process', 'fluent-cart'),
-                    'stats' => [],
-                ];
+                return $step;
             }
+            $this->log("Step {$step['step']} of {$step['steps']} done.", 'info', $progressCallback);
+        } while (empty($step['done']));
 
-            // Step 4: Get date range
-            $this->log('Step 4: Calculating date range...', 'info', $progressCallback);
-            $dateRange = $this->getDateRange($productIdFilter);
-            $this->log(
-                "Date range: {$dateRange['first_month']} to {$dateRange['last_month']} ({$dateRange['total_months']} months)",
-                'success',
-                $progressCallback
-            );
+        return $step;
+    }
 
-            // Step 5 & 6: Build timelines and aggregate snapshots
-            $this->log('Step 5 & 6: Building timelines and aggregating snapshots...', 'info', $progressCallback);
-            $inserted = $this->buildTimelinesAndAggregate($pairs, $dateRange, $progressCallback);
-            $this->log("Aggregation and insertion complete. Total records: {$inserted}", 'success', $progressCallback);
-
-            // Get stats
-            $stats = $this->getStats();
-
-            return [
-                'success' => true,
-                'message' => __('Retention snapshots generated successfully', 'fluent-cart'),
-                'stats' => $stats,
-            ];
-        } catch (\Exception $e) {
-            $this->log('Error: ' . $e->getMessage(), 'error', $progressCallback);
+    /**
+     * Start a build: take the lock, plan the steps and empty the build table. The published snapshots stay in place
+     * until the last step.
+     */
+    public function start(): array
+    {
+        $this->ensureTableExists();
+        $plan = $this->planBuild();
+        // One build at a time: two would write every row twice
+        if (!$this->acquireLock($plan)) {
             return [
                 'success' => false,
+                'code'    => 'already_running',
+                'message' => __('A snapshot rebuild is already running. Try again in a few minutes.', 'fluent-cart'),
+                'stats'   => [],
+            ];
+        }
+
+        $this->prepareBuildTable();
+
+        return ['success' => true, 'step' => 0, 'steps' => $plan['steps'], 'token' => $plan['token']];
+    }
+
+    /**
+     * Run the next step of the started build: one range of customers into the build table, or, after the last range,
+     * publish the build in place of the old snapshots.
+     */
+    public function step(string $token = ''): array
+    {
+        $raw = $this->readLockRow();
+        $state = $raw === null ? null : maybe_unserialize($raw);
+        if (!is_array($state) || !isset($state['next_id'])) {
+            return [
+                'success' => false,
+                'code'    => 'no_build',
+                'message' => __('No snapshot rebuild is running. Start it again.', 'fluent-cart'),
+            ];
+        }
+        $running = [
+            'success' => false,
+            'code'    => 'already_running',
+            'message' => __('A snapshot rebuild is already running. Try again in a few minutes.', 'fluent-cart'),
+        ];
+        if (!hash_equals((string) ($state['token'] ?? ''), $token) || !empty($state['busy'])) {
+            return $running;
+        }
+
+        // Claim the build before working: a second request with the same token must not build the same range twice
+        $state['busy'] = 1;
+        $state['expires'] = time() + self::LOCK_SECONDS;
+        $claimed = maybe_serialize($state);
+        if (!$this->swapLockRow($raw, $claimed)) {
+            return $running;
+        }
+
+        try {
+            if ($state['months'] && $state['next_id'] <= $state['last_id']) {
+                $to = $state['next_id'] + $state['per_step'] - 1;
+                $this->buildRange($state['next_id'], $to, $state['months']);
+                $state['next_id'] = $to + 1;
+                $state['step']++;
+                $state['busy'] = 0;
+                // A build that took over an expired lock keeps its own state
+                if (!$this->swapLockRow($claimed, maybe_serialize($state))) {
+                    return $running;
+                }
+
+                return ['success' => true, 'done' => false, 'step' => $state['step'], 'steps' => $state['steps']];
+            }
+
+            $this->publish($state['months']);
+        } catch (\Throwable $e) {
+            delete_option(self::LOCK_OPTION);
+
+            return [
+                'success' => false,
+                'code'    => 'failed',
                 'message' => sprintf(
-                /* translators: %1$s: error message */
+                    /* translators: %1$s: error message */
                     __('Error: %1$s', 'fluent-cart'),
                     $e->getMessage()
                 ),
-                'stats' => [],
             ];
         }
+
+        delete_option(self::LOCK_OPTION);
+        delete_option(self::STALE_OPTION);
+
+        return [
+            'success' => true,
+            'done'    => true,
+            'step'    => $state['steps'],
+            'steps'   => $state['steps'],
+            'message' => __('Retention snapshots generated successfully', 'fluent-cart'),
+            'stats'   => $this->getStats(),
+        ];
+    }
+
+    /**
+     * The lock row as stored, read past the option cache: another request may have changed it
+     */
+    protected function readLockRow()
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", self::LOCK_OPTION));
+    }
+
+    /**
+     * Replace the lock row only if it still holds $expected (compare-and-swap)
+     */
+    protected function swapLockRow(string $expected, string $new): bool
+    {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s",
+            $new,
+            self::LOCK_OPTION,
+            $expected
+        ));
+        wp_cache_delete(self::LOCK_OPTION, 'options');
+
+        return (int) $wpdb->rows_affected === 1;
+    }
+
+    /**
+     * An options-table lock (option_name is unique, so one add_option() wins), not a database lock: those are not
+     * available on every host. It holds the build plan and expires, so a build left behind never blocks the next one.
+     */
+    protected function acquireLock(array $plan): bool
+    {
+        global $wpdb;
+        $plan['expires'] = time() + self::LOCK_SECONDS;
+        // add_option() checks the cache first, so two requests could both add it. One INSERT IGNORE succeeds once.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')",
+            self::LOCK_OPTION,
+            maybe_serialize($plan)
+        ));
+        $taken = (int) $wpdb->rows_affected === 1;
+
+        if (!$taken) {
+            $heldValue = $this->readLockRow();
+            $held = maybe_unserialize($heldValue);
+            if ($heldValue === null || (int) (is_array($held) ? ($held['expires'] ?? 0) : $held) > time()) {
+                return false;
+            }
+            // Expired: take it over only if no other request changed it since we read it
+            $taken = $this->swapLockRow($heldValue, maybe_serialize($plan));
+        }
+
+        wp_cache_delete(self::LOCK_OPTION, 'options');
+        wp_cache_delete('notoptions', 'options');
+
+        return $taken;
+    }
+
+    /**
+     * The customer id range, its steps and the cohort months, fixed for the whole build
+     */
+    protected function planBuild(): array
+    {
+        $bounds = $this->subscriptionScope()->selectRaw('MIN(customer_id) AS first_id, MAX(customer_id) AS last_id')->first();
+        $first = (int) ($bounds->first_id ?? 0);
+        $last = (int) ($bounds->last_id ?? 0);
+        $perStep = max(1, (int) $this->customersPerStep);
+        $ranges = $first > 0 ? (int) ceil(($last - $first + 1) / $perStep) : 0;
+
+        return [
+            'months'   => $first > 0 ? $this->getDateRange()['months'] : [],
+            'next_id'  => $first,
+            'last_id'  => $last,
+            'per_step' => $perStep,
+            'step'     => 0,
+            // Only the request that started the build may step it
+            'token'    => wp_generate_password(20, false),
+            // The ranges, then publishing
+            'steps'    => $ranges + 1,
+        ];
     }
 
     /**
@@ -108,603 +268,489 @@ class RetentionSnapshotService
      */
     protected function ensureTableExists(): void
     {
-        RetentionSnapshotsMigrator::migrate();
+        // Only when missing (a store updated since 1.3.20): DDL commits any open transaction, and updates already run
+        // the column changes
+        if (!Schema::hasTable('fct_retention_snapshots')) {
+            RetentionSnapshotsMigrator::migrate();
+        }
     }
 
     /**
-     * Truncate the snapshots table
+     * The build table: one row per customer range and snapshot, MRR kept as twelve times the monthly cents so the
+     * ranges add up exactly; no unique key, as every range writes the same snapshot keys
      */
-    protected function truncateTable(): void
+    protected function prepareBuildTable(): void
     {
-        App::db()->table('fct_retention_snapshots')->truncate();
+        global $wpdb;
+        $table = $wpdb->prefix . self::BUILD_TABLE;
+        // Created once; emptied with DELETE, not TRUNCATE: DDL would commit any open transaction
+        if (Schema::hasTable(self::BUILD_TABLE)) {
+            App::db()->table(self::BUILD_TABLE)->delete();
+
+            return;
+        }
+        $collate = $wpdb->get_charset_collate();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->query("CREATE TABLE `{$table}` (
+            `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            `cohort` VARCHAR(7) NOT NULL,
+            `period` VARCHAR(7) NOT NULL,
+            `product_id` BIGINT(20) UNSIGNED NULL,
+            `currency` VARCHAR(10) NOT NULL DEFAULT '',
+            `billing_interval` VARCHAR(20) NOT NULL DEFAULT '',
+            `rebuy_adjusted` TINYINT(1) NOT NULL DEFAULT 0,
+            `period_offset` INT UNSIGNED NOT NULL DEFAULT 0,
+            `cohort_customers` INT UNSIGNED NOT NULL DEFAULT 0,
+            `cohort_x12` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            `retained_customers` INT UNSIGNED NOT NULL DEFAULT 0,
+            `retained_x12` BIGINT UNSIGNED NOT NULL DEFAULT 0
+        ) {$collate}");
     }
 
     /**
-     * Get all unique customer-product pairs
+     * Subscriptions that count in cohorts: a customer and a product, no installment plan
      */
-    protected function getCustomerProductPairs(?int $productIdFilter = null): array
+    protected function subscriptionScope()
     {
-        $query = App::db()->query()
+        return App::db()->query()
             ->from('fct_subscriptions')
-            ->select(['customer_id', 'product_id'])
-            ->whereNotNull('customer_id')
-            ->whereNotNull('product_id')
             ->where('customer_id', '>', 0)
             ->where('product_id', '>', 0)
             ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
-            ->where('bill_times', '<=', 0)
-            ->groupBy(['customer_id', 'product_id']);
-
-        if ($productIdFilter) {
-            $query->where('product_id', $productIdFilter);
-        }
-
-        return $query->get()->toArray();
+            ->where('bill_times', '<=', 0);
     }
 
     /**
      * Get the date range for analysis
      */
-    protected function getDateRange(?int $productIdFilter = null): array
+    protected function getDateRange(): array
     {
-        $query = App::db()->query()
-            ->from('fct_subscriptions')
-            ->selectRaw('MIN(created_at) as first_date, MAX(created_at) as last_date')
-            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
-            ->where('bill_times', '<=', 0);
+        $result = $this->subscriptionScope()->selectRaw('MIN(created_at) as first_date')->first();
 
-        if ($productIdFilter) {
-            $query->where('product_id', $productIdFilter);
-        }
+        // Cohort months are store months, like every report; the stored dates are GMT
+        $firstDate = (new \DateTime($result->first_date, new \DateTimeZone('UTC')))->setTimezone(wp_timezone());
+        $lastDate = new \DateTime('now', wp_timezone()); // Use today as the end date
 
-        $result = $query->first();
-
-        $firstDate = new \DateTime($result->first_date);
-        $lastDate = new \DateTime(); // Use today as the end date
-
-        $firstMonth = $firstDate->format('Y-m');
-        $lastMonth = $lastDate->format('Y-m');
-
-        // Calculate total months
-        $interval = $firstDate->diff($lastDate);
-        $totalMonths = ($interval->y * 12) + $interval->m + 1;
-
-        // Generate all months
         $months = [];
-        $current = new \DateTime($firstMonth . '-01');
-        $end = new \DateTime($lastMonth . '-01');
-
+        $current = new \DateTime($firstDate->format('Y-m') . '-01');
+        $end = new \DateTime($lastDate->format('Y-m') . '-01');
         while ($current <= $end) {
             $months[] = $current->format('Y-m');
             $current->modify('+1 month');
         }
 
-        return [
-            'first_month'  => $firstMonth,
-            'last_month'   => $lastMonth,
-            'total_months' => $totalMonths,
-            'months'       => $months,
-        ];
+        return ['months' => $months];
     }
 
     /**
-     * Build customer timelines - for each customer-product pair, determine their state in each month
+     * One step: the customers in [$from, $to] into the build table, as recorded and with rebuys counted as kept
      */
-    protected function buildCustomerTimelines(array $pairs, array $dateRange, ?callable $progressCallback = null): array
+    protected function buildRange(int $from, int $to, array $months): void
     {
-        $timelines = [];
-
-        // OPTIMIZATION: Fetch ALL subscriptions in one query, then group in memory
-        $this->log('Fetching all subscriptions in one query...', 'info', $progressCallback);
-        
-        $allSubscriptions = App::db()->query()
-            ->from('fct_subscriptions')
-            ->whereNotNull('customer_id')
-            ->whereNotNull('product_id')
-            ->where('customer_id', '>', 0)
-            ->where('product_id', '>', 0)
-            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
-            ->where('bill_times', '<=', 0)
+        $columns = ['id', 'customer_id', 'product_id', 'parent_order_id', 'currency', 'status', 'billing_interval', 'recurring_total',
+            'created_at', 'canceled_at', 'expire_at', 'next_billing_date', 'updated_at', 'trial_days', 'config'];
+        $subscriptions = $this->subscriptionScope()
+            ->select($columns)
+            ->whereBetween('customer_id', [$from, $to])
+            ->orderBy('customer_id', 'ASC')
             ->orderBy('created_at', 'ASC')
             ->get();
-
-        $this->log('Fetched ' . count($allSubscriptions) . ' subscriptions.', 'info', $progressCallback);
-
-        // Fetch last payment dates for all subscriptions in one query
-        $this->log('Fetching last payment dates...', 'info', $progressCallback);
-        
-        $lastPayments = App::db()->query()
-            ->from('fct_order_transactions')
-            ->select(['subscription_id', App::db()->raw('MAX(created_at) as last_payment')])
-            ->whereNotNull('subscription_id')
-            ->where('status', 'succeeded')
-            ->groupBy('subscription_id')
-            ->get();
-
-        // Index last payments by subscription_id
-        $lastPaymentMap = [];
-        foreach ($lastPayments as $lp) {
-            $lastPaymentMap[$lp->subscription_id] = $lp->last_payment;
+        if ($subscriptions->isEmpty()) {
+            return;
         }
-        unset($lastPayments);
 
-        $this->log('Found last payment dates for ' . count($lastPaymentMap) . ' subscriptions.', 'info', $progressCallback);
-
-        // Attach last_payment to each subscription
-        foreach ($allSubscriptions as &$sub) {
-            $sub->last_payment = isset($lastPaymentMap[$sub->id]) ? $lastPaymentMap[$sub->id] : null;
-        }
-        unset($sub);
-        unset($lastPaymentMap);
-
-        $this->log('Grouping by customer-product pairs...', 'info', $progressCallback);
-
-        // Group subscriptions by customer_id + product_id in memory
-        $grouped = [];
-        foreach ($allSubscriptions as $sub) {
-            $key = "{$sub->customer_id}_{$sub->product_id}";
-            if (!isset($grouped[$key])) {
-                $grouped[$key] = [];
+        // Renewals of this step's subscriptions only, so a step's work does not grow with the store
+        $parentIds = array_values(array_unique(array_filter(array_map('intval', $subscriptions->pluck('parent_order_id')->all()))));
+        $firstPaid = $this->firstPaidRenewals($parentIds);
+        $lastPaid = $this->paidRenewalDates('MAX', false, $parentIds);
+        foreach ([0, 1] as $rebuyAdjusted) {
+            $aggregates = $this->aggregate($subscriptions, $months, null, $firstPaid, (bool) $rebuyAdjusted, $lastPaid);
+            foreach ($aggregates as $currency => $currencyAggregates) {
+                $this->insertBuildRows($currencyAggregates, $months, (string) $currency, $rebuyAdjusted);
             }
-            $grouped[$key][] = $sub;
         }
-
-        // Free memory
-        unset($allSubscriptions);
-
-        $this->log('Grouped into ' . count($grouped) . ' customer-product pairs.', 'info', $progressCallback);
-        $this->log('Processing timelines...', 'info', $progressCallback);
-
-        foreach ($grouped as $key => $subscriptions) {
-            if (empty($subscriptions)) {
-                continue;
-            }
-
-            $firstSub = $subscriptions[0];
-            $customerId = $firstSub->customer_id;
-            $productId = $firstSub->product_id;
-
-            // Determine cohort (first subscription month)
-            $cohort = (new \DateTime($firstSub->created_at))->format('Y-m');
-
-            // Build monthly state
-            $monthlyState = [];
-            foreach ($dateRange['months'] as $month) {
-                $state = $this->getCustomerStateForMonth($subscriptions, $month);
-                $monthlyState[$month] = $state;
-            }
-
-            $timelines[$key] = [
-                'customer_id' => $customerId,
-                'product_id'  => $productId,
-                'cohort'      => $cohort,
-                'monthly'     => $monthlyState,
-            ];
-        }
-
-        return $timelines;
     }
 
     /**
-     * Build timelines and aggregate - optimized to fetch all data once but insert in batches
+     * When each subscription's first renewal was paid, by parent order: a real free trial becomes a customer then
+     *
+     * @return array<int, string> parent order id => GMT date
      */
-    protected function buildTimelinesAndAggregate(
-        array $pairs,
-        array $dateRange,
-        ?callable $progressCallback
-    ): int {
-        // Fetch ALL subscriptions in one query
-        $this->log('Fetching all subscriptions...', 'info', $progressCallback);
-        
-        $allSubscriptions = App::db()->query()
-            ->from('fct_subscriptions')
-            ->whereNotNull('customer_id')
-            ->whereNotNull('product_id')
-            ->where('customer_id', '>', 0)
-            ->where('product_id', '>', 0)
-            ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
-            ->where('bill_times', '<=', 0)
-            ->orderBy('created_at', 'ASC')
+    protected function firstPaidRenewals(?array $parentIds = null): array
+    {
+        return $this->paidRenewalDates('MIN', true, $parentIds);
+    }
+
+    /**
+     * @param string $pick MIN (the first paid renewal) or MAX (the last)
+     * @param int[]|null $parentIds only these parent orders; null for the whole store
+     * @return array<int, string> parent order id => GMT date
+     */
+    protected function paidRenewalDates(string $pick, bool $tookMoney = false, ?array $parentIds = null): array
+    {
+        $pick = $pick === 'MAX' ? 'MAX' : 'MIN';
+        if ($parentIds === []) {
+            return [];
+        }
+        $rows = App::db()->table('fct_orders')
+            ->when($parentIds !== null, fn($q) => $q->whereIn('parent_id', $parentIds))
+            ->where('type', Status::ORDER_TYPE_RENEWAL)
+            ->whereIn('payment_status', Status::getReportStatuses())
+            // A trial joins a cohort at a renewal that took money, not one marked paid at 0
+            ->when($tookMoney, fn($q) => $q->where('total_paid', '>', 0))
+            ->selectRaw("parent_id, {$pick}(COALESCE(completed_at, created_at)) AS paid_at")
+            ->groupBy('parent_id')
             ->get();
 
-        $this->log('Fetched ' . count($allSubscriptions) . ' subscriptions.', 'info', $progressCallback);
-
-        // Fetch last payment dates
-        $this->log('Fetching last payment dates...', 'info', $progressCallback);
-        
-        $lastPayments = App::db()->query()
-            ->from('fct_order_transactions')
-            ->select(['subscription_id', App::db()->raw('MAX(created_at) as last_payment')])
-            ->whereNotNull('subscription_id')
-            ->where('status', 'succeeded')
-            ->groupBy('subscription_id')
-            ->get();
-
-        // Index last payments by subscription_id
-        $lastPaymentMap = [];
-        foreach ($lastPayments as $lp) {
-            $lastPaymentMap[$lp->subscription_id] = $lp->last_payment;
+        $paid = [];
+        foreach ($rows as $row) {
+            $paid[(int) $row->parent_id] = (string) $row->paid_at;
         }
-        unset($lastPayments);
 
-        // Attach last_payment to each subscription
-        foreach ($allSubscriptions as &$sub) {
-            $sub->last_payment = $lastPaymentMap[$sub->id] ?? null;
+        return $paid;
+    }
+
+    /**
+     * Customer cohorts per currency, product ('all' or an id) and billing interval ('' for all).
+     *
+     * A customer joins the cohort of the month they first paid and is retained in a later month while any of their
+     * subscriptions is running at its end; a customer who leaves and comes back counts again from the return.
+     *
+     * @param iterable $allSubscriptions subscription rows, sorted by customer
+     * @param string[] $months store months (Y-m), oldest first
+     * @param array<int, string>|null $firstPaid first paid renewal per parent order, for real free trials
+     * @return array [currency][product][interval][cohort index] => ['size', 'mrr0', 'count' => [index => delta], 'mrr' => [index => delta]]
+     */
+    protected function aggregate($allSubscriptions, array $months, ?callable $progressCallback = null, ?array $firstPaid = null, bool $rebuyAdjusted = false, ?array $lastPaid = null): array
+    {
+        $lastPaid = $lastPaid ?? [];
+        $this->lastPaidDates = $lastPaid;
+        // A discounted first year counts at the price paid now, as on the subscription health cards
+        if ($this->paidNow === null) {
+            $this->paidNow = SubscriptionReportService::make()->paidNowBySubscription();
         }
-        unset($sub, $lastPaymentMap);
-
-        $this->log('Grouping by customer-product pairs...', 'info', $progressCallback);
-
-        // Group subscriptions by customer_id + product_id + currency — MRR is
-        // only summable within one currency (multi-currency plan §13)
+        $firstPaid = $firstPaid ?? [];
         $baseCurrency = BaseCurrency::get();
-        $grouped = [];
-        foreach ($allSubscriptions as $sub) {
-            $sub->currency = strtoupper((string) ($sub->currency ?? '')) ?: $baseCurrency;
-            $key = "{$sub->customer_id}_{$sub->product_id}_{$sub->currency}";
-            if (!isset($grouped[$key])) {
-                $grouped[$key] = [];
+        $index = array_flip($months);
+        $count = count($months);
+        $timezone = wp_timezone();
+        $now = $this->getNow();
+        $monthIndex = function (\DateTime $date) use ($index, $count, $timezone, $months) {
+            $month = (clone $date)->setTimezone($timezone)->format('Y-m');
+            if (isset($index[$month])) {
+                return $index[$month];
             }
-            $grouped[$key][] = $sub;
-        }
-        unset($allSubscriptions);
 
-        $this->log('Processing timelines and aggregating...', 'info', $progressCallback);
+            return $month < $months[0] ? 0 : $count;
+        };
 
-        // Build aggregates directly without building full timelines array
         $aggregates = [];
-        $processedCount = 0;
-        $totalCount = count($grouped);
+        $customer = null;
+        $spans = [];
+        $customers = 0;
+        $flush = function () use (&$aggregates, &$spans, &$customers, $count, $progressCallback, $rebuyAdjusted) {
+            if ($spans) {
+                $this->addCustomer($aggregates, $rebuyAdjusted ? $this->bridgeRebuys($spans) : $spans, $count);
+                if (++$customers % 1000 === 0) {
+                    $this->log("Processed {$customers} customers", 'info', $progressCallback);
+                }
+            }
+            $spans = [];
+        };
 
-        foreach ($grouped as $key => $subscriptions) {
-            if (empty($subscriptions)) {
-                continue;
+        foreach ($allSubscriptions as $sub) {
+            if ($sub->customer_id !== $customer) {
+                $flush();
+                $customer = $sub->customer_id;
             }
 
-            $firstSub = $subscriptions[0];
-            $customerId = $firstSub->customer_id;
-            $productId = $firstSub->product_id;
-            $currency = $firstSub->currency;
-            if (!isset($aggregates[$currency])) {
-                $aggregates[$currency] = [];
-            }
-            $cohort = (new \DateTime($firstSub->created_at))->format('Y-m');
-
-            // Get cohort baseline
-            $cohortState = $this->getCustomerStateForMonth($subscriptions, $cohort);
-            
-            // Only include customers who were active at their cohort month
-            if (!$cohortState['is_active']) {
-                continue;
-            }
-
-            $cohortMrr = $cohortState['mrr'];
-            $cohortDate = new \DateTime($cohort . '-01');
-
-            // Track for each period from cohort onwards
-            foreach ($dateRange['months'] as $period) {
-                $periodDate = new \DateTime($period . '-01');
-
-                // Only track periods from cohort month onwards
-                if ($periodDate < $cohortDate) {
+            $start = new \DateTime($sub->created_at, new \DateTimeZone('UTC'));
+            // A real free trial was no customer until it paid; one that never paid joins no cohort
+            if ((int) ($sub->trial_days ?? 0) > 0 && !$this->isSimulatedTrial($sub)) {
+                if (empty($firstPaid[(int) $sub->parent_order_id])) {
                     continue;
                 }
-
-                $periodState = $this->getCustomerStateForMonth($subscriptions, $period);
-
-                // Calculate period offset
-                $interval = $cohortDate->diff($periodDate);
-                $periodOffset = ($interval->y * 12) + $interval->m;
-
-                // Aggregate for specific product
-                $this->addToAggregate(
-                    $aggregates[$currency],
-                    $cohort,
-                    $period,
-                    $productId,
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
-
-                // Aggregate for all products
-                $this->addToAggregate(
-                    $aggregates[$currency],
-                    $cohort,
-                    $period,
-                    'all',
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
+                $start = new \DateTime($firstPaid[(int) $sub->parent_order_id], new \DateTimeZone('UTC'));
             }
 
-            $processedCount++;
-            if ($processedCount % 1000 == 0) {
-                $this->log("Processed {$processedCount}/{$totalCount} customer-product pairs", 'info', $progressCallback);
+            // Running at a month's end until it ended; an end still ahead (a retry due later) is no end yet
+            $end = $this->getSubscriptionEndDate($sub);
+            if ($end && $end > $now) {
+                $end = null;
             }
-        }
-        unset($grouped);
 
-        // Insert aggregates in batches
-        $this->log('Inserting snapshots to database...', 'info', $progressCallback);
-        $totalInserted = 0;
-        foreach ($aggregates as $currency => $currencyAggregates) {
-            $totalInserted += $this->insertAggregates('fct_retention_snapshots', $currencyAggregates, $progressCallback, (string) $currency);
+            $span = [
+                'currency' => strtoupper((string) ($sub->currency ?? '')) ?: $baseCurrency,
+                'product'  => (int) $sub->product_id,
+                'interval' => (string) ($sub->billing_interval ?? ''),
+                'from'     => $monthIndex($start),
+                'to'       => $end ? $monthIndex($end) : $count, // exclusive: not running at the end of that month
+                'mrr'      => $this->mrrTimes12($sub),
+            ];
+            if ($rebuyAdjusted) {
+                $span['started'] = $start->getTimestamp();
+                $span['term_end'] = null;
+                if (in_array($sub->status, [Status::SUBSCRIPTION_CANCELED, Status::SUBSCRIPTION_EXPIRED], true)) {
+                    $paidAt = !empty($lastPaid[(int) $sub->parent_order_id])
+                        ? max($start, new \DateTime($lastPaid[(int) $sub->parent_order_id], new \DateTimeZone('UTC')))
+                        : clone $start;
+                    $span['term_end'] = $this->addInterval($paidAt, (string) ($sub->billing_interval ?? ''), $sub)->getTimestamp();
+                }
+            }
+            $spans[] = $span;
         }
-        
-        unset($aggregates);
-        if (function_exists('gc_collect_cycles')) {
-            gc_collect_cycles();
-        }
+        $flush();
 
-        return $totalInserted;
+        return $aggregates;
     }
 
     /**
-     * Build timelines and aggregate in batches to minimize memory usage
-     * 
-     * Instead of building ALL timelines in memory, we:
-     * 1. Fetch subscriptions for a batch of customer-product pairs
-     * 2. Build timelines for that batch
-     * 3. Aggregate and insert to DB
-     * 4. Clear memory and repeat
+     * One customer into every group they belong to: the store, each of their products, each billing interval
      */
-    protected function buildAndAggregateInBatches(
-        array $pairs,
-        array $dateRange,
-        ?callable $progressCallback,
-        ?int $productIdFilter
-    ): int {
-        $table = 'fct_retention_snapshots';
-        $batchSize = 100; // Process 100 customer-product pairs at a time
-        $totalPairs = count($pairs);
-        $processedPairs = 0;
-
-        // Global aggregates accumulator (across all batches)
-        $globalAggregates = [];
-
-        // Fetch last payment dates for all subscriptions in one query (this is memory-efficient)
-        $this->log('Fetching last payment dates...', 'info', $progressCallback);
-        $lastPayments = App::db()->query()
-            ->from('fct_order_transactions')
-            ->select(['subscription_id', App::db()->raw('MAX(created_at) as last_payment')])
-            ->whereNotNull('subscription_id')
-            ->where('status', 'succeeded')
-            ->groupBy('subscription_id')
-            ->get();
-
-        $lastPaymentMap = [];
-        foreach ($lastPayments as $lp) {
-            $lastPaymentMap[$lp->subscription_id] = $lp->last_payment;
-        }
-        unset($lastPayments);
-
-        $this->log('Processing in batches of ' . $batchSize . ' customer-product pairs...', 'info', $progressCallback);
-
-        // Process pairs in batches
-        foreach (array_chunk($pairs, $batchSize) as $batchIndex => $batchPairs) {
-            $batchNum = $batchIndex + 1;
-            $this->log("Processing batch {$batchNum} ({$processedPairs}/{$totalPairs} pairs)...", 'info', $progressCallback);
-
-            // Get customer IDs and product IDs from this batch
-            $customerIds = array_unique(array_column($batchPairs, 'customer_id'));
-            $productIds = array_unique(array_column($batchPairs, 'product_id'));
-
-            // Fetch subscriptions for this batch only
-            $query = App::db()->query()
-                ->from('fct_subscriptions')
-                ->whereIn('customer_id', $customerIds)
-                ->whereIn('product_id', $productIds)
-                ->whereNotNull('customer_id')
-                ->whereNotNull('product_id')
-                ->where('customer_id', '>', 0)
-                ->where('product_id', '>', 0)
-                ->whereNotIn('status', SubscriptionReportService::RETENTION_EXCLUDED_STATUSES)
-                ->where('bill_times', '<=', 0)
-                ->orderBy('created_at', 'ASC');
-
-            $batchSubscriptions = $query->get();
-
-            // Attach last payment dates
-            foreach ($batchSubscriptions as &$sub) {
-                $sub->last_payment = $lastPaymentMap[$sub->id] ?? null;
-            }
-            unset($sub);
-
-            // Group by customer-product key
-            $grouped = [];
-            foreach ($batchSubscriptions as $sub) {
-                $key = "{$sub->customer_id}_{$sub->product_id}";
-                if (!isset($grouped[$key])) {
-                    $grouped[$key] = [];
-                }
-                $grouped[$key][] = $sub;
-            }
-            unset($batchSubscriptions);
-
-            // Build timelines for this batch
-            $timelines = [];
-            foreach ($grouped as $key => $subscriptions) {
-                if (empty($subscriptions)) {
-                    continue;
-                }
-
-                $firstSub = $subscriptions[0];
-                $customerId = $firstSub->customer_id;
-                $productId = $firstSub->product_id;
-                $cohort = (new \DateTime($firstSub->created_at))->format('Y-m');
-
-                // Build monthly state
-                $monthlyState = [];
-                foreach ($dateRange['months'] as $month) {
-                    $state = $this->getCustomerStateForMonth($subscriptions, $month);
-                    $monthlyState[$month] = $state;
-                }
-
-                $timelines[$key] = [
-                    'customer_id' => $customerId,
-                    'product_id'  => $productId,
-                    'cohort'      => $cohort,
-                    'monthly'     => $monthlyState,
-                ];
-            }
-            unset($grouped);
-
-            // Aggregate into global aggregates (don't insert yet)
-            $this->accumulateAggregates($globalAggregates, $timelines, $dateRange);
-            $processedPairs += count($batchPairs);
-
-            $this->log("Batch {$batchNum} complete. Processed {$processedPairs}/{$totalPairs} pairs", 'info', $progressCallback);
-
-            // Clear memory
-            unset($timelines);
-            if (function_exists('gc_collect_cycles')) {
-                gc_collect_cycles();
-            }
-        }
-
-        // Now insert all aggregates in batches
-        $this->log('All batches processed. Inserting snapshots to database...', 'info', $progressCallback);
-        $totalInserted = $this->insertAggregates($table, $globalAggregates, $progressCallback);
-        
-        unset($globalAggregates);
-        if (function_exists('gc_collect_cycles')) {
-            gc_collect_cycles();
-        }
-
-        return $totalInserted;
-    }
-
-    /**
-     * Accumulate timelines into global aggregates array
-     * This merges data from multiple batches without creating duplicates
-     */
-    protected function accumulateAggregates(array &$globalAggregates, array $timelines, array $dateRange): void
+    protected function addCustomer(array &$aggregates, array $spans, int $count): void
     {
-        foreach ($timelines as $timeline) {
-            $cohort = $timeline['cohort'];
-            $productId = $timeline['product_id'];
-            $monthly = $timeline['monthly'];
+        $groups = [];
+        foreach ($spans as $span) {
+            foreach ([['all', ''], ['all', $span['interval']], [$span['product'], ''], [$span['product'], $span['interval']]] as [$product, $interval]) {
+                $groups[$span['currency'] . '|' . $product . '|' . $interval][] = $span;
+            }
+        }
 
-            // Get cohort baseline (state at cohort month)
-            $cohortState = $monthly[$cohort] ?? ['is_active' => false, 'mrr' => 0];
+        foreach ($groups as $key => $members) {
+            [$currency, $product, $interval] = explode('|', $key, 3);
+            $cohort = min(array_column($members, 'from'));
+            $cell = &$aggregates[$currency][$product][$interval][$cohort];
+            if ($cell === null) {
+                $cell = ['size' => 0, 'mrr0' => 0, 'count' => [], 'mrr' => []];
+            }
+            $cell['size']++;
 
-            // Only include customers who were active at their cohort month
-            if (!$cohortState['is_active']) {
-                continue;
+            // MRR: every running subscription adds its own; the cohort's start is what began in the cohort month
+            foreach ($members as $span) {
+                if ($span['from'] === $cohort) {
+                    $cell['mrr0'] += $span['mrr'];
+                }
+                if ($span['to'] > $span['from']) {
+                    $cell['mrr'][$span['from']] = ($cell['mrr'][$span['from']] ?? 0) + $span['mrr'];
+                    $cell['mrr'][$span['to']] = ($cell['mrr'][$span['to']] ?? 0) - $span['mrr'];
+                }
             }
 
-            $cohortMrr = $cohortState['mrr'];
-
-            // Track for each period from cohort onwards
-            $cohortDate = new \DateTime($cohort . '-01');
-
-            foreach ($dateRange['months'] as $period) {
-                $periodDate = new \DateTime($period . '-01');
-
-                // Only track periods from cohort month onwards
-                if ($periodDate < $cohortDate) {
+            // Count: the customer once per month, over the union of their subscriptions' running months
+            usort($members, function ($a, $b) {
+                return $a['from'] <=> $b['from'];
+            });
+            $from = null;
+            $to = null;
+            foreach ($members as $span) {
+                if ($span['to'] <= $span['from']) {
                     continue;
                 }
-
-                $periodState = $monthly[$period] ?? ['is_active' => false, 'mrr' => 0];
-
-                // Calculate period offset
-                $interval = $cohortDate->diff($periodDate);
-                $periodOffset = ($interval->y * 12) + $interval->m;
-
-                // Aggregate for specific product
-                $this->addToAggregate(
-                    $globalAggregates,
-                    $cohort,
-                    $period,
-                    $productId,
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
-
-                // Aggregate for all products (product_id = NULL)
-                $this->addToAggregate(
-                    $globalAggregates,
-                    $cohort,
-                    $period,
-                    'all', // Will be converted to NULL
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
+                if ($from !== null && $span['from'] <= $to) {
+                    $to = max($to, $span['to']);
+                    continue;
+                }
+                if ($from !== null) {
+                    $cell['count'][$from] = ($cell['count'][$from] ?? 0) + 1;
+                    $cell['count'][$to] = ($cell['count'][$to] ?? 0) - 1;
+                }
+                $from = $span['from'];
+                $to = $span['to'];
             }
+            if ($from !== null) {
+                $cell['count'][$from] = ($cell['count'][$from] ?? 0) + 1;
+                $cell['count'][$to] = ($cell['count'][$to] ?? 0) - 1;
+            }
+            unset($cell);
         }
     }
 
     /**
-     * Insert aggregates into database in batches
+     * A customer's ended subscription runs on until the same product, in the same currency, was bought again within
+     * the rebuy window of its paid term's end: the customer never really left
      */
-    protected function insertAggregates(string $table, array $aggregates, ?callable $progressCallback, string $currency = ''): int
+    protected function bridgeRebuys(array $spans): array
     {
-        $snapshots = [];
-        $batchInsertThreshold = 10000;
-        $totalInserted = 0;
-        $generatedAt = DateTime::gmtNow()->format('Y-m-d H:i:s');
+        $window = SubscriptionReportService::REBUY_WINDOW_DAYS * DAY_IN_SECONDS;
+        foreach ($spans as $i => $span) {
+            if (empty($span['term_end'])) {
+                continue;
+            }
+            foreach ($spans as $j => $other) {
+                if ($i !== $j && $other['product'] === $span['product'] && $other['currency'] === $span['currency']
+                    && abs($other['started'] - $span['term_end']) <= $window) {
+                    $spans[$i]['to'] = max($spans[$i]['to'], $other['from']);
+                }
+            }
+        }
 
-        // Convert aggregates to final snapshot format and insert in batches
-        foreach ($aggregates as $cohort => $periods) {
-            foreach ($periods as $period => $products) {
-                foreach ($products as $productKey => $data) {
-                    $productId = $productKey === 'all' ? null : $productKey;
+        return $spans;
+    }
 
-                    $retentionRateCustomers = $data['cohort_customers'] > 0
-                        ? round(($data['retained_customers'] / $data['cohort_customers']) * 100, 2)
-                        : 0;
+    protected function addInterval(\DateTime $date, string $interval, $sub = null): \DateTime
+    {
+        // A custom billing schedule (every 4 months; plans migrated from WooCommerce) wins over the slug
+        $schedule = $sub ? $this->billingSchedule($sub) : null;
+        if ($schedule) {
+            return (new \DateTime('@' . SubscriptionHelper::addBillingInterval($date->getTimestamp(), $interval, $schedule)))
+                ->setTimezone($date->getTimezone());
+        }
 
-                    $retentionRateMrr = $data['cohort_mrr'] > 0
-                        ? round(($data['retained_mrr'] / $data['cohort_mrr']) * 100, 2)
-                        : 0;
+        $months = ['monthly' => 1, 'quarterly' => 3, 'half_yearly' => 6, 'yearly' => 12];
+        if (!isset($months[$interval])) {
+            return (clone $date)->modify($interval === 'weekly' ? '+1 week' : '+1 day');
+        }
 
-                    $snapshots[] = [
-                        'cohort'                    => $cohort,
-                        'period'                    => $period,
-                        'product_id'                => $productId,
-                        'currency'                  => $currency,
-                        'period_offset'             => $data['period_offset'],
-                        'cohort_customers'          => $data['cohort_customers'],
-                        'cohort_mrr'                => $data['cohort_mrr'],
-                        'retained_customers'        => $data['retained_customers'],
-                        'retained_mrr'              => $data['retained_mrr'],
-                        'new_customers'             => 0,
-                        'churned_customers'         => $data['cohort_customers'] - $data['retained_customers'],
-                        'retention_rate_customers'  => $retentionRateCustomers,
-                        'retention_rate_mrr'        => $retentionRateMrr,
-                        'created_at'                => $generatedAt,
-                        'updated_at'                => $generatedAt,
-                    ];
+        // As MySQL's + INTERVAL n MONTH: a day the target month lacks becomes its last day (31 Jan + 1 month = 28 Feb)
+        $next = (clone $date)->setDate((int) $date->format('Y'), (int) $date->format('n') + $months[$interval], 1);
 
-                    // Batch insert when threshold is reached
-                    if (count($snapshots) >= $batchInsertThreshold) {
-                        $inserted = $this->insertBatch($table, $snapshots);
-                        $totalInserted += $inserted;
-                        $this->log("Inserted batch of {$inserted} records (total: {$totalInserted})", 'info', $progressCallback);
-                        
-                        // Clear memory
-                        $snapshots = [];
-                        if (function_exists('gc_collect_cycles')) {
-                            gc_collect_cycles();
-                        }
+        return $next->setDate((int) $next->format('Y'), (int) $next->format('n'), min((int) $date->format('j'), (int) $next->format('t')));
+    }
+
+    protected function isSimulatedTrial($sub): bool
+    {
+        $config = is_array($sub->config ?? null) ? $sub->config : json_decode((string) ($sub->config ?? ''), true);
+
+        return is_array($config) && ($config['is_trial_days_simulated'] ?? '') === 'yes';
+    }
+
+    /**
+     * One customer range's snapshots into the build table
+     */
+    protected function insertBuildRows(array $aggregates, array $months, string $currency, int $rebuyAdjusted): void
+    {
+        foreach (array_chunk($this->buildRows($aggregates, $months, $currency, $rebuyAdjusted), 2000) as $rows) {
+            $this->insertBatch(self::BUILD_TABLE, $rows);
+        }
+    }
+
+    /**
+     * Snapshot rows of one customer range: running retained counts and MRR per period, MRR still as twelve times the
+     * monthly cents so ranges add up exactly
+     */
+    protected function buildRows(array $aggregates, array $months, string $currency, int $rebuyAdjusted): array
+    {
+        $rows = [];
+        $count = count($months);
+        foreach ($aggregates as $product => $intervals) {
+            foreach ($intervals as $interval => $cohorts) {
+                foreach ($cohorts as $cohort => $cell) {
+                    $retained = 0;
+                    $retainedX12 = 0;
+                    for ($k = $cohort; $k < $count; $k++) {
+                        $retained += $cell['count'][$k] ?? 0;
+                        $retainedX12 += $cell['mrr'][$k] ?? 0;
+                        $rows[] = [
+                            'cohort'             => $months[$cohort],
+                            'period'             => $months[$k],
+                            'product_id'         => $product === 'all' ? null : (int) $product,
+                            'currency'           => $currency,
+                            'billing_interval'   => (string) $interval,
+                            'rebuy_adjusted'     => $rebuyAdjusted,
+                            'period_offset'      => $k - $cohort,
+                            'cohort_customers'   => $cell['size'],
+                            'cohort_x12'         => $cell['mrr0'],
+                            'retained_customers' => $retained,
+                            'retained_x12'       => $retainedX12,
+                        ];
                     }
                 }
             }
         }
 
-        // Insert remaining snapshots
-        if (!empty($snapshots)) {
-            $inserted = $this->insertBatch($table, $snapshots);
-            $totalInserted += $inserted;
-            $this->log("Inserted final batch of {$inserted} records", 'info', $progressCallback);
+        return $rows;
+    }
+
+    /**
+     * The last step: add up the ranges and replace the published snapshots
+     */
+    protected function publish(array $months): void
+    {
+        // Until the last row is in, the page must rebuild on its next visit: a request that dies here leaves the table part-filled
+        update_option(self::STALE_OPTION, 1, false);
+        App::db()->table('fct_retention_snapshots')->delete();
+
+        // A year of periods per read bounds memory with few scans of the unindexed build table; store-wide
+        // rounding never crosses periods
+        $dimensions = ['cohort', 'period', 'product_id', 'currency', 'billing_interval', 'rebuy_adjusted'];
+        foreach (array_chunk($months, 12) as $periods) {
+            $groups = App::db()->table(self::BUILD_TABLE)
+                ->selectRaw(implode(', ', $dimensions) . ', MAX(period_offset) AS period_offset, SUM(cohort_customers) AS cohort_customers,
+                    SUM(cohort_x12) AS cohort_x12, SUM(retained_customers) AS retained_customers, SUM(retained_x12) AS retained_x12')
+                ->whereIn('period', $periods)
+                ->groupBy($dimensions)
+                ->get()
+                ->map(function ($row) {
+                    return (array) $row;
+                })
+                ->all();
+            foreach (array_chunk($this->publishedRows($groups), 2000) as $rows) {
+                $this->insertBatch('fct_retention_snapshots', $rows);
+            }
+        }
+        App::db()->table(self::BUILD_TABLE)->delete();
+    }
+
+    /**
+     * Published snapshot rows from build rows that are already one per snapshot key: MRR turned into cents once, and
+     * the store-wide rows of a month rounded to add up to its total rounded once (largest remainder), which equals
+     * the health MRR card for the current month
+     */
+    protected function publishedRows(array $groups): array
+    {
+        $storeX12 = [];
+        foreach ($groups as $index => $row) {
+            if ($row['product_id'] === null && (string) $row['billing_interval'] === '') {
+                $storeX12[$row['currency'] . '|' . $row['rebuy_adjusted'] . '|' . $row['period']][$index] = (int) $row['retained_x12'];
+            }
+        }
+        $rounded = [];
+        foreach ($storeX12 as $rows) {
+            $target = intdiv(array_sum($rows) + 6, 12);
+            $remainders = [];
+            foreach ($rows as $index => $times12) {
+                $rounded[$index] = intdiv($times12, 12);
+                $remainders[$index] = $times12 % 12;
+            }
+            arsort($remainders);
+            $extra = $target - array_sum(array_intersect_key($rounded, $rows));
+            foreach (array_keys($remainders) as $index) {
+                if ($extra-- <= 0) {
+                    break;
+                }
+                $rounded[$index]++;
+            }
         }
 
-        return $totalInserted;
+        $generatedAt = DateTime::gmtNow()->format('Y-m-d H:i:s');
+        $snapshots = [];
+        foreach ($groups as $index => $row) {
+            $size = (int) $row['cohort_customers'];
+            $retained = (int) $row['retained_customers'];
+            $cohortMrr = intdiv((int) $row['cohort_x12'] + 6, 12);
+            $retainedMrr = $rounded[$index] ?? intdiv((int) $row['retained_x12'] + 6, 12);
+            $snapshots[] = [
+                'cohort'                   => $row['cohort'],
+                'period'                   => $row['period'],
+                'product_id'               => $row['product_id'] === null ? null : (int) $row['product_id'],
+                'currency'                 => $row['currency'],
+                'billing_interval'         => (string) $row['billing_interval'],
+                'rebuy_adjusted'           => (int) $row['rebuy_adjusted'],
+                'period_offset'            => (int) $row['period_offset'],
+                'cohort_customers'         => $size,
+                'cohort_mrr'               => $cohortMrr,
+                'retained_customers'       => $retained,
+                'retained_mrr'             => $retainedMrr,
+                'new_customers'            => 0,
+                'churned_customers'        => $size - $retained,
+                'retention_rate_customers' => $size ? round($retained / $size * 100, 2) : 0,
+                'retention_rate_mrr'       => $cohortMrr > 0 ? round($retainedMrr / $cohortMrr * 100, 2) : 0,
+                'created_at'               => $generatedAt,
+                'updated_at'               => $generatedAt,
+            ];
+        }
+
+        return $snapshots;
     }
 
     /**
@@ -712,24 +758,17 @@ class RetentionSnapshotService
      */
     protected function getCustomerStateForMonth($subscriptions, string $month): array
     {
-        $monthStart = new \DateTime($month . '-01');
+        // The store month's end; PHP compares it with the GMT dates as instants
+        $monthStart = new \DateTime($month . '-01', wp_timezone());
         $monthEnd = (clone $monthStart)->modify('last day of this month')->setTime(23, 59, 59);
 
-        $cohortStart = null;
-        foreach ($subscriptions as $sub) {
-            $createdAt = new \DateTime($sub->created_at);
-            if (!$cohortStart || $createdAt < $cohortStart) {
-                $cohortStart = $createdAt;
-            }
-        }
-
-        // The cohort month counts anyone active during it; later months count who is still subscribed at month end.
-        $isCohortMonth = $cohortStart && $cohortStart->format('Y-m') === $month;
+        // Every period, the cohort month included, counts who is subscribed at its end (now for the month still
+        // running): the month-end snapshot that MRR and retention reports use, and the Retention table's rule
         $now = $this->getNow();
         $pointInTime = $monthEnd > $now ? $now : $monthEnd;
 
         $isActive = false;
-        $mrr = 0;
+        $mrrX12 = 0;
 
         foreach ($subscriptions as $sub) {
             $createdAt = new \DateTime($sub->created_at);
@@ -739,20 +778,17 @@ class RetentionSnapshotService
                 continue;
             }
 
-            $counts = $isCohortMonth
-                ? $this->wasSubscriptionActiveInMonth($sub, $monthStart, $monthEnd)
-                : $this->wasSubscriptionActiveAt($sub, $pointInTime);
-
-            if ($counts) {
+            if ($this->wasSubscriptionActiveAt($sub, $pointInTime)) {
                 $isActive = true;
-                // Use the subscription's recurring amount as MRR (normalized to monthly)
-                $mrr = max($mrr, $this->normalizeToMonthlyMrr($sub));
+                // Twelve times the monthly cents, summed over the pair's subscriptions; divided once on insert
+                $mrrX12 += $this->mrrTimes12($sub);
             }
         }
 
         return [
             'is_active' => $isActive,
-            'mrr'       => $mrr,
+            'mrr'       => intdiv($mrrX12 + 6, 12),
+            'mrr_x12'   => $mrrX12,
         ];
     }
 
@@ -763,33 +799,6 @@ class RetentionSnapshotService
         }
 
         return $this->now;
-    }
-
-    /**
-     * Check if a subscription was active at any time during a given month
-     */
-    protected function wasSubscriptionActiveInMonth($sub, \DateTime $monthStart, \DateTime $monthEnd): bool
-    {
-        $createdAt = new \DateTime($sub->created_at);
-
-        // Subscription must have started by end of month
-        if ($createdAt > $monthEnd) {
-            return false;
-        }
-
-        // Determine the subscription's effective end date
-        $endDate = $this->getSubscriptionEndDate($sub);
-
-        // If no end date, subscription is still ongoing
-        // But we need to check if it was created by this month
-        if (!$endDate) {
-            return $createdAt <= $monthEnd;
-        }
-
-        // Subscription was active in this month if:
-        // - It started on or before the end of this month, AND
-        // - It ended on or after the start of this month
-        return $createdAt <= $monthEnd && $endDate >= $monthStart;
     }
 
     protected function wasSubscriptionActiveAt($sub, \DateTime $at): bool
@@ -809,249 +818,100 @@ class RetentionSnapshotService
      */
     protected function getSubscriptionEndDate($sub): ?\DateTime
     {
-        // Renewals leave expire_at stale on active subscriptions, so their dates are ignored.
-        if (in_array($sub->status, $this->activeStatuses)) {
+        // Same rule as SubscriptionReportService::leftAtSql(), except that a custom billing schedule sets the paid
+        // term here; the SQL reads only the interval slug
+        $date = function ($value) {
+            return (empty($value) || $value === '0000-00-00 00:00:00') ? null : new \DateTime($value);
+        };
+        $earliest = function (array $dates) {
+            $dates = array_filter($dates);
+
+            return $dates ? min($dates) : null;
+        };
+
+        if (in_array($sub->status, $this->activeStatuses, true)) {
+            return null;
+        }
+        if (in_array($sub->status, [Status::SUBSCRIPTION_FAILING, Status::SUBSCRIPTION_PAST_DUE], true)) {
+            return $date($sub->next_billing_date ?? null) ?: $date($sub->updated_at ?? null);
+        }
+        if ($sub->status === Status::SUBSCRIPTION_PAUSED) {
+            return $date($sub->updated_at ?? null);
+        }
+
+        $ended = $earliest([$date($sub->canceled_at ?? null), $date($sub->expire_at ?? null)]);
+        if ($sub->status === Status::SUBSCRIPTION_CANCELED && !$date($sub->canceled_at ?? null)) {
+            $ended = $earliest([$date($sub->updated_at ?? null), $date($sub->expire_at ?? null)]);
+        }
+
+        // An ended subscription with no date at all left when it was last updated, never "still active"
+        $ended = $ended ?: $date($sub->updated_at ?? null);
+
+        // A cancel keeps the paid term (SubscriptionReportService::keepsAccessSql): it leaves when that term ends,
+        // by its custom billing schedule when it has one
+        if ($sub->status === Status::SUBSCRIPTION_CANCELED && $this->keepsAccess($sub)) {
+            $paid = !empty($this->lastPaidDates[(int) ($sub->parent_order_id ?? 0)])
+                ? max(new \DateTime($sub->created_at), new \DateTime($this->lastPaidDates[(int) $sub->parent_order_id]))
+                : new \DateTime($sub->created_at);
+            $termEnd = $this->addInterval($paid, (string) ($sub->billing_interval ?? ''), $sub);
+            $ended = $ended && $ended > $termEnd ? $ended : $termEnd;
+        }
+
+        return $ended;
+    }
+
+    /**
+     * The subscription's custom billing schedule, or null. Read only when its config names one: most plans have none.
+     */
+    protected function billingSchedule($sub)
+    {
+        $config = $sub->config ?? null;
+        if (!$config || (is_string($config) && strpos($config, 'billing_schedule') === false)) {
             return null;
         }
 
-        $endDate = null;
-        foreach (['canceled_at', 'expire_at'] as $column) {
-            $value = $sub->{$column} ?? null;
-            if (empty($value) || $value === '0000-00-00 00:00:00') {
-                continue;
-            }
-            $date = new \DateTime($value);
-            if (!$endDate || $date < $endDate) {
-                $endDate = $date;
-            }
-        }
-
-        if ($endDate) {
-            return $endDate;
-        }
-
-        // No end dates recorded: assume it ran one billing period past the last payment
-        if (!empty($sub->last_payment) && $sub->last_payment !== '0000-00-00 00:00:00') {
-            $lastPayment = new \DateTime($sub->last_payment);
-            $interval = $this->getBillingIntervalMonths($sub->billing_interval ?? 'yearly');
-            return (clone $lastPayment)->modify("+{$interval} months");
-        }
-
-        // Fallback: if no payment history, use created_at + billing_interval
-        // (they paid at creation)
-        $createdAt = new \DateTime($sub->created_at);
-        $interval = $this->getBillingIntervalMonths($sub->billing_interval ?? 'yearly');
-        return (clone $createdAt)->modify("+{$interval} months");
+        return ReportHelper::billingScheduleFromConfig($config);
     }
 
-    /**
-     * Get billing interval in months
-     */
-    protected function getBillingIntervalMonths(string $interval): int
+    protected function keepsAccess($sub): bool
     {
-        switch ($interval) {
-            case 'yearly':
-            case 'annual':
-                return 12;
-            case 'half_yearly':
-                return 6;
-            case 'quarterly':
-                return 3;
-            case 'weekly':
-                return 1; // Approximate to 1 month
-            case 'daily':
-                return 1; // Approximate to 1 month
-            default:
-                return 1; // monthly
+        $config = is_array($sub->config ?? null) ? $sub->config : json_decode((string) ($sub->config ?? ''), true);
+        $reason = is_array($config) ? (string) ($config['cancellation_reason'] ?? '') : '';
+        // Replaced by an upgrade (with or without a reason stored): the new plan carries on
+        if (in_array($reason, ['refunded', 'fraudulent', 'upgraded_to_new_plan'], true) || (int) ($config['upgraded_to_sub_id'] ?? 0) > 0) {
+            return false;
         }
+
+        // A free trial that never paid had no paid term
+        return !((int) ($sub->trial_days ?? 0) > 0 && !$this->isSimulatedTrial($sub) && empty($this->lastPaidDates[(int) ($sub->parent_order_id ?? 0)]));
     }
 
     /**
-     * Normalize recurring amount to monthly MRR
+     * Twelve times the monthly MRR in cents: SubscriptionReportService::mrrTimes12Sql() for one subscription.
      */
-    protected function normalizeToMonthlyMrr($sub): int
+    protected function mrrTimes12($sub): int
     {
-        $amount = (int) ($sub->recurring_amount ?? 0);
-        $interval = $sub->billing_interval ?? 'monthly';
+        $cycles = [
+            'monthly' => 12, 'quarterly' => 4, 'half_yearly' => 2, 'yearly' => 1, 'weekly' => 52, 'daily' => 365,
+        ];
+        $perYear = $cycles[$sub->billing_interval ?? ''] ?? 0;
 
-        switch ($interval) {
-            case 'yearly':
-            case 'annual':
-                return (int) round($amount / 12);
-            case 'half_yearly':
-                return (int) round($amount / 6);
-            case 'quarterly':
-                return (int) round($amount / 3);
-            case 'weekly':
-                return (int) round($amount * 4.33);
-            case 'daily':
-                return (int) round($amount * 30);
-            default:
-                return $amount; // monthly
+        // A plan reached by an upgrade counts at its full price: its prorated first cycle is the upgrade credit
+        $config = in_array($sub->status, [Status::SUBSCRIPTION_TRIALING, Status::SUBSCRIPTION_CANCELED], true)
+            ? (is_array($sub->config ?? null) ? $sub->config : json_decode((string) ($sub->config ?? ''), true)) : null;
+        if (is_array($config) && (int) ($config['upgraded_from_sub_id'] ?? 0) > 0) {
+            return (int) ($sub->recurring_total ?? $sub->recurring_amount ?? 0) * $perYear;
         }
-    }
-
-    /**
-     * Aggregate timelines into cohort snapshots
-     * Returns the number of snapshots inserted (not the snapshots themselves to save memory)
-     */
-    protected function aggregateSnapshots(array $timelines, array $dateRange, ?callable $progressCallback = null): int
-    {
-        $table = 'fct_retention_snapshots';
-        
-        $snapshots = [];
-        $batchInsertThreshold = 10000; // Insert every 10k records to manage memory
-        $totalInserted = 0;
-
-        // Initialize snapshot structure
-        // We need: by cohort, by period, by product_id (and NULL for all)
-        $aggregates = [];
-
-        foreach ($timelines as $timeline) {
-            $cohort = $timeline['cohort'];
-            $productId = $timeline['product_id'];
-            $monthly = $timeline['monthly'];
-
-            // Get cohort baseline (state at cohort month)
-            $cohortState = $monthly[$cohort] ?? ['is_active' => false, 'mrr' => 0];
-
-            // Only include customers who were active at their cohort month
-            if (!$cohortState['is_active']) {
-                continue;
-            }
-
-            $cohortMrr = $cohortState['mrr'];
-
-            // Track for each period from cohort onwards
-            $periodOffset = 0;
-            $cohortDate = new \DateTime($cohort . '-01');
-
-            foreach ($dateRange['months'] as $period) {
-                $periodDate = new \DateTime($period . '-01');
-
-                // Only track periods from cohort month onwards
-                if ($periodDate < $cohortDate) {
-                    continue;
-                }
-
-                $periodState = $monthly[$period] ?? ['is_active' => false, 'mrr' => 0];
-
-                // Calculate period offset
-                $interval = $cohortDate->diff($periodDate);
-                $periodOffset = ($interval->y * 12) + $interval->m;
-
-                // Aggregate for specific product
-                $this->addToAggregate(
-                    $aggregates,
-                    $cohort,
-                    $period,
-                    $productId,
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
-
-                // Aggregate for all products (product_id = NULL)
-                $this->addToAggregate(
-                    $aggregates,
-                    $cohort,
-                    $period,
-                    'all', // Will be converted to NULL
-                    $periodOffset,
-                    $cohortMrr,
-                    $periodState
-                );
-            }
+        if ($sub->status === Status::SUBSCRIPTION_TRIALING) {
+            // A real free trial is not MRR; a simulated one counts at the price paid now
+            return (int) ($this->paidNow[(int) $sub->id] ?? 0) * $perYear;
+        }
+        // A canceled discounted first cycle stays at the price paid until it ends
+        if ($sub->status === Status::SUBSCRIPTION_CANCELED && isset($this->paidNow[(int) $sub->id])) {
+            return (int) $this->paidNow[(int) $sub->id] * $perYear;
         }
 
-        // Convert aggregates to final snapshot format and insert in batches
-        foreach ($aggregates as $cohort => $periods) {
-            foreach ($periods as $period => $products) {
-                foreach ($products as $productKey => $data) {
-                    $productId = $productKey === 'all' ? null : $productKey;
-
-                    $retentionRateCustomers = $data['cohort_customers'] > 0
-                        ? round(($data['retained_customers'] / $data['cohort_customers']) * 100, 2)
-                        : 0;
-
-                    $retentionRateMrr = $data['cohort_mrr'] > 0
-                        ? round(($data['retained_mrr'] / $data['cohort_mrr']) * 100, 2)
-                        : 0;
-
-                    $snapshots[] = [
-                        'cohort'                    => $cohort,
-                        'period'                    => $period,
-                        'product_id'                => $productId,
-                        'period_offset'             => $data['period_offset'],
-                        'cohort_customers'          => $data['cohort_customers'],
-                        'cohort_mrr'                => $data['cohort_mrr'],
-                        'retained_customers'        => $data['retained_customers'],
-                        'retained_mrr'              => $data['retained_mrr'],
-                        'new_customers'             => 0, // Can be calculated separately if needed
-                        'churned_customers'         => $data['cohort_customers'] - $data['retained_customers'],
-                        'retention_rate_customers'  => $retentionRateCustomers,
-                        'retention_rate_mrr'        => $retentionRateMrr,
-                        'created_at'                => current_time('mysql'),
-                        'updated_at'                => current_time('mysql'),
-                    ];
-
-                    // Batch insert when threshold is reached
-                    if (count($snapshots) >= $batchInsertThreshold) {
-                        $inserted = $this->insertBatch($table, $snapshots);
-                        $totalInserted += $inserted;
-                        $this->log("Inserted batch of {$inserted} records (total: {$totalInserted})", 'info', $progressCallback);
-                        
-                        // Clear memory
-                        $snapshots = [];
-                        if (function_exists('gc_collect_cycles')) {
-                            gc_collect_cycles();
-                        }
-                    }
-                }
-            }
-        }
-
-        // Insert remaining snapshots
-        if (!empty($snapshots)) {
-            $inserted = $this->insertBatch($table, $snapshots);
-            $totalInserted += $inserted;
-            $this->log("Inserted final batch of {$inserted} records", 'info', $progressCallback);
-        }
-
-        return $totalInserted;
-    }
-
-    /**
-     * Add data to aggregate array
-     */
-    protected function addToAggregate(
-        array &$aggregates,
-        string $cohort,
-        string $period,
-        $productId,
-        int $periodOffset,
-        int $cohortMrr,
-        array $periodState
-    ): void {
-        if (!isset($aggregates[$cohort][$period][$productId])) {
-            $aggregates[$cohort][$period][$productId] = [
-                'period_offset'      => $periodOffset,
-                'cohort_customers'   => 0,
-                'cohort_mrr'         => 0,
-                'retained_customers' => 0,
-                'retained_mrr'       => 0,
-            ];
-        }
-
-        // Always increment cohort baseline
-        $aggregates[$cohort][$period][$productId]['cohort_customers']++;
-        $aggregates[$cohort][$period][$productId]['cohort_mrr'] += $cohortMrr;
-
-        // Increment retained if active in this period
-        if ($periodState['is_active']) {
-            $aggregates[$cohort][$period][$productId]['retained_customers']++;
-            $aggregates[$cohort][$period][$productId]['retained_mrr'] += $periodState['mrr'];
-        }
+        return (int) ($sub->recurring_total ?? $sub->recurring_amount ?? 0) * $perYear;
     }
 
     /**

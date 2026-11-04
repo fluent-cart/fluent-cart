@@ -32,7 +32,7 @@
                     v-model="selectedBulkAction"
                 >
                   <el-option :label="translate('Approve')" value="approve"/>
-                  <el-option :label="translate('Pending')" value="pending"/>
+                  <el-option :label="_x('Pending', 'Review status')" value="pending"/>
                   <el-option :label="translate('Mark as Spam')" value="spam"/>
                   <el-option :label="translate('Move to Trash')" value="trash"/>
                   <el-option :label="translate('Delete Permanently')" value="delete"/>
@@ -180,7 +180,7 @@
                         params: { review_id: scope.row.id }
                       }"
                   >
-                    <Badge :status="scope.row.status" size="small"/>
+                    <Badge :status="scope.row.status" kind="review" size="small"/>
                   </RouteCell>
                 </template>
               </el-table-column>
@@ -243,7 +243,7 @@
                             v-if="scope.row.status !== 'pending'"
                             :command="{ action: 'pending', review: scope.row }"
                         >
-                          {{ translate("Pending") }}
+                          {{ _x('Pending', 'Review status') }}
                         </el-dropdown-item>
                         <el-dropdown-item
                             v-if="scope.row.status !== 'spam'"
@@ -323,7 +323,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
-import translate, {translateNumber} from "@/utils/translator/Translator";
+import translate, {_x, translateNumber} from "@/utils/translator/Translator";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import StarRating from "@/Bits/Components/StarRating.vue";
@@ -424,7 +424,7 @@ const handleSelectionChange = (selection) => {
 const handleCommand = (command) => {
   if (command.action === 'delete') {
     $confirm(
-        translate('Are you sure you want to permanently delete this review? This action cannot be undone.'),
+        translate('Review_Sure_Want'),
         translate('Confirm Delete'),
         {
           confirmButtonText: translate('Yes, Delete!'),

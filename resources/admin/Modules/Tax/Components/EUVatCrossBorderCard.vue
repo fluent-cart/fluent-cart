@@ -179,7 +179,7 @@ function handleCrossBorderAction(command) {
 
 function stopCrossBorderCollecting() {
     $confirm(
-        translate('Are you sure you want to stop collecting cross-border VAT? This will clear your OSS/home country registration.'),
+        translate('Tax_Sure_Want'),
         translate('Stop Collecting'),
         { confirmButtonText: translate('Yes, Stop'), cancelButtonText: translate('Cancel'), type: 'warning' }
     ).then(() => {
@@ -261,8 +261,8 @@ watch(() => props.countries, (val) => {
                         icon="Info"
                         class="mb-4 mt-4"
                         :content="homeCountryConfigured
-                            ? /* translators: %1$s: home country name (e.g. Cyprus) */ translate('Collecting cross-border EU VAT at your %1$s home country rate. This is for small businesses whose total cross-border EU sales stay below €10,000/year. Once you exceed that threshold you must charge each buyer\'s local VAT rate instead.', getCountryName(crossBorderForm.home_country))
-                            : /* translators: %1$s: home country name (e.g. Cyprus) */ translate('Your %1$s home country VAT rate will apply to all EU cross-border sales. This is available for small businesses below €10,000/year in cross-border EU sales. Make sure %1$s is registered below with the correct rate.', getCountryName(crossBorderForm.home_country))"
+                            ? /* translators: %1$s: home country name (e.g. Cyprus) */ translate('Tax_Collecting_Cross', getCountryName(crossBorderForm.home_country))
+                            : /* translators: %1$s: home country name (e.g. Cyprus) */ translate('Tax_Home_Country', getCountryName(crossBorderForm.home_country))"
                     />
 
                     <EUVatHomeCountryRegistration
@@ -332,7 +332,7 @@ watch(() => props.countries, (val) => {
                     <span class="fct-eu-flag-icon">🇪🇺</span>
                     <div class="fct-vat-cross-border-empty-text">
                         <p class="fct-vat-cross-border-empty-title">{{ translate('Not collecting cross-border VAT') }}</p>
-                        <p class="fct-vat-cross-border-empty-desc">{{ translate('Set up OSS, micro-business, or specific-country registrations to collect VAT across the EU.') }}</p>
+                        <p class="fct-vat-cross-border-empty-desc">{{ translate('Tax_Set_Oss') }}</p>
                     </div>
                     <el-button size="small" @click="showCrossBorderModal = true" type="primary">
                         {{ translate('Configure') }}

@@ -13,7 +13,7 @@
       {{ translate("How's FluentCart working for you?") }}
     </h3>
     <p class="fct-review-prompt__text">
-      {{ translate('A short review on WordPress.org helps other store owners decide, and tells us what to improve.') }}
+      {{ translate('Review_Short_Review') }}
     </p>
 
     <el-button

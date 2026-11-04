@@ -134,10 +134,10 @@
                       params: { coupon_id: scope.row.id, action: 'edit' },
                     }"
                   >
-                    <Badge :status="scope.row.status">
+                    <Badge :status="scope.row.status" kind="coupon">
                       {{
                         isExpired(scope.row.end_date)
-                            ? translate("Expired")
+                            ? _x('Expired', 'Coupon status')
                             : scope.row.status
                       }}
                     </Badge>
@@ -267,7 +267,7 @@ import utc from "dayjs/plugin/utc";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 
 dayjs.extend(utc);
-import translate, {translateNumber} from "@/utils/translator/Translator";
+import translate, {_x, translateNumber} from "@/utils/translator/Translator";
 
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";

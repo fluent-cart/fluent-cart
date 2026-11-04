@@ -408,6 +408,30 @@ class CartCurrency
     }
 
     /**
+     * Run $callback with currentQuote() pinned to $quote, e.g. an existing
+     * order's frozen rate, so shipping is priced as that order was. A null or
+     * base quote runs the callback unchanged.
+     *
+     * @param array|null $quote ['currency' => , 'rate' => , ...]
+     * @return mixed the callback's return value
+     */
+    public static function withQuote(?array $quote, callable $callback)
+    {
+        if (!$quote || PriceConverter::isBaseQuote($quote)) {
+            return $callback();
+        }
+
+        $currency = strtoupper((string) Arr::get($quote, 'currency', ''));
+
+        return CurrencyContext::withCurrency($currency, function () use ($quote, $currency, $callback) {
+            self::$currentQuote = $quote;
+            self::$currentQuoteCurrency = $currency;
+
+            return $callback();
+        });
+    }
+
+    /**
      * Record the base-currency price on a freshly generated cart item.
      */
     public static function stampBase(array $item): array

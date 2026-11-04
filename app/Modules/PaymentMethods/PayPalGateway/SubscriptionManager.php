@@ -130,6 +130,9 @@ class SubscriptionManager
             ], 422);
         }
 
+        // The confirm step accepts only a PayPal subscription on this plan.
+        $subscriptionModel->updateMeta('paypal_switch_plan_id', Arr::get($plan, 'id'));
+
         wp_send_json([
             'status'  => 'success',
             'message' => __('Plan created successfully', 'fluent-cart'),
@@ -176,6 +179,25 @@ class SubscriptionManager
             ], 422);
         }
 
+        // The id comes from the browser: bind it to the plan the store issued
+        // for this switch before anything is changed or cancelled.
+        $issuedPlanId = $subscription->getMeta('paypal_switch_plan_id');
+        if (!$issuedPlanId || Arr::get($paypalSubscription, 'plan_id') !== $issuedPlanId) {
+            $this->sendError(__('This PayPal subscription does not match the plan issued for this switch.', 'fluent-cart'));
+        }
+
+        if (!in_array(Arr::get($paypalSubscription, 'status'), ['ACTIVE', 'APPROVED'], true)) {
+            $this->sendError(__('This PayPal subscription is not active.', 'fluent-cart'));
+        }
+
+        $alreadyLinked = Subscription::query()
+            ->where('vendor_subscription_id', Arr::get($paypalSubscription, 'id'))
+            ->where('id', '!=', $subscription->id)
+            ->exists();
+        if ($alreadyLinked) {
+            $this->sendError(__('This PayPal subscription is already linked to another subscription.', 'fluent-cart'));
+        }
+
         $oldPaymentMethod = $subscription->current_payment_method;
         $oldVendorSubscriptionId = $subscription->vendor_subscription_id;
         $oldVendorCustomerId = $subscription->vendor_customer_id;
@@ -201,6 +223,7 @@ class SubscriptionManager
         ]);
 
         Subscription::query()->where('id', $subscriptionId)->update($data);
+        $subscription->deleteMeta('paypal_switch_plan_id');
 
         $subscription->mergeConfig(['is_trial_days_simulated' => 'yes']);
 

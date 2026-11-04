@@ -14,6 +14,21 @@ $shippingAddress = $order->shipping_address;
 if(!$billingAddress && !$shippingAddress) {
     return;
 }
+// The name in bold, then one line each: street, city, state + postcode, country.
+$fctRenderAddressLines = function ($address) {
+    $parts = $address->formatted_address;
+    $lines = array_filter([
+        implode(', ', array_filter([trim((string) $parts['address_1']), trim((string) $parts['address_2'])])),
+        trim((string) $parts['city']),
+        implode(', ', array_filter([trim((string) $parts['state']), trim((string) $parts['postcode'])])),
+        trim((string) $parts['country']),
+    ]);
+    $html = '';
+    if (trim((string) $parts['name']) !== '') {
+        $html .= '<span style="font-weight:600;color:rgb(17,24,39);">' . esc_html($parts['name']) . '</span><br>';
+    }
+    return $html . implode('<br>', array_map('esc_html', $lines));
+};
 
 ?>
 <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
@@ -25,13 +40,13 @@ if(!$billingAddress && !$shippingAddress) {
                 <tbody style="width:100%; vertical-align: top;">
                 <tr style="width:100%">
                     <td style="width:50%;padding-<?php echo esc_attr($startSide); ?>: 0;padding-<?php echo esc_attr($endSide); ?>: 10px;">
-                        <p style="font-size:12px;color:rgb(127,140,141);margin:0px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
+                        <p style="font-size:11px;font-weight:700;color:#64748b;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.1em;line-height:16px;">
                             <?php echo esc_html__('Billing Address', 'fluent-cart'); ?>
                         </p>
-                        <p style="font-size:14px;color:rgb(44,62,80);margin:0px;line-height:1.4;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px">
+                        <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
                             <?php
                             if ($order->billing_address) {
-                                echo esc_html($order->billing_address->getAddressAsText());
+                                echo $fctRenderAddressLines($order->billing_address); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped per line
                             } else {
                                 echo esc_html__('n/a', 'fluent-cart');
                             }
@@ -101,13 +116,13 @@ if(!$billingAddress && !$shippingAddress) {
                     </td>
                     <td style="width:50%;padding-<?php echo esc_attr($endSide); ?>: 0;padding-<?php echo esc_attr($startSide); ?>: 10px;">
                         <?php if ($order->fulfillment_type !== 'digital'): ?>
-                            <p style="font-size:12px;color:rgb(127,140,141);margin:0px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;line-height:24px;margin-top:0px;margin-left:0px;margin-right:0px">
+                            <p style="font-size:11px;font-weight:700;color:#64748b;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.1em;line-height:16px;">
                                 <?php echo esc_html__('Shipping Address', 'fluent-cart'); ?>
                             </p>
-                            <p style="font-size:14px;color:rgb(44,62,80);margin:0px;line-height:1.4;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px">
+                            <p style="font-size:14px;color:rgb(55,65,81);margin:0px;line-height:24px;">
                                 <?php
                                 if ($order->shipping_address) {
-                                    echo esc_html($order->shipping_address->getAddressAsText());
+                                    echo $fctRenderAddressLines($order->shipping_address); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped per line
                                 } else {
                                     echo esc_html__('n/a', 'fluent-cart');
                                 }

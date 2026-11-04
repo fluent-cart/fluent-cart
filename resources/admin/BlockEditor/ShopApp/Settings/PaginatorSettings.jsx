@@ -1,6 +1,6 @@
 import InspectorSettings from "@/BlockEditor/ShopApp/Settings/InspectorSettings";
 import BlockEditorControl from "@/BlockEditor/Components/BlockEditorControl";
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import blocktranslate, {_x} from "@/BlockEditor/BlockEditorTranslator";
 
 const {
     __experimentalRadio: Radio,
@@ -20,7 +20,7 @@ const PaginatorSettings = (props) => {
         <BlockEditorControl title={blocktranslate('Paginator')}>
             <div className="fct-block-editor-control-item">
                 <div className="fct-inspector-control-row">
-                    <span className="label">{blocktranslate('View')}</span>
+                    <span className="label">{_x('View', 'Pagination display mode')}</span>
                     <div className="actions">
                         <RadioGroup
                             className="fct-block-editor-radio-group"

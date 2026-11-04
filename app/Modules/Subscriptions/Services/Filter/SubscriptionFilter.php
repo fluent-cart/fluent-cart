@@ -72,6 +72,9 @@ class SubscriptionFilter extends BaseFilter
             Status::SUBSCRIPTION_FAILING  => 'status',
             Status::SUBSCRIPTION_EXPIRING => 'status',
             Status::SUBSCRIPTION_EXPIRED  => 'status',
+            // A finished installment plan
+            Status::SUBSCRIPTION_COMPLETED => 'status',
+            'installment'                  => 'plan_type',
         ];
     }
 
@@ -170,7 +173,9 @@ class SubscriptionFilter extends BaseFilter
         //Apply Active Tab view
         $this->query = $this->query->when($activeView, function (Builder $query, $activeView) use ($tabsMap) {
             $query->where(function ($query) use ($tabsMap, $activeView) {
-                if ('canceled' === $activeView && $tabsMap[$activeView] === 'status') {
+                if ($tabsMap[$activeView] === 'plan_type') {
+                    $query->ofPlanType($activeView);
+                } elseif ('canceled' === $activeView && $tabsMap[$activeView] === 'status') {
                     // active(Collection paused) is also considered as canceled
                     $query->whereIn('status', [Status::SUBSCRIPTION_CANCELED]);
                 } else {
@@ -228,6 +233,29 @@ class SubscriptionFilter extends BaseFilter
                         'relation'        => 'variation',
                         'remote_data_key' => 'product_variations',
                         'limit'           => 10,
+                    ],
+                    [
+                        'label'       => __('Plan Type', 'fluent-cart'),
+                        'value'       => 'plan_type',
+                        'type'        => 'selections',
+                        'filter_type' => 'custom',
+                        'options'     => [
+                            'installment' => __('Installment', 'fluent-cart'),
+                            'recurring'   => __('Recurring', 'fluent-cart'),
+                        ],
+                        'is_multiple' => true,
+                        'is_only_in'  => true,
+                        'callback'    => function ($query, $data) {
+                            $types = array_values(array_intersect((array) Arr::get($data, 'value', []), ['installment', 'recurring']));
+                            $operator = Arr::get($data, 'operator');
+                            $exclude = in_array($operator, ['not_in', 'not_contains', 'not_in_all'], true);
+                            if (count($types) === 1) {
+                                $query->ofPlanType($exclude ? ($types[0] === 'installment' ? 'recurring' : 'installment') : $types[0]);
+                            } elseif (count($types) === 2 && ($exclude || $operator === 'in_all')) {
+                                // A plan is one type: excluding both, or needing both at once, matches nothing
+                                $query->whereRaw('1 = 0');
+                            }
+                        },
                     ],
                     [
                         'label'       => __('Billing Interval', 'fluent-cart'),
@@ -337,9 +365,9 @@ class SubscriptionFilter extends BaseFilter
                         'column'      => 'status',
                         'relation'    => 'license',
                         'options'     => [
-                            Status::LICENSE_ACTIVE   => __('Active', 'fluent-cart'),
-                            Status::LICENSE_DISABLED => __('Disabled', 'fluent-cart'),
-                            Status::LICENSE_EXPIRED  => __('Expired', 'fluent-cart'),
+                            Status::LICENSE_ACTIVE   => _x('Active', 'License status', 'fluent-cart'),
+                            Status::LICENSE_DISABLED => _x('Disabled', 'License status', 'fluent-cart'),
+                            Status::LICENSE_EXPIRED  => _x('Expired', 'License status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true

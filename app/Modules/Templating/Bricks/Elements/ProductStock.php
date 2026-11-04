@@ -109,43 +109,6 @@ class ProductStock extends Element
             ],
         ];
 
-        // Low Stock
-        if (false) {
-            $this->controls['lowStockText'] = [
-                'tab'            => 'content',
-                'group'          => 'lowStock',
-                'type'           => 'text',
-                'hasDynamicData' => 'text',
-                'placeholder'    => esc_html__('Custom text', 'fluent-cart'),
-            ];
-
-            $this->controls['lowStockTypography'] = [
-                'tab'   => 'content',
-                'group' => 'lowStock',
-                'label' => esc_html__('Typography', 'fluent-cart'),
-                'type'  => 'typography',
-                'css'   => [
-                    [
-                        'property' => 'font',
-                        'selector' => '.low-stock, .available-on-backorder',
-                    ],
-                ],
-            ];
-
-            $this->controls['lowStockBackgroundColor'] = [
-                'tab'   => 'style',
-                'group' => 'lowStock',
-                'label' => esc_html__('Background color', 'fluent-cart'),
-                'type'  => 'color',
-                'css'   => [
-                    [
-                        'property' => 'background-color',
-                        'selector' => '.low-stock, .available-on-backorder',
-                    ]
-                ],
-            ];
-        }
-
         // Out of Stock
         $this->controls['outOfStockText'] = [
             'tab'            => 'content',

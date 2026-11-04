@@ -6,44 +6,65 @@
     <meta name="x-apple-disable-message-reformatting">
     <style>
         html {
-            background-color: rgb(248, 249, 250);
+            background-color: rgb(241, 243, 246);
             font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
         body {
-            background-color: rgb(248, 249, 250);
-            padding-top: 40px;
-            padding-bottom: 40px;
+            background-color: rgb(241, 243, 246);
+            margin: 0;
+            padding: 32px 12px;
             font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
 
         p {
             font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
             font-size: 14px;
+            color: rgb(55, 65, 81);
             margin: 0px;
             margin-bottom: 8px;
             line-height: 24px;
         }
 
         .email_footer p {
-            font-size: 12px;
-            color: rgb(127, 140, 141);
+            font-size: 13px;
+            color: rgb(75, 85, 99);
             margin: 0px;
             line-height: 24px;
             margin-bottom: 8px;
         }
 
         hr {
-            border-color: rgb(229, 231, 235);
-            margin-bottom: 20px;
+            margin: 24px 0;
             width: 100%;
             border: none;
-            border-top: 1px solid #eaeaea;
+            border-top: 1px solid rgb(229, 231, 235);
         }
 
         .space_bottom_30 {
             display: block;
             width: 100%;
             margin-bottom: 30px;
+        }
+
+        /* Email intro; the greeting line carries a class so a plain opening sentence stays plain. */
+        .space_bottom_30 p {
+            font-size: 15px;
+            line-height: 24px;
+            color: rgb(55, 65, 81);
+        }
+
+        .space_bottom_30 p.fct-email-greeting {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgb(17, 24, 39);
+            margin-bottom: 8px;
+        }
+
+        /* Clients that read <style> get a tighter card on phones; the rest keep 32px. */
+        @media only screen and (max-width: 480px) {
+            .email_wrap_inner {
+                padding: 24px 20px !important;
+            }
         }
     </style>
 </head>
@@ -60,10 +81,11 @@
 <?php endif; ?>
 
 <table class="email_wrap" dir="<?php echo esc_attr($fctEmailDir); ?>" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
-       style="background-color:rgb(255,255,255);margin-left:auto;margin-right:auto;padding-left:32px;padding-right:32px;padding-top:32px;padding-bottom:32px;max-width:620px">
+       style="background-color:rgb(255,255,255);margin-left:auto;margin-right:auto;max-width:620px;border:1px solid rgb(229,231,235);border-radius:12px;border-collapse:separate;">
     <tbody>
     <tr style="width:100%">
-        <td>
+        <?php // Padding on the cell, not the table: table padding adds to its 100% width and overflows on phones. ?>
+        <td class="email_wrap_inner" style="padding:32px;">
             <?php echo $emailBody; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>
         </td>
     </tr>

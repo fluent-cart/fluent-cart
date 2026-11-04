@@ -13,6 +13,7 @@ use FluentCart\Api\PaymentMethods;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Models\Shipment;
 use FluentCart\App\Models\Customer;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\CPT\FluentProducts;
@@ -191,9 +192,11 @@ class MenuHandler
     {
 
         add_action('admin_menu', array($this, 'addAdminMenu'));
+        // Late, so rows added by add-ons and the Products children are grouped too.
+        add_action('admin_menu', array($this, 'groupAdminSubmenu'), 9999);
 
-        // The "↳" children under Products stay visible on every page so the
-        // sidebar never changes shape. Pro's "↳ Inventory" still hides itself
+        // The children under Products stay visible on every page so the
+        // sidebar never changes shape. Pro's Inventory row still hides itself
         // with inline CSS (it relied on the admin app to reveal it), so keep
         // that row visible whichever Pro version is installed.
         add_action('admin_enqueue_scripts', function () {
@@ -202,6 +205,18 @@ class MenuHandler
             wp_add_inline_style('fluent-cart-admin-submenu', '
                 #adminmenu .toplevel_page_fluent-cart li.fluent_cart_inventory {
                     display: list-item;
+                }
+                #adminmenu .toplevel_page_fluent-cart li.fct_menu_group_start {
+                    margin-top: 5px;
+                    padding-top: 5px;
+                    border-top: 1px solid rgba(240, 246, 252, 0.2);
+                }
+                .admin-color-light #adminmenu .toplevel_page_fluent-cart li.fct_menu_group_start {
+                    border-top-color: rgba(0, 0, 0, 0.12);
+                }
+                #adminmenu .toplevel_page_fluent-cart li.fct_menu_child a {
+                    margin-left: 8px;
+                    font-size: 90%;
                 }
             ');
         });
@@ -396,14 +411,114 @@ class MenuHandler
         do_action('fluent_cart/admin_submenu_added', $submenu);
     }
 
+    public function groupAdminSubmenu()
+    {
+        global $submenu;
+
+        if (empty($submenu['fluent-cart'])) {
+            return;
+        }
+
+        $submenu['fluent-cart'] = $this->groupSubmenu($submenu['fluent-cart']);
+    }
+
+    /**
+     * Order the FluentCart submenu by group, drop the rows the in-app top bar
+     * already links to, and mark the first visible row of each group after the
+     * first, which the admin CSS draws a divider above.
+     *
+     * @param array $items $submenu['fluent-cart'] rows, keyed by slug or index.
+     * @return array
+     */
+    public function groupSubmenu(array $items)
+    {
+        // '__taxonomies' places the public product taxonomies, which only the sidebar links to.
+        $groups = apply_filters('fluent_cart/admin_menu/submenu_groups', [
+            'overview' => ['dashboard', 'reports'],
+            'sales'    => ['orders', 'customers', 'subscriptions'],
+            'catalog'  => ['products', 'attributes', 'inventory', 'reviews', '__taxonomies', 'coupons'],
+            'config'   => ['integrations', 'settings'],
+            'tools'    => ['migrator', 'logs'],
+        ]);
+
+        // Only rows the top bar links to are hidden; a site that turns the top
+        // bar off keeps them, or the sidebar is left as their only way in and
+        // they would have none.
+        $hidden = apply_filters('fluent_cart/show_admin_top_bar', true)
+            ? ['attributes', 'inventory', 'reviews', 'product_feed', 'taxes', 'logs']
+            : [];
+
+        $hidden = apply_filters('fluent_cart/admin_menu/hidden_submenu_items', $hidden);
+
+        $taxonomies = [];
+        $taxonomyPrefix = 'edit-tags.php?taxonomy=';
+        $productTaxonomySuffix = '&post_type=' . FluentProducts::CPT_NAME;
+
+        foreach ($items as $key => $item) {
+            if (in_array($key, $hidden, true)) {
+                unset($items[$key]);
+                continue;
+            }
+
+            $url = (string)($item[2] ?? '');
+            if (strpos($url, $taxonomyPrefix) === 0 && substr($url, -strlen($productTaxonomySuffix)) === $productTaxonomySuffix) {
+                $taxonomies[$key] = $item;
+                unset($items[$key]);
+            }
+        }
+
+        // Rows no group claims get their own group, before Tools.
+        $order = array_keys($groups);
+        $toolsAt = array_search('tools', $order, true);
+        array_splice($order, $toolsAt === false ? count($order) : $toolsAt, 0, ['__other']);
+
+        $buckets = array_fill_keys($order, []);
+
+        foreach ($groups as $group => $keys) {
+            foreach ($keys as $key) {
+                if ($key === '__taxonomies') {
+                    $buckets[$group] += $taxonomies;
+                    $taxonomies = [];
+                } elseif (isset($items[$key])) {
+                    $buckets[$group][$key] = $items[$key];
+                    unset($items[$key]);
+                }
+            }
+        }
+
+        $buckets['__other'] += $taxonomies + $items;
+
+        $children = ['attributes', 'inventory', 'reviews', 'product_feed'];
+
+        $grouped = [];
+        $isFirstGroup = true;
+        foreach ($buckets as $rows) {
+            $marked = false;
+            foreach ($rows as $key => $row) {
+                if (in_array($key, $children, true)) {
+                    // Pro and the feed add-on still prefix their labels with "↳".
+                    $row[0] = preg_replace('/^↳\s*/u', '', $row[0]);
+                    $row[4] = trim(($row[4] ?? '') . ' fct_menu_child');
+                }
+
+                // WordPress skips rows the user can't see, so the divider goes on the first visible one.
+                if (!$marked && current_user_can($row[1])) {
+                    if (!$isFirstGroup) {
+                        $row[4] = trim(($row[4] ?? '') . ' fct_menu_group_start');
+                    }
+                    $marked = true;
+                    $isFirstGroup = false;
+                }
+                $grouped[$key] = $row;
+            }
+        }
+
+        return $grouped;
+    }
+
     public function renderAdmin()
     {
-        $isCustomDashboardSlugChanged = (new StoreSettings())->getCustomerDashboardPageSlug() != (new StoreSettings())->get('customer_profile_page_slug');
-
-        if ($isCustomDashboardSlugChanged) {
-            $allSettings = (new StoreSettings())->get();
-            (new StoreSettings())->save($allSettings); // we are just resaving to flash the settings cache
-        }
+        (new StoreSettings())->syncCustomerDashboardPageSlug();
 
         if (function_exists('wp_enqueue_editor')) {
             wp_enqueue_editor();
@@ -590,6 +705,11 @@ class MenuHandler
             'editable_order_statues'           => Status::getEditableOrderStatuses(),
             'editable_customer_statues'        => Status::getEditableCustomerStatuses(),
             'shipping_statuses'                => Status::getShippingStatuses(),
+            // Hand-settable subset only: `partially_shipped` is derived from the
+            // shipment records, so it must never appear in a status dropdown.
+            'editable_shipping_statuses'       => Status::getEditableShippingStatuses(),
+            // Per-shipment lifecycle, distinct from the order's shipping_status.
+            'shipment_statuses'                => Shipment::getStatuses(),
             // Attribute library powering the Advanced Variation feature.
             'variation_attributes'             => AttributeGroup::with(['terms'])->get(),
             'variation_terms'                  => AttributeTerm::query()->get()->keyBy('id'),

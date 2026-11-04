@@ -88,10 +88,11 @@ class SmartCodeParser
         $parsedValue = "";
 
         if (method_exists($parser, 'parse')) {
+            // Conditions come from $code: the cached reference may hold the same code without its |fallback.
             $parsedValue = $parser->parse(
                 $parserReference['accessor'],
                 $parserReference['template'],
-                $this->evaluateCondition($parserReference['template'])
+                $this->evaluateCondition($code)
             );
 
         }

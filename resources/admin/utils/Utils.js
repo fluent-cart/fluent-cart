@@ -9,7 +9,7 @@ import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {resolveDateFormat, fluentDayjsLocale, toStoreTimezone} from "@/utils/dateFormats";
 
 // Re-exported so every existing `@/utils/Utils` import keeps working.
-export {resolveDateFormat, fluentDayjsLocale, toStoreTimezone, storeNow, resolveYearAwareFormat} from "@/utils/dateFormats";
+export {resolveDateFormat, fluentDayjsLocale, toStoreTimezone, storeNow, resolveYearAwareFormat, recentDateText} from "@/utils/dateFormats";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -33,6 +33,10 @@ export default class Utils {
 
 
 export function dateTimeI18(dateTime, format = 'date_short') {
+    // No date (an ended plan's next billing): nothing, not "Invalid Date" or today
+    if (!dateTime) {
+        return '';
+    }
 
     const date = toStoreTimezone(dateTime)
         .locale(fluentDayjsLocale())

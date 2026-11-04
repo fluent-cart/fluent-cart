@@ -17,7 +17,7 @@
               <el-breadcrumb-item>#{{ subscription_id }}</el-breadcrumb-item>
             </el-breadcrumb>
             <div class="single-page-header-status-wrap">
-              <Badge :status="subscriptionStatus"/>
+              <Badge :status="subscriptionStatus" kind="subscription"/>
             </div>
           </div>
           <div class="pt-2 text-xs text-system-mid dark:text-gray-300">

@@ -263,12 +263,17 @@ class API
                 fluent_cart_update_option('_paypal_access_token_' . $mode, []);
             }
 
-            if (!empty($body['message'])) {
-                $message = $body['message'];
-                if (isset($body['details'])) {
-                    $message = Arr::get($body, 'details.0.description');
+            $message = $body['error_description'] ?? $body['message'] ?? 'PayPal General Error';
+
+            if (isset($body['details'])) {
+                $detail = Arr::get($body, 'details.0.description')
+                    ?: Arr::get($body, 'details.0.issue');
+
+                if ($detail) {
+                    $message = $detail;
                 }
             }
+
             return new \WP_Error($code, $message, $body);
         }
 

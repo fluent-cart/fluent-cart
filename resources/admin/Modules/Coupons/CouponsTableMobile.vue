@@ -17,8 +17,8 @@
           </div><!-- fct-table-id-col -->
 
           <div class="fct-table-status-col">
-            <Badge :status="row.status">
-              {{isExpired(row.end_date) ? translate("Expired") : row.status }}
+            <Badge :status="row.status" kind="coupon">
+              {{isExpired(row.end_date) ? _x('Expired', 'Coupon status') : row.status }}
             </Badge>
 
             <el-tooltip
@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import {$confirm, formatDate} from "@/Bits/common";
 import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";

@@ -1,6 +1,6 @@
 <script setup>
 import * as Card from '@/Bits/Components/Card/Card.js';
-import translate, {pluralizeTranslate} from "@/utils/translator/Translator";
+import translate, {_x, splitPlaceholders} from "@/utils/translator/Translator";
 import {computed, h, markRaw, nextTick, onBeforeUnmount, onMounted, ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
@@ -21,7 +21,14 @@ const MULTI_CURRENCY_DOCS_URL = 'https://docs.fluentcart.com/guide/settings-conf
 const SUPPORT_URL = 'https://fluentcart.com/account/support/';
 // Split on the placeholder so the link renders without v-html while translators keep the whole sentence
 /* translators: %1$s: "our support team" link */
-const betaNotice = translate('Multi-currency is in beta. Test it on a staging site before relying on it in your live store, and report any issues you find to %1$s.').split('%1$s');
+const betaNotice = translate('Settings_Multi_Currency').split('%1$s');
+// Whole sentences around the inputs and copy pills, so translators can move them
+/* translators: %1$s: shortcode, %2$s: menu CSS class */
+const switcherSentence = splitPlaceholders(translate('Settings_Shoppers_Switch'));
+/* translators: %1$s: percentage input */
+const marginSentence = splitPlaceholders(translate('Settings_Add_Margin'));
+/* translators: %1$s: minutes input */
+const rateLockSentence = splitPlaceholders(translate('Settings_Keep_Converted'));
 
 const loading = ref(true);
 // Saving before a successful load would send the defaults below and switch
@@ -219,7 +226,7 @@ const saveRate = (code) => {
           }
           // The rate is stored but the currency list is not; the row stays on the page for Save Settings
           Notify.notify(
-              translate('The rate is saved, but %1$s is not added to your currencies yet. Click Save Settings to keep it.', code),
+              translate('Settings_Rate_Saved', code),
               translate('Warning'),
               'warning'
           );
@@ -295,7 +302,7 @@ const rateNote = computed(() => {
   if (rateProviderNotes.value[settings.value.rate_provider]) {
     return rateProviderNotes.value[settings.value.rate_provider];
   }
-  return isAutomated.value ? '' : translate('Edit each rate in the Currencies table below. Rates only change when you edit them.');
+  return isAutomated.value ? '' : translate('Settings_Edit_Rate');
 });
 
 onMounted(() => {
@@ -336,7 +343,7 @@ onBeforeUnmount(() => {
         <Card.Body>
           <div class="flex items-center justify-between gap-4">
             <p class="m-0 text-sm">
-              {{ translate('The multi-currency settings could not be loaded, so they cannot be changed right now.') }}
+              {{ translate('Settings_Multi_Currency_Settings') }}
             </p>
             <el-button size="small" @click="fetchSettings">{{ translate('Retry') }}</el-button>
           </div>
@@ -358,20 +365,17 @@ onBeforeUnmount(() => {
               <div class="fct-mc-field-text gap-0.5">
                 <span class="fct-mc-field-label">{{ translate('Enable multi-currency') }}</span>
                 <span class="fct-mc-field-hint">
-                  {{ translate('Prices are kept in the base currency and converted at the rate you set. Each order keeps the rate it was placed at, and renewals keep it too.') }}
+                  {{ translate('Settings_Prices_Kept') }}
                 </span>
                 <Animation :visible="settings.enabled === 'yes'" accordion>
                   <div class="fct-mc-switcher-line">
-                    <span>{{ translate('Shoppers switch currency with the currency switcher. Add it to your header, footer or shop page with') }}</span>
-                    <button type="button" class="fct-mc-shortcode" :title="translate('Copy')" @click="copyText(SWITCHER_SHORTCODE)">
-                      <McIcon name="copy"/>
-                      <code>{{ SWITCHER_SHORTCODE }}</code>
-                    </button>
-                    <span>{{ translate('or the Currency Switcher block. For a navigation menu, add the class') }}</span>
-                    <button type="button" class="fct-mc-shortcode" :title="translate('Copy')" @click="copyText(SWITCHER_MENU_CLASS)">
-                      <McIcon name="copy"/>
-                      <code>{{ SWITCHER_MENU_CLASS }}</code>
-                    </button>
+                    <template v-for="(part, index) in switcherSentence" :key="index">
+                      <button v-if="part.slot === 1 || part.slot === 2" type="button" class="fct-mc-shortcode" :title="translate('Copy')" @click="copyText(part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS)">
+                        <McIcon name="copy"/>
+                        <code>{{ part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS }}</code>
+                      </button>
+                      <span v-else-if="part.text">{{ part.text }}</span>
+                    </template>
                     <a :href="MULTI_CURRENCY_DOCS_URL" target="_blank" rel="noopener noreferrer" class="fct-text-link">
                       {{ translate('See documentation') }}
                     </a>
@@ -382,7 +386,7 @@ onBeforeUnmount(() => {
             <Animation :visible="settings.enabled !== 'yes'" accordion>
               <div class="fct-mc-note">
                 <McIcon name="info"/>
-                <span>{{ translate('Multi-currency is off. Shoppers only see %1$s. Turn it on to add currencies and set their rates.', baseCurrency) }}</span>
+                <span>{{ translate('Settings_Multi_Currency_Off', baseCurrency) }}</span>
               </div>
             </Animation>
             <div class="fct-mc-divider"></div>
@@ -427,18 +431,22 @@ onBeforeUnmount(() => {
                   <span>{{ rateNote }}</span>
                 </div>
                 <div v-if="isAutomated" class="fct-mc-inline-row">
-                  <span>{{ translate('Add a margin of') }}</span>
-                  <el-input-number v-model="settings.rate_margin" :min="0" :max="10" :step="0.5" :precision="2" class="fct-mc-counter" :aria-label="translate('Add a margin of')">
-                    <template #decrease-icon><McIcon name="subtract"/></template>
-                    <template #increase-icon><McIcon name="add"/></template>
-                  </el-input-number>
-                  <span>{{ translate('% to fetched rates, to cover the spread your payment gateway charges on conversion.') }}</span>
+                  <template v-for="(part, index) in marginSentence" :key="index">
+                    <template v-if="part.slot === 1">
+                      <el-input-number v-model="settings.rate_margin" :min="0" :max="10" :step="0.5" :precision="2" class="fct-mc-counter" :aria-label="translate('Rate margin (%)')">
+                        <template #decrease-icon><McIcon name="subtract"/></template>
+                        <template #increase-icon><McIcon name="add"/></template>
+                      </el-input-number>
+                      <span>%</span>
+                    </template>
+                    <span v-else-if="part.text">{{ part.text }}</span>
+                  </template>
                 </div>
                 <el-alert
                     v-if="isAutomated && hasStaleRate"
                     type="warning"
                     :closable="false"
-                    :title="translate('Some rates have not updated for more than 3 days. Prices keep using the last rate until the next update.')"
+                    :title="translate('Settings_Some_Rates')"
                 />
               </Card.Body>
             </Card.Container>
@@ -516,7 +524,7 @@ onBeforeUnmount(() => {
                             size="small"
                             class="fct-mc-rate-input"
                             :data-rate-input="row.code"
-                            :placeholder="translate('Rate')"
+                            :placeholder="_x('Rate', 'Exchange rate')"
                             :aria-label="translate('Rate for 1 %1$s in %2$s', baseCurrency, row.code)"
                             @keyup.enter="saveRate(row.code)"
                         >
@@ -608,7 +616,7 @@ onBeforeUnmount(() => {
                         <McIcon name="history"/>
                       </button>
                       <el-popconfirm
-                          :title="translate('Remove %1$s? Shoppers can no longer pick it. Existing orders keep their currency. This applies when you save.', row.code)"
+                          :title="translate('Settings_Remove_Shoppers', row.code)"
                           :confirm-button-text="translate('Remove')"
                           :cancel-button-text="translate('Cancel')"
                           width="280"
@@ -628,7 +636,10 @@ onBeforeUnmount(() => {
                   <Animation :visible="Boolean(rates[row.code]) && editingRate !== row.code && heldMinutesLeft(row.code) > 0" accordion>
                     <p class="fct-mc-rate-hold-note" role="status">
                       <McIcon name="info"/>
-                      <span>{{ pluralizeTranslate('Converted prices may still use the previous rate for up to %1$s more minute.', 'Converted prices may still use the previous rate for up to %1$s more minutes.', heldMinutesLeft(row.code)) }}</span>
+                      <span>{{
+                        /* translators: %1$s: minutes left */
+                        translate('Converted prices may still use the previous rate. Minutes left: %1$s', heldMinutesLeft(row.code))
+                      }}</span>
                     </p>
                   </Animation>
 
@@ -645,7 +656,7 @@ onBeforeUnmount(() => {
                         <div class="fct-mc-pricing-field">
                           <LabelHint
                               :title="translate('Price adjustment')"
-                              :content="translate('Raises or lowers every %1$s price by this percentage after conversion. Use a negative number for a discount.', row.code)"
+                              :content="translate('Settings_Raises_Lowers', row.code)"
                               placement="right"
                           />
                           <div class="flex items-center gap-2">
@@ -659,7 +670,7 @@ onBeforeUnmount(() => {
                         <div class="fct-mc-pricing-field">
                           <LabelHint
                               :title="translate('Rounding')"
-                              :content="translate('Rounds the converted price up to the step you pick. For example, Round up to 1 turns 91.20 into 92.00.')"
+                              :content="translate('Settings_Rounds_Converted')"
                               placement="right"
                           />
                           <el-select v-model="row.rounding" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Rounding')">
@@ -669,7 +680,7 @@ onBeforeUnmount(() => {
                         <div class="fct-mc-pricing-field">
                           <LabelHint
                               :title="translate('Charm pricing')"
-                              :content="translate('Makes prices end in .99 or .95, which shoppers tend to see as a better deal. It takes 0.01 or 0.05 off the rounded price, so pair it with a whole-number rounding step. For example, 92.00 becomes 91.99.')"
+                              :content="translate('Settings_Makes_Prices')"
                               placement="right"
                           />
                           <el-select v-model="row.charm" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Charm pricing')">
@@ -689,12 +700,13 @@ onBeforeUnmount(() => {
             <Card.Body class="fct-mc-body fct-mc-checkout">
               <span class="fct-mc-field-hint">{{ translate('Keep converted prices steady while customers shop and check out') }}</span>
               <div class="fct-mc-inline-row">
-                <span>{{ translate('Keep converted prices at the previous rate for up to') }}</span>
-                <el-input-number v-model="settings.rate_lock_minutes" :min="0" :max="1440" class="fct-mc-counter" :aria-label="translate('Minutes converted prices keep the previous rate')">
-                  <template #decrease-icon><McIcon name="subtract"/></template>
-                  <template #increase-icon><McIcon name="add"/></template>
-                </el-input-number>
-                <span>{{ translate('minutes after a rate change. Set 0 to use a new rate at once.') }}</span>
+                <template v-for="(part, index) in rateLockSentence" :key="index">
+                  <el-input-number v-if="part.slot === 1" v-model="settings.rate_lock_minutes" :min="0" :max="1440" class="fct-mc-counter" :aria-label="translate('Minutes converted prices keep the previous rate')">
+                    <template #decrease-icon><McIcon name="subtract"/></template>
+                    <template #increase-icon><McIcon name="add"/></template>
+                  </el-input-number>
+                  <span v-else-if="part.text">{{ part.text }}</span>
+                </template>
               </div>
             </Card.Body>
           </Card.Container>
@@ -723,7 +735,7 @@ onBeforeUnmount(() => {
         </template>
       </el-skeleton>
       <el-table v-else :data="history.rates" class="fct-mc-history-table" :max-height="historyTableHeight()" :empty-text="translate('No rates yet')">
-        <el-table-column :label="translate('Rate')" min-width="150">
+        <el-table-column :label="_x('Rate', 'Exchange rate')" min-width="150">
           <template #default="{row}">
             <div class="fct-mc-history-rate">
               <span class="fct-mc-history-rate-value">{{ trimRate(row.rate) }}</span>
@@ -732,7 +744,7 @@ onBeforeUnmount(() => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="translate('Change')" width="120">
+        <el-table-column :label="_x('Change', 'Exchange rate column: difference from the previous rate')" width="120">
           <template #default="{$index}">
             <span v-if="historyChange($index)" class="fct-mc-history-change" :class="'is-' + historyChange($index).direction">
               {{ historyChange($index).direction === 'same' ? translate('No change') : historyChange($index).percent }}

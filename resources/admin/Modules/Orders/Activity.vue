@@ -10,7 +10,7 @@
                   <ConvertedTime :date-time="activity.created_at"/>
                 </span>
                 <div class="event-title">
-                  <span>{{ $t(activity.title) }}</span>
+                  <span>{{ activity.title }}</span>
                     <el-tag type="info">
                         {{ activity.created_by }}
                     </el-tag>

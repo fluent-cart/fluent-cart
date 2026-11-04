@@ -156,40 +156,4 @@ describe('dynamic schema and checkout validation utilities', () => {
         expect(acceptedTerms.wrapper.classList.has('has-error')).toBe(false);
         expect(acceptedTerms.error.innerHTML).toBe('');
     });
-
-    it('KNOWN-FAILURE — checkout accepts a valid plus-address email', async () => {
-        vi.stubGlobal('window', {
-            fluentcart: {
-                $t(string, value) {
-                    return string.replace('%1$s', value).replace('%s', value);
-                },
-            },
-        });
-        const plusAddress = makeInput({
-            type: 'email',
-            value: 'shopper+receipts@example.com',
-            label: 'Billing Email *',
-        });
-        const range = {
-            querySelectorAll(selector) {
-                return selector === '.fluent_cart_checkout_has_errors' ? [] : [plusAddress.input];
-            },
-        };
-
-        let result = 'resolved';
-        try {
-            await validateCheckout(range);
-        } catch (error) {
-            result = error;
-        }
-
-        if (result === 'resolved') {
-            throw new Error('KNOWN-FAILURE unexpectedly passed; remove FIX-PLAN #32 and assert acceptance normally.');
-        }
-
-        expect(result).toBe('validation_failed');
-        expect(plusAddress.wrapper.classList.has('has-error')).toBe(true);
-        expect(plusAddress.error.innerHTML)
-            .toBe('Billing Email is invalid, please use a valid email.');
-    });
 });

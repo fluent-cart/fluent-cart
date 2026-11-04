@@ -36,20 +36,23 @@ use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Query\QueryParser;
 use FluentCart\App\Models\Query\Sort;
+use FluentCart\App\Models\Shipment;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\AdminOrderPricing;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Services\ShipmentService;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\PaymentInstance;
+use FluentCart\App\Services\Payments\Refund;
 use FluentCart\App\Services\Tax\AdminOrderTaxService;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Collection;
 use FluentCart\Framework\Support\Arr;
-
+use FluentCart\App\Modules\Shipping\Carriers\Core\CarrierManager;
 
 class OrderResource extends BaseResourceApi
 {
@@ -92,7 +95,6 @@ class OrderResource extends BaseResourceApi
         $sortCriteria = Arr::get($params, 'sort_criteria', []);
         Sort::make()->apply($query, $sortCriteria);
 
-
         $with = array_merge(['customer', 'filteredOrderItems'], Arr::get($params, 'with', []));
 
         return $query->with($with)
@@ -110,7 +112,6 @@ class OrderResource extends BaseResourceApi
             })
             ->paginate(Arr::get($params, 'per_page'), ['*'], 'page', Arr::get($params, 'page'));
     }
-
 
     /**
      * Find an order by ID with associated customer and address details.
@@ -470,10 +471,10 @@ class OrderResource extends BaseResourceApi
             $order->shipping_tax = $shippingTax;
 
             // Calculate total_amount based on tax behavior
-            if ($taxBehavior === 1) {
+            if ($taxBehavior === 1 && $storeTaxBehavior !== 2) {
                 // Pure exclusive: all tax (product + fee) is on top of subtotals.
                 $order->total_amount = $order->total_amount + $taxTotal + $shippingTax;
-            } elseif ($taxBehavior === 3) {
+            } elseif (in_array($taxBehavior, [1, 3], true)) {
                 // Mixed: only exclusive product tax + store-exclusive fee/shipping on top.
                 $order->total_amount = $order->total_amount + $exclusiveTaxTotal;
                 if ($storeTaxBehavior === 1) {
@@ -828,7 +829,7 @@ class OrderResource extends BaseResourceApi
             if ($hasFeeItems) {
                 $feeBaseTotal = $netFeeTotal;
                 $newFeeTotal  = $netFeeTotal;
-                if ($feeTax && ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1))) {
+                if ($feeTax && (($taxBehavior === 1 && $storeTaxBehavior !== 2) || ($taxBehavior === 3 && $storeTaxBehavior === 1))) {
                     $newFeeTotal += $feeTax;
                 }
                 $order->fee_total = $newFeeTotal;
@@ -848,10 +849,10 @@ class OrderResource extends BaseResourceApi
             $order->shipping_tax = $shippingTax;
             $order->total_amount = $baseTotal;
 
-            if ($taxBehavior === 1) {
+            if ($taxBehavior === 1 && $storeTaxBehavior !== 2) {
                 // taxTotal already includes feeTax → net fee + fee tax counted exactly once.
                 $order->total_amount += $taxTotal + $shippingTax;
-            } elseif ($taxBehavior === 3) {
+            } elseif (in_array($taxBehavior, [1, 3], true)) {
                 // exclusiveTaxTotal excludes fee lines → add feeTax explicitly for exclusive stores.
                 $order->total_amount += $exclusiveTaxTotal;
                 if ($storeTaxBehavior === 1) {
@@ -1573,7 +1574,6 @@ class OrderResource extends BaseResourceApi
     public static function update($data, $id, $params = [])
     {
 
-
         $order = static::getQuery()->with(["order_items", "appliedCoupons", "labels"])->where('id', $id)->first();
 
         if (empty($order) || $order->status === Status::ORDER_COMPLETED || $order->status === Status::ORDER_CANCELED) {
@@ -1625,56 +1625,87 @@ class OrderResource extends BaseResourceApi
 
         $orderId = $order->id;
 
-        /**
-         * First delete the deleted items
-         */
-        if (!empty($deletedItems)) {
-            // Filter only the custom items that are in the deleted IDs
-            $customItems = $order->order_items
-                ->filter(fn($item) => $item->is_custom && in_array($item->id, $deletedItems))
-                ->values(); // reset keys
+        // Item writes share the shipment lock so they cannot interleave with a shipment change.
+        $db = App::db();
+        $db->beginTransaction();
+
+        try {
+            $lockedOrder = ShipmentService::lockOrderForShipping($orderId);
+
+            $itemEditError = ShipmentService::validateOrderItemEdits(
+                $orderId,
+                (array) $deletedItems,
+                (array) Arr::get($orderData, 'order_items', [])
+            );
+            if ($itemEditError) {
+                $db->rollBack();
+                return static::makeErrorResponse([
+                    ['code' => $itemEditError->get_error_code(), 'message' => $itemEditError->get_error_message()]
+                ], 422);
+            }
+
+            /**
+             * First delete the deleted items
+             */
+            if (!empty($deletedItems)) {
+                // Filter only the custom items that are in the deleted IDs
+                $customItems = $order->order_items
+                    ->filter(fn($item) => $item->is_custom && in_array($item->id, $deletedItems))
+                    ->values(); // reset keys
             
-            if ($customItems->isNotEmpty()) {
-                do_action('fluent_cart/order/before_custom_items_deleted', $customItems, $order);
+                if ($customItems->isNotEmpty()) {
+                    do_action('fluent_cart/order/before_custom_items_deleted', $customItems, $order);
+                }
+
+                OrderItem::destroy($deletedItems);
+
+                if ($customItems->isNotEmpty()) {
+                    do_action('fluent_cart/order/after_custom_items_deleted', $customItems, $order);
+                }
             }
 
-            OrderItem::destroy($deletedItems);
-
-            if ($customItems->isNotEmpty()) {
-                do_action('fluent_cart/order/after_custom_items_deleted', $customItems, $order);
+            if (!empty($discount)) {
+                if (!empty($appliedCoupons) && count($appliedCoupons) > 0) {
+                    // Remove the custom discount amount if coupon is applied.
+                    OrderMetaResource::delete($orderId, [
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_key' => 'order_discount',
+                    ]);
+                } else {
+                    static::addOrUpdateOrderMeta([
+                        'order_id'   => $orderId,
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_key'   => 'order_discount',
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        'meta_value' => $discount
+                    ]);
+                }
             }
-        }
-
-        if (!empty($discount)) {
-            if (!empty($appliedCoupons) && count($appliedCoupons) > 0) {
-                // Remove the custom discount amount if coupon is applied.
-                OrderMetaResource::delete($orderId, [
-                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                    'meta_key' => 'order_discount',
-                ]);
-            } else {
+            if (!empty($shipping)) {
+                $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
                 static::addOrUpdateOrderMeta([
                     'order_id'   => $orderId,
                     //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                    'meta_key'   => 'order_discount',
+                    'meta_key'   => 'order_shipping',
                     //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                    'meta_value' => $discount
+                    'meta_value' => $shipping
                 ]);
             }
-        }
-        if (!empty($shipping)) {
-            $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
-            static::addOrUpdateOrderMeta([
-                'order_id'   => $orderId,
-                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'meta_key'   => 'order_shipping',
-                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                'meta_value' => $shipping
-            ]);
+
+            $items = Arr::get($orderData, 'order_items');
+            $isUpdatedOrderItems = OrderItemResource::updateOrInsertOrderItems($order, $orderId, Arr::except($items, ['*']));
+
+            $shippingTransition = $lockedOrder ? ShipmentService::reconcileAfterItemEdit($lockedOrder) : null;
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
         }
 
-        $items = Arr::get($orderData, 'order_items');
-        $isUpdatedOrderItems = OrderItemResource::updateOrInsertOrderItems($order, $orderId, Arr::except($items, ['*']));
+        if ($shippingTransition) {
+            ShipmentService::dispatchFulfillmentTransition($lockedOrder, $shippingTransition, true);
+        }
 
         if ($isUpdatedOrderItems) {
             unset($orderData['order_items']);
@@ -1951,6 +1982,7 @@ class OrderResource extends BaseResourceApi
         OrderMeta::query()->whereIn('order_id', $orderIds)->delete();
         OrderTaxRate::query()->whereIn('order_id', $orderIds)->delete();
         OrderOperation::query()->whereIn('order_id', $orderIds)->delete();
+        Shipment::query()->whereIn('order_id', $orderIds)->delete();
         AppliedCoupon::query()->whereIn('order_id', $orderIds)->delete();
         Cart::query()->whereIn('order_id', $orderIds)->delete();
         OrderDownloadPermission::query()->whereIn('order_id', $orderIds)->delete();
@@ -1998,6 +2030,10 @@ class OrderResource extends BaseResourceApi
                                 $query->addAppends(['coupon_discount']);
                             },
                             'order_items.variants.media',
+                            'order_items.variants.simpleProductGallery',
+                            'shipments'   => function ($query) {
+                                $query->addAppends(['can_refresh_tracking']);
+                            },
                             'transactions',
                             'order_addresses',
                             'orderTaxRates.tax_rate',
@@ -2035,16 +2071,34 @@ class OrderResource extends BaseResourceApi
             $order = $orders[0];
             $selectedLabels = Collection::make($order['labels'])->pluck('label_id');
             $order['custom_checkout_url'] = PaymentHelper::getCustomPaymentLink(Arr::get($order, 'uuid'));
+            //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+            $order['shipping_refunded']        = (bool) OrderMetaResource::find($order['id'], ['meta_key' => 'shipping_refunded']);
+            //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+            $order['shipping_refunded_amount'] = (int) OrderMetaResource::find($order['id'], ['meta_key' => 'shipping_refunded_amount']);
 
             $orderModel = Order::find($id);
             $rcMode = $orderModel ? $orderModel->getOrderRcMode() : 'fixed';
+            $order['shipping_refundable'] = $orderModel
+                ? max(0, min(
+                    $orderModel->shippingChargedTotal() - (int) Arr::get($order, 'shipping_refunded_amount', 0),
+                    $orderModel->netAmount((int) $orderModel->total_paid) - (int) $orderModel->total_refund
+                ))
+                : 0;
+
+            if ($orderModel && !empty($order['shipments']) && is_array($order['shipments'])) {
+                $order['shipments'] = ShipmentService::withOrderCurrencyEstimates($orderModel, $order['shipments']);
+            }
+
+            $order['unconfirmed_shipments'] = $orderModel ? ShipmentService::unconfirmedShipments($orderModel) : [];
 
             //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
             $shippingMeta = OrderMetaResource::find($order['id'], ['meta_key' => 'order_shipping']);
 
             $orderConfig = is_array($order['config']) ? $order['config'] : (array)json_decode((string)($order['config'] ?? ''), true);
-            $methodId    = (int)Arr::get($orderConfig, 'shipping_method_id', 0);
+            $methodId    = Arr::get($orderConfig, 'shipping_method_id', 0);
+            $methodId    = is_numeric($methodId) ? (int)$methodId : (string)$methodId;
             $methodTitle = (string)Arr::get($orderConfig, 'shipping_method_title', '');
+            $carrierSlug = (string)Arr::get($orderConfig, 'shipping_carrier', '');
 
             if (!$methodId && is_array($shippingMeta) && isset($shippingMeta['id'], $shippingMeta['title'])) {
                 $methodId    = (int)$shippingMeta['id'];
@@ -2057,6 +2111,8 @@ class OrderResource extends BaseResourceApi
             $checkoutShipping = $methodTitle ? [
                 'method_id'      => $methodId,
                 'method_title'   => $methodTitle,
+                'carrier'        => $carrierSlug,
+                'carrier_name'   => static::carrierDisplayName($carrierSlug),
                 'shipping_total' => (int)Arr::get($order, 'shipping_total', 0),
             ] : null;
 
@@ -2076,105 +2132,6 @@ class OrderResource extends BaseResourceApi
         }
 
         return $data;
-    }
-
-    /**
-     * Retrieve an overview of reports based on specified parameters.
-     *
-     * It calculates total sales, net sales, total discounts, total shipping tax, average order
-     * value, and customer order count based on the reports data.
-     *
-     * @param array $params Required. Additional parameters for report overview.
-     *        $params = [
-     *              //(Required)
-     *               "status" => [
-     *                  "column" => "status",
-     *                  "operator" => "in",
-     *                  "value" => "Order success status e.g. completed,
-     *               ],
-     *
-     *               //(Required)
-     *               "payment_status" => [
-     *                  "column" => "payment_status",
-     *                  "operator" => "in",
-     *                  "value" => "Transaction success status e.g. paid,
-     *               ],
-     *
-     *               //(Optional)
-     *               "created_at" => [
-     *                  "column" => "created_at",
-     *                  "operator" => "between"
-     *                  "value" => "from and to date"
-     *              ]
-     *        ]
-     *
-     */
-    /**
-     * @deprecated since v1.4. Use OverviewReportController::getOverview() via GET reports/overview instead.
-     */
-    public static function reportOverview($params = [])
-    {
-        return static::getQuery()->when(
-            $params,
-            function ($query) use ($params) {
-                return $query->search($params);
-            }
-        )
-            ->selectRaw('sum(total_amount) as total_sales')
-            ->selectRaw('sum(total_amount - manual_discount_total - shipping_total - tax_total) as net_sales')
-            ->selectRaw('sum(manual_discount_total + coupon_discount_total) as total_discounts')
-            ->selectRaw('sum(shipping_total) as total_shipping_tax')
-            ->selectRaw('avg(total_amount) as average_order_value')
-            ->selectRaw('count(*) as customer_order_count')
-            ->get()->first();
-    }
-
-    /**
-     * Retrieve order summary based on payment methods and specified parameters.
-     *
-     * This function generates order summary by payment method, applying filters provided in the parameters.
-     *
-     * It retrieves the count of orders, total transactions, and groups the results by payment method.
-     *
-     * @param array $params Required. Additional parameters for order summary generation.
-     *        $params = [
-     *              //(Required)
-     *               "status" => [
-     *                  "column" => "status",
-     *                  "operator" => "in",
-     *                  "value" => "Order success status e.g. completed,
-     *               ],
-     *
-     *               //(Required)
-     *               "payment_status" => [
-     *                  "column" => "payment_status",
-     *                  "operator" => "in",
-     *                  "value" => "Transaction success status e.g. paid,
-     *               ],
-     *
-     *               //( Optional )
-     *               'created_at' => [
-     *                  'column' => 'created_at',
-     *                  'operator' => 'between'
-     *                  'value' => 'from and to date'
-     * ]
-     * ]
-     *
-     * @return Collection of orders
-     */
-    public static function orderSummaryByPayment(array $params = [])
-    {
-        return static::getQuery()->select('payment_method')
-            ->when(
-                $params,
-                function ($query) use ($params) {
-                    return $query->search($params);
-                }
-            )
-            ->selectRaw('COUNT(*) as order_count')
-            ->selectRaw('SUM(total_amount) as transactions')
-            ->groupBy('payment_method')
-            ->get();
     }
 
     private static function addOrUpdateOrderMeta($params = [])
@@ -2241,22 +2198,6 @@ class OrderResource extends BaseResourceApi
             $newStatus = Arr::get($params, 'statuses.shipping_status', null);
             $oldStatus = Arr::get($order, 'shipping_status');
             $validStatuses = Status::getEditableShippingStatuses();
-            $actionActivity = [
-                'title'   => __('Shipping status updated', 'fluent-cart'),
-                'content' => sprintf(
-                    /* translators: %1$s is the old status, %2$s is the new status */
-                    __('Shipping status has been updated from %1$s to %2$s', 'fluent-cart'), $oldStatus, $newStatus)
-            ];
-
-            $orderItems = OrderItem::query()->where('fulfillment_type', 'physical')->where('order_id', $orderId)->get();
-            $updateData = [];
-            foreach ($orderItems as $item) {
-                $updateData[] = [
-                    'id'                 => $item->id,
-                    'fulfilled_quantity' => in_array($newStatus, ['shipped', 'delivered']) ? $item->quantity : '0'
-                ];
-            }
-            OrderItem::query()->batchUpdate($updateData);
         }
         if ($action === 'change_order_status') {
             $newStatus = Arr::get($params, 'statuses.order_status', null);
@@ -2281,33 +2222,189 @@ class OrderResource extends BaseResourceApi
                         if ($oldStatus === Status::ORDER_CANCELED) {
                             return static::makeErrorResponse([
                                 ['code' => 400, 'message' => __('You cannot change the order status once it has been canceled.', 'fluent-cart')]
-                            ]);
+                            ], 400);
                         }
-
-                        $order = $order->updateStatus('status', $newStatus);
 
                         if ($newStatus === Status::ORDER_CANCELED) {
                             if (in_array($shippingStatus, $getOrderNoActionableStatuses)) {
                                 //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                                 $shippingStatus = OrderMetaResource::find($orderId, ['meta_key' => 'shipping_previous_status']);
                             }
-                            (new OrderStatusUpdated($order, $shippingStatus, $newStatus, Arr::get($params, 'manage_stock', true), $actionActivity, $changeType))->dispatch();
+
+                            $order = Refund::withOrderRefundLock($orderId, 0, function () use ($orderId, $shippingStatus, $newStatus, $params, $actionActivity, $changeType) {
+                                $order = static::getQuery()->with("order_items.variants.product_detail")->where('id', $orderId)->first();
+                                if ($order->status === Status::ORDER_CANCELED) {
+                                    return static::makeErrorResponse([
+                                        ['code' => 400, 'message' => __('You cannot change the order status once it has been canceled.', 'fluent-cart')]
+                                    ], 400);
+                                }
+
+                                // Its units are already off the order lines, so cancel cannot restore them, and the re-sync restock is skipped once canceled.
+                                $awaitingResync = OrderTransaction::query()
+                                    ->where('order_id', $orderId)
+                                    ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+                                    ->get()
+                                    ->contains(function ($refund) {
+                                        $intent = Arr::get($refund->meta, 'refund_intent', []);
+
+                                        return $refund->isAwaitingResync()
+                                            && empty(Arr::get($intent, 'items'))
+                                            && filter_var(Arr::get($intent, 'manage_stock', true), FILTER_VALIDATE_BOOLEAN);
+                                    });
+
+                                if ($awaitingResync) {
+                                    return static::makeErrorResponse([
+                                        ['code' => 423, 'message' => __('Re-sync the pending refund before cancelling this order.', 'fluent-cart')]
+                                    ], 423);
+                                }
+
+                                $order = $order->updateStatus('status', $newStatus);
+                                (new OrderStatusUpdated($order, $shippingStatus, $newStatus, Arr::get($params, 'manage_stock', true), $actionActivity, $changeType))->dispatch();
+
+                                return $order;
+                            });
+
+                            if (is_wp_error($order)) {
+                                if ($order->get_error_code() === 'refund_lock_timeout') {
+                                    $order->add_data(['status' => 409]);
+                                }
+                                return $order;
+                            }
                         } else {
+                            $order = $order->updateStatus('status', $newStatus);
                             (new OrderStatusUpdated($order, $oldStatus, $newStatus, false, $actionActivity, $changeType))->dispatch();
                         }
                     }
 
                     if ($action === 'change_shipping_status') {
 
-                        if (in_array($newStatus, $getOrderNoActionableStatuses)) {
-                            static::addOrUpdateOrderMeta([
-                                'order_id'   => $orderId,
-                                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                                'meta_key'   => 'shipping_previous_status',
-                                //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                                'meta_value' => $oldStatus
-                            ]);
+                        // Same order lock as ShipmentService, so the guards and the write
+                        // below see committed shipment state and cannot interleave with a
+                        // shipment change. Listeners run after commit.
+                        $db = App::db();
+                        $db->beginTransaction();
+
+                        try {
+                            $lockedOrder = ShipmentService::lockOrderForShipping($orderId);
+
+                            if (!$lockedOrder) {
+                                $db->rollBack();
+                                return static::makeErrorResponse([
+                                    ['code' => 404, 'message' => __('Order not found!', 'fluent-cart')]
+                                ]);
+                            }
+
+                            // Re-read under the lock: a shipment change may have moved it.
+                            $oldStatus = $lockedOrder->shipping_status;
+
+                            if ($oldStatus === $newStatus) {
+                                $db->rollBack();
+                                return static::makeErrorResponse([
+                                    ['code' => 400, 'message' => __('Order already has the same status', 'fluent-cart')]
+                                ]);
+                            }
+
+                            $actionActivity = [
+                                'title'   => __('Shipping status updated', 'fluent-cart'),
+                                'content' => sprintf(
+                                    /* translators: %1$s is the old status, %2$s is the new status */
+                                    __('Shipping status has been updated from %1$s to %2$s', 'fluent-cart'), $oldStatus, $newStatus)
+                            ];
+
+                            // Once an order has shipment records they own fulfilled_quantity (the
+                            // shipment service keeps it in sync per item). This manual dropdown must
+                            // not blind-write the same column, or already dispatched units silently
+                            // become re-shippable.
+                            $hasShipments = Shipment::query()->where('order_id', $orderId)->exists();
+
+                            if ($hasShipments) {
+                                // With shipment records present, unshipped/shipped are *derived* from
+                                // them and must not be hand-set — doing so would assert a fulfilment
+                                // state the item rows contradict (and "shipped" would email the customer
+                                // that an order shipped while units remain undispatched). `unshippable`
+                                // directly contradicts already-dispatched units.
+                                $contradictsShipments = [
+                                    Status::SHIPPING_UNSHIPPED   => __('This order has shipment records. Delete its shipments before marking it as unshipped.', 'fluent-cart'),
+                                    Status::SHIPPING_SHIPPED     => __('Shipping status is derived from this order\'s shipments. Create a shipment for the remaining items instead of marking it shipped.', 'fluent-cart'),
+                                    Status::SHIPPING_UNSHIPPABLE => __('This order has shipment records. Delete its shipments before marking it as unshippable.', 'fluent-cart'),
+                                ];
+
+                                if (isset($contradictsShipments[$newStatus])) {
+                                    $db->rollBack();
+                                    return static::makeErrorResponse([
+                                        [
+                                            'code'    => 400,
+                                            'message' => $contradictsShipments[$newStatus]
+                                        ]
+                                    ]);
+                                }
+
+                                // `delivered` is a legitimate manual step, but only once everything
+                                // has actually gone out — otherwise the order claims delivery of
+                                // units that were never dispatched.
+                                if ($newStatus === Status::SHIPPING_DELIVERED) {
+                                    $totals = ShipmentService::getFulfillmentTotals($orderId);
+
+                                    if ($totals['total'] > 0 && $totals['fulfilled'] < $totals['total']) {
+                                        $db->rollBack();
+                                        return static::makeErrorResponse([
+                                            [
+                                                'code'    => 400,
+                                                'message' => __('This order still has unshipped items. Ship them before marking it as delivered.', 'fluent-cart')
+                                            ]
+                                        ]);
+                                    }
+                                }
+                            } else {
+                                // No shipment records exist, so this dropdown is the only writer
+                                // of fulfilled_quantity — keep the legacy all-or-nothing sync.
+                                $orderItems = OrderItem::query()
+                                    ->where('fulfillment_type', 'physical')
+                                    ->where('order_id', $orderId)
+                                    ->get();
+
+                                $isFulfilled = in_array($newStatus, [Status::SHIPPING_SHIPPED, Status::SHIPPING_DELIVERED]);
+
+                                $updateData = [];
+                                foreach ($orderItems as $item) {
+                                    $lineMeta = $item->line_meta;
+                                    $shippedRefunded = (int) Arr::get($lineMeta, 'refunded_shipped_quantity', 0);
+                                    if (!$isFulfilled && $shippedRefunded > 0) {
+                                        unset($lineMeta['refunded_shipped_quantity']);
+                                        $item->line_meta = $lineMeta;
+                                        $item->save();
+                                    }
+
+                                    $updateData[] = [
+                                        'id'                 => $item->id,
+                                        'fulfilled_quantity' => $isFulfilled ? max((int) $item->fulfilled_quantity, $item->unitsLeft() + $shippedRefunded) : '0'
+                                    ];
+                                }
+
+                                if (!empty($updateData)) {
+                                    OrderItem::query()->batchUpdate($updateData);
+                                }
+                            }
+
+                            if (in_array($newStatus, $getOrderNoActionableStatuses)) {
+                                static::addOrUpdateOrderMeta([
+                                    'order_id'   => $orderId,
+                                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                                    'meta_key'   => 'shipping_previous_status',
+                                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                                    'meta_value' => $oldStatus
+                                ]);
+                            }
+
+                            $order->setRawAttributes($lockedOrder->getAttributes(), true);
+                            $order = $order->updateStatus('shipping_status', $newStatus);
+
+                            $db->commit();
+                        } catch (\Throwable $e) {
+                            $db->rollBack();
+                            throw $e;
                         }
+
                         if (in_array($oldStatus, $getOrderNoActionableStatuses)) {
                             //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                             $oldStatus = OrderMetaResource::find($orderId, ['meta_key' => 'shipping_previous_status']);
@@ -2322,8 +2419,6 @@ class OrderResource extends BaseResourceApi
                                 ]);
                             }
                         }
-
-                        $order = $order->updateStatus('shipping_status', $newStatus);
 
                         (new OrderStatusUpdated($order, $oldStatus, $newStatus, Arr::get($params, 'manage_stock'), $actionActivity, $changeType))->dispatch();
 
@@ -2374,7 +2469,6 @@ class OrderResource extends BaseResourceApi
                 : sprintf(
                     /* translators: %s is the out of stock variant */
                     __('%s is out of stock', 'fluent-cart'), reset($outOfStockVariants));
-
 
             return [
                 'status'  => true,
@@ -2560,4 +2654,17 @@ class OrderResource extends BaseResourceApi
         return $shipping;
     }
 
+    /**
+     * The carrier's display name, or its slug when the carrier is no longer registered.
+     */
+    protected static function carrierDisplayName(string $slug): string
+    {
+        if (!$slug) {
+            return '';
+        }
+
+        $carrier = CarrierManager::carrier($slug);
+
+        return $carrier ? (string) Arr::get($carrier->meta(), 'name', $slug) : $slug;
+    }
 }

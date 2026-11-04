@@ -47,7 +47,7 @@ describe('the All currencies selection on reports without a converted mode', () 
     });
 
     it('is kept on a report that converts', () => {
-        reportFilter.setReportRoute('reports_sales');
+        reportFilter.setReportRoute('reports_revenue');
 
         expect(reportFilter.supportsConvertedCurrency()).toBe(true);
         expect(reportFilter.applicableFilters.params.currency).toBe('__all__');

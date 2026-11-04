@@ -53,7 +53,7 @@ class SubscriptionEOT extends EventDispatcher
                 'Subscription #' . $this->subscription->id . ': ' . $result->get_error_message(),
                 'error',
                 [
-                    'module' => 'subscription',
+                    'module_name' => 'subscription',
                     'module_id' => $this->subscription->id
                 ]
             );
@@ -68,6 +68,14 @@ class SubscriptionEOT extends EventDispatcher
     public function shouldCreateActivity(): bool
     {
         return true;
+    }
+
+    public function getEventInfoForActivity(): array
+    {
+        return [
+            'content' => __('Subscription reached the end of its billing term.', 'fluent-cart'),
+            'status'  => 'info',
+        ];
     }
 
 }

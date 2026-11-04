@@ -2,41 +2,15 @@ import UTMManager from "./utils/UTMManager";
 import FluentCartCart from "./Cart/FluentCartCart";
 import AddToCartButton from "../buttons/add-to-cart/script";
 import ModalCheckoutHandler from "../checkout/ModalCheckoutHandler";
+import makeTranslator from "./translator";
 
-const translationStrings = {
+// fluentcart_frontend_vars ships on every page that loads this app; the checkout maps only on checkout.
+window.fluentcart = makeTranslator({
+    ...window.fluentcart_frontend_vars?.trans || {},
     ...window.fluentcart_checkout_vars?.trans || {},
     ...window.fluentcart_checkout_vars?.payments_trans || {},
     ...window.fluentcart_shop_vars?.trans || {}
-}
-window.fluentcart = {
-    $t: function (str) {
-        let string = translationStrings[str] || str;
-        // Prepare the arguments, excluding the first one (the string itself)
-        const args = Array.prototype.slice.call(arguments, 1);
-
-        if (args.length === 0) {
-            return string;
-        }
-
-        // Regular expression to match %s, %d, or %1s, %2s,  %1$s etc.
-        const regex = /%(\d*\$?)s|%d/g;
-
-        // Replace function to handle each match found by the regex
-        let argIndex = 0; // Keep track of the argument index for non-numbered placeholders
-        string = string.replace(regex, (match, number) => {
-            // If it's a numbered placeholder, use the number to find the corresponding argument
-            if (number) {
-                const index = parseInt(number, 10) - 1; // Convert to zero-based index
-                return index < args.length ? args[index] : match; // Replace or keep the placeholder
-            } else {
-                // For non-numbered placeholders, use the next argument in the array
-                return argIndex < args.length ? args[argIndex++] : match; // Replace or keep the placeholder
-            }
-        });
-
-        return string;
-    }
-};
+});
 
 const recursiveFlatten = function (obj, prefix) {
     return Object.keys(obj).reduce(function (acc, key) {

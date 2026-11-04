@@ -3,8 +3,8 @@
         <el-form label-position='top' :data="order">
             <el-form-item :label="$t('Order Status')">
                 <el-radio-group v-model="order.status">
-                    <el-radio label="draft">{{$t('Draft')}}</el-radio>
-                    <el-radio label="publish">{{$t('Publish')}}</el-radio>
+                    <el-radio value="draft">{{$t('Draft')}}</el-radio>
+                    <el-radio value="publish">{{$t('Publish')}}</el-radio>
                 </el-radio-group>
             </el-form-item>
         </el-form>

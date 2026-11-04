@@ -1,0 +1,320 @@
+<?php
+/**
+ * Phase 18 UUID-bearing customer-portal route inventory.
+ *
+ * Source locations are executable metadata: the integration runner verifies
+ * each route declaration, ownership predicate, denial branch, and first
+ * post-guard operation before dispatching any negative request.
+ */
+
+$routesFile = 'app/Http/Routes/frontend_routes.php';
+$orderController = 'app/Http/Controllers/FrontendControllers/CustomerOrderController.php';
+$profileController = 'app/Http/Controllers/FrontendControllers/CustomerProfileController.php';
+$subscriptionController = 'app/Http/Controllers/FrontendControllers/CustomerSubscriptionController.php';
+
+$entry = static function (
+    $id,
+    $verb,
+    $path,
+    $entity,
+    $routeLine,
+    $routeNeedle,
+    $sourceFile,
+    $methodLine,
+    $methodNeedle,
+    $ownershipLine,
+    $ownershipNeedle,
+    $denialLine,
+    $denialNeedle,
+    $postGuardLine,
+    $postGuardNeedle,
+    array $params = [],
+    $publicExempt = false
+) use ($routesFile) {
+    return [
+        'id'                    => $id,
+        'verb'                  => $verb,
+        'path'                  => $path,
+        'entity'                => $entity,
+        'route_file'            => $routesFile,
+        'route_line'            => $routeLine,
+        'route_needle'          => $routeNeedle,
+        'source_file'           => $sourceFile,
+        'method_line'           => $methodLine,
+        'method_needle'         => $methodNeedle,
+        'ownership_line'        => $ownershipLine,
+        'ownership_needle'      => $ownershipNeedle,
+        'denial_line'           => $denialLine,
+        'denial_needle'         => $denialNeedle,
+        'post_guard_line'       => $postGuardLine,
+        'post_guard_needle'     => $postGuardNeedle,
+        'params'                => $params,
+        'permission_public_exempt' => $publicExempt,
+        'coverage'              => 'public-uuid-' . $id,
+    ];
+};
+
+return [
+    // Must equal the number of public_exempt classifications in
+    // tests/wp-cli/permissions/routes.manifest.php. The integration runner (run-integration.php)
+    // reconciles that count against BOTH this total and its own literal pin —
+    // update all three together. 21→17 when e7b731971 removed the four
+    // frontend customer-mutation routes shadowed by the admin customers group
+    // ('53:PUT', '56:PUT', '57:POST', '58:DELETE') and their exemptions.
+    // 17→20 when the product-review feature added the three public review
+    // mutations ('108:POST', '109:PUT', '111:POST') and their exemptions.
+    // 20→19: the merged review feature removed POST
+    // public/reviews/{postId}/{reviewId}/reply (submitReply). Only submitReview
+    // and updateReview remain public mutations ('111:POST', '112:PUT').
+    'permission_public_exempt_total' => 19,
+    'routes' => [
+        $entry(
+            'order-detail',
+            'GET',
+            'customer-profile/orders/%s',
+            'order',
+            80,
+            "orders/{order_uuid}'",
+            $orderController,
+            120,
+            'function orderDetails',
+            141,
+            "where('customer_id', \$customer->id)",
+            153,
+            'if (!$order)',
+            159,
+            'if ($order->type'
+        ),
+        $entry(
+            'order-upgrade-paths',
+            'GET',
+            'customer-profile/orders/%s/upgrade-paths',
+            'order',
+            81,
+            "orders/{order_uuid}/upgrade-paths'",
+            $profileController,
+            607,
+            'function getUpgradePaths',
+            618,
+            "where('customer_id', \$currentCustomer->id)",
+            621,
+            'if (!$order)',
+            627,
+            "\$variationId = \$request->get('variation_id')",
+            ['variation_id' => 1]
+        ),
+        $entry(
+            'transaction-billing-read',
+            'GET',
+            'customer-profile/orders/%s/billing-address',
+            'transaction',
+            84,
+            "->get('orders/{transaction_uuid}/billing-address'",
+            $orderController,
+            453,
+            'function getTransactionBillingAddress',
+            472,
+            "where('customer_id', \$customer->id)",
+            474,
+            'if (empty($order))',
+            480,
+            "\$order->getMeta('vat_tax_id'"
+        ),
+        $entry(
+            'subscription-detail',
+            'GET',
+            'customer-profile/subscriptions/%s',
+            'subscription',
+            90,
+            "subscriptions/{subscription_uuid}'",
+            $subscriptionController,
+            79,
+            'function getSubscription',
+            97,
+            "where('customer_id', \$customer->id)",
+            102,
+            'if (!$subscription',
+            108,
+            "\$formattedData = ["
+        ),
+        $entry(
+            'subscription-setup-attempts',
+            'GET',
+            'customer-profile/subscriptions/%s/setup-intent-attempts',
+            'subscription',
+            91,
+            "subscriptions/{subscription_uuid}/setup-intent-attempts'",
+            $subscriptionController,
+            594,
+            'function getSetupIntentRemainingAttempts',
+            611,
+            "where('customer_id', \$customer->id)",
+            614,
+            'if (empty($subscription))',
+            627,
+            'new SubscriptionsManager'
+        ),
+        $entry(
+            'subscription-update-payment',
+            'POST',
+            'customer-profile/subscriptions/%s/update-payment-method',
+            'subscription',
+            92,
+            "subscriptions/{subscription_uuid}/update-payment-method'",
+            $subscriptionController,
+            198,
+            'function updatePaymentMethod',
+            222,
+            "where('customer_id', \$customer->id)",
+            225,
+            'if (empty($subscription))',
+            231,
+            'App::gateway()->has',
+            ['data' => ['method' => 'phase18-no-gateway']],
+            true
+        ),
+        $entry(
+            'subscription-get-plan',
+            'POST',
+            'customer-profile/subscriptions/%s/get-or-create-plan',
+            'subscription',
+            93,
+            "subscriptions/{subscription_uuid}/get-or-create-plan'",
+            $subscriptionController,
+            251,
+            'function getOrCreatePlan',
+            275,
+            "where('customer_id', \$customer->id)",
+            277,
+            'if (empty($subscription))',
+            283,
+            'APP::gateway()->has',
+            ['data' => ['method' => 'phase18-no-gateway', 'reason' => 'guard-test']],
+            true
+        ),
+        $entry(
+            'subscription-switch-payment',
+            'POST',
+            'customer-profile/subscriptions/%s/switch-payment-method',
+            'subscription',
+            94,
+            "subscriptions/{subscription_uuid}/switch-payment-method'",
+            $subscriptionController,
+            303,
+            'function switchPaymentMethod',
+            328,
+            "where('customer_id', \$customer->id)",
+            330,
+            'if (empty($subscription))',
+            342,
+            'App::gateway()->has',
+            [
+                'data' => [
+                    'newPaymentMethod'     => 'phase18-new',
+                    'currentPaymentMethod' => 'phase18-old',
+                ],
+            ],
+            true
+        ),
+        $entry(
+            'subscription-confirm-switch',
+            'POST',
+            'customer-profile/subscriptions/%s/confirm-subscription-switch',
+            'subscription',
+            95,
+            "subscriptions/{subscription_uuid}/confirm-subscription-switch'",
+            $subscriptionController,
+            364,
+            'function confirmSubscriptionSwitch',
+            389,
+            "where('customer_id', \$customer->id)",
+            391,
+            'if (empty($subscription))',
+            403,
+            'APP::gateway()->has',
+            [
+                'data' => [
+                    'newVendorSubscriptionId' => 'phase18-vendor',
+                    'method'                  => 'phase18-no-gateway',
+                ],
+            ],
+            true
+        ),
+        $entry(
+            'subscription-cancel',
+            'POST',
+            'customer-profile/subscriptions/%s/cancel-auto-renew',
+            'subscription',
+            96,
+            "subscriptions/{subscription_uuid}/cancel-auto-renew'",
+            $subscriptionController,
+            424,
+            'function cancelAutoRenew',
+            440,
+            "where('customer_id', \$customer->id)",
+            443,
+            'if (empty($subscription))',
+            449,
+            'cancelRemoteSubscription',
+            [],
+            true
+        ),
+        $entry(
+            'subscription-early-payment',
+            'POST',
+            'customer-profile/subscriptions/%s/initiate-early-payment',
+            'subscription',
+            97,
+            "subscriptions/{subscription_uuid}/initiate-early-payment'",
+            $subscriptionController,
+            466,
+            'function initiateEarlyPayment',
+            482,
+            "where('customer_id', \$customer->id)",
+            485,
+            'if (!$subscription)',
+            491,
+            'EarlyPaymentFeature::canPay',
+            [],
+            true
+        ),
+        $entry(
+            'subscription-pause',
+            'POST',
+            'customer-profile/subscriptions/%s/pause',
+            'subscription',
+            98,
+            "subscriptions/{subscription_uuid}/pause'",
+            $subscriptionController,
+            516,
+            'function pauseSubscription',
+            532,
+            "where('customer_id', \$customer->id)",
+            535,
+            'if (empty($subscription))',
+            542,
+            'pauseSubscription',
+            [],
+            true
+        ),
+        $entry(
+            'subscription-resume',
+            'POST',
+            'customer-profile/subscriptions/%s/resume',
+            'subscription',
+            99,
+            "subscriptions/{subscription_uuid}/resume'",
+            $subscriptionController,
+            555,
+            'function resumeSubscription',
+            571,
+            "where('customer_id', \$customer->id)",
+            574,
+            'if (empty($subscription))',
+            581,
+            'resumeSubscription',
+            [],
+            true
+        ),
+    ],
+];

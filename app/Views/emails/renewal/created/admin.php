@@ -7,7 +7,7 @@
 ?>
 
 <div class="space_bottom_30">
-    <p><?php echo esc_html__('Hey there,', 'fluent-cart'); ?></p>
+    <p class="fct-email-greeting"><?php echo esc_html__('Hey there,', 'fluent-cart'); ?></p>
     <p>
         <?php
             printf(

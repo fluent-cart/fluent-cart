@@ -1,7 +1,7 @@
 import {ColorPickerField} from "@/BlockEditor/Components/ColorPickerField";
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import {colorConfig} from "@/BlockEditor/PricingTable/colorConfig";
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import blocktranslate, {_x} from "@/BlockEditor/BlockEditorTranslator";
 import CustomSelect from "@/BlockEditor/Components/CustomSelect";
 
 const {
@@ -268,7 +268,7 @@ const InspectorSettings = (props) => {
                         </div>
                     </EditorPanel>
 
-                    <EditorPanel title={blocktranslate('Card')}>
+                    <EditorPanel title={_x('Card', 'layout element')}>
                         <div className="fct-inspector-control-settings">
                             <div className="fct-inspector-control-row">
                                 <div className="fct-inspector-control-label">{blocktranslate('Show/Hide Icon')}</div>

@@ -14,7 +14,7 @@
         <div v-if="!loading && addons.length === 0" style="text-align:center;padding:40px 20px;">
           <p style="font-size:14px;color:#606266;">{{ translate('No addon assets configured for this product.') }}</p>
           <p style="color:#909399;font-size:13px;">
-            {{ translate('Addon assets allow you to distribute additional downloadable packages (e.g., payment gateway addons) that share this product\'s license.') }}
+            {{ translate('Addon_Addon_Assets') }}
           </p>
         </div>
 

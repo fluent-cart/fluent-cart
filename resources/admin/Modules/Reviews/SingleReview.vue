@@ -38,7 +38,7 @@
                 </el-breadcrumb-item>
               </el-breadcrumb>
               <div class="single-page-header-status-wrap">
-                <Badge :status="review.status"/>
+                <Badge :status="review.status" kind="review"/>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@
                                   :aria-expanded="openReplyStatusMenu === reply.id ? 'true' : 'false'"
                                   aria-haspopup="menu"
                               >
-                                <Badge :type="reply.status" class="fct-thread-status-pill">
+                                <Badge :type="reply.status" kind="review" class="fct-thread-status-pill">
                                   <span>{{ replyStatusLabel(reply.status) }}</span>
                                   <el-icon class="fct-thread-status-caret" aria-hidden="true"><ArrowDown/></el-icon>
                                 </Badge>
@@ -453,7 +453,7 @@ import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import StarRating from "@/Bits/Components/StarRating.vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Asset from "@/utils/support/Asset";
 import Arr from "@/utils/support/Arr";
 import Rest from "@/utils/http/Rest";
@@ -482,7 +482,7 @@ const moderationActions = computed(() => {
     {status: 'approved', label: translate('Approve'), aria: translate('Approve')},
     {status: 'spam', label: translate('Spam'), aria: translate('Mark as Spam')},
     {status: 'trash', label: translate('Trash'), aria: translate('Move to Trash')},
-    {status: 'pending', label: translate('Pending'), aria: translate('Mark as Pending')}
+    {status: 'pending', label: _x('Pending', 'Review status'), aria: translate('Mark as Pending')}
   ];
 
   // Slice as well as filter: a status outside these four — a legacy
@@ -498,7 +498,7 @@ const replyStatusLoading = ref(null);
 // The statuses a reply can be moved to, each with the icon the menu shows
 // beside it. Literal strings, so the translation extractor sees each label.
 const replyStatusOptions = [
-  {status: 'pending', label: translate('Pending'), icon: 'Clock'},
+  {status: 'pending', label: _x('Pending', 'Review status'), icon: 'Clock'},
   {status: 'approved', label: translate('Approved'), icon: 'Check'},
   {status: 'spam', label: translate('Spam'), icon: 'AlertIcon'},
   {status: 'trash', label: translate('Trash'), icon: 'TrashIcon'},
@@ -627,7 +627,7 @@ const updateVerified = (isVerified) => {
 
 const deleteReview = () => {
   $confirm(
-      translate('Are you sure you want to permanently delete this review? This action cannot be undone.'),
+      translate('Review_Sure_Want'),
       translate('Confirm Delete'),
       {
         confirmButtonText: translate('Yes, Delete!'),

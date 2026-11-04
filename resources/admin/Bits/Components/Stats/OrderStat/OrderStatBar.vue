@@ -65,13 +65,13 @@
 </template>
 
 <script setup>
+import { siteToday } from "@/Modules/Reports/Utils/datePresets";
 import {getCurrentInstance, onMounted, ref, watch} from "vue";
 import StatCard from "./Components/StatCard.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
 import * as Fluid from "@/Bits/Components/FluidTab/FluidTab.js";
 import dashBoardReport from "@/Models/Reports/DashBoardReportModel";
-import dayjs from "dayjs";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import Storage from "@/utils/Storage";
 import OrderStatLoader from "./Components/OrderStatLoader.vue";
@@ -165,24 +165,6 @@ const toggleCollapse = () => {
   Storage.set('order_stat_collapse', isCollapsed.value);
 };
 
-// const fetchStat = () => {
-//   stat_range_popup.value = false
-//   loading.value = true;
-//   selfRef.$get('reports/quick-order-stats', {
-//     day_range: stat_range.value
-//   })
-//       .then(response => {
-//         console.log(response.stats, "_____")
-//         stats.value = response.stats
-//       })
-//       .catch((errors) => {
-//         selfRef.handleError(errors);
-//       })
-//       .finally(() => {
-//         loading.value = false;
-//       });
-// }
-
 //to do: sync with the stat_range
 const fetchStat = () => {
   stat_range_popup.value = false;
@@ -190,27 +172,27 @@ const fetchStat = () => {
 
   const dateShortCuts = {
     "-0 days": [
-      dayjs().startOf("day").format("YYYY-MM-DD"),
-      dayjs().endOf("day").format("YYYY-MM-DD"),
+      siteToday().startOf("day").format("YYYY-MM-DD"),
+      siteToday().endOf("day").format("YYYY-MM-DD"),
     ],
     "-7 days": [
-      dayjs().subtract(7, "days").startOf("day").format("YYYY-MM-DD"),
-      dayjs().endOf("day").format("YYYY-MM-DD"),
+      siteToday().subtract(7, "days").startOf("day").format("YYYY-MM-DD"),
+      siteToday().endOf("day").format("YYYY-MM-DD"),
     ],
     "-30 days": [
-      dayjs().subtract(30, "days").startOf("day").format("YYYY-MM-DD"),
-      dayjs().endOf("day").format("YYYY-MM-DD"),
+      siteToday().subtract(30, "days").startOf("day").format("YYYY-MM-DD"),
+      siteToday().endOf("day").format("YYYY-MM-DD"),
     ],
     "this_month": [
-      dayjs().startOf("month").format("YYYY-MM-DD"),
-      dayjs().endOf("day").format("YYYY-MM-DD"),
+      siteToday().startOf("month").format("YYYY-MM-DD"),
+      siteToday().endOf("day").format("YYYY-MM-DD"),
     ],
     "all_time": [null, null],
   };
 
   const [startDate, endDate] = dateShortCuts[stat_range.value] || [
-    dayjs().startOf("month"),
-    dayjs().endOf("day"),
+    siteToday().startOf("month"),
+    siteToday().endOf("day"),
   ];
 
   const params = {

@@ -29,7 +29,7 @@ const needsUpdate = isProActive && proVersion
     && proVersion.localeCompare(props.minVersion, undefined, { numeric: true }) < 0;
 
 const updateMessage = translate(
-    'This feature requires FluentCart Pro v%s or later. Please update FluentCart Pro to use this feature.'
+    'Pro_Feature_Requires'
 ).replace('%s', props.minVersion);
 </script>
 

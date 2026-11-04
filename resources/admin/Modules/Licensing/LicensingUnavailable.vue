@@ -23,8 +23,8 @@ const updateUrl = `${AppConfig.get('wp_admin_url')}/plugins.php?s=fluent-cart&pl
         v-if="needsUpdate"
         :title="translate('Update FluentCart Pro to use Licensing')"
         :text="(isAdmin
-            ? translate('Licensing now ships with FluentCart Pro v%s or later. Update FluentCart Pro to keep managing licenses and activated sites.')
-            : translate('Licensing now ships with FluentCart Pro v%s or later. Ask a site administrator to update FluentCart Pro.')).replace('%s', LICENSING_MIN_PRO_VERSION)"
+            ? translate('License_Licensing_Now_Ships')
+            : translate('License_Licensing_Now')).replace('%s', LICENSING_MIN_PRO_VERSION)"
         :show-button="isAdmin"
         :button-text="translate('Update FluentCart Pro')"
         :button-url="updateUrl"
@@ -45,7 +45,7 @@ const updateUrl = `${AppConfig.get('wp_admin_url')}/plugins.php?s=fluent-cart&pl
         :closable="false"
         :title="translate('Licensing is not enabled')"
         :description="isAdmin
-            ? translate('The Licensing module is turned off. Turn it on in Settings → Features & addon to manage licenses.')
+            ? translate('License_Licensing_Module')
             : translate('The Licensing module is turned off. Ask a site administrator to turn it on.')"
     />
   </div>

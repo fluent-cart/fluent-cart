@@ -68,8 +68,8 @@
                     <div class="fct-checkout-field-action" v-if="sectionFields.can_alter === 'yes'">
                       <el-checkbox
                           v-model="settings[sectionKey].required"
-                          true-label="yes"
-                          false-label="no"
+                          true-value="yes"
+                          false-value="no"
                           :disabled="settings[sectionKey].enabled !== 'yes'"
                       >
                         {{ translate('Required') }}
@@ -140,8 +140,8 @@
                            v-if="field.can_alter === 'yes' && fieldKey!=='first_name' && fieldKey!=='b2b_only_mode'">
                         <el-checkbox
                             v-model="settings[sectionKey][fieldKey].required"
-                            true-label="yes"
-                            false-label="no"
+                            true-value="yes"
+                            false-value="no"
                             :disabled="settings[sectionKey][fieldKey].enabled !== 'yes'"
                         >
                           {{ translate('Required') }}

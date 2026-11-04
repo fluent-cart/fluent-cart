@@ -127,28 +127,18 @@ export default class CouponService {
 			event.preventDefault();
 			const container = document.querySelector(this.#couponContainer);
 			if (container) {
-				const inputWrapper = container.querySelector(this.#inputWrapper);
-				if (inputWrapper) {
-					const input = inputWrapper.querySelector('input');
-					if (input) {
-						setTimeout(() => input.focus(), 0);
-					}
-				}
-				// Two sources of hiding must be cleared to show:
-				// 1. The `hidden` HTML attr — theme CSS has [hidden]{display:none!important} beating inline style
-				// 2. The .fct_coupon_field class has display:none via @apply hidden — beaten by inline style
-				const isHidden = container.hasAttribute('hidden') || container.style.display === 'none' || !container.style.display;
-				if (isHidden) {
-					container.removeAttribute('hidden');
-					container.style.display = 'block';
-				} else {
-					container.setAttribute('hidden', '');
-					container.style.removeProperty('display');
+				const isOpen = container.classList.toggle('is-open');
+				toggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+				const input = container.querySelector(`${this.#inputWrapper} input`);
+				if (isOpen && input) {
+					// Two frames: themes that transition inputs keep them hidden for the first one.
+					requestAnimationFrame(() => requestAnimationFrame(() => input.focus()));
 				}
 
 				const parentParent = toggleEl.parentElement.parentElement;
 				if (parentParent) {
-					parentParent.classList.toggle('is_coupon_active', isHidden);
+					parentParent.classList.toggle('is_coupon_active', isOpen);
 				}
 			}
 		});

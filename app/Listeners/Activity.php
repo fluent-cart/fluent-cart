@@ -32,6 +32,11 @@ class Activity
 
         $eventName = static::guessActivityTitle($event);
 
+        // module_name is stored and filtered on, so it keeps the English word
+        $moduleName = Str::of($eventName)->split('/\s+/')->first();
+
+        $eventName = static::translatedActivityTitle($eventName);
+
         $eventInfo = $event->getEventInfoForActivity();
 
         $userId = '';
@@ -41,8 +46,6 @@ class Activity
             $userId = $user->ID ?? '';
             $createdBy = $user->display_name ?? 'FCT-BOT';
         }
-
-        $moduleName = Str::of($eventName)->split('/\s+/')->first();
 
         fluent_cart_add_log(
             Arr::get($eventInfo, 'title', $eventName),
@@ -59,6 +62,41 @@ class Activity
                 'created_by' => Arr::get($eventInfo, 'created_by', $createdBy),
             ]
         );
+    }
+
+    /**
+     * Activity titles are stored as rendered text, so they are translated here,
+     * at write time. Unknown events keep the English headline.
+     */
+    protected static function translatedActivityTitle(string $title): string
+    {
+        // Keyed by the English headline guessActivityTitle() builds
+        $titles = [
+            'License Renewed'               => __('License Renewed', 'fluent-cart'),
+            'Order Canceled'                => __('Order Canceled', 'fluent-cart'),
+            'Order Created'                 => __('Order Created', 'fluent-cart'),
+            'Order Deleted'                 => __('Order Deleted', 'fluent-cart'),
+            'Order Paid'                    => __('Order Paid', 'fluent-cart'),
+            'Order Payment Failed'          => __('Order Payment Failed', 'fluent-cart'),
+            'Order Refund'                  => __('Order Refund', 'fluent-cart'),
+            'Order Status Updated'          => __('Order Status Updated', 'fluent-cart'),
+            'Order Updated'                 => __('Order Updated', 'fluent-cart'),
+            'Renewal Order Deleted'         => __('Renewal Order Deleted', 'fluent-cart'),
+            'Subscription Activated'        => __('Subscription Activated', 'fluent-cart'),
+            'Subscription Canceled'         => __('Subscription Canceled', 'fluent-cart'),
+            'Subscription E O T'            => __('Subscription Ended', 'fluent-cart'),
+            'Subscription Paused'           => __('Subscription Paused', 'fluent-cart'),
+            'Subscription Period Skipped'   => __('Subscription Period Skipped', 'fluent-cart'),
+            'Subscription Reactivated'      => __('Subscription Reactivated', 'fluent-cart'),
+            'Subscription Renewal Failed'   => __('Subscription Renewal Failed', 'fluent-cart'),
+            'Subscription Renewed'          => __('Subscription Renewed', 'fluent-cart'),
+            'Subscription Resumed'          => __('Subscription Resumed', 'fluent-cart'),
+            'Subscription Updated'          => __('Subscription Updated', 'fluent-cart'),
+            'Subscription Validity Expired' => __('Subscription Validity Expired', 'fluent-cart'),
+            'User Created'                  => __('User Created', 'fluent-cart'),
+        ];
+
+        return Arr::get($titles, $title, $title);
     }
 
     protected static function guessActivityTitle($event): string

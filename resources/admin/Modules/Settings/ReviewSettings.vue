@@ -165,7 +165,7 @@
                 <div class="fct-setting-form-content">
                   <LabelHint :title="translate('Auto-approve Photo Reviews')"/>
                   <p class="fct-inline-tip">
-                    {{ translate('Publish reviews with photos immediately. When off, photo reviews always wait for moderation.') }}
+                    {{ translate('Settings_Publish_Reviews') }}
                   </p>
                 </div>
                 <div class="fct-setting-form-fields self-center flex justify-end">

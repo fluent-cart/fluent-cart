@@ -95,7 +95,7 @@
                                   :title="translate('Coupon Priority')"
                                   :content="
                                   translate(
-                                    'Coupons will be calculated based on their priority. The lower the number the higher the priority is.'
+                                    'Coupon_Coupons_Calculated'
                                   )
                                 "
                               />
@@ -299,12 +299,12 @@
                                 <template #label>
                                     <LabelHint
                                         :title="translate('Spend Amount Based On')"
-                                        :content="translate('Choose what the min/max spend limits are measured against: the cart subtotal (items only) or the order total (including shipping and fees). Applies at checkout.')"
+                                        :content="translate('Coupon_Choose_Min')"
                                     />
                                 </template>
                                 <el-radio-group v-model="coupon.conditions.min_amount_basis">
                                     <el-radio value="subtotal" :label="translate('Subtotal (items only)')" />
-                                    <el-radio value="total" :label="translate('Total (includes shipping &amp; fees)')" />
+                                    <el-radio value="total" :label="translate('Total (includes shipping & fees)')" />
                                 </el-radio-group>
                             </el-form-item>
                         </el-col>
@@ -370,7 +370,7 @@
                                 <template #label>
                                     <LabelHint
                                         :title="translate('By Email Address')"
-                                        :content="translate('List of email addresses that can use the coupon. Separate multiple emails with commas. You may also use regular expressions.')"
+                                        :content="translate('Coupon_List_Email')"
                                     />
                                 </template>
                                 <el-input
@@ -397,7 +397,7 @@
                                   :title="translate('Recurring Coupon')"
                                   :content="
                                   translate(
-                                    'Mark this coupon as recurring to apply it automatically to every future subscription order. This discount will automatically apply on every renewal. However, the coupon will not be applied if it reduces the payable amount to zero.'
+                                    'Coupon_Mark_Coupon'
                                   )
                                 "
                               />
@@ -471,7 +471,7 @@
                               <LabelHint
                                   :title="translate('Per Logged in User Limit')"
                                   :content="
-                                  translate('Maximum an logged in user can use. 0 means unlimited. Only logged in user can use this coupon.')
+                                  translate('Coupon_Maximum_Logged')
                                 "
                               />
                             </template>
@@ -510,9 +510,9 @@
                         <el-col :lg="24">
                           <el-form-item :label="translate('Status')">
                               <el-radio-group v-model="coupon.status">
-                                <el-radio value="active" :label='translate("Active")' />
-                                <el-radio value="disabled" :label='translate("Disabled")' />
-                                <el-radio disabled value="expired" :label='translate("Expired")' />
+                                <el-radio value="active" :label="_x('Active', 'Coupon status')" />
+                                <el-radio value="disabled" :label="_x('Disabled', 'Coupon status')" />
+                                <el-radio disabled value="expired" :label="_x('Expired', 'Coupon status')" />
                               </el-radio-group>
 
                             <ValidationError
@@ -759,7 +759,7 @@
 <script>
 import SaveBar from "@/Bits/Components/SaveBar.vue";
 import { ArrowRight } from "@element-plus/icons-vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import { Container as CardContainer, Header as CardHeader, Body as CardBody } from '@/Bits/Components/Card/Card.js';
 import LabelHint from "@/Bits/Components/LabelHint.vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
@@ -908,6 +908,7 @@ export default {
   },
   methods: {
     translate,
+    _x,
     generateRandomCouponCode(){
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let couponCode = "";

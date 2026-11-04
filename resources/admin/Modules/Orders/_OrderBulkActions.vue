@@ -12,7 +12,7 @@
       <template #dropdown>
         <el-dropdown-menu>
           <div v-if="trigger_action !== 'add'">
-            <el-dropdown-item command="shipping_status" v-if="!isCancelled && order?.fulfillment_type === 'physical'">
+            <el-dropdown-item command="shipping_status" v-if="!isCancelled && isPhysicalOrder">
               <DynamicIcon name="ShipmentStatus"/>
               {{ translate('Change Shipping Status') }}
             </el-dropdown-item>
@@ -92,8 +92,27 @@
         <el-form-item v-if="selected_action === 'shipping_status' || selected_action === 'all'"
                       :label="translate('Shipping Status')">
           <el-select v-model="status_data.shipping_status" :placeholder="translate('Select Shipping Status')">
+            <!--
+              editable_shipping_statuses (not shipping_statuses) — `partially_shipped`
+              is a DERIVED status, computed from the shipment records. Offering it here
+              would let an admin hand-set it, which zeroes every item's fulfilled_quantity
+              server-side while the shipment rows survive.
+            -->
+            <!--
+              The order may currently sit in a derived status that is not settable
+              (partially_shipped). Element Plus falls back to printing the raw slug
+              when the bound value has no matching option, so surface it as a
+              disabled option purely to give the select a label to render.
+            -->
             <el-option
-                v-for="(statusName, status) in appVars.shipping_statuses"
+                v-if="status_data.shipping_status && !appVars.editable_shipping_statuses[status_data.shipping_status]"
+                :key="status_data.shipping_status"
+                :label="appVars.shipping_statuses[status_data.shipping_status] || status_data.shipping_status"
+                :value="status_data.shipping_status"
+                disabled
+            />
+            <el-option
+                v-for="(statusName, status) in appVars.editable_shipping_statuses"
                 :key="status"
                 :label="statusName"
                 :value="status"
@@ -114,6 +133,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {handleSuccess, handleError} from "@/Bits/common";
 import translate from "../../utils/translator/Translator";
 import Notify from "@/utils/Notify";
+import {FULFILLMENT_TYPE_PHYSICAL} from "@/utils/orderConstants";
 
 export default {
   name: 'OrderBulkActions',
@@ -137,6 +157,11 @@ export default {
       isCompleted: ['completed'].includes(this.order.status),
       isUnshippable: ['unshippable'].includes(this.order.shipping_status),
     }
+  },
+  computed: {
+    isPhysicalOrder() {
+      return this.order?.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL;
+    },
   },
   methods: {
     translate,
@@ -273,7 +298,7 @@ export default {
           })
     },
     cancelOrder() {
-      this.$confirm(translate('Are you sure you want to change the order status to Cancel? This action is irreversible and cannot be undone.'),
+      this.$confirm(translate('Order_Sure_Want'),
           translate('Please confirm'),
           {
             confirmButtonText: translate('Yes, Changed status to Cancel'),

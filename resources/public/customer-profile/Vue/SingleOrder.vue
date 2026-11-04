@@ -14,12 +14,12 @@
                 <el-breadcrumb-item :to="{ name: 'purchase-history' }">
                     {{ $t('Purchase History') }}
                 </el-breadcrumb-item>
-                <el-breadcrumb-item aria-current="page"><span class="fct-ltr-isolate">#{{ order?.invoice_no }}</span></el-breadcrumb-item>
+                <el-breadcrumb-item aria-current="page"><span class="fct-ltr-isolate">#{{ order?.uuid }}</span></el-breadcrumb-item>
             </el-breadcrumb>
         </div>
 
         <template v-if="order">
-            <h1 :id="orderTitleId" class="sr-only">{{ $t('Order Details') }} <span v-if="order.invoice_no">#{{ order.invoice_no }}</span></h1>
+            <h1 :id="orderTitleId" class="sr-only">{{ $t('Order Details') }} <span v-if="order.uuid">#{{ order.uuid }}</span></h1>
 
             <el-alert
                 v-if="order.custom_payment_link && (order.total_amount - order.total_paid - order.total_refund) > 0"
@@ -39,6 +39,13 @@
                     {{ $t('Pay Now') }}
                 </el-button>
             </el-alert>
+
+            <article v-if="showDelivery" class="fct-single-order-box" role="region" aria-labelledby="delivery-title">
+                <header class="fct-single-order-header">
+                    <h2 id="delivery-title" class="title">{{ $t('Delivery') }}</h2>
+                </header>
+                <OrderDelivery :key="order.uuid" :shipments="order.shipments || []" :unshipped-items="order.unshipped_items || []"/>
+            </article>
 
             <article class="fct-single-order-box" role="region" aria-labelledby="order-summary-title">
                 <div v-if="sectionParts.before_summary" v-html="sectionParts.before_summary"></div>
@@ -118,6 +125,15 @@
                                                             class="variation-title"
                                                         >
                                                             {{ filteredOrderItem.variation_display_title || filteredOrderItem.title }}
+                                                        </div>
+
+                                                        <div
+                                                            v-for="(state, stateIndex) in itemDeliveryStates[filteredOrderItem.id] || []"
+                                                            :key="'delivery-state-' + stateIndex"
+                                                            class="fct-order-item-delivery"
+                                                        >
+                                                            <span class="fct-order-item-delivery__dot" :class="'is-' + state.tone" aria-hidden="true"></span>
+                                                            {{ state.text }}
                                                         </div>
 
                                                         <div
@@ -478,12 +494,14 @@ import DownloadsTable from "./parts/DownloadsTable.vue";
 import LicenseTable from "./parts/LicenseTable.vue";
 import TransactionsTable from "./parts/TransactionTable.vue";
 import OrderTableLoader from "./parts/OrderTableLoader.vue";
-import translate, {pluralizeTranslate, translateNumber} from '../translator/Translator'
+import translate, {dateTimeI18, pluralizeTranslate, translateNumber} from '../translator/Translator'
 import statusLabel from "../utils/statusLabels";
 import { formatOrderItems } from "@/Bits/common";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 import CustomerTaxBreakdownBox from "./parts/CustomerTaxBreakdownBox.vue";
 import UpgradePlan from "./subcriptions/UpdatePaymentInfos/UpgradePlan.vue";
+import OrderDelivery from "./parts/OrderDelivery.vue";
+import {itemDeliveryStates} from "../utils/shipmentLabels";
 
 export default {
     name: 'SingleOrderDetails',
@@ -497,7 +515,8 @@ export default {
         BundleProducts,
         InfoFilled,
         CustomerTaxBreakdownBox,
-        UpgradePlan
+        UpgradePlan,
+        OrderDelivery
     },
     props: {
         order_id: {
@@ -529,6 +548,19 @@ export default {
         feeItems() {
             if (!this.order || !this.order.order_items) return [];
             return this.order.order_items.filter(item => item.payment_type === 'fee');
+        },
+        showDelivery() {
+            return this.order.fulfillment_type === 'physical'
+                && !!((this.order.shipments || []).length || (this.order.unshipped_items || []).length);
+        },
+        // With one shipment and nothing waiting, the Delivery card already says it all.
+        itemDeliveryStates() {
+            const shipments = this.order?.shipments || [];
+            const unshipped = this.order?.unshipped_items || [];
+            if (shipments.length + (unshipped.length ? 1 : 0) < 2) {
+                return {};
+            }
+            return itemDeliveryStates(shipments, unshipped);
         },
         visibleTransactions() {
             return (this.order?.transactions || []).filter(
@@ -613,6 +645,7 @@ export default {
         pluralizeTranslate,
         getStatusText: statusLabel,
         translateNumber,
+        dateTimeI18,
         getItemTaxRates(item) {
             var rates = item.line_meta && item.line_meta.tax_config
                 ? item.line_meta.tax_config.rates
@@ -654,19 +687,7 @@ export default {
             return diff > 0 && diff <= quantity;
         },
         formatOrderAmount(amount, withCurrency = true, hideEmpty = false) {
-            var formatted = this.formatNumber(amount, withCurrency, hideEmpty, this.order && this.order.currency);
-            if (!formatted) return formatted;
-
-            var numericAmount = Number(amount || 0);
-            if (!Number.isFinite(numericAmount) || numericAmount % 100 !== 0) {
-                return formatted;
-            }
-
-            var shopConfig = window.fluentcart_customer_profile_vars.shop || {};
-            var decimalSeparator = shopConfig.decimal_separator === 'comma' ? ',' : '.';
-            var decimalToken = decimalSeparator + translateNumber('00');
-
-            return formatted.replace(decimalToken, '');
+            return this.formatNumber(amount, withCurrency, hideEmpty, this.order && this.order.currency);
         },
         formatTaxRateBadge(rate) {
             var pct = parseFloat(rate.rate_percent || 0).toFixed(3).replace(/\.?0+$/, '');

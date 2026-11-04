@@ -40,7 +40,7 @@
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
-            <Badge :status="subscriptionStatus(scope.row)" :key="scope.row.id" size="small" :hide-icon="true"/>
+            <Badge :status="subscriptionStatus(scope.row)" kind="subscription" :key="scope.row.id" size="small" :hide-icon="true"/>
           </RouteCell>
         </template>
       </el-table-column>
@@ -50,6 +50,14 @@
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             <span v-html="scope.row.payment_info"></span>
+            <!-- An installment plan has a fixed number of payments (bill_times); a recurring plan needs no marker -->
+            <!-- translators: %1$s is the number of payments in the installment plan -->
+            <el-tooltip v-if="scope.row.bill_times > 0" placement="top"
+                        :content="translate('Installment plan: %1$s payments', translateNumber(scope.row.bill_times))">
+              <span class="fct-installment-icon ml-1 inline-flex align-middle" :aria-label="translate('Installment plan')">
+                <DynamicIcon name="Calendar" class="text-gray-500 w-4 h-4"/>
+              </span>
+            </el-tooltip>
           </RouteCell>
         </template>
       </el-table-column>
@@ -84,7 +92,11 @@
 
       <el-table-column v-if="columns.indexOf('bills_count') !== -1" :label="translate('Bills Count')" width="100">
         <template #default="scope">
-          {{ translateNumber(scope.row.bill_count) }}
+          <!-- Payments made of the plan's total -->
+          <template v-if="scope.row.bill_times > 0">
+            {{ translateNumber(scope.row.bill_count) }} / {{ translateNumber(scope.row.bill_times) }}
+          </template>
+          <template v-else>{{ translateNumber(scope.row.bill_count) }}</template>
         </template>
       </el-table-column>
 

@@ -154,12 +154,12 @@ class Processor
             $storeTaxBehavior = $taxBehavior;
         }
 
-        if ($taxBehavior === 1) {
+        if ($taxBehavior === 1 && $storeTaxBehavior !== 2) {
             // Pure exclusive: all tax is additive on top of item prices.
             // tax_total includes product + fee tax (both exclusive).
             $taxTotal = $this->toDecimal($order->tax_total, $currency) + $this->toDecimal($order->shipping_tax, $currency);
-        } elseif ($taxBehavior === 3) {
-            // Mixed: only exclusive product + fee tax is additive; shipping conditional.
+        } elseif (in_array($taxBehavior, [1, 2, 3], true)) {
+            // Mixed, all-inclusive or an inclusive store: only exclusive product tax is additive; shipping and fee tax follow the store.
             $taxTotal = $this->toDecimal($exclusiveTaxTotal, $currency);
             if ($storeTaxBehavior === 1) {
                 // Store is exclusive: fees and shipping are also exclusive.
@@ -840,7 +840,7 @@ class Processor
         if ($transaction->status === Status::TRANSACTION_SUCCEEDED) {
             (new StatusHelper($order))->syncOrderStatuses($transaction);
         } else {
-            fluent_cart_add_log('PayPal Subscription Activated', 'Subscription activated, transaction & order statuses will be synced on webhook receive.', [
+            fluent_cart_add_log('PayPal Subscription Activated', 'Subscription activated, transaction & order statuses will be synced on webhook receive.', 'info', [
                 'module_name' => 'order',
                 'module_id'   => $order->id,
             ]);

@@ -4,6 +4,7 @@ namespace FluentCart\App\Models;
 
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\OrderItemHelper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Concerns\CanSearch;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\WpModels\PostMeta;
@@ -252,6 +253,71 @@ class OrderItem extends Model
         return $this->hasOne(ProductMeta::class, 'object_id', 'object_id')
             ->where('object_type', 'product_variant_info')
             ->where('meta_key', 'product_thumbnail');
+    }
+
+    /**
+     * What the customer was charged for this line in cents: line_total, plus tax_amount when the tax was
+     * added on top, or 0 for a trial line on its first order. Refunds are recorded against this in refund_total.
+     */
+    public function chargedTotal(Order $order)
+    {
+        // A trial line's first order charges only its signup fee, which sits on its own line.
+        if ($this->isTrialLineOnFirstOrder($order)) {
+            return 0;
+        }
+
+        $inclusive = Arr::get($this->line_meta, 'tax_config.inclusive', null);
+        if ($inclusive !== null) {
+            $inclusive = filter_var($inclusive, FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $taxInclusion = Arr::get($this->other_info, 'tax_inclusion');
+            if ($taxInclusion === 'included' || $taxInclusion === 'excluded') {
+                $inclusive = ($taxInclusion === 'included');
+            } elseif ($this->isRenewalLineWithTax($order)) {
+                $inclusive = true;
+            } else {
+                $inclusive = ((int) $order->tax_behavior === 2);
+            }
+        }
+
+        return (int) $this->line_total + ($inclusive ? 0 : (int) $this->tax_amount);
+    }
+
+    /**
+     * Simulated trials keep trial_days off the line, and renewal lines that keep it were charged.
+     */
+    private function isTrialLineOnFirstOrder(Order $order)
+    {
+        return $this->payment_type === 'subscription'
+            && (int) Arr::get($this->other_info, 'trial_days', 0) > 0
+            && $order->type !== Status::ORDER_TYPE_RENEWAL;
+    }
+
+    /**
+     * Renewal lines store line_total with the tax already in it and no tax_config.
+     */
+    private function isRenewalLineWithTax(Order $order)
+    {
+        $tax = (int) $this->tax_amount;
+
+        return $order->type === Status::ORDER_TYPE_RENEWAL
+            && $tax > 0
+            && (int) $this->line_total === (int) $this->subtotal - (int) $this->discount_total + $tax;
+    }
+
+    public function unitsLeft()
+    {
+        return max(0, (int) $this->quantity - (int) Arr::get($this->line_meta, 'refunded_quantity', 0));
+    }
+
+    /**
+     * Shipped units the customer still has: shipped, minus those refunded after shipping.
+     */
+    public function shippedUnitsKept()
+    {
+        $shippedRefunded = (int) Arr::get($this->line_meta, 'refunded_shipped_quantity', 0);
+
+        return min(max(0, (int) $this->fulfilled_quantity - $shippedRefunded), $this->unitsLeft());
     }
 
     public function getIsCustomAttribute()

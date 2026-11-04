@@ -1,6 +1,6 @@
+@use "../../Components/style/badge-positions" as *;
 @config "./sale-badge-block-editor.config.js";
 @tailwind utilities;
-@import "../../Components/style/badge-positions";
 
 .fct-sale-badge {
     @apply inline-block font-semibold leading-none whitespace-nowrap z-[2] pointer-events-none;

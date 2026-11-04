@@ -207,7 +207,7 @@ class ReviewModule
     }
 
     /**
-     * Show Reviews as a "↳" child under Products in the WP admin left
+     * Show Reviews as a child under Products in the WP admin left
      * sidebar, mirroring the Attributes and Inventory children. Always
      * visible, so the sidebar keeps the same shape on every page.
      */
@@ -242,7 +242,7 @@ class ReviewModule
             }
 
             $entry = [
-                __('↳ Reviews', 'fluent-cart'),
+                __('Reviews', 'fluent-cart'),
                 $capability,
                 'admin.php?page=fluent-cart#/reviews',
                 '',

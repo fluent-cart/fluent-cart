@@ -204,7 +204,7 @@ $router->prefix('products')->withPolicy('ProductPolicy')->group(function (Router
         'permissions' => 'products/delete'
     ]);
     $router->get('getDownloadableUrl/{downloadableId}', [ProductDownloadablesController::class, 'getDownloadableUrl'])->meta([
-        'permissions' => 'products/view'
+        'permissions' => 'products/edit'
     ]);
 
     $router->get('/{productId}/pricing-widgets', [ProductController::class, 'getPricingWidgets'])->meta([
@@ -596,6 +596,13 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
             'permissions' => 'orders/can_refund'
         ]);
 
+    $router->post('/{order_id}/refund/{transaction_id}/resync', [OrderController::class, 'resyncRefund'])
+        ->int('order_id')
+        ->int('transaction_id')
+        ->meta([
+            'permissions' => 'orders/can_refund'
+        ]);
+
     $router->post('/{order_id}/change-customer', [OrderController::class, 'changeCustomer'])->int('order_id')->meta([
         'permissions' => 'orders/manage'
     ]);
@@ -649,6 +656,83 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
     $router->put('/{order}/sync-statuses', [OrderController::class, 'syncOrderStatuses'])->meta([
         'permissions' => 'orders/manage'
     ]);
+
+    $router->get('/{order_id}/shipments', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'index'])
+        ->int('order_id')
+        ->meta([
+            'permissions' => 'orders/view'
+        ]);
+
+    // Writes nothing, but spends the store's carrier quota and only feeds the
+    // create route, so it carries the same gate.
+    $router->post('/{order_id}/shipments/quote', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'quote'])
+        ->int('order_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Creating a shipment moves the order's shipping_status (unshipped ->
+    // partially_shipped/shipped via deriveFulfillmentStatus), so it is gated
+    // on orders/manage_statuses like update/delete below. Gating it on the broader
+    // orders/manage would let that permission move shipping status through create,
+    // bypassing the stricter gate the status routes enforce.
+    $router->post('/{order_id}/shipments', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'store'])
+        ->int('order_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Can record a shipment like create, so it shares create's gate.
+    $router->post('/{order_id}/shipments/recheck-unconfirmed', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'recheckUnconfirmed'])
+        ->int('order_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    $router->post('/{order_id}/shipments/dismiss-unconfirmed', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'dismissUnconfirmed'])
+        ->int('order_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Status-management, not order-management: this route's only effect is a
+    // status transition, and marking the last shipment delivered derives and
+    // persists the order's own shipping_status. It is therefore gated by the same
+    // permission as PUT /{order}/statuses rather than the broader `orders/manage`,
+    // so `orders/manage` alone cannot be used to move an order's shipping status.
+    $router->put('/{order_id}/shipments/{shipment_id}', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'update'])
+        ->int('order_id')
+        ->int('shipment_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Deleting a shipment re-derives the order's shipping_status back down, the same
+    // privileged status move as create/update — gated on orders/manage_statuses so
+    // it can't be used to sidestep that gate.
+    $router->delete('/{order_id}/shipments/{shipment_id}', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'destroy'])
+        ->int('order_id')
+        ->int('shipment_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Pulls tracking from the carrier and re-derives shipping_status; spends the
+    // carrier's quota, so it shares the status gate.
+    $router->post('/{order_id}/shipments/{shipment_id}/refresh-tracking', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'refreshTracking'])
+        ->int('order_id')
+        ->int('shipment_id')
+        ->meta([
+            'permissions' => 'orders/manage_statuses'
+        ]);
+
+    // Read-only, so it shares the shipment list's gate.
+    $router->get('/{order_id}/shipments/{shipment_id}/label', [\FluentCart\App\Http\Controllers\ShipmentController::class, 'label'])
+        ->int('order_id')
+        ->int('shipment_id')
+        ->meta([
+            'permissions' => 'orders/view'
+        ]);
 
 });
 
@@ -752,6 +836,10 @@ $router->prefix('customers')->withPolicy('CustomerPolicy')->group(function (Rout
     ]);
 
     $router->post('/{customerId}/recalculate-ltv', [CustomerController::class, 'recalculateLtv'])->int('customerId')->meta([
+        'permissions' => 'customers/manage'
+    ]);
+
+    $router->post('/{customerId}/mark-email-verified', [CustomerController::class, 'markEmailVerified'])->int('customerId')->meta([
         'permissions' => 'customers/manage'
     ]);
 

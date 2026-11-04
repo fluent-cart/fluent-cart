@@ -8,9 +8,7 @@ import translate from "@/utils/translator/Translator";
 
 class FilterState extends Model {
   data = {
-    orderStatus: ['all'],
     orderTypes: ['all'],
-    paymentStatus: ['all'],
     filterOptions: {},
     showDropdown: false,
     activeFilter: null,
@@ -151,14 +149,17 @@ class FilterState extends Model {
     this.triggerFilterChanged();
   }
 
-  setDateRange(value) {
+  setDateRange(value, rangeKey = "") {
     const start = dayjs(value[0]);
     const end = dayjs(value[1]);
 
+    // rangeKey names a report preset ("last_7"), so a saved range can move with today
+    this.data.rangeKey = rangeKey;
     this.data.selectedFilters['dateRange'] = {
       label: translate("Date"),
       value: [start, end],
       type: "date",
+      rangeKey,
     };
 
     //this.data.activeFilter = null;
@@ -355,8 +356,8 @@ class FilterState extends Model {
           /* translators: %1$s: base currency code */
           let label = translate('All currencies (in %1$s)', reportFilter.data.baseCurrency);
           if (excluded) {
-            /* translators: %1$s: number of orders */
-            label += ' — ' + translate('%1$s orders without an exchange rate left out', excluded);
+            /* translators: %1$s: base currency code, %2$s: number of orders */
+            label = translate('All currencies (in %1$s) — orders left out without an exchange rate: %2$s', reportFilter.data.baseCurrency, excluded);
           }
           return {label, value: code};
         }
@@ -480,19 +481,17 @@ class FilterState extends Model {
   applicableFilters() {
     // define only the keys you want to store
     const allowedKeys = [
-      "orderStatus",
       "orderTypes",
       "compareDate",
       "currency",
       "compareType",
       "subscriptionType",
       "variation_ids",
-      "paymentStatus",
       "rangeKey"
     ];
 
     // build new object from this.data using only allowed keys
-    // e.g. { orderStatus: "all", orderTypes: ["all"], ... }
+    // e.g. { orderTypes: ["all"], currency: "USD", ... }
     return Object.fromEntries(
         allowedKeys.map(key => [key, this.data[key]])
     );

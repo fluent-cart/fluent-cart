@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Helpers;
 
+use FluentCart\Framework\Support\Arr;
+
 class Status
 {
     // product statuses: publish, draft, pending, private, future
@@ -90,6 +92,7 @@ class Status
     // Shipping Statuses
     public const SHIPPING_UNSHIPPED = 'unshipped';
     public const SHIPPING_SHIPPED = 'shipped';
+    public const SHIPPING_PARTIALLY_SHIPPED = 'partially_shipped';
     public const SHIPPING_DELIVERED = 'delivered';
     public const SHIPPING_UNSHIPPABLE = 'unshippable';
 
@@ -130,12 +133,6 @@ class Status
             self::PRODUCT_FUTURE  => __('Scheduled', 'fluent-cart'),
             self::PRODUCT_TRASH   => __('Trashed', 'fluent-cart'),
         ], []);
-
-        if ($withLabel) {
-            return $statues;
-        }
-
-        return array_keys($statues);
     }
 
     public static function getScheduleStatus($status): string
@@ -174,11 +171,19 @@ class Status
     {
         return apply_filters('fluent_cart/order_statuses', [
             self::ORDER_PROCESSING => __('Processing', 'fluent-cart'),
-            self::ORDER_COMPLETED  => __('Completed', 'fluent-cart'),
+            self::ORDER_COMPLETED  => _x('Completed', 'Order status', 'fluent-cart'),
             self::ORDER_ON_HOLD    => __('On Hold', 'fluent-cart'),
-            self::ORDER_CANCELED   => __('Canceled', 'fluent-cart'),
-            self::ORDER_FAILED     => __('Failed', 'fluent-cart'),
+            self::ORDER_CANCELED   => _x('Canceled', 'Order status', 'fluent-cart'),
+            self::ORDER_FAILED     => _x('Failed', 'Order status', 'fluent-cart'),
         ], []);
+    }
+
+    /**
+     * Translated label for an order status key, or the key itself when unknown.
+     */
+    public static function getOrderStatusLabel($status): string
+    {
+        return (string)Arr::get(self::getOrderStatuses(), (string)$status, $status);
     }
 
     public static function getEditableOrderStatuses()
@@ -186,9 +191,9 @@ class Status
         $statuses = [
             self::ORDER_ON_HOLD    => __('On Hold', 'fluent-cart'),
             self::ORDER_PROCESSING => __('Processing', 'fluent-cart'),
-            self::ORDER_COMPLETED  => __('Completed', 'fluent-cart'),
+            self::ORDER_COMPLETED  => _x('Completed', 'Order status', 'fluent-cart'),
             //  'archived' => __('Archived', 'fluent-cart'),
-            self::ORDER_CANCELED   => __('Canceled', 'fluent-cart')
+            self::ORDER_CANCELED   => _x('Canceled', 'Order status', 'fluent-cart')
         ];
 
         return apply_filters('fluent_cart/editable_order_statuses', $statuses, []);
@@ -199,13 +204,13 @@ class Status
     public static function getPaymentStatuses()
     {
         return apply_filters('fluent_cart/payment_statuses', [
-            self::PAYMENT_PENDING            => __('Pending', 'fluent-cart'),
-            self::PAYMENT_PAID               => __('Paid', 'fluent-cart'),
+            self::PAYMENT_PENDING            => _x('Pending', 'Payment status', 'fluent-cart'),
+            self::PAYMENT_PAID               => _x('Paid', 'Payment status', 'fluent-cart'),
             self::PAYMENT_PARTIALLY_PAID     => __('Partially Paid', 'fluent-cart'),
-            self::PAYMENT_FAILED             => __('Failed', 'fluent-cart'),
-            self::PAYMENT_REFUNDED           => __('Refunded', 'fluent-cart'),
+            self::PAYMENT_FAILED             => _x('Failed', 'Payment status', 'fluent-cart'),
+            self::PAYMENT_REFUNDED           => _x('Refunded', 'Payment status', 'fluent-cart'),
             self::PAYMENT_PARTIALLY_REFUNDED => __('Partially Refunded', 'fluent-cart'),
-            self::PAYMENT_AUTHORIZED         => __('Authorized', 'fluent-cart'),
+            self::PAYMENT_AUTHORIZED         => _x('Authorized', 'Payment status', 'fluent-cart'),
             self::PAYMENT_SCHEDULED          => __('Payment Scheduled', 'fluent-cart'),
         ], []);
     }
@@ -214,11 +219,11 @@ class Status
     public static function getTransactionStatuses($withLabel = true)
     {
         return apply_filters('fluent_cart/transaction_statuses', [
-            self::TRANSACTION_PENDING   => __('Pending', 'fluent-cart'),
-            self::TRANSACTION_SUCCEEDED => __('Succeeded', 'fluent-cart'),
-            self::TRANSACTION_AUTHORIZED => __('Authorized', 'fluent-cart'),
-            self::TRANSACTION_FAILED    => __('Failed', 'fluent-cart'),
-            self::TRANSACTION_REFUNDED  => __('Refunded', 'fluent-cart'),
+            self::TRANSACTION_PENDING   => _x('Pending', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_SUCCEEDED => _x('Succeeded', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_AUTHORIZED => _x('Authorized', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_FAILED    => _x('Failed', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_REFUNDED  => _x('Refunded', 'Transaction status', 'fluent-cart'),
         ], []);
 
         if ($withLabel) {
@@ -231,11 +236,11 @@ class Status
     public static function getEditableTransactionStatuses($withLabel = true)
     {
         $statuses = [
-            self::TRANSACTION_PENDING   => __('Pending', 'fluent-cart'),
-            self::TRANSACTION_SUCCEEDED => __('Succeeded', 'fluent-cart'),
-            self::TRANSACTION_AUTHORIZED => __('Authorized', 'fluent-cart'),
-            self::TRANSACTION_FAILED    => __('Failed', 'fluent-cart'),
-            self::TRANSACTION_REFUNDED  => __('Refunded', 'fluent-cart'),
+            self::TRANSACTION_PENDING   => _x('Pending', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_SUCCEEDED => _x('Succeeded', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_AUTHORIZED => _x('Authorized', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_FAILED    => _x('Failed', 'Transaction status', 'fluent-cart'),
+            self::TRANSACTION_REFUNDED  => _x('Refunded', 'Transaction status', 'fluent-cart'),
         ];
 
         $statuses = apply_filters('fluent_cart/editable_transaction_statuses', $statuses, []);
@@ -251,10 +256,11 @@ class Status
     public static function getShippingStatuses()
     {
         return apply_filters('fluent_cart/shipping_statuses', [
-            self::SHIPPING_UNSHIPPED   => __('Unshipped', 'fluent-cart'),
-            self::SHIPPING_SHIPPED     => __('Shipped', 'fluent-cart'),
-            self::SHIPPING_DELIVERED   => __('Delivered', 'fluent-cart'),
-            self::SHIPPING_UNSHIPPABLE => __('Unshippable', 'fluent-cart'),
+            self::SHIPPING_UNSHIPPED          => __('Unshipped', 'fluent-cart'),
+            self::SHIPPING_SHIPPED            => __('Shipped', 'fluent-cart'),
+            self::SHIPPING_PARTIALLY_SHIPPED  => __('Partially Shipped', 'fluent-cart'),
+            self::SHIPPING_DELIVERED          => _x('Delivered', 'Shipping status', 'fluent-cart'),
+            self::SHIPPING_UNSHIPPABLE        => __('Unshippable', 'fluent-cart'),
         ], []);
     }
 
@@ -263,7 +269,7 @@ class Status
         $statuses = [
             self::SHIPPING_UNSHIPPED   => __('Unshipped', 'fluent-cart'),
             self::SHIPPING_SHIPPED     => __('Shipped', 'fluent-cart'),
-            self::SHIPPING_DELIVERED   => __('Delivered', 'fluent-cart'),
+            self::SHIPPING_DELIVERED   => _x('Delivered', 'Shipping status', 'fluent-cart'),
             self::SHIPPING_UNSHIPPABLE => __('Unshippable', 'fluent-cart'),
         ];
 
@@ -274,17 +280,17 @@ class Status
     public static function getSubscriptionStatuses()
     {
         return apply_filters('fluent_cart/subscription_statuses', [
-            self::SUBSCRIPTION_PENDING  => __('Pending', 'fluent-cart'),
-            self::SUBSCRIPTION_ACTIVE   => __('Active', 'fluent-cart'),
+            self::SUBSCRIPTION_PENDING  => _x('Pending', 'Subscription status', 'fluent-cart'),
+            self::SUBSCRIPTION_ACTIVE   => _x('Active', 'Subscription status', 'fluent-cart'),
             self::SUBSCRIPTION_FAILING  => __('Failing', 'fluent-cart'),
             self::SUBSCRIPTION_PAUSED   => __('Paused', 'fluent-cart'),
-            self::SUBSCRIPTION_EXPIRED  => __('Expired', 'fluent-cart'),
+            self::SUBSCRIPTION_EXPIRED  => _x('Expired', 'Subscription status', 'fluent-cart'),
             self::SUBSCRIPTION_EXPIRING => __('Expiring', 'fluent-cart'),
-            self::SUBSCRIPTION_CANCELED => __('Canceled', 'fluent-cart'),
+            self::SUBSCRIPTION_CANCELED => _x('Canceled', 'Subscription status', 'fluent-cart'),
             self::SUBSCRIPTION_TRIALING => __('Trialing', 'fluent-cart'),
             self::SUBSCRIPTION_INTENDED => __('Intended', 'fluent-cart'),
             self::SUBSCRIPTION_PAST_DUE => __('Past Due', 'fluent-cart'),
-            self::SUBSCRIPTION_COMPLETED   => __('Completed', 'fluent-cart'),
+            self::SUBSCRIPTION_COMPLETED   => _x('Completed', 'Subscription status', 'fluent-cart'),
         ], []);
     }
 
@@ -432,8 +438,8 @@ class Status
     public static function getEditableCustomerStatuses()
     {
         $statuses = [
-            self::CUSTOMER_ACTIVE   => __('Active', 'fluent-cart'),
-            self::CUSTOMER_INACTIVE => __('Inactive', 'fluent-cart'),
+            self::CUSTOMER_ACTIVE   => _x('Active', 'Customer status', 'fluent-cart'),
+            self::CUSTOMER_INACTIVE => _x('Inactive', 'Customer status', 'fluent-cart'),
         ];
 
         return apply_filters('fluent_cart/editable_customer_statuses', $statuses, []);
@@ -550,6 +556,10 @@ class Status
                         [
                             'value' => 'shipping_status_changed_to_delivered',
                             'label' => __('Order Delivered', 'fluent-cart')
+                        ],
+                        [
+                            'value' => 'order_shipment_created',
+                            'label' => __('Shipment Created (with tracking)', 'fluent-cart')
                         ]
                     ]
                 ]

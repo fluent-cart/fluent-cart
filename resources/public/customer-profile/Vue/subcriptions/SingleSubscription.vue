@@ -222,7 +222,9 @@
                                 <div class="left-content">
                                     <div class="title">{{ $t('Installment Progress') }}</div>
                                     <span class="text" :aria-label="$t('Installment Progress')">
-                                        {{ $t('%s of %s paid', subscription.bill_count, subscription.bill_times) }}
+                                        <!-- translators: %1$s: installments paid, %2$s: total installments -->
+                                        {{ $t('%1$s of %2$s paid', subscription.bill_count, subscription.bill_times) }}
+                                        <!-- translators: %s: number of installments remaining -->
                                         ({{ $t('%s remaining', subscription.remaining_installments) }})
                                     </span>
                                 </div>

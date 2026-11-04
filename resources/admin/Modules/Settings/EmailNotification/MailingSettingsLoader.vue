@@ -34,8 +34,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
           <div>
             <div class="form-note">
               <p>{{
-                  translate(`Provide Valid Email Address email as per your domain/SMTP settings. This
-email will be used to send emails like notifications`)
+                  translate('Settings_Provide_Valid')
                 }}</p>
             </div>
           </div>
@@ -68,8 +67,7 @@ email will be used to send emails like notifications`)
           <div>
             <div class="form-note">
               <p>{{
-                  translate(`If someone replies to your notification email, this is where you would like to
-receive it.`)
+                  translate('Settings_Someone_Replies')
                 }}</p>
             </div>
           </div>
@@ -89,8 +87,7 @@ receive it.`)
         <div class="mt-2 mb-2">
           <div class="form-note">
             <p>{{
-                translate(`This email footer will be used for all emails sent from FluentCart, It's highly recommended to use your business name and address in the footer for
-compliance.`)
+                translate('Settings_Email_Footer')
               }}</p>
           </div>
         </div>

@@ -12,7 +12,7 @@
     <el-form :model="form" :rules="rules" ref="formRef" label-position="top" require-asterisk-position="right">
       <el-form-item prop="name">
         <template #label>
-          <LabelHint :title="translate('Class Name')" :content="translate('Give the shipping class a friendly name to help identify it when setting up shipping rates for your products. For instance: Bulky Items, Fragile Goods, and so on.')" placement="bottom"/>
+          <LabelHint :title="translate('Class Name')" :content="translate('Ship_Give_Shipping')" placement="bottom"/>
         </template>
         <el-input v-model="form.name" :placeholder="translate('Enter class name')"></el-input>
       </el-form-item>
@@ -26,7 +26,7 @@
 
       <el-form-item prop="cost">
         <template #label>
-          <LabelHint :title="translate('Cost')" :content="translate('Enter the shipping cost for this class. This cost will be added to the shipping rate for products that belong to this class. Leave it at 0 if this class has no additional cost or if the cost is determined by other settings.')"/>
+          <LabelHint :title="translate('Cost')" :content="translate('Ship_Enter_Shipping')"/>
         </template>
         <el-input-number v-model="form.cost" :precision="2" :min="0" :step="1"></el-input-number>
       </el-form-item>
@@ -44,7 +44,7 @@
 
       <el-form-item prop="per_item">
         <el-checkbox v-model="form.per_item" true-label="1" false-label="0">
-          <LabelHint :title="translate('Apply to quantity')" :content="translate('Check this box if you want the Cost to be multiplied by the quantity of items in the cart that belong to this shipping class. For example, if the cost is $5 and a customer buys 3 items from this class, the total shipping cost for these items will be $15, plus other shipping cost from other settings. Leave this unchecked to apply the cost only once per order for this class')"/>
+          <LabelHint :title="translate('Apply to quantity')" :content="translate('Ship_Check_Box')"/>
         </el-checkbox>
       </el-form-item>
     </el-form>

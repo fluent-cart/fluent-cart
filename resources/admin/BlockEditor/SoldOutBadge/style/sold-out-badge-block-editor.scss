@@ -1,6 +1,6 @@
+@use "../../Components/style/badge-positions" as *;
 @config "./sold-out-badge-block-editor.config.js";
 @tailwind utilities;
-@import "../../Components/style/badge-positions";
 
 .fct-sold-out-badge {
     @apply inline-block font-medium leading-none whitespace-nowrap z-[2] pointer-events-none;

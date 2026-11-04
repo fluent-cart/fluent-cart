@@ -69,6 +69,14 @@ export const exportCSV = (data, filename = "export.csv") => {
     });
 }
 
+// A value starting with = + - @ would run as a formula in a spreadsheet; use on any column holding text a visitor or
+// customer typed (UTM tags, city names, product names, refund reasons)
+export const csvSafe = (value) => {
+    const text = value === null || value === undefined ? '' : String(value);
+
+    return /^[=+\-@\t\r]/.test(text) ? "'" + text : text;
+};
+
 /**
  * Export data to CSV using explicit column definitions.
  *

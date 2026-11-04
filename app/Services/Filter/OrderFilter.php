@@ -9,6 +9,11 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\OrderTransaction;
+use FluentCart\App\Models\Subscription;
+use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\Framework\Pagination\LengthAwarePaginator;
+use FluentCart\App\Services\Report\ReportHelper;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCartPro\App\Modules\Licensing\Models\License;
@@ -55,6 +60,134 @@ class OrderFilter extends BaseFilter
         }
     }
 
+    public function paginate($perPage = null): LengthAwarePaginator
+    {
+        $orders = parent::paginate($perPage);
+
+        if (in_array('admin_order_list', Arr::wrap($this->with), true)) {
+            static::attachInstallmentNumbers($orders->items());
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Gives the page's installment orders installment_number / installment_total ("Installment 3/6"), numbered as
+     * Subscription::calculateBillCount() counts the plan's payments: its succeeded charges up to this order's charge,
+     * plus billed_cycles_offset, less billed_cycles_deduction (a real trial's signup fee). A failed or voided invoice
+     * has no succeeded charge, so it gets no number. Batched by order and by subscription, after the page query.
+     *
+     * @param Order[] $orders
+     */
+    protected static function attachInstallmentNumbers(array $orders): void
+    {
+        $ids = [];
+        foreach ($orders as $order) {
+            if (in_array($order->sale_type, ['installment', 'installment_payment'], true)) {
+                $ids[] = (int) $order->id;
+            }
+        }
+        if (!$ids) {
+            return;
+        }
+
+        $charges = function ($query) {
+            return $query->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+                ->where('status', Status::TRANSACTION_SUCCEEDED)
+                ->where('total', '>', 0);
+        };
+
+        // Each order's latest charge, then the plans it paid into
+        $ownCharge = [];
+        foreach ($charges(OrderTransaction::query())->whereIn('order_id', $ids)->orderBy('id')->get(['id', 'order_id', 'subscription_id']) as $charge) {
+            $ownCharge[(int) $charge->order_id] = $charge;
+        }
+        $plans = Subscription::query()
+            ->whereIn('id', array_unique(array_map(function ($charge) {
+                return (int) $charge->subscription_id;
+            }, $ownCharge)))
+            ->where('bill_times', '>', 0)
+            ->get(['id', 'bill_times'])
+            ->keyBy('id');
+        if ($plans->isEmpty()) {
+            return;
+        }
+        $planIds = $plans->keys()->all();
+
+        // A charge's place among its plan's payments
+        $position = [];
+        $counted = [];
+        foreach ($charges(OrderTransaction::query())->whereIn('subscription_id', $planIds)->orderBy('id')->get(['id', 'subscription_id']) as $charge) {
+            $planId = (int) $charge->subscription_id;
+            $counted[$planId] = Arr::get($counted, $planId, 0) + 1;
+            $position[(int) $charge->id] = $counted[$planId];
+        }
+
+        $shift = [];
+        foreach (SubscriptionMeta::query()->whereIn('subscription_id', $planIds)->whereIn('meta_key', ['billed_cycles_offset', 'billed_cycles_deduction'])->get(['subscription_id', 'meta_key', 'meta_value']) as $meta) {
+            $sign = $meta->meta_key === 'billed_cycles_offset' ? 1 : -1;
+            $shift[(int) $meta->subscription_id] = Arr::get($shift, (int) $meta->subscription_id, 0) + $sign * (int) $meta->meta_value;
+        }
+
+        foreach ($orders as $order) {
+            $charge = Arr::get($ownCharge, (int) $order->id);
+            $plan = $charge ? $plans->get((int) $charge->subscription_id) : null;
+            if (!$plan) {
+                continue;
+            }
+            $number = Arr::get($position, (int) $charge->id, 0) + Arr::get($shift, (int) $plan->id, 0);
+            $order->installment_number = $number > 0 ? $number : null;
+            $order->installment_total = (int) $plan->bill_times;
+        }
+    }
+
+    /**
+     * An Order Type filter saved before the sale types has no filter_type and would compare the raw type column, so
+     * every Order Type item goes through the sale-type callback.
+     */
+    protected function parseSearchGroups(?string $json = null): array
+    {
+        $groups = parent::parseSearchGroups($json);
+        foreach ($groups as &$group) {
+            foreach (Arr::get($group, 'order', []) as $index => $item) {
+                if (Arr::get($item, 'property') === 'type') {
+                    $group['order'][$index]['filter_type'] = 'custom';
+                }
+            }
+        }
+        unset($group);
+
+        return $groups;
+    }
+
+    /**
+     * ReportHelper::saleTypeSql() for the orders table of the list query.
+     */
+    protected static function saleTypeSql(): string
+    {
+        global $wpdb;
+
+        return ReportHelper::saleTypeSql($wpdb->prefix . 'fct_orders.');
+    }
+
+    /**
+     * @param string[] $types sale types from ReportHelper::saleTypeLabels()
+     */
+    protected static function whereSaleType($query, array $types, bool $exclude = false)
+    {
+        $placeholders = implode(', ', array_fill(0, count($types), '?'));
+
+        if (!$exclude) {
+            // Each sale type comes from one stored type: narrowing on the indexed column first spares a full-table CASE
+            $stored = ['installment' => 'subscription', 'installment_payment' => 'renewal'];
+            $query->whereIn('type', array_values(array_unique(array_map(function ($type) use ($stored) {
+                return Arr::get($stored, $type, $type);
+            }, $types))));
+        }
+
+        return $query->whereRaw(self::saleTypeSql() . ($exclude ? ' NOT IN ' : ' IN ') . "({$placeholders})", array_values($types));
+    }
+
     public function tabsMap(): array
     {
         return [
@@ -63,9 +196,11 @@ class OrderFilter extends BaseFilter
             //'unpaid'       => 'payment_status',
             'completed'          => 'status',
             'processing'         => 'status',
-            'renewal'            => 'type',
-            'subscription'       => 'type',
-            'onetime'            => 'type',
+            // Sale types: an installment plan's orders are not subscription sign-ups or renewals
+            'renewal'            => 'sale_type',
+            'subscription'       => 'sale_type',
+            'installment'        => 'sale_type',
+            'onetime'            => 'sale_type',
             'refunded'           => 'payment_status',
             'partially_refunded' => 'payment_status',
             'upgraded_to'        => 'upgraded_to',
@@ -150,6 +285,11 @@ class OrderFilter extends BaseFilter
      */
     protected function adminOrderList($query)
     {
+        // One-time, new subscription, renewal, installment sign-up or installment payment, as the reports read it.
+        // select() adds the table prefix itself; the raw SQL names the prefixed table
+        $query->select('fct_orders.*')->selectRaw(self::saleTypeSql() . ' AS sale_type');
+
+
         // Line items belong to the order the route already authorised on
         // `orders/view`, so they need no second bar of their own.
         $query->with(['order_items']);
@@ -272,6 +412,10 @@ class OrderFilter extends BaseFilter
                 return $query->whereHas('orderTaxRates', function ($q) {
                     $q->whereRaw("JSON_EXTRACT(meta, '$.reverse_charge_applied') = true");
                 });
+            } else if ($tabsMap[$activeView] === 'sale_type') {
+                $saleTypes = ['installment' => ['installment', 'installment_payment'], 'onetime' => ['payment']];
+
+                return static::whereSaleType($query, Arr::get($saleTypes, $activeView, [$activeView]));
             } else {
                 return $query->where(
                     $tabsMap[$activeView],
@@ -407,10 +551,10 @@ class OrderFilter extends BaseFilter
                         'value'       => 'status',
                         'type'        => 'selections',
                         'options'     => [
-                            'completed'  => __('Completed', 'fluent-cart'),
+                            'completed'  => _x('Completed', 'Order status', 'fluent-cart'),
                             'processing' => __('Processing', 'fluent-cart'),
                             'on-hold'    => __('On Hold', 'fluent-cart'),
-                            'canceled'   => __('Canceled', 'fluent-cart')
+                            'canceled'   => _x('Canceled', 'Order status', 'fluent-cart')
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true
@@ -420,10 +564,10 @@ class OrderFilter extends BaseFilter
                         'value'       => 'payment_status',
                         'type'        => 'selections',
                         'options'     => [
-                            'paid'               => __('Paid', 'fluent-cart'),
-                            'pending'            => __('Pending', 'fluent-cart'),
+                            'paid'               => _x('Paid', 'Payment status', 'fluent-cart'),
+                            'pending'            => _x('Pending', 'Payment status', 'fluent-cart'),
                             'partially_paid'     => __('Partially Paid', 'fluent-cart'),
-                            'refunded'           => __('Refunded', 'fluent-cart'),
+                            'refunded'           => _x('Refunded', 'Payment status', 'fluent-cart'),
                             'partially_refunded' => __('Partially Refunded', 'fluent-cart'),
                             //'authorized'         => __('Authorized', 'fluent-cart')
                         ],
@@ -446,13 +590,24 @@ class OrderFilter extends BaseFilter
                         'label'       => __('Order Type', 'fluent-cart'),
                         'value'       => 'type',
                         'type'        => 'selections',
-                        'options'     => [
-                            'payment'      => __('Single Payment', 'fluent-cart'),
-                            'subscription' => __('Subscription', 'fluent-cart'),
-                            'renewal'      => __('Renewal', 'fluent-cart'),
-                        ],
+                        'filter_type' => 'custom',
+                        // The sale types the reports use, so installment orders are not counted as renewals
+                        'options'     => ReportHelper::saleTypeLabels(),
                         'is_multiple' => true,
-                        'is_only_in'  => true
+                        'is_only_in'  => true,
+                        'callback'    => function ($query, $data) {
+                            $types = array_values(array_intersect((array) Arr::get($data, 'value', []), array_keys(ReportHelper::saleTypeLabels())));
+                            if (!$types) {
+                                return;
+                            }
+                            $operator = Arr::get($data, 'operator');
+                            // As BaseFilter reads a single-value column: in_all needs every value at once
+                            if ($operator === 'in_all' && count($types) > 1) {
+                                $query->whereRaw('1 = 0');
+                                return;
+                            }
+                            static::whereSaleType($query, $types, in_array($operator, ['not_in', 'not_contains', 'not_in_all'], true));
+                        },
                     ],
                     [
                         // Filter to one currency, then sort by amount — mixed
@@ -552,10 +707,10 @@ class OrderFilter extends BaseFilter
                         'column'      => 'status',
                         'relation'    => 'transactions',
                         'options'     => [
-                            Status::TRANSACTION_SUCCEEDED => __('Succeeded', 'fluent-cart'),
-                            Status::TRANSACTION_PENDING   => __('Pending', 'fluent-cart'),
-                            Status::TRANSACTION_REFUNDED  => __('Refunded', 'fluent-cart'),
-                            Status::TRANSACTION_FAILED    => __('Failed', 'fluent-cart'),
+                            Status::TRANSACTION_SUCCEEDED => _x('Succeeded', 'Transaction status', 'fluent-cart'),
+                            Status::TRANSACTION_PENDING   => _x('Pending', 'Transaction status', 'fluent-cart'),
+                            Status::TRANSACTION_REFUNDED  => _x('Refunded', 'Transaction status', 'fluent-cart'),
+                            Status::TRANSACTION_FAILED    => _x('Failed', 'Transaction status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true
@@ -569,7 +724,7 @@ class OrderFilter extends BaseFilter
                         'relation'    => 'transactions',
                         'options'     => [
                             Status::TRANSACTION_TYPE_CHARGE  => __('Charge', 'fluent-cart'),
-                            Status::TRANSACTION_TYPE_REFUND  => __('Refunded', 'fluent-cart'),
+                            Status::TRANSACTION_TYPE_REFUND  => _x('Refunded', 'Transaction type', 'fluent-cart'),
                             Status::TRANSACTION_TYPE_DISPUTE => __('Dispute', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
@@ -637,9 +792,9 @@ class OrderFilter extends BaseFilter
                         'column'      => 'status',
                         'relation'    => 'licenses',
                         'options'     => [
-                            Status::LICENSE_ACTIVE   => __('Active', 'fluent-cart'),
-                            Status::LICENSE_DISABLED => __('Disabled', 'fluent-cart'),
-                            Status::LICENSE_EXPIRED  => __('Expired', 'fluent-cart'),
+                            Status::LICENSE_ACTIVE   => _x('Active', 'License status', 'fluent-cart'),
+                            Status::LICENSE_DISABLED => _x('Disabled', 'License status', 'fluent-cart'),
+                            Status::LICENSE_EXPIRED  => _x('Expired', 'License status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true

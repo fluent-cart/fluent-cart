@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 
 class SubscriptionTable extends Table {
@@ -8,12 +8,20 @@ class SubscriptionTable extends Table {
     getTabs() {
         return {
             all: translate('All'),
-            active: translate('Active'),
+            active: _x('Active', 'Subscription status'),
             trialing: translate('Trialing'),
-            pending: translate('Pending'),
+            pending: _x('Pending', 'Subscription status'),
             intended: translate('Intended'),
-            expired: translate('Expired'),
-            canceled: translate('Canceled'),
+            expired: _x('Expired', 'Subscription status'),
+            canceled: _x('Canceled', 'Subscription status'),
+            completed: {
+                title: _x('Completed', 'Subscription status'),
+                description: translate('Installment plans paid in full')
+            },
+            installment: {
+                title: translate('Installments'),
+                description: translate('Plans with a fixed number of payments')
+            },
         }
     }
 

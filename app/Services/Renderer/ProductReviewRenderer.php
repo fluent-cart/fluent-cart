@@ -36,7 +36,7 @@ class ProductReviewRenderer
      * reviews.scss falls back to this same value (--fct-review-star-color), so
      * a section left on it prints no override and the stylesheet paints it.
      * Anything else the block asks for is printed as --fct-star-color. Keep
-     * the two in step: tests/js/reviews-palette-colours.test.js checks them.
+     * the two in step.
      */
     const DEFAULT_STAR_COLOR = '#f59e0b';
 

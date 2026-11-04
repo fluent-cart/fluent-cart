@@ -1,6 +1,11 @@
 <template>
   <div class="fct-compare-to-filter">
-    <div class="fct-applied-filter-label">{{translate('Compare to')}}</div>
+    <div class="fct-applied-filter-label">
+      {{translate('Compare to')}}
+      <el-tooltip :content="translate('Applies to the main chart and summary of each report.')" placement="top" popper-class="fct-tooltip" effect="dark">
+        <DynamicIcon class="w-3.5 h-3.5 cursor-help" name="InformationFill"/>
+      </el-tooltip>
+    </div>
     <div class="fct-applied-filter-actions">
       <div class="fct-compare-to-select">
         <el-select
@@ -36,6 +41,7 @@
 
 <script setup>
 import {computed} from "vue";
+import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import dayjs from "dayjs";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";

@@ -1,540 +1,333 @@
 <template>
     <UserCan :permission="'reports/view'">
-        <div class="fct-refund-report-page">
-          <PageHeading :title="translate('Subscription Future Revenue')"></PageHeading>
-        </div>
+        <div class="fct-future-renewals-page">
+          <PageHeading>
+            <template #title>
+              <h1 class="page-title">
+                {{ translate('Future Renewals') }}
+                <el-tooltip popper-class="fct-tooltip" placement="top" :content="pageInfo">
+                  <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this report')">
+                    <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+                  </button>
+                </el-tooltip>
+              </h1>
+            </template>
+            <template #action>
+              <el-select v-model="horizon" size="small" class="w-[170px]" :aria-label="translate('Horizon')" @change="fetchData(reportFilter.applicableFilters)">
+                <el-option v-for="option in horizonOptions" :key="option.value" :label="option.label" :value="option.value" />
+              </el-select>
+            </template>
+          </PageHeading>
 
-
-        <Card.Container>
-            <Card.Body class="p-3">
-                <SummaryLoader v-if="loading" :loading="loading" :margin-bottom="0" :padding="0" />
-
-                <div v-else>
-                    {{ tooltip }}
+          <SummaryLoader v-if="loading" :loading="loading" :count="5" />
+          <div v-else class="fct-report-order-summary summary-col-5">
+            <div class="summary-item" v-for="card in cards" :key="card.key">
+              <div class="summary-item-inner">
+                <div class="value"><div class="inner-value">{{ card.value }}</div></div>
+                <div class="title">
+                  {{ card.title }}
+                  <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+                    <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
+                      <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
+                    </button>
+                  </el-tooltip>
                 </div>
-            </Card.Body>
-        </Card.Container>
-
-        <SummaryLoader v-if="loading" :loading="loading" :count="2" />
-
-        <div v-else class="fct-report-order-summary summary-col-2">
-            <div class="summary-item" v-for="(summary, summaryIndex) in summaryCards" :key="summaryIndex">
-                <div class="summary-item-inner">
-                    <div class="value">
-                        <div class="inner-value">
-                            <span v-html="summary.value"/>
-                        </div>
-                    </div>
-
-                    <div class="title">
-                        {{ summary.title }}
-                    </div>
-                </div>
+                <div v-if="card.sub" class="text-xs text-system-light dark:text-gray-400 mt-1">{{ card.sub }}</div>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <div class="fct-revenue-line-chart-wrap">
-            <Card.Container>
-                <Card.Header title_size="small" border_bottom>
-                    <template #title>
-                        <div class="flex items-center gap-2">
-                            <h4 class="fct-card-header-title is-small">
-                                {{ translate("Upcoming Renewal Revenue") }}
-                            </h4>
-                        </div>
-                    </template>
-                    <template #action v-if="data.totalRenewals && !loading">
-                        <!-- <div class="fct-chart-select">
-                            <el-select class="el-select--x-small" v-model="selectedGroupKey" @change="filterChartData">
-                                <el-option v-for="groupKey in groupKeys" :key="groupKey.value"
-                                    :label="$t(groupKey.label)" :value="groupKey.value" />
-                            </el-select>
-                        </div> -->
-
-                        <div class="fct-btn-group sm">
-                            <IconButton tag="button" size="small" :title="$t('Zoom Chart')" @click="handleZoomChart"
-                                :class="zoomIsActive ? 'primary' : ''">
-                                <DynamicIcon name="SearchAdd" />
-                            </IconButton>
-
-                            <Screenshot :targetRef="chartRef" />
-                        </div>
-                    </template>
-                </Card.Header>
-                <Card.Body class="px-0 pt-0">
-                    <el-skeleton v-if="loading" animated :rows="7" class="px-4 pt-4" />
-
-                    <template v-else>
-                        <template v-if="!isEmpty">
-                            <div v-if="!isEmpty" class="fct-chart-wrap fct-revenue-line-chart mt-3" ref="chartRef"></div>
-                            
-                            <div class="chart-action-wrap">
-                                <div class="chart-change-wrap">
-                                    <div class="chart-change">
-                                        <DynamicIcon name="ArrowUp" class="arrow-up" />
-                                        <span class="text">{{ translate("Data") }}</span>
-                                    </div>
-    
-                                    <div class="chart-change">
-                                        <span class="text">{{ translate("Timeline") }}</span>
-                                        <DynamicIcon name="ArrowRight" class="arrow-right" />
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        <Empty
-                            v-else
-                            icon="Empty/ListView"
-                            :has-dark="true"
-                            :text="translate('Currently there is no data!')"
-                            class="fct-report-empty-state"
-                        />
-
-                    </template>
-                </Card.Body>
-            </Card.Container>
-        </div>
-
-        <Card.Container v-if="!loading && variationRows.length" class="overflow-hidden">
-            <Card.Header :title="translate('Renewals by Variant')" title_size="small" border_bottom />
-            <Card.Body class="px-0 pb-0">
-                <el-table :data="variationRows" :default-sort="{prop: 'projected_amount', order: 'descending'}">
-                    <el-table-column prop="product_title" :label="translate('Product')" min-width="200" />
-
-                    <el-table-column prop="variation_title" :label="translate('Variant')" min-width="150" />
-
-                    <el-table-column
-                        prop="renewals_count"
-                        :label="translate('Renewals')"
-                        min-width="120"
-                        sortable
-                        :sort-method="byNumber('renewals_count')"
-                    >
-                        <template #default="scope">
-                            {{ formatNumber(scope.row.renewals_count) }}
-                        </template>
-                    </el-table-column>
-
-                    <el-table-column
-                        prop="projected_amount"
-                        :label="translate('Projected revenue')"
-                        min-width="150"
-                        sortable
-                        :sort-method="byNumber('projected_amount')"
-                    >
-                        <template #default="scope">
-                            {{ reportFilter.formatAmount(scope.row.projected_amount, {cents: true}) }}
-                        </template>
-                    </el-table-column>
-                </el-table>
+          <Card.Container v-if="!loading && sliders.length" class="mb-6">
+            <Card.Header title_size="small" border_bottom>
+              <template #title>
+                <div class="flex items-center gap-2">
+                  <h4 class="fct-card-header-title is-small">{{ translate('Renewal rate assumptions') }}</h4>
+                  <el-tooltip popper-class="fct-tooltip" placement="top" :content="ratesInfo">
+                    <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this setting')">
+                      <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
+                    </button>
+                  </el-tooltip>
+                </div>
+              </template>
+              <template #action>
+                <el-button size="small" :disabled="!changed" @click="resetRates">{{ translate('Reset to your history') }}</el-button>
+              </template>
+            </Card.Header>
+            <Card.Body>
+              <div class="grid gap-x-8 gap-y-4 md:grid-cols-2">
+                <div v-for="slider in sliders" :key="slider.key">
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-system-dark dark:text-gray-200">{{ slider.label }}</span>
+                    <span class="font-medium text-system-dark dark:text-gray-100">{{ rates[slider.key] }}%</span>
+                  </div>
+                  <el-slider v-model="rates[slider.key]" :min="0" :max="100" :step="1" :show-tooltip="false" :aria-label="slider.label" />
+                  <div class="text-xs text-system-light dark:text-gray-400">{{ slider.hint }}</div>
+                </div>
+              </div>
             </Card.Body>
-        </Card.Container>
+          </Card.Container>
+
+          <Card.Container class="overflow-hidden">
+            <Card.Header title_size="small" border_bottom>
+              <template #title>
+                <h4 class="fct-card-header-title is-small">{{ translate('Renewals by month') }}</h4>
+              </template>
+            </Card.Header>
+            <Card.Body>
+              <el-skeleton v-if="loading" animated :rows="6" />
+              <div v-else-if="!data.totalRenewals" class="py-10 text-center text-sm text-system-light dark:text-gray-400">
+                {{ translate('No renewal is scheduled in this horizon') }}
+              </div>
+              <div v-else ref="chartRef" class="w-full h-[340px]"></div>
+            </Card.Body>
+          </Card.Container>
+
+          <ExtensionComponent v-if="!loading" name="reports.renewals.variations" class="mt-6" :rows="variationRows" :report-filter="reportFilter">
+            <ProReportPreview
+                class="mt-6"
+                :title="translate('See which products your renewals come from')"
+                :text="translate('SubRpt_Split_Forecast')"
+                :bullets="[translate('Renewals per variant'), translate('Ideal and projected amount per variant')]"
+                placement="feature_lock_report_renewals_by_variant"
+            >
+              <ProReportSample
+                  :title="translate('Renewals by Variant')"
+                  :columns="[translate('Product'), translate('Variant'), translate('Renewals'), translate('Projected')]"
+                  :rows="[[translate('Product A'), translate('Monthly'), '40', '2,000.00'], [translate('Product B'), translate('Yearly'), '10', '1,500.00']]"
+              />
+            </ProReportPreview>
+          </ExtensionComponent>
+        </div>
     </UserCan>
 </template>
 
 <script setup>
-/**
- * ----------------------------------------------------------------------------
- * Imports
- * ----------------------------------------------------------------------------
- */
-import { ref, onMounted, nextTick, computed, watch, onUnmounted } from "vue";
-import UserCan from "@/Bits/Components/Permission/UserCan.vue";
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import * as echarts from "echarts";
+import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import * as Card from "@/Bits/Components/Card/Card.js";
-import { monthNames } from "@/Modules/Reports/Utils/monthNames";
-import checkBoxFilter from "@/Models/Reports/CheckBoxFilterModel";
-import Screenshot from "@/Bits/Components/Screenshot.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
-import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
-import Theme from "@/utils/Theme";
-import Empty from "@/Bits/Components/Table/Empty.vue";
-import { formatNumber } from "../Utils/formatNumber";
-import translate from "@/utils/translator/Translator";
+import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
+import SummaryLoader from "@/Modules/Reports/Components/SummaryLoader.vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-import SummaryLoader from "../Components/SummaryLoader.vue";
-import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
-import {
-    makeXAxisLabels,
-    tooltipSuffix,
-    prepareLabel,
-    getEmphasisColor,
-    getXAxisConfig,
-} from '../Utils/decorator';
-import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
-
-/**
- * ----------------------------------------------------------------------------
- * Props and Data
- * ----------------------------------------------------------------------------
- */
+import Theme from "@/utils/Theme";
+import translate from "@/utils/translator/Translator";
+import { formatNumber } from "@/Modules/Reports/Utils/formatNumber";
+import { chartAxisPointer, chartTooltipPosition } from "@/utils/Utils";
+import { prepareLabel, storeTimeNote } from "@/Modules/Reports/Utils/decorator";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import ProReportPreview from "../Components/ProReportPreview.vue";
+import ProReportSample from "../Components/ProReportSample.vue";
 
 const props = defineProps({
-    reportFilter: {
-        type: Object,
-        required: true,
-    },
+    reportFilter: {type: Object, required: true},
 });
 
 const reportFilter = props.reportFilter;
-const zoomIsActive = ref(false);
 const colors = Theme.colors.report;
-const isDarkTheme = ref(Theme.isDark());
-const chartRef = ref(null);
-let chartInstance = null;
-const data = ref({
-    totalProjected: 0,
-    totalRenewals: 0,
-    projections: [],
-    period: {
-        start: null,
-        end: null
-    },
-    groupBy: 'monthly'
-});
+const INTERVALS = {
+    daily: translate("Daily plans"), weekly: translate("Weekly plans"), monthly: translate("Monthly plans"),
+    quarterly: translate("Quarterly plans"), half_yearly: translate("Half-yearly plans"), yearly: translate("Yearly plans"),
+};
+const horizonOptions = [
+    {value: '3', label: translate('Next 3 months')},
+    {value: '6', label: translate('Next 6 months')},
+    {value: '12', label: translate('Next 12 months')},
+];
+
+const horizon = ref('3');
 const loading = ref(true);
-let latestRequest = 0;
+const data = ref({totalRenewals: 0, totalProjected: 0, projections: [], by_interval: {}, trial: {}, rates: {}, trial_first: {count: 0, amount: 0},
+    overdue: {count: 0, amount: 0}, retrying: {count: 0, amount: 0}, wont_renew: {count: 0, amount: 0, by_month: {}}, by_variation: []});
+// Renewal rate per interval (and "trial" for first charges), in percent; the defaults are the store's own
+const rates = reactive({});
+const defaults = ref({});
+const chartRef = ref(null);
+let chart = null;
+let requestSeq = 0;
 
-/**
- * ----------------------------------------------------------------------------
- * Methods
- * ----------------------------------------------------------------------------
- */
-const fetchData = (filters, groupKey = 'monthly') => {
-    const request = ++latestRequest;
-    loading.value = true;
+const money = (cents) => new DOMParser().parseFromString(reportFilter.formatAmount(cents || 0, {cents: true}), "text/html").documentElement.textContent;
 
-    return Rest.get('reports/future-renewals', {
-        params: {
-            ...filters.params,
-            groupKey: groupKey
-        }
-    }).then(response => {
-        if (request === latestRequest) {
-            data.value = response;
-        }
-    })
-    .catch(error => {
-        if (request === latestRequest) {
-            Notify.error(error);
-        }
-    })
-    .finally(() => {
-        if (request === latestRequest) {
-            loading.value = false;
-        }
-    });
-}
+// The store's renewal rate across its intervals, weighted by what is due: the fallback for an interval with no history
+const overallRate = (d) => {
+    const known = Object.entries(d.rates || {}).filter(([, rate]) => rate !== null && rate !== undefined);
+    if (!known.length) return null;
+    const due = (key) => sumCents({[key]: d.by_interval?.[key]}) || 1;
+    const weight = known.reduce((sum, [key]) => sum + due(key), 0);
 
-const createSeries = (name, type, yAxisIndex, data, color) => {
-    return {
-        name,
-        type,
-        barMaxWidth: 30,
-        yAxisIndex,
-        data,
-        smooth: false,
-        color,
-        lineStyle: {
-            width: 3,
-        },
-        symbol: "circle",
-        showSymbol: true,
-        symbolSize: 8,
-        itemStyle: {
-            color: color,
-            borderRadius: [4, 4, 0, 0]
-        },
-        emphasis: {
-            scale: 2,
-            itemStyle: {
-                color: getEmphasisColor(color),
-            },
-            lineStyle: {
-                color: color,
-            },
-        },
-        animation: true,
-        animationEasing: "cubicOut",
-        animationDuration: 800,
-        animationDelay: 0,
-        barGap: '-100%',
-        legendHoverLink: false,
-    };
+    return Math.round(known.reduce((sum, [key, rate]) => sum + Number(rate) * due(key), 0) / weight);
 };
 
-const initChart = () => {
-    if (chartInstance) {
-        chartInstance.dispose();
-        chartInstance = null;
+// Intervals with renewals due, as plans or as trials that convert
+const intervalKeys = (d) => [...new Set([...Object.keys(d.by_interval || {}), ...Object.keys(d.trial || {})])];
+const sumCents = (byPosition) => Object.values(byPosition || {}).reduce((sum, row) => sum + Object.values(row || {}).reduce((a, b) => a + Number(b), 0), 0);
+
+const applyDefaults = (d) => {
+    const fallback = overallRate(d) ?? 100;
+    const next = {};
+    intervalKeys(d).forEach((key) => {
+        const rate = d.rates?.[key];
+        next[key] = rate === null || rate === undefined ? fallback : Math.round(Number(rate));
+    });
+    if (d.trial_first?.count) {
+        next.trial = d.trial_rate === null || d.trial_rate === undefined ? 50 : Math.round(Number(d.trial_rate));
     }
+    defaults.value = next;
+    Object.keys(rates).forEach((key) => delete rates[key]);
+    Object.assign(rates, next);
+};
+const resetRates = () => Object.assign(rates, defaults.value);
+const changed = computed(() => Object.keys(defaults.value).some((key) => rates[key] !== defaults.value[key]));
 
-    nextTick(() => {
-        if (chartRef.value) {
-            chartInstance = echarts.init(chartRef.value);
-            updateChart();
-        }
+const sliders = computed(() => {
+    const list = intervalKeys(data.value).map((key) => {
+        const history = data.value.rates?.[key];
+        return {
+            key,
+            label: INTERVALS[key] || key,
+            hint: history === null || history === undefined
+                ? translate('SubRpt_Renewal_Plans')
+                /* translators: %1$s - renewal rate with its percent sign */
+                : translate("Your last 12 closed months: %1$s renewed.", `${history}%`),
+        };
     });
-};
-
-const updateChart = () => {
-    if (!chartInstance) return;
-    
-    const labels = makeXAxisLabels(data.value.projections);
-    const option = {
-        title: {
-            text: "",
-            left: "center",
-        },
-        legend: {
-            show: true,
-            itemGap: 20,
-            itemWidth: 10,
-            itemHeight: 10,
-            textStyle: {
-                color: isDarkTheme.value ? "#ffffff" : "#000000",
-            }
-        },
-        tooltip: {
-            trigger: "axis",
-            backgroundColor: isDarkTheme.value ? "#253241" : "#ffffff",
-            borderColor: isDarkTheme.value ? "#2C3C4E" : "#c0c4ca",
-            borderWidth: 1,
-            textStyle: {
-                color: isDarkTheme.value ? "#ffffff" : "#565865",
-            },
-            axisPointer: chartAxisPointer(isDarkTheme.value, colors.dark_cyan_blue_16, colors.light_gray_blue),
-            confine: true,
-            position: chartTooltipPosition,
-            formatter: (params) => {
-                let result = params[0].name;
-
-                params.forEach((param, index) => {
-                    // Series 0 is the projected amount, the rest are counts.
-                    const value = index === 0
-                        ? chartTooltipAmount(param.value)
-                        : formatNumber(param.value);
-
-                    const color = isDarkTheme.value ? "#ffffff" : "#565865";
-
-                    result += `<div>
-                        ${param.marker}
-                        <span style="color: ${color};">${param.seriesName}</span>
-                        <span style="float: right; margin-left: 20px; color: ${color};">
-                        ${value}
-                        </span>
-                    </div>`;
-                });
-                return result;
-            },
-        },
-        grid: {
-            show: false,
-        },
-        xAxis: {
-            type: "category",
-            data: labels, // Use group for x-axis
-            axisLabel: {
-                color: isDarkTheme.value ? "#ffffff" : "#000000",
-                fontSize: 12,
-                interval: xAxisConfig.value.interval,
-            },
-            axisLine: {
-                lineStyle: {
-                    type: "dashed",
-                    color: isDarkTheme.value ? "#253241" : "#D6DAE1",
-                },
-            },
-        },
-        yAxis: [
-            {
-                type: "value",
-                axisLabel: {
-                    color: isDarkTheme.value ? "#ffffff" : "#000000",
-                    fontSize: 12,
-                    formatter: (value) => `${reportFilter.formatAmount(value, {cents: true, chart: true})}`,
-                },
-                splitLine: {
-                    show: true,
-                    lineStyle: {
-                        color: isDarkTheme.value ? "#253241" : "#D6DAE1",
-                        type: "dashed",
-                    },
-                },
-            },
-            {
-                type: "value",
-                axisLabel: {
-                    color: isDarkTheme.value ? "#ffffff" : "#000000",
-                    fontSize: 12,
-                },
-                splitLine: {
-                    show: false,
-                },
-            },
-        ],
-        series: seriesData.value, // Use the computed series data
-    };
-    chartInstance.setOption(option, { notMerge: true, replaceMerge: ["series"] });
-};
-
-const handleZoomChart = () => {
-    zoomIsActive.value = !zoomIsActive.value;
-
-    if (zoomIsActive.value) {
-        chartInstance.setOption({
-            dataZoom: [
-                {
-                    type: "slider",
-                    show: true,
-                    xAxisIndex: [0],
-                    start: 1,
-                    end: 100,
-                },
-                {
-                    type: "slider",
-                    show: true,
-                    yAxisIndex: [0],
-                    left: "95%",
-                    start: 1,
-                    end: 100,
-                },
-                {
-                    type: "inside",
-                    xAxisIndex: [0],
-                    start: 1,
-                    end: 100,
-                },
-                {
-                    type: "inside",
-                    yAxisIndex: [0],
-                    start: 1,
-                    end: 100,
-                },
-            ],
+    if (data.value.trial_first?.count) {
+        list.push({
+            key: "trial",
+            label: translate("Free trials converting"),
+            hint: data.value.trial_rate === null || data.value.trial_rate === undefined
+                ? translate("No free trial ended in the last 12 closed months; starts at 50%.")
+                /* translators: %1$s - trial conversion rate with its percent sign */
+                : translate("Your last 12 closed months: %1$s of ended trials paid.", `${data.value.trial_rate}%`),
         });
-    } else {
-        updateChart();
     }
-};
-
-const handleThemeChange = () => {
-    isDarkTheme.value = Theme.isDark();
-
-    nextTick(() => {
-        updateChart();
-    });
-};
-
-/**
- * ----------------------------------------------------------------------------
- * Computed Properties
- * ----------------------------------------------------------------------------
- */
-const tooltip = computed(() => {
-    const tooltipAppendix = tooltipSuffix(data.value.period);
-
-    return translate('This report is calculated by looking at active subscriptions and extrapolating their renewals over time, to estimate future renewal revenue ') + tooltipAppendix;
+    return list;
 });
 
-const seriesData = computed(() => {
-    let seriesSrc = [
-        {
-            name: translate("Revenue"),
-            key: "count",
-            type: 'line',
-            color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
-            data: data.value.projections.map((item) => item.projected_amount)
-        },
-        {
-            name: translate("Count"),
-            key: "count",
-            type: 'bar',
-            color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
-            data: data.value.projections.map(item => item.renewals_count)
-        }
+// The k-th renewal of a subscription in the horizon is paid only if every one before it was: rate^k. A trial's
+// charges come only if it converts first (k = 0 is the converting charge)
+const expectedOf = (byInterval, trial) => {
+    const rate = (key) => (rates[key] ?? 100) / 100;
+    const convert = (rates.trial ?? 100) / 100;
+    let cents = 0;
+    Object.entries(byInterval || {}).forEach(([key, positions]) => {
+        Object.entries(positions || {}).forEach(([k, amount]) => {
+            cents += Number(amount) * Math.pow(rate(key), Number(k));
+        });
+    });
+    Object.entries(trial || {}).forEach(([key, positions]) => {
+        Object.entries(positions || {}).forEach(([k, amount]) => {
+            cents += Number(amount) * convert * Math.pow(rate(key), Number(k));
+        });
+    });
+    return Math.round(cents);
+};
+
+const expectedTotal = computed(() => expectedOf(data.value.by_interval, data.value.trial));
+const monthly = computed(() => (data.value.projections || []).map((row) => ({
+    label: prepareLabel(String(row.group)),
+    scheduled: Number(row.projected_amount) || 0,
+    expected: expectedOf(row.by_interval, row.trial),
+    wont: Number(data.value.wont_renew?.by_month?.[row.group]) || 0,
+})));
+
+const variationRows = computed(() => (data.value.by_variation || []).map((row) => ({...row, expected: expectedOf(row.by_interval, row.trial)})));
+
+const cards = computed(() => {
+    const d = data.value;
+    const atRisk = (d.retrying?.amount || 0) + (d.overdue?.amount || 0);
+    return [
+        {key: "scheduled", title: translate("Ideal Renewals (100%)"), value: money(d.totalProjected),
+            info: translate('SubRpt_Every_Renewal'),
+            /* translators: %1$s - number of renewals */
+            sub: translate("%1$s renewals due", formatNumber(d.totalRenewals || 0))},
+        {key: "expected", title: translate("Projected Renewals"), value: money(expectedTotal.value),
+            info: translate('SubRpt_Ideal_Amount_Renewal'),
+            /* translators: %1$s - projected share of the ideal amount, with its percent sign */
+            sub: d.totalProjected ? translate("%1$s of ideal", `${Math.round(expectedTotal.value / d.totalProjected * 100)}%`) : ""},
+        {key: "gap", title: translate("Projected Shortfall"), value: money(Math.max(0, (d.totalProjected || 0) - expectedTotal.value)),
+            info: translate('SubRpt_Ideal_Amount')},
+        {key: "wont", title: translate("Won't Renew"), value: money(d.wont_renew?.amount),
+            info: translate('SubRpt_Canceled_Subscriptions'),
+            /* translators: %1$s - number of subscriptions */
+            sub: translate("%1$s canceled subscriptions", formatNumber(d.wont_renew?.count || 0))},
+        {key: "risk", title: translate("At Risk Now"), value: money(atRisk),
+            info: translate('SubRpt_Renewals_Already'),
+            /* translators: %1$s - renewals in payment retry, %2$s - overdue renewals */
+            sub: translate("%1$s retrying · %2$s overdue", formatNumber(d.retrying?.count || 0), formatNumber(d.overdue?.count || 0))},
     ];
-
-    return seriesSrc.map((item, index) => createSeries(
-        item.name,
-        item.type,
-        index,
-        item.data,
-        item.color
-    ));
 });
 
-const xAxisConfig = computed(() => {
-    return getXAxisConfig(data.value.projections.length);
+const pageInfo = computed(() => {
+    /* translators: %1$s - the store timezone note */
+    return translate('SubRpt_Renewals_Scheduled', storeTimeNote());
 });
+const ratesInfo = translate('SubRpt_Share_Renewals');
 
-const summaryCards = computed(() => [
-    {
-        title: translate("Renewal Revenue"),
-        value: reportFilter.formatAmount(data.value.totalProjected, {cents: true}),
-        key: 'renewal_revenue',
-    },
-    {
-        title: translate("Renewals"),
-        value: formatNumber(data.value.totalRenewals),
-        key: 'renewals_count',
-        no_currency: true
-    },
-]);
+const render = () => {
+    if (!chartRef.value || loading.value || !data.value.totalRenewals) return;
+    if (chart && chart.getDom() !== chartRef.value) {
+        chart.dispose();
+        chart = null;
+    }
+    if (!chart) chart = echarts.init(chartRef.value);
+    const dark = Theme.isDark();
+    const textColor = dark ? "#ffffff" : "#565865";
+    const rows = monthly.value;
+    const showWont = rows.some((row) => row.wont);
+    const series = [
+        {name: translate("Ideal (100%)"), type: "bar", barMaxWidth: 34, color: dark ? colors.dark_cyan_blue_16 : colors.light_gray_blue, data: rows.map((row) => row.scheduled)},
+        {name: translate("Projected"), type: "line", symbolSize: 6, color: dark ? colors.blue_dark_mode : colors.royal_blue, data: rows.map((row) => row.expected)},
+    ];
+    if (showWont) {
+        series.push({name: translate("Won't renew"), type: "bar", barMaxWidth: 34, color: colors.coral, data: rows.map((row) => row.wont)});
+    }
+    chart.setOption({
+        legend: {show: true, itemGap: 20, itemWidth: 10, itemHeight: 10, textStyle: {color: textColor}},
+        grid: {left: 16, right: 16, bottom: 8, top: 48, containLabel: true},
+        tooltip: {
+            trigger: "axis", confine: true, position: chartTooltipPosition,
+            axisPointer: chartAxisPointer(dark, colors.dark_cyan_blue_16, colors.light_gray_blue),
+            formatter: (params) => params[0].name + params.map((param) => `<div>${param.marker} ${param.seriesName}
+                <span style="float: right; margin-left: 20px">${money(param.value)}</span></div>`).join(""),
+        },
+        xAxis: {type: "category", data: rows.map((row) => row.label), axisLabel: {color: textColor}},
+        yAxis: {type: "value", axisLabel: {color: textColor, formatter: (value) => money(value)}, splitLine: {lineStyle: {type: "dashed", color: dark ? "#253241" : "#D6DAE1"}}},
+        series,
+    }, {notMerge: true});
+};
 
-const isEmpty = computed(() => {
-    return !data.value.totalRenewals;
-});
-
-const variationRows = computed(() => data.value.by_variation || []);
-
-const byNumber = (key) => (a, b) => Number(a[key]) - Number(b[key]);
-
-/**
- * ----------------------------------------------------------------------------
- * Watchers
- * ----------------------------------------------------------------------------
- */
-watch(
-    [() => data.value],
-    () => {
-        nextTick(updateChart);
-    },
-    { deep: true }
-);
-
-watch(isEmpty, (value) => {
-    if (!value) initChart();
-})
-
-watch(loading, (value) => {
-    if (!value) initChart();
-})
-
-/**
- * ----------------------------------------------------------------------------
- * Hooks
- * ----------------------------------------------------------------------------
- */
-onMounted(() => {
-    reportFilter.addListener('future-renewals', fetchData);
-    fetchData(reportFilter.applicableFilters);
-
-    nextTick(() => {
-        initChart();
+const fetchData = (filters) => {
+    const seq = ++requestSeq;
+    loading.value = true;
+    Rest.get("reports/future-renewals", {
+        params: {...(filters || reportFilter.applicableFilters).params, horizon: horizon.value},
+    }).then((response) => {
+        if (seq !== requestSeq) return;
+        data.value = response;
+        applyDefaults(response);
+    }).catch((error) => {
+        if (seq === requestSeq) Notify.error(error);
+    }).finally(() => {
+        if (seq !== requestSeq) return;
+        loading.value = false;
     });
+};
 
-    window.addEventListener("onFluentCartThemeChange", handleThemeChange);
-    window.addEventListener("fluentCartCurrencyChange", updateChart);
+watch(() => [monthly.value, loading.value], () => nextTick(render), {deep: true});
+const resize = () => chart && chart.resize();
+onMounted(() => {
+    fetchData(reportFilter.applicableFilters);
+    reportFilter.addListener("future-renewals", fetchData);
+    window.addEventListener("resize", resize);
 });
-
 onUnmounted(() => {
-    reportFilter.removeListener('future-renewals');
-    latestRequest++;
-    window.removeEventListener("onFluentCartThemeChange", handleThemeChange, false);
-    window.removeEventListener("fluentCartCurrencyChange", updateChart, false);
+    reportFilter.removeListener("future-renewals");
+    window.removeEventListener("resize", resize);
+    if (chart) {
+        chart.dispose();
+        chart = null;
+    }
 });
 </script>

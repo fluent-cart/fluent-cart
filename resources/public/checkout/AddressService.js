@@ -5,6 +5,8 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import NiceSelect from "../components/select/NiceSelect";
 import LocalizationService from "./LocalizationService";
+import {saveResponseSequence, startCheckoutSave} from "./shippingDestination";
+import {ownPickSave, savedByPick} from "./selectPickSave";
 
 export default class AddressService {
     static instance = null;
@@ -40,6 +42,7 @@ export default class AddressService {
     async initCustomBillingSelect() {
         let countrySelector = this.formWrapper.querySelector('#billing_country');
         if (!countrySelector) {
+            this.initShippingOrReady({});
             return;
         }
 
@@ -83,7 +86,7 @@ export default class AddressService {
             defaultState = stateSelector.value;
         }
 
-        this.stateLabel = 'State';
+        this.stateLabel = this.translate('State');
         if (response && response.address_locale?.state?.label) {
             this.stateLabel = response.address_locale?.state?.label
         }
@@ -124,36 +127,40 @@ export default class AddressService {
 
         const ref = this;
         if (countrySelector) {
-            this.billingCountrySelect.setOnChange(
+            ownPickSave(this.billingCountrySelect,
                 async (value) => {
                     window.fluent_cart_checkout_ui_service.setComponentState('billingStateSelect', 'loading');
-                    if (value) {
-                        // const response = await this.getCountryInfo(null, value);
-                        const response = await LocalizationService.getCountryInfo(value);
-                        ref.saveCustomerData('billing_country', value);
+                    // Save after the state input is rebuilt, so the posted form carries its reset value.
+                    try {
+                        if (value) {
+                            // const response = await this.getCountryInfo(null, value);
+                            const response = await LocalizationService.getCountryInfo(value);
 
-                        if (response) {
-                            window.fluent_cart_checkout_ui_service.setComponentState('billingStateSelect', 'enable');
-                        }
+                            if (response) {
+                                window.fluent_cart_checkout_ui_service.setComponentState('billingStateSelect', 'enable');
+                            }
 
-                        if (window.fluent_cart_shipping_service && window.fluent_cart_shipping_service.shippingToDifferent === false) {
-                            if (response.views) {
-                                window.fluent_cart_shipping_service.updateShippingMethodsView({
-                                    view: response.views.shipping_methods,
-                                    status: true
-                                });
-                            } else {
-                                window.fluent_cart_shipping_service.handleBillingAddressChange(value);
+                            if (window.fluent_cart_shipping_service && window.fluent_cart_shipping_service.shippingToDifferent === false) {
+                                if (response.views) {
+                                    window.fluent_cart_shipping_service.updateShippingMethodsView({
+                                        view: response.views.shipping_methods,
+                                        status: true
+                                    });
+                                } else {
+                                    window.fluent_cart_shipping_service.handleBillingAddressChange(value);
+                                }
+                            }
+
+
+                            this.updateStateInput(response, 'billing');
+                        } else {
+                            if (this.formWrapper.querySelector('#billing_state')) {
+                                this.formWrapper.querySelector('#billing_state').value = '';
+                                this.billingStateSelect.setOptions([]);
                             }
                         }
-
-
-                        this.updateStateInput(response, 'billing');
-                    } else {
-                        if (this.formWrapper.querySelector('#billing_state')) {
-                            this.formWrapper.querySelector('#billing_state').value = '';
-                            this.billingStateSelect.setOptions([]);
-                        }
+                    } finally {
+                        ref.saveCustomerData('billing_country', value);
                     }
                 }
             )
@@ -173,20 +180,22 @@ export default class AddressService {
         }
 
 
-        // Shipping Select Field
+        this.initShippingOrReady({response, defaultCountry, defaultState});
+    }
+
+    initShippingOrReady(shippingData) {
         if (this.isAllDigital) {
-            if (typeof this.onReady === 'function') {
-                this.onReady();
-            }
+            this.callOnReady();
         } else {
-            const shippingData = {
-                response,
-                defaultCountry,
-                defaultState
-            }
             this.initCustomShippingSelect(shippingData);
         }
+    }
 
+    // The checkout starts ShippingService here, so this must run even when an address select is turned off.
+    callOnReady() {
+        if (typeof this.onReady === 'function') {
+            this.onReady();
+        }
     }
 
     initCustomShippingSelect(shippingData) {
@@ -196,7 +205,8 @@ export default class AddressService {
         const shippingAddressCountry = shippingAddressInput?.dataset?.country || '';
         const shippingAddressState = shippingAddressInput?.dataset?.state || '';
 
-        if (!shippingStateSelector || !shippingCountrySelector) {
+        if (!shippingCountrySelector) {
+            this.callOnReady();
             return;
         }
 
@@ -243,39 +253,44 @@ export default class AddressService {
             this.shippingCountrySelect.setSelected(shippingDefaultCountry);
         }
 
-        if (shippingDefaultCountry) {
+        if (shippingStateSelector && shippingDefaultCountry) {
             this.shippingStateSelect.setSelected(shippingDefaultState);
         }
 
         if (shippingCountrySelector) {
-            this.shippingCountrySelect.setOnChange(
+            ownPickSave(this.shippingCountrySelect,
                 async (value) => {
 
                     window.fluent_cart_checkout_ui_service.setComponentState('shippingStateSelect', 'loading');
-                    if (value) {
-                        // const response = await this.getCountryInfo(null, value);
-                        const response = await LocalizationService.getCountryInfo(value, 'shipping');
+                    // Save after the state input is rebuilt, so the posted form carries its reset value.
+                    try {
+                        if (value) {
+                            // const response = await this.getCountryInfo(null, value);
+                            const response = await LocalizationService.getCountryInfo(value, 'shipping');
 
-                        if (response) {
-                            window.fluent_cart_checkout_ui_service.setComponentState('shippingStateSelect', 'enable');
-                        }
-
-                        if (window.fluent_cart_shipping_service) {
-                            if (response.views) {
-                                window.fluent_cart_shipping_service.updateShippingMethodsView({
-                                    view: response.views.shipping_methods,
-                                    status: true
-                                });
-                            } else {
-                                window.fluent_cart_shipping_service.handleShippingAddressChange(value);
+                            if (response) {
+                                window.fluent_cart_checkout_ui_service.setComponentState('shippingStateSelect', 'enable');
                             }
+
+                            if (window.fluent_cart_shipping_service) {
+                                if (response.views) {
+                                    window.fluent_cart_shipping_service.updateShippingMethodsView({
+                                        view: response.views.shipping_methods,
+                                        status: true
+                                    });
+                                } else {
+                                    window.fluent_cart_shipping_service.handleShippingAddressChange(value);
+                                }
+                            }
+
+
+                            this.updateStateInput(response, 'shipping');
+                        } else if (this.formWrapper.querySelector('#shipping_state')) {
+                            this.formWrapper.querySelector('#shipping_state').value = '';
+                            this.shippingStateSelect.setOptions([]);
                         }
-
-
-                        this.updateStateInput(response, 'shipping');
-                    } else {
-                        this.formWrapper.querySelector('#shipping_state').value = '';
-                        this.shippingStateSelect.setOptions([]);
+                    } finally {
+                        this.saveCustomerData('shipping_country', value);
                     }
                 }
             )
@@ -283,11 +298,7 @@ export default class AddressService {
             this.onCountryChanged('shipping', shippingData.response, shippingData.response?.country_code);
         }
 
-
-        if (typeof this.onReady === 'function') {
-            this.onReady();
-        }
-
+        this.callOnReady();
     }
 
     onCountryChanged(type = 'billing', response, country_code = '') {
@@ -324,7 +335,7 @@ export default class AddressService {
                         this.billingStateSelect.setSelected(defaultState);
                     }
                     const ref = this;
-                    this.billingStateSelect.setOnChange(
+                    ownPickSave(this.billingStateSelect,
                         async (value) => {
                             ref.saveCustomerData('billing_state', value);
                         }
@@ -339,7 +350,7 @@ export default class AddressService {
                         this.shippingStateSelect.setSelected(defaultState);
                     }
                     const ref = this;
-                    this.shippingStateSelect.setOnChange(
+                    ownPickSave(this.shippingStateSelect,
                         async (value) => {
                             ref.saveCustomerData('shipping_state', value);
                         }
@@ -388,25 +399,21 @@ export default class AddressService {
 
             if (stateCount === 0) {
                 if (isSelectElement) {
-                    let stateLabel = 'State';
+                    let stateLabel = this.translate('State');
                     if (response && response.address_locale?.state?.label) {
                         stateLabel = response.address_locale?.state?.label
                     }
                     element = this.convertElementToType(element, 'input', stateLabel);
 
-                    element.addEventListener('change', () => {
-                        this.saveCustomerData(element.name, element.value);
-                    });
+                    this.saveOnNativeChange(element);
                 }
             } else {
                 if (!isSelectElement) {
                     element = this.convertElementToType(element, 'select');
 
-                    element.addEventListener('change', () => {
-                        this.saveCustomerData(element.name, element.value);
-                    });
+                    this.saveOnNativeChange(element);
                 }
-                let stateLabel = 'State';
+                let stateLabel = this.translate('State');
                 if (response && response.address_locale?.state?.label) {
                     stateLabel = response.address_locale?.state?.label
                 }
@@ -428,7 +435,7 @@ export default class AddressService {
                     this.shippingStateSelect = this.initStateSelect(element, response, stateLabel).setOptions(formattedData);
                     this.shippingStateSelect.setSelected(defaultState);
                     const ref = this;
-                    this.shippingStateSelect.setOnChange(
+                    ownPickSave(this.shippingStateSelect,
                         async (value) => {
                             ref.saveCustomerData('shipping_state', value);
                         }
@@ -437,9 +444,9 @@ export default class AddressService {
                     this.billingStateSelect = this.initStateSelect(element, response, stateLabel).setOptions(formattedData);
                     this.billingStateSelect.setSelected(defaultState);
                     const ref = this;
-                    this.billingStateSelect.setOnChange(
+                    ownPickSave(this.billingStateSelect,
                         async (value) => {
-                            ref.saveCustomerData('shipping_state', value);
+                            ref.saveCustomerData('billing_state', value);
                         }
                     )
                 }
@@ -450,8 +457,21 @@ export default class AddressService {
     }
 
 
+    // A nice-select pick fires change twice before its owner saves; run after it and save only if no pick did.
+    saveOnNativeChange(element) {
+        let timer = null;
+        element.addEventListener('change', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (!savedByPick(element, element.value)) {
+                    this.saveCustomerData(element.name, element.value);
+                }
+            }, 0);
+        });
+    }
+
     initStateSelect(element, response = null, placeholder = false) {
-        const label = response?.address_locale?.state?.label || 'State';
+        const label = response?.address_locale?.state?.label || this.translate('State');
         return new NiceSelect(element, {
             placeholder: placeholder,
             onChange: (value) => {
@@ -503,7 +523,7 @@ export default class AddressService {
             return;
         }
         const isRequired = /\s\*$/.test(wrapper.dataset.fctLabel);
-        const stateLabel = response?.address_locale?.state?.label || 'State';
+        const stateLabel = response?.address_locale?.state?.label || this.translate('State');
         wrapper.dataset.fctLabel = stateLabel + (isRequired ? ' *' : '');
         wrapper.dataset.fctField = response?.states?.length ? 'select' : 'input';
     }
@@ -563,6 +583,9 @@ export default class AddressService {
             });
 
         window.fluent_cart_checkout_ui_service.setLoading('shippingMethodsWrapper');
+        const shipToDifferent = !!this.formWrapper.querySelector('input[name="ship_to_different"]')?.checked;
+        const save = startCheckoutSave(params, column, value, shipToDifferent, window.fluent_cart_checkout_ui_service);
+        let stored = false;
 
         fetch(url, {
             method: "POST",
@@ -574,16 +597,25 @@ export default class AddressService {
             credentials: 'include',
             body: params
         }).then((response) => {
+            stored = response.ok;
             return response.json();
         }).then(data => {
+            save.settled(stored);
+            if (!saveResponseSequence.shouldApply(save.sequence, data)) {
+                return;
+            }
             if (data?.fragments) {
                 CheckoutHelper.handleFragments(data.fragments);
             }
             if (data?.shipping_charge_changes || data?.tax_total_Changes) {
                 this.checkoutHandler.handleCheckoutAmountChanges();
             }
+        }).catch((error) => {
+            save.settled(false);
+            throw error;
         }).finally(() => {
             window.fluent_cart_checkout_ui_service.finishLoading('shippingMethodsWrapper');
+            save.release();
         });
 
     }

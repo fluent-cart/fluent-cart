@@ -5,7 +5,6 @@ namespace FluentCart\App\Services\Report;
 use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
 use FluentCart\App\Models\Product;
-use FluentCart\App\Models\ProductVariation;
 
 class DefaultReportService extends ReportService
 {
@@ -15,13 +14,16 @@ class DefaultReportService extends ReportService
             ->selectRaw('
                 oi.post_id AS product_id,
                 SUM(oi.quantity) AS quantity_sold,
-                SUM(oi.line_total) / 100 AS total_amount
+                SUM(' . ProductReportService::lineTotalSql() . ') / 100 AS total_amount
             ')
             ->where('oi.post_id', '>', 0)
             ->groupBy('oi.post_id')
             ->orderByDesc('quantity_sold');
 
-        $query = ReportCurrency::joinOrderItems($query, $params);
+        $query = ReportCurrency::joinOrderItems($query, $params)
+            ->leftJoinSub($this->orderDiscountsQuery(array_diff_key($params, ['variationIds' => true])), 'od', 'od.order_id', '=', 'o.id')
+            // The Products filter picks lines, not whole orders, so an order's other lines stay out
+            ->when(!empty($params['variationIds']), fn($q) => $q->whereIn('oi.object_id', $params['variationIds']));
 
         unset($params['variationIds']);
 
@@ -44,52 +46,6 @@ class DefaultReportService extends ReportService
 
         return [
             'topSoldProducts' => $topSoldProducts,
-        ];
-    }
-
-    public function fetchTopSoldVariants(array $params): array
-    {
-        $query = ReportCurrency::ordersTable($params)
-            ->selectRaw('
-                oi.object_id AS variation_id,
-                SUM(oi.quantity) AS quantity_sold,
-                SUM(oi.line_total) / 100 AS total_amount
-            ')
-            ->where('oi.object_id', '>', 0)
-            ->groupBy('oi.object_id')
-            ->orderByDesc('quantity_sold');
-
-        $query = ReportCurrency::joinOrderItems($query, $params);
-
-        unset($params['variationIds']);
-
-        $query = $this->applyFilters($query, $params);
-
-        $topSoldVariants = $query->limit(10)->get();
-
-        $variationIds = $topSoldVariants->pluck('variation_id')->all();
-        $variantMeta = $this->getVariantMeta($variationIds);
-
-        $productIds = array_values(array_unique(array_column($variantMeta, 'post_id')));
-        $productNames = $this->getProductNames($productIds);
-
-        $variationImages = $this->getVariationImages($variationIds);
-        $productImages = $this->getProductImages($productIds);
-
-        $topSoldVariants = $topSoldVariants->map(fn ($item) => [
-            'product_id'     => (int) ($variantMeta[(int) $item->variation_id]['post_id'] ?? 0),
-            'product_name'   => $productNames[(int) ($variantMeta[(int) $item->variation_id]['post_id'] ?? 0)] ?? __('Unknown Product', 'fluent-cart'),
-            'variation_id'   => (int) $item->variation_id,
-            'variation_name' => $variantMeta[(int) $item->variation_id]['title'] ?? __('Unknown Variant', 'fluent-cart'),
-            'quantity'       => (int) $item->quantity_sold,
-            'total_amount'   => round((float) $item->total_amount, 2),
-            'media_url'      => $variationImages[(int) $item->variation_id]
-                ?? $productImages[(int) ($variantMeta[(int) $item->variation_id]['post_id'] ?? 0)]
-                ?? null,
-        ]);
-
-        return [
-            'topSoldVariants' => $topSoldVariants,
         ];
     }
 
@@ -165,51 +121,6 @@ class DefaultReportService extends ReportService
             }, []);
     }
 
-    private function getVariantMeta(array $variationIds): array
-    {
-        $variationIds = array_values(array_unique(array_filter(array_map('intval', $variationIds))));
-
-        if (!$variationIds) {
-            return [];
-        }
-
-        $latestIds = App::db()->table('fct_order_items')
-            ->selectRaw('MAX(id) AS id')
-            ->whereIn('object_id', $variationIds)
-            ->groupBy('object_id');
-
-        return App::db()->table('fct_order_items')
-            ->select(['object_id', 'title', 'post_id'])
-            ->whereIn('id', $latestIds)
-            ->get()
-            ->reduce(function ($meta, $item) {
-                $meta[(int) $item->object_id] = [
-                    'title'   => $item->title,
-                    'post_id' => (int) $item->post_id,
-                ];
-                return $meta;
-            }, []);
-    }
-
-    private function getVariationImages(array $variationIds): array
-    {
-        $variationIds = array_values(array_unique(array_filter(array_map('intval', $variationIds))));
-
-        if (!$variationIds) {
-            return [];
-        }
-
-        return ProductVariation::query()
-            ->whereIn('id', $variationIds)
-            ->with(['media'])
-            ->get()
-            ->reduce(function ($images, ProductVariation $variation) {
-                $images[(int) $variation->id] = $variation->thumbnail ?: null;
-
-                return $images;
-            }, []);
-    }
-
     public function getAllGraphMetricsSeparate($params = [])
     {
         $group = ReportHelper::processGroup(
@@ -226,19 +137,16 @@ class DefaultReportService extends ReportService
                 ->whereBetween('created_at', [$params['startDate'], $params['endDate']]))
             ->when($variationIds, fn ($q) => $q->whereIn('object_id', $variationIds));
 
-        $orderMetricsQuery = ReportCurrency::ordersTable($params)
+        $orderMetricsQuery = ReportHelper::joinShippingRefund(ReportCurrency::ordersTable($params), $params)
             ->leftJoinSub($itemsSub, 'oi_sum', fn ($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
+
+        $netSql = ReportHelper::netSalesSql($params);
 
         $orderMetricsQuery = $orderMetricsQuery->selectRaw("{$group['field']},
 
             SUM(o.total_paid) / 100 AS gross_sale,
 
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / 100 as net_revenue,
+            SUM({$netSql}) / 100 as net_revenue,
 
             SUM(o.total_refund) / 100 AS refund_amount,
 
@@ -258,17 +166,17 @@ class DefaultReportService extends ReportService
 
             SUM(
                 CASE WHEN o.type = 'payment' 
-                THEN (o.total_paid - o.total_refund - o.tax_total - o.shipping_tax) 
+                THEN {$netSql} 
                 ELSE 0 END
             ) / 100 AS onetime_net,
             SUM(
                 CASE WHEN o.type = 'renewal' 
-                THEN (o.total_paid - o.total_refund - o.tax_total - o.shipping_tax) 
+                THEN {$netSql} 
                 ELSE 0 END
             ) / 100 AS renewal_net,
             SUM(
                 CASE WHEN o.type = 'subscription' 
-                THEN (o.total_paid - o.total_refund - o.tax_total - o.shipping_tax) 
+                THEN {$netSql} 
                 ELSE 0 END
             ) / 100 AS subscription_net,
 
@@ -277,7 +185,7 @@ class DefaultReportService extends ReportService
             SUM(
                 CASE
                     WHEN o.parent_id > 0
-                    THEN o.total_paid - o.total_refund - o.tax_total - o.shipping_tax
+                    THEN {$netSql}
                     ELSE 0
                 END
             ) / 100 as subscription_revenue")
@@ -364,4 +272,5 @@ class DefaultReportService extends ReportService
             'summary' => $summary,
         ];
     }
+
 }

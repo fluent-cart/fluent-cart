@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductReview;
@@ -756,11 +757,17 @@ class ProductReviewService
             // can diverge, and the dashboard matches on the customer one.
             $customer = static::visitorCustomer($userId);
 
+            // An unproven account email must not join this identity, or a self-set
+            // address would share a slot with the reviews that address really owns.
+            $accountEmail = EmailVerificationService::isUnverified((int) $userId)
+                ? ''
+                : (string) wp_get_current_user()->user_email;
+
             return [
                 'user_id'     => (int) $userId,
                 'customer_id' => $customer ? (int) $customer->id : 0,
                 'emails'      => array_values(array_unique(array_filter([
-                    (string) wp_get_current_user()->user_email,
+                    $accountEmail,
                     $customer ? (string) $customer->email : '',
                 ]))),
                 'order_id'    => 0,
@@ -1961,7 +1968,8 @@ class ProductReviewService
     {
         $emails = [(string) $customer->email];
 
-        if ($customer->user_id) {
+        // An unproven account email must not reach another person's reviews by matching it.
+        if ($customer->user_id && !EmailVerificationService::isUnverified((int) $customer->user_id)) {
             $user = get_userdata((int) $customer->user_id);
             if ($user && $user->user_email) {
                 $emails[] = (string) $user->user_email;

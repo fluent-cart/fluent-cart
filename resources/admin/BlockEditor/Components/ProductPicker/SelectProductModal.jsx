@@ -2,7 +2,7 @@ import {Cross} from "@/BlockEditor/Icons";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import ProductSelector from './ProductSelector';
 
-const {useState, useRef, useEffect} = wp.element;
+const {useState, useRef, useEffect, createPortal} = wp.element;
 
 // Stable per-instance suffix for aria-labelledby ids.
 let modalInstanceCount = 0;
@@ -24,6 +24,7 @@ const SelectProductModal = ({
     const [titleId] = useState(() => 'fct-select-product-modal-title-' + (++modalInstanceCount));
     const dialogRef = useRef(null);
     const restoreFocusRef = useRef(null);
+    const [portalTarget, setPortalTarget] = useState(null);
 
     // Dialog focus lifecycle: remember the trigger, move focus into the
     // dialog on open, and restore it to the trigger on close.
@@ -41,7 +42,10 @@ const SelectProductModal = ({
         }
     }, [isPopupOpen]);
 
-    const openPopup = () => {
+    const openPopup = (event) => {
+        // Rendered inside the sidebar, Safari clips the fixed overlay to it;
+        // the trigger's own document keeps the editor iframe case unchanged.
+        setPortalTarget(event?.currentTarget?.ownerDocument?.body || document.body);
         if (confirmMode) {
             setDraftProduct(selectedProduct);
         }
@@ -90,21 +94,23 @@ const SelectProductModal = ({
             return;
         }
 
-        const focusable = dialogRef.current.querySelectorAll(
+        const focusable = [...dialogRef.current.querySelectorAll(
             'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
+        )].filter((el) => el.getClientRects().length);
         if (!focusable.length) {
             return;
         }
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
-            e.preventDefault();
-            last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-        }
+
+        // Move focus ourselves on every Tab: in the editor iframe, Gutenberg's
+        // writing-flow listener would otherwise send focus out of the canvas.
+        e.preventDefault();
+        // The dialog's own document: in the editor iframe the top one only sees the iframe.
+        const index = focusable.indexOf(dialogRef.current.ownerDocument.activeElement);
+        const step = e.shiftKey ? -1 : 1;
+        const next = index === -1
+            ? (e.shiftKey ? focusable.length - 1 : 0)
+            : (index + step + focusable.length) % focusable.length;
+        focusable[next].focus();
     };
 
     return (
@@ -113,7 +119,7 @@ const SelectProductModal = ({
                 {blocktranslate('Select Product')}
             </button>
 
-            {isPopupOpen &&
+            {isPopupOpen && createPortal(
                 <div className="fct-popup-container">
                     <div className="fct-popup-overlay" onClick={closePopup}></div>
 
@@ -124,7 +130,7 @@ const SelectProductModal = ({
                         aria-labelledby={titleId}
                         tabIndex={-1}
                         ref={dialogRef}
-                        onKeyDown={handleDialogKeyDown}
+                        onKeyDownCapture={handleDialogKeyDown}
                     >
                         <div className="fct-popup-head">
                             <h4 className="fct-popup-head-title" id={titleId}>
@@ -167,8 +173,9 @@ const SelectProductModal = ({
                         </div>
 
                     </div>
-                </div>
-            }
+                </div>,
+                portalTarget || document.body
+            )}
         </>
     );
 }

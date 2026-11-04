@@ -11,8 +11,6 @@ class RetentionSnapshotCommand
      */
     public function generate($args, $assoc_args)
     {
-        $productIdFilter = isset($assoc_args['product_id']) ? (int) $assoc_args['product_id'] : null;
-
         \WP_CLI::line('');
         \WP_CLI::line('===========================================');
         \WP_CLI::line('  Retention Snapshot Generator');
@@ -34,7 +32,7 @@ class RetentionSnapshotCommand
 
         // Run the service
         $service = new RetentionSnapshotService();
-        $result = $service->generate($productIdFilter, $progressCallback);
+        $result = $service->generate($progressCallback);
 
         // Summary
         \WP_CLI::line('');

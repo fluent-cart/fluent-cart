@@ -297,6 +297,25 @@ class EmailNotifications
                     'attach_pdf_template' => '',
                 ]
             ],
+            'order_shipment_created_customer' => [
+                'event'            => 'order_shipment_created',
+                'group'            => 'order',
+                'group_label'      => __('Order Actions', 'fluent-cart'),
+                'title'            => __('Send mail to customer when a shipment is created.', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer with the tracking details of a shipment, when the shipment is created with "Notify customer" enabled.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'order.shipment.customer',
+                'is_async'         => false,
+                'manage_toggle'    => 'no',
+                'toggle_label'     => __('Sent when "Notify customer" is ticked', 'fluent-cart'),
+                'settings'         => [
+                    'subject'             => __('Your shipment is on the way #{{order.invoice_no}} 📦', 'fluent-cart'),
+                    'is_default_body'     => 'yes',
+                    'email_body'          => '',
+                    'attach_pdf_template' => '',
+                ]
+            ],
             'order_delivered_customer'      => [
                 'event'            => 'shipping_status_changed_to_delivered',
                 'group'            => 'order',
@@ -489,7 +508,7 @@ class EmailNotifications
                 'manage_toggle'    => 'no',
                 'toggle_label'     => __('On demand', 'fluent-cart'),
                 'settings'         => [
-                    'subject'         => __('Payment Reminder - Order #{{order.id}}', 'fluent-cart'),
+                    'subject'         => __('Payment Reminder - Order #{{order.uuid}}', 'fluent-cart'),
                     'is_default_body' => 'yes',
                     'email_body'      => '',
                 ]
@@ -747,8 +766,7 @@ class EmailNotifications
                 continue;
             }
 
-            $settings = Arr::get($notification, 'settings');
-            if (!in_array($notification['event'], ['order_placed_offline', 'renewal_reminder_overdue']) && Arr::get($settings, 'active') !== 'yes') {
+            if (!self::isActive($notification)) {
                 continue;
             }
 
@@ -767,6 +785,23 @@ class EmailNotifications
         return $names;
     }
 
+    /**
+     * Notifications without a store toggle (manage_toggle 'no') always send;
+     * a stale saved `active` must not silence them.
+     */
+    private static function isActive($notification): bool
+    {
+        if (Arr::get($notification, 'manage_toggle') === 'no') {
+            return true;
+        }
+
+        if (in_array(Arr::get($notification, 'event'), ['order_placed_offline', 'renewal_reminder_overdue'], true)) {
+            return true;
+        }
+
+        return Arr::get($notification, 'settings.active') === 'yes';
+    }
+
     public static function getNotificationsOfEvent($event, $viewData): array
     {
         $notifications = static::getNotifications();
@@ -783,14 +818,10 @@ class EmailNotifications
 
         foreach ($notifications as $key => $notification) {
 
-            $settings = Arr::get($notification, 'settings');
-
-            // Skip active check for on-demand notifications (offline payments, payment reminders)
-            if (in_array($notification['event'], ['order_placed_offline', 'renewal_reminder_overdue']) || Arr::get($settings, 'active') === 'yes') {
-                // Continue with normal flow
-            } else {
+            if (!self::isActive($notification)) {
                 continue;
             }
+
             $recipient = Arr::get($notification, 'recipient');
 
             // A notification that declares its own `to` carries its recipient

@@ -558,3 +558,15 @@
         }
     }
 }
+/*=== Filters text button with a count, in the report title bar ===*/
+.fct-filter-dropdown-text-button {
+  @apply gap-1.5 font-normal;
+
+  > span {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .fct-filter-dropdown-count {
+    @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-medium bg-blue-500 text-white;
+  }
+}

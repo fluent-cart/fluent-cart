@@ -87,6 +87,21 @@ class CheckoutProcessor
         return is_numeric($value) && is_finite((float)$value) && abs((float)$value) < (float)PHP_INT_MAX;
     }
 
+    /**
+     * Shipping and fee tax follow the store setting, not the items: an exclusive
+     * store adds them on top even when every item is priced with tax included,
+     * and an inclusive store keeps them inside even when every item excludes it.
+     */
+    private function storeTaxIsAdded($taxBehavior, $storeTaxBehavior)
+    {
+        if (in_array($storeTaxBehavior, [1, 2], true)) {
+            return in_array($taxBehavior, [1, 2, 3], true) && $storeTaxBehavior === 1;
+        }
+
+        // Carts saved before store_tax_behavior existed.
+        return $taxBehavior === 1;
+    }
+
     private function unsafeAmountError()
     {
         return new \WP_Error(
@@ -728,6 +743,7 @@ class CheckoutProcessor
                     $args['package_dimension_unit'] = Arr::get($package, 'dimension_unit', 'cm');
                     $args['package_weight']         = Arr::get($package, 'weight', 0);
                     $args['package_weight_unit']    = Arr::get($package, 'weight_unit', 'kg');
+                    $args['package_max_weight']     = Arr::get($package, 'max_weight', 0);
                 }
             }
 
@@ -953,7 +969,7 @@ class CheckoutProcessor
             $shippingTax = (int)Arr::get($this->args, 'shipping_tax', 0);
             if ($shippingTax > 0) {
                 $storeTaxBehavior = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
-                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1)) {
+                if ($this->storeTaxIsAdded($taxBehavior, $storeTaxBehavior)) {
                     $recurringTotal += $shippingTax;
                 }
             }
@@ -976,7 +992,7 @@ class CheckoutProcessor
             $shippingTaxForFirst = (int)Arr::get($this->args, 'shipping_tax', 0);
             if ($shippingTaxForFirst > 0) {
                 $storeTaxBehaviorForFirst = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
-                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehaviorForFirst === 1)) {
+                if ($this->storeTaxIsAdded($taxBehavior, $storeTaxBehaviorForFirst)) {
                     $firstIterationTax += $shippingTaxForFirst;
                 }
             }
@@ -1006,7 +1022,7 @@ class CheckoutProcessor
             // A fully discounted charge left its shipping tax out above as well.
             if ($shippingCharge <= 0) {
                 $storeTaxBehavior = (int)Arr::get($this->args, 'store_tax_behavior', $taxBehavior);
-                if ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1)) {
+                if ($this->storeTaxIsAdded($taxBehavior, $storeTaxBehavior)) {
                     $renewalTotal += (int)Arr::get($this->args, 'shipping_tax', 0);
                 }
             }
@@ -1145,7 +1161,7 @@ class CheckoutProcessor
         $feeTax = (int) Arr::get($this->args, 'fee_tax', 0);
 
         // Roll fee tax into fee_total for exclusive scenarios — gateways use fee_total as source of truth.
-        if ($feeTax && ($taxBehavior === 1 || ($taxBehavior === 3 && $storeTaxBehavior === 1))) {
+        if ($feeTax && $this->storeTaxIsAdded($taxBehavior, $storeTaxBehavior)) {
             $this->feeTotal += $feeTax;
         }
 
@@ -1186,11 +1202,17 @@ class CheckoutProcessor
                 'create_account_after_paid' => Arr::get($this->args, 'create_account_after_paid', 'no'),
                 'shipping_method_id'        => Arr::get($this->args, 'shipping_method_id', 0),
                 'shipping_method_title'     => Arr::get($this->args, 'shipping_method_title', ''),
+                'shipping_carrier'          => Arr::get($this->args, 'shipping_carrier', ''),
                 'shipping_discount'         => (int) Arr::get($this->args, 'shipping_discount', 0),
                 'prorate_credit'            => $this->prorateCreditTotal,
                 'upgrade_discount'          => $this->upgradeDiscountTotal,
             ],
         ];
+
+        $shippingQuote = Arr::get($this->args, 'shipping_quote');
+        if (is_array($shippingQuote) && $shippingQuote) {
+            $orderData['config']['shipping_quote'] = $shippingQuote;
+        }
 
         // Frozen from the cart's locked quote — Order::creating keeps an
         // explicit snapshot (multi-currency plan §9.1)
@@ -1202,15 +1224,15 @@ class CheckoutProcessor
         if ($taxBehavior === 1) {
             // Pure exclusive: fee_tax is already in fee_total; exclude it here to avoid double-count.
             $estimatedTaxTotal = $orderData['tax_total'] - $feeTax;
-            $estimatedShippingTax = $orderData['shipping_tax'];
+            $estimatedShippingTax = $this->storeTaxIsAdded($taxBehavior, $storeTaxBehavior) ? $orderData['shipping_tax'] : 0;
         } elseif ($taxBehavior === 3) {
             // Mixed: fee_tax rolled into fee_total for exclusive store; shipping still additive.
             $estimatedTaxTotal = $exclusiveTaxTotal;
             $estimatedShippingTax = ($storeTaxBehavior === 1) ? $orderData['shipping_tax'] : 0;
         } else {
-            // Inclusive (2) or reverse-charge (0): nothing to add to total; tax is in item prices.
+            // Inclusive (2) or reverse-charge (0): item tax is in the prices.
             $estimatedTaxTotal = 0;
-            $estimatedShippingTax = 0;
+            $estimatedShippingTax = $this->storeTaxIsAdded($taxBehavior, $storeTaxBehavior) ? $orderData['shipping_tax'] : 0;
             if ($taxBehavior !== 2) {
                 // Reverse-charge (0): zero stored columns — no tax applies.
                 // Inclusive (2): keep orderData values so reporting surfaces can read them.

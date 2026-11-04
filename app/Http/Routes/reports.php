@@ -28,43 +28,19 @@ $router->prefix('reports')
 
         // Default
         $router->get('fetch-report-meta', [ReportingController::class, 'getReportMeta']);
-        $router->get('quick-order-stats', [ReportingController::class, 'getOrderQuickStats']);
-        $router->get('report-overview', [ReportingController::class, 'getReportOverview']);
-        $router->get('search-repeat-customer', [ReportingController::class, 'searchRepeatCustomer']);
-        $router->get('top-products-sold', [ReportingController::class, 'getTopProductsSold']); //Using Resource Api
 
         //Revenue
         $router->get('revenue', [RevenueReportController::class, 'getRevenue']); //d
-        $router->get('revenue-by-group', [RevenueReportController::class, 'getRevenueByGroup']); //d
 
         // Order
-        $router->get('order-value-distribution', [OrderReportController::class, 'getOrderValueDistribution']);
         $router->get('fetch-new-vs-returning-customer', [OrderReportController::class, 'getNewVsReturningCustomer']); //d
-        $router->get('fetch-order-by-group', [OrderReportController::class, 'getOrderByGroup']); //d
-        $router->get('fetch-report-by-day-and-hour', [OrderReportController::class, 'getReportByDayAndHour']); //d
-        $router->get('item-count-distribution', [OrderReportController::class, 'getItemCountDistribution']); //d
-        $router->get('order-completion-time', [OrderReportController::class, 'getOrderCompletionTime']); //d
         $router->get('order-chart', [OrderReportController::class, 'getOrderChart']); //d
 
         //Default
-        $router->get('sales-report', [DefaultReportController::class, 'getSalesReport']); //d
 
         $router->get('fetch-top-sold-products', [DefaultReportController::class, 'getTopSoldProducts']); //d
-        $router->get('fetch-top-sold-variants', [DefaultReportController::class, 'getTopSoldVariants']); //d
-
-        // The routes below are commented out because their controller methods have not been implemented yet
-        // in DefaultReportController. The corresponding Vue calls in DefaultReport.vue are also commented out.
-        // Uncomment both when the methods are implemented.
-        // $router->get('fetch-default-report', [DefaultReportController::class, 'getDefaultReport']);
-        // $router->get('fetch-failed-orders', [DefaultReportController::class, 'getFailedOrders']);
-        // $router->get('fetch-default-report-graphs', [DefaultReportController::class, 'getDefaultReportGraphs']);
-        // $router->get('fetch-default-report-fluctuations', [DefaultReportController::class, 'getDefaultReportFluctuations']);
-        // $router->get('fetch-frequently-bought-together', [DefaultReportController::class, 'getFrequentlyBoughtTogether']);
 
         //Refund
-        $router->get('refund-chart', [RefundReportController::class, 'getRefundChart']); //d
-        $router->get('weeks-between-refund', [RefundReportController::class, 'getWeeksBetweenRefund']); //(d)
-        $router->get('refund-data-by-group', [RefundReportController::class, 'getRefundDataByGroup']); //(d)
 
         //License
         $router->get('license-chart', [LicenseReportController::class, 'getLicenseLineChart']);
@@ -77,25 +53,34 @@ $router->prefix('reports')
         $router->get('country-heat-map', [ReportingController::class, 'getCountryHeatMap']);
         $router->get('get-recent-orders', [ReportingController::class, 'getRecentOrders']);
         $router->get('get-recent-activities', [ReportingController::class, 'getRecentActivities']);
-        $router->get('get-dashboard-summary', [ReportingController::class, 'getDashBoardSummary']);
         //Subscription
-        $router->get('subscription-chart', [SubscriptionReportController::class, 'getSubscriptionChart']); //d    
-        $router->get('daily-signups', [SubscriptionReportController::class, 'getDailySignups']); //d
-        $router->get('retention-chart', [SubscriptionReportController::class, 'getRetentionChart']); //d
         $router->get('future-renewals', [SubscriptionReportController::class, 'getFutureRenewals']); //d
         $router->get('subscription-retention', [SubscriptionReportController::class, 'getRetentionData']);
         $router->get('subscription-cohorts', [SubscriptionReportController::class, 'getCohortData']);
+        $router->get('installments', [SubscriptionReportController::class, 'getInstallments']);
+        $router->get('installments/at-risk', [SubscriptionReportController::class, 'getInstallmentsAtRisk']);
         $router->post('retention-snapshots/generate', [RetentionSnapshotController::class, 'generate']);
-        $router->get('retention-snapshots/status', [RetentionSnapshotController::class, 'checkStatus']);
+        $router->post('retention-snapshots/step', [RetentionSnapshotController::class, 'step']);
 
         //Product (y)
-        $router->get('product-report', [ProductReportController::class, 'getProductReport']); //d
-        $router->get('product-performance', [ProductReportController::class, 'getProductPerformance']); //d
-        $router->get('product-compare', [ProductReportController::class, 'getProductCompare']);
 
         //Customer
-        $router->get('customer-report', [CustomerReportController::class, 'index']); //d
         
         //Source Report
         $router->get('sources', [SourceReportController::class, 'index']);
+
+        $router->get('subscription-health', [SubscriptionReportController::class, 'getHealth']);
+        $router->get('coupons', [\FluentCart\App\Http\Controllers\Reports\CouponReportController::class, 'index']);
+        $router->get('customer-insights', [CustomerReportController::class, 'insights']);
+        $router->get('payment-methods', [RevenueReportController::class, 'getPaymentMethods']);
+        $router->get('failed-orders', [OrderReportController::class, 'getFailedOrders']);
+        $router->get('locations', [RevenueReportController::class, 'getLocations']);
+        $router->get('order-mix', [OrderReportController::class, 'getOrderMix']);
+        $router->get('refunds-overview', [RefundReportController::class, 'getOverview']);
+        $router->get('subscriptions-overview', [SubscriptionReportController::class, 'getOverview']);
+        $router->get('subscription-variations', [SubscriptionReportController::class, 'getSubscriptionVariations']);
+        $router->get('product-sales', [ProductReportController::class, 'getProductSales']);
+        $router->get('customer-overview', [CustomerReportController::class, 'overview']);
+        $router->get('source-channels', [SourceReportController::class, 'channels']);
+        $router->get('coupon-overview', [\FluentCart\App\Http\Controllers\Reports\CouponReportController::class, 'overview']);
     });

@@ -143,7 +143,7 @@ const deleteFile = async (file, index) => {
     v-if="storageDriverModel.needsReconfigure(driver)"
     type="warning"
     :closable="false"
-    :title="translate('S3 needs to be reconfigured. Please go to S3 settings and re-save your bucket selection.')"
+    :title="translate('S3_Needs_Reconfigured')"
     show-icon
   />
 

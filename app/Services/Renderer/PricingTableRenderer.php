@@ -169,7 +169,18 @@ class PricingTableRenderer
             'installment'  => __('Installment', 'fluent-cart'),
         ];
 
-        return $labels[$key] ?? ucfirst(str_replace('_', ' ', $key));
+        if (isset($labels[$key])) {
+            return $labels[$key];
+        }
+
+        // Quarterly, half-yearly and filter-added intervals carry translated labels here.
+        foreach (Helper::getAvailableSubscriptionIntervalOptions() as $option) {
+            if (Arr::get($option, 'value') === $key && Arr::get($option, 'label')) {
+                return $option['label'];
+            }
+        }
+
+        return ucfirst(str_replace('_', ' ', $key));
     }
 
     protected function isVariantActive($variant): bool

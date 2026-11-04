@@ -10,8 +10,10 @@ use FluentCart\App\Modules\MCP\Support\AdvancedSearch;
 use FluentCart\App\Modules\MCP\Support\MCPHelper;
 use FluentCart\App\Modules\MCP\Support\PermissionGate;
 use FluentCart\App\Modules\MCP\Support\WriteGuard;
+use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\Refund;
 use FluentCart\Api\Resource\OrderResource;
+use FluentCart\Framework\Support\Arr;
 
 /**
  * Order tools — find orders, then load one fully.
@@ -34,6 +36,8 @@ use FluentCart\Api\Resource\OrderResource;
  */
 class OrderTools
 {
+    const UNRECORDED_REFUND_META = '_mcp_unrecorded_refund';
+
     public static function definitions()
     {
         $enums            = ContextTools::enums();
@@ -176,12 +180,12 @@ class OrderTools
 
             'fluent-cart/refund-order' => [
                 'label'       => __('Refund Order', 'fluent-cart'),
-                'description' => __('Refund an order through its gateway. ALWAYS call dry_run:true first to preview the refundable amount and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute — without the key a repeated execute could double-refund. amount is in store currency; omit for the full remaining balance. The preview reports payment_mode and live_gateway_action; a LIVE refund requires operator opt-in, and test-mode always works.', 'fluent-cart'),
+                'description' => __('Refund an order through its gateway. ALWAYS call dry_run:true first to preview the refundable amount and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute — without the key a repeated execute could double-refund. amount is in the order\'s currency (e.g. 49.99), not cents. Omit to refund what the selected charge can still refund. The preview reports payment_mode and live_gateway_action; a LIVE refund requires operator opt-in, and test-mode always works.', 'fluent-cart'),
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'order_id'        => ['type' => 'integer'],
-                        'amount'          => ['type' => 'number', 'description' => 'Amount to refund in store currency. Omit for the full remaining balance.'],
+                        'amount'          => ['type' => 'number', 'description' => 'Amount to refund in the order\'s currency (e.g. 49.99), not cents. Omit to refund what the selected charge can still refund.'],
                         'transaction_id'  => ['type' => 'integer', 'description' => 'Charge transaction to refund against. Omit to use the latest successful charge.'],
                         'reason'          => ['type' => 'string'],
                         'dry_run'         => ['type' => 'boolean', 'description' => 'Preview without refunding. Returns a confirm_token. Do this first.'],
@@ -1146,6 +1150,71 @@ class OrderTools
         if (empty($params['order_id'])) {
             return MCPHelper::error('missing_identifier', __('order_id is required.', 'fluent-cart'));
         }
+
+        if (!empty($params['dry_run'])) {
+            $refund = self::prepareRefund($params);
+            if (is_wp_error($refund)) {
+                return $refund;
+            }
+
+            list($order, $txn, $amountCents, $remaining, $fingerprint) = $refund;
+
+            return MCPHelper::envelope(
+                sprintf(
+                    /* translators: 1: amount to refund, 2: remaining refundable, 3: order id */
+                    __('Preview: refund %1$s of %2$s remaining on order #%3$d.', 'fluent-cart'),
+                    MCPHelper::displayAmount($amountCents, $order->currency),
+                    MCPHelper::displayAmount($remaining, $order->currency),
+                    (int) $order->id
+                ),
+                WriteGuard::preview('fluent-cart/refund-order', 'order:' . $order->id, $fingerprint, [
+                    'order_id'            => (int) $order->id,
+                    'refundable'          => MCPHelper::money($remaining, $order->currency),
+                    'amount'              => MCPHelper::money($amountCents, $order->currency),
+                    'transaction'         => ['id' => (int) $txn->id, 'payment_method' => $txn->payment_method, 'payment_mode' => $txn->payment_mode],
+                    'live_gateway_action' => WriteGuard::isLiveMode($txn->payment_mode),
+                ])
+            );
+        }
+
+        // Same per-order lock as OrderController::refundOrder(). The order is read inside it, so the
+        // confirm compares the fingerprint against totals no other refund can change mid-request.
+        $result = Refund::withOrderRefundLock((int) $params['order_id'], 0, function () use ($params) {
+            return self::executeRefund($params);
+        });
+
+        if (is_wp_error($result) && $result->get_error_code() === 'refund_lock_timeout') {
+            return new \WP_Error('refund_in_progress', __('Another refund is currently being processed for this order. Please try again in a moment.', 'fluent-cart'));
+        }
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        $order = Order::query()->where('id', (int) $params['order_id'])->first();
+
+        return MCPHelper::envelope(
+            sprintf(
+                /* translators: 1: refunded amount, 2: order id */
+                __('Refunded %1$s on order #%2$d.', 'fluent-cart'),
+                MCPHelper::displayAmount($result['amount_cents'], $order->currency),
+                (int) $order->id
+            ),
+            [
+                'order_id'       => (int) $order->id,
+                'refunded'       => MCPHelper::money($result['amount_cents'], $order->currency),
+                'payment_status' => $order->payment_status,
+                'total_refund'   => MCPHelper::money($order->total_refund, $order->currency),
+                'gateway_result' => is_array($result['gateway_result']) ? array_intersect_key($result['gateway_result'], array_flip(['vendor_refund_id', 'manual_refund'])) : null,
+            ]
+        );
+    }
+
+    /**
+     * @return array|\WP_Error [order, charge transaction, amount cents, remaining cents, fingerprint]
+     */
+    private static function prepareRefund($params)
+    {
         $order = Order::query()->where('id', (int) $params['order_id'])->first();
         if (!$order) {
             return MCPHelper::error('order_not_found', __('No order found for the given order_id.', 'fluent-cart'));
@@ -1154,7 +1223,7 @@ class OrderTools
             return MCPHelper::error('not_refundable', __('This order cannot be refunded in its current state.', 'fluent-cart'), ['current_state' => ['payment_status' => $order->payment_status]]);
         }
 
-        $remaining = (int) $order->total_paid - (int) $order->total_refund;
+        $remaining = Refund::netPaidAmount($order);
         if ($remaining <= 0) {
             return MCPHelper::error('nothing_to_refund', __('There is no remaining refundable balance on this order.', 'fluent-cart'));
         }
@@ -1181,7 +1250,8 @@ class OrderTools
             return MCPHelper::error('transaction_not_found', __('No refundable charge transaction was found on this order.', 'fluent-cart'));
         }
 
-        $amountCents = isset($params['amount']) ? Helper::toCent($params['amount']) : $remaining;
+        $txnRefundable = $txn->getMaxRefundableAmount();
+        $amountCents = isset($params['amount']) ? Helper::toCent($params['amount']) : ($txnRefundable > 0 ? min($remaining, $txnRefundable) : $remaining);
         if ($amountCents <= 0) {
             return MCPHelper::error('invalid_amount', __('Refund amount must be greater than zero.', 'fluent-cart'));
         }
@@ -1198,33 +1268,51 @@ class OrderTools
             );
         }
 
-        $tool        = 'fluent-cart/refund-order';
-        $entityKey   = 'order:' . $order->id;
+        $invalid = (new Refund())->validateRefundAmount($txn, $order, $amountCents);
+        if ($invalid) {
+            return MCPHelper::error(
+                $invalid->get_error_code(),
+                $invalid->get_error_message(),
+                ['current_state' => ['transaction_refundable_cents' => $txn->getMaxRefundableAmount()]]
+            );
+        }
+
+        $unrecorded = $order->getMeta(self::UNRECORDED_REFUND_META);
+        if (is_array($unrecorded) && !self::unrecordedRefundIsRecorded($order, $unrecorded)) {
+            return MCPHelper::error(
+                'unrecorded_refund_pending',
+                __('An earlier refund on this order went through the payment gateway but was not recorded in FluentCart. A store admin must record or reconcile it before another refund is made.', 'fluent-cart'),
+                ['current_state' => ['unrecorded_refund' => $unrecorded], 'hint' => 'Ask a person to check the order in the FluentCart admin.']
+            );
+        }
+
         // Bind the exact previewed mutation (amount + transaction) into the
         // fingerprint so a token minted for one amount can't confirm another.
         $fingerprint = 'paid:' . (int) $order->total_paid
             . '|refund:' . (int) $order->total_refund
+            . '|net:' . (int) $remaining
             . '|amount:' . (int) $amountCents
             . '|txn:' . (int) $txn->id;
 
-        if (!empty($params['dry_run'])) {
-            return MCPHelper::envelope(
-                sprintf(
-                    /* translators: 1: amount to refund, 2: remaining refundable, 3: order id */
-                    __('Preview: refund %1$s of %2$s remaining on order #%3$d.', 'fluent-cart'),
-                    MCPHelper::displayAmount($amountCents, $order->currency),
-                    MCPHelper::displayAmount($remaining, $order->currency),
-                    (int) $order->id
-                ),
-                WriteGuard::preview($tool, $entityKey, $fingerprint, [
-                    'order_id'            => (int) $order->id,
-                    'refundable'          => MCPHelper::money($remaining, $order->currency),
-                    'amount'              => MCPHelper::money($amountCents, $order->currency),
-                    'transaction'         => ['id' => (int) $txn->id, 'payment_method' => $txn->payment_method, 'payment_mode' => $txn->payment_mode],
-                    'live_gateway_action' => WriteGuard::isLiveMode($txn->payment_mode),
-                ])
-            );
+        return [$order, $txn, $amountCents, $remaining, $fingerprint];
+    }
+
+    /**
+     * Runs under the per-order refund lock.
+     *
+     * @return array|\WP_Error amount_cents, gateway_result
+     */
+    private static function executeRefund($params)
+    {
+        $refund = self::prepareRefund($params);
+        if (is_wp_error($refund)) {
+            return $refund;
         }
+
+        list($order, $txn, $amountCents, , $fingerprint) = $refund;
+
+        $tool = 'fluent-cart/refund-order';
+        $entityKey = 'order:' . $order->id;
 
         $confirm = WriteGuard::confirm($tool, $entityKey, $fingerprint, isset($params['confirm_token']) ? $params['confirm_token'] : '');
         if (is_wp_error($confirm)) {
@@ -1240,31 +1328,52 @@ class OrderTools
         $reason  = isset($params['reason']) ? sanitize_text_field($params['reason']) : '';
         $idemKey = isset($params['idempotency_key']) ? (string) $params['idempotency_key'] : '';
 
-        $result = WriteGuard::idempotent($tool, $entityKey, $idemKey, function () use ($txn, $amountCents, $reason) {
-            return (new Refund())->processRefund($txn, $amountCents, ['reason' => $reason]);
+        // The marker is written inside the callback so an idempotent replay never rewrites it.
+        $result = WriteGuard::idempotent($tool, $entityKey, $idemKey, function () use ($order, $txn, $amountCents, $reason) {
+            $result = (new Refund())->processRefund($txn, $amountCents, ['reason' => $reason]);
+
+            if (is_wp_error($result) && $result->get_error_code() === 'refund_not_recorded') {
+                try {
+                    $order->updateMeta(self::UNRECORDED_REFUND_META, [
+                        'vendor_refund_id' => Arr::get($result->get_error_data(), 'vendor_refund_id'),
+                        'amount'           => $amountCents,
+                        'at'               => DateTime::gmtNow()->format('Y-m-d H:i:s'),
+                    ]);
+                } catch (\Throwable $e) {
+                    // The database that lost the refund row can lose the marker too; the error must still reach the caller.
+                }
+            }
+
+            return $result;
         });
 
         if (is_wp_error($result)) {
             return $result;
         }
 
-        $order = Order::query()->where('id', (int) $params['order_id'])->first();
+        return ['amount_cents' => $amountCents, 'gateway_result' => $result];
+    }
 
-        return MCPHelper::envelope(
-            sprintf(
-                /* translators: 1: refunded amount, 2: order id */
-                __('Refunded %1$s on order #%2$d.', 'fluent-cart'),
-                MCPHelper::displayAmount($amountCents, $order->currency),
-                (int) $order->id
-            ),
-            [
-                'order_id'       => (int) $order->id,
-                'refunded'       => MCPHelper::money($amountCents, $order->currency),
-                'payment_status' => $order->payment_status,
-                'total_refund'   => MCPHelper::money($order->total_refund, $order->currency),
-                'gateway_result' => is_array($result) ? array_intersect_key($result, array_flip(['vendor_refund_id', 'manual_refund'])) : null,
-            ]
-        );
+    /**
+     * The refund is recorded once a refund row carries its vendor refund id. Without a vendor refund id,
+     * a refund row of the same amount recorded after the failure counts.
+     */
+    private static function unrecordedRefundIsRecorded($order, array $unrecorded)
+    {
+        $refunds = OrderTransaction::query()
+            ->where('order_id', $order->id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->where('status', '!=', Status::TRANSACTION_FAILED);
+
+        $vendorRefundId = Arr::get($unrecorded, 'vendor_refund_id');
+        if ($vendorRefundId) {
+            return $refunds->where('vendor_charge_id', $vendorRefundId)->exists();
+        }
+
+        return $refunds
+            ->where('total', (int) Arr::get($unrecorded, 'amount'))
+            ->where('created_at', '>', Arr::get($unrecorded, 'at', ''))
+            ->exists();
     }
 
     // -----------------------------------------------------------------

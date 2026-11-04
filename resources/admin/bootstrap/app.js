@@ -2,7 +2,6 @@ import {createApp} from 'vue'
 import {createRouter, createWebHashHistory} from 'vue-router';
 import {routes} from '@/routes';
 import DashboardApplication from "../Application.vue";
-import {ElLoadingDirective} from "element-plus";
 import {ElMessageBox} from 'element-plus';
 import ElementPlus from 'element-plus';
 import {
@@ -23,7 +22,6 @@ import {
 import {useAppMixin} from "@/mixin/useAppMixin";
 import {useRouteMiddleware} from "@/mixin/useRouteMiddleware";
 import {useNavigationMenuUpdateService} from "@/mixin/useNavigationMenuUpdateService";
-import {useElementPlusComponents} from "@/mixin/useElementPlusComponents";
 import {animateDirective} from "../animation";
 import translate from "@/utils/translator/Translator";
 import NotFound from "@/Pages/NotFound.vue";
@@ -49,7 +47,7 @@ document.addEventListener('fcart_renew_rest_nonce', function (event) {
         return;
     }
     ElMessageBox.alert(
-        translate('Your session has expired due to inactivity. Please refresh the page to continue.'),
+        translate('Session_Session_Expired'),
         translate('Session Expired'),
         {
             // if you want to disable its autofocus
@@ -104,10 +102,7 @@ app.config.globalProperties.appVars = AppConfig.get();
 app.provide('appVars', AppConfig.get());
 app.mixin(useAppMixin());
 
-app.directive('loading', ElLoadingDirective)
 app.directive('animate', animateDirective)
-
-useElementPlusComponents(app);
 
 const router = createRouter({
         routes: [

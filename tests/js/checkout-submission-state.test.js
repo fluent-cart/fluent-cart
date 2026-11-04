@@ -178,6 +178,44 @@ describe('Checkout submission state', () => {
         expect(state.handler.isSubmitting()).toBe(false);
     });
 
+    it('retries once with a fresh security token when the first one was expired', async () => {
+        const state = checkout();
+
+        state.handler.handleOrder();
+        await state.settle();
+        await state.respond({status: 'failed', code: 'turnstile_invalid', message: 'Security check failed.'});
+
+        expect(state.requests).toHaveLength(2);
+
+        await state.respond({status: 'failed', message: 'Out of stock'});
+
+        expect(state.requests).toHaveLength(2);
+        expect(state.handler.isSubmitting()).toBe(false);
+    });
+
+    it('does not retry a second expired-token refusal', async () => {
+        const state = checkout();
+
+        state.handler.handleOrder();
+        await state.settle();
+        await state.respond({status: 'failed', code: 'turnstile_invalid', message: 'Security check failed.'});
+        await state.respond({status: 'failed', code: 'turnstile_invalid', message: 'Security check failed.'});
+
+        expect(state.requests).toHaveLength(2);
+        expect(state.handler.isSubmitting()).toBe(false);
+    });
+
+    it('does not retry other refusals', async () => {
+        const state = checkout();
+
+        state.handler.handleOrder();
+        await state.settle();
+        await state.respond({status: 'failed', code: 'turnstile_unreachable', message: 'Try again in a minute.'});
+
+        expect(state.requests).toHaveLength(1);
+        expect(state.handler.isSubmitting()).toBe(false);
+    });
+
     it('releases the submission when a third-party callback throws', async () => {
         const state = checkout();
         state.context.window.fluentCartCheckout.beforeCheckoutCallbacks = [

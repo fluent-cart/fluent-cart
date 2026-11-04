@@ -22,6 +22,7 @@ import {
   prepareLabel,
   getEmphasisColor,
   getXAxisConfig,
+  axisDayLabel,
 } from '@/Modules/Reports/Utils/decorator';
 
 
@@ -108,12 +109,13 @@ let chartInstance = null;
 
 // Initialize the chart
 const initChart = () => {
-  if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
-  }
-
   nextTick(() => {
+    // Dispose here: two calls in one tick would both init the same element
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
+
     if (chartRef.value) {
       chartInstance = echarts.init(chartRef.value);
       updateChart();
@@ -180,6 +182,7 @@ const updateChart = () => {
       type: "category",
       data: labels.value,
       axisLabel: {
+        formatter: axisDayLabel,
         color: isDarkTheme.value ? "#ffffff" : "#696778",
         fontSize: 12,
         interval: xAxisConfig.value.interval,

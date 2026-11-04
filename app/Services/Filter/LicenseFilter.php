@@ -49,9 +49,9 @@ class LicenseFilter extends BaseFilter
     public function tabsMap(): array
     {
         return [
-            'inactive' => __('Inactive', 'fluent-cart'),
-            'active'   => __('Active', 'fluent-cart'),
-            'expired'  => __('Expired', 'fluent-cart'),
+            'inactive' => _x('Inactive', 'License status', 'fluent-cart'),
+            'active'   => _x('Active', 'License status', 'fluent-cart'),
+            'expired'  => _x('Expired', 'License status', 'fluent-cart'),
             'disabled' => __('disabled', 'fluent-cart')
         ];
     }
@@ -307,9 +307,9 @@ class LicenseFilter extends BaseFilter
                         'filter_type' => 'column',
                         'column'      => 'status',
                         'options'     => [
-                            Status::LICENSE_ACTIVE   => __('Active', 'fluent-cart'),
-                            Status::LICENSE_DISABLED => __('Disabled', 'fluent-cart'),
-                            Status::LICENSE_EXPIRED  => __('Expired', 'fluent-cart'),
+                            Status::LICENSE_ACTIVE   => _x('Active', 'License status', 'fluent-cart'),
+                            Status::LICENSE_DISABLED => _x('Disabled', 'License status', 'fluent-cart'),
+                            Status::LICENSE_EXPIRED  => _x('Expired', 'License status', 'fluent-cart'),
                         ],
                         'is_multiple' => true,
                         'is_only_in'  => true

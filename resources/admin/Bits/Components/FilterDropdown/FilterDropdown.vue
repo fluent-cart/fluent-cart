@@ -1,6 +1,11 @@
 <template>
   <div ref="dropdownRef" class="fct-filter-dropdown-container" @click.stop>
-    <IconButton class="fct-filter-dropdown-toggle-button" size="small" tag="button" @click="filter.toggleDropdown">
+    <el-button v-if="label" size="small" class="fct-filter-dropdown-text-button" @click="filter.toggleDropdown">
+      <DynamicIcon name="Filter" class="w-4 h-4"/>
+      <span>{{ label }}</span>
+      <span v-if="count" class="fct-filter-dropdown-count">{{ count }}</span>
+    </el-button>
+    <IconButton v-else class="fct-filter-dropdown-toggle-button" size="small" tag="button" @click="filter.toggleDropdown">
       <DynamicIcon name="Filter"/>
     </IconButton>
 
@@ -62,6 +67,15 @@ const props = defineProps({
   filterState: {
     type: [Object]
   },
+  // A text button with a count of active filters, as in the report title bar; the icon button otherwise
+  label: {
+    type: String,
+    default: '',
+  },
+  count: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const dropdownRef = ref(null);
@@ -69,26 +83,6 @@ const filter = props.filterState;
 const isProActive = AppConfig.get('app_config.isProActive');
 
 const filters = [
-  // {
-  //   label: translate("Order Status"),
-  //   icon: "Cart",
-  //   type: "multi-list",
-  //   value: "orderStatus",
-  //   disableRoutes:[
-  //     "reports_products",
-  //     "reports_customer",
-  //     "reports_subscriptions",
-  //     "reports_refunds",
-  //   ],
-  //   options: [
-  //     {label: translate("All"), value: "all"},
-  //     {label: translate("Processing"), value: "processing"},
-  //     {label: translate("Completed"), value: "completed"},
-  //     {label: translate("On Hold"), value: "on-hold"},
-  //     {label: translate("Canceled"), value: "canceled"},
-  //     {label: translate("Failed"), value: "failed"},
-  //   ],
-  // },
   {
     label: translate("Order Type"),
     icon: "AppsLine",
@@ -103,6 +97,8 @@ const filters = [
       {label: translate("One time"), value: "payment"},
       {label: translate("Subscription"), value: "subscription"},
       {label: translate("Renewal"), value: "renewal"},
+      {label: translate("Installment sign-up"), value: "installment"},
+      {label: translate("Installment payment"), value: "installment_payment"},
     ],
   },
   {
@@ -111,14 +107,16 @@ const filters = [
     type: "list",
     value: "subscriptionType",
     disableRoutes:[
+        "reports_subscriptions",
         "reports_revenue",
         "reports_products",
         "reports_customer",
-        "reports_sales",
         "reports_refunds",
         "reports_orders",
-        "reports_sales",
         "reports_sources",
+        "reports_coupons",
+        "reports_payment_methods",
+        "reports_locations",
     ],
     options: [
       {label: translate("New"), value: "subscription"},
@@ -127,44 +125,19 @@ const filters = [
       {label: translate("Canceled"), value: "canceled"},
     ],
   },
-  // {
-  //   label: translate("Payment Status"),
-  //   icon: "BankCard",
-  //   type: "multi-list",
-  //   value: "paymentStatus",
-  //   disableRoutes:[
-  //     "reports_products",
-  //     "reports_customer",
-  //     "reports_subscriptions",
-  //     "reports_refunds",
-  //   ],
-  //   options: [
-  //     {label: translate("All"), value: "all"},
-  //     {label: translate("Paid"), value: "paid"},
-  //     {label: translate("Pending"), value: "pending"},
-  //     {label: translate("Partially Paid"), value: "partially_paid"},
-  //   ],
-  // },
-  // {
-  //   label: translate("Date"),
-  //   icon: "Calendar",
-  //   type: "date",
-  //   value: "dateRange",
-  // },
   {
     label: translate("Currency"),
     icon: "Currency",
     type: "currency",
     value: "currency",
-    disableRoutes:[
-      "reports_customer",
-    ],
+    disableRoutes:[],
   },
   {
     label: translate("Products"),
     icon: "ListView",
     type: "tree-select",
     value: "variation_ids",
+    // Sources offers it too: without Pro's advanced filter it is the only way to pick products there
     disableRoutes:[
       "reports_customer",
     ],

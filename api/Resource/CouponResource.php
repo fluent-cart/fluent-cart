@@ -100,6 +100,9 @@ class CouponResource extends BaseResourceApi
             $data['conditions']['min_amount_basis'] = 'subtotal';
         }
 
+        // notes is optional in the request but NOT NULL in the table
+        $data['notes'] = (string) Arr::get($data, 'notes', '');
+
         $data = self::formatAmount($data);
         $isCreated = static::getQuery()->create($data);
 
@@ -136,6 +139,10 @@ class CouponResource extends BaseResourceApi
         }
         if (Arr::get($data, 'min_purchase_amount', null) == '') {
             $data['min_purchase_amount'] = null;
+        }
+        // An omitted notes field arrives as null; keep the stored notes
+        if (array_key_exists('notes', $data) && $data['notes'] === null) {
+            unset($data['notes']);
         }
 
         if (!$id) {

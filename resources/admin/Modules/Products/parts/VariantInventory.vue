@@ -8,7 +8,7 @@ import {ref, computed, onMounted} from 'vue';
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import LabelHint from "@/Bits/Components/LabelHint.vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import VariantItemCollapse from "@/Modules/Products/parts/VariantItemCollapse.vue";
@@ -227,7 +227,7 @@ const generateSku = () => {
         <div v-if="showInventory && !productStockEnabled" class="fct-variant-inventory-global-off" role="alert">
             <span class="fct-variant-inventory-global-off__text">
                 <DynamicIcon name="Warning" />
-                {{ translate('Enable inventory to track stock and manage availability for this product and its variations.') }}
+                {{ translate('Product_Enable_Inventory') }}
             </span>
             <span class="fct-variant-inventory-global-off__action">
                 <el-switch
@@ -265,7 +265,7 @@ const generateSku = () => {
 
             <!-- On Hold -->
             <div class="fct-variant-stock-box">
-                <div class="fct-stock-box-label">{{ translate('On Hold') }}</div>
+                <div class="fct-stock-box-label">{{ _x('On Hold', 'Reserved stock quantity') }}</div>
                 <div class="fct-stock-box-content">
                     <div class="fct-stock-number">{{ variant.on_hold }}</div>
                 </div>

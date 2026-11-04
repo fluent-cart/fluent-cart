@@ -10,8 +10,11 @@ class OrderPaymentFailed
     {
         if ($event->order) {
             $event->order->addLog(
-                __('Payment Failed', 'fluent-cart'), 
-                __('Payment attempt failed for this order.', 'fluent-cart'), 
+                __('Payment Failed', 'fluent-cart'),
+                $event->reason
+                    /* translators: %s is the payment gateway's failure reason */
+                    ? sprintf(__('Payment attempt failed for this order: %s', 'fluent-cart'), $event->reason)
+                    : __('Payment attempt failed for this order.', 'fluent-cart'),
                 'error'
             );
         }

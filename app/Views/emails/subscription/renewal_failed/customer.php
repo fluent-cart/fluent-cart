@@ -4,6 +4,7 @@
  * @var \FluentCart\App\Models\Order $order
  * @var \FluentCart\App\Models\Subscription $subscription
  * @var string $error Gateway failure reason
+ * @var array|null $renewal_payment Gateway-reported renewal amount (cents) and currency, when known
  */
 
 $paymentMethodText = $subscription->getPaymentMethodText();
@@ -13,10 +14,11 @@ $paymentMethodText = $subscription->getPaymentMethodText();
 $updateMethodUrl = (new \FluentCart\Api\StoreSettings())->getCustomerProfilePage()
     ? \FluentCart\App\Services\URL::getCustomerDashboardUrl('subscription/' . $subscription->uuid)
     : '';
+$canUpdateCard = $updateMethodUrl && $subscription->canUpdatePaymentMethod();
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
             printf(
                 /* translators: %1$s is the customer's full name */
@@ -59,10 +61,10 @@ $updateMethodUrl = (new \FluentCart\Api\StoreSettings())->getCustomerProfilePage
 
     <p>
         <?php
-            if ($updateMethodUrl) {
-                esc_html_e( 'We will automatically retry the charge. You can update your payment method from your account if it has changed.', 'fluent-cart' );
+            if ($canUpdateCard) {
+                esc_html_e( 'We may try the charge again. Please update your payment method so it goes through.', 'fluent-cart' );
             } else {
-                esc_html_e( 'We will automatically retry the charge.', 'fluent-cart' );
+                esc_html_e( 'We may try the charge again. Please make sure your payment method can be charged, or contact us.', 'fluent-cart' );
             }
         ?>
     </p>
@@ -70,22 +72,14 @@ $updateMethodUrl = (new \FluentCart\Api\StoreSettings())->getCustomerProfilePage
 
 <?php
 
-\FluentCart\App\App::make('view')->render('emails.parts.items_table', [
-    'order'          => $order,
-    'formattedItems' => $order->order_items,
-    'heading'        => __('Renewal Summary', 'fluent-cart'),
+\FluentCart\App\App::make('view')->render('emails.parts.renewal_summary', [
+    'summary' => \FluentCart\App\Services\Email\SubscriptionRenewalSummary::make($subscription, $order, $renewal_payment ?? []),
 ]);
 
-if ($updateMethodUrl) :
+if ($canUpdateCard) :
 ?>
 <p>
-    <?php
-        printf(
-            /* translators: %1$s is an HTML link to the customer's subscription page */
-            esc_html__( 'Card expired or changed? %1$s to replace the payment method we charge automatically.', 'fluent-cart' ),
-            '<a href="' . esc_url( $updateMethodUrl ) . '">' . esc_html__( 'Update your payment method', 'fluent-cart' ) . '</a>'
-        );
-    ?>
+    <a href="<?php echo esc_url( $updateMethodUrl ); ?>"><?php esc_html_e( 'Update your payment method', 'fluent-cart' ); ?></a>
 </p>
 <?php
 endif;

@@ -613,11 +613,9 @@ class FluentCRMDeepIntegration
      * wp_timezone() so a store on FluentCart's 'fluent_cart' timezone source
      * (no order context here) doesn't fall back to UTC.
      *
-     * Scoped to this page: DateFormatter's own default behavior is unchanged
-     * everywhere else in FluentCart, including the FluentSupport customer
-     * widget, which renders this same getStatsHtml() markup but must NOT
-     * pick up FluentCRM's display preference -- see getStatsHtml()'s
-     * $dateFormatter parameter.
+     * Scoped to this page: the FluentSupport customer widget renders the same
+     * getStatsHtml() markup but must NOT pick up FluentCRM's display
+     * preference -- see getStatsHtml()'s $dateFormatter parameter.
      */
     public function formatDateForFluentCrm($datetime): string
     {
@@ -637,12 +635,10 @@ class FluentCRMDeepIntegration
     /**
      * @param \FluentCart\App\Models\Customer $customer
      * @param callable|null $dateFormatter Formats a single GMT datetime string
-     *        for display. Defaults to DateFormatter::format() unchanged, which
-     *        is what FluentSupportWidget::getPurchaseWidgets() relies on when
-     *        it calls this method directly -- FluentCRM's own date/time
-     *        preference must stay opt-in via formatDateForFluentCrm(),
-     *        passed explicitly by pushInfoWidgetToContact() below, or it would
-     *        leak into the unrelated FluentSupport widget.
+     *        for display. Defaults to DateFormatter::format(). Callers pass their
+     *        own: formatDateForFluentCrm() for the FluentCRM profile, and
+     *        FluentSupportWidget::formatDate() so FluentCRM's preference does
+     *        not leak into the FluentSupport widget.
      */
     public function getStatsHtml($customer, ?callable $dateFormatter = null)
     {

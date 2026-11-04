@@ -1,7 +1,7 @@
 <script setup>
 import {formatDate} from "../common";
-import {dateTimeI18, resolveDateFormat, resolveYearAwareFormat, toStoreTimezone} from "@/utils/Utils";
-import {onMounted, ref} from "vue";
+import {dateTimeI18, getDateTimeStringI18, recentDateText, resolveDateFormat, resolveYearAwareFormat, toStoreTimezone} from "@/utils/Utils";
+import {computed, onMounted, ref} from "vue";
 
 const props = defineProps({
     dateTime: {
@@ -22,6 +22,9 @@ const props = defineProps({
 });
 
 const format = ref('date');
+
+// Earlier today the time says more than the date (and already is the time a with-time cell asks for)
+const recent = computed(() => props.onlyTime ? null : recentDateText(props.dateTime));
 
 onMounted(() => {
     // Whether the year may be dropped is the store's call, and it has to be
@@ -46,6 +49,6 @@ onMounted(() => {
 
 <template>
   <span :title="dateTimeI18(dateTime, 'date_time')">
-    {{ dateTimeI18(dateTime, format) }}
+    {{ recent ? getDateTimeStringI18(recent, 'mNumber') : dateTimeI18(dateTime, format) }}
   </span>
 </template>

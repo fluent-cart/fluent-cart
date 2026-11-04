@@ -276,7 +276,7 @@ class OrderReviewRenderer
 
     protected function renderHeader($itemCount)
     {
-        $invoiceNo = $this->order->invoice_no;
+        $invoiceNo = Arr::get($this->order, 'invoice_no') ?: Arr::get($this->order, 'uuid');
         ?>
         <header class="fct-order-review-header">
             <?php if ($this->showTitle) : ?>

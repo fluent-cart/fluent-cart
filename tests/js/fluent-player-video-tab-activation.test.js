@@ -36,7 +36,7 @@ const confirmBox = vi.hoisted(() => vi.fn(async () => 'confirm'));
 vi.mock('element-plus', () => ({ElMessageBox: {confirm: (...args) => confirmBox(...args)}}));
 vi.mock('@/utils/http/Rest', () => ({default: rest}));
 vi.mock('@/utils/Notify', () => ({default: notify}));
-vi.mock('@/utils/translator/Translator', () => ({default: (value) => value}));
+vi.mock('@/utils/translator/Translator', async () => ({default: (await import('./support/reserved-words.js')).withReserved((value) => value)}));
 vi.mock('@/Bits/Components/Icons/DynamicIcon.vue', () => ({default: {name: 'DynamicIcon', render: () => null}}));
 
 const Tab = (await import('@/Modules/Products/parts/FluentPlayerVideoTab.vue')).default;

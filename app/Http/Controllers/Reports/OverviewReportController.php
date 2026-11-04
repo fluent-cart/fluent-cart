@@ -7,14 +7,35 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\App\Http\Controllers\Controller;
+use FluentCart\App\Services\DateTime\DateTime;
+use FluentCart\App\Services\Report\ReportHelper;
+use FluentCart\Framework\Support\Arr;
+use FluentCart\App\Services\Report\RevenueReportService;
 
 class OverviewReportController extends Controller
 {
     public function getOverview(Request $request): \WP_REST_Response
     {
-        // We need 24 hours of data to compare the last 12 months
-        $start = gmdate('Y-m-01 00:00:00', strtotime('first day of 30 months ago'));
-        $end = gmdate('Y-m-t 23:59:59', strtotime('last day of this month'));
+        $raw = (array) $request->get('params', []);
+        $converted = ReportCurrency::resolve(Arr::get($raw, 'currency'), true);
+
+        // The Overview page reads only the 12-month net sales; other callers get every series, as before
+        if (!empty($raw['net_sales_only'])) {
+            $months = function () use ($converted) {
+                return $this->netSalesMonths($converted);
+            };
+
+            // It does not follow the date range, so the Overview may take it from a short cache
+            return $this->sendSuccess(['data' => [
+                'net_sales_months' => !empty($raw['cached']) ? ReportHelper::remember('net_sales_months', [$converted], $months) : $months(),
+            ]]);
+        }
+
+        // We need 24 months of data to compare the last 12 months. Store months: the wall-clock bounds label the
+        // months, and the queries compare their UTC time against the GMT column
+        $site = wp_timezone();
+        $start = (new \DateTime('first day of 30 months ago', $site))->format('Y-m-01 00:00:00');
+        $end = (new \DateTime('last day of this month', $site))->format('Y-m-t 23:59:59');
 
         $currency = ReportCurrency::resolve($request->get('params.currency'));
 
@@ -24,7 +45,7 @@ class OverviewReportController extends Controller
         $netData = $this->generateComparesMonths($orderStats['net']);
 
         $countryWiseStats = $this->getCountryWiseStatsImproved(
-            gmdate('Y-m-01 00:00:00', strtotime('first day of 11 months ago')), $end, 5, $currency
+            (new \DateTime('first day of 11 months ago', $site))->format('Y-m-01 00:00:00'), $end, 5, $currency
         );
 
         return $this->sendSuccess([
@@ -37,8 +58,32 @@ class OverviewReportController extends Controller
                 'net_summary'             => $this->calculateOverallSummary($netData),
                 'top_country_net'         => $countryWiseStats['net'],
                 'top_country_gross'       => $countryWiseStats['gross'],
+                // All currencies counts converted orders, as the Net sales card does; the older series stay in one currency
+                'net_sales_months'        => $this->netSalesMonths(ReportCurrency::resolve($request->get('params.currency'), true)),
             ],
         ]);
+    }
+
+    /**
+     * The last 24 store months of net sales, counted as the Revenue report counts them. The range is set here, not
+     * by processParams(), so it holds on every license.
+     */
+    private function netSalesMonths($currency): array
+    {
+        $site = wp_timezone();
+        $groups = RevenueReportService::make()->getRevenueData([
+            'startDate'     => ReportHelper::toGmt((new DateTime('first day of 23 months ago', $site))->startOfDay()),
+            'endDate'       => ReportHelper::toGmt((new DateTime('last day of this month', $site))->endOfDay()),
+            'currency'      => $currency,
+            'paymentStatus' => Status::getReportStatuses(),
+            'groupKey'      => 'monthly',
+        ])['groups'];
+
+        return array_map(function ($group) {
+            $group = (array) $group;
+
+            return ['group' => (string) $group['group'], 'net_sales' => round((float) $group['net_sales'], 2)];
+        }, array_values($groups));
     }
 
     protected function getMonthToMonthStats($start, $end, $currency = null)
@@ -50,22 +95,36 @@ class OverviewReportController extends Controller
             Status::PAYMENT_PARTIALLY_REFUNDED,
         ];
 
+        $netSql = ReportHelper::netRevenueSql('');
+        [$from, $to] = $this->gmtRange($start, $end);
+        $month = "DATE_FORMAT(" . ReportHelper::storeTimeSql('created_at', $from, $to) . ", '%Y-%m')";
+
         $orders = App::db()->table('fct_orders')
             ->selectRaw("
-                DATE_FORMAT(created_at, '%Y-%m') AS month,
+                {$month} AS month,
                 
                 SUM(total_paid) AS gross,
 
-                SUM(total_paid - total_refund - tax_total - shipping_tax) AS net
+                SUM({$netSql}) AS net
             ")
             ->whereIn('payment_status', $paymentStatuses)
-            ->whereBetween('created_at', [$start, $end])
+            ->whereBetween('created_at', [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')])
             ->where('currency', ReportCurrency::resolve($currency))
             ->groupBy('month')
             ->orderBy('month')
             ->get();
 
         return $this->fillData([$start, $end], $orders);
+    }
+
+    /**
+     * Store wall-clock bounds as UTC instants, for comparing with GMT columns.
+     *
+     * @return \DateTimeInterface[]
+     */
+    private function gmtRange(string $start, string $end): array
+    {
+        return [ReportHelper::toGmt(ReportHelper::siteDay($start)), ReportHelper::toGmt(ReportHelper::siteDay($end))];
     }
 
     private function fillData($dateRange, $results)
@@ -188,22 +247,27 @@ class OverviewReportController extends Controller
     {
         global $wpdb;
 
-        $net_revenue_column = 'SUM(o.total_paid - o.total_refund - o.tax_total - o.shipping_tax) AS net_revenue';
+        $net_revenue_column = 'SUM(' . ReportHelper::netRevenueSql() . ') AS net_revenue';
         $gross_revenue_column = 'SUM(o.total_paid) AS gross_revenue';
 
         $currencyFilter = $currency ? 'AND o.currency = ?' : '';
         $statuses = Status::getReportStatuses();
         $statusPlaceholders = implode(', ', array_fill(0, count($statuses), '?'));
 
+        [$from, $to] = $this->gmtRange($start_date, $end_date);
+        $month = "DATE_FORMAT(" . ReportHelper::storeTimeSql('o.created_at', $from, $to) . ", '%Y-%m')";
+
         $top_countries_query = "WITH monthly_country_revenue AS (
             SELECT
-                DATE_FORMAT(o.created_at, '%Y-%m') AS month,
+                {$month} AS month,
                 a.country,
                 $net_revenue_column,
                 $gross_revenue_column,
-                RANK() OVER (PARTITION BY DATE_FORMAT(o.created_at, '%Y-%m') ORDER BY SUM(o.total_paid - o.total_refund) DESC) AS revenue_rank
+                RANK() OVER (PARTITION BY {$month} ORDER BY SUM(o.total_paid - o.total_refund) DESC) AS revenue_rank
             FROM {$wpdb->prefix}fct_orders o
-            INNER JOIN {$wpdb->prefix}fct_order_addresses a ON o.id = a.order_id
+            INNER JOIN {$wpdb->prefix}fct_order_addresses a ON a.order_id = o.id AND a.id = (
+                SELECT MAX(latest.id) FROM {$wpdb->prefix}fct_order_addresses latest WHERE latest.order_id = o.id AND latest.type = 'billing'
+            )
             WHERE
                 o.payment_status IN ({$statusPlaceholders})
                 AND o.created_at >= ?
@@ -212,7 +276,7 @@ class OverviewReportController extends Controller
                 AND a.country IS NOT NULL
                 AND a.country != ''
                 {$currencyFilter}
-            GROUP BY DATE_FORMAT(o.created_at, '%Y-%m'), a.country
+            GROUP BY {$month}, a.country
         )
         SELECT
             month,
@@ -224,7 +288,7 @@ class OverviewReportController extends Controller
         WHERE revenue_rank <= 5
         ORDER BY month, revenue_rank";
 
-        $bindings = array_merge($statuses, [$start_date, $end_date]);
+        $bindings = array_merge($statuses, [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]);
         if ($currency) {
             $bindings[] = $currency;
         }

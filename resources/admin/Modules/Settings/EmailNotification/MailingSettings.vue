@@ -96,7 +96,7 @@ onMounted(() => {
             :title="translate('Email Configuration')"
             :text="
             /* translators: %s is the plugin name */
-            translate('Set your from name, email, and email footer. These configurations will be used to send emails from %s.', 'FluentCart')
+            translate('Settings_Set_Name', 'FluentCart')
           "
             border_bottom />
         <MailingSettingsLoader v-if="saving" />
@@ -129,8 +129,7 @@ onMounted(() => {
                   />
                   <div class="form-note">
                     <p>{{
-                        translate(`Provide Valid Email Address email as per your domain/SMTP settings. This
-email will be used to send emails like notifications`)
+                        translate('Settings_Provide_Valid')
                       }}</p>
                   </div>
                 </div>
@@ -159,8 +158,7 @@ email will be used to send emails like notifications`)
                   />
                   <div class="form-note">
                     <p>{{
-                        translate(`If someone replies to your notification email, this is where you would like to
-receive it.`)
+                        translate('Settings_Someone_Replies')
                       }}</p>
                   </div>
                 </div>
@@ -189,8 +187,7 @@ receive it.`)
                 />
                 <div class="form-note">
                   <p>{{
-                      translate(`This email footer will be used for all emails sent from FluentCart, It's highly recommended to use your business name and address in the footer for
-compliance.`)
+                      translate('Settings_Email_Footer')
                     }}</p>
                 </div>
               </div>

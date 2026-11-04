@@ -237,12 +237,13 @@ class PayPal extends AbstractPaymentGateway
         $taxBehavior = (int) Arr::get($tax, 'tax_behavior', 0);
         $storeTaxBehavior = (int) Arr::get($tax, 'store_tax_behavior', $taxBehavior);
 
-        if ($taxBehavior === 1) {
+        if ($taxBehavior === 1 && $storeTaxBehavior !== 2) {
             // Pure exclusive — add all tax including fee tax (tax_total contains both).
             $totalPrice = $totalPrice + (int) Arr::get($tax, 'tax_total', 0)
                                          + (int) Arr::get($tax, 'shipping_tax', 0);
-        } elseif ($taxBehavior === 3) {
-            // Mixed — add only exclusive product tax + fee/shipping if store is exclusive.
+        } elseif (in_array($taxBehavior, [1, 2, 3], true)) {
+            // An inclusive store keeps fee and shipping tax inside even when every item excludes it.
+            // Mixed or all-inclusive — add only exclusive product tax + fee/shipping if store is exclusive.
             $totalPrice = $totalPrice + (int) Arr::get($tax, 'exclusive_tax_total', 0);
             if ($storeTaxBehavior === 1) {
                 $totalPrice = $totalPrice + (int) Arr::get($tax, 'fee_tax', 0)
@@ -694,6 +695,7 @@ class PayPal extends AbstractPaymentGateway
                 fluent_cart_add_log(
                     'PayPal Subscription Plan Mismatch',
                     'The PayPal subscription plan ID does not match the expected plan ID for this subscription. This may indicate a configuration issue or potential tampering.',
+                    'warning',
                     [
                         'module_name' => 'subscription',
                         'module_id'   => $localSubscription->id,

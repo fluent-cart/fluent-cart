@@ -197,7 +197,7 @@ onMounted(() => {
                     type="info"
                     icon="InformationFill"
                     class="mb-4"
-                    :content="translate('VAT for these EU countries is currently being collected using Collect VAT cross-border (OSS). Check the country list in the Collect VAT cross-border section.')"
+                    :content="translate('Tax_Vat_Countries')"
                 />
 
                 <Alert
@@ -206,8 +206,8 @@ onMounted(() => {
                     icon="InformationFill"
                     class="mb-4"
                     :content="homeCountryConfigured
-                        ? /* translators: %1$s: home country name (e.g. Germany) */ translate('Collecting VAT across the EU using your %1$s home country rate. This rate applies to all cross-border EU sales.', getCountryName(crossBorderHomeCountry))
-                        : /* translators: %1$s: home country name (e.g. Germany) */ translate('Your home country VAT rate applies to all EU cross-border sales. Make sure %1$s is registered here with the correct rate.', getCountryName(crossBorderHomeCountry))"
+                        ? /* translators: %1$s: home country name (e.g. Germany) */ translate('Tax_Collecting_Vat', getCountryName(crossBorderHomeCountry))
+                        : /* translators: %1$s: home country name (e.g. Germany) */ translate('Tax_Home_Country_Vat', getCountryName(crossBorderHomeCountry))"
                 />
 
                 <div class="fct-country-registrations-list">

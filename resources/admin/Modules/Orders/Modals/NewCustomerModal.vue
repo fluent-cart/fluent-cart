@@ -52,7 +52,7 @@
               false-value="no"
               v-model="customerModalInfos.manageWpUser"
           >
-            <LabelHint :title="getWpUserCheckboxLabel" :content="translate('We will create a new user for this customer. If a user with the same email already exists, we will associate the customer with that existing user.')" />
+            <LabelHint :title="getWpUserCheckboxLabel" :content="translate('Order_Create_New')" />
           </el-checkbox>
         </div>
 

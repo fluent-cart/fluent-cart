@@ -66,7 +66,7 @@ const toggleCountry = (countryCode) => {
 
 const beforeSave = () => {
   if (selectedCountries.value.length === 0) {
-    $confirm(translate('If you don\'t select any country, all countries will be available for tax calculation. Are you sure you want to proceed?'), translate('Yes, Proceed!'), {
+    $confirm(translate('Tax_Don_Select'), translate('Yes, Proceed!'), {
       confirmButtonText: translate('Yes, Proceed!'),
       cancelButtonText: translate('Cancel'),
       type: 'warning'

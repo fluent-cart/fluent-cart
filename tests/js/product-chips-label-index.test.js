@@ -39,9 +39,41 @@ describe('mergeProductTree', () => {
         expect(known).toEqual(initial);
     });
 
+    it('replaces a product seen again in place', () => {
+        const renamed = [{label: 'Plan v2', value: 'product_1', children: [{label: 'Basic', value: 11}]}];
+
+        expect(mergeProductTree(initial, renamed).map(product => product.label)).toEqual(['Plan v2', 'Shirt']);
+    });
+
     it('handles empty sides', () => {
         expect(mergeProductTree(null, initial)).toEqual(initial);
         expect(mergeProductTree(initial, undefined)).toEqual(initial);
+    });
+
+    it('ignores malformed rows', () => {
+        expect(mergeProductTree(null, [{label: 'No value'}, null])).toEqual([]);
+    });
+});
+
+describe('advanced filter product chips from the cache', () => {
+    // Shape returned by VariationFilter::getTreeFilterOptions().
+    const firstPage = [
+        {value: 1, label: 'Plan', children: [{value: 11, label: 'Basic'}, {value: 12, label: 'Pro'}, {value: 13, label: 'Team'}]},
+        {value: 2, label: 'Shirt', children: [{value: 21, label: 'S'}, {value: 22, label: 'M'}]},
+    ];
+    const searchResult = [{value: 3, label: 'Ebook', children: [{value: 31, label: 'PDF'}]}];
+    const cache = mergeProductTree(mergeProductTree([], firstPage), searchResult);
+
+    it('shows picks hidden by the current search', () => {
+        // The visible options are only the search result, yet picks from the first page still resolve.
+        const chips = buildProductChips(groupIdsByTree([12, 13, 21, 31], cache));
+        expect(chips.map(chip => chip.text)).toEqual(['Plan (2 of 3)', 'Shirt (1 of 2)', 'Ebook']);
+    });
+
+    it('reads a ticked parent as the product name alone', () => {
+        // A ticked parent puts every child id in v-model, not the product id.
+        const [chip] = buildProductChips(groupIdsByTree([11, 12, 13], cache));
+        expect(chip).toEqual({key: 'id-1', text: 'Plan', variations: []});
     });
 });
 

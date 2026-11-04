@@ -19,74 +19,89 @@ const props = defineProps({
   reportFilter: {
     type: Object,
   },
+  failedOrders: {
+    type: Number,
+    default: 0,
+  },
 });
 
-const summaryCards = [
-  {
-    title: translate("Gross Sales"),
-    key: "gross_sale",
-    content: translate("Total paid on paid, partially paid and refunded orders created in this period, including tax and shipping. Discounts are already applied. Refunds are not deducted."),
-    checkable: true,
-    hasCurrency: true,
-  },
-  {
-    title: translate("Refunds"),
-    key: "total_refund",
-    liability: true,
-    hasCurrency: true,
-    content: translate("Amount refunded on orders created in this period. Deducted from gross sales to calculate revenue."),
-  },
-  {
-    title: translate("Revenue"),
-    key: "net_revenue",
-    hasCurrency: true,
-    content: translate("Gross sales less refunds and taxes. Shipping charges and payment fees are not deducted."),
-    checkable: true
-  },
-  {
-    title: translate("Orders"),
-    key: "order_count",
-    content: translate("Paid, partially paid and refunded orders created in this period, in the report currency. Renewal orders are included; unpaid orders are not."),
-    checkable: true,
-    hideCurrency: true
-  },
-  {
-    title: translate("Items"),
-    key: "total_item_count",
-    content: translate("Total quantity of items on the orders counted in this period. With a product filter, only the matching items are counted."),
-    hideCurrency: true
-  },
-  {
-    title: translate("Average Gross"),
-    key: "average_gross",
-    hasCurrency: true,
-    content: translate("Gross sales divided by the number of orders counted in this period."),
-  },
-  {
-    title: translate("Average Revenue"),
-    key: "average_net",
-    hasCurrency: true,
-    content: translate("Revenue divided by the number of orders counted in this period."),
-  },
-  {
-    title: translate("Average Order Items"),
-    key: "average_order_items_count",
-    content: translate("Items divided by the number of orders counted in this period."),
-    hideCurrency: true
-  },
-];
+// Order cards only: gross, refunds and revenue live on the Revenue page
+const percent = (value) => new Intl.NumberFormat(undefined, {maximumFractionDigits: 1}).format(Number(value) || 0) + "%";
+
+// Up to 90 days a daily rate reads naturally; longer ranges read per month
+const perDay = computed(() => (props.reportFilter?.data?.dateDiff ?? 0) <= 90);
+
+const summaryCards = computed(() => {
+  const summary = props.orderReport.data.summary || {};
+  const orders = Number(summary.order_count) || 0;
+  const failed = Number(props.failedOrders) || 0;
+
+  return [
+    {
+      title: translate("Orders"),
+      key: "order_count",
+      content: translate('OrderRpt_Paid_Partially'),
+      checkable: true,
+      hideCurrency: true
+    },
+    {
+      title: translate("Average Order Value (Net)"),
+      key: "average_net",
+      hasCurrency: true,
+      content: translate("Revenue divided by the number of orders counted in this period."),
+    },
+    {
+      title: translate("Items per Order"),
+      key: "average_order_items_count",
+      content: translate("Items divided by the number of orders counted in this period."),
+      hideCurrency: true,
+      decimals: 2,
+    },
+    {
+      title: translate("Refunded Orders"),
+      key: "refunded_orders",
+      content: translate("Orders in this period with a full or partial refund."),
+      hideCurrency: true,
+      liability: true,
+      /* translators: %1$s - share of orders with its percent sign, e.g. 2.5% */
+      sub: translate("%1$s of orders", percent(summary.refund_rate)),
+    },
+    {
+      title: translate("Failed Orders"),
+      key: "failed_orders",
+      content: translate('OrderRpt_Orders_Created'),
+      hideCurrency: true,
+      noCompare: true,
+      /* translators: %1$s - failed orders as a share of all attempts, with its percent sign, e.g. 1.2% */
+      sub: translate("%1$s failure rate", percent(orders + failed ? failed / (orders + failed) * 100 : 0)),
+    },
+    perDay.value
+      ? {
+        title: translate("Orders per Day"),
+        key: "orders_per_day",
+        content: translate("Orders divided by the days in this period that have passed."),
+        hideCurrency: true,
+      }
+      : {
+        title: translate("Orders per Month"),
+        key: "orders_per_month",
+        content: translate("Orders divided by the months in this period."),
+        hideCurrency: true,
+      },
+  ];
+});
 
 const summaryData = computed(() => {
-  return summaryCards.map((card) => ({
+  return summaryCards.value.map((card) => ({
     ...card,
-    value: props.orderReport.data.summary[card.key] || 0,
-    fluctuation: props.orderReport.data.fluctuations[card.key] || 0,
+    value: card.key === 'failed_orders' ? props.failedOrders : (props.orderReport.data.summary[card.key] || 0),
+    fluctuation: props.orderReport.data.fluctuations[card.key] ?? null,
     liability: card.liability || false,
     hasCurrency: card.hasCurrency || false,
   }));
 });
 
-const allowedKeys = computed(() => summaryCards.filter((card) => !card.hideCurrency).map((card) => card.key));
+const allowedKeys = computed(() => summaryCards.value.filter((card) => !card.hideCurrency).map((card) => card.key));
 
 const dataLoader = computed(() => {
   return props.orderReport.data.isBusy.orderChartData;
@@ -99,21 +114,21 @@ const onCheckBoxChange = (key) => {
 const formatAmount = (summary) => {
   return allowedKeys.value.includes(summary.key) 
     ? maybeLiability(summary.value, summary.liability, props.reportFilter.reportCurrency) 
-    : formatNumber(summary.value);
+    : (summary.decimals
+      ? new Intl.NumberFormat(undefined, {minimumFractionDigits: summary.decimals, maximumFractionDigits: summary.decimals}).format(Number(summary.value) || 0)
+      : formatNumber(summary.value));
 };
 </script>
 
 <template>
-  <SummaryLoader v-if="dataLoader" :count="4" :rows="2" />
+  <SummaryLoader v-if="dataLoader" :count="6" :rows="2" />
 
-  <div v-else class="fct-report-order-summary summary-col-4">
+  <div v-else class="fct-report-order-summary summary-col-6">
     <div class="summary-item" v-for="(card, index) in summaryData" :key="index">
       <div class="summary-item-inner">
         <div class="value">
           <div class="summary-checkbox" v-if="card.checkable">
             <el-checkbox
-                :true-value="true"
-                :false-value="false"
                 :model-value="checkBoxFilter.data.order.includes(card.key)"
                 @change="() => onCheckBoxChange(card.key)"
             />
@@ -123,7 +138,8 @@ const formatAmount = (summary) => {
             <ReportSummary :amount="formatAmount(card)" :title="card.title" />
           </div><!-- inner-value -->
 
-          <Fluctuation 
+          <Fluctuation
+            v-if="!card.noCompare && card.fluctuation !== null"
             :fluctuation="card.fluctuation" 
             :amount="orderReport.data.previousSummary[card.key]"
             :is-liability="card.liability"
@@ -140,6 +156,7 @@ const formatAmount = (summary) => {
             </button>
           </el-tooltip>
         </div><!-- title -->
+        <div v-if="card.sub" class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ card.sub }}</div>
 
       </div>
     </div>

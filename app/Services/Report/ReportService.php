@@ -4,9 +4,9 @@ namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseAmountSql;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
-use FluentCart\Api\CurrencySettings;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Query\Builder as Query;
 use FluentCart\Framework\Support\DateTime;
@@ -112,7 +112,6 @@ abstract class ReportService
         return $this->data;
     }
 
-
     public function generate()
     {
      
@@ -127,7 +126,6 @@ abstract class ReportService
         $this->loaded = true;
         return $this;
     }
-
 
     /**
      * Begin a fluent query against a database table.
@@ -158,6 +156,7 @@ abstract class ReportService
             'orderStatus'   => null,
             'variationIds'  => null,
             'paymentStatus' => null,
+            'paymentMode'   => null,
         ];
 
         $filters = wp_parse_args($filters, $defaults);
@@ -173,11 +172,16 @@ abstract class ReportService
         ->when($filters['paymentStatus'], fn($q) => 
             $q->whereIn("o.payment_status", $filters['paymentStatus'])
         )
+        // Live or test orders only; reports count both unless asked
+        ->when(in_array($filters['paymentMode'], ['live', 'test'], true), fn($q) =>
+            $q->where("o.mode", $filters['paymentMode'])
+        )
         ->when($filters['orderStatus'], fn($q) => 
             $q->whereNotIn("o.status", $filters['orderStatus'])
         )
-        ->when($filters['orderTypes'], fn($q) => 
-            $q->whereIn("o.type", $filters['orderTypes'])
+        // Sale types: renewal leaves out installment payments, which have their own types
+        ->when($filters['orderTypes'], fn($q) =>
+            $q->whereRaw(ReportHelper::saleTypeSql() . ' IN (' . implode(', ', array_fill(0, count((array) $filters['orderTypes']), '?')) . ')', array_values((array) $filters['orderTypes']))
         )
         ->when($filters['variationIds'], fn($q) => 
             $q->whereExists(fn($q) =>
@@ -202,6 +206,10 @@ abstract class ReportService
         } else if ($groupKey === 'yearly') {
             $interval = 'P1Y';
         }
+
+        // Bucket keys are store days, months and years
+        $startDate = ReportHelper::local($startDate);
+        $endDate = ReportHelper::local($endDate);
 
         // force include the end date in the period to support php < 8.0
         $endDate = $this->clampToToday($endDate, $groupKey)->add(new \DateInterval('PT1S'));
@@ -244,7 +252,8 @@ abstract class ReportService
     // starting mid-month (or mid-year) still yields the current bucket.
     protected function clampToToday($endDate, $groupKey = 'daily')
     {
-        $today = DateTime::now($endDate->getTimezone())->endOfDay();
+        // "Today" and its month are the store's; the result keeps the caller's zone, since a UTC end gets bound
+        $today = ReportHelper::local(DateTime::now())->endOfDay();
 
         if ($endDate < $today) {
             return $endDate->copy();
@@ -258,7 +267,7 @@ abstract class ReportService
             $limit = $limit->endOfYear();
         }
 
-        return $limit;
+        return $limit->setTimezone($endDate->getTimezone());
     }
 
     // Chart queries and their zero-filled buckets must share this end date,
@@ -275,17 +284,34 @@ abstract class ReportService
         return $params;
     }
 
-    public function getFutureInstallments($params = [])
+    /**
+     * Per-order discount split (ProductReportService::orderDiscountSplitQuery()) for the orders in scope, so line
+     * amounts read net of order-level discounts and upgrade credits, as on the Products page.
+     */
+    protected function orderDiscountsQuery(array $params)
     {
-        $query = App::db()->table('fct_subscriptions as s')
-            ->selectRaw("SUM((s.bill_times - s.bill_count) * s.recurring_total) / 100 AS amount")
-            ->join('fct_orders as o', 'o.id', '=', 's.parent_order_id')
-            ->where('s.bill_times', '>', 0)
-            ->where('s.bill_count', '<', App::db()->raw('s.bill_times'))
-            ->whereIn('s.status', ['active', 'trialing', 'past_due']);
+        $converted = ReportCurrency::isConverted($params);
+        [$trusted, $bindings] = BaseAmountSql::trustedRate('o.');
 
-        $query = $this->applyFilters($query, $params);
+        $orders = $this->applyFilters(App::db()->table('fct_orders as o'), $params)
+            ->when($converted, fn($q) => $q->whereRaw("{$trusted} = 1", $bindings));
 
-        return $query->first()->amount;
+        return ProductReportService::orderDiscountSplitQuery($orders, $converted);
+    }
+
+    /**
+     * Percent change per key, null when there was nothing before: no change, rather than a made-up +100%.
+     *
+     * @param string[] $keys
+     */
+    protected function percentChanges(array $current, array $previous, array $keys): array
+    {
+        $changes = [];
+        foreach ($keys as $key) {
+            $before = $previous[$key] ?? 0;
+            $changes[$key] = $before > 0 ? ((($current[$key] ?? 0) - $before) / $before) * 100 : null;
+        }
+
+        return $changes;
     }
 }

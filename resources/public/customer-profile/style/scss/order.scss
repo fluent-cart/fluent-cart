@@ -43,6 +43,15 @@
 
 }
 
+// Delivery badge and line under the items in Purchase History
+.fct-order-delivery-summary {
+  @apply flex flex-col items-start gap-1 mt-2;
+
+  small {
+    @apply text-xs text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+  }
+}
+
 // license
 .license-only-mobile-item {
   @apply grid gap-3 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
@@ -62,6 +71,190 @@
     @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] mb-2;
     .text-meta {
       @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)];
+    }
+  }
+}
+
+// Delivery card on the single order page
+.fct-shipment-card {
+  @apply flex flex-col gap-3 min-w-0 text-sm text-[var(--fct-customer-dashboard-text-color,#565865)];
+
+  &__label,
+  small {
+    @apply text-xs text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+  }
+
+  &__label {
+    @apply font-semibold uppercase tracking-wider mb-1;
+  }
+
+  &__steps {
+    @apply grid grid-cols-3 gap-1.5 m-0 p-0 list-none;
+
+    li {
+      @apply flex flex-col gap-1.5 m-0 text-xs text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+
+      &::before {
+        @apply block h-1 rounded-sm bg-[var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+        content: "";
+      }
+
+      &.is-done {
+        @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+
+        &::before {
+          @apply bg-[var(--fct-customer-dashboard-btn-bg-color,#253241)];
+        }
+      }
+    }
+  }
+
+  &__update {
+    @apply flex flex-col gap-0.5 py-2.5 px-3 bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+  }
+
+  // Status colours stay fixed, like the badges.
+  &__alert {
+    @apply flex flex-col gap-0.5 py-2.5 px-3 bg-red-100 text-red-800;
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+
+    small {
+      @apply text-red-800 opacity-80;
+    }
+  }
+
+  &__meta {
+    @apply grid gap-x-4 gap-y-2.5 m-0;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+
+    dt {
+      @apply text-xs font-semibold uppercase tracking-wider text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+    }
+
+    dd {
+      @apply mt-0.5 mx-0 mb-0 break-words text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    }
+  }
+
+  &__actions {
+    @apply flex flex-wrap items-center gap-2;
+
+    .el-button + .fct-copy-wrap {
+      @apply ms-0;
+    }
+  }
+
+  &__list {
+    @apply flex flex-col gap-1.5 m-0 p-0 list-none;
+
+    li {
+      @apply flex flex-wrap justify-between gap-2.5 m-0 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    }
+  }
+
+  &__note {
+    @apply py-2 px-3 whitespace-pre-line break-words bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+  }
+}
+
+.fct-order-delivery {
+  @apply flex flex-col gap-2.5;
+
+  &__row {
+    @apply min-w-0 border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)];
+    border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
+
+    &--waiting {
+      @apply border-dashed;
+    }
+  }
+
+  &__head {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-2 py-3.5 px-3;
+  }
+
+  // Scoped twice so theme button styles do not win.
+  & &__toggle {
+    @apply flex flex-auto min-w-0 items-start gap-2 m-0 p-0 border-0 bg-transparent shadow-none text-start text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] cursor-pointer;
+    flex-basis: 220px;
+
+    &:hover,
+    &:focus {
+      @apply bg-transparent text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    }
+
+    &:hover .fct-order-delivery__name {
+      @apply underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--fct-customer-dashboard-focus-border-color, #253241);
+      outline-offset: 2px;
+    }
+
+    &[aria-expanded="true"] .fct-order-delivery__chevron {
+      transform: rotate(90deg);
+    }
+  }
+
+  &__chevron {
+    @apply w-4 h-4 flex-none mt-0.5 text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)] transition-transform duration-150 motion-reduce:transition-none rtl:-scale-x-100;
+  }
+
+  &__row--waiting &__title {
+    @apply ps-6;
+  }
+
+  &__title {
+    @apply flex flex-col gap-1 min-w-0;
+
+    small {
+      @apply text-xs break-words text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+    }
+  }
+
+  &__name {
+    @apply font-semibold text-[var(--fct-customer-dashboard-title-color,#2F3448)];
+  }
+
+  &__side {
+    @apply flex flex-wrap items-center gap-2 ms-auto;
+  }
+
+  &__eta {
+    @apply text-xs text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+  }
+
+  &__body {
+    @apply py-3 px-3 ps-9 border-0 border-t border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+  }
+}
+
+@container customer-profile-page (max-width: 480px) {
+  .fct-order-delivery__body {
+    @apply ps-3;
+  }
+}
+
+// Under each product in the Summary
+.fct-order-item-delivery {
+  @apply inline-flex items-center gap-1.5 mt-0.5 me-2 text-xs text-[var(--fct-customer-dashboard-text-color,#565865)];
+
+  &__dot {
+    @apply inline-block w-1.5 h-1.5 rounded-full flex-none bg-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)];
+
+    &.is-success {
+      @apply bg-[var(--fct-customer-dashboard-btn-bg-color,#253241)];
+    }
+
+    &.is-danger {
+      @apply bg-red-500;
+    }
+
+    &.is-progress {
+      @apply bg-blue-500;
     }
   }
 }

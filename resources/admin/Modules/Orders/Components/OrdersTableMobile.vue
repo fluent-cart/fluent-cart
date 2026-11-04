@@ -2,8 +2,8 @@
 import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import Badge from "@/Bits/Components/Badge.vue";
+import {orderTypeText, isInstallmentOrder} from "@/Modules/Orders/Components/orderSaleType";
 import translate from "@/utils/translator/Translator";
-import Str from "../../../utils/support/Str";
 import Arr from "@/utils/support/Arr";
 import Url from "@/utils/support/Url";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -66,18 +66,6 @@ const getInvoiceUrl = (uuid) => {
 const getFilteredItems = (orderItems) => {
   return orderItems.filter(item => item.payment_type !== 'signup_fee' && item.payment_type !== 'fee');
 };
-const getOrderTypeText = (type) => {
-  switch (type) {
-    case 'payment':
-      return translate('Payment');
-    case 'subscription':
-      return translate('Subscription');
-    case 'renewal':
-      return translate('Renewal');
-    default:
-      Str.headline(type);
-  }
-}
 
 </script>
 <template>
@@ -94,11 +82,11 @@ const getOrderTypeText = (type) => {
 
           <div class="flex items-center gap-3">
             <div class="fct-order-table-total-col" @click="$router.push({ name: 'view_order', params: { order_id: row.id } })">
-              <span v-if="!parseInt(row.total_refund)" v-html="CurrencyFormatter.formatNumber(row.total_amount, true, false, row.currency)"></span>
+              <span v-if="!parseInt(row.total_refund)" v-html="CurrencyFormatter.formatFixed(row.total_amount, true, false, row.currency)"></span>
 
               <template v-else>
-                <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatNumber(row.total_amount, true, false, row.currency)"></span>
-                <span class="ms-1" v-if="row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(row.total_amount) - parseInt(row.total_refund)), true, false, row.currency)"></span>
+                <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatFixed(row.total_amount, true, false, row.currency)"></span>
+                <span class="ms-1" v-if="row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatFixed((parseInt(row.total_amount) - parseInt(row.total_refund)), true, false, row.currency)"></span>
               </template>
             </div>
 
@@ -198,7 +186,7 @@ const getOrderTypeText = (type) => {
             <div class="fct-order-table-payment-status-col">
               <div class="title">{{translate('Payment Status')}}</div>
               <div class="fct-status-group">
-                <Badge :status="row.payment_status" :hide-icon="true"/>
+                <Badge :status="row.payment_status" kind="payment" :hide-icon="true"/>
 
                 <span class="img" v-if="getPaymentProviderLogo(row.payment_method)"
                       :class="row.payment_method">
@@ -214,12 +202,12 @@ const getOrderTypeText = (type) => {
 
             <div v-if="isColumnVisible('status')" class="fct-order-table-status-col">
               <div class="title">{{translate('Status')}}</div>
-              <Badge :status="row.status" :hide-icon="true" :key="row.id"/>
+              <Badge :status="row.status" kind="order" :hide-icon="true" :key="row.id"/>
             </div><!-- fct-order-table-status-col -->
 
             <div v-if="isColumnVisible('type')" class="fct-order-table-order-type-col">
               <div class="title">{{translate('Order Type')}}</div>
-              <span class="type">{{ getOrderTypeText(row.type) }}</span>
+              <Badge :type="isInstallmentOrder(row) ? 'blue' : 'info'" :text="orderTypeText(row)" size="small" :hide-icon="true"/>
               <OrderUpDownIndicator :order="row"/>
             </div><!-- fct-order-table-order-type-col -->
           </div>

@@ -237,7 +237,7 @@ export function useExport(config) {
             columns: selectedColumns,
             modules: selectedModules,
             memoryLimitMessage: translate(
-                'This export exceeds the 64 MB safe in-memory limit. Use a Chromium-based browser to write the file directly to disk.'
+                'Export_Export_Exceeds'
             )
         });
         isExporting.value = true;

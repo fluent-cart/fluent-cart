@@ -1,136 +1,77 @@
-# Local WP-CLI test suite
+# Tests
 
-The fast regression gate. Runs against the **real** WordPress/MySQL install with
-protected row counts, so it is read-mostly by design.
+Every test in this plugin lives under `tests/`. `npm test` shows a menu in a terminal. `npm test -- <module>` runs one module without the menu, and `npm test -- --help` lists every module and argument.
 
-For the map of all three suites and where a new test belongs, see `TESTING.md`
-at the plugin root, or run `npm run test:help`. This file is the gate's own
-reference.
+## Run the gate after every code change
 
 ```bash
-npm test        # the whole gate, ~20s, must exit 0
+npm test -- wp-cli
 ```
 
-## Why this suite is separate from `dev/wp-browser`
+The gate takes about 23 seconds and must exit 0 before you report the work done. Run it when you finish the change, not when you open the PR. Every committed case passes on `develop`, so a red gate after your change means your change broke it.
 
-They differ by **which database they run against**, and that decides what each
-can do:
+## Two databases decide what a suite may do
 
-- **This suite** runs on your real store. It can therefore catch things only real
-  data exposes — route drift, raw-SQL prefix bugs, strict-SQL failures, real query
-  shapes — but it must never mutate protected tables.
-- **`dev/wp-browser`** runs on a disposable database (`resetFluentCartTables()`),
-  so it can do destructive, payment, and full-lifecycle work this gate cannot.
+The PHP tests are split by the database they run against.
 
-Neither replaces the other. A full comparison found exactly **one** true duplicate
-across ~4,700 cases. Do not delete a test here because "wp-browser covers it"
-without checking.
+- `tests/wp-cli/` runs inside your real dev store through WP-CLI. It counts the rows in `fct_orders` and `fct_customers` before and after every tier and fails if a count changed. Because the data is real, it catches what only real data shows: a route that stopped answering, a raw-SQL table name without the prefix, a query that strict SQL mode rejects. It may not pay, refund, or delete anything it did not create.
+- `tests/codeception/` runs against a throwaway database named in `tests/codeception/.env`. The Integration, Functional and IntegrationPro suites wipe that database on every run, so they can check out, pay, refund, and run a subscription through its whole life.
 
-## Tiers
+The two suites check different things. The gate proves that every mutating route refuses an anonymous caller. A Functional Cest proves that one resource's permission model is right. Before you delete a test because the other suite covers it, read both tests.
 
-| Tier | Command | What it proves |
-|---|---|---|
-| static | `npm run test:gate -- static` | no unprefixed raw SQL, no route drift, every mutating route inventoried |
-| pure | `npm run test:gate -- pure` | money/date/validator boundaries, provider mappings — no DB |
-| smoke | `npm run test:gate -- smoke` | every GET route answers, with the query shapes the app really sends |
-| permissions | `npm run test:gate -- permissions` | every mutating route rejects anonymous and low-privilege callers |
-| integration | `npm run test:gate -- integration` | behaviour and exact stored values against a real DB |
+## Modules
 
-`run-all.sh` defaults to `all` = static + pure + smoke + permissions + integration.
-JS, browser, and E2E are deliberately **opt-in** and never run in that gate.
+| Module | Folder | Runs against | Command |
+|---|---|---|---|
+| `wp-cli` (tiers `static`, `pure`, `smoke`, `permissions`, `integration`) | `tests/wp-cli/` | your real dev store, row counts protected | `npm test -- wp-cli [tier] [filter]` |
+| `e2e` | `tests/wp-cli/e2e/` | your real dev store, through a fake gateway | `npm test -- e2e` |
+| `codeception unit` | `tests/codeception/Unit/` | nothing, WordPress is not loaded | `npm test -- codeception unit` |
+| `codeception integration`, `codeception functional`, `codeception integration-pro` | `tests/codeception/Integration/`, `Functional/`, `IntegrationPro/` | the throwaway database, wiped on every run | `npm test -- codeception functional [path]` |
+| `js` | `tests/js/` | nothing (Vitest in Node) | `npm test -- js` |
+| `playwright` | `tests/playwright/` | the live site named in `tests/playwright/.env` | `npm test -- playwright [suite or test]` |
 
-```bash
-npm run test:js                        # Vitest
-npm run test:browser -- admin/smoke    # read-only admin screen mount
-npm run test:e2e                       # E2E money flows (fake gateway)
-```
+Two names run several modules. `npm test -- codeception` runs the four Codeception suites in order. `npm test -- safe` runs `wp-cli`, `codeception unit` and `js`, which leave the throwaway database alone.
 
-Any tier takes a substring filter:
+`npm test -- playwright status` lists every Playwright suite and test. The runner finds them on disk. A folder with an `index.mjs` is a suite, and a full run executes the classes that `index.mjs` exports. Each `*.test.mjs` also runs alone by its path: `admin/orders/search.test.mjs` is `npm test -- playwright admin/orders/search`.
 
-```bash
-npm run test:gate -- integration coupon
-npm run test:gate -- smoke orders
-npm run test:gate -- pure money-to-cent
-```
+## Where a new test goes
 
-Useful filters: `shared-` (discriminators), `domain-` (stock/scheduler/
-subscription invariants), `crud-` (route round-trips), `background-`,
-`public-uuid`, `throughput`, `reports-`, `provider`, `webhook`,
-`input-validation`.
-
-## Hostile environment axes
-
-Opt-in. They reproduce failures a dev machine hides — see `SUITE-STATUS.md` for
-current results and why the non-UTC axis matters.
-
-```bash
-bash tests/bin/run-all.sh all --axis=strict-sql   # MySQL ONLY_FULL_GROUP_BY
-bash tests/bin/run-all.sh all --axis=non-utc      # non-zero gmt_offset
-bash tests/bin/run-all.sh all --axis=pro-absent   # FluentCart Pro deactivated
-```
-
-## Proving the suite still bites
-
-A gate that cannot fail is worse than none. These are intentional red:
-
-```bash
-# raw-SQL lint must fire on the known-bad fixtures — exit 1
-php tests/lint/raw-sql-prefix.php tests/lint/fixtures
-
-# ...and stay clean on the real plugin — exit 0
-php tests/lint/raw-sql-prefix.php
-
-# the protected-count guard must hard-fail on a mutation — exit 97
-cd /path/to/wordpress
-wp eval-file /path/to/fluent-cart/tests/bin/prove-protected-count-guard.php
-```
-
-Standalone lints: `php tests/lint/route-coverage.php`,
-`php tests/lint/permission-inventory.php`.
-
-Extra flags: `--full-php-lint` scans every PHP file instead of changed ones;
-`WP_PLUGIN_TEST_PROFILE=1` prints per-case timing and query counts.
-
-## Layout
-
-```
-tests/
-  suite.config.php   the only file with plugin-specific values
-  bin/               runners
-  lib/               harness, fixtures, provider transport
-  lint/              static gates (+ fixtures/ = intentional bugs)
-  smoke/  permissions/  public/  reports/  throughput/  validation/
-                     manifests and inventories, pinned by file:line
-  integration/       the behaviour cases
-  js/                Vitest
-```
-
-**Manifests pin source locations by `file:line`.** A shifted line breaks the
-lint. That is the feature — it is what stops a route from silently losing
-coverage. If you change a route, update `smoke/routes.manifest.php`,
-`permissions/routes.manifest.php`, and `public/inventory.php`.
-
-## Rules
-
-`AGENT.md` has the full set. The ones that matter most:
-
-- **Never weaken a test to make it pass.** The test is the specification.
-- **Never mock the database.** Every bug that has shipped here was a runtime or
-  SQL bug, and a mocked-DB test passes on all of them.
-- **Never mutate real store data.** Fixtures are created in-case and deleted in a
-  `finally`; protected counts are compared before and after every tier.
-- **Findings are parked, not fixed.** A failing case gets a `KNOWN-FAILURE` tag
-  and a `FIX-PLAN.md` entry with `file:line`. Fixes happen in a separate pass so
-  they get reviewed.
-
-## Other documents
-
-| File | What |
+| You are testing | Folder |
 |---|---|
-| `SUITE-STATUS.md` | every tier: command, latest result, runtime, known limits |
-| `AGENT.md` | rules for extending this suite |
-| `FIX-PLAN.md` | open findings, each with a parked failing case |
-| `FIX-AGENT.md` | rules for the separate production-fix run |
-| `COVERAGE-GAPS.md` | risk-ranked list of files no test touches |
-| `MUTATION-AUDIT.md` | whether the suite asserts what it executes; survivor list |
-| `../dev-docs/bugs/test-suite-findings/kanban.md` | the findings as developer tickets |
+| Pure PHP logic with no WordPress call | `tests/codeception/Unit/` |
+| A model, service, event or migration that needs WordPress and the database | `tests/codeception/Integration/`, or `tests/codeception/IntegrationPro/` when it needs Pro loaded |
+| A REST route: status, response shape, permissions, side effects | `tests/codeception/Functional/` |
+| That a whole surface still answers on real data | `tests/wp-cli/`; read `tests/wp-cli/README.md` first |
+| Admin or storefront JavaScript that Node can import | `tests/js/` |
+| An admin screen or a storefront flow in a browser | `tests/playwright/` |
+
+The `testing` skill in `.claude/skills/testing/` picks between Unit, Integration and Functional and holds the Codeception conventions. Specs for the PHP suites are in `tests/codeception/Cases/{domain}.md`.
+
+## A changed route needs its manifests updated
+
+`tests/wp-cli/smoke/routes.manifest.php` and `tests/wp-cli/permissions/routes.manifest.php` pin every route declaration by `file:line`. If you add, remove or move a route, even by one line, the `route-coverage` and `permission-inventory` lints fail until you update both manifests. `tests/wp-cli/inventories/public.php` pins the public routes the same way. Update the manifests in the same PR as the route change, so a route cannot lose its coverage without a reviewer seeing it.
+
+## Rules for every suite
+
+- Never weaken, narrow or delete a test to make it pass. The test is the specification. If it looks wrong, say so and leave it red.
+- Never skip a test to hide a failure. A test that cannot pass is fixed or deleted. The Codeception suites have no `markTestSkipped()` call and must stay that way. The gate and Playwright may skip a case only when the install lacks what the case needs, such as FluentCRM or a product with a gallery, and the skip message names it. If a test exposes a production bug, report the bug with its `file:line`. The owner decides whether the test stays red until the fix lands or is deleted.
+- A test is vague when breaking the code it names would not fail it. Delete it or give it a real assertion. Typical cases: a lone `assertTrue(true)`, a lone `class_exists()`, a check that only reads status 200, and a grep of stylesheet text for colour or spacing tokens.
+- Never mock the database, the query builder or a model. Mock only outbound third parties.
+- For a bug fix, write the failing test first and watch it fail. Then fix the code.
+- Report an unrelated bug with its `file:line` instead of fixing it inside another change.
+
+## Setup
+
+- Codeception: `cd tests/codeception && composer install`. Copy `.env.example` to `.env`, point `TEST_DB_*` at a database you can lose and `WORDPRESS_ROOT_DIR` at your WordPress install, then run `vendor/bin/codecept build`. The runner refuses to start a destructive suite until `FCT_TEST_DB_ALLOW="host:db"` names that database. In a terminal, the menu asks for it.
+- Playwright: copy `tests/playwright/.env.example` to `tests/playwright/.env` and set `WP_URL`, `WP_USER` and `WP_PASS`. Firefox and Safari need `npm run test:playwright:install` once.
+- The gate: `wp` must be on your `PATH`, and the WordPress install must load this plugin. The `php -l` step reads changed files from `git`, so `git` on your `PATH` must work.
+
+If Codeception fails before any test runs, check these first.
+
+| Error | Fix |
+|---|---|
+| `Suite 'integration' could not be found` | Suite names are case-sensitive. Use `Integration`. |
+| `tests/_wordpress does not exist` | Set `WORDPRESS_ROOT_DIR` in `tests/codeception/.env` to your WordPress install. |
+| `Trait _generated\IntegrationTesterActions not found` | Run `vendor/bin/codecept build` in `tests/codeception/`. |
+| `Access denied for user` | Check `TEST_DB_USER` and `TEST_DB_PASSWORD` in `tests/codeception/.env`. |
+| `register_argc_argv` error | Set `register_argc_argv = On` in `php.ini`. |

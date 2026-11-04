@@ -73,10 +73,10 @@ docs: update contribution guide
 #### Testing
 
 ```bash
-npm run test:unit          # pure PHP — no WordPress bootstrap, runs in milliseconds
-npm run test:integration   # models, services, hooks against a real WP + DB
-npm run test:functional    # REST API contract: routes, permissions, payloads
-npm run test:browser       # end-to-end in a real browser (also :firefox / :safari)
+npm test -- wp-cli                 # fast regression check on your real dev store, run after every change
+npm test -- codeception unit       # pure PHP, no WordPress
+npm test -- codeception functional # REST routes against a throwaway database
+npm test -- playwright             # end-to-end in a real browser
 ```
 
 - Write unit tests when possible — put a test in the cheapest suite that can still catch the bug

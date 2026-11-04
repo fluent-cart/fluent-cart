@@ -72,7 +72,7 @@
             </el-table-column>
 
             <template #empty>
-              {{ translate('Control available upgrade options and offer tailored discounts when moving between plans.') }}
+              {{ translate('Product_Control_Available') }}
             </template>
 
           </el-table>
@@ -189,7 +189,7 @@
         <Empty
             icon="Empty/WebPage"
             :title="translate('Upgrade Paths Temporarily Unavailable for Bundle Products')"
-            :text="translate('Upgrade paths feature is temporarily disabled for bundle products. This feature will be enabled in a future update.')"
+            :text="translate('Product_Upgrade_Paths')"
         />
       </div>
 

@@ -43,7 +43,7 @@
                     >
                         <p class="text-sm">
                             {{
-                                $t( "You don't have any integration module enabled. Please go to integration modules and enable and configured from available modules")
+                                $t( 'Integration_Don_Integration')
                             }}
                         </p>
 

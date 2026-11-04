@@ -11,8 +11,45 @@ class TurnstileHandler {
         this.visibleModeActive = false;
         this.fadeTimer = null;
         this.autoRetryCount = 0;
+        this.trackedToken = null;
+        this.tokenIssuedAt = 0;
         this.setupGlobalCallback();
+        this.watchPageRestore();
         this.autoRenderWidget();
+    }
+
+    // A page restored from the back-forward cache brings back an old, possibly spent token.
+    watchPageRestore() {
+        window.addEventListener?.('pageshow', (event) => {
+            if (event.persisted) {
+                this.reset();
+            }
+        });
+    }
+
+    /**
+     * 'fresh', 'stale' or 'none'. The widget is removed after verifying, so Cloudflare
+     * can't report expiry (tokens die at 300s); stop trusting a token at 240s.
+     */
+    cachedTokenState() {
+        const token = window.fluentCartTurnstileToken;
+        if (!token) {
+            return 'none';
+        }
+        // Set without handleToken (the footer fallback): its age starts when first seen.
+        if (token !== this.trackedToken) {
+            this.trackedToken = token;
+            this.tokenIssuedAt = Date.now();
+        }
+        if (Date.now() - this.tokenIssuedAt < 240000) {
+            return 'fresh';
+        }
+        window.fluentCartTurnstileToken = null;
+        return 'stale';
+    }
+
+    translate(text) {
+        return this.checkoutHandler?.translate?.(text) || text;
     }
 
     setupGlobalCallback() {
@@ -247,7 +284,14 @@ class TurnstileHandler {
             if (this.checkoutHandler?.cleanupAfterProcessing) {
                 this.checkoutHandler.cleanupAfterProcessing();
             }
-            if (this.inVisibleMode) {
+            if (typeof turnstile === 'undefined') {
+                // Usually a cookie-consent or script-blocking plugin; a refresh won't help.
+                new Toastify({
+                    text: this.translate("The security check could not load. If you see a cookie notice, please accept it, then try again."),
+                    className: "warning",
+                    duration: 6000
+                }).showToast();
+            } else if (this.inVisibleMode) {
                 new Toastify({
                     text: this.checkoutHandler?.translate?.("Please complete the security verification above, then try again.") || "Please complete the security verification above, then try again.",
                     className: "warning",
@@ -266,6 +310,8 @@ class TurnstileHandler {
         }
 
         formData.append('cf_turnstile_token', turnstileToken);
+        // Single-use: never send the same token twice, whatever the response.
+        window.fluentCartTurnstileToken = null;
         return true;
     }
 
@@ -292,6 +338,7 @@ class TurnstileHandler {
         }
 
         formData.append('cf_turnstile_token', turnstileToken);
+        window.fluentCartTurnstileToken = null;
         return true;
     }
 
@@ -322,7 +369,8 @@ class TurnstileHandler {
             return null;
         }
 
-        if (window.fluentCartTurnstileToken) {
+        const cached = this.cachedTokenState();
+        if (cached === 'fresh') {
             return window.fluentCartTurnstileToken;
         }
 
@@ -340,6 +388,12 @@ class TurnstileHandler {
         }
 
         let widgetId = widget.getAttribute('data-widget-id');
+        if (widgetId && cached === 'stale') {
+            try {
+                turnstile.reset(widgetId);
+            } catch (e) {
+            }
+        }
         if (!widgetId) {
             const siteKey = widget.getAttribute('data-sitekey') || window.fluentcart_checkout_vars?.turnstile?.site_key;
             if (!siteKey) {
@@ -426,6 +480,8 @@ class TurnstileHandler {
         this.visibleModeActive = false;
         this.autoRetryCount = 0;
         window.fluentCartTurnstileToken = token;
+        this.trackedToken = token;
+        this.tokenIssuedAt = Date.now();
         this.resolvePendingToken(token);
 
         const wrapper = document.querySelector('[data-fluent-cart-turnstile-widget]');

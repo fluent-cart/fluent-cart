@@ -4,82 +4,16 @@ namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
 use FluentCart\App\App;
-use FluentCart\App\Services\DateTime\DateFormatter;
 
 class OrderReportService extends ReportService
 {
-    public function groupBy($params = [])
-    {
-        $groupKey = ReportHelper::sanitizeGroupKey($params['groupKey'] ?? null);
-
-        $query = ReportCurrency::ordersTable($params);
-
-        $query = $this->applyFilters($query, $params);
-
-        if (in_array($groupKey, ['billing_country', 'shipping_country'])) {
-            $type = $groupKey === 'billing_country' ? 'billing' : 'shipping';
-
-            $query->leftJoin(
-                'fct_order_addresses as a',
-                fn ($join) => $join->on('o.id', '=', 'a.order_id')->where('a.type', '=', $type)
-            );
-
-            $query->selectRaw("COALESCE(a.country, 'Uncategorized') AS `{$groupKey}`");
-        } else {
-            $query->selectRaw("COALESCE(o.{$groupKey}, 'Uncategorized') AS `{$groupKey}`");
-        }
-
-        $query->selectRaw("COUNT(o.id) AS orders,
-
-            SUM(o.total_paid) / 100 AS gross_sale,
-
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / 100 AS net_sale,
-
-            SUM(o.total_paid) / COUNT(o.id) / 100 AS average_order_gross,
-
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / COUNT(o.id) / 100 AS average_order_net")
-        ->groupBy($groupKey)
-        ->orderBy($groupKey);
-
-        return $query->get();
-    }
-
-    public function getOrderValueDistribution(array $params)
-    {
-        $query = ReportCurrency::ordersTable($params)
-            ->selectRaw("SUM(CASE WHEN total_amount <= 10000 THEN 1 ELSE 0 END) AS `0-100`,
-                SUM(CASE WHEN total_amount > 10000 AND total_amount <= 20000 THEN 1 ELSE 0 END) AS `100-200`,
-                SUM(CASE WHEN total_amount > 20000 AND total_amount <= 30000 THEN 1 ELSE 0 END) AS `200-300`,
-                SUM(CASE WHEN total_amount > 30000 AND total_amount <= 40000 THEN 1 ELSE 0 END) AS `300-400`,
-                SUM(CASE WHEN total_amount > 40000 AND total_amount <= 50000 THEN 1 ELSE 0 END) AS `400-500`,
-                SUM(CASE WHEN total_amount > 50000 AND total_amount <= 60000 THEN 1 ELSE 0 END) AS `500-600`,
-                SUM(CASE WHEN total_amount > 60000 AND total_amount <= 70000 THEN 1 ELSE 0 END) AS `600-700`,
-                SUM(CASE WHEN total_amount > 70000 AND total_amount <= 80000 THEN 1 ELSE 0 END) AS `700-800`,
-                SUM(CASE WHEN total_amount > 80000 AND total_amount <= 90000 THEN 1 ELSE 0 END) AS `800-900`,
-                SUM(CASE WHEN total_amount > 90000 AND total_amount <= 100000 THEN 1 ELSE 0 END) AS `900-1000`,
-                SUM(CASE WHEN total_amount > 100000 THEN 1 ELSE 0 END) AS `1000+`");
-
-        $query = $this->applyFilters($query, $params);
-
-        return $query->first();
-    }
 
     public function getOrderLineChart($params = [])
     {
         $params = $this->clampParamsToToday($params);
         $monthBetween = $params['endDate'] < $params['startDate']
             ? 1
-            : $params['endDate']->diffInMonths($params['startDate']) + 1;
+            : ReportHelper::monthSpan($params['startDate'], $params['endDate']);
 
         $group = ReportHelper::processGroup(
             $params['startDate'], $params['endDate'], $params['groupKey']
@@ -100,16 +34,14 @@ class OrderReportService extends ReportService
 
         $orderQuery = $this->applyFilters($orderQuery, $params);
 
+        $netSql = ReportHelper::netRevenueSql();
+        $taxSql = ReportHelper::unrefundedTaxSql();
+
         $orderData = $orderQuery->selectRaw("{$group['field']},
 
             SUM(o.total_paid) / 100 AS gross_sale,
 
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / 100 AS net_revenue,
+            SUM({$netSql}) / 100 AS net_revenue,
 
             COUNT(o.id) AS order_count,
 
@@ -117,16 +49,11 @@ class OrderReportService extends ReportService
 
             SUM(o.shipping_total) / 100 AS shipping_total,
 
-            SUM(o.tax_total + o.shipping_tax) / 100 AS tax_total,
+            SUM({$taxSql}) / 100 AS tax_total,
 
             CASE
                 WHEN COUNT(o.id) = 0 THEN 0
-                ELSE SUM(
-                    o.total_paid
-                    - o.total_refund
-                    - o.tax_total
-                    - o.shipping_tax
-                ) / COUNT(o.id) / 100
+                ELSE SUM({$netSql}) / COUNT(o.id) / 100
             END AS average_net,
 
             CASE
@@ -141,12 +68,15 @@ class OrderReportService extends ReportService
                 ELSE SUM(COALESCE(oi_sum.total_items, 0)) / COUNT(o.id)
             END AS average_order_items_count,
 
+            COUNT(CASE WHEN o.total_refund > 0 THEN 1 END) AS refunded_orders,
+
             ROUND(AVG(o.total_paid / 100)) AS average_order_gross")
         ->groupByRaw($group['by'])
         ->get();
         
         $summary = [
             'net_revenue'               => 0,
+            'net_sales'                 => 0,
             'gross_sale'                => 0,
             'order_count'               => 0,
             'total_item_count'          => 0,
@@ -155,14 +85,25 @@ class OrderReportService extends ReportService
             'average_gross'             => 0,
             'total_refund'              => 0,
             'tax_total'                 => 0,
-            'shipping_total'            => 0
+            'shipping_total'            => 0,
+            'refunded_orders'           => 0,
         ];
 
         $groups = $this->getPeriodRange(
             $params['startDate'], $params['endDate'], $group['key'], array_keys($summary)
         );
 
+        // Net sales as the Revenue report counts them (shipping, fees and tax out), so the average order matches it
+        $netSales = [];
+        foreach (RevenueReportService::make()->getRevenueData($params)['groups'] as $revenueGroup) {
+            $revenueGroup = (array) $revenueGroup;
+            $netSales[(string) $revenueGroup['group']] = (float) $revenueGroup['net_sales'];
+        }
+
         foreach ($orderData as $group) {
+            $group->net_sales = $netSales[(string) $group->group] ?? 0;
+            $group->average_net = $group->order_count ? $group->net_sales / $group->order_count : 0;
+            $summary['net_sales'] += $group->net_sales;
             $summary['net_revenue'] += $group->net_revenue;
             $summary['gross_sale'] += $group->gross_sale;
             $summary['order_count'] += $group->order_count;
@@ -170,12 +111,13 @@ class OrderReportService extends ReportService
             $summary['total_refund'] += $group->total_refund;
             $summary['tax_total'] += $group->tax_total;
             $summary['shipping_total'] += $group->shipping_total;
+            $summary['refunded_orders'] += $group->refunded_orders;
 
             $groups[$group->group] = (array) $group;
         }
 
         if ($orderData->count()) {
-            $summary['average_net'] = $summary['net_revenue'] / $summary['order_count'];
+            $summary['average_net'] = $summary['net_sales'] / $summary['order_count'];
             $summary['average_order_items_count'] = $summary['total_item_count'] / $summary['order_count'];
             $summary['average_gross'] = $summary['gross_sale'] / $summary['order_count'];
 
@@ -185,6 +127,13 @@ class OrderReportService extends ReportService
             $summary['monthly_items'] = $summary['total_item_count'] / $monthBetween;
         }
 
+        // The card row's rates: refunds as a share of orders, and orders per store day (elapsed days only) or month
+        $summary['refund_rate'] = $summary['order_count'] ? $summary['refunded_orders'] / $summary['order_count'] * 100 : 0;
+        $days = $params['endDate'] < $params['startDate'] ? 1
+            : ReportHelper::local($params['startDate'])->startOfDay()->diff(ReportHelper::local($params['endDate']))->days + 1;
+        $summary['orders_per_day'] = $summary['order_count'] / $days;
+        $summary['orders_per_month'] = $summary['order_count'] / $monthBetween;
+
         return [
             'chartData' => array_values($groups),
             'summary'   => $summary,
@@ -193,26 +142,21 @@ class OrderReportService extends ReportService
 
     public function getNewVsReturningCustomer($params = [])
     {
-        global $wpdb;
-
-        $paidStatuses = implode(', ', array_map(function ($status) {
-            return "'" . esc_sql($status) . "'";
-        }, \FluentCart\App\Helpers\Status::getReportStatuses()));
         $renewal = \FluentCart\App\Helpers\Status::ORDER_TYPE_RENEWAL;
 
-        $orders = $this->applyFilters(ReportCurrency::ordersTable($params), $params);
+        // Net sales as the Revenue report counts them (shipping, fees and tax out)
+        $orders = ReportHelper::joinShippingRefund(ReportCurrency::ordersTable($params), $params);
+        $netSql = ReportHelper::netSalesSql($params);
+        $orders = $this->applyFilters($orders, $params);
 
-        // Renewals are checked first: they always follow a paid parent order, so the earlier-order test would call them Returning.
+        // Renewals first: they follow a paid parent order. New is the shared first-purchase rule (the Customers
+        // report's), so a free order is neither new nor returning: it gets its own type
         $rows = $orders->selectRaw("CASE
-                WHEN o.type = '{$renewal}' THEN 'Renewal'
+                WHEN o.type = '{$renewal}' THEN (CASE WHEN " . ReportHelper::saleTypeSql() . " = 'installment_payment' THEN 'Installment payment' ELSE 'Renewal' END)
                 WHEN o.customer_id IS NULL THEN 'Guest'
-                WHEN EXISTS (
-                    SELECT 1 FROM {$wpdb->prefix}fct_orders AS p
-                    WHERE p.customer_id = o.customer_id
-                        AND p.payment_status IN ({$paidStatuses})
-                        AND (p.created_at < o.created_at OR (p.created_at = o.created_at AND p.id < o.id))
-                ) THEN 'Returning'
-                ELSE 'New'
+                WHEN o.total_paid <= 0 THEN 'Free order'
+                WHEN " . ReportHelper::firstPurchaseSql($params) . " THEN 'New'
+                ELSE 'Returning'
             END AS customer_type,
 
             COUNT(DISTINCT o.customer_id) AS customer_count,
@@ -221,12 +165,7 @@ class OrderReportService extends ReportService
 
             SUM(o.total_paid) / 100 AS gross_sales,
 
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / 100 AS net_sales")
+            SUM({$netSql}) / 100 AS net_sales")
         ->groupBy('customer_type')
         ->get();
 
@@ -236,8 +175,12 @@ class OrderReportService extends ReportService
         }
 
         $result = [];
-        foreach (['New', 'Returning', 'Renewal', 'Guest'] as $type) {
+        foreach (['New', 'Returning', 'Renewal', 'Installment payment', 'Free order', 'Guest'] as $type) {
             $row = $byType[$type] ?? null;
+            // Only stores with installment plans or free orders get those rows
+            if (in_array($type, ['Installment payment', 'Free order'], true) && !$row) {
+                continue;
+            }
             $orderCount = $row ? (int) $row->order_count : 0;
             $grossSales = $row ? (float) $row->gross_sales : 0.0;
             $netSales = $row ? (float) $row->net_sales : 0.0;
@@ -256,128 +199,117 @@ class OrderReportService extends ReportService
         return $result;
     }
 
-    public function getReportByDayAndHour(array $params): array
+    public const FAILED_ORDER_LIST = 10;
+
+    /**
+     * Orders created in the range whose payment failed: how many, and the latest few.
+     *
+     * @param array $params startDate, endDate, currency
+     */
+    public function getFailedOrders(array $params): array
     {
-        $query = ReportCurrency::ordersTable($params)
-            ->selectRaw("HOUR(o.created_at) AS hour_24,
+        $failed = function () use ($params) {
+            return $this->applyFilters(ReportCurrency::ordersTable($params), array_merge($params, [
+                'paymentStatus' => [\FluentCart\App\Helpers\Status::PAYMENT_FAILED],
+                'orderStatus'   => null,
+            ]));
+        };
 
-                DAYOFWEEK(o.created_at) AS day_of_week,
+        $latest = $failed()
+            ->leftJoin('fct_customers as c', 'c.id', '=', 'o.customer_id')
+            ->select(['o.id', 'o.total_amount', 'o.payment_method', 'o.created_at', 'c.first_name', 'c.last_name', 'c.email'])
+            ->orderBy('o.created_at', 'desc')
+            ->orderBy('o.id', 'desc')
+            ->limit(self::FAILED_ORDER_LIST)
+            ->get();
 
-                COUNT(o.id) AS order_count,
+        $items = $latest->isEmpty() ? [] : App::db()->table('fct_order_items')
+            ->selectRaw('order_id, SUM(quantity) AS items')
+            ->whereIn('order_id', $latest->pluck('id')->all())
+            ->groupBy('order_id')
+            ->pluck('items', 'order_id')
+            ->all();
 
-                SUM(o.total_paid) / 100 AS gross_sale")
-            ->groupByRaw('hour_24, day_of_week')
-            ->orderByRaw('hour_24, day_of_week');
-
-        $query = $this->applyFilters($query, $params);
-
-        $ordersData = $query->get();
-
-        $daysOfWeek = [
-            1 => 'Sunday',
-            2 => 'Monday',
-            3 => 'Tuesday',
-            4 => 'Wednesday',
-            5 => 'Thursday',
-            6 => 'Friday',
-            7 => 'Saturday'
-        ];
-
-        $structuredData = [];
-        $grossSaleByHour = [];
-
-        for ($hour = 0; $hour < 24; $hour++) {
-            $timeLabel = gmdate(DateFormatter::hourFormat(), mktime($hour, 0));
-            $structuredData[$hour] = [
-                'hour'      => $timeLabel,
-                'Sunday'    => 0,
-                'Monday'    => 0,
-                'Tuesday'   => 0,
-                'Wednesday' => 0,
-                'Thursday'  => 0,
-                'Friday'    => 0,
-                'Saturday'  => 0,
-            ];
-
-            $grossSaleByHour[$hour] = [
-                'hour'        => $timeLabel,
-                'gross_sale'  => 0,
-                'order_count' => 0,
-            ];
-        }
-
-        $grossSaleByDay = array_fill(1, 7, ['day' => 0, 'gross_sale' => 0, 'order_count' => 0]);
-
-        foreach ($ordersData as $order) {
-            $hour = (int) $order->hour_24;
-            $dayOfWeek = $daysOfWeek[$order->day_of_week];
-            $orderCount = $order->order_count;
-            
-            $structuredData[$hour][$dayOfWeek] += $orderCount;
-
-            $grossSaleByDay[$order->day_of_week]['day'] = $order->day_of_week;
-            $grossSaleByDay[$order->day_of_week]['order_count'] += $orderCount;
-            $grossSaleByDay[$order->day_of_week]['gross_sale'] += $order->gross_sale;
-
-            $grossSaleByHour[$hour]['gross_sale'] += $order->gross_sale;
-            $grossSaleByHour[$hour]['order_count'] += $orderCount;
-        }
+        $showCustomers = (bool) ($params['showCustomers'] ?? true);
 
         return [
-            'orderByDayAndHour' => $structuredData,
-            'grossSaleByDay'    => array_values($grossSaleByDay),
-            'grossSaleByHour'   => array_values($grossSaleByHour),
+            'count'            => (int) $failed()->count(),
+            'customers_hidden' => !$showCustomers,
+            'orders'           => $latest->map(function ($order) use ($items, $showCustomers) {
+                return [
+                    'order_id'       => (int) $order->id,
+                    'customer_name'  => $showCustomers ? (trim($order->first_name . ' ' . $order->last_name) ?: (string) $order->email) : '',
+                    'total_amount'   => round((int) $order->total_amount / 100, 2),
+                    'items'          => (int) ($items[$order->id] ?? 0),
+                    'payment_method' => (string) $order->payment_method,
+                    'created_at'     => (string) $order->created_at,
+                ];
+            })->values()->all(),
         ];
-    }
-
-    public function getItemCountDistribution(array $params): array
-    {
-        $itemsSub = App::db()->table('fct_order_items')
-            ->selectRaw('order_id, SUM(quantity) AS item_count')
-            ->groupBy('order_id')
-            ->whereBetween('created_at', [$params['startDate'], $params['endDate']])
-            ->when($params['variationIds'], fn($q) => $q->whereIn('object_id', $params['variationIds']));
-            
-        $query = ReportCurrency::ordersTable($params)
-            ->selectRaw('COUNT(*) AS order_count, oi_sum.item_count')
-            ->joinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'))
-            ->groupBy('oi_sum.item_count');
-
-        $query = $this->applyFilters($query, $params);
-
-        return $query->get()->toArray();
     }
 
     public function calculateFluctuations($currentData, $previousData)
     {
-        $fluctuations = [];
+        return $this->percentChanges((array) $currentData, (array) $previousData, array_keys((array) $currentData));
+    }
 
-        foreach ($currentData as $key => $currentValue) {
-            $lastValue = $previousData[$key] ?? 0;
-            if ($lastValue > 0) {
-                $fluctuations[$key] = (($currentValue - $lastValue) / $lastValue) * 100;
-            } else {
-                $fluctuations[$key] = ($currentValue > 0) ? 100 : 0;  // 100% increase if current value is greater than 0, else 0% change
+    /**
+     * The Orders card split four ways: order type, order status, discounted orders, and physical orders by
+     * shipping status. Same orders as the card, so every split adds up to its total.
+     */
+    public function getOrderMix(array $params): array
+    {
+        $discounted = '(o.coupon_discount_total > 0 OR o.manual_discount_total > 0)';
+        // One scan: group by every dimension at once, then fold the small result in PHP
+        $rows = $this->applyFilters(ReportCurrency::ordersTable($params), $params)
+            ->selectRaw(ReportHelper::saleTypeSql() . " AS sale_type, o.status, o.fulfillment_type, o.shipping_status, {$discounted} AS discounted, COUNT(*) AS orders")
+            ->groupByRaw('sale_type, o.status, o.fulfillment_type, o.shipping_status, discounted')
+            ->get();
+
+        $total = 0;
+        $types = [];
+        $statuses = [];
+        $shipping = [];
+        $discountedOrders = 0;
+        foreach ($rows as $row) {
+            $orders = (int) $row->orders;
+            $total += $orders;
+            $types[$row->sale_type] = ($types[$row->sale_type] ?? 0) + $orders;
+            $statuses[$row->status] = ($statuses[$row->status] ?? 0) + $orders;
+            $discountedOrders += $row->discounted ? $orders : 0;
+            if ($row->fulfillment_type === 'physical') {
+                $key = $row->shipping_status ?: \FluentCart\App\Helpers\Status::SHIPPING_UNSHIPPED;
+                $shipping[$key] = ($shipping[$key] ?? 0) + $orders;
             }
         }
 
-        return $fluctuations;
-    }
+        $typeLabels = ReportHelper::saleTypeLabels();
+        $share = function ($count, $of) {
+            return $of ? round($count / $of * 100, 2) : 0;
+        };
+        $list = function (array $counts, array $labels, $of) use ($share) {
+            // Most orders first; ties by key, so the order is stable
+            uksort($counts, function ($a, $b) use ($counts) {
+                return $counts[$b] <=> $counts[$a] ?: strcmp((string) $a, (string) $b);
+            });
+            $result = [];
+            foreach ($counts as $key => $orders) {
+                $result[] = ['key' => (string) $key, 'label' => $labels[$key] ?? (string) $key, 'orders' => $orders, 'share' => $share($orders, $of)];
+            }
 
-    public function getOrderCompletionTime(array $params): array
-    {
-        $query = ReportCurrency::ordersTable($params)
-            ->selectRaw("TIMESTAMPDIFF(
-                    HOUR, o.created_at, o.completed_at
-                ) AS hour,
+            return $result;
+        };
+        $physical = array_sum($shipping);
 
-                COUNT(o.id) AS orders")
-            ->whereNotNull('o.completed_at')
-            ->groupBy('hour')
-            ->orderBy('hour');
-
-        $query = $this->applyFilters($query, $params);
-
-        return $query->get()->toArray();
+        return [
+            'total'       => $total,
+            'types'       => $list($types, $typeLabels, $total),
+            'statuses'    => $list($statuses, \FluentCart\App\Helpers\Status::getOrderStatuses(), $total),
+            'discounted'  => ['orders' => $discountedOrders, 'share' => $share($discountedOrders, $total)],
+            'fulfillment' => [
+                'orders'   => $physical,
+                'statuses' => $list($shipping, \FluentCart\App\Helpers\Status::getShippingStatuses(), $physical),
+            ],
+        ];
     }
 }

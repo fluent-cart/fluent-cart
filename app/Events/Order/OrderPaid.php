@@ -10,6 +10,12 @@ use FluentCart\App\Models\OrderTransaction;
 
 class OrderPaid extends EventDispatcher
 {
+    /**
+     * `source` value when a store admin marked the order paid by hand (mark as paid,
+     * changing a transaction to succeeded, re-syncing statuses). Empty means a normal
+     * payment: checkout, gateway confirmation or webhook.
+     */
+    const SOURCE_ADMIN = 'admin';
 
     public string $hook = 'fluent_cart/order_paid';
     protected array $listeners = [
@@ -31,12 +37,18 @@ class OrderPaid extends EventDispatcher
      */
     public ?OrderTransaction $transaction;
 
-    public function __construct(Order $order, $customer = null, $transaction = null)
+    /**
+     * @var string $source What marked the order paid, see SOURCE_ADMIN. Empty for a normal payment.
+     */
+    public string $source = '';
+
+    public function __construct(Order $order, $customer = null, $transaction = null, string $source = '')
     {
         $this->order = $order;
         $this->order->load('customer', 'order_items', 'shipping_address', 'billing_address');
         $this->customer = $customer;
         $this->transaction = $transaction;
+        $this->source = $source;
     }
 
     public function toArray(): array
@@ -44,7 +56,8 @@ class OrderPaid extends EventDispatcher
         return [
             'order'       => $this->order,
             'customer'    => $this->customer ?? null,
-            'transaction' => $this->transaction ?? null
+            'transaction' => $this->transaction ?? null,
+            'source'      => $this->source
         ];
     }
 

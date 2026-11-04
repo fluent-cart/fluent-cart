@@ -121,6 +121,11 @@ class OrderParser extends BaseParser
 
     public function parse($accessor = '', $code = '', $transformer = null): ?string
     {
+        // Unpaid orders have no invoice number yet: show the uuid, unless the
+        // template sets its own fallback, even an empty one ({{order.invoice_no|}}).
+        if ($accessor === 'invoice_no' && !array_key_exists('default_value', (array) $transformer)) {
+            return $this->getOrderRef();
+        }
 
         if ($this->shouldParseAddress($accessor)) {
             return $this->parseAddressFields($accessor);
@@ -167,6 +172,7 @@ class OrderParser extends BaseParser
             'order.subscription_details',
             'order.license_details',
             'order.address_details',
+            'order.shipments',
         ];
 
         if (in_array($code, $htmlParsers)) {
@@ -198,6 +204,17 @@ class OrderParser extends BaseParser
                         'licenses'    => $licenses,
                         'heading'     => _n('License', 'Licenses', $licenses->count(), 'fluent-cart'),
                         'show_notice' => false
+                    ]);
+                }
+                return '';
+            }
+
+            if ($code === 'order.shipments') {
+                $shipments = $order->shipments()->orderBy('id', 'ASC')->get();
+                if ($shipments->count() > 0) {
+                    return \FluentCart\App\App::make('view')->make('emails.parts.shipments', [
+                        'order'     => $order,
+                        'shipments' => $shipments,
                     ]);
                 }
                 return '';
@@ -362,7 +379,7 @@ class OrderParser extends BaseParser
             return (string) $invoiceNo;
         }
 
-        return (string) Arr::get($this->order, 'id');
+        return (string) Arr::get($this->order, 'uuid');
     }
 
     public function getCustomerDashboardAnchorLink($accessor, $code = null, $conditions = [])

@@ -122,7 +122,7 @@ onMounted(() => {
       <Card.Container>
         <Card.Header
             :title="translate('Recipients & General')"
-            :text="translate('A system email summarising your store activity. Numbers match the Reports dashboard.')"
+            :text="translate('Settings_System_Email')"
             border_bottom/>
         <Card.Body>
           <el-row :gutter="15">

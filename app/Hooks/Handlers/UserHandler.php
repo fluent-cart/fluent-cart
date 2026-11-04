@@ -13,15 +13,33 @@ class UserHandler
     public function register()
     {
         add_action('delete_user', [$this, 'userDeleteHandler'], 10, 1);
-        add_action('user_register', [$this, 'userRegistrationHandler'], 10, 1);
         add_action('password_reset', [EmailVerificationService::class, 'capturePasswordResetProof'], 10, 1);
         add_action('after_password_reset', [EmailVerificationService::class, 'verifyAfterPasswordReset'], 10, 1);
+        add_action('fluent_auth/email_verified', [$this, 'handleFluentAuthEmailVerified'], 10, 1);
 
         // Let's handle auto user registration!
         add_action('fluent_cart/cart_completed', [$this, 'maybeCreateUser'], 10, 1);
 
+        add_filter('wp_pre_insert_user_data', [$this, 'markUnprovenEmailChange'], 10, 3);
         add_action('profile_update', [$this, 'handleWpUserProfileUpdated'], 10, 3);
 
+    }
+
+    /**
+     * Records an unproven email change before WordPress stores it. Recorded later, on
+     * profile_update, a parallel request could read the new email with no record yet.
+     */
+    public function markUnprovenEmailChange($data, $update, $userId)
+    {
+        $user = $update && $userId ? get_userdata($userId) : false;
+        $email = is_array($data) ? (string) Arr::get($data, 'user_email', '') : '';
+
+        if ($user && $email && !EmailVerificationService::isSame($user->user_email, $email)
+            && !$this->isTrustedEmailChange((int) $userId, $email)) {
+            EmailVerificationService::markUnverified((int) $userId, $email);
+        }
+
+        return $data;
     }
 
     public function handleWpUserProfileUpdated($userId, $oldData, $newData = [])
@@ -34,22 +52,20 @@ class UserHandler
 
         // Staff authority, or WordPress's own confirmation link, already proves the
         // change, so the contact email follows the account without a second link.
-        if ($this->isStaffEmailChange((int) $userId) || $this->isWpConfirmedEmailChange((int) $userId, $user->user_email)) {
+        if ($this->isTrustedEmailChange((int) $userId, $user->user_email)) {
             $status = EmailClaimService::confirmAdminChange((int) $userId, $user->user_email);
             if (in_array($status, ['confirmed', 'recovering', 'incomplete'], true)) {
                 return;
             }
-            // Fell through on a conflict or a storage failure: the gate still applies.
         }
 
-        // State is recorded only while the store requires verification; accounts
-        // without it are treated as existing accounts if verification is enabled later.
-        if (!EmailVerificationService::isEnabled()) {
-            return;
-        }
+        // Unproven, or a trusted change that could not be applied (conflict, storage).
+        EmailVerificationService::markUnverified((int) $userId, $user->user_email);
+    }
 
-        // Account changes do not prove inbox ownership or change customer contact details.
-        EmailVerificationService::markPending((int) $userId, $user->user_email);
+    private function isTrustedEmailChange(int $userId, string $email): bool
+    {
+        return $this->isStaffEmailChange($userId) || $this->isWpConfirmedEmailChange($userId, $email);
     }
 
     /**
@@ -141,15 +157,14 @@ class UserHandler
         Customer::query()->where('user_id', $userId)->update(['user_id' => null]);
     }
 
-    public function userRegistrationHandler($userId)
+    /**
+     * FluentAuth binds magic links and email codes to the address they were mailed to,
+     * so a sign-in with one proves the account's current inbox.
+     */
+    public function handleFluentAuthEmailVerified($user)
     {
-        if (!EmailVerificationService::isEnabled()) {
-            return;
-        }
-
-        $user = $userId ? get_userdata($userId) : false;
-        if ($user) {
-            EmailVerificationService::markPending((int) $userId, $user->user_email);
+        if ($user instanceof \WP_User && $user->user_email) {
+            EmailClaimService::confirmInboxProof((int) $user->ID, $user->user_email);
         }
     }
 

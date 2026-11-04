@@ -1,5 +1,4 @@
 @config "./single-product.config.js";
-@tailwind utilities;
 /* Review photos open in the product gallery's lightbox; reviews also render
    on pages that never load the gallery styles (the standalone block, the
    order-review page), so the skin travels with them. */

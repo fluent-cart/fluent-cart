@@ -199,7 +199,7 @@ class AddonGatewaySettings extends BaseGatewaySettings
         
         return '<span class="fct-badge fct-badge-success" style="display: inline-flex; align-items: center; background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; border: 1px solid #bbf7d0;">'
             . $this->renderIcon($checkIcon, 'width: 16px; height: 16px; margin-right: 6px; fill: #166534;')
-            . __('Active', 'fluent-cart')
+            . _x('Active', 'Add-on state', 'fluent-cart')
             . '</span>';
     }
 
@@ -271,7 +271,7 @@ class AddonGatewaySettings extends BaseGatewaySettings
                 $statusColor = $styles['status_info'];
                 $actionButton = $this->renderActivateButton($config['addon_file'], $mode);
             } else {
-                $statusMessage = __('Active', 'fluent-cart');
+                $statusMessage = _x('Active', 'Add-on state', 'fluent-cart');
                 $statusColor = $styles['status_success'];
                 $actionButton = $this->renderActiveBadge();
             }

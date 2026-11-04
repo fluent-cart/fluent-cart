@@ -3,10 +3,10 @@
     <div class="fct-subs-status-wrap float-end">
       <!-- <span class="fluent_cart_subs_method">{{subscription.current_payment_method}}</span> -->
       <!--      <span :class="'fluent_cart_subs_status badge ' + subscription.status">{{subscription.status}}</span>-->
-      <Badge :status="subscriptionStatus"/>
+      <Badge :status="subscriptionStatus" kind="subscription"/>
     </div>
     <router-link :to="{name: 'view_subscription', params: {subscription_id: subscription?.id}}">
-      <p class="fct-subs-title underline">{{ $t(subscription?.display_item_name) }}</p>
+      <p class="fct-subs-title underline">{{ subscription?.display_item_name }}</p>
     </router-link>
     <p v-html="subscription?.payment_info"></p>
 

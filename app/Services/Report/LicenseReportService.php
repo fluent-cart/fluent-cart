@@ -5,15 +5,13 @@ namespace FluentCart\App\Services\Report;
 use DateInterval;
 use DatePeriod;
 use FluentCart\App\App;
-use FluentCart\App\Services\Report\Concerns\CanParseAddressField;
 use FluentCart\App\Services\Report\Concerns\HasRange;
 use FluentCart\Framework\Database\Orm\Builder;
-use FluentCart\Framework\Support\DateTime;
 use FluentCartPro\App\Modules\Licensing\Models\License;
 
 class LicenseReportService extends ReportService
 {
-    use HasRange, CanParseAddressField;
+    use HasRange;
 
     protected $summary = [];
 
@@ -44,8 +42,10 @@ class LicenseReportService extends ReportService
     {
         global $wpdb;
 
-        $startDate = new DateTime($startDate);
-        $endDate = new DateTime($endDate);
+        // Store days, like every report: labels in the site timezone, bounds as UTC for the GMT column
+        $startDate = ReportHelper::siteDay($startDate)->startOfDay();
+        $endDate = ReportHelper::siteDay($endDate)->endOfDay();
+        $local = ReportHelper::storeTimeSql('created_at', $startDate, $endDate);
 
         $this->forcedGroupKey = $groupKey;
 
@@ -55,16 +55,16 @@ class LicenseReportService extends ReportService
 
         switch ($groupKey) {
             case 'yearly':
-                $dateFormat = "YEAR(created_at) AS year";
-                $groupBy = "YEAR(created_at)";
+                $dateFormat = "YEAR({$local}) AS year";
+                $groupBy = "YEAR({$local})";
                 break;
             case 'monthly':
-                $dateFormat = "YEAR(created_at) AS year, MONTH(created_at) AS month";
-                $groupBy = "YEAR(created_at), MONTH(created_at)";
+                $dateFormat = "YEAR({$local}) AS year, MONTH({$local}) AS month";
+                $groupBy = "YEAR({$local}), MONTH({$local})";
                 break;
             default:
-                $dateFormat = "DATE(created_at) AS date";
-                $groupBy = "DATE(created_at)";
+                $dateFormat = "DATE({$local}) AS date";
+                $groupBy = "DATE({$local})";
                 break;
         }
 
@@ -72,8 +72,8 @@ class LicenseReportService extends ReportService
         $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT {$dateFormat}, COUNT(*) AS license_count FROM {$wpdb->prefix}fct_licenses WHERE created_at BETWEEN %s AND %s GROUP BY {$groupBy} ORDER BY {$groupBy}",
-                $startDate->format('Y-m-d 00:00:00'),
-                $endDate->format('Y-m-d 23:59:59')
+                ReportHelper::toGmt($startDate)->format('Y-m-d H:i:s'),
+                ReportHelper::toGmt($endDate)->format('Y-m-d H:i:s')
             )
         );
 
@@ -158,13 +158,17 @@ class LicenseReportService extends ReportService
 
     }
 
+    /**
+     * Licenses by their current status. A status is a snapshot, so the date range does not apply.
+     */
     public function getSummary($startDate, $endDate): array
     {
 
         $this->summary = [
             'totalLicense'          => App::db()->table('fct_licenses')->count(),
             'totalActiveLicense'    => App::db()->table('fct_licenses')->where('status', 'active')->count(),
-            'totalInactiveLicense'  => App::db()->table('fct_licenses')->where('status', 'disabled')->count(),
+            'totalInactiveLicense'  => App::db()->table('fct_licenses')->where('status', 'inactive')->count(),
+            'totalDisabledLicense'  => App::db()->table('fct_licenses')->where('status', 'disabled')->count(),
             'totalExpiredLicense'   => App::db()->table('fct_licenses')->where('status', 'expired')->count(),
             'totalActivatedSites'   => App::db()->table('fct_licenses')->sum('activation_count'),
             'totalLicensedProducts' => App::db()->table('fct_product_meta')

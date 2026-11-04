@@ -7,6 +7,7 @@ use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
+use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
@@ -45,14 +46,14 @@ class DataBackfills
             // 2026-07-03 — shipped with the installment bill_times fix (PR #2194).
             // Remove after one or two releases once affected installs have upgraded.
             'installment_payments' => [
-                'title' => 'Installment Payments Backfill',
+                'title' => __('Installment Payments Backfill', 'fluent-cart'),
             ],
             // 2026-07-22 — shipped with the completed-subscription guard in
             // Subscription::cancelRemoteSubscription: the EOT flow used to stamp
             // next_billing_date with the completion time on completed rows.
             // Remove after one or two releases once affected installs have upgraded.
             'completed_next_billing_date' => [
-                'title' => 'Completed Subscription Billing Date Cleanup',
+                'title' => __('Completed Subscription Billing Date Cleanup', 'fluent-cart'),
             ],
             // 2026-07-25 — idx_order_addresses_order_id_type has been declared in
             // OrderAddressesMigrator::migrated() since 2026-06-06, but migrated()
@@ -64,27 +65,33 @@ class DataBackfills
             // forcing the whole version-gated block to re-run on every install.
             // Remove after one or two releases once affected installs have upgraded.
             'order_address_index' => [
-                'title' => 'Order Address Index',
+                'title' => __('Order Address Index', 'fluent-cart'),
             ],
             // 2026-09-27 — multi-currency (dev-docs/multi-currency/plan.md §10).
             // Orders that predate currency snapshots get one: legacy_base when
             // in the base currency, legacy_unknown otherwise — never a guessed
             // rate. Remove after one or two releases once installs have upgraded.
             'order_currency_snapshot' => [
-                'title' => 'Order Currency Snapshot',
+                'title' => __('Order Currency Snapshot', 'fluent-cart'),
             ],
             // 2026-09-27 — copies each subscription's currency out of its
             // config JSON / parent order into the new currency column, plus the
             // parent order's snapshot that renewals carry.
             // Remove after one or two releases once installs have upgraded.
             'subscription_currency' => [
-                'title' => 'Subscription Currency',
+                'title' => __('Subscription Currency', 'fluent-cart'),
             ],
             // 2026-09-27 — recount customer stats per currency: purchase_value
             // becomes a per-currency map again and ltv/aov stop adding
             // different currencies together. Remove after one or two releases.
             'customer_currency_stats' => [
-                'title' => 'Customer Currency Stats',
+                'title' => __('Customer Currency Stats', 'fluent-cart'),
+            ],
+            // 2026-10-22 — old amount refunds stopped each line at line_total, losing the
+            // tax on top, and shipping refunds were never recorded. Remove after one or
+            // two releases.
+            'refund_totals_repair' => [
+                'title' => 'Refund Totals Repair',
             ],
         ];
     }
@@ -186,6 +193,10 @@ class DataBackfills
             return self::recountCustomerCurrencyStats();
         }
 
+        if ($slug === 'refund_totals_repair') {
+            return self::repairRefundTotals();
+        }
+
         // registered slug without a runner — mark done so it can't wedge the
         // queue, but leave a trace since this is a programming error
         fluent_cart_add_log(
@@ -213,8 +224,10 @@ class DataBackfills
         $title = Arr::get(self::getRegistry(), $slug . '.title', $slug);
 
         fluent_cart_add_log(
-            $title . ' completed',
-            'Data backfill "' . $slug . '" finished and was marked completed.',
+            /* translators: 1: data backfill title */
+            sprintf(__('%1$s completed', 'fluent-cart'), $title),
+            /* translators: 1: data backfill slug */
+            sprintf(__('Data backfill "%1$s" finished and was marked completed.', 'fluent-cart'), $slug),
             'info',
             [
                 'module_name' => 'activity',
@@ -754,6 +767,277 @@ class DataBackfills
                 $customer->recountStat();
             }
         }, ['chunk_size' => 200, 'max_chunks_per_run' => 5]);
+    }
+
+    /**
+     * Record only the refund split that is certain. When the order is nothing but its lines and
+     * shipping, R − shipping must have gone to the lines and R − lines to shipping; anything in
+     * between stays unassigned. Orders without tax or shipping lost nothing and are never read.
+     *
+     * @return bool true when done; false = budget spent or a refund lock was busy
+     */
+    private static function repairRefundTotals()
+    {
+        return self::runKeysetChunks('refund_totals_repair', '_fluent_cart_refund_totals_repair_cursor', function ($lastId, $chunkSize) {
+            return Order::query()
+                ->where('id', '>', $lastId)
+                ->where('total_refund', '>', 0)
+                ->where(function ($query) {
+                    $query->where('tax_total', '>', 0)
+                        ->orWhere('shipping_total', '>', 0)
+                        ->orWhere('shipping_tax', '>', 0);
+                })
+                ->orderBy('id', 'ASC')
+                ->limit($chunkSize)
+                ->get();
+        }, function ($orders) {
+            $orders->load(['order_items', 'orderTaxRates', 'transactions']);
+
+            $shippingRefunded = OrderMeta::query()
+                ->whereIn('order_id', $orders->pluck('id')->toArray())
+                ->where('meta_key', 'shipping_refunded_amount')
+                ->orderBy('id', 'DESC')
+                ->pluck('meta_value', 'order_id')
+                ->toArray();
+
+            $results = [];
+            $finished = true;
+            foreach ($orders as $order) {
+                $orderId = (int) $order->id;
+                $plan = self::planRefundTotals($order, (int) Arr::get($shippingRefunded, $orderId, 0));
+                if ($plan && (Arr::get($plan, 'lines') || Arr::get($plan, 'shipping'))) {
+                    $plan = self::applyRefundTotals($orderId);
+                }
+
+                if ($plan === false) {
+                    $finished = false;
+                    break;
+                }
+
+                $results[$orderId] = $plan;
+            }
+
+            self::mergeRefundTotalsReport($results);
+
+            return $finished;
+        }, ['chunk_size' => 200, 'max_chunks_per_run' => 5]);
+    }
+
+    /**
+     * Writes under the order's refund lock, re-reading everything inside it, so a refund
+     * being recorded right now is either fully seen or not seen at all.
+     *
+     * @return array|false|null applied plan, false when the lock is busy,
+     *                          null when the order is no longer certain or a write lost a race
+     */
+    private static function applyRefundTotals($orderId)
+    {
+        global $wpdb;
+
+        $lock = Schema::isSqlite() ? null : 'fct_refund_' . $orderId;
+        if ($lock) {
+            $acquired = $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lock, 0));
+            if ($acquired === null) {
+                return null;
+            }
+            if ((string) $acquired !== '1') {
+                return false;
+            }
+        }
+
+        try {
+            $order = Order::query()->with(['order_items', 'orderTaxRates', 'transactions'])->find($orderId);
+            if (!$order) {
+                return null;
+            }
+
+            $shippingMeta = OrderMeta::query()
+                ->where('order_id', $orderId)
+                ->where('meta_key', 'shipping_refunded_amount')
+                ->first();
+            $plan = self::planRefundTotals($order, $shippingMeta ? (int) $shippingMeta->meta_value : 0);
+            if (!$plan) {
+                return $plan;
+            }
+
+            // compare-and-set: Pro gateways record some refunds without the lock
+            $missed = false;
+            foreach ((array) Arr::get($plan, 'lines', []) as $itemId => $change) {
+                $written = OrderItem::query()
+                    ->where('id', $itemId)
+                    ->where('refund_total', Arr::get($change, 0))
+                    ->update(['refund_total' => Arr::get($change, 1)]);
+                if (!$written) {
+                    unset($plan['lines'][$itemId]);
+                    $missed = true;
+                }
+            }
+
+            if (Arr::get($plan, 'shipping')) {
+                list(, $new, $full) = Arr::get($plan, 'shipping');
+                if ($shippingMeta) {
+                    $written = OrderMeta::query()
+                        ->where('id', $shippingMeta->id)
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        ->where('meta_value', (string) Arr::get($shippingMeta->getAttributes(), 'meta_value'))
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        ->update(['meta_value' => (string) $new]);
+                    if (!$written) {
+                        $plan['shipping'] = null;
+                        $missed = true;
+                    }
+                } else {
+                    $order->updateMeta('shipping_refunded_amount', $new);
+                }
+
+                if (Arr::get($plan, 'shipping') && $full) {
+                    $order->updateMeta('shipping_refunded', '1');
+                }
+            }
+
+            return $missed ? null : $plan;
+        } finally {
+            if ($lock) {
+                $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+            }
+        }
+    }
+
+    /**
+     * @param int $shippingRefunded cents already recorded as shipping refunded
+     * @return array|null ['lines' => [item id => [old, new]], 'shipping' => [old, new, full]|null],
+     *                    null when the order's money can't be told apart for certain
+     */
+    private static function planRefundTotals(Order $order, $shippingRefunded)
+    {
+        $total = (int) $order->total_amount;
+        $refunded = (int) $order->total_refund;
+        $shippingCharged = $order->shippingChargedTotal();
+
+        $charged = [];
+        foreach ($order->order_items as $item) {
+            /** @var OrderItem $item */
+            $charged[(int) $item->id] = (int) $item->chargedTotal($order);
+        }
+        $linesCharged = array_sum($charged);
+
+        // fees, order discounts, credits and trials put money outside lines and shipping
+        if ($linesCharged + $shippingCharged !== $total || $refunded > $total) {
+            return null;
+        }
+
+        $paid = 0;
+        $refundRows = 0;
+        $lastRefundAt = 0;
+        foreach ($order->transactions as $transaction) {
+            if ($transaction->transaction_type === Status::TRANSACTION_TYPE_CHARGE
+                && in_array($transaction->status, Status::getTransactionSuccessStatuses(), true)) {
+                $paid += (int) $transaction->total;
+            } elseif ($transaction->transaction_type === Status::TRANSACTION_TYPE_REFUND
+                && $transaction->status === Status::TRANSACTION_REFUNDED
+                && Arr::get((array) $transaction->meta, 'local_sync') !== 'pending') {
+                $refundRows += (int) $transaction->total;
+            }
+            if ($transaction->transaction_type === Status::TRANSACTION_TYPE_REFUND) {
+                $lastRefundAt = max($lastRefundAt, (int) strtotime((string) $transaction->created_at));
+            }
+        }
+
+        // items edited after payment, or total_refund counting rows that are not refunds
+        if ($paid !== $total || $refundRows !== $refunded) {
+            return null;
+        }
+
+        // Pro webhook refunds save total_refund before spreading lines, outside the lock
+        if ($lastRefundAt > time() - 600) {
+            return null;
+        }
+
+        $lineMoney = $refunded - $shippingCharged;
+        $lines = [];
+        foreach ($order->order_items as $item) {
+            $itemId = (int) $item->id;
+            $old = (int) $item->refund_total;
+            $itemCharged = (int) Arr::get($charged, $itemId, 0);
+            $certain = max(0, min($itemCharged, $lineMoney - ($linesCharged - $itemCharged)));
+
+            if ($old > $itemCharged) {
+                // the line's real share is anywhere from $certain up; only a full refund pins it
+                if ($certain < $itemCharged) {
+                    return null;
+                }
+                $lines[$itemId] = [$old, $itemCharged];
+            } elseif ($old < $certain) {
+                $lines[$itemId] = [$old, $certain];
+            }
+        }
+
+        $shippingCertain = max(0, min($shippingCharged, $refunded - $linesCharged));
+        $shipping = $shippingCertain > $shippingRefunded
+            ? [$shippingRefunded, $shippingCertain, $shippingCertain >= $shippingCharged]
+            : null;
+
+        return ['lines' => $lines, 'shipping' => $shipping];
+    }
+
+    /**
+     * Counts every order once: a chunk replayed after a busy lock re-reads orders already counted.
+     *
+     * @param array $results order id => applied plan, or null when skipped
+     */
+    private static function mergeRefundTotalsReport(array $results)
+    {
+        $report = (array) fluent_cart_get_option('_fluent_cart_refund_totals_repair_report', [], false);
+        $countedThrough = (int) Arr::get($report, 'counted_through', 0);
+
+        $repairedIds = (array) Arr::get($report, 'repaired_order_ids', []);
+        $skippedIds = (array) Arr::get($report, 'skipped_order_ids', []);
+        $counts = [
+            'repaired_count'   => (int) Arr::get($report, 'repaired_count', 0),
+            'lines_changed'    => (int) Arr::get($report, 'lines_changed', 0),
+            'shipping_written' => (int) Arr::get($report, 'shipping_written', 0),
+            'skipped_count'    => (int) Arr::get($report, 'skipped_count', 0),
+        ];
+        $changed = false;
+
+        foreach ($results as $orderId => $plan) {
+            if ($orderId <= $countedThrough) {
+                continue;
+            }
+            $countedThrough = $orderId;
+
+            if ($plan === null) {
+                $counts['skipped_count']++;
+                if (count($skippedIds) < 200) {
+                    $skippedIds[] = $orderId;
+                }
+                $changed = true;
+                continue;
+            }
+
+            if (!Arr::get($plan, 'lines') && !Arr::get($plan, 'shipping')) {
+                continue;
+            }
+
+            $counts['repaired_count']++;
+            $counts['lines_changed'] += count((array) Arr::get($plan, 'lines', []));
+            $counts['shipping_written'] += Arr::get($plan, 'shipping') ? 1 : 0;
+            if (count($repairedIds) < 200) {
+                $repairedIds[] = $orderId;
+            }
+            $changed = true;
+        }
+
+        if (!$changed) {
+            return;
+        }
+
+        fluent_cart_update_option('_fluent_cart_refund_totals_repair_report', array_merge($counts, [
+            'repaired_at'        => gmdate('Y-m-d H:i:s'),
+            'counted_through'    => $countedThrough,
+            'repaired_order_ids' => $repairedIds,
+            'skipped_order_ids'  => $skippedIds,
+        ]));
     }
 
     /**

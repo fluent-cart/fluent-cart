@@ -69,14 +69,36 @@
         <div>
           <div
               v-if="customer.user_id && customer.user_id > 0"
-              class="flex items-center gap-2 mt-1.5"
+              class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5"
           >
-            <div class="user-info">
+            <div class="user-info whitespace-nowrap">
               WP User: <a :href="customer.user_link" target="_blank" class="inline-flex items-center gap-1 dark:text-gray-100 text-primary-500 focus:shadow-none hover:!underline">
               #{{ translateNumber(customer.user_id) }}
               <DynamicIcon name="Redirect" class="w-2.5 h-2.5 text-primary-500 dark:text-gray-200" />
             </a>
             </div>
+
+            <template v-if="customer.unverified_email">
+              <el-tag type="warning" size="small" round :title="translate('The account changed its email without an inbox check.')">
+                {{ translate('Email unverified') }}
+              </el-tag>
+
+              <UserCan permission="customers/manage">
+                <el-popconfirm
+                    :width="300"
+                    :confirm-button-text="translate('Mark verified')"
+                    :cancel-button-text="translate('Cancel')"
+                    :title="translate('Customer_Confirmed_Person', customer.unverified_email)"
+                    @confirm="markEmailVerified"
+                >
+                  <template #reference>
+                    <el-button link type="primary" size="small" :loading="verifyingEmail">
+                      {{ translate('Mark verified') }}
+                    </el-button>
+                  </template>
+                </el-popconfirm>
+              </UserCan>
+            </template>
 
             <el-popconfirm
                 v-if="false"
@@ -287,6 +309,7 @@ import AddOrEditAddressModal from "../Modals/AddOrEditAddressModal.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import UserAttchModal from "@/Modules/Customers/parts/UserAttchModal.vue";
+import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 
 
 export default {
@@ -299,9 +322,11 @@ export default {
     DynamicIcon,
     CopyToClipboard,
     UserAttchModal,
+    UserCan,
     Back
   },
   props: ["customer", "customer_id"],
+  emits: ["fetch", "emailVerified"],
   data() {
     this.localizedData = window.fluentCartAdminApp;
     return {
@@ -338,6 +363,7 @@ export default {
       },
       detaching: false,
       recalculatingLtv: false,
+      verifyingEmail: false,
       shouldShowSetAsAlsoCheckbox: true,
       closingModal: false,
     };
@@ -441,6 +467,21 @@ export default {
           })
           .finally(() => {
             this.recalculatingLtv = false;
+          });
+    },
+    markEmailVerified() {
+      this.verifyingEmail = true;
+      this.$post(`customers/${this.customer_id}/mark-email-verified`)
+          .then((response) => {
+            this.handleSuccess(response.message);
+            // Guest orders may have been linked; the parent reloads the stats and the order list.
+            this.$emit("emailVerified");
+          })
+          .catch((error) => {
+            this.handleError(error.message || this.$t('The email could not be verified. Please try again.'));
+          })
+          .finally(() => {
+            this.verifyingEmail = false;
           });
     },
     handleDetachUser() {

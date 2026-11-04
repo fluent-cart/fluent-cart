@@ -148,7 +148,7 @@ onMounted(() => {
                     v-if="group.key === 'scheduler'"
                     class="m-0 mt-0 leading-5 text-system-mid dark:text-gray-300"
                 >
-                  {{ translate('This notification trigger is controlled from the Reminders section. You can configure it from') }}
+                  {{ translate('Settings_Notification_Trigger') }}
                   <router-link
                       :to="{ path: '/settings/email_mailing_settings/reminders' }"
                       class="underline hover:no-underline font-medium text-inherit hover:text-inherit"

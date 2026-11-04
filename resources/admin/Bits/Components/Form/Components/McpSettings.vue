@@ -26,7 +26,7 @@ const props = defineProps({
     nesting: { type: Boolean, default: false },
     statePath: { type: String },
     form: { type: Object, required: true },
-    callback: { type: Function, required: true },
+    callback: { type: Function },
     label: { type: String },
     attribute: { required: true }
 });
@@ -287,7 +287,7 @@ onMounted(() => {
                     </h4>
 
                     <p class="fct-mcp-content-box-text">
-                        {{ translate('FluentCart speaks to AI agents through the MCP adapter bundled with FluentHub (WordPress 6.9+). The endpoint will not respond until it is installed and active.') }}
+                        {{ translate('Mcp_Fluentcart_Speaks') }}
                     </p> 
                     
                     <div class="fct-mcp-content-box-action">
@@ -370,7 +370,7 @@ onMounted(() => {
                 <div class="fct-form-group">
                     <label>{{ translate('Connect a client') }}</label>
                     <p class="form-note mb-3">
-                        {{ translate('Create an application password for your WordPress user, then fill it in below. Your password stays in the browser — it is only written into the snippet you copy.') }}
+                        {{ translate('Mcp_Create_Application') }}
                         <a :href="status.app_passwords_url" target="_blank" rel="noopener noreferrer">
                             {{ translate('Create an application password') }}
                         </a>

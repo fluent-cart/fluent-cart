@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\Integrations\FluentPlugins;
 
+use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Modules\Integrations\BaseIntegrationManager;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
@@ -230,7 +231,7 @@ class FluentCRMConnect extends BaseIntegrationManager
             $contactData['address_line_1'] = $order->billing_address->address_1;
             $contactData['address_line_2'] = $order->billing_address->address_2;
             $contactData['city'] = $order->billing_address->city;
-            $contactData['state'] = $order->billing_address->state;
+            $contactData['state'] = AddressHelper::getStateNameByCode($order->billing_address->state, $order->billing_address->country);
             $contactData['postal_code'] = $order->billing_address->postcode;
             $contactData['country'] = $order->billing_address->country;
             $contactData['phone'] = $order->billing_address->phone;

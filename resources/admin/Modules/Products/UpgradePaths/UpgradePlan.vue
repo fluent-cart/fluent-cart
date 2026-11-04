@@ -13,7 +13,7 @@
     >
       <div v-if="upgradePaths.length > 0" class="fct-upgrade-variation-table">
         <el-table :data="upgradePaths" style="width: 100%">
-          <el-table-column :label="$t('Package')" :width="290">
+          <el-table-column :label="_x('Package', 'Upgrade plan column')" :width="290">
             <template #default="scope">
               <div class="upgrade-title">{{ scope.row.title }}</div>
             </template>
@@ -66,7 +66,7 @@
 <script>
 import Str from "@/utils/support/Str";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import Rest from "@/utils/http/Rest";
 import AppConfig from "@/utils/Config/AppConfig";
@@ -132,6 +132,7 @@ export default {
   },
   methods: {
     translate,
+    _x,
     showUpgradePlanModal() {
       // call the rest api to get upgrade-paths
       Rest.get(`${this.endpoint_path}/variation/${this.variation_id}/upgrade-paths`, {

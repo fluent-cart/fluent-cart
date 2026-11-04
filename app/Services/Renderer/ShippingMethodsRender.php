@@ -11,10 +11,14 @@ class ShippingMethodsRender
 
     protected $selectedId = null;
 
-    public function __construct($shippingMethods = [], $selectedId = null)
+    /** @var array ['key' => list key, 'pending' => carrier rate sources checkout still fetches] */
+    protected $rateSources = [];
+
+    public function __construct($shippingMethods = [], $selectedId = null, array $rateSources = [])
     {
         $this->shippingMethods = $shippingMethods;
         $this->selectedId = $selectedId;
+        $this->rateSources = $rateSources;
     }
 
     public function render()
@@ -46,7 +50,13 @@ class ShippingMethodsRender
 
     public function renderBody()
     {
-        if (is_wp_error($this->shippingMethods)) {
+        // With sources still to come, the list renders even when empty so their rates can join it.
+        $awaiting = !empty($this->rateSources['pending'])
+            && (!is_wp_error($this->shippingMethods) || $this->shippingMethods->get_error_code() === 'no_shipping_methods');
+
+        if ($awaiting) {
+            $this->renderMethods();
+        } else if (is_wp_error($this->shippingMethods)) {
             $this->renderEmpty($this->shippingMethods->get_error_message());
         } else if ($this->shippingMethods) {
             $this->renderMethods();
@@ -66,7 +76,8 @@ class ShippingMethodsRender
 
     public function renderMethods()
     {
-        if (is_wp_error($this->shippingMethods)) {
+        $pending = (array) Arr::get($this->rateSources, 'pending', []);
+        if (is_wp_error($this->shippingMethods) && !$pending) {
             return;
         }
         $errorId = 'shipping-methods-error';
@@ -74,6 +85,10 @@ class ShippingMethodsRender
         <div
                 class="fct_shipping_methods_list"
                 data-fluent-cart-checkout-page-shipping-method-wrapper
+                data-fct-rates-key="<?php echo esc_attr((string) Arr::get($this->rateSources, 'key', '')); ?>"
+                <?php if ($pending) : ?>
+                data-fct-pending-rate-sources="<?php echo esc_attr(wp_json_encode($pending)); ?>"
+                <?php endif; ?>
                 role="radiogroup"
                 aria-labelledby="shipping-methods-title"
                 aria-describedby="<?php echo esc_attr($errorId); ?>"
@@ -81,26 +96,53 @@ class ShippingMethodsRender
             <?php $this->renderLoader(); ?>
 
             <input type="hidden" name="fc_selected_shipping_method" value="<?php echo esc_attr($this->selectedId); ?>">
+            <?php $this->renderItems(); ?>
+            <?php if ($pending) {
+                $this->renderPendingRatesLoader();
+            } ?>
+        </div>
+        <?php if ($pending) : ?>
+            <?php if (is_wp_error($this->shippingMethods) || !$this->shippingMethods) : ?>
+                <div class="fct-empty-state" data-fct-rate-sources-empty hidden>
+                    <?php echo esc_html__('No shipping methods available for this address.', 'fluent-cart') ?>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
+        <?php
+    }
+
+    public function renderItems()
+    {
+        if (is_wp_error($this->shippingMethods)) {
+            return;
+        }
+        ?>
             <?php foreach ($this->shippingMethods as $shippingMethod) : ?>
+                <?php
+                $methodId = (string) Arr::get($shippingMethod, 'id', '');
+                $formattedCost = Helper::toDecimal(
+                    (int) Arr::get($shippingMethod, 'cost', 0),
+                    true,
+                    Arr::get($shippingMethod, 'currency') ?: null
+                );
+                $description = Arr::get($shippingMethod, 'description', '');
+                ?>
                 <div class="fct_shipping_methods_item">
                     <input
                             type="radio"
-                            <?php echo checked($this->selectedId, $shippingMethod->id); ?>
+                            <?php echo checked((string) $this->selectedId, $methodId); ?>
                             name="fc_shipping_method"
-                            id="shipping_method_<?php echo esc_attr($shippingMethod->id); ?>"
-                            value="<?php echo esc_attr($shippingMethod->id); ?>"
+                            id="shipping_method_<?php echo esc_attr($methodId); ?>"
+                            value="<?php echo esc_attr($methodId); ?>"
                     />
-                    <label for="shipping_method_<?php echo esc_attr($shippingMethod->id); ?>">
-                        <?php
-                        $description = Arr::get($shippingMethod->meta, 'description', '');
-                        ?>
-                        <?php echo esc_html($shippingMethod->title); ?>
+                    <label for="shipping_method_<?php echo esc_attr($methodId); ?>">
+                        <?php echo esc_html(Arr::get($shippingMethod, 'title', '')); ?>
                         <span class="shipping-method-amount" aria-label="<?php
                         /* translators: %s charge amount */
                         printf(esc_attr__('Shipping cost: %s', 'fluent-cart'),
-                                esc_html(Helper::toDecimal($shippingMethod->charge_amount))); ?>"
+                                esc_html($formattedCost)); ?>"
                         >
-                            <?php echo esc_html(Helper::toDecimal($shippingMethod->charge_amount)); ?>
+                            <?php echo esc_html($formattedCost); ?>
                         </span>
                         <span class="fct-checkmark" aria-hidden="true"></span>
                         <?php if (!empty($description)) : ?>
@@ -109,7 +151,6 @@ class ShippingMethodsRender
                     </label>
                 </div>
             <?php endforeach; ?>
-        </div>
         <?php
     }
 
@@ -134,6 +175,26 @@ class ShippingMethodsRender
                     </path>
                 </svg>
             </div>
+        <?php
+    }
+
+    /**
+     * Last row of the list while carrier rates load; the script collapses it, then removes it.
+     */
+    public function renderPendingRatesLoader()
+    {
+        ?>
+        <div class="fct_shipping_rates_loader fct-collapse is-open" data-fct-rate-sources-status role="status" aria-live="polite">
+            <div class="fct-collapse__inner">
+                <div class="fct_shipping_rates_status">
+                    <span class="fct_shipping_rates_spinner" aria-hidden="true"></span>
+                    <span class="fct_shipping_rates_status_body">
+                        <span><?php echo esc_html__('Loading shipping methods…', 'fluent-cart'); ?></span>
+                        <span class="fct_shipping_rates_shimmer" aria-hidden="true"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
         <?php
     }
 

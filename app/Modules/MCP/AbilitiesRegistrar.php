@@ -130,29 +130,18 @@ class AbilitiesRegistrar
         }
 
         if (!empty($definition['annotations'])) {
-            $mapped = self::mapAnnotations($definition['annotations']);
-            if (!empty($mapped)) {
-                $args['meta']['annotations'] = $mapped;
-            }
+            $args['meta']['annotations'] = self::mapAnnotations($definition['annotations']);
         }
 
         wp_register_ability($name, $args);
     }
 
     /**
-     * Translate a tool's readable snake_case behavior hints into the MCP tool
-     * annotation keys clients actually read.
+     * Keep WordPress annotation names for the Abilities API and MCP aliases for
+     * adapters that do not translate them.
      *
-     * Tool classes declare intent as readonly / destructive / idempotent /
-     * open_world / title. The MCP spec names them readOnlyHint / destructiveHint
-     * / idempotentHint / openWorldHint, and the WP MCP adapter forwards
-     * meta.annotations VERBATIM (it does not translate), so an unmapped
-     * 'readonly' key would never reach a client as a real hint. Unknown keys
-     * (e.g. a stray 'bulk') are dropped rather than emitted as noise a client
-     * cannot act on.
-     *
-     * @param array $annotations snake_case behavior hints from the tool definition
-     * @return array MCP-standard annotation keys
+     * @param array $annotations Ability behavior annotations.
+     * @return array
      */
     private static function mapAnnotations($annotations)
     {
@@ -165,6 +154,10 @@ class AbilitiesRegistrar
 
         $out = [];
         foreach ((array) $annotations as $key => $value) {
+            if (in_array($key, ['readonly', 'destructive', 'idempotent'], true)) {
+                $out[$key] = (bool) $value;
+            }
+
             if ($key === 'title') {
                 $out['title'] = (string) $value;
             } elseif (isset($map[$key])) {
@@ -172,10 +165,6 @@ class AbilitiesRegistrar
             }
         }
 
-        // A read-only tool cannot be destructive. destructiveHint defaults to
-        // true when absent (MCP spec), so state it explicitly for read tools —
-        // otherwise a client gating on destructiveHint would treat every report
-        // as dangerous.
         if (!empty($out['readOnlyHint']) && !isset($out['destructiveHint'])) {
             $out['destructiveHint'] = false;
         }

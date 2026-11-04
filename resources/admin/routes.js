@@ -42,7 +42,6 @@ import GlobalStorageComponents from './Modules/Settings/GlobalStorageComponents.
 import AddEmailNotification from "@/Modules/Settings/EmailNotification/AddEmailNotification.vue";
 import Logs from "@/Modules/Logs/Logs.vue";
 import ReportsView from "./Modules/Reports/ReportsView.vue";
-import DefaultReport from "./Modules/Reports//Default/DefaultReport.vue";
 import RevenueReport from "./Modules/Reports/Revenue/RevenueReport.vue";
 import OrderReport from "./Modules/Reports/Order/OrderReport.vue";
 import RefundReport from "@/Modules/Reports/Refund/RefundReport.vue";
@@ -51,6 +50,9 @@ import FutureRenewalsReport from "@/Modules/Reports/Subscription/FutureRenewalsR
 import RetentionReport from "@/Modules/Reports/Subscription/Retention/RetentionReport.vue";
 import CustomerReport from "@/Modules/Reports/Customer/CustomerReport.vue";
 import SourcesReport from "@/Modules/Reports/Sources/SourcesReport.vue";
+import CouponsReport from "@/Modules/Reports/Coupons/CouponsReport.vue";
+import PaymentMethodsReport from "@/Modules/Reports/PaymentMethods/PaymentMethodsReport.vue";
+import LocationsReport from "@/Modules/Reports/Locations/LocationsReport.vue";
 
 import ProductReport from './Modules/Reports/Product/ProductReport.vue';
 import ProductCompare from './Modules/Reports/Product/ProductCompare.vue';
@@ -336,15 +338,6 @@ export var routes = {
                 },
             },
             {
-                name: "reports_sales",
-                path: "sales",
-                component: DefaultReport,
-                meta: {
-                    title: translate("Sales"),
-                    permission: "reports/view"
-                },
-            },
-            {
                 name: "reports_orders",
                 path: "orders",
                 component: OrderReport,
@@ -408,6 +401,15 @@ export var routes = {
                 }
             },
             {
+                name: "reports_installments",
+                path: "subscriptions/installments",
+                component: () => import('./Modules/Reports/Subscription/InstallmentsReport.vue'),
+                meta: {
+                    title: translate("Installments"),
+                    permission: "reports/view"
+                }
+            },
+            {
                 name: "reports_products",
                 path: "products",
                 component: ProductReport,
@@ -440,6 +442,33 @@ export var routes = {
                 component: SourcesReport,
                 meta: {
                     title: translate("Sources"),
+                    permission: "reports/view"
+                },
+            },
+            {
+                name: "reports_coupons",
+                path: "coupons",
+                component: CouponsReport,
+                meta: {
+                    title: translate("Coupons"),
+                    permission: "reports/view"
+                },
+            },
+            {
+                name: "reports_payment_methods",
+                path: "payment-methods",
+                component: PaymentMethodsReport,
+                meta: {
+                    title: translate("Payment Methods"),
+                    permission: "reports/view"
+                },
+            },
+            {
+                name: "reports_locations",
+                path: "locations",
+                component: LocationsReport,
+                meta: {
+                    title: translate("Locations"),
                     permission: "reports/view"
                 },
             },

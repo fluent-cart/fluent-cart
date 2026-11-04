@@ -372,6 +372,19 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fct-carousel-dot-active) 20%, transparent);
 }
 
+/* Same Safari square-outline fix as the product carousel. */
+.fct-product-carousel .swiper-pagination-bullet:focus,
+.fct-product-carousel .swiper-button-prev:focus,
+.fct-product-carousel .swiper-button-next:focus {
+  outline: none;
+}
+
+.fct-product-carousel .swiper-pagination-bullet:focus-visible,
+.fct-product-carousel .swiper-button-prev:focus-visible,
+.fct-product-carousel .swiper-button-next:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--fct-carousel-dot-active);
+}
+
 /* =====================================================
    Pagination Variants
 ===================================================== */

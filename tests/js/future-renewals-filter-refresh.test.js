@@ -10,9 +10,14 @@ vi.mock('@/Bits/Components/Buttons/IconButton.vue', () => ({default: {}}));
 vi.mock('@/Bits/Components/Table/Empty.vue', () => ({default: {}}));
 vi.mock('@/Bits/Components/Layout/PageHeading.vue', () => ({default: {}}));
 vi.mock('@/Modules/Reports/Components/SummaryLoader.vue', () => ({default: {}}));
+vi.mock('@/Bits/Components/Extension/ExtensionComponent.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Components/ProReportPreview.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Components/ProReportSample.vue', () => ({default: {}}));
 vi.mock('@/Models/Reports/CheckBoxFilterModel', () => ({default: {}}));
 vi.mock('@/Models/Reports/ChartTypeFilterModel', () => ({default: {}}));
 vi.mock('@/utils/Theme', () => ({default: {colors: {report: {}}, isDark: () => false}}));
+// AppConfig reads window as it loads, before beforeEach stubs it
+vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => '', onShopUpdate: () => {}}}));
 vi.mock('@/utils/translator/Translator', () => ({default: text => text}));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn()}}));
 vi.mock('@/utils/Notify', () => ({default: {error: vi.fn()}}));
@@ -71,7 +76,8 @@ describe('Future Renewals filter changes', () => {
         await filter.listeners['future-renewals']({params: {currency}});
         await settle();
 
-        expect(Rest.get).toHaveBeenLastCalledWith('reports/future-renewals', {params: {currency, groupKey: 'monthly'}});
+        // The page asks for its horizon (3 months by default), not a chart grouping
+        expect(Rest.get).toHaveBeenLastCalledWith('reports/future-renewals', {params: {currency, horizon: '3'}});
         expect(state.data.totalProjected).toBe(300000);
         app.unmount();
         app = null;

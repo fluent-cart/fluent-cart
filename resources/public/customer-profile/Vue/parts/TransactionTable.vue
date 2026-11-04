@@ -10,7 +10,7 @@
       <el-table-column :label="$t('Date')" :width="120">
         <template #default="scope">
           <time class="text truncate" :datetime="scope.row.created_at">
-            {{ dateTimeI18(scope.row.created_at, 'date') }}
+            {{ recentDateText(scope.row.created_at) || dateTimeI18(scope.row.created_at, 'date') }}
           </time>
         </template>
       </el-table-column>
@@ -138,7 +138,7 @@ import translate from "../../translator/Translator";
 import MaterialInput from "@/Bits/Components/MaterialInput.vue";
 import statusLabel from "../../utils/statusLabels";
 import AddressComponent from "./AddressComponent.vue";
-import {dateTimeI18} from "../../translator/Translator";
+import {dateTimeI18, recentDateText} from "../../translator/Translator";
 
 export default {
   name: 'TransactionsTable',
@@ -188,6 +188,7 @@ export default {
   methods: {
     translate,
     dateTimeI18,
+    recentDateText,
     handleTransactionCommand(command, row) {
       if (command === 'view_receipt') {
         window.open(row.receipt_view_url, '_blank', 'noopener,noreferrer');

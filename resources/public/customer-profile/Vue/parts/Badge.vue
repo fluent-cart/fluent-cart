@@ -63,16 +63,21 @@ export default {
         case 'success':
         case 'licensed':
         case 'succeeded':
+        case 'delivered':
           return 'fct-success';
 
         case 'failed':
         case 'error':
         case 'canceled':
         case 'expired':
+        case 'returned':
           return 'fct-danger';
 
         case 'partially_paid':
         case 'intended':
+        case 'dispatched':
+        case 'in_transit':
+        case 'partially_shipped':
           return 'fct-blue';
 
         case 'scheduled':

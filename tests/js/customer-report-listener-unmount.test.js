@@ -3,9 +3,16 @@ import {createRenderer, h, ssrContextKey} from 'vue';
 
 vi.mock('@/Bits/Components/Permission/UserCan.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/Layout/PageHeading.vue', () => ({default: {}}));
-vi.mock('@/Modules/Reports/Customer/Summary.vue', () => ({default: {}}));
-vi.mock('@/Modules/Reports/Customer/CustomerReportChart.vue', () => ({default: {}}));
-vi.mock('@/Modules/Reports/Customer/Comparison.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Customer/CustomerTrendChart.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Customer/TopCustomers.vue', () => ({default: {}}));
+vi.mock('@/Bits/Components/Extension/ExtensionComponent.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Components/ProReportPreview.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Components/ProReportSample.vue', () => ({default: {}}));
+vi.mock('@/Bits/Components/ReportSummary.vue', () => ({default: {}}));
+vi.mock('@/Bits/Components/Fluctuation.vue', () => ({default: {}}));
+vi.mock('@/Bits/Components/Icons/DynamicIcon.vue', () => ({default: {}}));
+vi.mock('@/Modules/Reports/Components/SummaryLoader.vue', () => ({default: {}}));
+vi.mock('@/utils/Notify', () => ({default: {error: vi.fn()}}));
 vi.mock('@/utils/translator/Translator', () => ({default: text => text}));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn()}}));
 
@@ -23,13 +30,14 @@ const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 let app, filter;
 beforeEach(() => {
     Rest.get.mockReset();
-    Rest.get.mockResolvedValue({summary: {}, currentMetrics: [], previousMetrics: []});
+    Rest.get.mockResolvedValue({summary: {}, previous: null, chart: []});
     filter = {
         applicableFilters: {params: {currency: 'USD'}},
         data: {compareType: 'no_comparison'},
         listeners: {},
         addListener(key, callback) { this.listeners[key] = callback; },
         removeListener(key) { delete this.listeners[key]; },
+        trackCompareRange: request => request,
     };
     app = renderer.createApp({render: () => h(Report, {reportFilter: filter})});
     app.provide(ssrContextKey, {});
@@ -40,15 +48,15 @@ afterEach(() => {
 });
 
 describe('Customer report filter listener', () => {
-    it('stops requesting the customer report after the page unmounts', async () => {
+    it('stops requesting the customer overview after the page unmounts', async () => {
         await settle();
-        expect(filter.listeners['customer-report']).toBeTypeOf('function');
+        expect(filter.listeners['customer-overview']).toBeTypeOf('function');
         expect(Rest.get).toHaveBeenCalledTimes(1);
 
         app.unmount();
         app = null;
 
-        expect(filter.listeners['customer-report']).toBeUndefined();
+        expect(filter.listeners['customer-overview']).toBeUndefined();
         Object.values(filter.listeners).forEach(listener => listener({params: {currency: 'GBP'}}));
         await settle();
         expect(Rest.get).toHaveBeenCalledTimes(1);

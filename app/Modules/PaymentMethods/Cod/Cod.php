@@ -16,7 +16,7 @@ use FluentCart\Framework\Support\Arr;
 
 class Cod extends AbstractPaymentGateway
 {
-    public array $supportedFeatures = ['payment', 'refund', 'offline', 'multi_currency'];
+    public array $supportedFeatures = ['payment', 'refund', 'offline', 'local_refund_only', 'multi_currency'];
 
     public BaseGatewaySettings $settings;
 
@@ -98,8 +98,8 @@ class Cod extends AbstractPaymentGateway
                 'content' => sprintf(
                 /* translators: 1: old status, 2: new status */
                     __('Order status has been updated from %1$s to %2$s', 'fluent-cart'),
-                    $orderStatus,
-                    $order->status
+                    Status::getOrderStatusLabel($orderStatus),
+                    Status::getOrderStatusLabel($order->status)
                 )
             ];
 
@@ -221,5 +221,14 @@ class Cod extends AbstractPaymentGateway
     public function getOrderInfo(array $data)
     {
         // TODO: Implement getOrderInfo() method.
+    }
+
+    public function processRefund($transaction, $amount, $args = [])
+    {
+        return apply_filters('fluent_cart/offline_payment_refund_id', '', [
+            'transaction'   => $transaction,
+            'amount'        => $amount,
+            'args'          => $args
+        ]);
     }
 }

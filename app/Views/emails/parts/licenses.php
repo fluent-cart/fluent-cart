@@ -4,7 +4,7 @@ $showNotice = $show_notice ?? true;
 
 
 if (isset($heading)): ?>
-    <p style="font-size:16px;font-weight:600;color:rgb(44,62,80);margin: 16px 0 0 0;line-height:24px;">
+    <p style="font-size:16px;font-weight:600;color:rgb(17,24,39);margin: 16px 0 0 0;line-height:24px;">
         <?php echo esc_html($heading); ?>
     </p>
 <?php endif; ?>

@@ -62,6 +62,13 @@ class Cart extends Model
     private $isCalculatingFees = false;
 
     /**
+     * Set while the stored shipping charge already has the pricing rules taken off,
+     * so fees are not measured on a twice-discounted charge.
+     * @var bool
+     */
+    public $shippingRulesApplied = false;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -460,7 +467,10 @@ class Cart extends Model
                     if (!$byInput) {
                         $quantity += (int)Arr::get($prevItem, 'quantity', 1);
                     }
-                    if (Arr::get($prevItem, 'other_info.promotion_id') || Arr::get($prevItem, 'other_info.is_price_locked') === 'yes') {
+                    // A normal add onto a bump line rebuilds it at the real price, so the bump discount
+                    // and free shipping never spread to the units the shopper added.
+                    $keepsPromotion = Arr::get($prevItem, 'other_info.promotion_id') && Arr::get($config, 'other_info.promotion_id');
+                    if ($keepsPromotion || Arr::get($prevItem, 'other_info.is_price_locked') === 'yes') {
                         // The base-currency price: the cart converts it again on save
                         $unitPrice = CartCurrency::baseUnitPrice($prevItem);
                         if ($unitPrice) {
@@ -948,12 +958,20 @@ class Cart extends Model
         $paymentMethod = Arr::get($this->checkout_data, 'payment_method')
             ?: Arr::get($this->checkout_data, 'form_data._fct_pay_method');
 
+        // Fees are measured on the postage the shopper pays, after shipping rules.
+        $shippingTotal = $this->getShippingTotal();
+        if ($shippingTotal > 0 && !$this->shippingRulesApplied) {
+            $shippingTotal = max(0, (int)apply_filters('fluent_cart/checkout/order_shipping_charge', $shippingTotal, [
+                'cart' => $this,
+            ]));
+        }
+
         // Let addons add dynamic (computed) fees via filter
         $allFees = apply_filters('fluent_cart/cart/fees', $storedFees, [
             'cart'           => $this,
             'cart_items'     => $this->cart_data ?? [],
             'cart_subtotal'  => $this->getItemsSubtotal(),
-            'shipping_total' => $this->getShippingTotal(),
+            'shipping_total' => $shippingTotal,
             'customer_id'    => $this->customer_id,
             'payment_method' => $paymentMethod,
             'checkout_data'  => $this->checkout_data,

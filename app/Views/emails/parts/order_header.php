@@ -2,7 +2,19 @@
 
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\Renderer\Receipt\StoreBusinessInfoHelper;
+use FluentCart\Framework\Support\Arr;
 $endSide = \FluentCart\App\Services\Email\EmailDirection::end();
+$startSide = \FluentCart\App\Services\Email\EmailDirection::start();
+$metaItems = [];
+if (!empty($order)) {
+    $metaItems[] = ['label' => __('Order Date', 'fluent-cart'), 'value' => '{{order.created_at}}'];
+    $metaItems[] = ['label' => __('Order #', 'fluent-cart'), 'value' => (string) Arr::get($order, 'uuid')];
+    // The receipt number is the invoice number, assigned on payment.
+    $receiptNo = (string) Arr::get($order, 'invoice_no');
+    if ($receiptNo !== '') {
+        $metaItems[] = ['label' => __('Receipt #', 'fluent-cart'), 'value' => $receiptNo];
+    }
+}
 ?>
 
 <?php if(!empty($order)): ?>
@@ -14,22 +26,18 @@ $endSide = \FluentCart\App\Services\Email\EmailDirection::end();
             <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border: none;">
                 <tbody style="width:100%">
                 <tr style="width:100%">
-                    <td style="width:60%;padding-<?php echo esc_attr($endSide); ?>:12px;">
-                        <h1 style="font-size:24px;font-weight:700;color:rgb(17,24,39);margin:0px">
+                    <td style="vertical-align:middle;padding-<?php echo esc_attr($endSide); ?>:12px;">
+                        <h1 style="font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.01em;color:rgb(17,24,39);margin:0px">
                             {{ settings.store_brand }}
                         </h1>
                     </td>
-                    <td style="vertical-align: middle; width: 15%; text-align: <?php echo esc_attr($endSide); ?>; border: 0;padding-<?php echo esc_attr($endSide); ?>: 10px;">
-                        <p style="white-space: nowrap; color: #94a3b8; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:12px;"><?php echo esc_html__('Order Date', 'fluent-cart'); ?></p>
-                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:15px;">{{order.created_at}}</p>
-                    </td>
-                    <td style="width:15%;text-align:<?php echo esc_attr($endSide); ?>">
-                        <p style="white-space: nowrap; color: #94a3b8; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:12px;">
-                            <?php echo esc_html__('Order #', 'fluent-cart'); ?>
-                        </p>
-                        <p style="white-space: nowrap; font-weight: bold; color: #000; text-align: <?php echo esc_attr($endSide); ?>; margin: 0;font-size:14px;">
-                            <?php echo esc_html($order->invoice_no); ?>
-                        </p>
+                    <?php // Label and value sit side by side and wrap on narrow screens; a legacy 32-character uuid breaks mid-string. ?>
+                    <td style="vertical-align:middle;text-align:<?php echo esc_attr($endSide); ?>;border:0;">
+                        <?php foreach ($metaItems as $metaItem): ?>
+                        <div style="text-align:<?php echo esc_attr($endSide); ?>;">
+                            <p style="display:inline-block;color:rgb(75,85,99);margin:0;padding-<?php echo esc_attr($endSide); ?>:8px;font-size:12px;line-height:20px;"><?php echo esc_html($metaItem['label']); ?></p><p style="display:inline-block;max-width:100%;word-break:break-all;font-weight:600;color:rgb(17,24,39);margin:0;font-size:13px;line-height:20px;"><?php echo esc_html($metaItem['value']); ?></p>
+                        </div>
+                        <?php endforeach; ?>
                     </td>
                 </tr>
                 </tbody>

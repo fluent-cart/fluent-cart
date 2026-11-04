@@ -431,7 +431,11 @@ class CustomerResource extends BaseResourceApi
             ->with(['billing_address', 'shipping_address'])
             ->first();
 
-        if (!$existingCustomer && !EmailVerificationService::isEnabled()) {
+        // A self-service email change has no inbox proof, so it must not claim or shadow
+        // the guest row that holds that address.
+        $canClaim = EmailVerificationService::canClaimByEmail($currentUser->ID);
+
+        if (!$existingCustomer && $canClaim) {
             $existingCustomer = static::claimUnlinkedCustomerByEmail($currentUser);
         }
 
@@ -440,8 +444,8 @@ class CustomerResource extends BaseResourceApi
             return $existingCustomer;
         }
 
-        if (!$createIfNotExists || (EmailVerificationService::isEnabled() && Customer::query()->where('email', $currentUser->user_email)->exists())) {
-            // With verification enabled, confirmation links an existing guest row.
+        if (!$createIfNotExists || (!$canClaim && Customer::query()->where('email', $currentUser->user_email)->exists())) {
+            // Confirming the email links the existing guest row.
             // Otherwise an explicitly requested profile is separate from guest history.
             return null;
         }

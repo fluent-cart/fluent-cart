@@ -671,10 +671,9 @@ class NiceSelect {
                 item.element.style.display = ""
             });
         } else if (hasClass(this.dropdown, "open")) {
-            const matchReg = new RegExp(text);
             this.options.forEach((item) => {
                 if (item.element) {
-                    item.element.style.display = matchReg.test(item.data.text.toLowerCase())
+                    item.element.style.display = item.data.text.toLowerCase().includes(text)
                         ? ""
                         : "none";
                 }

@@ -285,7 +285,7 @@ class ShopResource extends BaseResourceApi
      * Expand the caller's `with` list so the relations that the models' default
      * appends read are eager loaded rather than fetched one row at a time.
      *
-     * `ProductVariation::$appends` renders `thumbnail` from its `media` relation and
+     * `ProductVariation::$appends` renders `thumbnail` from `media` and `simpleProductGallery`, and
      * `ProductDetail::$appends` renders `featured_media` from `galleryImage`, so every
      * serialized row issued its own query — one per variant plus one per product, on a
      * public list endpoint. Only relations the caller already asked for are expanded,
@@ -300,13 +300,18 @@ class ShopResource extends BaseResourceApi
         $with = Arr::wrap($with);
 
         $appendRelations = [
-            'variants' => 'variants.media',
-            'detail'   => 'detail.galleryImage',
+            'variants' => ['variants.media', 'variants.simpleProductGallery'],
+            'detail'   => ['detail.galleryImage'],
         ];
 
-        foreach ($appendRelations as $relation => $nestedRelation) {
-            if (in_array($relation, $with, true) && !in_array($nestedRelation, $with, true)) {
-                $with[] = $nestedRelation;
+        foreach ($appendRelations as $relation => $nestedRelations) {
+            if (!in_array($relation, $with, true)) {
+                continue;
+            }
+            foreach ($nestedRelations as $nestedRelation) {
+                if (!in_array($nestedRelation, $with, true)) {
+                    $with[] = $nestedRelation;
+                }
             }
         }
 

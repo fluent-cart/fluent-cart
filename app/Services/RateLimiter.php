@@ -24,9 +24,7 @@ class RateLimiter
      */
     public static function isSpamming($identifier, $limit = 10, $seconds = 30, $sendJson = false)
     {
-        if (!self::isActive()) {
-            return false; // Currently only support rate limiting when external object cache is enabled
-        }
+        global $wpdb;
 
         $prefix = AddressHelper::getIpAddress();
         $userId = get_current_user_id();
@@ -36,28 +34,24 @@ class RateLimiter
 
         $prefix = md5($prefix);
         $identifier = "{$prefix}_{$identifier}";
-        $hits = static::getCurrentHits($identifier);
 
-        if (!$hits) {
-            $hits = [
-                time()
-            ];
-            // Save the hit for the first time
-            self::setHits($identifier, $hits, $seconds);
-            return false; // all good here
+        // Parallel hits from one visitor update the window one at a time; a hit
+        // that cannot get its turn counts as over the limit.
+        $lockName = 'fct_rate_' . md5($identifier);
+        if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lockName, 2)) !== '1') {
+            $isSpamming = true;
+        } else {
+            // Remove hits older than the time window, then add this one
+            $currentTime = time();
+            $hits = array_filter(static::getCurrentHits($identifier), function ($hitTime) use ($currentTime, $seconds) {
+                return ($currentTime - $hitTime) <= $seconds;
+            });
+            $hits[] = $currentTime;
+            self::setHits($identifier, array_values($hits), $seconds);
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lockName));
+
+            $isSpamming = count($hits) > $limit;
         }
-
-        // Remove hits older than the time window
-        $currentTime = time();
-        $hits = array_filter($hits, function ($hitTime) use ($currentTime, $seconds) {
-            return ($currentTime - $hitTime) <= $seconds;
-        });
-
-        // Add the current hit
-        $hits[] = $currentTime;
-        self::setHits($identifier, $hits, $seconds);
-
-        $isSpamming = count($hits) > $limit;
 
         if ($isSpamming && $sendJson) {
             wp_send_json([
@@ -68,14 +62,23 @@ class RateLimiter
         return $isSpamming;
     }
 
+    // Without an external object cache wp_cache_* lives only for the request,
+    // so the window is kept in a transient instead.
     private static function getCurrentHits($identifier)
     {
-        $hits = Cache::get("rate_limit:{$identifier}");
-        return $hits ?? [];
+        $hits = self::isActive()
+            ? Cache::get("rate_limit:{$identifier}")
+            : get_transient("fct_rate_limit_{$identifier}");
+
+        return is_array($hits) ? $hits : [];
     }
 
     private static function setHits($identifier, $hits, $seconds)
     {
-        return Cache::set("rate_limit:{$identifier}", $hits, $seconds);
+        if (self::isActive()) {
+            return Cache::set("rate_limit:{$identifier}", $hits, $seconds);
+        }
+
+        return set_transient("fct_rate_limit_{$identifier}", $hits, $seconds);
     }
 }

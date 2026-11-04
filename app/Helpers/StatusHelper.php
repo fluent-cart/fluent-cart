@@ -19,6 +19,11 @@ class StatusHelper
 {
     protected $order;
 
+    /**
+     * Passed on to the OrderPaid event, see OrderPaid::SOURCE_ADMIN. Empty for a normal payment.
+     */
+    protected $paymentSource = '';
+
     public function __construct($order = null)
     {
         $this->order = $order;
@@ -27,6 +32,19 @@ class StatusHelper
     public function setOrder($order)
     {
         $this->order = $order;
+        return $this;
+    }
+
+    /**
+     * Say what caused the payment, so listeners of `fluent_cart/order_paid` can tell a store
+     * admin's manual action from a real payment.
+     *
+     * @param string $source OrderPaid::SOURCE_ADMIN, or empty for a normal payment.
+     * @return $this
+     */
+    public function setPaymentSource($source)
+    {
+        $this->paymentSource = (string)$source;
         return $this;
     }
 
@@ -52,7 +70,7 @@ class StatusHelper
             'title'   => __('Order status updated', 'fluent-cart'),
             'content' => sprintf(
                 /* translators: 1: old status, 2: new status */
-                __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), $oldStatus, $orderStatus)
+                __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), Status::getOrderStatusLabel($oldStatus), Status::getOrderStatusLabel($orderStatus))
         ];
 
         (new OrderStatusUpdated($this->order, $oldStatus, $orderStatus, true, $actionActivity, 'order_status'))->dispatch();
@@ -126,7 +144,7 @@ class StatusHelper
             $transaction = OrderTransaction::query()->where('order_id', $order->id)
                 ->where('status', Status::TRANSACTION_SUCCEEDED)
                 ->first();
-            (new OrderPaid($order, $this->order->customer, $transaction))->dispatch();
+            (new OrderPaid($order, $this->order->customer, $transaction, $this->paymentSource))->dispatch();
         }
 
         // Trigger any other payment status actions based on the payment status
@@ -159,9 +177,20 @@ class StatusHelper
             ->whereIn('status', $successStatuses)
             ->sum('total');
 
+        $transactionPaidTotal = (int) apply_filters(
+            'fluentcart_order_transaction_paid_total',
+            (int) $transactionPaidTotal,
+            $this->order,
+            $successStatuses
+        );
+
         $refundedTotal = OrderTransaction::query()
             ->where('order_id', $this->order->id)
             ->where('status', Status::TRANSACTION_REFUNDED)
+            ->get()
+            ->filter(function ($transaction) {
+                return !$transaction->isAwaitingResync();
+            })
             ->sum('total');
 
         $isFullyPaid = $this->order->total_amount <= ($transactionPaidTotal - $refundedTotal);
@@ -296,7 +325,7 @@ class StatusHelper
             }
 
             if ($this->order->type !== 'renewal' && $oldPaymentStatus != $this->order->payment_status && $this->order->payment_status == Status::PAYMENT_PAID) {
-                (new OrderPaid($this->order, $this->order->customer, $latestTransaction))->dispatch();
+                (new OrderPaid($this->order, $this->order->customer, $latestTransaction, $this->paymentSource))->dispatch();
             }  
         }
 
@@ -305,7 +334,7 @@ class StatusHelper
                 'title'   => __('Order status updated', 'fluent-cart'),
                 'content' => sprintf(
                     /* translators: 1: old status, 2: new status */
-                    __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), $oldOrderStatus, $this->order->status)
+                    __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), Status::getOrderStatusLabel($oldOrderStatus), Status::getOrderStatusLabel($this->order->status))
             ];
             (new OrderStatusUpdated($this->order, $oldOrderStatus, $this->order->status, true, $actionActivity, 'order_status'))->dispatch();
         }
@@ -328,7 +357,7 @@ class StatusHelper
                 'title'   => __('Order status updated', 'fluent-cart'),
                 'content' => sprintf(
                     /* translators: 1: old status, 2: new status */
-                    __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), $oldOrderStatus, $this->order->status)
+                    __('Order status has been updated from %1$s to %2$s', 'fluent-cart'), Status::getOrderStatusLabel($oldOrderStatus), Status::getOrderStatusLabel($this->order->status))
             ];
 
             (new OrderStatusUpdated($this->order, $oldOrderStatus, $this->order->status, true, $actionActivity, 'order_status'))->dispatch();

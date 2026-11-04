@@ -89,7 +89,7 @@ function removeOssClass(cls) {
     if (cls.slug === 'standard') return
     $confirm(
         /* translators: %1$s: tax class name (e.g. Reduced) */
-        translate('This will permanently delete the "%1$s" tax class and all its rates across every country (not just EU). Products using this class will fall back to Standard. Continue?', cls.title),
+        translate('Tax_Permanently_Delete', cls.title),
         translate('Delete Tax Class'),
         { confirmButtonText: translate('Remove'), cancelButtonText: translate('Cancel'), type: 'warning' }
     ).then(() => {
@@ -133,7 +133,7 @@ function buildDefaultLabel(countryCode, countryName, slug) {
 
 function resetOssRatesToDefaults() {
     $confirm(
-        translate('This will overwrite all EU destination country standard rates with preset defaults. Continue?'),
+        translate('Tax_Overwrite_Destination'),
         translate('Reset to default tax rates'),
         {
             confirmButtonText: translate('Reset'),
@@ -189,8 +189,7 @@ defineExpose({ loadRates })
                 <Alert type="info">
                     <template #content>
                         <span>
-                            {{ translate('Rates are pre-filled for convenience and may not reflect current laws — verify with a tax advisor before going live. If you sell products taxed at different rates (e.g. food, books, digital goods), use the') }} + 
-                            {{ translate('button to add tax classes.') }}
+                            {{ translate('Tax_Rates_Pre') }}
                         </span>
                     </template>
                 </Alert>

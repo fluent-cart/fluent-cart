@@ -56,7 +56,7 @@ class EmailClaimPortal
      */
     public static function render(): string
     {
-        if (!is_user_logged_in() || !EmailVerificationService::isEnabled()) {
+        if (!is_user_logged_in()) {
             return '';
         }
 

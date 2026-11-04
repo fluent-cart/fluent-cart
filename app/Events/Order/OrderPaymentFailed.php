@@ -88,5 +88,11 @@ class OrderPaymentFailed extends EventDispatcher
 
     }
 
+    public function shouldCreateActivity(): bool
+    {
+        // The listener already writes the error entry for this order.
+        return false;
+    }
+
 }
 

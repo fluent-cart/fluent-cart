@@ -4,12 +4,13 @@ namespace FluentCart\App\Http\Controllers;
 
 
 use FluentCart\Api\Checkout\CheckoutApi;
+use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\ShippingMethod;
-use FluentCart\App\Services\RateLimiter;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\Framework\Http\Request\Request;
+use FluentCart\Framework\Support\Arr;
 
 class CheckoutController extends Controller
 {
@@ -18,8 +19,8 @@ class CheckoutController extends Controller
      */
     public function placeOrder(Request $request)
     {
-        RateLimiter::isSpamming('place_order_attempt', 5, 60, true);
-
+        // CheckoutApi::placeOrder() applies the attempt limit; a second count
+        // here let a shopper try only twice a minute.
         CheckoutApi::placeOrder($request->all(), true);
     }
 
@@ -30,9 +31,17 @@ class CheckoutController extends Controller
 
 
         $charge = 0;
-        $shippingMethod = ShippingMethod::query()->find($shippingMethodId);
+        $shippingMethod = is_numeric($shippingMethodId) ? ShippingMethod::query()->find($shippingMethodId) : null;
         if (!empty($shippingMethod)) {
             $charge = CartHelper::calculateShippingMethodCharge($shippingMethod);
+        } else if ($shippingMethodId) {
+            // A carrier rate has no row to price from: take its cost from the cart address's list.
+            $cart = CartHelper::getCart();
+            if ($cart) {
+                $address = $cart->getShippingAddress();
+                $rate = AddressHelper::resolveSelectedRate(Arr::get($address, 'country'), Arr::get($address, 'state'), (array) $cart->cart_data, $shippingMethodId, $address);
+                $charge = $rate ? Helper::roundCent(Arr::get($rate, 'cost', 0)) : 0;
+            }
         }
 
         ob_start();

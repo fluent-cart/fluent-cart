@@ -313,8 +313,9 @@ class CartResource extends BaseResourceApi
      */
     public static function update($data, $id = '', $params = [])
     {
+        // Resolve only; a rejected item must not leave an empty cart row behind.
         $cart = self::get([
-            'create' => true,
+            'create' => false,
             'hash'   => Arr::get($params, 'hash'),
         ]);
 
@@ -329,8 +330,7 @@ class CartResource extends BaseResourceApi
             );
         }
 
-        $existingItem = $cart->findExistingItemAndIndex($itemId);
-        $existingItem = Arr::get($existingItem, 1);
+        $existingItem = $cart ? Arr::get($cart->findExistingItemAndIndex($itemId), 1) : null;
 
         $rawIsCustom = $existingItem !== null
             ? Arr::get($existingItem, 'is_custom', false)
@@ -371,7 +371,8 @@ class CartResource extends BaseResourceApi
                     'is_custom'        => $isCustom,
                 ]);
 
-                if (!is_object($variation)) {
+                // Cast arrays only: (object) null is a truthy empty object that slips past the guard below.
+                if (is_array($variation)) {
                     $variation = (object) $variation;
                 }
             }
@@ -414,6 +415,13 @@ class CartResource extends BaseResourceApi
                 $quantity = 1;
             }
             $byInput = true;
+        }
+
+        if (!$cart) {
+            $cart = self::get([
+                'create' => true,
+                'hash'   => Arr::get($params, 'hash'),
+            ]);
         }
 
         if($isCustom) {

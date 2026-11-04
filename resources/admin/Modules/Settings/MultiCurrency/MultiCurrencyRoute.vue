@@ -9,7 +9,7 @@
               class="py-7.5"
               placement="feature_lock_multi_currency"
               :title="translate('Multi Currency')"
-              :text="translate('Sell in more than one currency with exchange rates, price adjustments, rounding and charm pricing.')"
+              :text="translate('Settings_Sell_Currency')"
           />
         </Card.Body>
       </Card.Container>

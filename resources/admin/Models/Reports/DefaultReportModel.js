@@ -1,8 +1,6 @@
-import Model from "@/utils/model/Model";
-import Arr from "@/utils/support/Arr";
-import Rest from "@/utils/http/Rest";
+import ReportRequestModel from "./ReportRequestModel";
 
-class DefaultReportModel extends Model {
+class DefaultReportModel extends ReportRequestModel {
   get controllerKey() {
     return "DefaultReportController";
   }
@@ -41,7 +39,6 @@ class DefaultReportModel extends Model {
       subscriptionRenewalGraph: {},
     },
     topSoldProducts: [],
-    failedOrders: [],
     topSoldVariants: [],
     isBusy: {
       graphs: {
@@ -58,65 +55,8 @@ class DefaultReportModel extends Model {
       topSoldVariants: true,
       topSoldProducts: true,
       fluctuations: false,
-      salesReport: true,
     },
   };
-
-  makeRequest(endPoint, query, accessor, key) {
-    if (key && key.startsWith("graphs.")) {
-      const graphKey = key.split(".")[1];
-      this.data.isBusy.graphs[graphKey] = true;
-    } else {
-      this.data.isBusy[key] = true;
-    }
-
-    let request;
-    if (typeof query === "object") {
-      request = Rest.get("reports/" + endPoint, query);
-      //request = this.controller.withParams(query)[endPoint]();
-    } else {
-      request = Rest.get("reports/" + endPoint);
-      //request = this.controller[endPoint]();
-    }
-
-    this.resolvePromiseResponse(request, accessor, key);
-    return request;
-  }
-
-  resolvePromiseResponse(promise, accessor = null, key = null) {
-    promise
-      .then((response) => {
-        if (!(key == null || accessor == null)) {
-          Arr.set(this.data, key, Arr.get(response, accessor));
-          //this.data[key] = response[accessor];
-        } else {
-          Object.assign(this.data, response);
-        }
-      })
-      .catch((error) => {
-      })
-      .finally(() => {
-        if (key && key.startsWith("graphs.")) {
-          const graphKey = key.split(".")[1];
-          this.data.isBusy.graphs[graphKey] = false;
-        } else {
-          this.data.isBusy[key] = false;
-        }
-      });
-  }
-
-  // Not yet implemented — controller methods missing. Uncomment when DefaultReportController is complete.
-  // getDefaultReport(query = {}) {
-  //   return this.makeRequest("fetch-default-report", query, "summaryData", "summaryData");
-  // }
-
-  // getDefaultReportFluctuations(query = {}) {
-  //   return this.makeRequest("fetch-default-report-fluctuations", query, "fluctuations", "fluctuations");
-  // }
-
-  // getDefaultReportGraphs(query = {}) {
-  //   return this.makeRequest("fetch-default-report-graphs", query, "graphs." + query.params.graph, "graphs." + query.params.graph);
-  // }
 
   getTopSoldProducts(query = {}) {
     return this.makeRequest(
@@ -127,27 +67,6 @@ class DefaultReportModel extends Model {
     );
   }
 
-  // getFailedOrders(query = {}) {
-  //   return this.makeRequest("fetch-failed-orders", query, "failedOrders", "failedOrders");
-  // }
-
-  getTopSoldVariants(query = {}) {
-    return this.makeRequest(
-      "fetch-top-sold-variants",
-      query,
-      "topSoldVariants",
-      "topSoldVariants"
-    );
-  }
-
-  getSalesReport(query = {}) {
-    return this.makeRequest(
-      "sales-report",
-      query,
-      null,
-      'salesReport'
-    );
-  }
 }
 
 export default DefaultReportModel.init();

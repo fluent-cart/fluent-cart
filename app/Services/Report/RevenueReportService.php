@@ -3,81 +3,9 @@
 namespace FluentCart\App\Services\Report;
 
 use FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency;
-use FluentCart\App\App;
 
 class RevenueReportService extends ReportService
 {
-    public function revenueByGroup(array $params = []): array
-    {
-        $itemsSub = App::db()->table('fct_order_items')
-            ->selectRaw('order_id, SUM(quantity) AS total_items')
-            ->groupBy('order_id');
-
-        $query = ReportCurrency::ordersTable($params)
-            ->leftJoinSub($itemsSub, 'oi_sum', fn($join) => $join->on('oi_sum.order_id', '=', 'o.id'));
-
-        $query = $this->applyFilters($query, $params);
-
-        $groupKey = ReportHelper::sanitizeGroupKey($params['groupKey'] ?? null);
-
-        $groupKeyExpression = '';
-
-        if (in_array($groupKey, ['billing_country', 'shipping_country'])) {
-            $type = $groupKey === 'billing_country' ? 'billing' : 'shipping';
-
-            $query->leftJoin('fct_order_addresses as a', function ($join) use ($type) {
-                $join->on('o.id', 'a.order_id')->where('a.type', $type);
-            });
-
-            $groupKeyExpression = "COALESCE(a.country, 'Uncategorized') AS `{$groupKey}`";
-        } elseif ($groupKey === 'payment_method') {
-            $groupKeyExpression = "COALESCE(o.payment_method, 'Unknown') AS `{$groupKey}`";
-        } else {
-            $groupKeyExpression = "COALESCE(o.{$groupKey}, 'Unknown') AS `{$groupKey}`";
-        }
-
-        $query->selectRaw("{$groupKeyExpression},
-
-            COUNT(o.id) AS orders,
-
-            COUNT(CASE WHEN o.total_refund > 0 THEN 1 END) AS refunded_orders,
-
-            SUM(o.total_paid) / 100 AS gross_sale,
-
-            SUM(
-                o.total_paid
-                - o.total_refund
-                - o.tax_total
-                - o.shipping_tax
-            ) / 100 AS net_sale,
-
-            CASE
-                WHEN COUNT(o.id) = 0 THEN 0
-                ELSE SUM(o.total_paid) / COUNT(o.id) / 100
-            END AS average_order_gross,
-
-            CASE
-                WHEN COUNT(o.id) = 0 THEN 0
-                ELSE SUM(
-                    o.total_paid
-                    - o.total_refund
-                    - o.tax_total
-                    - o.shipping_tax
-                ) / COUNT(o.id) / 100
-            END AS average_order_net,
-
-            SUM(COALESCE(oi_sum.total_items, 0)) AS items,
-
-            SUM(o.shipping_total) / 100 AS shipping_total,
-
-            SUM(o.tax_total + o.shipping_tax) / 100 AS total_tax,
-
-            SUM(o.total_refund) / 100 AS total_refunds,
-
-            COUNT(DISTINCT o.customer_id) AS customer_count");
-
-        return $query->groupByRaw($groupKey)->orderByRaw($groupKey)->get()->toArray();
-    }
 
     public function getRevenueData($params = []): array
     {
@@ -87,21 +15,21 @@ class RevenueReportService extends ReportService
 
         $group = ReportHelper::processGroup($startDate, $endDate, $params['groupKey']);
 
-        $query = ReportCurrency::ordersTable($params)
+        $netSql = ReportHelper::netRevenueSql();
+        $taxSql = ReportHelper::unrefundedTaxSql();
+
+        $query = ReportHelper::joinShippingRefund(ReportCurrency::ordersTable($params), $params);
+        $split = ReportHelper::refundSplitSql($params);
+        $query = $query
             ->selectRaw("{$group['field']},
 
                 SUM(o.total_paid) / 100 AS total_sales,
 
-                SUM(
-                    o.total_paid
-                    - o.total_refund
-                    - o.tax_total
-                    - o.shipping_tax
-                ) / 100 AS net_revenue,
+                SUM({$netSql}) / 100 AS net_revenue,
 
                 SUM(o.shipping_total) / 100 AS shipping_total,
 
-                SUM(o.tax_total + o.shipping_tax) / 100 AS total_tax,
+                SUM({$taxSql}) / 100 AS total_tax,
 
                 SUM(o.total_refund) / 100 AS total_refunds,
 
@@ -113,7 +41,19 @@ class RevenueReportService extends ReportService
                 COUNT(o.id) AS order_count,
 
                 -- COUNT(CASE WHEN o.total_paid = o.total_refund AND o.total_paid > 0 THEN 1 END) AS refunded_orders
-                COUNT(CASE WHEN o.total_refund > 0 THEN 1 END) AS refunded_orders");
+                COUNT(CASE WHEN o.total_refund > 0 THEN 1 END) AS refunded_orders,
+
+                SUM(o.coupon_discount_total + o.manual_discount_total) / 100 AS discounts,
+
+                SUM({$split['shipping_kept']}) / 100 AS shipping_net,
+
+                SUM({$split['fees_kept']}) / 100 AS fees,
+
+                SUM({$split['tax_kept']}) / 100 AS taxes_net,
+
+                SUM({$split['sales_refunded']}) / 100 AS refunds,
+
+                SUM({$split['net_sales']}) / 100 AS net_sales");
 
         $query = $this->applyFilters($query, $params);
 
@@ -127,6 +67,12 @@ class RevenueReportService extends ReportService
             'shipping_total'        => 0,
             'order_count'           => 0,
             'refunded_orders'       => 0,
+            'discounts'             => 0,
+            'fees'                  => 0,
+            'shipping_net'          => 0,
+            'taxes_net'             => 0,
+            'refunds'               => 0,
+            'net_sales'             => 0,
         ];
 
         $keys = [
@@ -136,7 +82,15 @@ class RevenueReportService extends ReportService
             'total_tax',
             'total_refunds',
             'order_count',
-            'refunded_orders'
+            'refunded_orders',
+            'discounts',
+            'fees',
+            'gross_sales',
+            'net_sales',
+            'total_collected',
+            'refunds',
+            'shipping_net',
+            'taxes_net',
         ];
 
         $groups = $this->getPeriodRange($startDate, $endDate, $group['key'], $keys);
@@ -152,7 +106,13 @@ class RevenueReportService extends ReportService
                 'total_refunds'   => $row->total_refunds,
                 'order_count'     => $row->order_count,
                 'refunded_orders' => $row->refunded_orders,
-            ];
+                'discounts'       => $row->discounts,
+                'fees'            => $row->fees,
+                'shipping_net'    => $row->shipping_net,
+                'taxes_net'       => $row->taxes_net,
+                'refunds'         => $row->refunds,
+                'net_sales'       => $row->net_sales,
+            ] + self::salesBreakdown($row);
 
             $summary['net_revenue'] += $row->net_revenue;
             $summary['gross_sale'] += $row->total_sales;
@@ -161,7 +121,14 @@ class RevenueReportService extends ReportService
             $summary['shipping_total'] += $row->shipping_total;
             $summary['order_count'] += $row->order_count;
             $summary['refunded_orders'] += $row->refunded_orders;
+            $summary['discounts'] += $row->discounts;
+            $summary['fees'] += $row->fees;
+            $summary['shipping_net'] += $row->shipping_net;
+            $summary['taxes_net'] += $row->taxes_net;
+            $summary['refunds'] += $row->refunds;
+            $summary['net_sales'] += $row->net_sales;
         }
+        $summary = self::salesBreakdown((object) $summary) + $summary;
 
         return [
             'groups'   => array_values($groups),
@@ -172,8 +139,6 @@ class RevenueReportService extends ReportService
 
     public function getFluctuations($currentMetrics, $previousMetrics)
     {
-        $fluctuations = [];
-
         $indices = [
             'net_revenue',
             'gross_sale',
@@ -181,19 +146,68 @@ class RevenueReportService extends ReportService
             'tax_total',
             'shipping_total',
             'discount',
+            'gross_sales',
+            'discounts',
+            'net_sales',
+            'fees',
+            'total_collected',
+            'refunds',
+            'shipping_net',
+            'taxes_net',
         ];
 
-        foreach ($indices as $key) {
-            $previousValue = $previousMetrics[$key] ?? 0;
-            $currentValue = $currentMetrics[$key] ?? 0;
+        return $this->percentChanges((array) $currentMetrics, (array) $previousMetrics, $indices);
+    }
 
-            if ($previousValue > 0) {
-                $fluctuations[$key] = (($currentValue - $previousValue) / $previousValue) * 100;
-            } else {
-                $fluctuations[$key] = $currentValue > 0 ? 100 : 0;
-            }
+    /**
+     * The breakdown lines derived from the per-order split: gross sales adds discounts and refunded sales back to net
+     * sales; total collected adds what was kept of shipping, fees and tax (what customers paid, less refunds).
+     *
+     * @param object $row net_sales, discounts, refunds, shipping_net, fees, taxes_net
+     */
+    private static function salesBreakdown($row): array
+    {
+        $net = (float) $row->net_sales;
+
+        return [
+            'gross_sales'     => $net + (float) $row->discounts + (float) $row->refunds,
+            'total_collected' => $net + (float) $row->shipping_net + (float) $row->fees + (float) $row->taxes_net,
+        ];
+    }
+
+    /**
+     * Net sales by order type (one-time, new subscription, renewal); the rows add up to the period's net sales.
+     */
+    public function getRevenueByOrderType(array $params): array
+    {
+        $net = ReportHelper::netSalesSql($params);
+        $rows = $this->applyFilters(ReportHelper::joinShippingRefund(ReportCurrency::ordersTable($params), $params), $params)
+            ->selectRaw(ReportHelper::saleTypeSql() . " AS sale_type, COUNT(*) AS orders, SUM({$net}) / 100 AS net_sales")
+            ->groupBy('sale_type')
+            ->get();
+
+        $total = 0;
+        foreach ($rows as $row) {
+            $total += (float) $row->net_sales;
         }
+        $labels = ReportHelper::saleTypeLabels();
 
-        return $fluctuations;
+        $result = [];
+        foreach ($rows as $row) {
+            $orders = (int) $row->orders;
+            $result[] = [
+                'key'           => (string) $row->sale_type,
+                'label'         => $labels[$row->sale_type] ?? (string) $row->sale_type,
+                'orders'        => $orders,
+                'net_sales'     => round((float) $row->net_sales, 2),
+                'average'       => $orders ? round((float) $row->net_sales / $orders, 2) : 0,
+                'share'         => $total ? round((float) $row->net_sales / $total * 100, 2) : 0,
+            ];
+        }
+        usort($result, function ($a, $b) {
+            return $b['net_sales'] <=> $a['net_sales'] ?: strcmp($a['key'], $b['key']);
+        });
+
+        return $result;
     }
 }

@@ -1,6 +1,6 @@
 <script setup>
 import {computed, ref} from 'vue'
-import translate from "@/utils/translator/Translator"
+import translate, {_x} from "@/utils/translator/Translator"
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue"
 import {CircleCheckFilled} from '@element-plus/icons-vue'
 import Rest from "@/utils/http/Rest"
@@ -149,8 +149,8 @@ defineExpose({onNextStep, inserting})
         <p class="fct-dummy-product-hint">
             {{
                 aborted
-                    ? translate('The import stopped early. Products created before it stopped were kept, and you can add the rest from the Products page.')
-                    : translate('The products that were created have been kept. You can add the rest from the Products page.')
+                    ? translate('Onboard_Import_Stopped')
+                    : translate('Onboard_Products_Created')
             }}
         </p>
         <div class="fct-btn-group mt-4">
@@ -196,7 +196,7 @@ defineExpose({onNextStep, inserting})
         >
             <el-radio-button value="start-from-scratch">
                 <DynamicIcon name="Scratch" />
-                <span class="label">{{ translate('Start') }} <br/>
+                <span class="label">{{ _x('Start', 'Onboarding action') }} <br/>
                     {{ translate('From scratch') }}
                 </span>
                 <span class="marker">

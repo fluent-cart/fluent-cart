@@ -268,7 +268,7 @@ class Processor
         }
 
         $customerData = [
-            'name'      => $fcCustomer->first_name . ' ' . $fcCustomer->last_name,
+            'name'      => $this->billingDetailsName($fcCustomer, $billingAddress),
             'email'     => $fcCustomer->email,
             'address_1' => $billingAddress->address_1,
             'address_2' => $billingAddress->address_2,
@@ -573,7 +573,8 @@ class Processor
         if (in_array($intentStatus, ['requires_payment_method', 'requires_confirmation', 'requires_action'], true)) {
             $chargeMaterialMatches = (int)Arr::get($existingIntent, 'amount') === (int)Arr::get($intentData, 'amount')
                 && strtolower((string)Arr::get($existingIntent, 'currency')) === strtolower((string)Arr::get($intentData, 'currency'))
-                && Arr::get($existingIntent, 'customer') === Arr::get($intentData, 'customer');
+                && Arr::get($existingIntent, 'customer') === Arr::get($intentData, 'customer')
+                && Arr::get($existingIntent, 'setup_future_usage') === Arr::get($intentData, 'setup_future_usage');
 
             if ($chargeMaterialMatches) {
                 return $existingIntent;
@@ -668,7 +669,7 @@ class Processor
         $paymentArgs['trx_hash'] = $transaction->uuid;
 
         $customerData = [
-            'name'      => $fcCustomer->first_name . ' ' . $fcCustomer->last_name,
+            'name'      => $this->billingDetailsName($fcCustomer, $billingAddress),
             'email'     => $fcCustomer->email,
             'address_1' => $billingAddress ? $billingAddress->address_1 : '',
             'address_2' => $billingAddress ? $billingAddress->address_2 : '',
@@ -864,9 +865,12 @@ class Processor
             // lifetime. Built AFTER the intent-args filter so filtered amounts are what
             // get fingerprinted.
             $idempotencyFingerprint = [
-                'amount'   => Arr::get($intentData, 'amount'),
-                'currency' => Arr::get($intentData, 'currency'),
-                'customer' => Arr::get($intentData, 'customer'),
+                'amount'             => Arr::get($intentData, 'amount'),
+                'currency'           => Arr::get($intentData, 'currency'),
+                'customer'           => Arr::get($intentData, 'customer'),
+                'setup_future_usage' => Arr::get($intentData, 'setup_future_usage'),
+                // A canceled intent must never be replayed when consent changes back.
+                'previous_intent' => $transaction->vendor_charge_id,
             ];
             $idempotencySeed = $paymentInstance->getIdempotencySeed();
             $idempotencyKey = $idempotencySeed
@@ -887,7 +891,7 @@ class Processor
         }
 
         $customerData = [
-            'name'      => $fcCustomer->first_name . ' ' . $fcCustomer->last_name,
+            'name'      => $this->billingDetailsName($fcCustomer, $billingAddress),
             'email'     => $fcCustomer->email,
             'address_1' => $billingAddress->address_1,
             'address_2' => $billingAddress->address_2,
@@ -1098,9 +1102,10 @@ class Processor
         }
 
         $fingerprint = [
-            'customer'   => Arr::get($sessionData, 'customer'),
-            'line_items' => Arr::get($sessionData, 'line_items'),
-            'mode'       => Arr::get($sessionData, 'mode'),
+            'customer'           => Arr::get($sessionData, 'customer'),
+            'line_items'         => Arr::get($sessionData, 'line_items'),
+            'mode'               => Arr::get($sessionData, 'mode'),
+            'setup_future_usage' => Arr::get($sessionData, 'payment_intent_data.setup_future_usage'),
         ];
 
         return 'fct_stripe_cs_' . md5($seed . '|' . wp_json_encode($fingerprint));
@@ -1318,11 +1323,13 @@ class Processor
             $storeTaxBehavior = $taxBehavior;
         }
 
-        if ($taxBehavior === 1) {
+        if ($taxBehavior === 1 && $storeTaxBehavior !== 2) {
             return Helper::roundCent($order->tax_total) + Helper::roundCent($order->shipping_tax);
         }
 
-        if ($taxBehavior === 3) {
+        // All-inclusive items (2) still pay shipping and fee tax on top in an exclusive store,
+        // and an inclusive store keeps them inside when every item excludes tax (1).
+        if (in_array($taxBehavior, [1, 2, 3], true)) {
             $taxTotal = $exclusiveTaxTotal;
 
             if ($storeTaxBehavior === 1) {
@@ -1356,6 +1363,27 @@ class Processor
         return is_array($body) && Arr::get($body, 'error.type') === 'invalid_request_error';
     }
 
+    /**
+     * The name Stripe gets as billing_details.name.
+     *
+     * The order's billing address holds the name typed in this checkout. The
+     * customer row is a snapshot from the first checkout and guest checkouts
+     * never refresh it, so a bad stored name would fail every later payment.
+     *
+     * @param \FluentCart\App\Models\Customer|null $fcCustomer
+     * @param \FluentCart\App\Models\OrderAddress|null $billingAddress
+     * @return string
+     */
+    private function billingDetailsName($fcCustomer, $billingAddress)
+    {
+        $name = $billingAddress ? trim((string) $billingAddress->name) : '';
+
+        if ($name === '' && $fcCustomer) {
+            $name = trim($fcCustomer->first_name . ' ' . $fcCustomer->last_name);
+        }
+
+        return $name;
+    }
 
     /**
      * The one-time part of a hosted subscription session, itemised.

@@ -14,6 +14,8 @@ use FluentCart\App\Services\DateTime\DateFormatter;
 
 class ReceiptRenderer
 {
+    private const HEADER_ITEM_STYLE = 'display:inline-block;vertical-align:top;text-align:end;padding-inline-start:16px;padding-top:6px;';
+
     protected $config = null;
 
     protected $is_first_time = false;
@@ -150,7 +152,7 @@ class ReceiptRenderer
                 padding-bottom: 0 !important;
             }
 
-            /* The nowrap date and invoice cells don't fit beside the store name, so stack them. */
+            /* The nowrap date, order and invoice items don't fit beside the store name, so stack them. */
             @media (max-width: 480px) {
                 .fct-receipt-header,
                 .fct-receipt-header tbody,
@@ -165,14 +167,17 @@ class ReceiptRenderer
                     padding-inline-end: 0 !important;
                 }
 
+                .fct-receipt-header .fct-receipt-header-meta {
+                    text-align: start !important;
+                }
+
                 .fct-receipt-header .fct-receipt-header-date,
+                .fct-receipt-header .fct-receipt-header-order-no,
                 .fct-receipt-header .fct-receipt-header-invoice-no {
                     display: inline-block;
                     vertical-align: top !important;
                     margin-top: 12px;
-                }
-
-                .fct-receipt-header .fct-receipt-header-date {
+                    padding-inline-start: 0 !important;
                     padding-inline-end: 24px !important;
                 }
 
@@ -219,21 +224,25 @@ class ReceiptRenderer
                 style="width: 100%;border-collapse: collapse;margin-bottom: 10px;border: none;">
             <tbody style="width:100%">
             <tr style="width:100%">
-                <td style="width:60%;border: none;padding-inline-end: 12px;">
+                <td style="border: none;padding-inline-end: 12px;">
                     <?php $this->renderHeaderLogo(); ?>
 
                     <!-- show tax content -->
                     <?php $this->renderStoreTaxInformation(); ?>
                 </td>
-                <td
-                        class="fct-receipt-header-date"
-                        style="vertical-align: middle; width: 15%; text-align: end; border: none;padding-inline-end: 10px;">
-                    <?php $this->renderHeaderOrderDate(); ?>
-                </td>
-                <td
-                        class="fct-receipt-header-invoice-no"
-                        style="width:15%;text-align:end;border:none;vertical-align:baseline;">
-                    <?php $this->renderHeaderInvoiceNo(); ?>
+                <?php // Inline-block items sit in one row on desktop and wrap onto new lines on phones. ?>
+                <td class="fct-receipt-header-meta" style="vertical-align: middle; text-align: end; border: none;">
+                    <div class="fct-receipt-header-date" style="<?php echo esc_attr(self::HEADER_ITEM_STYLE); ?>">
+                        <?php $this->renderHeaderOrderDate(); ?>
+                    </div>
+                    <div class="fct-receipt-header-order-no" style="<?php echo esc_attr(self::HEADER_ITEM_STYLE); ?>">
+                        <?php $this->renderHeaderOrderNo(); ?>
+                    </div>
+                    <?php if (Arr::get($order, 'invoice_no')) : ?>
+                    <div class="fct-receipt-header-invoice-no" style="<?php echo esc_attr(self::HEADER_ITEM_STYLE); ?>">
+                        <?php $this->renderHeaderInvoiceNo(); ?>
+                    </div>
+                    <?php endif; ?>
                 </td>
             </tr>
             </tbody>
@@ -294,6 +303,20 @@ class ReceiptRenderer
                 );
                 echo esc_html(Helper::translateNumber($date));
             ?>
+        </p>
+        <?php
+    }
+
+    public function renderHeaderOrderNo()
+    {
+        $order = Arr::get($this->config, 'order', null);
+        ?>
+        <p style="white-space: nowrap; color: #94a3b8; text-align: end; margin: 0;font-size:12px;print-color-adjust: exact;">
+            <?php echo esc_html__('Order #', 'fluent-cart'); ?>
+        </p>
+        <p id="fct-order-uuid"
+           style="white-space: nowrap; font-weight: bold; color: #000; text-align: end; margin: 0;font-size:14px;">
+            <?php echo esc_html(Arr::get($order, 'uuid', '')); ?>
         </p>
         <?php
     }

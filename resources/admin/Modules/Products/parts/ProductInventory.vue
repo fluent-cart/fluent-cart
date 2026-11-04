@@ -4,8 +4,8 @@ import {onMounted, ref} from "vue";
 import StockAdjuster from '@/Modules/Products/parts/StockAdjuster.vue';
 import SkuInput from '@/Modules/Products/parts/SkuInput.vue';
 import Animation from "@/Bits/Components/Animation.vue";
-import translateNumber from "@/utils/translator/Translator";
-import translate from "@/utils/translator/Translator";
+import {translateNumber} from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import AppConfig from "@/utils/Config/AppConfig";
@@ -219,7 +219,7 @@ const handleManageStockChange = (value) => {
                     <span>{{ translate('Available') }}:</span> {{row.available.toString()}}
                   </li>
                   <li>
-                    <span>{{ translate('On Hold') }}:</span> {{row.on_hold.toString()}}
+                    <span>{{ _x('On Hold', 'Reserved stock quantity') }}:</span> {{row.on_hold.toString()}}
                   </li>
                   <li>
                     <span>{{ translate('Delivered') }}:</span> {{row.committed.toString()}}

@@ -186,12 +186,21 @@ class PlanUpgradeService
                 }
 
                 $paymentType = Arr::get($variant, 'payment_type');
-                $paymentSummary = Helper::toDecimal($cost, true, $currency) . ' one-time';
+                $formattedCost = Helper::toDecimal($cost, true, $currency);
+                $paymentSummary = sprintf(
+                    /* translators: %1$s: upgrade cost, e.g. "$10.00" */
+                    __('%1$s one-time', 'fluent-cart'),
+                    $formattedCost
+                );
                 if ($paymentType === 'subscription') {
-                    $paymentSummary = '<strong>' . Helper::toDecimal($cost, true, $currency) . '</strong> ' . __('first', 'fluent-cart') . ' '
-                        . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval'))
-                        . ', ' . __('then', 'fluent-cart') . ' ' . Helper::toDecimal($itemPrice, true, $currency)
-                        . '/' . Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval')) . ' ' . __('thereafter', 'fluent-cart') . '.';
+                    $boldCost = '<strong>' . $formattedCost . '</strong>';
+                    $paymentSummary = sprintf(
+                        /* translators: e.g. "$10.00 first month, then $20.00/month thereafter." 1: amount due now (bold), 2: billing interval unit, 3: recurring price */
+                        __('%1$s first %2$s, then %3$s/%2$s thereafter.', 'fluent-cart'),
+                        $boldCost,
+                        Helper::humanIntervalMaps(Arr::get($variant->other_info, 'repeat_interval')),
+                        Helper::toDecimal($itemPrice, true, $currency)
+                    );
                 }
 
                 $upgradePaths[] = [
@@ -305,7 +314,7 @@ class PlanUpgradeService
         // are leaving — tax included — so it isn't undercredited by the tax they paid.
         // For tax-exclusive lines the tax was added on top (add tax_amount); for inclusive
         // lines it is already baked into line_total. Then prorated by days remaining below.
-        $totalPaid = self::itemUnrefundedPaidWithTax($originalItem);
+        $totalPaid = self::itemUnrefundedPaidWithTax($order, $originalItem);
 
         $additionalItemIds = Arr::get($originalItem->line_meta, 'additional_item_ids', []);
         if (!empty($additionalItemIds)) {
@@ -315,7 +324,7 @@ class PlanUpgradeService
 
             foreach ($additionalItems as $item) {
                 if (Arr::get($item->line_meta, 'parent_item_id', '') == $originalItem->id) {
-                    $totalPaid += self::itemUnrefundedPaidWithTax($item);
+                    $totalPaid += self::itemUnrefundedPaidWithTax($order, $item);
                 }
             }
         }
@@ -368,25 +377,11 @@ class PlanUpgradeService
 
     /**
      * Unrefunded amount the customer actually paid for an order item, tax included (cents).
-     *
-     * Exclusive tax was added on top of line_total, so it is added back here. Inclusive
-     * tax is already part of line_total and must not be double-counted.
-     *
-     * Refunds are allocated against line_total (see Order::updateRefundedItems), so the
-     * exclusive tax is scaled to the unrefunded fraction of the line — otherwise a
-     * refunded line would still contribute its tax_amount to the upgrade credit.
+     * refund_total is recorded against the line's charge (see OrderItem::chargedTotal).
      */
-    private static function itemUnrefundedPaidWithTax(OrderItem $item)
+    private static function itemUnrefundedPaidWithTax(Order $order, OrderItem $item)
     {
-        $lineTotal = (int) $item->line_total;
-        $unrefunded = max(0, $lineTotal - (int) $item->refund_total);
-        $inclusive = (bool) Arr::get($item->line_meta, 'tax_config.inclusive', false);
-
-        if ($inclusive || $lineTotal <= 0) {
-            return $unrefunded;
-        }
-
-        return $unrefunded + (int) round((int) $item->tax_amount * $unrefunded / $lineTotal);
+        return max(0, $item->chargedTotal($order) - (int) $item->refund_total);
     }
 
 

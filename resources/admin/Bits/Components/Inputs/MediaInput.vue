@@ -37,7 +37,8 @@ const props = defineProps({
 })
 
 const emits = defineEmits([
-  'update:modelValue'
+  'update:modelValue',
+  'change'
 ])
 
 const value = ref();
@@ -53,6 +54,7 @@ const removeImageHandler = () => {
   }
   lightBoxAttachments.value = []
   emits('update:modelValue', value.value)
+  emits('change', value.value)
 }
 
 const onMediaSelected = (attachments) => {
@@ -71,6 +73,7 @@ const onMediaSelected = (attachments) => {
   }
 
   emits('update:modelValue', value.value)
+  emits('change', value.value)
 
 }
 watch(() => props.modelValue, (newValue) => {

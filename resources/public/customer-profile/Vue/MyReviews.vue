@@ -41,7 +41,7 @@
                                         <div v-if="product.last_purchased_at" class="variation-title">
                                             {{
                                                 /* translators: %1$s: the date the product was last purchased */
-                                                $t('Purchased on %1$s', formatDate(product.last_purchased_at))
+                                                $t('Purchased on %1$s', dateTimeI18(product.last_purchased_at))
                                             }}
                                         </div>
                                     </div>
@@ -109,7 +109,7 @@
                                             />
                                         </span>
                                         <span class="fct-my-reviews-reviewed-on">
-                                            {{ $t('Reviewed %1$s', formatDate(review.created_at)) }}
+                                            {{ $t('Reviewed %1$s', dateTimeI18(review.created_at)) }}
                                         </span>
                                         <span
                                             class="fct-my-reviews-status"
@@ -251,6 +251,7 @@ import {markRaw} from 'vue';
 import EmptyState from './EmptyState.vue';
 import Pagination from "./parts/Pagination.vue";
 import ReviewStar from "@/Bits/Components/Icons/ReviewStar.vue";
+import {dateTimeI18} from "../translator/Translator";
 
 export default {
     name: 'MyReviews',
@@ -337,6 +338,8 @@ export default {
         this.fetchPendingProducts();
     },
     methods: {
+        // Dates inside sentences: the portal's own date, never the recent-time form of the global formatDate()
+        dateTimeI18,
         /**
          * The media PRO attached to a review, defensively.
          *

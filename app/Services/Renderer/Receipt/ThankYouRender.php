@@ -261,7 +261,7 @@ class ThankYouRender
                             '%s<strong style="color: #007bff;"><a href="%s">#%s</a></strong>%s',
                             esc_html__('Your order ', 'fluent-cart'),
                             esc_url($profilePage . 'order/' . $order->uuid),
-                            esc_html($order->invoice_no),
+                            esc_html(Arr::get($order, 'invoice_no') ?: Arr::get($order, 'uuid')),
                             esc_html__(' has been placed successfully.', 'fluent-cart')
                     );
                     ?>
@@ -273,7 +273,7 @@ class ThankYouRender
                             '%s<strong style="color: #007bff;"><a href="%s">#%s</a></strong>%s',
                             esc_html__('Your order ', 'fluent-cart'),
                             esc_url($profilePage . 'order/' . $order->uuid),
-                            esc_html($order->invoice_no),
+                            esc_html(Arr::get($order, 'invoice_no') ?: Arr::get($order, 'uuid')),
                             esc_html__(' has been refunded.', 'fluent-cart')
                     );
                     ?>
@@ -285,7 +285,7 @@ class ThankYouRender
                             '%s<strong style="color: #007bff;"><a href="%s">#%s</a></strong>%s <a style="color: #007bff;" target="_blank" href="%s">%s</a>.',
                             esc_html__('The payment for your order ', 'fluent-cart'),
                             esc_url($profilePage . 'order/' . $order->uuid),
-                            esc_html($order->invoice_no),
+                            esc_html(Arr::get($order, 'invoice_no') ?: Arr::get($order, 'uuid')),
                             esc_html__(' could not be completed. You can try again from', 'fluent-cart'),
                             esc_url(\FluentCart\App\Services\Payments\PaymentHelper::getCustomPaymentLink($order->uuid)),
                             esc_html__('here', 'fluent-cart')

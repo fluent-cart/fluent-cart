@@ -3,8 +3,8 @@
     <SettingsHeader :show-save-button="false">
       <template #heading>
         <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-          <el-breadcrumb-item :to="{ name: 'shipping' }">
-            {{ translate("Shipping Zones") }}
+          <el-breadcrumb-item :to="manualCarrierRoute">
+            {{ translate('Manual carrier') }}
           </el-breadcrumb-item>
           <el-breadcrumb-item>
             {{ isEdit ? translate('Edit Shipping Zone') : translate('Add Shipping Zone') }}
@@ -46,7 +46,7 @@
                 </el-form-item>
 
                 <el-form-item :label="translate('Coverage')" prop="region" class="mt-2 mb-0" required>
-                  <ul class="fct-coverage-selector" role="radiogroup" :aria-label="translate('Coverage')">
+                  <ul class="fct-radio-cards" role="radiogroup" :aria-label="translate('Coverage')">
                     <li
                         v-for="option in coverageOptions"
                         :key="option.value"
@@ -57,12 +57,12 @@
                         @click="setCoverageMode(option.value)"
                         @keydown.enter.space.prevent="setCoverageMode(option.value)"
                     >
-                      <div class="fct-coverage-selector-content">
-                        <span class="fct-coverage-selector-title">{{ option.title }}</span>
-                        <span class="fct-coverage-selector-desc">{{ option.desc }}</span>
+                      <div class="fct-radio-cards-content">
+                        <span class="fct-radio-cards-title">{{ option.title }}</span>
+                        <span class="fct-radio-cards-desc">{{ option.desc }}</span>
                       </div>
-                      <div class="fct-coverage-selector-dot-wrap">
-                        <span class="fct-coverage-selector-dot"></span>
+                      <div class="fct-radio-cards-dot-wrap">
+                        <span class="fct-radio-cards-dot"></span>
                       </div>
                     </li>
                   </ul>
@@ -135,6 +135,7 @@ import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 import Animation from "@/Bits/Components/Animation.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import {CARRIER_MANUAL} from "@/utils/orderConstants";
 
 // Props
 const props = defineProps({
@@ -147,6 +148,7 @@ const props = defineProps({
 
 // Router
 const router = useRouter();
+const manualCarrierRoute = {name: 'carrier_settings', params: {slug: CARRIER_MANUAL}};
 
 const keyboardShortcuts = useKeyboardShortcuts();
 keyboardShortcuts.bind(['mod+s'], (event) => {
@@ -278,8 +280,8 @@ const fetchZoneData = () => {
         notFound.value = {
           show: true,
           message: translate('Shipping zone not found'),
-          buttonText: translate('Back to Shipping Zones'),
-          route: {name: 'all_shipping_zones'}
+          buttonText: translate('Go to Manual carrier'),
+          route: manualCarrierRoute
         };
       })
       .finally(() => {
@@ -375,7 +377,7 @@ const saveZone = () => {
 };
 
 const goBack = () => {
-  router.push({name: 'all_shipping_zones'});
+  router.push(manualCarrierRoute);
 };
 
 

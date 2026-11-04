@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, computed, toRaw } from "vue";
 import RevenueLineChart from "./RevenueLineChart.vue";
 import Revenue from "./Revenue.vue";
-import RevenueGroupedBy from "./RevenueGroupedBy.vue";
+import RevenueByOrderType from "./RevenueByOrderType.vue";
 import RevenueReportSummary from "./RevenueReportSummary.vue";
 import revenueReport from "@/Models/Reports/RevenueReportModel";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
@@ -17,7 +17,6 @@ const props = defineProps({
 });
 
 const appliedGroupKey = ref('default');
-const tableGroupKey = ref("billing_country");
 const reportFilter = props.reportFilter;
 
 const getRevenueReport = (params, groupKey = 'default') => {
@@ -48,25 +47,8 @@ const filterChartData = (groupKey) => {
   getRevenueReport(reportFilter.applicableFilters, appliedGroupKey.value)
 };
 
-const fetchDataByGroup = (groupKey) => {
-  tableGroupKey.value = groupKey;
-  revenueReport.getReportByGroup({
-    params: {
-      ...reportFilter.applicableFilters.params,
-      groupKey: groupKey,
-    },
-  });
-};
-
 const getData = (params) => {
   getRevenueReport(params, appliedGroupKey.value);
-  
-  revenueReport.getReportByGroup({
-    params: {
-      ...params.params,
-      groupKey: tableGroupKey.value,
-    },
-  });
 };
 
 onMounted(() => {
@@ -111,11 +93,10 @@ onUnmounted(() => {
         :loading="revenueReport.data.isBusy.revenueReport"
       />
 
-      <RevenueGroupedBy
-        :tableData="revenueReport.data.netRevenueByGroup"
-        :reportFilter="reportFilter"
-        :revenueReport="revenueReport"
-        @fetch-data-by-group="fetchDataByGroup"
+      <RevenueByOrderType
+        :rows="revenueReport.data.byOrderType"
+        :loading="revenueReport.data.isBusy.revenueReport"
+        :hasComparison="props.reportFilter.data.compareType !== 'no_comparison'"
       />
     </div>
   </UserCan>

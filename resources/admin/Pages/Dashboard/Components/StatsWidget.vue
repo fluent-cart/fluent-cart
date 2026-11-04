@@ -39,8 +39,8 @@
               }}
               <div v-if="stat.excluded_orders">
                 {{
-                  /* translators: %s: number of orders */
-                  translate('%s orders without an exchange rate left out', translateNumber(stat.excluded_orders))
+                  /* translators: %1$s: number of orders */
+                  translate('Orders left out without an exchange rate: %1$s', translateNumber(stat.excluded_orders))
                 }}
               </div>
             </div>

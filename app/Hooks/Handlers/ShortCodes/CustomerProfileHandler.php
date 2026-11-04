@@ -56,6 +56,11 @@ class CustomerProfileHandler extends ShortCode
             }
         });
 
+        // Moving or renaming the account page (or a parent page) changes its path.
+        add_action('save_post_page', function () {
+            (new StoreSettings())->syncCustomerDashboardPageSlug();
+        });
+
         // Add wildcard customer profile pages
         // add a custom permalink endpoint
         add_action('init', function () {
@@ -156,15 +161,16 @@ class CustomerProfileHandler extends ShortCode
             'public/customer-profile/style/customer-profile-global.scss',
         );
 
+        // Link first, so the notice offers only guest history that is still unlinked.
+        if (!EmailVerificationService::isRequired(get_current_user_id())) {
+            CustomerResource::getCurrentCustomer(!EmailVerificationService::isEnabled());
+        }
+
         // Gate before custom endpoint callbacks or the dashboard load customer data.
         $verificationNotice = EmailClaimPortal::render();
         if (EmailVerificationService::isRequired(get_current_user_id())) {
             echo $verificationNotice; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the view
             return;
-        }
-
-        if (!EmailVerificationService::isEnabled()) {
-            CustomerResource::getCurrentCustomer(true);
         }
 
         $customEndpointContent = $this->maybeCustomEndpointContent();

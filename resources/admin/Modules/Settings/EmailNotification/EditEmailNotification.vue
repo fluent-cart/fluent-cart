@@ -26,7 +26,7 @@ const props = defineProps({
     }
 });
 
-const loading = ref(false);
+const loading = ref(true);
 const saving = ref(false);
 const name = ref(props.name);
 const notificationData = ref({
@@ -285,7 +285,7 @@ onMounted(() => {
 
         <template v-if="!loading">
           <div class="mb-5">
-            <!-- Only show enable/disable switch for notifications that are not order_placed_admin or order_placed_customer -->
+            <!-- manage_toggle 'no' notifications are always on; show their label instead of a switch -->
             <div v-if="notificationData?.manage_toggle !== 'no'" class="setting-switcher">
               <el-switch
                   v-model="notificationData.settings.active"
@@ -295,9 +295,8 @@ onMounted(() => {
               ></el-switch>
             </div>
 
-            <!-- Show a text indicator for order_placed notifications -->
             <div v-else class="setting-switcher text-system-mid text-sm dark:text-gray-300">
-              {{ translate('Auto-enabled for offline payments') }}
+              {{ notificationData?.toggle_label || translate('Auto-enabled for offline payments') }}
             </div>
           </div>
 
@@ -354,7 +353,7 @@ onMounted(() => {
                         type="warning"
                         class="mb-3"
                         show-icon
-                        :description="translate('The preview shown here use sample data. Actual emails will be populated with real information.')"
+                        :description="translate('Settings_Preview_Shown')"
                     />
                     <iframe
                         :srcdoc="defaultTemplateHtml"
@@ -369,14 +368,14 @@ onMounted(() => {
                       min-version="1.3.15"
                       placement="feature_lock_email_templates"
                       :feature-title="translate('Custom Email Templates')"
-                      :feature-text="translate('Design beautiful email templates with a drag-and-drop block editor, shortcodes, and conditional content.')"
+                      :feature-text="translate('Settings_Design_Beautiful')"
                   >
                     <el-form-item :label="translate('Email Body')">
                       <Alert
                           class="mb-3"
                           type="warning"
                           show-icon
-                          :description="translate('Shortcodes/Blocks shown here use sample data. Actual emails will be populated with real information.')"
+                          :description="translate('Settings_Shortcodes_Blocks')"
                       />
                       <NewEditorFrame
                           ref="editorFrameRef"
@@ -493,7 +492,7 @@ onMounted(() => {
               class="mb-3"
               type="warning"
               show-icon
-              :description="translate('The preview shown here uses sample data. Actual emails will be populated with real information.')"
+              :description="translate('Settings_Preview_Shown_Uses')"
           />
 
           <div class="fct-preview-stage" :class="'fct-preview-stage--' + previewMode">

@@ -29,12 +29,9 @@
            already sit on a product (the product page's Reviews tab) pass
            product-id and get the variation row below instead.
 
-           A product with variations is a group, and its variations are the
-           options: what a review is about is the variation, not the product,
-           so the product itself is not selectable there. A simple product has
-           nothing to tell apart and is one plain option. That is the whole
-           rule — the shape of the list says which products have items, with
-           no second control to keep in step. -->
+           Every product title is an option (item_id null), with its variations
+           listed indented under it. Variation labels carry the product title
+           so the closed select still says whose "Version 1" was picked. -->
       <div v-if="!productId" class="fct-add-review-field">
         <label class="fct-add-review-label" for="fct_add_review_product">
           {{ translate('Select Product') }} <span class="fct-add-review-required">*</span>
@@ -45,6 +42,8 @@
             class="w-full"
             :class="hasError('post_id') || hasError('item_id') ? 'is-error' : ''"
             :aria-invalid="hasError('post_id') || hasError('item_id') ? 'true' : undefined"
+            clearable
+            :value-on-clear="null"
             filterable
             remote
             :reserve-keyword="false"
@@ -56,19 +55,47 @@
             @change="onSelectionChanged"
         >
           <template v-for="product in products" :key="product.id">
-            <el-option-group v-if="product.variations.length" :label="product.title">
-              <el-option
-                  v-for="variation in product.variations"
-                  :key="variation.id"
-                  :label="variation.title"
-                  :value="variationKey(product, variation)"
-              />
-            </el-option-group>
+            <!-- Product header: picking it files the review against the whole product. -->
             <el-option
-                v-else
+                class="fct-add-review-product-option"
                 :label="product.title"
                 :value="productKey(product)"
-            />
+            >
+              <span class="fct-add-review-option-body">
+                <span class="fct-add-review-option-title">{{ product.title }}</span>
+                <!-- The id tells apart products that share a title. -->
+                <span class="fct-add-review-option-meta">
+                  <template v-if="product.variations.length">
+                    <!-- translators: %1$s: number of variations -->
+                    {{ translate('%1$s variations', product.variations.length) }}
+                  </template>
+                  <template v-else>{{ translate('Simple product') }}</template>
+                  · #{{ product.id }}
+                </span>
+              </span>
+              <DynamicIcon
+                  v-if="selectionKey === productKey(product)"
+                  name="Check"
+                  class="fct-add-review-option-check"
+                  aria-hidden="true"
+              />
+            </el-option>
+            <el-option
+                v-for="(variation, index) in product.variations"
+                :key="variation.id"
+                class="fct-add-review-variation-option"
+                :class="{'is-last': index === product.variations.length - 1}"
+                :label="`${product.title} - ${variation.title}`"
+                :value="variationKey(product, variation)"
+            >
+              <span class="fct-add-review-option-title">{{ variation.title }}</span>
+              <DynamicIcon
+                  v-if="selectionKey === variationKey(product, variation)"
+                  name="Check"
+                  class="fct-add-review-option-check"
+                  aria-hidden="true"
+              />
+            </el-option>
           </template>
         </el-select>
         <ValidationError :validation-errors="validationErrors" field-key="post_id"/>
@@ -195,7 +222,7 @@
           <label class="fct-add-review-label" for="fct_add_review_status">{{ translate('Status') }}</label>
           <el-select id="fct_add_review_status" v-model="form.status" class="w-full">
             <el-option :label="translate('Approved')" value="approved"/>
-            <el-option :label="translate('Pending')" value="pending"/>
+            <el-option :label="_x('Pending', 'Review status')" value="pending"/>
           </el-select>
         </div>
 
@@ -313,7 +340,7 @@ import StarRatingInput from "@/Bits/Components/StarRatingInput.vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import {upgradeUrl} from "@/Bits/common";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 
@@ -468,11 +495,18 @@ const lockedHint = isProActive
 const onProductFocus = () => {
   clearValidationError('post_id');
   clearValidationError('item_id');
+  if (!products.value.length) {
+    searchProducts('');
+  }
 };
 
-// The select is not clearable, so a change always names an option: the errors
-// are already gone by now — picking one means the control was focused first.
+// Errors are already gone by now — picking one means the control was focused first.
 const onSelectionChanged = (key) => {
+  if (!key) {
+    form.value.post_id = null;
+    form.value.item_id = null;
+    return;
+  }
   const [postId, itemId] = String(key).split(':');
   form.value.post_id = Number(postId);
   form.value.item_id = itemId ? Number(itemId) : null;
@@ -488,6 +522,7 @@ const variations = ref([]);
 // goes with it.
 
 let searchTimer = null;
+let suggestedProducts = null;
 // Every request carries a sequence number. Responses come back in whatever
 // order the network decides, so without this a slow request for "sh" can land
 // after a fast one for "shirt" and repaint the list with products the admin is
@@ -549,18 +584,22 @@ const searchProducts = (name) => {
   const seq = ++searchSeq;
   abortPendingSearch();
 
-  if (!name) {
-    products.value = [];
+  // An empty query shows the default suggestions, fetched once per page load.
+  if (!name && suggestedProducts) {
+    products.value = suggestedProducts;
     productsLoading.value = false;
     return;
   }
 
   productsLoading.value = true;
   searchTimer = setTimeout(() => {
-    fetchProducts({search: name}, seq)
+    fetchProducts(name ? {search: name} : {}, seq)
         .then((rows) => {
           if (rows === null) {
             return;
+          }
+          if (!name) {
+            suggestedProducts = rows;
           }
           products.value = rows;
         })
@@ -581,7 +620,7 @@ const searchProducts = (name) => {
           searchAbort = null;
           productsLoading.value = false;
         });
-  }, 400);
+  }, name ? 400 : 0);
 };
 
 /**

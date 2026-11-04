@@ -19,6 +19,7 @@ import {
   prepareLabel,
   getEmphasisColor,
   getXAxisConfig,
+  axisDayLabel,
 } from '../Utils/decorator';
 import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
@@ -125,18 +126,35 @@ const hasComparison = computed(() => props.reportFilter.data.compareType !== 'no
 const seriesData = computed(() => {
   let seriesSrc = [
     {
-      name: translate("Current Revenue"),
-      key: "net_revenue",
+      name: translate("Net Sales"),
+      key: "net_sales",
       type: chartType.value,
       color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
-      data: props.chartData.map((item) => item["net_revenue"])
+      data: props.chartData.map((item) => item["net_sales"])
+    },
+    // Off by default; the legend turns them on
+    {
+      name: translate("Discounts"),
+      key: "discounts",
+      type: chartType.value,
+      color: colors.hot_pink,
+      data: props.chartData.map((item) => item["discounts"]),
+      hidden: true,
+    },
+    {
+      name: translate("Refunds"),
+      key: "refunds",
+      type: chartType.value,
+      color: colors.coral,
+      data: props.chartData.map((item) => item["refunds"]),
+      hidden: true,
     },
   ];
 
   if (hasComparison.value) {
     seriesSrc.unshift({
-      name: translate("Compare Revenue"),
-      key: "net_revenue",
+      name: translate("Compare Net Sales"),
+      key: "net_sales",
       type: chartType.value,
       color: chartType.value === 'bar'
         ? echarts.color.modifyAlpha(isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue, 0.35)
@@ -145,7 +163,7 @@ const seriesData = computed(() => {
       fill: false,
       data: props.compareData.map(item => {
         return {
-          value: item.net_revenue,
+          value: item.net_sales,
           date: item.group
         }
       }),
@@ -166,17 +184,23 @@ const seriesData = computed(() => {
 });
 
 let chartInstance = null;
+// The owner's legend choices outlive a redraw (a filter change rebuilds the chart)
+const legendChoices = ref({});
 
 // Initialize the chart
 const initChart = () => {
-  if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
-  }
-
   nextTick(() => {
+    // Dispose here: two calls in one tick would both init the same element
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
+
     if (chartRef.value) {
       chartInstance = echarts.init(chartRef.value);
+      chartInstance.on('legendselectchanged', (params) => {
+        legendChoices.value = {...params.selected};
+      });
       updateChart();
     }
   });
@@ -210,7 +234,7 @@ const updateChart = () => {
       textStyle: {
         color: isDarkTheme.value ? "#ffffff" : "#000000",
       },
-      selected: Object.fromEntries(seriesData.value.map(item => [item.name, !item.hidden])),
+      selected: Object.fromEntries(seriesData.value.map(item => [item.name, legendChoices.value[item.name] ?? !item.hidden])),
     },
     tooltip: {
       trigger: "axis",
@@ -228,10 +252,12 @@ const updateChart = () => {
       formatter: (params) => {
         let tooltipContent = '';
         const color = isDarkTheme.value ? "#ffffff" : "#565865";
+        let lastDate = null;
       
         params.forEach(function (param, index) {
           const isDataObject = typeof param.data === 'object' && param.data !== null;
           const customDate = isDataObject ? prepareLabel(param.data.date) : param.name;
+          // Series of the same period share one date line
           const value = chartTooltipAmount(param.value * 100);
           const needMarginBottom = params.length > 1 && index === 0;
 
@@ -239,7 +265,10 @@ const updateChart = () => {
             tooltipContent += `<div style="margin-bottom: 10px">`
           }
 
-          tooltipContent += `<div>${customDate}</div>`;
+          if (customDate !== lastDate) {
+            tooltipContent += `<div>${customDate}</div>`;
+            lastDate = customDate;
+          }
           tooltipContent += `<div>
             ${param.marker}
             <span style="color: ${color}">${param.seriesName}</span>
@@ -263,6 +292,7 @@ const updateChart = () => {
       type: "category",
       data: labels, // Use group for x-axis
       axisLabel: {
+        formatter: axisDayLabel,
         color: isDarkTheme.value ? "#ffffff" : "#000000",
         fontSize: 12,
         interval: xAxisConfig.value.interval,
@@ -406,11 +436,9 @@ onMounted(() => {
               popper-class="fct-tooltip"
               :content="tooltip"
               placement="top"
-            >
-              <DynamicIcon
-                class="text-gray-500 w-4 h-4 cursor-pointer"
-                name="InformationFill"
-              />
+            
+              :trigger="['hover', 'focus']">
+              <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')"><DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/></button>
             </el-tooltip>
           </div>
         </template>
@@ -424,7 +452,7 @@ onMounted(() => {
               <el-option
                 v-for="groupKey in groupKeys"
                 :key="groupKey.value"
-                :label="translate(groupKey.label)"
+                :label="groupKey.label"
                 :value="groupKey.value"
               />
             </el-select>

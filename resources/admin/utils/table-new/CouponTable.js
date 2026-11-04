@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Arr from "@/utils/support/Arr";
 
 class CouponTable extends Table {
@@ -8,8 +8,8 @@ class CouponTable extends Table {
     getTabs() {
         return {
             all: translate("All"),
-            active: translate("Active"),
-            expired: translate('Inactive'),
+            active: _x('Active', 'Coupon status'),
+            expired: _x('Inactive', 'Coupon status'),
             //disabled: translate('Disabled'),
         }
     }

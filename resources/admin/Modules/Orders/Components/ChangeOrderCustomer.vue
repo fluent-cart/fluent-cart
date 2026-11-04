@@ -198,7 +198,7 @@ const handleBack = () => {
               v-model="editableCustomer.wp_user"
           >
             <LabelHint :title="translate('Create as wordpress user')"
-                       :content="translate('We will create a new user for this customer. If a user with the same email already exists, we will associate the customer with that existing user.')"/>
+                       :content="translate('Order_Create_New')"/>
           </el-checkbox>
         </div>
 

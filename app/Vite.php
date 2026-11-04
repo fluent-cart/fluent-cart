@@ -21,12 +21,19 @@ class  Vite
 
     public function __construct()
     {
-        $serverConfigPath = FLUENTCART_PLUGIN_PATH . 'config' . DIRECTORY_SEPARATOR . 'vite.json';
+        $configDirectory = FLUENTCART_PLUGIN_PATH . 'config' . DIRECTORY_SEPARATOR;
+        $serverConfigPath = $configDirectory . 'vite.json';
         if (file_exists($serverConfigPath)) {
             $serverConfig = json_decode(file_get_contents($serverConfigPath));
+            $localServerConfigPath = $configDirectory . 'vite.local.json';
+            if (file_exists($localServerConfigPath)) {
+                foreach ((array) json_decode(file_get_contents($localServerConfigPath)) as $key => $value) {
+                    $serverConfig->$key = $value;
+                }
+            }
             $this->viteHost = $serverConfig->host ?: $this->viteHost;
             $this->viteHostProtocol = $serverConfig->protocol ?: $this->viteHostProtocol;
-            $this->vitePort = $serverConfig->port ?: $this->vitePort;
+            $this->vitePort = $serverConfig->public_port ?? $serverConfig->port ?: $this->vitePort;
         }
     }
 

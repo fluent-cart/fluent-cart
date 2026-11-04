@@ -87,7 +87,7 @@ class StoreSettings implements ArrayableInterface
             'hide_coupon_field'                    => 'no',
             'user_account_creation_mode'           => 'all',
             'auto_login_after_account_creation'    => 'yes',
-            'require_customer_email_verification' => 'no',
+            'require_customer_email_verification' => 'yes',
             'checkout_page_id'                     => '',
             'custom_payment_page_id'               => '',
             'registration_page_id'                 => '',
@@ -1280,7 +1280,7 @@ class StoreSettings implements ArrayableInterface
                                                 'wrapperClass' => 'fct-compliance-auto-login',
                                                 'label' => false,
                                                 'type' => 'radio',
-                                                'value' => 'no',
+                                                'value' => 'yes',
                                                 'attributes' => [
                                                     'aria-label' => __('Customer email verification', 'fluent-cart'),
                                                 ],
@@ -2119,6 +2119,14 @@ class StoreSettings implements ArrayableInterface
         }
 
         return trim(str_replace(home_url('/'), '', $url), '/');
+    }
+
+    // Re-saving recomputes the slug and flushes the account-page rewrite rule.
+    public function syncCustomerDashboardPageSlug()
+    {
+        if ($this->getCustomerDashboardPageSlug(null, false) !== $this->get('customer_profile_page_slug')) {
+            $this->save($this->get());
+        }
     }
 
     /**

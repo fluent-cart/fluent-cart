@@ -4,7 +4,6 @@ import {onMounted, ref, nextTick} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {useFilterPopoverOutsideClickMixin} from '@/mixin/filterPopoverOutsideClickMixin';
 import Animation from "@/Bits/Components/Animation.vue";
-import translateNumber from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";

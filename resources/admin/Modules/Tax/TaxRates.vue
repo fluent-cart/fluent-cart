@@ -301,7 +301,7 @@ onMounted(() => {
               <Alert
                   type="warning"
                   icon="AlertTriangle"
-                  :content="translate('Tax is currently disabled. Enable tax from the Tax Settings page to start collecting tax.')"
+                  :content="translate('Tax_Tax_Currently')"
               />
             </div>
             <TaxRatesLoader v-if="loading" />

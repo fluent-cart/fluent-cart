@@ -1,12 +1,14 @@
 <script>
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 
 // Exported as well: the edit page's summary bar shows the chosen option's
-// label and icon.
+// label and icon. summaryLabel is the badge inside that sentence, which some
+// languages word differently from the tile label.
 export const appliesToOptions = [
     {
         value: 'line_item',
         label: translate('All line items'),
+        summaryLabel: _x('All line items', 'Pricing rule summary target'),
         icon: 'ShoppingBag',
         // Conditions switch the rule on for the whole cart; they never pick lines.
         hint: translate('Applied to every line item in the cart when the conditions match.')
@@ -14,12 +16,14 @@ export const appliesToOptions = [
     {
         value: 'checkout',
         label: translate('Checkout'),
+        summaryLabel: _x('Checkout', 'Pricing rule summary target'),
         icon: 'Cart',
         hint: translate('Discount or fee is applied once to the overall checkout total.')
     },
     {
         value: 'shipping',
         label: translate('Shipping'),
+        summaryLabel: _x('Shipping', 'Pricing rule summary target'),
         icon: 'Truck',
         hint: translate('Discount or fee is applied to the shipping cost.')
     },

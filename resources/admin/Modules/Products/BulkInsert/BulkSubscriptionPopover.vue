@@ -97,6 +97,8 @@ const closePopover = () => {
     popper-class="fct-tooltip"
     :show-after="400"
   >
+    <!-- The tooltip trigger needs an element; el-popover has a fragment root. -->
+    <span class="inline-flex">
     <el-popover
       v-model:visible="popoverVisible"
       placement="bottom"
@@ -170,7 +172,8 @@ const closePopover = () => {
         <div class="fct-bulk-sub-row">
           <el-switch
             :active-text="$t('Setup fee')"
-            v-model="variant.other_info.manage_setup_fee"
+            :model-value="variant.other_info.manage_setup_fee || 'no'"
+            @update:model-value="value => variant.other_info.manage_setup_fee = value"
             active-value="yes"
             inactive-value="no"
             :disabled="!hasPro || disabled"
@@ -210,6 +213,7 @@ const closePopover = () => {
       </div>
     </div>
     </el-popover>
+    </span>
   </el-tooltip>
 </template>
 

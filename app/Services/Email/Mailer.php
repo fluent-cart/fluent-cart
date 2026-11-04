@@ -63,6 +63,8 @@ class Mailer
         $replyToEmail = Arr::get($settings, 'reply_to_email', '');
         $replyToName = Arr::get($settings, 'reply_to_name', '');
 
+        $replyToName = static::cleanDisplayName($replyToName);
+
         if ($replyToEmail && $replyToName) {
             $this->replyTo = $replyToName . ' <' . $replyToEmail . '>';
         } else if ($replyToEmail) {
@@ -88,12 +90,35 @@ class Mailer
 
     public function to($email, $name = ''): Mailer
     {
+        $name = static::cleanDisplayName($name);
+
         if ($name) {
             $this->to = $name . ' <' . $email . '>';
         } else {
             $this->to = $email;
         }
         return $this;
+    }
+
+    /**
+     * Make a name safe to use as the display name in a "Name <email>" value.
+     *
+     * wp_mail() splits To, Cc, Bcc and Reply-To on every comma and ignores quotes,
+     * so a name such as "x,someone@example.com,y" would add a recipient. Address
+     * separators, quotes and control characters become spaces.
+     *
+     * @param mixed $name
+     * @return string Empty when nothing printable is left.
+     */
+    public static function cleanDisplayName($name): string
+    {
+        if (!is_string($name) || $name === '') {
+            return '';
+        }
+
+        $name = preg_replace('/[\x00-\x1F\x7F,;<>"\\\\]+/', ' ', $name);
+
+        return trim(preg_replace('/\s+/', ' ', $name));
     }
 
     public function setIsHtml($isHtml): Mailer

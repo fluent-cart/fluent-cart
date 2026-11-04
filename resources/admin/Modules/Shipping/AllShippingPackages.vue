@@ -1,6 +1,6 @@
 <script setup>
 import {ref, onMounted} from 'vue';
-import translate from "@/utils/translator/Translator";
+import translate, {translateNumber} from "@/utils/translator/Translator";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import {ElMessageBox} from "element-plus";
@@ -8,6 +8,7 @@ import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import PackageDialog from "@/Modules/Shipping/Components/PackageDialog.vue";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import {syncShippingPackagesConfig} from "@/Modules/Shipping/shippingPackagesConfig";
 
 const packages = ref([]);
 const loading = ref(false);
@@ -45,6 +46,7 @@ const savePackages = (snapshot) => {
   return Rest.post('shipping/packages', {packages: packages.value})
     .then(response => {
       packages.value = response.packages || packages.value;
+      syncShippingPackagesConfig(packages.value);
       showDialog.value = false;
       Notify.success(response.message);
     })
@@ -138,6 +140,16 @@ const formatWeight = (pkg) => {
   return pkg.weight + ' ' + pkg.weight_unit;
 };
 
+const formatCapacity = (pkg) => {
+  const maxWeight = Number(pkg.max_weight);
+  if (!maxWeight || maxWeight <= 0) {
+    return '';
+  }
+  const amount = translateNumber(new Intl.NumberFormat(undefined, {maximumFractionDigits: 4}).format(maxWeight));
+  /* translators: %1$s is the box capacity, %2$s its weight unit */
+  return translate('Holds up to %1$s %2$s', amount, pkg.weight_unit);
+};
+
 onMounted(() => {
   fetchPackages();
 });
@@ -161,7 +173,7 @@ onMounted(() => {
         </div>
 
         <div v-else-if="packages.length === 0 && !loading" class="fct-packages-empty">
-          <p class="text-gray-500">{{ translate('No packages defined yet. Add a package to define how your products are packaged for shipping.') }}</p>
+          <p class="text-gray-500">{{ translate('Ship_Packages_Defined') }}</p>
         </div>
 
         <div v-else class="fct-packages-cards">
@@ -176,7 +188,9 @@ onMounted(() => {
               </span>
               <div class="fct-package-card-info">
                 <div class="fct-package-card-name">{{ pkg.name }}</div>
-                <div class="fct-package-card-dims">{{ formatDimensions(pkg) }}, {{ formatWeight(pkg) }}</div>
+                <div class="fct-package-card-dims">
+                  {{ formatDimensions(pkg) }}, {{ formatWeight(pkg) }}<template v-if="formatCapacity(pkg)"> · {{ formatCapacity(pkg) }}</template>
+                </div>
               </div>
             </div>
 

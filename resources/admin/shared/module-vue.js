@@ -8,6 +8,7 @@ export {
     defineComponent,
     getCurrentInstance,
     nextTick,
+    onBeforeUnmount,
     onMounted,
     onUnmounted,
     ref,
@@ -16,6 +17,7 @@ export {
     // Template compiler helpers
     Fragment,
     createBlock,
+    createSlots,
     createCommentVNode,
     createElementBlock,
     createElementVNode,

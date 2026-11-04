@@ -80,6 +80,22 @@ class EmailNotificationMailer
             $this->mailEmailsOfEvent('shipping_status_changed_to_shipped', $data);
         }, 999, 1);
 
+        add_action('fluent_cart/order_shipment_created', function ($data) {
+            $shipment = Arr::get($data, 'shipment');
+            $order = Arr::get($data, 'order');
+
+            if (!$shipment || !$order || !$shipment->notify_customer) {
+                return;
+            }
+
+            // The shipment is part of the payload so the template can render
+            // the carrier / tracking number / tracking URL that was just captured.
+            $this->mailEmailsOfEvent('order_shipment_created', [
+                'order'    => $order,
+                'shipment' => $shipment,
+            ]);
+        }, 10, 1);
+
         add_action('fluent_cart/shipping_status_changed_to_delivered', function ($data) {
             $this->mailEmailsOfEvent('shipping_status_changed_to_delivered', $data);
         }, 999, 1);

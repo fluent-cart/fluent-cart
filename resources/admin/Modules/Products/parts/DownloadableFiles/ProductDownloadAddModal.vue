@@ -43,7 +43,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
     <template #header>
       <LabelHint
           :title="$t('Add Downloadable Asset(s)')"
-          :content="$t('Attach the WordPress-supported digital files that customers will receive after purchasing this product. If this downloadable file is only for a specific product variation (e.g., \'eBook Version\' or \'Audiobook Version\'), please select that variant. Otherwise, you may leave the \'Choose variant\' field empty to make the file available for all variants of this product. Please note that any additional files added after any sell will be accessible to both existing and new orders.')"
+          :content="$t('Product_Attach_Wordpress')"
           placement="bottom"
       />
     </template>

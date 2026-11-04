@@ -28,7 +28,7 @@ $formattedAmount = \FluentCart\Api\CurrencySettings::getFormattedPrice($order->t
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
             printf(
                 /* translators: %1$s is the customer's full name */

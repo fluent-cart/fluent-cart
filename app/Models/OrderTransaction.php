@@ -88,6 +88,16 @@ class OrderTransaction extends Model
         return \json_decode($value, true);
     }
 
+    /**
+     * A refund row saved without its item and shipping writes. Order totals skip it until resync.
+     */
+    public function isAwaitingResync(): bool
+    {
+        $meta = $this->meta;
+
+        return is_array($meta) && Arr::get($meta, 'local_sync') === 'pending';
+    }
+
     public function subscription()
     {
         return $this->hasOne(Subscription::class, 'id', 'subscription_id');

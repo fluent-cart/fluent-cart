@@ -3,7 +3,6 @@ import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import Empty from '@/Bits/Components/Table/Empty.vue';
 import Badge from "@/Bits/Components/Badge.vue";
 import translate from "@/utils/translator/Translator";
-import Str from "../../../utils/support/Str";
 import Url from "@/utils/support/Url";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -12,6 +11,7 @@ import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import CustomerInfoPopover from "@/Modules/Customers/parts/CustomerInfoPopover.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import OrderUpDownIndicator from "@/Bits/Components/OrderUpDownIndicator.vue";
+import {orderTypeText, isInstallmentOrder} from "@/Modules/Orders/Components/orderSaleType";
 import {ref} from "vue";
 import BulkDeleteAction from "@/Modules/Orders/Components/BulkDeleteAction.vue";
 import {translateNumber} from "@/utils/translator/Translator";
@@ -100,19 +100,6 @@ const handleSelectionChange = (selection) => {
 
 const handleDeleteComplete = () => {
   props.table.fetch();
-}
-
-const getOrderTypeText = (type) => {
-  switch (type) {
-    case 'payment':
-      return translate('Payment');
-    case 'subscription':
-      return translate('Subscription');
-    case 'renewal':
-      return translate('Renewal');
-    default:
-      Str.headline(type)
-  }
 }
 
 // Format all orders on a load
@@ -245,10 +232,10 @@ defineExpose({
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
-                        <span v-if="!parseInt(scope.row.total_refund)" v-html="CurrencyFormatter.formatNumber(scope.row.total_amount, true, false, scope.row.currency)"></span>
+                        <span v-if="!parseInt(scope.row.total_refund)" v-html="CurrencyFormatter.formatFixed(scope.row.total_amount, true, false, scope.row.currency)"></span>
                         <template v-else>
-                            <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatNumber(scope.row.total_amount, true, false, scope.row.currency)"></span>
-                            <span style="margin-inline-start: 5px;" v-if="scope.row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatNumber((parseInt(scope.row.total_amount) - parseInt(scope.row.total_refund)), true, false, scope.row.currency)"></span>
+                            <span class="text-gray-700 line-through" v-html="CurrencyFormatter.formatFixed(scope.row.total_amount, true, false, scope.row.currency)"></span>
+                            <span style="margin-inline-start: 5px;" v-if="scope.row.payment_status != 'refunded'" v-html="CurrencyFormatter.formatFixed((parseInt(scope.row.total_amount) - parseInt(scope.row.total_refund)), true, false, scope.row.currency)"></span>
                         </template>
                     </RouteCell>
                 </template>
@@ -259,7 +246,7 @@ defineExpose({
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
                         <div class="fct-status-group">
-                            <Badge :status="scope.row.payment_status" :hide-icon="true"/>
+                            <Badge :status="scope.row.payment_status" kind="payment" :hide-icon="true"/>
 
                             <span class="img" v-if="getPaymentProviderLogo(scope.row.payment_method)"
                                   :class="scope.row.payment_method">
@@ -280,7 +267,7 @@ defineExpose({
 
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
-                        <Badge :status="scope.row.status" :hide-icon="true" :key="scope.row.id"/>
+                        <Badge :status="scope.row.status" kind="order" :hide-icon="true" :key="scope.row.id"/>
                     </RouteCell>
 
                 </template>
@@ -288,7 +275,7 @@ defineExpose({
 
             <el-table-column v-if="isColumnVisible('type')" :width="140" :label="translate('Order Type')">
                 <template #default="scope">
-                    <span>{{ getOrderTypeText(scope.row.type) }}</span>
+                    <Badge :type="isInstallmentOrder(scope.row) ? 'blue' : 'info'" :text="orderTypeText(scope.row)" size="small" :hide-icon="true"/>
                     <OrderUpDownIndicator :order="scope.row"/>
                 </template>
             </el-table-column>

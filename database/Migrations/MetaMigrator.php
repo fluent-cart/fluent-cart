@@ -20,7 +20,8 @@ class MetaMigrator extends Migrator
                 `created_at` DATETIME NULL,
                 `updated_at` DATETIME NULL,
                  INDEX `{$indexPrefix}_mt_idx` (`object_type` ASC),
-                 INDEX `{$indexPrefix}_mto_id_idx` (`object_id` ASC)";
+                 INDEX `{$indexPrefix}_mto_id_idx` (`object_id` ASC),
+                 INDEX `{$indexPrefix}_mt_type_key_idx` (`object_type` ASC, `meta_key` ASC)";
     }
 
 
@@ -28,6 +29,24 @@ class MetaMigrator extends Migrator
     {
         static::renameKeyToMetaKey();
         static::renameValueToMetaValue();
+        static::addObjectTypeMetaKeyIndex();
+    }
+
+    /**
+     * Options are looked up by object_type + meta_key (carrier settings read a
+     * `meta_key LIKE` prefix under `object_type = 'option'`). Only `object_type`
+     * was indexed, so those reads matched every option row before the meta_key
+     * predicate was applied — cost grew with unrelated option metadata.
+     *
+     * Composite, in that order: equality on object_type, then a range scan on the
+     * meta_key prefix. Name must stay identical to getSqlSchema()'s.
+     */
+    public static function addObjectTypeMetaKeyIndex()
+    {
+        static::addIndexIfNotExists(
+            static::getDbPrefix() . 'fct_mt__mt_type_key_idx',
+            ['object_type', 'meta_key']
+        );
     }
 
     public static function renameKeyToMetaKey()

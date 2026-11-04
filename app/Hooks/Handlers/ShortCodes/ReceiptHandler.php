@@ -100,7 +100,7 @@ class ReceiptHandler
             ]);
 
             if ($pdfPath && file_exists($pdfPath)) {
-                $fileName = sanitize_file_name('receipt-' . $order->invoice_no . '.pdf');
+                $fileName = static::getDownloadFileName($order);
                 header('Content-Type: application/pdf');
                 header("Content-Disposition: attachment; filename=\"" . $fileName . "\"; filename*=UTF-8''" . rawurlencode($fileName));
                 header('Content-Length: ' . filesize($pdfPath));
@@ -209,5 +209,15 @@ class ReceiptHandler
             __("The requested receipt is invalid", 'fluent-cart')
         );
         return ob_get_clean();
+    }
+
+    /**
+     * Receipt PDF download name: the invoice number once paid, the order uuid before.
+     */
+    public static function getDownloadFileName($order): string
+    {
+        $reference = Arr::get($order, 'invoice_no') ?: Arr::get($order, 'uuid');
+
+        return sanitize_file_name('receipt-' . $reference . '.pdf');
     }
 }

@@ -26,7 +26,7 @@ class RadiusPalette
         return [
             'card'  => [
                 'var'   => '--fct-card-radius',
-                'label' => __('Card', 'fluent-cart'),
+                'label' => _x('Card', 'layout element', 'fluent-cart'),
                 'note'  => __('Product cards and their image corners.', 'fluent-cart'),
             ],
             'btn'   => [

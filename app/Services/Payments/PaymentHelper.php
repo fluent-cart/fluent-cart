@@ -7,6 +7,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\URL;
 use FluentCart\Framework\Support\Arr;
 
@@ -222,6 +223,54 @@ class PaymentHelper
         $meta['refunded_total'] = $alreadyRefunded + $refundedAmount;
         $parentTransaction->meta = $meta;
         $parentTransaction->save();
+    }
+
+    /**
+     * Set the charge's meta.refunded_total from the refund rows linked to it, for webhook paths
+     * that create or adopt a refund row without adding its amount. Never lowers the stored
+     * total: older refund rows can lack the link to their charge.
+     *
+     * @param OrderTransaction $chargeTransaction
+     * @return void
+     */
+    public static function recountTransactionRefundedTotal(OrderTransaction $chargeTransaction): void
+    {
+        $linkedRefundTotal = OrderTransaction::query()
+            ->where('order_id', $chargeTransaction->order_id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->where('status', Status::TRANSACTION_REFUNDED)
+            ->get()
+            ->filter(function ($refund) use ($chargeTransaction) {
+                $meta = is_array($refund->meta) ? $refund->meta : [];
+                $chargeId = Arr::get($meta, 'parent_id');
+                if (!$chargeId && $refund->payment_method === 'stripe') {
+                    // Older Stripe webhook rows link the charge as transaction_id.
+                    $chargeId = Arr::get($meta, 'transaction_id');
+                }
+                return (int) $chargeId === (int) $chargeTransaction->id;
+            })
+            ->sum('total');
+
+        if ($linkedRefundTotal <= 0) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'fct_order_transactions';
+
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$table}
+            SET meta = JSON_SET(
+                CASE WHEN meta IS NULL OR meta = '' OR JSON_LENGTH(meta) = 0 THEN '{}' ELSE meta END,
+                '$.refunded_total',
+                GREATEST(CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(meta, ''), '$.refunded_total')), 0) AS SIGNED), %d)
+            ),
+            updated_at = %s
+            WHERE id = %d",
+            (int) $linkedRefundTotal,
+            DateTime::gmtNow()->format('Y-m-d H:i:s'),
+            $chargeTransaction->id
+        ));
     }
 
 //    public static function updateOrderRefundedTotal($order, $refundedAmount, &$type): void

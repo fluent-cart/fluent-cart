@@ -9,36 +9,22 @@ use FluentCart\App\Services\Report\CustomerReportService;
 
 class CustomerReportController extends Controller
 {
-    public function index(Request $request)
+    public function insights(Request $request)
     {
-        $params = ReportHelper::processParams($request->get('params'));
-        $compareRanges = ReportHelper::formatCompareRanges($params);
+        $params = ReportHelper::processParams($request->get('params'), [], true);
 
-        $service = CustomerReportService::make();
+        // The report permission does not cover customer names and emails
+        return CustomerReportService::make()->getInsights($params, ReportHelper::canSeeCustomers());
+    }
 
-        $currentMetrics = $service->getCustomerReportData($params);
+    // Paid, partly refunded and refunded orders, as the Products page reads
+    public function overview(Request $request)
+    {
+        $params = ReportHelper::processParams($request->get('params'), ['paymentStatus'], true);
 
-        $fluctuations = [];
-        $previousMetrics = ['grouped' => [], 'summary' => []];
-
-        if ($params['comparePeriod']) {
-            $params['startDate'] = $params['comparePeriod'][0];
-            $params['endDate'] = $params['comparePeriod'][1];
-            $previousMetrics = $service->getCustomerReportData($params);
-
-            $fluctuations = $service->calculateFluctuations(
-                $currentMetrics['summary'], $previousMetrics['summary']
-            );
-        }
-
-        return [
-            'summary'         => $currentMetrics['summary'],
-            'previousSummary' => $previousMetrics['summary'],
-            'fluctuations'    => $fluctuations,
-            'currentMetrics'  => $currentMetrics['grouped'],
-            'previousMetrics' => $previousMetrics['grouped'],
-            'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
-            'compare_ranges'  => $compareRanges,
+        return CustomerReportService::make()->getOverview($params) + [
+            'compare_ranges' => ReportHelper::formatCompareRanges($params),
         ];
     }
+
 }

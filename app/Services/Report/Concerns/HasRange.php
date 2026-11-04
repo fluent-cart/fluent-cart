@@ -46,18 +46,6 @@ trait HasRange
         return $this->setStartDate($startDate)->setEndDate($endDate);
     }
 
-    /**
-     * @param $year
-     */
-    public function setYearlyRange($selectedYear)
-    {
-
-        $startDate = DateTime::parse("{$selectedYear}-01-01")->startOfYear();
-        $endDate = DateTime::parse("{$selectedYear}-01-01")->endOfYear();
-
-        return $this->setStartDate($startDate)->setEndDate($endDate);
-    }
-
     protected ?DateTime $startDate = null;
 
     /**
@@ -146,29 +134,7 @@ trait HasRange
 
     }
 
-    public function getRangeDiffInMonth(): int
-    {
-        if (!empty($this->startDate) && !empty($this->endDate)) {
-            (new DateTime($this->startDate))->diffInMonths(
-                new DateTime($this->endDate)
-            );
-        }
-        return 0;
-    }
 
-    public function getRangeDiffInYear(): int
-    {
-        if (!empty($this->startDate) && !empty($this->endDate)) {
-            (new DateTime($this->startDate))->diffInYears(
-                new DateTime($this->endDate)
-            );
-        }
-        return 0;
-    }
 
-    public function test()
-    {
-        return 6;
-    }
 
 }

@@ -121,7 +121,7 @@ const fmtCents = (cents, currency) => CurrencyFormatter.formatForOrder(cents, cu
             <template #default="scope">
                 <div class="table-cell">
                     <div class="flex flex-col gap-1">
-                        <span><Badge :status="statusBadge(scope.row.status)" size="small"/></span>
+                        <span><Badge :status="statusBadge(scope.row.status)" kind="withdrawal" size="small"/></span>
                         <span class="font-medium text-system-dark dark:text-gray-50">{{ scope.row.reference }}</span>
                     </div>
                 </div>

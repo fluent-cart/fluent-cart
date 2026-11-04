@@ -304,7 +304,7 @@ const getIntervalShortcode = (interval) => {
                                 <template #label>
                                     <LabelHint
                                         :title="translate('Compare at price')"
-                                        :content="translate('Set a higher price to show with a strike-through, highlighting a discount for sales')"
+                                        :content="translate('Product_Set_Higher')"
                                     />
                                 </template>
                                 <PriceInput
@@ -352,7 +352,7 @@ const getIntervalShortcode = (interval) => {
                             <el-form-item class="has-tooltip">
                                 <template #label>
                                     <LabelHint :title="translate('Trial Days')"
-                                            :content="translate('Enter the number of days the free trial will last. The trial period cannot exceed 365 days.')"/>
+                                            :content="translate('Product_Enter_Number')"/>
                                 </template>
 
                                 <el-input
@@ -539,7 +539,7 @@ const getIntervalShortcode = (interval) => {
                                     <el-form-item required class="has-tooltip-and-required">
                                         <template #label>
                                             <LabelHint :title="translate('Setup fee amount')"
-                                                    :content="translate('Set the one-time setup fee amount (e.g., $50) per order. This fee does not apply to quantity.')"/>
+                                                    :content="translate('Product_Set_Time')"/>
                                         </template>
                                         <PriceInput
                                             :error-class="productEditModel.hasValidationError(`${fieldKey}.other_info.signup_fee`) ? 'is-error' : ''"

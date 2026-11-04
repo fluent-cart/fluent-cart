@@ -488,6 +488,16 @@ onMounted(() => {
               #{{ translateNumber(entity.customer.user_id) }}
               <DynamicIcon name="Redirect" class="w-2.5 h-2.5 text-primary-500 dark:text-gray-200"/>
             </a>
+              <el-tag
+                  v-if="entity.customer.unverified_email"
+                  class="ml-1"
+                  type="warning"
+                  size="small"
+                  round
+                  :title="translate('Order_Account_Changed')"
+              >
+                {{ translate('Email unverified') }}
+              </el-tag>
             </div>
           </div>
 

@@ -105,8 +105,6 @@
 </template>
 
 <script>
-import {translateNumber} from "../../translator/Translator";
-
 export default {
   name: "CustomerTaxBreakdownBox",
   props: {
@@ -153,19 +151,7 @@ export default {
     // (not part of the global mixin), so it's replicated here identically,
     // built on top of the inherited global formatNumber.
     formatOrderAmount(amount, withCurrency = true, hideEmpty = false) {
-      var formatted = this.formatNumber(amount, withCurrency, hideEmpty, this.order && this.order.currency);
-      if (!formatted) return formatted;
-
-      var numericAmount = Number(amount || 0);
-      if (!Number.isFinite(numericAmount) || numericAmount % 100 !== 0) {
-        return formatted;
-      }
-
-      var shopConfig = window.fluentcart_customer_profile_vars.shop || {};
-      var decimalSeparator = shopConfig.decimal_separator === 'comma' ? ',' : '.';
-      var decimalToken = decimalSeparator + translateNumber('00');
-
-      return formatted.replace(decimalToken, '');
+      return this.formatNumber(amount, withCurrency, hideEmpty, this.order && this.order.currency);
     }
   }
 };

@@ -11,6 +11,7 @@ use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\User;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Localization\LocalizationManager;
@@ -134,7 +135,7 @@ class Helper
     {
         $baseUrl = (string) apply_filters(
             'fluent_cart/pro_upgrade_base_url',
-            'https://fluentcart.com/discount-deal/'
+            'https://fluentcart.com/pricing/'
         );
 
         $params = wp_parse_args($overrides, [
@@ -269,11 +270,8 @@ class Helper
      */
     public static function getShippingPackages()
     {
-        static $packages = null;
-        if ($packages === null) {
-            $packages = fluent_cart_get_option('shipping_packages', []);
-        }
-        return $packages ?: [];
+        // fluent_cart_get_option() caches per request and refreshes on update.
+        return fluent_cart_get_option('shipping_packages', []) ?: [];
     }
 
     /**
@@ -329,7 +327,7 @@ class Helper
         $statuses = [
             'on-hold'    => __('On Hold', 'fluent-cart'),
             'processing' => __('Processing', 'fluent-cart'),
-            'completed'  => __('Completed', 'fluent-cart'),
+            'completed'  => _x('Completed', 'Order status', 'fluent-cart'),
             //'archived' => __('Archived', 'fluent-cart'),
             'cancelled'  => __('Cancelled', 'fluent-cart'),
         ];
@@ -342,7 +340,7 @@ class Helper
         $statuses = [
             'on-hold'    => __('On Hold', 'fluent-cart'),
             'processing' => __('Processing', 'fluent-cart'),
-            'completed'  => __('Completed', 'fluent-cart'),
+            'completed'  => _x('Completed', 'Order status', 'fluent-cart'),
             //  'archived' => __('Archived', 'fluent-cart'),
             'cancelled'  => __('Cancelled', 'fluent-cart')
         ];
@@ -353,8 +351,8 @@ class Helper
     public static function getEditableCustomerStatuses()
     {
         $statuses = [
-            'active'   => __('Active', 'fluent-cart'),
-            'inactive' => __('Inactive', 'fluent-cart'),
+            'active'   => _x('Active', 'Customer status', 'fluent-cart'),
+            'inactive' => _x('Inactive', 'Customer status', 'fluent-cart'),
         ];
 
         return apply_filters('fluent_cart/editable_customer_statuses', $statuses, []);
@@ -363,10 +361,11 @@ class Helper
     public static function getShippingStatuses()
     {
         $statuses = [
-            'unshipped'   => __('Unshipped', 'fluent-cart'),
-            'shipped'     => __('Shipped', 'fluent-cart'),
-            'delivered'   => __('Delivered', 'fluent-cart'),
-            'unshippable' => __('Unshippable', 'fluent-cart'),
+            'unshipped'         => __('Unshipped', 'fluent-cart'),
+            'shipped'           => __('Shipped', 'fluent-cart'),
+            'partially_shipped' => __('Partially Shipped', 'fluent-cart'),
+            'delivered'         => _x('Delivered', 'Shipping status', 'fluent-cart'),
+            'unshippable'       => __('Unshippable', 'fluent-cart'),
         ];
 
         return apply_filters('fluent_cart/shipping_statuses', $statuses, []);
@@ -377,7 +376,7 @@ class Helper
         $statuses = [
             'unshipped'   => __('Unshipped', 'fluent-cart'),
             'shipped'     => __('Shipped', 'fluent-cart'),
-            'delivered'   => __('Delivered', 'fluent-cart'),
+            'delivered'   => _x('Delivered', 'Shipping status', 'fluent-cart'),
             'unshippable' => __('Unshippable', 'fluent-cart'),
         ];
 
@@ -412,12 +411,12 @@ class Helper
     public static function getTransactionStatuses($withLabel = true)
     {
         $statuses = [
-            'pending'         => __('Pending', 'fluent-cart'),
-            'paid'            => __('Paid', 'fluent-cart'),
+            'pending'         => _x('Pending', 'Transaction status', 'fluent-cart'),
+            'paid'            => _x('Paid', 'Transaction status', 'fluent-cart'),
             'require_capture' => __('Authorized (Require Capture)', 'fluent-cart'),
-            'failed'          => __('Failed', 'fluent-cart'),
-            'refunded'        => __('Refunded', 'fluent-cart'),
-            'active'          => __('Active', 'fluent-cart'),
+            'failed'          => _x('Failed', 'Transaction status', 'fluent-cart'),
+            'refunded'        => _x('Refunded', 'Transaction status', 'fluent-cart'),
+            'active'          => _x('Active', 'Transaction status', 'fluent-cart'),
         ];
 
         $statuses = apply_filters('fluent_cart/transaction_statuses', $statuses, []);
@@ -432,10 +431,10 @@ class Helper
     public static function getEditableTransactionStatuses($withLabel = true)
     {
         $statuses = [
-            'pending'  => __('Pending', 'fluent-cart'),
-            'paid'     => __('Paid', 'fluent-cart'),
-            'failed'   => __('Failed', 'fluent-cart'),
-            'refunded' => __('Refunded', 'fluent-cart'),
+            'pending'  => _x('Pending', 'Transaction status', 'fluent-cart'),
+            'paid'     => _x('Paid', 'Transaction status', 'fluent-cart'),
+            'failed'   => _x('Failed', 'Transaction status', 'fluent-cart'),
+            'refunded' => _x('Refunded', 'Transaction status', 'fluent-cart'),
         ];
 
         $statuses = apply_filters('fluent_cart/editable_transaction_statuses', $statuses, []);
@@ -589,7 +588,8 @@ class Helper
             return 0;
         }
 
-        $amount = floatval($amount) * 100; // Convert to float and multiply
+        // Round to cents before scaling: 1.005 * 100 is 100.4999..., which PHP 8.4's round() no longer lifts to 101
+        $amount = round(floatval($amount), 2) * 100;
         $amount = (int)round($amount); // Round to nearest integer, then cast
         return $amount;
     }
@@ -1050,9 +1050,9 @@ class Helper
     public static function getCouponStatuses()
     {
         $statuses = [
-            'active'   => __('Active', 'fluent-cart'),
-            'expired'  => __('Expired', 'fluent-cart'),
-            'disabled' => __('Disabled', 'fluent-cart'),
+            'active'   => _x('Active', 'Coupon status', 'fluent-cart'),
+            'expired'  => _x('Expired', 'Coupon status', 'fluent-cart'),
+            'disabled' => _x('Disabled', 'Coupon status', 'fluent-cart'),
         ];
 
         return apply_filters('fluent_cart/coupon_statuses', $statuses, []);
@@ -1205,23 +1205,24 @@ class Helper
 
         // Prefix trial if present: "N days free then …"
         if ($trialDays > 0) {
-            $trialFrag = sprintf(
-            /* translators: "30 days free then" */
-                __('%1$d %2$s free then', 'fluent-cart'),
+            $main = sprintf(
+            /* translators: e.g. "30 days free then $100 per month". 1: trial day count, 2: "day" or "days", 3: the recurring price phrase */
+                __('%1$d %2$s free then %3$s', 'fluent-cart'),
                 $trialDays,
-                $pluralUnit('day', $trialDays)
+                $pluralUnit('day', $trialDays),
+                $main
             );
-            $main = $trialFrag . ' ' . $main;
         }
 
         // Append signup fee if any: " + $10 one-time signup fee"
         if ($signupFee) {
-            $main .= ' ' . sprintf(
-                /* translators: e.g. "+ $10 one-time signup fee" */
-                    __('+ %1$s one-time %2$s', 'fluent-cart'),
-                    $signupFee,
-                    $signupFeeLabel
-                );
+            $main = sprintf(
+            /* translators: e.g. "$100 per month + $10 one-time signup fee". 1: the price phrase, 2: signup fee amount, 3: signup fee name */
+                __('%1$s + %2$s one-time %3$s', 'fluent-cart'),
+                $main,
+                $signupFee,
+                $signupFeeLabel
+            );
         }
 
         // No trailing period (matches your examples)
@@ -1243,6 +1244,26 @@ class Helper
                 return __('six month', 'fluent-cart');
             case 'year':
                 return __('year', 'fluent-cart');
+            default:
+                return $unit;
+        }
+    }
+
+    public static function getTranslatedIntervalUnitPlural(string $unit, int $count): string
+    {
+        switch ($unit) {
+            case 'day':
+                return _n('day', 'days', $count, 'fluent-cart');
+            case 'week':
+                return _n('week', 'weeks', $count, 'fluent-cart');
+            case 'month':
+                return _n('month', 'months', $count, 'fluent-cart');
+            case 'quarter':
+                return _n('quarter', 'quarters', $count, 'fluent-cart');
+            case 'half_year':
+                return _n('six month', 'six months', $count, 'fluent-cart');
+            case 'year':
+                return _n('year', 'years', $count, 'fluent-cart');
             default:
                 return $unit;
         }
@@ -1296,11 +1317,11 @@ class Helper
             : '';
 
         $time = $intervalUnit
-            ? $intervalLabel
+            ? static::getTranslatedIntervalUnitPlural($intervalUnit, $occurrence)
             : '';
 
         $paymentInfo = sprintf(
-        /* translators: %1$s is the price, %2$s is the interval, %3$s is "until cancel" text, %4$s is the occurrence count, %5$s is the time period */
+        /* translators: %1$s is the price, %2$s is the interval, %3$s is the occurrence count, %4$s is the pluralized interval unit (e.g. months) */
             __('%1$s %2$s, for %3$s %4$s', 'fluent-cart'),
             $price,
             $interval,
@@ -1422,8 +1443,8 @@ class Helper
             ];
 
             if (isset($weekdays[$anchor['weekday']])) {
-                /* translators: %s is a weekday name, e.g. "on Friday" */
-                return sprintf(__('on %s', 'fluent-cart'), $weekdays[$anchor['weekday']]);
+                /* translators: %1$s is a weekday name, e.g. "on Friday" */
+                return sprintf(_x('on %1$s', 'subscription billing day', 'fluent-cart'), $weekdays[$anchor['weekday']]);
             }
 
             return '';
@@ -1436,8 +1457,8 @@ class Helper
                 return __('on the last day', 'fluent-cart');
             }
 
-            /* translators: %s is an ordinal day of month, e.g. "on the 10th" */
-            return sprintf(__('on the %s', 'fluent-cart'), gmdate('jS', gmmktime(12, 0, 0, 1, $day, 2001)));
+            /* translators: %1$s is an ordinal day of month, e.g. "on the 10th" */
+            return sprintf(_x('on the %1$s', 'subscription billing day', 'fluent-cart'), self::ordinalDay($day));
         }
 
         if ($period === 'year' && (!empty($anchor['day']) || !empty($anchor['month']))) {
@@ -1445,10 +1466,10 @@ class Helper
             $month = (int) Arr::get($anchor, 'month', 0);
 
             if ($month && $day) {
-                // wp_date(), not gmdate(): gmdate() has no locale, so this month
-                // name stayed English inside an otherwise translated sentence.
-                /* translators: %s is a date, e.g. "on Aug 19" */
-                return sprintf(__('on %s', 'fluent-cart'), wp_date('M', gmmktime(12, 0, 0, $month, 1, 2001), new \DateTimeZone('UTC')) . ' ' . $day);
+                // Store format keeps the locale's field order ("16. Aug" in German).
+                // 2000 is a leap year, so Feb 29 renders.
+                /* translators: %1$s is a date without the year, e.g. "on Aug 19" */
+                return sprintf(_x('on %1$s', 'subscription billing day', 'fluent-cart'), wp_date(DateFormatter::shortDateFormat(), gmmktime(12, 0, 0, $month, $day, 2000), new \DateTimeZone('UTC')));
             }
 
             if ($month) {
@@ -1456,11 +1477,30 @@ class Helper
                 return sprintf(__('in %s', 'fluent-cart'), wp_date('F', gmmktime(12, 0, 0, $month, 1, 2001), new \DateTimeZone('UTC')));
             }
 
-            /* translators: %s is an ordinal day of month, e.g. "on the 10th" */
-            return sprintf(__('on the %s', 'fluent-cart'), gmdate('jS', gmmktime(12, 0, 0, 1, $day, 2001)));
+            /* translators: %1$s is an ordinal day of month, e.g. "on the 10th" */
+            return sprintf(_x('on the %1$s', 'subscription billing day', 'fluent-cart'), self::ordinalDay($day));
         }
 
         return '';
+    }
+
+    // gmdate('jS') hard-codes the English suffix, so each suffix is its own msgid.
+    private static function ordinalDay(int $day): string
+    {
+        switch (gmdate('S', gmmktime(12, 0, 0, 1, $day, 2001))) {
+            case 'st':
+                /* translators: %d: day of month, e.g. "1st", "21st" */
+                return sprintf(_x('%dst', 'ordinal day of month', 'fluent-cart'), $day);
+            case 'nd':
+                /* translators: %d: day of month, e.g. "2nd", "22nd" */
+                return sprintf(_x('%dnd', 'ordinal day of month', 'fluent-cart'), $day);
+            case 'rd':
+                /* translators: %d: day of month, e.g. "3rd", "23rd" */
+                return sprintf(_x('%drd', 'ordinal day of month', 'fluent-cart'), $day);
+            default:
+                /* translators: %d: day of month, e.g. "4th", "11th" */
+                return sprintf(_x('%dth', 'ordinal day of month', 'fluent-cart'), $day);
+        }
     }
 
     public static function generateSetupFeeInfo($otherInfo, $asArray = false, $currencyCode = null)
@@ -1517,7 +1557,7 @@ class Helper
         if ($trialDays && Arr::get($otherInfo, 'is_trial_days_simulated', 'no') !== 'yes') {
             $trialInfo = sprintf(
             /* translators: %d is the number of trial days */
-                __('Free Trial: %d days', 'fluent-cart'),
+                _n('Free Trial: %d day', 'Free Trial: %d days', (int) $trialDays, 'fluent-cart'),
                 $trialDays
             );
         }

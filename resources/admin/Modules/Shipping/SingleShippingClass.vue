@@ -62,94 +62,16 @@
                   {{ translate('How this cost should be applied to the shipping rate') }}
                 </div>
               </el-form-item>
+
+              <el-form-item prop="per_item">
+                <el-checkbox v-model="classForm.per_item" :true-value="1" :false-value="0">
+                  <LabelHint :title="translate('Apply to quantity')" :content="translate('Ship_Check_Box')"/>
+                </el-checkbox>
+              </el-form-item>
             </el-form>
           </CardBody>
         </CardContainer>
 
-        <!-- Shipping Profile: Zones & Methods for this class -->
-        <div v-if="isEdit" class="mt-4">
-          <CardContainer>
-            <CardHeader :title="translate('Shipping Profile')" border_bottom title_size="small">
-              <template #action>
-                <el-button type="primary" size="small" @click="addZoneForClass">
-                  {{ translate('Add Zone') }}
-                </el-button>
-              </template>
-            </CardHeader>
-            <CardBody>
-              <p class="text-gray-500 text-sm mb-3">
-                {{ translate('Define shipping zones and methods specific to this class. Products with this class will use these rates instead of the general shipping zones.') }}
-              </p>
-
-              <div v-if="profileLoading" v-loading="true" class="py-8"></div>
-
-              <div v-else-if="profileZones.length === 0" class="text-center py-4 text-gray-400">
-                {{ translate('No class-specific zones yet. Products in this class will use the general shipping zones.') }}
-              </div>
-
-              <div v-else>
-                <div v-for="zone in profileZones" :key="zone.id" class="mb-4 border rounded-md overflow-hidden">
-                  <div class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800">
-                    <div>
-                      <strong>{{ zone.name }}</strong>
-                      <span class="text-gray-500 ms-2">({{ zone.formatted_region }})</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <el-popconfirm
-                          :title="translate('Delete this zone and its methods?')"
-                          @confirm="deleteProfileZone(zone.id)"
-                      >
-                        <template #reference>
-                          <el-button size="small" type="danger" text>
-                            {{ translate('Delete Zone') }}
-                          </el-button>
-                        </template>
-                      </el-popconfirm>
-                    </div>
-                  </div>
-                  <div class="p-0">
-                    <ShippingMethods
-                        :zone_id="zone.id"
-                        :methods="zone.methods || []"
-                        :country="zone.region"
-                        @fetch-shipping-methods="fetchProfile"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </CardContainer>
-        </div>
-
-        <!-- Zone creation drawer for this class -->
-        <el-drawer
-            v-model="showZoneDrawer"
-            :title="translate('Add Zone to Shipping Class')"
-            :aria-label="translate('Add Zone to Shipping Class')"
-            width="500px"
-            append-to-body
-        >
-          <el-form :model="zoneForm" ref="zoneFormRef" label-position="top">
-            <el-form-item :label="translate('Zone Name')" prop="name" :rules="[{ required: true, message: translate('Zone name is required'), trigger: 'blur' }]">
-              <el-input v-model="zoneForm.name" :placeholder="translate('Enter zone name')"></el-input>
-            </el-form-item>
-            <el-form-item :label="translate('Region')">
-              <el-select v-model="zoneForm.region" filterable :placeholder="translate('Select country or Whole World')">
-                <el-option :label="translate('Whole World')" value="all"/>
-                <el-option
-                    v-for="country in countries"
-                    :key="country.code2"
-                    :label="country.name"
-                    :value="country.code2"
-                />
-              </el-select>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <el-button @click="showZoneDrawer = false">{{ translate('Cancel') }}</el-button>
-            <el-button type="primary" @click="saveZoneForClass" :loading="savingZone" :disabled="savingZone">{{ translate('Save') }}</el-button>
-          </template>
-        </el-drawer>
       </div>
     </div>
   </div>
@@ -160,7 +82,6 @@ import {ref, computed, onMounted} from 'vue';
 import {useRouter} from 'vue-router';
 import {Container as CardContainer, Body as CardBody, Header as CardHeader} from '@/Bits/Components/Card/Card.js';
 import SingleShippingClassLoader from '@/Modules/Shipping/Components/SingleShippingClassLoader.vue';
-import ShippingMethods from '@/Modules/Shipping/ShippingMethods.vue';
 import NotFound from '@/Pages/NotFound.vue';
 import Rest from '@/utils/http/Rest';
 import translate from "@/utils/translator/Translator";
@@ -168,8 +89,8 @@ import {ArrowRight} from "@element-plus/icons-vue";
 import Notify from "@/utils/Notify";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import SettingsHeader from "../Settings/Parts/SettingsHeader.vue";
-import countriesList from "@/Modules/Customers/countries.json";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import LabelHint from "@/Bits/Components/LabelHint.vue";
 
 const saveShortcut = useSaveShortcut();
 
@@ -197,20 +118,9 @@ const classForm = ref({
   name: '',
   description: '',
   cost: 0,
-  type: 'fixed'
+  type: 'fixed',
+  per_item: 0
 });
-
-// Profile state
-const profileLoading = ref(false);
-const profileZones = ref([]);
-const showZoneDrawer = ref(false);
-const savingZone = ref(false);
-const zoneFormRef = ref(null);
-const zoneForm = ref({
-  name: '',
-  region: 'all'
-});
-const countries = countriesList;
 
 const rules = ref({
   name: [
@@ -251,11 +161,9 @@ const fetchClassData = () => {
         name: shippingClass.name,
         description: shippingClass.description || '',
         cost: shippingClass.cost,
-        type: shippingClass.type
+        type: shippingClass.type,
+        per_item: Number(shippingClass.per_item) ? 1 : 0
       };
-      if (shippingClass.zones) {
-        profileZones.value = shippingClass.zones;
-      }
     })
     .catch(error => {
       // Error handled below via notFound state
@@ -297,64 +205,6 @@ const saveClass = () => {
         saving.value = false;
       });
   });
-};
-
-// Profile methods
-const fetchProfile = () => {
-  if (!isEdit.value) return;
-
-  profileLoading.value = true;
-  Rest.get(`/shipping/classes/${props.class_id}/profile`)
-    .then(response => {
-      profileZones.value = response.shipping_class?.zones || [];
-    })
-    .catch(error => {
-      Notify.error(translate('Failed to load shipping profile'));
-    })
-    .finally(() => {
-      profileLoading.value = false;
-    });
-};
-
-const addZoneForClass = () => {
-  zoneForm.value = { name: '', region: 'all' };
-  showZoneDrawer.value = true;
-};
-
-const saveZoneForClass = () => {
-  zoneFormRef.value.validate(valid => {
-    if (!valid) return;
-
-    savingZone.value = true;
-    Rest.post('/shipping/zones', {
-      ...zoneForm.value,
-      shipping_class_id: props.class_id
-    })
-      .then(response => {
-        Notify.success(response.message);
-        showZoneDrawer.value = false;
-        fetchProfile();
-      })
-      .catch(error => {
-        // Error shown via Notify
-        Notify.error(translate('Failed to save shipping zone'));
-      })
-      .finally(() => {
-        savingZone.value = false;
-      });
-  });
-};
-
-const deleteProfileZone = (zoneId) => {
-  Rest.delete(`/shipping/zones/${zoneId}`)
-    .then(response => {
-      Notify.success(response.message);
-      fetchProfile();
-    })
-    .catch(error => {
-      // Error shown via Notify
-      Notify.error(translate('Failed to delete shipping zone'));
-    });
 };
 
 // Lifecycle

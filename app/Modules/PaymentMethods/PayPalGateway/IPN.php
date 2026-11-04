@@ -677,8 +677,18 @@ class IPN
             )
             : __('PayPal reported a failed subscription payment.', 'fluent-cart');
 
+        $renewalPayment = [];
+        $failedAmount = Arr::get($paypalSubscription, 'billing_info.last_failed_payment.amount.value');
+        $failedCurrency = Arr::get($paypalSubscription, 'billing_info.last_failed_payment.amount.currency_code');
+        if (is_numeric($failedAmount) && $failedCurrency) {
+            $renewalPayment = [
+                'amount'   => Helper::toCent($failedAmount),
+                'currency' => $failedCurrency,
+            ];
+        }
+
         try {
-            (new SubscriptionRenewalFailed($subscriptionModel, $order, $subscriptionModel->customer, $error))->dispatch();
+            (new SubscriptionRenewalFailed($subscriptionModel, $order, $subscriptionModel->customer, $error, $renewalPayment))->dispatch();
         } catch (\Throwable $e) {
             if (isset($claimKey)) {
                 delete_option($claimKey);
@@ -1197,11 +1207,17 @@ class IPN
             return false; // not our transaction, we are not handling this refund
         }
 
-        return \FluentCart\App\Services\Payments\Refund::createOrRecordRefund([
+        $recorded = \FluentCart\App\Services\Payments\Refund::createOrRecordRefund([
             'vendor_charge_id' => $paypalRefundId,
             'payment_method'   => 'paypal',
             'total'            => $paypalRefundAmount,
         ], $parentTransaction);
+
+        if (is_wp_error($recorded) && $recorded->get_error_code() === 'refund_lock_timeout') {
+            self::$recurringPaymentError = $recorded;
+        }
+
+        return $recorded;
 
     }
 
@@ -1249,12 +1265,18 @@ class IPN
 
         $paypalRefundAmount = Helper::toCent(Arr::get($refundData, 'amount.total', 0));
 
-        return \FluentCart\App\Services\Payments\Refund::createOrRecordRefund([
+        $recorded = \FluentCart\App\Services\Payments\Refund::createOrRecordRefund([
             'vendor_charge_id' => Arr::get($refundData, 'id'),
             'payment_method'   => 'paypal',
             'total'            => $paypalRefundAmount,
             'reason'           => Arr::get($refundData, 'description'),
         ], $parentTransaction);
+
+        if (is_wp_error($recorded) && $recorded->get_error_code() === 'refund_lock_timeout') {
+            self::$recurringPaymentError = $recorded;
+        }
+
+        return $recorded;
     }
 
     public function handleWebhookRecurringProfileCancelled($data)

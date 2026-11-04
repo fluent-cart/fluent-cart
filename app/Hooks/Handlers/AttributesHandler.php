@@ -37,7 +37,7 @@ class AttributesHandler
             }
 
             $entry = [
-                __('↳ Attributes', 'fluent-cart'),
+                __('Attributes', 'fluent-cart'),
                 $capability,
                 'admin.php?page=fluent-cart#/products/attributes',
                 '',

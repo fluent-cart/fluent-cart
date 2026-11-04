@@ -37,3 +37,32 @@
     @apply w-4 h-4 text-warning-500;
   }
 }
+
+// A Pro report section shown as blurred sample data under an upgrade card
+// Sample and card share one grid cell, so the box grows with whichever is taller and nothing is clipped
+.fct-pro-preview {
+  @apply relative grid overflow-hidden rounded-lg;
+  .fct-pro-preview-sample,
+  .fct-pro-preview-card {
+    grid-area: 1 / 1;
+  }
+  .fct-pro-preview-sample {
+    @apply pointer-events-none select-none;
+    filter: blur(4px);
+  }
+  .fct-pro-preview-label {
+    @apply absolute z-10 top-3 right-3 text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-system-mid dark:bg-gray-800 dark:text-gray-300;
+  }
+  .fct-pro-preview-card {
+    @apply relative z-[1] flex items-center justify-center p-4;
+    > .fct-pro-feature-notice-wrap {
+      @apply w-full max-w-[440px] rounded-lg border border-solid border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-900;
+    }
+  }
+  .fct-pro-preview-bullets {
+    @apply text-left text-sm text-system-mid mt-3 mb-0 pl-5 list-disc dark:text-gray-300;
+    li {
+      @apply mb-1;
+    }
+  }
+}

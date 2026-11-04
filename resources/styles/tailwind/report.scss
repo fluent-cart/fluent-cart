@@ -377,18 +377,6 @@
 }
 
 
-.report-overview-page {
-  .fct-card {
-    &-header {
-      @apply px-0 pt-0;
-    }
-  }
-  .report-overview-col-2.grid-cols-2 {
-    @media (max-width: 960px) {
-      grid-template-columns: repeat(1, 1fr);
-    }
-  }
-}
 .fct-custom-tooltip {
   @apply relative cursor-context-menu;
   &-content {
@@ -415,6 +403,12 @@
   }
   &.summary-col-4 {
     @apply grid-cols-4;
+  }
+  &.summary-col-5 {
+    @apply grid-cols-5;
+  }
+  &.summary-col-3 {
+    @apply grid-cols-3;
   }
   &.summary-col-2 {
     @apply grid-cols-2;
@@ -670,7 +664,14 @@
     &.summary-col-2 {
       @apply grid-cols-1 gap-0;
     }
+    // Three cards still fit side by side; they stack only on a phone
+    &.summary-col-3 {
+      @apply grid-cols-3;
+    }
     &.summary-col-4 {
+      @apply grid-cols-2;
+    }
+    &.summary-col-5 {
       @apply grid-cols-2;
     }
     &.summary-col-6 {
@@ -716,6 +717,9 @@
     &.summary-col-6 {
       @apply grid-cols-2;
     }
+    &.summary-col-3 {
+      @apply grid-cols-1 gap-0;
+    }
   }
 }
 
@@ -727,4 +731,157 @@
   .el-table__cell:not(:last-child) .cell {
     @apply pr-2;
   }
+}
+
+/*=== Report title-bar filters (date, compare, currency, Filters) ===*/
+.fct-report-filter-bar {
+  @apply flex flex-wrap items-center justify-end gap-2;
+
+  .fct-report-filter-bar-button {
+    @apply gap-1.5 font-normal;
+
+    > span {
+      @apply inline-flex items-center gap-1.5;
+    }
+  }
+
+  .el-select {
+    @apply w-[110px];
+  }
+
+  .fct-report-filter-compare-date {
+    @apply w-[140px];
+  }
+}
+
+.fct-report-filter-chips {
+  @apply items-center py-3;
+}
+
+.fct-report-filter-popover {
+  .fct-report-filter-menu {
+    @apply m-0 p-0 list-none grid gap-0.5;
+
+    button {
+      @apply w-full text-start bg-transparent border-0 rounded-sm px-2.5 py-1.5 text-sm cursor-pointer text-system-dark hover:bg-gray-25 dark:text-gray-200 dark:hover:bg-dark-500;
+
+      &.is-active {
+        @apply font-medium text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-dark-500;
+      }
+    }
+  }
+
+  .fct-report-filter-custom-actions {
+    @apply flex justify-end gap-2 mt-3;
+  }
+
+  .fct-report-filter-note {
+    @apply m-0 mt-2 pt-2 px-2.5 border border-x-0 border-b-0 border-solid border-gray-divider text-xs text-system-light dark:text-gray-400 dark:border-dark-400;
+  }
+}
+
+.fct-report-filter-compare-menu {
+  .el-dropdown-menu__item {
+    @apply flex flex-col items-start gap-0.5 leading-snug py-2;
+
+    &.is-active {
+      @apply font-medium text-blue-500 dark:text-blue-300;
+    }
+  }
+
+  .fct-report-filter-compare-range {
+    @apply text-xs text-system-light dark:text-gray-400 font-normal;
+  }
+}
+
+.fct-report-order-mix {
+  @apply mb-7.5;
+
+  .fct-report-order-mix-grid {
+    @apply grid gap-x-8 gap-y-6 sm:grid-cols-2;
+
+    // Dividers only once every section sits in one row
+    &.has-3 {
+      @apply lg:grid-cols-3 lg:gap-x-0;
+
+      .fct-report-order-mix-section {
+        @apply lg:px-5 lg:border-0 lg:border-s lg:border-solid lg:border-gray-divider dark:lg:border-dark-500;
+
+        &:first-child {
+          @apply lg:ps-0 lg:border-s-0;
+        }
+      }
+    }
+
+    &.has-4 {
+      @apply xl:grid-cols-4 xl:gap-x-0;
+
+      .fct-report-order-mix-section {
+        @apply xl:px-5 xl:border-0 xl:border-s xl:border-solid xl:border-gray-divider dark:xl:border-dark-500;
+
+        &:first-child {
+          @apply xl:ps-0 xl:border-s-0;
+        }
+      }
+    }
+  }
+
+  .fct-report-order-mix-section {
+    @apply min-w-0;
+
+    &:last-child {
+      @apply pe-0;
+    }
+  }
+
+  .fct-report-order-mix-head {
+    @apply flex items-baseline justify-between gap-2 mb-3;
+  }
+
+  .fct-report-order-mix-title {
+    @apply m-0 text-sm font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  .fct-report-order-mix-hint {
+    @apply text-xs text-system-light dark:text-gray-400 whitespace-nowrap;
+  }
+
+  .fct-report-order-mix-bar {
+    @apply flex h-2 gap-0.5 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-500 mb-4;
+
+    span {
+      @apply block h-full;
+    }
+  }
+
+  .fct-report-order-mix-legend {
+    @apply m-0 p-0 list-none grid gap-2;
+
+    li {
+      @apply grid items-center gap-2 text-sm;
+      grid-template-columns: auto 1fr auto 3.5rem;
+    }
+  }
+
+  .fct-report-order-mix-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .fct-report-order-mix-label {
+    @apply truncate text-system-mid dark:text-gray-300;
+  }
+
+  .fct-report-order-mix-count {
+    @apply font-medium text-system-dark dark:text-gray-50 tabular-nums;
+  }
+
+  .fct-report-order-mix-share {
+    @apply text-end text-system-light dark:text-gray-400 tabular-nums;
+  }
+}
+
+// Channel rules dialog: one condition per row, label | field | operator | value | remove
+.fct-channel-rule-condition {
+  @apply grid gap-2 items-center mb-2;
+  grid-template-columns: 2.5rem 10rem 8.5rem minmax(0, 1fr) auto;
 }

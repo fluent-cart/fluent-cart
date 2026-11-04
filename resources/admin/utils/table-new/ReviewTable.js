@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Storage from "@/utils/Storage";
 import Url from "@/utils/support/Url";
 
@@ -101,7 +101,7 @@ class ReviewTable extends Table {
         return {
             all: translate("All"),
             approved: translate("Approved"),
-            pending: translate("Pending"),
+            pending: _x('Pending', 'Review status'),
             spam: translate("Spam"),
             trash: translate("Trash"),
         }

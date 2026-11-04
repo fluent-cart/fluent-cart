@@ -361,7 +361,7 @@ const createVideo = () => {
     <div v-if="!isActive" class="fct-fp-video__block" data-fct-fp-video-inactive>
       <p class="fct-fp-video__notice">
         {{ activated
-          ? translate('FluentPlayer is ready. Save any changes to this product, then reload the page to add videos.')
+          ? translate('Product_Fluentplayer_Ready')
           : translate('FluentPlayer is required to add videos to this product.') }}
       </p>
       <p v-if="!activated && !canInstall" class="fct-fp-video__notice" data-fct-fp-video-no-install-permission>
@@ -391,7 +391,7 @@ const createVideo = () => {
 
     <template v-else>
     <p v-if="!canAuthor" class="fct-fp-video__notice" data-fct-fp-video-no-permission>
-      {{ translate('Your account cannot manage FluentPlayer videos. Ask an administrator to grant the FluentPlayer authoring capability.') }}
+      {{ translate('Product_Account_Cannot') }}
     </p>
 
     <template v-else>
@@ -421,7 +421,7 @@ const createVideo = () => {
             <template v-else-if="form.metaFailed"> — {{ translate('details could not be read; the file name will be used as the title') }}</template>
           </span>
           <span v-else-if="form.src" class="fct-fp-video__hint">{{ translate('Enter a full URL starting with http:// or https://') }}</span>
-          <span v-else class="fct-fp-video__hint">{{ translate('Title and poster are sourced from YouTube, Vimeo, audio or HLS file or direct video') }}</span>
+          <span v-else class="fct-fp-video__hint">{{ translate('Product_Title_Poster') }}</span>
         </div>
 
         <div class="fct-fp-video__divider" role="separator">

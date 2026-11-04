@@ -300,6 +300,8 @@ class ModuleSettingsController extends Controller
                 'plugin_file' => 'fluentforms-pdf/fluentforms-pdf.php',
                 'source_type' => 'wordpress',
                 'upcoming'    => false,
+                // Admin route the active addon's gear icon opens.
+                'settings_route' => '/settings/pdf-template',
             ],
             'fluent-cart-migrator' => [
                 'title'       => __('FluentCart Migrator', 'fluent-cart'),
@@ -321,6 +323,23 @@ class ModuleSettingsController extends Controller
                 'source_type' => 'cdn',
                 'upcoming'    => false,
                 'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
+            ],
+            'shipping-for-fluent-cart' => [
+                'title'       => __('Shipping For FluentCart', 'fluent-cart'),
+                'description' => __('Connect Shippo for live shipping rates at checkout, label purchase and tracking updates.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/shipping/black.svg'),
+                'dark_logo'   => Vite::getAssetUrl('images/shipping/white.svg'),
+                'plugin_slug' => 'shipping-for-fluent-cart',
+                'plugin_file' => 'shipping-for-fluent-cart/shipping-for-fluent-cart.php',
+                'source_type' => 'cdn',
+                'source_link' => 'https://addons-cdn.fluentcart.com/shipping-for-fluent-cart.zip',
+                'license_required' => [
+                    'enabled'           => false,
+                    'parent_product_id' => 21480
+                ],
+                'upcoming'    => false,
+                'repo_link'   => 'https://fluentcart.com/fluentcart-addons/',
+                'settings_route' => '/settings/shipping/carriers'
             ],
         ];
 

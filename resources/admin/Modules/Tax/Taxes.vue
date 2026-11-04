@@ -249,7 +249,7 @@
                 </p>
 
                 <p>
-                    {{ translate("Make sure you've downloaded and saved the CSV file for your records before proceeding.") }}
+                    {{ translate('Tax_Make_Sure') }}
                     <a @click.prevent="exportAndContinue" class="cursor-pointer">
                       {{ translate('Download Again') }}
                     </a>
@@ -278,7 +278,7 @@ import TableWrapper from "@/Bits/Components/TableNew/TableWrapper.vue";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
 import {getCurrentInstance, ref, nextTick, computed} from "vue";
 import Empty from "@/Bits/Components/Table/Empty.vue";
-import translateNumber from "@/utils/translator/Translator";
+import {translateNumber} from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";

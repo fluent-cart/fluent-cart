@@ -49,6 +49,7 @@
 @import "coupon.scss";
 @import "table.scss";
 @import "number-input.scss";
+@import "quantity-stepper.scss";
 @import "input.scss";
 @import "copy-to-clipboard.scss";
 @import "menu.scss";

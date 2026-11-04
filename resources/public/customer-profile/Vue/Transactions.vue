@@ -27,7 +27,7 @@
                 datetime="{{ transaction.created_at }}"
                 :aria-label="$t('Transaction date') + ': ' + dateTimeI18(transaction.created_at)"
               >
-                {{ $t('on') }} {{ dateTimeI18(transaction.created_at) }}
+                {{ _x('on', 'Before a date') }} {{ dateTimeI18(transaction.created_at) }}
               </time>
 
               <span v-if="transaction.status === 'succeeded'" class="me-1">{{$t('using')}}</span>
@@ -82,7 +82,7 @@
                   datetime="{{ firstTxn.created_at }}"
                   :aria-label="$t('Transaction date') + ': ' + dateTimeI18(firstTxn.created_at)"
                 >
-                  {{ $t('on') }} {{ dateTimeI18(firstTxn.created_at) }}
+                  {{ _x('on', 'Before a date') }} {{ dateTimeI18(firstTxn.created_at) }}
                 </time>
 
                 <span v-if="firstTxn.status === 'succeeded'">
@@ -130,7 +130,7 @@
 </template>
 
 <script setup>
-import translate from "../translator/Translator";
+import translate, {_x} from "../translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Badge from "./parts/Badge.vue";
 import {computed} from "vue";

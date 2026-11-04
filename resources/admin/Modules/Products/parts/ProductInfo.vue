@@ -4,7 +4,7 @@ import * as Card from '@/Bits/Components/Card/Card.js';
 import {onMounted, ref, watch} from "vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import {useRoute} from 'vue-router'
-import translateNumber from "@/utils/translator/Translator";
+import {translateNumber} from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import GutenbergEditor from "@/Bits/Components/Inputs/GutenbergEditor.vue";
 import * as Fluid from "@/Bits/Components/FluidTab/FluidTab.js";

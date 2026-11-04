@@ -1,11 +1,12 @@
 <script setup>
-import {dateTimeI18, translateNumber} from "../../translator/Translator";
+import {dateTimeI18, recentDateText, translateNumber} from "../../translator/Translator";
 import translate from "../../translator/Translator";
 import {pluralizeTranslate} from "../../translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Badge from "../parts/Badge.vue";
 import getStatusText from "../../utils/statusLabels";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
+import {deliverySummary} from "../../utils/shipmentLabels";
 
 const props = defineProps({
     orders: {
@@ -80,15 +81,15 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
       <div class="order-content-only-mobile" role="list">
         <!-- translators: %s is the order number -->
         <div v-if="orders.length > 0" class="order-content-only-mobile-item" v-for="order in orders" :key="order.id" role="listitem"
-          :aria-label="$t('Order summary for order number %s', order.invoice_no)"
+          :aria-label="$t('Order summary for order number %s', order.uuid)"
         >
           <div class="item-header">
             <h3 class="sr-only">{{ $t('Order Number') }}</h3>
 
-            <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="link text-sm" :aria-label="$t('View order') + ' #' + order.invoice_no">
-              <span class="block truncate max-w-[100px] fct-ltr-isolate">#{{ order.invoice_no }}</span>
+            <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" class="link text-sm" :aria-label="$t('View order') + ' #' + order.uuid">
+              <span class="block truncate max-w-[140px] fct-ltr-isolate" :title="order.uuid">#{{ order.uuid }}</span>
             </component>
-            <span class="text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] text-sm">{{ dateTimeI18(order.created_at, 'date') }}</span>
+            <span class="text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] text-sm">{{ recentDateText(order.created_at) || dateTimeI18(order.created_at, 'date') }}</span>
           </div><!-- item-header -->
 
           <div class="item-body">
@@ -109,7 +110,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                 </span>
               </div>
 
-              <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" :aria-label="$t('View order') + ' #' + order.invoice_no" v-else>
+              <component :is="orderLinkTag(order.uuid)" v-bind="orderLinkProps(order.uuid)" :aria-label="$t('View order') + ' #' + order.uuid" v-else>
                 {{
                   /* translators: %s is the number of items in the order */
                   translate("%s items", filteredOrderItems(order).length)
@@ -141,19 +142,23 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                 <template #reference>
                   <!-- translators: %s is the order number -->
                   <div class="fct-action-link-btn" :aria-expanded="false"
-                  :aria-label="$t('Show items for order %s', [order.invoice_no])"
+                  :aria-label="$t('Show items for order %s', [order.uuid])"
                   role="button">
                     <DynamicIcon name="ChevronDown"/>
                   </div>
                 </template>
               </el-popover>
             </div>
+            <div v-if="deliverySummary(order.shipments, order.unshipped_items)" class="fct-order-delivery-summary">
+              <Badge :type="deliverySummary(order.shipments, order.unshipped_items).type" :text="deliverySummary(order.shipments, order.unshipped_items).text" size="small"/>
+              <small>{{ deliverySummary(order.shipments, order.unshipped_items).line }}</small>
+            </div>
           </div><!-- item-body -->
 
           <div class="item-footer">
             <div class="item-footer-content">
               <Badge :type="order.status" size="small">
-                {{ order.status }}
+                {{ getStatusText(order.status) }}
               </Badge>
               <span v-html="formatNumber(order.total_amount, true, false, order.currency)"></span>
             </div>
@@ -170,14 +175,14 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
       <!-- desktop view -->
         <el-table class="order-content-only-desktop" :empty-text="$t('Your purchases will be shown here!')" :data="orders" :show-header="showTableHeader" role="table"
       :aria-label="$t('Customer order history')">
-            <el-table-column label="#" :width="120">
+            <el-table-column label="#" :width="150">
                 <template #default="scope">
                   <div class="invoice-id-date">
                     <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)" class="link text-sm">
-                      <span class="block truncate max-w-[100px] fct-ltr-isolate">#{{ scope.row.invoice_no }}</span>
+                      <span class="block truncate max-w-[140px] fct-ltr-isolate" :title="scope.row.uuid">#{{ scope.row.uuid }}</span>
                     </component>
                     <span class="text">
-                        {{ dateTimeI18(scope.row.created_at, 'date') }}
+                        {{ recentDateText(scope.row.created_at) || dateTimeI18(scope.row.created_at, 'date') }}
                     </span>
                   </div>
                 </template>
@@ -253,6 +258,11 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                   <template v-if="scope.row.order_items">
                     <BundleProducts v-for="item in scope.row.order_items" :key="item.id" :product="item"/>
                   </template>
+
+                  <div v-if="deliverySummary(scope.row.shipments, scope.row.unshipped_items)" class="fct-order-delivery-summary">
+                    <Badge :type="deliverySummary(scope.row.shipments, scope.row.unshipped_items).type" :text="deliverySummary(scope.row.shipments, scope.row.unshipped_items).text" size="small"/>
+                    <small>{{ deliverySummary(scope.row.shipments, scope.row.unshipped_items).line }}</small>
+                  </div>
                 </template>
             </el-table-column>
 

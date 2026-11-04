@@ -109,6 +109,7 @@
                   :customer="customer"
                   :customer_id="customer_id"
                   @fetch="fetch"
+                  @email-verified="fetch(); getCustomerOrders()"
               />
 
 

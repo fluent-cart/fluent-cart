@@ -1,5 +1,4 @@
 @config "./checkout.config.js";
-@tailwind utilities;
 
 :root {
   --fct-checkout-primary-text-color: var(--fct-primary-text-color);
@@ -1336,6 +1335,40 @@ ul.fct_summary_items_list {
   }
 }
 
+/*====== shared collapse (see .claude/skills/coding-rules/css-styling.md) =======*/
+// Animates height through grid rows; visibility keeps closed content out of tab order.
+.fct-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 0.2s ease-out, opacity 0.2s ease-out, margin 0.2s ease-out, visibility 0s linear 0.2s;
+
+  // A closed panel stays in the flow; drop margins themes give it (e.g. block layout's 24px).
+  &:not(.is-open) {
+    margin-block: 0;
+  }
+
+  &.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+}
+
+// Child combinator: a __inner outside a .fct-collapse stays unclipped.
+.fct-collapse > .fct-collapse__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fct-collapse {
+    transition: none;
+  }
+}
+
 /*====== coupon fields =======*/
 .fct_coupon {
   @apply w-full;
@@ -1359,7 +1392,7 @@ ul.fct_summary_items_list {
 
 // coupon field
 .fct_coupon_field {
-  @apply hidden relative mx-4 mb-4;
+  @apply relative mx-4 mb-4;
 
   .fct_coupon_input_wrapper {
     @apply w-full;
@@ -1506,6 +1539,70 @@ ul.fct_summary_items_list {
     }
   }
 
+}
+
+/*====== progressive carrier rates =======*/
+// Pass the list's bottom corners down to the row through the collapse wrappers.
+.fct_shipping_rates_loader,
+.fct_shipping_rates_loader > .fct-collapse__inner {
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+}
+
+.fct_shipping_rates_status {
+  @apply flex items-center gap-3 py-3 px-5 text-sm text-[var(--fct-checkout-secondary-text-color)];
+  background: color-mix(in srgb, var(--fct-checkout-border-color) 25%, transparent);
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+}
+
+.fct_shipping_rates_spinner {
+  @apply flex-none w-4 h-4 rounded-full border-2 border-solid border-[var(--fct-checkout-border-color)];
+  border-top-color: var(--fct-checkout-primary-bg-color);
+  animation: fct-rate-spin 0.8s linear infinite;
+}
+
+.fct_shipping_rates_status_body {
+  @apply flex flex-1 flex-col gap-1.5 min-w-0;
+}
+
+.fct_shipping_rates_shimmer {
+  @apply block h-2 w-3/5 rounded;
+  background: linear-gradient(90deg, var(--fct-checkout-border-color) 0%, transparent 50%, var(--fct-checkout-border-color) 100%);
+  background-size: 200% 100%;
+  animation: fct-rate-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes fct-rate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fct-rate-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.fct_shipping_methods_item--arrived label {
+  animation: fct-rate-arrived 1.6s ease-out;
+}
+
+@keyframes fct-rate-arrived {
+  from {
+    background-color: var(--fct-checkout-border-color);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fct_shipping_methods_item--arrived label,
+  .fct_shipping_rates_shimmer {
+    animation: none;
+  }
 }
 
 /*====== tax detail inline base amount =======*/
@@ -1815,6 +1912,12 @@ ul.fct_summary_items_list {
 
     .fluent-cart-checkout_embed_payment_wrapper {
       grid-template-rows: 1fr;
+    }
+
+    &:not(.fct-payment-loading) {
+      .fluent-cart-checkout_embed_payment_container {
+        overflow: visible;
+      }
     }
 
     &.fct-payment-loading {

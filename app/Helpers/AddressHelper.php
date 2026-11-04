@@ -11,13 +11,37 @@ use FluentCart\App\App;
 use FluentCart\App\Models\CustomerAddresses;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderAddress;
-use FluentCart\App\Models\ShippingMethod;
+use FluentCart\App\Models\Shipment;
+use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
+use FluentCart\App\Modules\MultiCurrency\Services\PriceConverter;
+use FluentCart\App\Modules\Shipping\Carriers\Core\CarrierManager;
+use FluentCart\App\Modules\Shipping\Carriers\Manual\ManualCarrier;
+use FluentCart\App\Modules\Shipping\Carriers\Manual\ManualCarrierSettings;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Framework\Support\Arr;
 
 class AddressHelper
 {
+    /**
+     * Live carrier rates per carrier + destination + cart + quote, for this request.
+     *
+     * @var array<string, array[]>
+     */
+    protected static $carrierRateCache = [];
+
+    protected static $reuseCarrierQuotes = false;
+
+    /** @var array<string, array[]> Pending rate sources per carrier rate-cache key, for this request. */
+    protected static $carrierPendingCache = [];
+
+    /** @var array|null [carrier slug, source id] the next rate list may quote live. */
+    protected static $fetchRateSource = null;
+
+    /** @var array The last rate list's ['key' => list key, 'pending' => [[carrier, source, label]]]. */
+    protected static $rateSourceState = ['key' => '', 'pending' => []];
+
     public static function insertOrderAddresses($orderId, $billingAddress, $shippingAddress)
     {
 
@@ -328,6 +352,434 @@ class AddressHelper
         ];
     }
 
+    /**
+     * Whether the zone-based ("manual") shipping methods may be offered.
+     *
+     * These rows belong to the Manual carrier, and its "Enable Manual Shipping"
+     * toggle is what withholds them from checkout. Absent or unregistered carrier
+     * means enabled — a store with no carrier framework booted must keep shipping.
+     */
+    public static function manualZonesEnabled(): bool
+    {
+        $manualCarrier = CarrierManager::carrier(Shipment::CARRIER_MANUAL);
+
+        return !$manualCarrier || $manualCarrier->isEnabled();
+    }
+
+    /**
+     * Form keys of the contact fields a live carrier quotes with ('name', 'address_1',
+     * 'phone'), only those the checkout shows; [] when no live carrier is enabled.
+     * Checkout JS gets the same lists (shipping_quote_fields), so its hold and this re-quote agree.
+     *
+     * @return array<string, string[]>
+     */
+    public static function quoteContactFields(bool $shipToDifferent): array
+    {
+        $liveCarriers = array_diff_key(CarrierManager::getInstance()->enabled(), [Shipment::CARRIER_MANUAL => true]);
+        if (!$liveCarriers) {
+            return [];
+        }
+
+        $prefix = $shipToDifferent ? 'shipping_' : 'billing_';
+        $settings = CheckoutFieldsSchema::getFieldsSettings();
+
+        if (CheckoutFieldsSchema::isFullNameRequired()) {
+            // The shipping form always shows its full name; billing's is a basic-info field.
+            $showsName = $shipToDifferent || Arr::get($settings, 'basic_info.full_name.enabled') === 'yes';
+            $name = $showsName ? [$prefix . 'full_name'] : [];
+        } else {
+            // Split names exist only in basic info, so they name the parcel either way.
+            $name = array_keys(array_filter([
+                'billing_first_name' => CheckoutFieldsSchema::isFirstNameEnabled(),
+                'billing_last_name'  => CheckoutFieldsSchema::isLastNameEnabled(),
+            ]));
+        }
+
+        $fields = ['name' => $name];
+        foreach (['address_1', 'phone'] as $key) {
+            if (Arr::get($settings, $prefix . 'address.' . $key . '.enabled') === 'yes') {
+                $fields[$key] = [$prefix . $key];
+            }
+        }
+
+        return array_filter($fields);
+    }
+
+    /**
+     * The contact a live carrier quote uses, read from checkout form data. All ''
+     * until every field quoteContactFields() lists is filled, so a half-typed
+     * contact never makes a new quote.
+     *
+     * @return array{name: string, address_1: string, phone: string}
+     */
+    public static function quoteContact(array $formData): array
+    {
+        $empty = ['name' => '', 'address_1' => '', 'phone' => ''];
+        $contact = $empty;
+
+        foreach (static::quoteContactFields(Arr::get($formData, 'ship_to_different') === 'yes') as $key => $formKeys) {
+            $values = [];
+            foreach ($formKeys as $formKey) {
+                $value = Arr::get($formData, $formKey, '');
+                $value = is_scalar($value) ? trim((string) $value) : '';
+                if ($value === '') {
+                    return $empty;
+                }
+                $values[] = $value;
+            }
+            $contact[$key] = implode(' ', $values);
+        }
+
+        return $contact;
+    }
+
+    /**
+     * Every enabled carrier's rates for a destination, as one list of rate arrays
+     * (see CarrierContract::getRates). Each rate is converted once, here, into the
+     * checkout currency, so rendering, validation, the charge and the tax/shipping
+     * modules all read the same `cost`. A carrier that declares canQuoteInCurrency()
+     * shows only the currencies carrierCurrencyPlan() accepts.
+     *
+     * @param string      $country
+     * @param string|null $state
+     * @param array|null  $items       Cart line items; null uses the current cart's.
+     * @param array       $destination ['postcode' => , 'city' => , 'name' => , 'address_1' => , 'phone' => ]
+     *                                 (contact from quoteContact()); empty uses the current cart's address.
+     * @param bool        $zonesOnly   Skip live carriers; zone (manual) methods only.
+     * @return array[]
+     */
+    protected static function collectCarrierRates($country, $state = null, $items = null, array $destination = [], bool $zonesOnly = false): array
+    {
+        if (!$country) {
+            return [];
+        }
+
+        $cart = null;
+        if ($items === null || !$destination) {
+            $cart = CartHelper::getCart();
+        }
+
+        // Live carriers must quote the real parcel on every path, not an empty one.
+        if ($items === null) {
+            $items = $cart ? (array) $cart->cart_data : [];
+        }
+
+        if (!$destination && $cart) {
+            $cartAddress = (array) $cart->getShippingAddress();
+            if (strcasecmp((string) Arr::get($cartAddress, 'country', ''), (string) $country) === 0) {
+                $destination = array_merge($cartAddress, static::quoteContact((array) Arr::get((array) $cart->checkout_data, 'form_data', [])));
+            }
+        }
+
+        $args = [
+            'country'   => $country,
+            'state'     => $state,
+            'postcode'  => (string) Arr::get($destination, 'postcode', ''),
+            'city'      => (string) Arr::get($destination, 'city', ''),
+            'name'      => (string) Arr::get($destination, 'name', ''),
+            'address_1' => (string) Arr::get($destination, 'address_1', ''),
+            'phone'     => (string) Arr::get($destination, 'phone', ''),
+            'items'     => is_array($items) ? $items : [],
+        ];
+
+        $quote = CartCurrency::currentQuote();
+        $baseCurrency = BaseCurrency::get();
+        $quoteCurrency = strtoupper((string) Arr::get($quote, 'currency', '')) ?: $baseCurrency;
+        $args['currency'] = $quoteCurrency;
+        $args['base_currency'] = $baseCurrency;
+        // Key on what a quote depends on: a line's shipping and tax shares change with
+        // the chosen method, and must not make the same address a new rate list.
+        $parcel = array_map(function ($item) {
+            return Arr::only((array) $item, ['object_id', 'post_id', 'quantity', 'fulfillment_type', 'other_info', 'unit_price', 'subtotal']);
+        }, $args['items']);
+        $requestKey = md5(serialize([array_merge($args, ['items' => $parcel]), CartCurrency::revisionOfQuote($quote)]));
+        if (static::$reuseCarrierQuotes) {
+            $args['reuse_quote'] = true;
+        }
+        // A carrier that splits its quote into sources answers from caches only;
+        // checkout fetches each pending source through fetchRateSource().
+        $args['defer_sources'] = true;
+        $fetch = static::$fetchRateSource;
+
+        $manager = CarrierManager::getInstance();
+        $carriers = $manager->enabled();
+        if (!$manager->get(Shipment::CARRIER_MANUAL)) {
+            // Carrier framework not booted: zone methods must keep shipping.
+            $carriers = [Shipment::CARRIER_MANUAL => new ManualCarrier(new ManualCarrierSettings())] + $carriers;
+        }
+
+        $rates = [];
+        $liveRates = [];
+        $pending = [];
+        foreach ($carriers as $slug => $carrier) {
+            if ($zonesOnly && $slug !== Shipment::CARRIER_MANUAL) {
+                continue;
+            }
+            $carrierArgs = $args;
+            if ($fetch && $fetch[0] === (string) $slug) {
+                $carrierArgs['fetch_source'] = $fetch[1];
+            }
+            $accepted = null;
+            if ($slug !== Shipment::CARRIER_MANUAL) {
+                $plan = static::carrierCurrencyPlan($carrier, (string) $slug, $quoteCurrency, $baseCurrency);
+                if (!$plan) {
+                    continue;
+                }
+                $carrierArgs['currency'] = $plan['currency'];
+                $accepted = $plan['accepted'];
+            }
+
+            // Zone rates are read fresh. Live rates are held for the request so the
+            // rate validated is the rate charged, even if the carrier answers differently.
+            $cacheKey = $slug . '|' . $carrierArgs['currency'] . '|' . $requestKey . '|' . (isset($carrierArgs['fetch_source']) ? $carrierArgs['fetch_source'] : '');
+            if ($slug !== Shipment::CARRIER_MANUAL && array_key_exists($cacheKey, static::$carrierRateCache)) {
+                $liveRates = array_merge($liveRates, static::$carrierRateCache[$cacheKey]);
+                $pending = array_merge($pending, static::$carrierPendingCache[$cacheKey]);
+                continue;
+            }
+
+            try {
+                $quoted = (array) $carrier->getRates($carrierArgs);
+            } catch (\Throwable $e) {
+                if ($slug === Shipment::CARRIER_MANUAL) {
+                    throw $e;
+                }
+                // One failing live carrier must not take checkout down with it.
+                $quoted = [];
+            }
+
+            $carrierRates = [];
+            foreach ($quoted as $rate) {
+                // A numeric id is a zone method's; another carrier using one would collide.
+                if (!is_array($rate) || ($slug !== Shipment::CARRIER_MANUAL && is_numeric(Arr::get($rate, 'id')))) {
+                    continue;
+                }
+                $rate['carrier'] = $slug;
+                if ($accepted !== null && !in_array(strtoupper(trim((string) Arr::get($rate, 'currency', ''))), $accepted, true)) {
+                    continue;
+                }
+                $converted = static::convertRateToQuote($rate, $quote);
+                if ($converted) {
+                    $carrierRates[] = $converted;
+                }
+            }
+
+            if ($slug === Shipment::CARRIER_MANUAL) {
+                $rates = array_merge($rates, $carrierRates);
+                continue;
+            }
+
+            $carrierPending = [];
+            $sources = method_exists($carrier, 'getPendingRateSources') ? (array) $carrier->getPendingRateSources() : [];
+            foreach ($sources as $source => $label) {
+                $carrierPending[] = ['carrier' => (string) $slug, 'source' => (string) $source, 'label' => (string) $label];
+            }
+
+            static::$carrierRateCache[$cacheKey] = $carrierRates;
+            static::$carrierPendingCache[$cacheKey] = $carrierPending;
+            $liveRates = array_merge($liveRates, $carrierRates);
+            $pending = array_merge($pending, $carrierPending);
+        }
+
+        static::$rateSourceState = ['key' => md5($requestKey), 'pending' => $pending];
+
+        // Zone methods keep the merchant's order; live rates follow, cheapest first.
+        return array_merge($rates, static::sortRatesByCost($liveRates));
+    }
+
+    /**
+     * The last rate list's key and the carrier rate sources it left pending.
+     *
+     * @return array ['key' => string, 'pending' => [['carrier' =>, 'source' =>, 'label' =>], ...]]
+     */
+    public static function rateSourceState(): array
+    {
+        return static::$rateSourceState;
+    }
+
+    /**
+     * Quotes one pending rate source live and returns its rates from the full list
+     * for this address. Only an enabled carrier's own declared source is ever called.
+     *
+     * @param array|null $items       Cart line items; null uses the current cart's.
+     * @param array      $destination ['postcode' => , 'city' => ]; empty uses the current cart's address.
+     * @return array[]
+     */
+    public static function fetchRateSource(string $carrier, string $source, $country, $state = null, $items = null, array $destination = []): array
+    {
+        static::$fetchRateSource = [$carrier, $source];
+        try {
+            $rates = static::getShippingMethods($country, $state, null, $items, $destination);
+        } finally {
+            static::$fetchRateSource = null;
+        }
+
+        if (is_wp_error($rates)) {
+            return [];
+        }
+
+        return array_values(array_filter($rates, function ($rate) use ($carrier, $source) {
+            return Arr::get($rate, 'carrier') === $carrier && (string) Arr::get($rate, 'rate_source', '') === $source;
+        }));
+    }
+
+    /**
+     * Cheapest first. Equal costs keep their quoted order: usort is not stable before PHP 8.
+     */
+    protected static function sortRatesByCost(array $rates): array
+    {
+        $positions = array_keys($rates);
+        $costs = array_map(function ($rate) {
+            return (int) $rate['cost'];
+        }, $rates);
+
+        array_multisort($costs, SORT_ASC, SORT_NUMERIC, $positions, SORT_ASC, SORT_NUMERIC);
+
+        return array_map(function ($position) use ($rates) {
+            return $rates[$position];
+        }, $positions);
+    }
+
+    /**
+     * The currency to ask a carrier in and the rate currencies it may show. A
+     * quote in the checkout currency always shows; its base-currency rate shows,
+     * converted at the store's rate, only when the conversion filter allows it.
+     * Null skips the carrier: it could show nothing. 'accepted' null means the
+     * carrier did not declare canQuoteInCurrency(), so every rate converts as before.
+     *
+     * @return array|null ['currency' => ISO, 'accepted' => string[]|null]
+     */
+    protected static function carrierCurrencyPlan($carrier, string $slug, string $checkoutCurrency, string $baseCurrency): ?array
+    {
+        $quotesCheckout = method_exists($carrier, 'canQuoteInCurrency') ? $carrier->canQuoteInCurrency($checkoutCurrency) : null;
+        if ($quotesCheckout === null) {
+            return ['currency' => $checkoutCurrency, 'accepted' => null];
+        }
+
+        $accepted = $quotesCheckout ? [$checkoutCurrency] : [];
+
+        if ($checkoutCurrency !== $baseCurrency && $carrier->canQuoteInCurrency($baseCurrency)) {
+            /**
+             * Show a carrier's base-currency rate, converted at the store's exchange
+             * rate, at a checkout in a currency the carrier does not quote in.
+             *
+             * @param bool  $allow   Default false: such rates are hidden.
+             * @param array $context ['carrier' => slug, 'checkout_currency' => ISO, 'base_currency' => ISO]
+             */
+            $allow = apply_filters('fluent_cart/shipping/carrier_rates_allow_conversion', false, [
+                'carrier'           => $slug,
+                'checkout_currency' => $checkoutCurrency,
+                'base_currency'     => $baseCurrency,
+            ]);
+
+            if ($allow) {
+                $accepted[] = $baseCurrency;
+            }
+        }
+
+        if (!$accepted) {
+            return null;
+        }
+
+        return ['currency' => $accepted[0], 'accepted' => $accepted];
+    }
+
+    /**
+     * A carrier rate in the checkout currency. The carrier's own amount stays on
+     * source_cost / source_currency. Null drops the rate: no currency, or one we
+     * have no exchange rate for.
+     */
+    protected static function convertRateToQuote(array $rate, array $quote): ?array
+    {
+        $currency = strtoupper(trim((string) Arr::get($rate, 'currency', '')));
+        $cost = Arr::get($rate, 'cost');
+        if ($currency === '' || !is_numeric($cost) || $cost < 0 || Arr::get($rate, 'id', '') === '') {
+            return null;
+        }
+
+        $quoteCurrency = strtoupper((string) Arr::get($quote, 'currency', ''));
+
+        if ($currency === $quoteCurrency) {
+            $converted = PriceConverter::toQuoteUnit($cost, $quote);
+        } elseif (BaseCurrency::is($currency)) {
+            $converted = PriceConverter::toQuote($cost, $quote);
+        } else {
+            $from = CartCurrency::freshQuote($currency);
+            $converted = $from ? PriceConverter::between($cost, $from, $quote) : null;
+        }
+
+        if ($converted === null) {
+            return null;
+        }
+
+        $rate['source_cost'] = Helper::roundCent($cost);
+        $rate['source_currency'] = $currency;
+        $rate['cost'] = (int) $converted;
+        $rate['currency'] = $quoteCurrency;
+
+        return $rate;
+    }
+
+    public static function resetRateCache(): void
+    {
+        static::$carrierRateCache = [];
+        static::$carrierPendingCache = [];
+        static::$reuseCarrierQuotes = false;
+        static::$rateSourceState = ['key' => '', 'pending' => []];
+    }
+
+    /**
+     * For the rest of this request, live carriers get `reuse_quote` and may
+     * answer from the rates they last quoted for the same address and cart.
+     * Place Order sets it so the customer does not wait on a carrier API.
+     */
+    public static function reuseCarrierQuotes(): void
+    {
+        static::$reuseCarrierQuotes = true;
+    }
+
+    /**
+     * The chosen rate from the same address-scoped list every checkout path prices
+     * against. Ids compare as exact strings, so "1<b>2" or a re-cased token never
+     * matches. Null when the id is not in the list.
+     *
+     * @param string     $country
+     * @param string     $state
+     * @param array|null $items       Cart line items; null uses the current cart's.
+     * @param mixed      $selectedId  Zone method id or carrier rate token.
+     * @param array      $destination ['postcode' => , 'city' => ]
+     * @return array|null Rate array (see CarrierContract::getRates).
+     */
+    public static function resolveSelectedRate($country, $state, $items, $selectedId, array $destination = []): ?array
+    {
+        if (!is_scalar($selectedId) || (string) $selectedId === '') {
+            return null;
+        }
+
+        return static::findRate(static::getShippingMethods($country, $state, null, $items, $destination), $selectedId);
+    }
+
+    /**
+     * The rate whose id is exactly $selectedId, compared as strings.
+     *
+     * @param array[]|\WP_Error $rates
+     * @param mixed             $selectedId
+     */
+    public static function findRate($rates, $selectedId): ?array
+    {
+        if (is_wp_error($rates) || !$rates || !is_scalar($selectedId) || (string) $selectedId === '') {
+            return null;
+        }
+
+        foreach ($rates as $rate) {
+            if ((string) Arr::get($rate, 'id') === (string) $selectedId) {
+                return $rate;
+            }
+        }
+
+        return null;
+    }
+
     public static function getAvailableShippingMethodLists($data): array
     {
         $state = Arr::get($data, 'state', '');
@@ -348,14 +800,15 @@ class AddressHelper
             ];
         }
 
-        $availableShippingMethods = ShippingMethod::getApplicableForCountry($countryCode, $state);
+        // Manual off drops only its zones; another carrier's rates still show.
+        $availableShippingMethods = static::collectCarrierRates($countryCode, $state, Arr::get($data, 'items'), [], (bool) Arr::get($data, 'zones_only'));
 
-        if (!$availableShippingMethods || $availableShippingMethods->isEmpty()) {
+        if (!$availableShippingMethods) {
             $settingView = '<div class="fct-empty-state">'
                 . esc_html__('No shipping methods available for this address.', 'fluent-cart');
 
             if (current_user_can('manage_options')) {
-                $settingsPageUrl = admin_url('admin.php?page=fluent-cart#/settings/shipping');
+                $settingsPageUrl = admin_url('admin.php?page=fluent-cart#/settings/shipping/carriers/' . Shipment::CARRIER_MANUAL);
 
                 $settingsLink = '<a href="' . esc_url($settingsPageUrl ?? '') . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
 
@@ -377,7 +830,12 @@ class AddressHelper
         ];
     }
 
-    public static function getShippingMethods($country, $state = null, $timezone = null)
+    /**
+     * @param array|null $items       Cart line items; null uses the current cart's.
+     * @param array      $destination ['postcode' => , 'city' => ]
+     * @return array[]|\WP_Error Rate arrays (see CarrierContract::getRates).
+     */
+    public static function getShippingMethods($country, $state = null, $timezone = null, $items = null, array $destination = [])
     {
         if (!$country && $timezone) {
             $country = LocalizationManager::guessCountryFromTimezone($timezone);
@@ -387,7 +845,8 @@ class AddressHelper
             return new \WP_Error('no_country', __('Please provide your shipping address to get shipping options', 'fluent-cart'));
         }
 
-        $shippingMethods = ShippingMethod::getApplicableForCountry($country, $state);
+        // Manual off drops only its zones; other carriers' rates survive.
+        $shippingMethods = static::collectCarrierRates($country, $state, $items, $destination);
 
         // let's filter the shipping methods
         $formattedMethods = [];
@@ -395,7 +854,9 @@ class AddressHelper
         $requireState = false;
 
         foreach ($shippingMethods as $shippingMethod) {
-            if (!$shippingMethod->states) {
+            $methodStates = (array) Arr::get($shippingMethod, 'states', []);
+
+            if (!$methodStates) {
                 $formattedMethods[] = $shippingMethod;
                 continue;
             }
@@ -406,7 +867,7 @@ class AddressHelper
                 continue;
             }
 
-            if (in_array($state, $shippingMethod->states)) {
+            if (in_array($state, $methodStates)) {
                 $formattedMethods[] = $shippingMethod;
             }
         }
@@ -417,38 +878,6 @@ class AddressHelper
 
         if (!$formattedMethods) {
             return new \WP_Error('no_shipping_methods', __('No shipping options available for the provided address', 'fluent-cart'));
-        }
-
-        return $formattedMethods;
-    }
-
-    /**
-     * Get shipping methods for a specific shipping class (or General if null).
-     *
-     * @param string $country Country code
-     * @param string|null $state State code
-     * @param int|null $shippingClassId Shipping class ID (null for General zones)
-     * @return array|\WP_Error
-     */
-    public static function getShippingMethodsForClass($country, $state = null, $shippingClassId = null)
-    {
-        if (!$country) {
-            return new \WP_Error('no_country', __('Please provide your shipping address to get shipping options', 'fluent-cart'));
-        }
-
-        $shippingMethods = ShippingMethod::applicableToCountry($country, $state, $shippingClassId)
-            ->orderBy('amount', 'DESC')
-            ->get();
-
-        $formattedMethods = [];
-        foreach ($shippingMethods as $shippingMethod) {
-            if (!$shippingMethod->states) {
-                $formattedMethods[] = $shippingMethod;
-                continue;
-            }
-            if ($state && in_array($state, $shippingMethod->states)) {
-                $formattedMethods[] = $shippingMethod;
-            }
         }
 
         return $formattedMethods;

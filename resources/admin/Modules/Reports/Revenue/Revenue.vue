@@ -2,7 +2,10 @@
 import * as Card from "@/Bits/Components/Card/Card.js";
 import dayjs from "dayjs";
 import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
-import ExportReport from "../ExportReport.vue";
+import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
+import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import Notify from "@/utils/Notify";
+import {exportCSVWithColumns} from "@/utils/Export";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import { formatNumber } from "../Utils/formatNumber";
 
@@ -47,6 +50,18 @@ export default {
     },
   },
   computed: {
+    // Period totals that decide which optional columns show
+    tax_total() {
+      return this.revenueReport.reduce((sum, item) => sum + Number(item.taxes_net || 0), 0);
+    },
+    shipping_total() {
+      return this.revenueReport.reduce((sum, item) => sum + Number(item.shipping_net || 0), 0);
+    },
+    hasExtras() {
+      return this.tax_total !== 0 || this.shipping_total !== 0
+        || this.revenueReport.some(item => Number(item.fees || 0) !== 0);
+    },
+
     dateFormat() {
       if (!this.revenueReport.length) return '';
 
@@ -84,16 +99,23 @@ export default {
             order_count: 0,
             net_revenue: 0,
             gross_sale: 0,
+            gross_sales: 0,
+            discounts: 0,
+            net_sales: 0,
+            total_collected: 0,
             total_refunded_amount: 0,
+            refunds: 0,
             tax_total: 0,
+            taxes_net: 0,
             shipping_total: 0,
+            shipping_net: 0,
             compare_revenue: null,
             items: []
           };
         }
 
         const previous = this.hasComparison ? this.previousMetrics[index] : null;
-        const compareRevenue = previous ? Number(previous.net_revenue) : null;
+        const compareRevenue = previous ? Number(previous.net_sales) : null;
 
         if (previous) {
           accumulator[year].compare_revenue = (accumulator[year].compare_revenue ?? 0) + compareRevenue;
@@ -102,15 +124,22 @@ export default {
         accumulator[year].order_count += Number(item.order_count);
         accumulator[year].net_revenue += Number(item.net_revenue);
         accumulator[year].gross_sale += Number(item.total_sales);
+        accumulator[year].gross_sales += Number(item.gross_sales);
+        accumulator[year].discounts += Number(item.discounts);
+        accumulator[year].net_sales += Number(item.net_sales);
+        accumulator[year].total_collected += Number(item.total_collected);
         accumulator[year].total_refunded_amount += Number(item.total_refunds);
+        accumulator[year].refunds += Number(item.refunds);
         accumulator[year].tax_total += Number(item.total_tax);
+        accumulator[year].taxes_net += Number(item.taxes_net);
         accumulator[year].shipping_total += Number(item.shipping_total);
+        accumulator[year].shipping_net += Number(item.shipping_net);
 
         accumulator[year].items.push({
           ...item,
           compare_revenue: compareRevenue,
           compare_date: previous ? this.formatGroup(previous.group, this.compareDateFormat) : '',
-          change_percent: this.changePercent(Number(item.net_revenue), compareRevenue),
+          change_percent: this.changePercent(Number(item.net_sales), compareRevenue),
         });
 
         return accumulator;
@@ -118,7 +147,7 @@ export default {
 
       return Object.values(groupedData).map((row) => ({
         ...row,
-        change_percent: this.changePercent(row.net_revenue, row.compare_revenue),
+        change_percent: this.changePercent(row.net_sales, row.compare_revenue),
       }));
     }
   },
@@ -150,6 +179,23 @@ export default {
       return 'text-system-light';
     },
 
+    // One row per period, with the compared net sales when a comparison is on, and a totals row
+    exportCsv() {
+      const keys = ['order_count', 'gross_sales', 'discounts', 'refunds', 'net_sales', 'shipping_net', 'fees', 'taxes_net', 'total_collected'];
+      const columns = [{header: 'period', accessor: 'group'}, ...keys.map(key => ({header: key, accessor: key}))];
+      if (this.hasComparison) {
+        columns.push({header: 'compare_net_sales', accessor: 'compare_revenue'}, {header: 'change_percent', accessor: 'change_percent'});
+      }
+      const rows = this.tableData.flatMap(year => year.items);
+      const total = {group: translate('Total')};
+      keys.forEach(key => (total[key] = rows.reduce((sum, row) => sum + Number(row[key] || 0), 0)));
+      if (this.hasComparison) {
+        total.compare_revenue = rows.reduce((sum, row) => sum + Number(row.compare_revenue || 0), 0);
+        total.change_percent = this.changePercent(total.net_sales, total.compare_revenue);
+      }
+      exportCSVWithColumns([...rows, total], columns, 'revenue.csv').catch(error => Notify.error(error.message));
+    },
+
     liabilityClass,
     maybeLiability
   },
@@ -160,7 +206,13 @@ export default {
   <Card.Container class="overflow-hidden">
     <Card.Header :title="translate('Revenue Breakdown')" title_size="small">
       <template #action v-if="!loading">
-        <ExportReport :data="revenueReport" filename="revenue.csv" />
+        <div class="fct-btn-group sm">
+          <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+            <IconButton tag="button" :disabled="!revenueReport.length" :aria-label="translate('Export CSV')" @click="exportCsv">
+              <DynamicIcon name="Download"/>
+            </IconButton>
+          </el-tooltip>
+        </div>
       </template>
     </Card.Header>
 
@@ -208,17 +260,20 @@ export default {
               </el-table-column>
 
               <el-table-column
-                prop="total_sales"
+                prop="gross_sales"
                 :label="translate('Gross Sales')"
                 min-width="100"
                 sortable
-                :sort-method="byNumber('total_sales')"
+                :sort-method="byNumber('gross_sales')"
               >
                 <template #default="scope">
+                  <div class="inline-flex">{{ decodeEntities(formatCurrency(Number(scope.row.gross_sales))) }}</div>
+                </template>
+              </el-table-column>
 
-                  <div class="inline-flex" v-html="formatCurrency(Number(scope.row.total_sales)) ">
-
-                  </div>
+              <el-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
+                <template #default="scope">
+                  <div class="inline-flex" :class="liabilityClass(scope.row.discounts)">{{ decodeEntities(maybeLiability(scope.row.discounts, null, reportFilter.reportCurrency)) }}</div>
                 </template>
               </el-table-column>
 
@@ -227,63 +282,68 @@ export default {
                 :label="translate('Refunds')"
                 min-width="100"
                 sortable
-                :sort-method="byNumber('total_refunds')"
+                :sort-method="byNumber('refunds')"
               >
                 <template #default="scope">
-                  <div class="inline-flex" :class="liabilityClass(scope.row.total_refunds)" v-html="maybeLiability(scope.row.total_refunds, null, reportFilter.reportCurrency)">
+                  <div class="inline-flex" :class="liabilityClass(scope.row.refunds)" v-html="maybeLiability(scope.row.refunds, null, reportFilter.reportCurrency)">
 
                   </div>
                 </template>
               </el-table-column>
 
+              <el-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
+                <template #default="scope">
+                  <div class="inline-flex font-medium">{{ decodeEntities(formatCurrency(Number(scope.row.net_sales))) }}</div>
+                </template>
+              </el-table-column>
+
               <el-table-column
-                prop="total_tax"
+                prop="taxes_net"
                 :label="translate('Taxes')"
                 min-width="100"
                 sortable
-                :sort-method="byNumber('total_tax')"
+                :sort-method="byNumber('taxes_net')"
                 v-if="tax_total > 0"
               >
                 <template #default="scope">
-                  <div class="inline-flex" :class="liabilityClass(scope.row.total_tax)">
-                    {{ maybeLiability(scope.row.total_tax, null, reportFilter.reportCurrency) }}
+                  <div class="inline-flex" :class="liabilityClass(scope.row.taxes_net)">
+                    {{ maybeLiability(scope.row.taxes_net, null, reportFilter.reportCurrency) }}
                   </div>
                 </template>
               </el-table-column>
 
               <el-table-column
-                prop="shipping_total"
+                prop="shipping_net"
                 :label="translate('Shipping')"
                 min-width="100"
                 sortable
-                :sort-method="byNumber('shipping_total')"
+                :sort-method="byNumber('shipping_net')"
                 v-if="shipping_total > 0"
               >
                 <template #default="scope">
-                  <div class="inline-flex" :class="liabilityClass(scope.row.shipping_total)">
-                    {{ maybeLiability(scope.row.shipping_total, null, reportFilter.reportCurrency) }}
+                  <div class="inline-flex" :class="liabilityClass(scope.row.shipping_net)">
+                    {{ maybeLiability(scope.row.shipping_net, null, reportFilter.reportCurrency) }}
                   </div>
                 </template>
               </el-table-column>
 
               <el-table-column
-                prop="net_revenue"
-                :label="translate('Revenue')"
+                v-if="hasExtras"
+                prop="total_collected"
+                :label="translate('Total Sales')"
                 min-width="100"
                 sortable
-                :sort-method="byNumber('net_revenue')"
+                :sort-method="byNumber('total_collected')"
               >
                 <template #default="scope">
-                  <div class="inline-flex" v-html="formatCurrency(Number(scope.row.net_revenue))">
-
-                  </div>
+                  <div class="inline-flex">{{ decodeEntities(formatCurrency(Number(scope.row.total_collected))) }}</div>
                 </template>
               </el-table-column>
 
               <el-table-column
                 v-if="hasComparison"
                 prop="compare_revenue"
-                :label="translate('Compare Revenue')"
+                :label="translate('Compare Net Sales')"
                 min-width="100"
                 sortable
                 :sort-method="byNullableNumber('compare_revenue')"
@@ -307,7 +367,7 @@ export default {
               <el-table-column
                 v-if="hasComparison"
                 prop="change_percent"
-                :label="translate('Change') + ' (%)'"
+                :label="translate('Change (%)')"
                 min-width="110"
                 sortable
                 :sort-method="byNullableNumber('change_percent')"
@@ -341,16 +401,20 @@ export default {
         </el-table-column>
 
         <el-table-column
-          prop="gross_sale"
+          prop="gross_sales"
           :label="translate('Gross Sales')"
           min-width="100"
           sortable
-          :sort-method="byNumber('gross_sale')"
+          :sort-method="byNumber('gross_sales')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="formatCurrency(scope.row.gross_sale)">
+            <div class="inline-flex">{{ decodeEntities(formatCurrency(scope.row.gross_sales)) }}</div>
+          </template>
+        </el-table-column>
 
-            </div>
+        <el-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
+          <template #default="scope">
+            <div class="inline-flex" :class="liabilityClass(scope.row.discounts)">{{ decodeEntities(maybeLiability(scope.row.discounts, null, reportFilter.reportCurrency)) }}</div>
           </template>
         </el-table-column>
 
@@ -358,55 +422,61 @@ export default {
           :label="translate('Refunds')"
           min-width="100"
           sortable
-          :sort-method="byNumber('total_refunded_amount')"
+          :sort-method="byNumber('refunds')"
         >
           <template #default="scope">
-            <div class="inline-flex" :class="liabilityClass(scope.row.total_refunded_amount)" v-html="maybeLiability(scope.row.total_refunded_amount, null, reportFilter.reportCurrency)">
+            <div class="inline-flex" :class="liabilityClass(scope.row.refunds)" v-html="maybeLiability(scope.row.refunds, null, reportFilter.reportCurrency)">
 
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="tax_total" :label="translate('Taxes')" min-width="100" sortable :sort-method="byNumber('tax_total')" v-if="tax_total > 0">
+        <el-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
           <template #default="scope">
-            <div class="inline-flex" v-html="formatCurrency(scope.row.tax_total)">
+            <div class="inline-flex font-medium">{{ decodeEntities(formatCurrency(scope.row.net_sales)) }}</div>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="taxes_net" :label="translate('Taxes')" min-width="100" sortable :sort-method="byNumber('taxes_net')" v-if="tax_total > 0">
+          <template #default="scope">
+            <div class="inline-flex" v-html="formatCurrency(scope.row.taxes_net)">
 
             </div>
           </template>
         </el-table-column>
 
         <el-table-column
-          prop="shipping_total"
+          prop="shipping_net"
           :label="translate('Shipping')"
           min-width="100"
           sortable
-          :sort-method="byNumber('shipping_total')"
+          :sort-method="byNumber('shipping_net')"
           v-if="shipping_total > 0"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="formatCurrency(scope.row.shipping_total)">
+            <div class="inline-flex" v-html="formatCurrency(scope.row.shipping_net)">
 
             </div>
           </template>
         </el-table-column>
 
         <el-table-column
-          prop="net_revenue"
-          :label="translate('Revenue')"
+          v-if="hasExtras"
+          prop="total_collected"
+          :label="translate('Total Sales')"
           min-width="100"
           sortable
-          :sort-method="byNumber('net_revenue')"
+          :sort-method="byNumber('total_collected')"
         >
           <template #default="scope">
-            <div class="inline-flex" v-html="formatCurrency(scope.row.net_revenue)">
-            </div>
+            <div class="inline-flex">{{ decodeEntities(formatCurrency(scope.row.total_collected)) }}</div>
           </template>
         </el-table-column>
 
         <el-table-column
           v-if="hasComparison"
           prop="compare_revenue"
-          :label="translate('Compare Revenue')"
+          :label="translate('Compare Net Sales')"
           min-width="100"
           sortable
           :sort-method="byNullableNumber('compare_revenue')"
@@ -420,7 +490,7 @@ export default {
         <el-table-column
           v-if="hasComparison"
           prop="change_percent"
-          :label="translate('Change') + ' (%)'"
+          :label="translate('Change (%)')"
           min-width="110"
           sortable
           :sort-method="byNullableNumber('change_percent')"

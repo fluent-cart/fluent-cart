@@ -41,8 +41,7 @@ const props = defineProps({
         required: true
     },
     callback: {
-        type: Function,
-        required: true
+        type: Function
     },
     label: {
         type: String

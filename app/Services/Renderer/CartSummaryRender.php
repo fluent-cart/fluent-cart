@@ -472,12 +472,13 @@ class CartSummaryRender
 
             <div
                 id="coupon_section"
-                class="fct_coupon_field"
-                hidden
+                class="fct-collapse"
                 data-fluent-cart-checkout-page-coupon-container
                 role="region"
                 aria-label="<?php esc_attr_e('Coupon entry area', 'fluent-cart'); ?>"
             >
+            <div class="fct-collapse__inner">
+            <div class="fct_coupon_field">
                 <label for="coupon" class="sr-only">
                     <?php echo esc_html__('Enter coupon code', 'fluent-cart'); ?>
                 </label>
@@ -518,6 +519,8 @@ class CartSummaryRender
                 <button type='submit' data-fluent-cart-checkout-page-coupon-validate>
                     <?php echo esc_html__('Apply', 'fluent-cart'); ?>
                 </button>
+            </div>
+            </div>
             </div>
         </div>
         <?php

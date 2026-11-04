@@ -172,7 +172,7 @@ function saveCrossBorderMethod() {
                         <Animation accordion :visible="form.method === 'home'">
                             <div class="fct-radio-option-fields">
                                 <p class="fct-radio-option-fields-desc">
-                                    {{ translate('Applies to micro-businesses located in one EU country and making less than €10,000 in sales to other EU countries each year') }}
+                                    {{ translate('Tax_Applies_Micro') }}
                                 </p>
                                 <el-form-item :label="translate('Country of registration')">
                                     <el-select
@@ -204,7 +204,7 @@ function saveCrossBorderMethod() {
                                 <div v-if="!initialRegistrations.length" class="fct-info-box mt-3">
                                     <DynamicIcon name="InformationFill" class="w-4 h-4 text-blue-500 flex-shrink-0" />
                                     <span class="text-xs text-system-mid">
-                                        {{ translate('You haven\'t added a home country registration. The information you add here will be used to create one for you.') }}
+                                        {{ translate('Tax_Haven_Added') }}
                                     </span>
                                 </div>
                             </div>
@@ -220,7 +220,7 @@ function saveCrossBorderMethod() {
                         <Animation accordion :visible="form.method === 'specific'">
                             <div class="fct-radio-option-fields">
                                 <p class="fct-radio-option-fields-desc">
-                                    {{ translate('Register in each EU country where you are required to collect VAT. Manage your registrations in the country list below.') }}
+                                    {{ translate('Tax_Register_Country') }}
                                 </p>
                             </div>
                         </Animation>

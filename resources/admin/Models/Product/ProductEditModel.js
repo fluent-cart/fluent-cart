@@ -10,6 +10,7 @@ import Rest from "@/utils/http/Rest";
 import Confirmation from "@/utils/Confirmation";
 import AppConfig from "@/utils/Config/AppConfig";
 import Arr from "@/utils/support/Arr";
+import {CARRIER_MANUAL} from "@/utils/orderConstants";
 import {
     buildSimpleVariantUpdatePayload,
     buildVariantUpdatePayload,
@@ -1296,7 +1297,7 @@ class ProductEditModel extends ProductBaseModel {
     }
 
     shippingSettingsUrl () {
-        return AppConfig.get('admin_url') + 'settings/shipping';
+        return AppConfig.get('admin_url') + 'settings/shipping/carriers/' + CARRIER_MANUAL;
     }
 
     isBundleProduct = () =>{

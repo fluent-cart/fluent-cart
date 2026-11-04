@@ -1,7 +1,7 @@
 <script setup>
 
 import Empty from "@/Bits/Components/Table/Empty.vue";
-import translateNumber from "@/utils/translator/Translator";
+import {translateNumber} from "@/utils/translator/Translator";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -111,7 +111,7 @@ const handleCommand = (command) => {
         <RouteCell
             class="hover:no-underline"
             :to="{ name: 'view_order_bump', params: { id: scope.row.id } }">
-          <Badge :status="scope.row.status" :hide-icon="true" :key="scope.row.id"/>
+          <Badge :status="scope.row.status" kind="order_bump" :hide-icon="true" :key="scope.row.id"/>
         </RouteCell>
       </template>
     </el-table-column>

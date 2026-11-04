@@ -8,7 +8,7 @@ import advancedFormat from 'dayjs/plugin/advancedFormat';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import Storage from "@/utils/Storage";
 import translate from "@/utils/translator/Translator";
-import {resolveDateFormat, fluentDayjsLocale, resolveYearAwareFormat} from "@/utils/Utils";
+import {resolveDateFormat, fluentDayjsLocale, resolveYearAwareFormat, recentDateText} from "@/utils/Utils";
 
 export const calculatePercent = function (currentValue, compareValue, strict = false) {
     if (currentValue == 0) {
@@ -55,6 +55,103 @@ const getMsg = (res, def = '') => {
 
     return msg;
 }
+/**
+ * Resolve a human-readable message out of any error shape `Rest` can reject with.
+ *
+ * `Rest` rejects with `{data, status_code}`. `data` is either a controller error
+ * body (`{message: '...'}`) or — for a FormRequest 422 — the raw validation
+ * errors map (`{field: {rule: 'message'}}`) which carries no `message` key at
+ * all. Both shapes have to resolve to something the user can read.
+ *
+ * @param {any} response - The rejected value, its `data` payload, or a plain string.
+ * @param {string} [fallback=''] - Message to use when nothing usable is found.
+ * @returns {string} A plain-text message (no HTML).
+ */
+export const getErrorMessage = (response, fallback = '') => {
+
+    const defaultMessage = fallback || translate('Something is wrong!');
+
+    if (!response) {
+        return defaultMessage;
+    }
+
+    if (typeof response === 'string') {
+        return response;
+    }
+
+    // Unwrap the Rest reject envelope.
+    const body = response.data !== undefined ? response.data : response;
+
+    if (!body) {
+        return defaultMessage;
+    }
+
+    if (typeof body === 'string') {
+        return body;
+    }
+
+    if (body.message) {
+        return body.message;
+    }
+
+    // Validation errors map — {field: {rule: 'message'}} or {field: 'message'}.
+    const messages = [];
+    Object.values(body).forEach((fieldErrors) => {
+        if (typeof fieldErrors === 'string') {
+            messages.push(fieldErrors);
+        } else if (fieldErrors && typeof fieldErrors === 'object') {
+            Object.values(fieldErrors).forEach((message) => {
+                if (typeof message === 'string') {
+                    messages.push(message);
+                }
+            });
+        }
+    });
+
+    return messages.length ? messages.join(' ') : defaultMessage;
+};
+
+/**
+ * Resolve the display image for an order item.
+ *
+ * Resolution order matters: `featured_media` is not always present on the order
+ * payload and `variants.product_detail` is not eager-loaded, so every fallback
+ * branch is reachable depending on which relations the endpoint returned.
+ *
+ * @param {object} item - An order item from the order payload.
+ * @param {string} [placeholderUrl=''] - Image used when the item has no media.
+ * @returns {string} The image URL to render.
+ */
+export const getOrderItemImageUrl = (item, placeholderUrl = '') => {
+    if (!item) {
+        return placeholderUrl;
+    }
+
+    if (item.featured_media != null) {
+        return item.featured_media;
+    }
+
+    // Covers the variant image and, for a simple product, its gallery image.
+    if (item.variants && item.variants.thumbnail) {
+        return item.variants.thumbnail;
+    }
+
+    const media = item.variants && item.variants.media;
+    if (media && Array.isArray(media.meta_value) && media.meta_value[0] && media.meta_value[0].url) {
+        return media.meta_value[0].url;
+    }
+
+    const detailFeatured = item.variants
+        && item.variants.product_detail
+        && item.variants.product_detail.featured_media;
+
+    if (!media && detailFeatured && typeof detailFeatured === 'object' && detailFeatured.url) {
+        return detailFeatured.url;
+    }
+
+    return placeholderUrl;
+};
+
 /**
  * Handle errors and notify with a custom class.
  *
@@ -179,12 +276,25 @@ export const formatDate = (
         return formatTime(sourceDate);
     }
 
+    // Earlier today the time says more than the date; it already holds the time asked for
+    const recent = recentDateText(sourceDate);
+    if (recent) {
+        return recent;
+    }
+
     const dateFormat = buildDateFormat(sourceDate);
 
     return withTime
         /* translators: 1: formatted date, 2: formatted time */
         ? translate('%1$s at %2$s', dateFormat, formatTime(sourceDate))
         : dateFormat;
+};
+
+// The smart date without the recent-time form, for a date inside a sentence ("Created %1$s")
+export const formatSentenceDate = (datetimeValue) => {
+    if (!datetimeValue) return '';
+
+    return buildDateFormat(parseDateTime(datetimeValue, 'UTC', storeTimezone()));
 };
 
 const parseDateTime = (datetimeValue, fromTimezone, targetTimezone) => {

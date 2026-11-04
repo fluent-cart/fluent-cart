@@ -71,16 +71,16 @@ const statusBadge = computed(() => {
       : {label: translate('Store Billing'), type: 'warning'};
 });
 
-const fallbackRenewalHint = computed(() => translate('Gateways without built-in recurring billing can still sell subscriptions. Their renewals are invoiced by email before each due date.'));
+const fallbackRenewalHint = computed(() => translate('SubMode_Gateways_Without_Built'));
 
 const statusDescription = computed(() => {
   if (!isStoreManaged.value) {
-    return translate('Stripe, PayPal, and other subscription-ready gateways charge renewals automatically.');
+    return translate('SubMode_Stripe_Paypal_Subscription');
   }
   if (systemChargeOn.value) {
-    return translate('Your store creates renewal invoices and charges saved payment methods automatically.');
+    return translate('SubMode_Store_Creates_Renewal');
   }
-  return translate('Your store creates renewal invoices before each due date. Customers pay via email link.');
+  return translate('SubMode_Store_Creates_Renewal_Invoices');
 });
 
 const openChangeFlow = () => {
@@ -205,7 +205,7 @@ const handleCardKeydown = (e) => {
               <span class="fct-subscription-mode-recommended">{{ translate('Recommended') }}</span>
             </div>
             <p class="fct-subscription-mode-card__desc">
-              {{ translate('Stripe, PayPal, and other subscription-ready gateways charge customers automatically each cycle.') }}
+              {{ translate('SubMode_Stripe_Paypal') }}
             </p>
 
             <TransitionAccordion :visible="draftMode === 'gateway_managed'">
@@ -214,7 +214,7 @@ const handleCardKeydown = (e) => {
                   {{ translate('Allow all payment methods') }}
                 </el-checkbox>
                 <p class="fct-subscription-mode-note">
-                  {{ translate('Gateways without built-in recurring billing (SSLCommerz, Authorize.Net, bank transfer, etc.) can still sell subscriptions. Their renewals are invoiced by email before each due date.') }}
+                  {{ translate('SubMode_Gateways_Without') }}
                 </p>
               </div>
             </TransitionAccordion>
@@ -235,7 +235,7 @@ const handleCardKeydown = (e) => {
               <span class="fct-subscription-mode-card__title">{{ translate('Store Billing') }}</span>
             </div>
             <p class="fct-subscription-mode-card__desc">
-              {{ translate('Your store creates a renewal invoice before each due date. Customers pay via a link in the email.') }}
+              {{ translate('SubMode_Store_Creates') }}
             </p>
 
             <TransitionAccordion :visible="draftMode === 'store_managed'">
@@ -244,7 +244,7 @@ const handleCardKeydown = (e) => {
                   {{ translate('Auto-charge saved payment methods') }}
                 </el-checkbox>
                 <p class="fct-subscription-mode-note">
-                  {{ translate('When supported, the customer\'s saved payment method is charged automatically on each renewal due date.') }}
+                  {{ translate('SubMode_Supported_Customer') }}
                 </p>
                 <p
                     v-if="systemChargeSupportNote"
@@ -284,7 +284,7 @@ const handleCardKeydown = (e) => {
           <path d="M8 5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           <circle cx="8" cy="11" r=".75" fill="currentColor"/>
         </svg>
-        <span>{{ translate('Only affects new subscriptions. Existing ones keep their current billing method.') }}</span>
+        <span>{{ translate('SubMode_Affects_New') }}</span>
       </div>
 
       <template #footer>

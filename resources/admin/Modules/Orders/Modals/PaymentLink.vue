@@ -19,7 +19,7 @@
 <!--        </el-checkbox>-->
 
 <!--        <el-tooltip-->
-<!--            :content="translate('Vendor checkout will redirect to vendor payment page instead of default payment page!')"-->
+<!--            :content="translate('Order_Vendor_Checkout')"-->
 <!--            placement="top" popper-class="fct-tooltip">-->
 <!--          <div class="w-4">-->
 <!--            <DynamicIcon name="InformationFill"/>-->

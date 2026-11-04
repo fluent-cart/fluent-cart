@@ -99,8 +99,11 @@ class FluentProducts
                 'wp-blocks',
                 "
         wp.domReady( function() {
-            // Force fullscreen mode
-            wp.data.dispatch( 'core/edit-post' ).toggleFeature( 'fullscreenMode', true );
+            // The FluentCart product screen has no core/edit-post store; only the WP post editor does.
+            const editPost = wp.data.dispatch( 'core/edit-post' );
+            if ( editPost ) {
+                editPost.toggleFeature( 'fullscreenMode', true );
+            }
             
             // Hide the fullscreen toggle button
             const style = document.createElement( 'style' );

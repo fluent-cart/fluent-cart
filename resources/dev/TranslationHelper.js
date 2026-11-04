@@ -153,11 +153,9 @@ function hasFlag(name) {
  * ProductTopChart.vue and `%s Renewal`/`%s Renewals` in the customer profile
  * had never reached a translator.
  *
- * The optional 4th `empty` argument is a msgid too, but no call site passes it
- * and the `count` argument before it may itself contain commas and parentheses
- * (`Object.entries(x).length`), which this pattern cannot reliably skip. If a
- * call site ever needs `empty`, extract it deliberately rather than by widening
- * this regex.
+ * Also matches the admin `$n()` alias. The optional 4th `empty` msgid lands in
+ * group 6, but only when `count` has no commas, quotes or parentheses
+ * (`customer.purchase_count ?? 0`); a complex count skips it, never mis-reads it.
  *
  * A factory rather than a constant: /g regexes carry lastIndex between calls,
  * so one shared instance would make matches vanish unpredictably across scans.
@@ -165,7 +163,17 @@ function hasFlag(name) {
  * pluralizeTranslate, so every caller wants this same pattern.
  */
 function makePluralRegex() {
-    return /(?<![\w$.])pluralizeTranslate\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1\s*,\s*(['"`])((?:\\.|(?!\3)[^\\])*)\3/g;
+    return /(?<![\w$.])(?:pluralizeTranslate|\$n)\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1\s*,\s*(['"`])((?:\\.|(?!\3)[^\\])*)\3(?:\s*,\s*[^,'"`()]+?\s*,\s*(['"`])((?:\\.|(?!\5)[^\\])*)\5)?/g;
+}
+
+/**
+ * Contextual `_x('text', 'context')` calls: msgid in group 2, context in group 4.
+ * The lookbehind stops `foo_x(` matching; `receiver` is an optional pattern for
+ * an allowed object prefix such as `window.fluentcart.`. A factory for the same
+ * lastIndex reason as makePluralRegex.
+ */
+function makeContextRegex(receiver = '') {
+    return new RegExp('(?<![\\w$.])' + (receiver ? '(?:' + receiver + ')?' : '') + '_x\\s*\\(\\s*([\'"`])((?:\\\\.|(?!\\1)[^\\\\])*)\\1\\s*,\\s*([\'"`])((?:\\\\.|(?!\\3)[^\\\\])*)\\3', 'g');
 }
 
 /**
@@ -246,6 +254,9 @@ function extractTranslations(dir, translationRegex, excludeDirs, excludeFiles, c
                             // each through translate() with no context attached.
                             record(singular, pluralMatch.index);
                             record(plural, pluralMatch.index);
+                            if (pluralMatch[6]) {
+                                record(decodeJsStringLiteral(pluralMatch[6]), pluralMatch.index);
+                            }
                         }
                     }
                 }
@@ -313,10 +324,15 @@ function phpLiteral(str) {
 }
 
 
-function updatePhpTranslations(newTranslations, existingTranslations, filePath, includeSource, commentsArray, contexts = {}) {
+/**
+ * @param {Object} reserved short key => English sentence (reservedWords.json). The source calls translate('Key'); the
+ *                          map keys on the short key and translators still get the full sentence through __(). Every
+ *                          entry is written, found in the source or not.
+ */
+function updatePhpTranslations(newTranslations, existingTranslations, filePath, includeSource, commentsArray, contexts = {}, reserved = {}) {
 
     let phpArray = {};
-    Object.keys(newTranslations).forEach(t => {
+    Object.keys(newTranslations).concat(Object.keys(reserved)).forEach(t => {
         phpArray[t] = t;
     });
 
@@ -333,6 +349,8 @@ function updatePhpTranslations(newTranslations, existingTranslations, filePath, 
             const context = contexts[key].context;
             const contextualKey = escapePhpDoubleQuoted(context) + '\\x04' + escapePhpDoubleQuoted(text);
             entryLine = `    "${contextualKey}" => _x(${phpLiteral(text)}, ${phpLiteral(context)}, 'fluent-cart'),\n`;
+        } else if (reserved.hasOwnProperty(key)) {
+            entryLine = `    ${phpLiteral(key)} => __(${phpLiteral(reserved[key])}, 'fluent-cart'),\n`;
         } else {
             const literal = phpLiteral(key);
             entryLine = `    ${literal} => __(${literal}, 'fluent-cart'),\n`;
@@ -340,7 +358,7 @@ function updatePhpTranslations(newTranslations, existingTranslations, filePath, 
 
         if (includeSource) {
             phpContent += `    /**\n    * Found In\n`;
-            const locations = newTranslations[key].split(', ');
+            const locations = (newTranslations[key] || 'reservedWords.json').split(', ');
             locations.forEach((location, index) => {
                 phpContent += `    * ${index + 1}) @see ${location}\n`;
             });
@@ -373,5 +391,6 @@ module.exports = {
     extractTranslations,
     updatePhpTranslations,
     makePluralRegex,
+    makeContextRegex,
     hasFlag
 };

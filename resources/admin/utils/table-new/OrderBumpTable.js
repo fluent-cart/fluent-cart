@@ -1,5 +1,5 @@
 import Table from "@/utils/table-new/Table";
-import translate from "@/utils/translator/Translator";
+import translate, {_x} from "@/utils/translator/Translator";
 import Arr from "@/utils/support/Arr";
 
 
@@ -13,7 +13,7 @@ class OrderBumpTable extends Table {
     getTabs() {
         return {
             all: translate("All"),
-            active: translate("Active"),
+            active: _x('Active', 'Order bump status'),
             draft: translate("Draft"),
         }
     }

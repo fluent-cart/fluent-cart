@@ -9,6 +9,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\Report\DefaultReportService;
+use FluentCart\App\Services\Report\ReportHelper;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\Framework\Support\Arr;
 
@@ -310,7 +311,7 @@ class StoreDigestService
             'reports_url'     => admin_url('admin.php?page=fluent-cart#/reports'),
             'settings_url'    => admin_url('admin.php?page=fluent-cart#/settings/email_digest_settings'),
             'is_pro'          => App::isProActive(),
-            'pro_url'         => apply_filters('fluent_cart/store_digest/pro_url', 'https://fluentcart.com/discount-deal/'),
+            'pro_url'         => apply_filters('fluent_cart/store_digest/pro_url', 'https://fluentcart.com/pricing/'),
             'is_empty'        => $orderCount === 0,
             'subject'         => '',
             'metrics'         => [
@@ -362,8 +363,8 @@ class StoreDigestService
     private static function metricsFor(string $startDate, string $endDate): array
     {
         $result = DefaultReportService::make([])->getAllGraphMetricsSeparate([
-            'startDate'     => $startDate,
-            'endDate'       => $endDate,
+            'startDate'     => ReportHelper::toGmt(ReportHelper::siteDay($startDate)),
+            'endDate'       => ReportHelper::toGmt(ReportHelper::siteDay($endDate)),
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
             // The digest is formatted in the base currency, so it sums only
             // base-currency orders (multi-currency plan §13)
@@ -381,8 +382,8 @@ class StoreDigestService
     private static function topProducts(string $startDate, string $endDate): array
     {
         $result = DefaultReportService::make([])->fetchTopSoldProducts([
-            'startDate'     => $startDate,
-            'endDate'       => $endDate,
+            'startDate'     => ReportHelper::toGmt(ReportHelper::siteDay($startDate)),
+            'endDate'       => ReportHelper::toGmt(ReportHelper::siteDay($endDate)),
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
             // The digest is formatted in the base currency, so it sums only
             // base-currency orders (multi-currency plan §13)
@@ -409,9 +410,8 @@ class StoreDigestService
     /**
      * Current finished-period window as site-local wall-clock strings.
      *
-     * created_at is stored in UTC, but — to match the dashboard exactly — we
-     * query with bare local strings (no GMT conversion), built from
-     * current_time() via the same gmdate() idiom the dashboard uses.
+     * The report queries convert these store days to UTC, as the Reports do
+     * (ReportHelper::processParams), so the digest matches them.
      *
      * @return array [startDate, endDate]
      */
@@ -755,7 +755,7 @@ class StoreDigestService
      */
     private static function proPromoUrl(array $payload, string $variant): string
     {
-        $base = (string) Arr::get($payload, 'pro_url', 'https://fluentcart.com/discount-deal/');
+        $base = (string) Arr::get($payload, 'pro_url', 'https://fluentcart.com/pricing/');
 
         return add_query_arg([
             'utm_source'   => 'fluent-cart',

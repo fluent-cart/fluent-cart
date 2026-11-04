@@ -52,7 +52,7 @@
           <div class="fct-setting-form-row">
             <div class="fct-setting-form-content">
               <LabelHint :title="$t('Request Method')" :required="true"/>
-              <p class="fct-inline-tip">{{$t('Specifies the HTTP method (e.g., GET, POST) used to send data to the webhook URL.')}}</p>
+              <p class="fct-inline-tip">{{$t('Settings_Specifies_Http')}}</p>
             </div><!-- .fct-setting-form-content -->
 
             <div class="fct-setting-form-fields">

@@ -13,10 +13,10 @@ class AuthService
     {
         $userName = self::createUserNameFromStrings($customer->email, [$customer->first_name, $customer->last_name]);
 
-        // With verification not required, link the account to its customer before
-        // other registration listeners run. The update never takes a customer
-        // another account owns, nor one whose stored email changed meanwhile;
-        // an unlinked one is linked on the first portal visit.
+        // Link the account to its customer before other registration listeners run.
+        // Only the inbox owner can sign in to a new account, so this is safe in both
+        // modes. The update never takes a customer another account owns, nor one
+        // whose stored email changed meanwhile.
         $link = function ($userId) use ($customer) {
             $user = get_userdata($userId);
             if ($user && EmailVerificationService::isSame($user->user_email, $customer->email)) {
@@ -30,10 +30,7 @@ class AuthService
             }
         };
 
-        $linkCustomer = !EmailVerificationService::isEnabled();
-        if ($linkCustomer) {
-            add_action('user_register', $link, PHP_INT_MIN, 1);
-        }
+        add_action('user_register', $link, PHP_INT_MIN, 1);
 
         try {
             return self::registerNewUser($userName, $customer->email, '', [
@@ -42,9 +39,7 @@ class AuthService
                 'role'       => $userRole
             ]);
         } finally {
-            if ($linkCustomer) {
-                remove_action('user_register', $link, PHP_INT_MIN);
-            }
+            remove_action('user_register', $link, PHP_INT_MIN);
         }
     }
 

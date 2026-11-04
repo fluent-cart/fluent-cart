@@ -91,3 +91,6 @@ add_filter('fluent_cart/dummy_product_info', function ($info) {
 
     return $infos;
 });
+
+// Core's own starters (shipment email) in Pro's email template picker.
+add_filter('fluent_cart_pro/email/starter_templates', [\FluentCart\App\Services\Email\StarterTemplates::class, 'addToPicker'], 10, 2);

@@ -8,7 +8,7 @@ vi.mock('@/utils/Notify', () => ({default: {error: vi.fn()}}));
 vi.mock('@/Bits/Components/Icons/DynamicIcon.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/DynamicTemplates/DynamicTemplates.vue', () => ({default: {render: () => null}}));
 vi.mock('@/utils/translator/Translator', () => ({
-    default: (text, value) => text.replace('%s', value),
+    default: (text, value) => text.replace(/%(1\$)?s/, value),
     translateNumber: value => value,
 }));
 vi.mock('@/utils/Config/AppConfig', () => ({default: {
@@ -61,7 +61,7 @@ describe('dashboard converted money', () => {
         ]);
 
         expect(html).toContain('$0');
-        expect(html).toContain('2 orders without an exchange rate left out');
+        expect(html).toContain('Orders left out without an exchange rate: 2');
     });
 
     it('keeps order counts as counts', async () => {

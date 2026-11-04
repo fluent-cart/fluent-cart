@@ -4,6 +4,7 @@ namespace FluentCart\App\Modules\Tax;
 
 use FluentCart\App\App;
 use FluentCart\Api\StoreSettings;
+use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\CartHelper;
@@ -12,6 +13,7 @@ use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Services\Renderer\TaxRenderer;
 use FluentCart\App\Services\Renderer\VatFieldRenderer;
 use FluentCart\App\Services\Renderer\CartSummaryRender;
+use FluentCart\App\Services\Renderer\ModalCheckoutRenderer;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\Api\Resource\FrontendResource\CartResource;
@@ -519,11 +521,17 @@ class TaxModule
         }
         if ($shipMethodId && $shipCharge > 0 && $distributedShipping === 0) {
             // A method is selected with a charge but no per-item share — redistribute it.
-            $shipMethod = \FluentCart\App\Models\ShippingMethod::query()->find($shipMethodId);
-            if ($shipMethod) {
-                $redistributed = \FluentCart\App\Helpers\CartHelper::calculateShippingMethodCharge(
-                    $shipMethod, $lineItems, 'items'
-                );
+            // A carrier token is a flat quote: spread the stored charge.
+            if (is_numeric($shipMethodId)) {
+                $shipMethod = \FluentCart\App\Models\ShippingMethod::query()->find($shipMethodId);
+                if ($shipMethod) {
+                    $redistributed = \FluentCart\App\Helpers\CartHelper::calculateShippingMethodCharge(
+                        $shipMethod, $lineItems, 'items'
+                    );
+                    $lineItems = Arr::get($redistributed, 'items', $lineItems);
+                }
+            } else {
+                $redistributed = \FluentCart\App\Helpers\CartHelper::itemizeFlatShipping($lineItems, $shipCharge);
                 $lineItems = Arr::get($redistributed, 'items', $lineItems);
             }
         } elseif (!$shipMethodId && $distributedShipping === 0) {
@@ -546,14 +554,12 @@ class TaxModule
                 $autoState = Arr::get($checkoutData, 'form_data.shipping_state')
                     ?: Arr::get($checkoutData, 'form_data.billing_state');
                 if ($autoCountry) {
-                    $autoMethods = \FluentCart\App\Helpers\AddressHelper::getShippingMethods($autoCountry, $autoState);
+                    $autoMethods = \FluentCart\App\Helpers\AddressHelper::getShippingMethods($autoCountry, $autoState, null, $lineItems);
                     if ($autoMethods && !is_wp_error($autoMethods) && count($autoMethods) === 1) {
                         $autoMethod = Arr::first($autoMethods);
-                        $autoCalc = \FluentCart\App\Helpers\CartHelper::calculateShippingMethodCharge(
-                            $autoMethod, $lineItems, 'items'
-                        );
+                        $autoCalc = \FluentCart\App\Helpers\CartHelper::itemizeSelectedRate($autoMethod, $lineItems);
                         $lineItems = Arr::get($autoCalc, 'items', $lineItems);
-                        Arr::set($checkoutData, 'shipping_data.shipping_method_id', $autoMethod->id);
+                        Arr::set($checkoutData, 'shipping_data.shipping_method_id', Arr::get($autoMethod, 'id'));
                         Arr::set($checkoutData, 'shipping_data.shipping_charge', (int) Arr::get($autoCalc, 'shipping_amount', 0));
                     }
                 }
@@ -1052,9 +1058,9 @@ class TaxModule
                 // total_amount was computed with RC-zeroed tax, and the draft's fee_total never
                 // absorbed fee_tax (behavior was 0 then) — so the full additive portion goes on top.
                 $addedTax = 0;
-                if ($newTaxBehavior === 1) {
+                if ($newTaxBehavior === 1 && $storeTaxBehavior !== 2) {
                     $addedTax = $newTaxTotal + $newShippingTax;
-                } elseif ($newTaxBehavior === 3) {
+                } elseif (in_array($newTaxBehavior, [1, 3], true)) {
                     $addedTax = $exclusiveTaxTotal;
                     if ($storeTaxBehavior === 1) {
                         $addedTax += $feeTax + $newShippingTax;
@@ -1363,6 +1369,27 @@ class TaxModule
             wp_send_json(['message' => __('Missing required data', 'fluent-cart')], 422);
         }
 
+        // Each check waits on the EU VIES service, so cap them per visitor. A transient,
+        // not RateLimiter, because that only works with an external object cache. The
+        // lock makes parallel checks update the count one at a time.
+        global $wpdb;
+        $ip = AddressHelper::getIpAddress();
+        $budgetKey = 'fct_vat_checks_' . md5($ip);
+        $lockName = 'fct_vat_' . md5($wpdb->prefix . $ip);
+
+        $checks = 10;
+        if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lockName, 2)) === '1') {
+            $checks = (int) get_transient($budgetKey);
+            if ($checks < 10) {
+                set_transient($budgetKey, $checks + 1, 10 * MINUTE_IN_SECONDS);
+            }
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lockName));
+        }
+
+        if ($checks >= 10) {
+            wp_send_json(['message' => __('Too many VAT checks. Please try again in a few minutes.', 'fluent-cart')], 429);
+        }
+
         // Strip EU country code prefix from VAT number if present
         foreach ($euCountryCodes as $code) {
             if (strpos($vatNumber, $code) === 0) {
@@ -1455,6 +1482,8 @@ class TaxModule
         (new VatFieldRenderer(Arr::get($taxData, 'country', $countryCode)))->renderInner($checkoutData);
         $euVatView = ob_get_clean();
 
+        $modalCheckoutRender = new ModalCheckoutRenderer($cart);
+
         wp_send_json([
             'success'   => true,
             'message'   => $appliesReverseCharge
@@ -1470,6 +1499,17 @@ class TaxModule
                 [
                     'selector' => '[data-fluent-cart-checkout-page-tax-wrapper]',
                     'content'  => $euVatView,
+                    'type'     => 'replace'
+                ],
+                // The modal checkout has no cart-items wrapper; it renders its own summary
+                [
+                    'selector' => '[data-fct-modal-checkout-summary-group]',
+                    'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                    'type'     => 'replace'
+                ],
+                [
+                    'selector' => '[data-fct-modal-checkout-summary]',
+                    'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
                     'type'     => 'replace'
                 ]
             ],
@@ -1523,6 +1563,8 @@ class TaxModule
         (new CartSummaryRender($cart))->render(false);
         $cartSummaryInner = ob_get_clean();
 
+        $modalCheckoutRender = new ModalCheckoutRenderer($cart);
+
         wp_send_json([
             'success'       => true,
             'message'       => __('VAT has been removed successfully', 'fluent-cart'),
@@ -1531,6 +1573,16 @@ class TaxModule
                 [
                     'selector' => '[data-fluent-cart-checkout-page-cart-items-wrapper]',
                     'content'  => $cartSummaryInner,
+                    'type'     => 'replace'
+                ],
+                [
+                    'selector' => '[data-fct-modal-checkout-summary-group]',
+                    'content'  => $modalCheckoutRender->getFragment('summary_group'),
+                    'type'     => 'replace'
+                ],
+                [
+                    'selector' => '[data-fct-modal-checkout-summary]',
+                    'content'  => $modalCheckoutRender->getFragment('checkout_summary'),
                     'type'     => 'replace'
                 ]
             ]

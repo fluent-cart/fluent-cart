@@ -213,7 +213,7 @@ onBeforeRouteLeave(() => {
           v-if="productEditModel.isInDraft()"
           type="warning"
           icon="InformationFill"
-          :content="translate('This product is currently in draft and cannot be sold to customers. Please publish the product to make it available for purchase.')"
+          :content="translate('Product_Product_Currently')"
       />
 
       <div class="fct-product-edit">

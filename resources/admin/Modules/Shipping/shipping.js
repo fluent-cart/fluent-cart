@@ -1,10 +1,12 @@
-import ShippingRoute from "./ShippingRoute.vue";
-import AllShippingZones from "./AllShippingZones.vue";
-import SingleShippingZone from "./SingleShippingZone.vue";
-import AllShippingClasses from "./AllShippingClasses.vue";
-import SingleShippingClass from "./SingleShippingClass.vue";
-import AllShippingPackages from "./AllShippingPackages.vue";
 import translate from "@/utils/translator/Translator";
+
+const ShippingZonesMoved = () => import('./ShippingZonesMoved.vue');
+const SingleShippingZone = () => import('./SingleShippingZone.vue');
+const AllShippingClasses = () => import('./AllShippingClasses.vue');
+const SingleShippingClass = () => import('./SingleShippingClass.vue');
+const AllShippingPackages = () => import('./AllShippingPackages.vue');
+const Carriers = () => import('./Carriers.vue');
+const SingleCarrier = () => import('./SingleCarrier.vue');
 
 
 window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping', function (routes) {
@@ -12,13 +14,15 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
     if (routes.settings && routes.settings.children) {
         routes.settings.children.push(
             {
+                // Kept for old links; zones now live on the Manual carrier page.
                 name: 'shipping',
                 path: 'shipping',
-                component: AllShippingZones,
+                component: ShippingZonesMoved,
                 meta: {
                     active_menu: 'shipping',
                     title: translate('Shipping Zones'),
-                    permission: ["store/settings", 'store/sensitive']
+                    // Same gate as the Manual carrier page its button opens.
+                    permission: ['store/sensitive']
                 },
             },
             {
@@ -81,6 +85,29 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
                     active_menu: 'settings',
                     title: translate('Packages'),
                     permission: ["store/settings", 'store/sensitive']
+                }
+            },
+            {
+                name: 'shipping_carriers',
+                path: 'shipping/carriers',
+                component: Carriers,
+                meta: {
+                    active_menu: 'shipping',
+                    title: translate('Carriers'),
+                    // The carriers REST endpoints sit behind StoreSensitivePolicy,
+                    // so the page gate matches — a store/settings-only user would
+                    // only see 403s here.
+                    permission: ['store/sensitive']
+                }
+            },
+            {
+                name: 'carrier_settings',
+                path: 'shipping/carriers/:slug',
+                component: SingleCarrier,
+                meta: {
+                    active_menu: 'shipping',
+                    title: translate('Carrier Settings'),
+                    permission: ['store/sensitive']
                 }
             }
         );

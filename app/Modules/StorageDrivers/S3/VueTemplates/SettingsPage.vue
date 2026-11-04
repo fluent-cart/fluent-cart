@@ -358,7 +358,7 @@
 
                             <div class="fct-bucket-list-header">
                               <span class="selected-bucket-count">
-                                {{ bucketOptions.length }} {{ translate(bucketOptions.length === 1 ? 'bucket' : 'buckets') }}
+                                {{ bucketOptions.length }} {{ bucketOptions.length === 1 ? translate('bucket') : translate('buckets') }}
                               </span>
                               <el-button text class="px-0" :loading="bucketLoading" @click.stop="refreshBucketList">
                                 {{ translate('Reload bucket list') }}

@@ -37,7 +37,7 @@ $rating = max(0, min(5, (int) $review->rating));
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
         if ($reviewerName !== '') {
             /* translators: 1: the reviewer's name */

@@ -26,6 +26,7 @@ use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\FileSystem\FileManager;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\App\Services\OrderService;
+use FluentCart\App\Services\ShipmentService;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use FluentCart\Framework\Database\Orm\Builder;
@@ -64,9 +65,11 @@ class CustomerOrderController extends BaseFrontendController
         $search = $request->getSafe('search', 'sanitize_text_field');
 
         $orders = Order::query()
-            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'fee_total', 'currency', 'uuid', 'type', 'status', 'created_at'])
+            ->select(['invoice_no', 'id', 'parent_id', 'total_amount', 'fee_total', 'currency', 'uuid', 'type', 'status', 'shipping_status', 'fulfillment_type', 'created_at'])
             ->with(['order_items' => function ($query) {
-                $query->select('id', 'order_id', 'object_id', 'post_title', 'title', 'quantity', 'payment_type', 'line_meta', 'other_info');
+                $query->select('id', 'order_id', 'object_id', 'post_title', 'title', 'quantity', 'payment_type', 'line_meta', 'other_info', 'fulfillment_type', 'fulfilled_quantity');
+            }, 'shipments' => function ($query) {
+                $query->select('id', 'order_id', 'status', 'carrier_name', 'tracking_number', 'tracking_url', 'shipped_at', 'notes', 'items', 'meta')->orderBy('shipped_at', 'ASC')->orderBy('id', 'ASC');
             }])
             ->where('customer_id', $customer->id)
             ->where(function ($query) {
@@ -90,6 +93,8 @@ class CustomerOrderController extends BaseFrontendController
                 'uuid'           => $order->uuid,
                 'type'           => $order->type,
                 'status'         => $order->status,
+                'shipments'      => ShipmentService::customerShipments($order),
+                'unshipped_items' => ShipmentService::customerUnshippedItems($order),
                 'renewals_count' => $order->renewals_count,
                 'order_items'    => $order->order_items->map(function ($item) {
                     return [
@@ -300,6 +305,8 @@ class CustomerOrderController extends BaseFrontendController
             'tax_summary'                => TaxSummaryHelper::computeTaxSummary($order),
             'payment_method'        => $order->payment_method,
             'custom_payment_link'   => $this->getCustomPaymentLink($order),
+            'shipments'             => ShipmentService::customerShipments($order),
+            'unshipped_items'       => ShipmentService::customerUnshippedItems($order),
         ];
 
         $formattedOrderData['subscriptions'] = $order->subscriptions

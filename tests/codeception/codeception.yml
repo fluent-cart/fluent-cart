@@ -1,0 +1,17 @@
+namespace: Tests\Support
+paths:
+    tests: .
+    output: _output
+    data: Support/Data
+    support: Support
+    envs: _envs
+actor_suffix: Tester
+extensions:
+    enabled:
+        # TC-047: in-process destructive-DB preflight — aborts before WPLoader
+        # opens any DB connection unless FCT_TEST_DB_ALLOW names the exact
+        # host:database and the loaded FluentCart copy is this repository.
+        - Tests\Support\Extension\DestructiveDbGuardExtension
+        - Codeception\Extension\RunFailed
+params:
+    - .env

@@ -39,7 +39,7 @@ const handleVariationChange = (newType) => {
 
     Confirmation.confirmDeleteWithInput(
         'proceed',
-        translate("Switching to Advanced Variations will delete all current variations for this product and cannot be undone. You won't be able to switch back to Simple Variations."),
+        translate('Product_Switching_Advanced'),
     ).then(() => {
       confirmChange();
     }).catch(() => {
@@ -70,8 +70,8 @@ const handleVariationChange = (newType) => {
     selectedVariationType.value = currentType;
 
     const warningMessage = variationLength > 1
-        ? translate("Switching to 'Simple' will permanently delete all variations except the first one, along with any image attached to that variation.")
-        : translate("Switching to 'Simple' will permanently delete the image attached to this variation.");
+        ? translate('Product_Switching_Simple')
+        : translate('Product_Switching_Simple_Permanently');
 
     Confirmation.confirmDeleteWithInput(
         'proceed',

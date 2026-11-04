@@ -1,4 +1,4 @@
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import blocktranslate, {_x} from "@/BlockEditor/BlockEditorTranslator";
 
 const { useBlockProps } = wp.blockEditor;
 const CheckoutShippingMethodsBlock = {
@@ -23,7 +23,7 @@ const CheckoutShippingMethodsBlock = {
                     <input type="radio" name="shipping_method" disabled value="free_shipping" />
                     <label>{blocktranslate('Free Shipping')}</label>
                     <span className="fc-checkout-shipping-methods-list-item-price">
-                        {blocktranslate('Free')}
+                        {_x('Free', 'Shipping cost')}
                     </span>
                 </div>
 

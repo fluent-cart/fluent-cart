@@ -18,7 +18,7 @@ if (!empty($celebration)) {
 ?>
 
 <div class="space_bottom_30">
-    <p><?php echo esc_html__('Hey There 👋,', 'fluent-cart'); ?></p>
+    <p class="fct-email-greeting"><?php echo esc_html__('Hey There 👋,', 'fluent-cart'); ?></p>
     <p><?php
         printf(
             /* translators: %1$s is the customer name, %2$s is the subscription item name */

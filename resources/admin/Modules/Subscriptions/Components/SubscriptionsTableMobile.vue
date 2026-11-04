@@ -4,7 +4,7 @@
       <div class="fct-table-mobile-header" @click="$router.push({ name: 'view_subscription', params: { subscription_id: row.id } })">
         <div class="fct-table-mobile-header-left">
           <div class="fct-table-status-col">
-            <Badge :status="subscriptionStatus(row)" :key="row.id"/>
+            <Badge :status="subscriptionStatus(row)" kind="subscription" :key="row.id"/>
           </div>
           <div class="fct-table-id-col">
             <div class="id">#{{ row.id }}</div>

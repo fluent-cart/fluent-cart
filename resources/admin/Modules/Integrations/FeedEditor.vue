@@ -212,7 +212,7 @@
                                             <el-radio
                                                 v-for="(fieldLabel, fieldValue) in field.options"
                                                 :key="fieldValue"
-                                                :label="fieldValue"
+                                                :value="fieldValue"
                                             >{{ fieldLabel }}
                                             </el-radio>
                                         </el-radio-group>

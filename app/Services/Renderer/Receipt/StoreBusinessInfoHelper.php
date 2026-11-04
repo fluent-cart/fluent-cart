@@ -11,10 +11,12 @@ class StoreBusinessInfoHelper
     /**
      * Seller ID lines (registration, tax, VAT) for receipts, the thank-you
      * page and order emails. Plain text; callers escape and style them.
+     * Typed `object`, not Order: the email preview passes a stand-in order.
      *
+     * @param Order|object $order
      * @return string[]
      */
-    public static function getIdLines(Order $order): array
+    public static function getIdLines(object $order): array
     {
         $info = $order->getStoreBusinessInfo();
         $labels = TaxModule::getBusinessIdLabels($info['store_country']);
@@ -40,7 +42,10 @@ class StoreBusinessInfoHelper
         return $lines;
     }
 
-    public static function getCompanyName(Order $order, string $fallback = ''): string
+    /**
+     * @param Order|object $order
+     */
+    public static function getCompanyName(object $order, string $fallback = ''): string
     {
         $companyName = $order->getStoreBusinessInfo()['company_name'];
 

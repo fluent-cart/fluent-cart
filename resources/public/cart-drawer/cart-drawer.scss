@@ -1,5 +1,4 @@
 @config "./cart-drawer.config.js";
-@tailwind utilities;
 
 :root {
   // The drawer is FluentCart chrome — a modal overlay no theme has rules for —
@@ -70,14 +69,14 @@
 
 /*=== drawer ===*/
 .fct-cart-drawer {
-  * {
-    @apply box-border;
-  }
-
   @apply z-[999999] bg-[var(--fct-cart-drawer-bg)] fixed w-[500px] max-w-full start-full bottom-0 shadow-lg;
   height: 100vh;
   height: 100dvh;
   transition: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  * {
+    @apply box-border;
+  }
 
   &.open {
     @apply start-[calc(100%-min(100%,500px))];

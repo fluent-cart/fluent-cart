@@ -66,4 +66,12 @@ class SubscriptionValidityExpired extends EventDispatcher
         return true;
     }
 
+    public function getEventInfoForActivity(): array
+    {
+        return [
+            'content' => $this->reason ?: __('Subscription validity expired', 'fluent-cart'),
+            'status'  => 'warning',
+        ];
+    }
+
 }

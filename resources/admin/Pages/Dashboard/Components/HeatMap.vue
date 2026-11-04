@@ -214,7 +214,9 @@ const getMapOption = () => ({
       label: {
         show: false,
         formatter: regionLabel,
-        emphasis: {
+      },
+      emphasis: {
+        label: {
           show: true,
           color: colors.gray["1000"],
           fontWeight: "bold",
@@ -223,8 +225,6 @@ const getMapOption = () => ({
           textShadowOffsetX: 0,
           textShadowOffsetY: 0,
         },
-      },
-      emphasis: {
         itemStyle: {
           areaColor: baseColor["300"],
           shadowBlur: 10,

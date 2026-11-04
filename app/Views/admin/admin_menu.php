@@ -67,10 +67,14 @@ $darkLogoSvg  = file_get_contents($logoDir . 'logo-full.svg');
 
                             <?php if (!empty($menu_item['children'])): ?>
                                 <ul class="fct_menu_child">
-                                    <?php foreach ($menu_item['children'] as $childSlug => $childItem):
+                                    <?php $prevGroup = null;
+                                    foreach ($menu_item['children'] as $childSlug => $childItem):
                                         if (empty($childItem['permission']) || PermissionManager::hasPermission($childItem['permission'])):
+                                            $childGroup = $childItem['group'] ?? null;
+                                            $isGroupStart = $prevGroup !== null && $childGroup !== $prevGroup;
+                                            $prevGroup = $childGroup;
                                             ?>
-                                            <li class="fct_menu_child_item fct_menu_child_item_<?php echo esc_attr($childSlug); ?>">
+                                            <li class="fct_menu_child_item fct_menu_child_item_<?php echo esc_attr($childSlug); echo $isGroupStart ? ' fct_menu_child_item_group_start' : ''; ?>">
                                                 <a type="button"
                                                    aria-label="<?php echo esc_attr($childItem['label']) ?>"
                                                    href="<?php echo esc_url($childItem['link']); ?>">

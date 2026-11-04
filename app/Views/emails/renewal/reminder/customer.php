@@ -6,7 +6,7 @@
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
             printf(
                 /* translators: %s is the customer's full name */
@@ -21,7 +21,7 @@
             printf(
                 /* translators: %s is the renewal order number */
                 esc_html__( 'This is a friendly reminder that your renewal order %s is still awaiting payment. Please complete the payment at your earliest convenience to avoid any interruption to your subscription.', 'fluent-cart' ),
-                esc_html( $order->invoice_no )
+                esc_html( \FluentCart\Framework\Support\Arr::get($order, 'invoice_no') ?: \FluentCart\Framework\Support\Arr::get($order, 'uuid') )
             );
         ?>
     </p>

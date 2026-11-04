@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\Shipping\Http\Requests;
 
+use FluentCart\App\Modules\Shipping\Carriers\Manual\ManualCarrier;
 use FluentCart\Framework\Foundation\RequestGuard;
 use FluentCart\Framework\Support\Arr;
 
@@ -30,6 +31,10 @@ class ShippingMethodRequest extends RequestGuard
             'is_enabled' => 'nullable|integer|in:0,1',
             'method_id'  => 'nullable|integer',
             'meta'       => 'nullable|array',
+            'meta.tracking_url_pattern' => function ($attr, $value) {
+                $pattern = ManualCarrier::sanitizeTrackingUrlPattern($value);
+                return is_wp_error($pattern) ? $pattern->get_error_message() : null;
+            },
         ];
     }
 

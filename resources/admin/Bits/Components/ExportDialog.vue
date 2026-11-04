@@ -228,7 +228,7 @@ const handleCancel = () => {
         <ProFeatureNotice
             v-if="!exportState.isProActive"
             :title="translate('Advanced data export is a Pro feature')"
-            :text="translate('Export configurable CSV files or schema-rich JSON data directly from your browser.')"
+            :text="translate('Export_Export_Configurable')"
             placement="feature_lock_data_export"
         />
 
@@ -382,7 +382,7 @@ const handleCancel = () => {
                 </div>
                 <el-alert
                     v-if="schema.sensitive_values_redacted"
-                    :title="translate('Authentication hashes, payment tokens, and other credentials are excluded or redacted from JSON exports.')"
+                    :title="translate('Export_Authentication_Hashes')"
                     type="info"
                     :closable="false"
                     show-icon
@@ -401,7 +401,7 @@ const handleCancel = () => {
                 {{
                     supportsDirectWriter
                         ? translate('Large exports are written to disk batch by batch to keep browser memory low.')
-                        : translate('This browser prepares the final download in memory. For very large exports, use a Chromium-based browser for direct-to-disk writing.')
+                        : translate('Export_Browser_Prepares')
                 }}
             </p>
         </div>

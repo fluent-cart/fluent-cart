@@ -49,7 +49,8 @@ const methodForm = ref({
   is_enabled: 1,
   states: [],
   meta: {
-    description: ''
+    description: '',
+    tracking_url_pattern: ''
   }
 });
 const fetchingStateZones = ref(false);
@@ -82,7 +83,8 @@ const addShippingMethod = () => {
     is_enabled: 1,
     states: [],
     meta: {
-      description: ''
+      description: '',
+      tracking_url_pattern: ''
     }
   };
   showMethodModal.value = true;
@@ -106,7 +108,16 @@ const validateWeightTiers = () => {
   return true;
 };
 
-// Add this method after other methods
+const saveErrorMessage = (errors, fallback) => {
+  let message = '';
+  if (errors.status_code == '422') {
+    for (const fieldKey in errors.data) {
+      message += Object.values(errors.data[fieldKey])[0] + ' \n';
+    }
+  }
+  return message || fallback;
+};
+
 const saveShippingMethod = () => {
   if (!validateWeightTiers()) return;
 
@@ -118,19 +129,7 @@ const saveShippingMethod = () => {
         emit('fetchShippingMethods');
       })
       .catch(errors => {
-        let message = '';
-        if (errors.status_code == '422') {
-          for (const fieldKey in errors.data) {
-            const errorData = errors.data[fieldKey];
-            const firstError = Object.values(errorData)[0];
-            message += firstError + ' \n';
-          }
-        }
-        if (!message) {
-          message = translate('Failed to save shipping method');
-        }
-        // Validation errors shown via Notify
-        Notify.error(message);
+        Notify.error(saveErrorMessage(errors, translate('Failed to save shipping method')));
       })
       .finally(() => {
         savingMethod.value = false;
@@ -146,9 +145,8 @@ const updateShippingMethod = () => {
         showMethodModal.value = false;
         emit('fetchShippingMethods');
       })
-      .catch(error => {
-        // Error shown via Notify
-        Notify.error(translate('Failed to update shipping method'));
+      .catch(errors => {
+        Notify.error(saveErrorMessage(errors, translate('Failed to update shipping method')));
       })
       .finally(() => {
         savingMethod.value = false;
@@ -190,7 +188,8 @@ const editShippingMethod = (row) => {
     is_enabled: row.is_enabled ? 1 : 0,
     states: row.states,
     meta: {
-      description: row.meta?.description || ''
+      description: row.meta?.description || '',
+      tracking_url_pattern: row.meta?.tracking_url_pattern || ''
     },
   };
   showMethodModal.value = true;
@@ -367,7 +366,7 @@ const fetchStateZones = () => {
             <template #empty>
               <div class="no-methods">
                 <p>{{
-                    translate('No shipping methods found for this zone. Add a shipping method to define how products are shipped in this zone.')
+                    translate('Ship_Shipping_Methods')
                   }}</p>
               </div>
             </template>
@@ -500,6 +499,14 @@ const fetchStateZones = () => {
               <el-input
                   v-model="methodForm.meta.description" type="textarea" :rows="2"
                         :placeholder="translate('Enter description')"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :lg="24">
+            <el-form-item :label="translate('Tracking URL Pattern')">
+              <el-input v-model="methodForm.meta.tracking_url_pattern" placeholder="https://"></el-input>
+              <div class="form-help-text mt-1">
+                {{ translate('Ship_Tracking_Number') }}
+              </div>
             </el-form-item>
           </el-col>
         </el-row>

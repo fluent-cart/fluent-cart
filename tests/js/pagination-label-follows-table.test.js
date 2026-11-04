@@ -1,7 +1,11 @@
-import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {describe, expect, it, vi} from 'vitest';
+
+vi.mock('@/utils/translator/Translator', () => ({
+    default: (text) => text,
+    translateNumber: (number) => `#${number}`,
+}));
+
+import Pagination from '@/Bits/Components/Pagination.vue';
 
 /**
  * The footer follows the table when the table moves the page on its own.
@@ -17,35 +21,57 @@ import {fileURLToPath} from 'node:url';
  * the page count changes - so a button stamped "2" that came to hold "4"
  * kept painting "2": a pager reading 1 2 3 2. The stamp now follows the
  * number the button holds.
- *
- * Source guards, not renders; the browser reproduction is in the PR.
  */
 
-const FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../resources/admin/Bits/Components/Pagination.vue');
-const SOURCE = fs.readFileSync(FILE, 'utf8');
-const SCRIPT = SOURCE.slice(SOURCE.indexOf('<script>'));
+const pageButton = (number, stampedFrom) => ({
+    textContent: number,
+    dataset: stampedFrom ? {translatedFrom: stampedFrom} : {},
+    style: {setProperty: vi.fn()},
+});
 
 describe('the pagination footer', () => {
     it('starts its page label from the table', () => {
-        expect(SCRIPT).toMatch(/currentPage:\s*this\.pagination\.current_page/);
+        expect(Pagination.data.call({pagination: {current_page: 3}}).currentPage).toBe(3);
     });
 
     it('follows the table when it moves the page without a click', () => {
-        expect(SCRIPT).toMatch(/'pagination\.current_page'\s*\(page\)\s*\{\s*this\.currentPage = page;/);
+        const footer = {currentPage: 2};
+
+        Pagination.watch['pagination.current_page'].call(footer, 1);
+
+        expect(footer.currentPage).toBe(1);
     });
 
     it('re-stamps a page button whose number changed, rather than once per element', () => {
-        expect(SCRIPT).toMatch(/elem\.dataset\.translatedFrom !== original/);
-        expect(SCRIPT).not.toMatch(/elem\.dataset\.translated\b/);
+        const reused = pageButton('4', '2');
+        const unchanged = pageButton('3', '3');
+        const footer = {$el: {querySelectorAll: () => [reused, unchanged]}};
+
+        Pagination.methods.translatePickerElements.call(footer);
+
+        expect(reused.style.setProperty).toHaveBeenCalledWith('--translated-number', '"#4"');
+        expect(reused.dataset.translatedFrom).toBe('4');
+        expect(unchanged.style.setProperty).not.toHaveBeenCalled();
     });
 
     it('re-stamps after the page count changes', () => {
-        const lastPageWatcher = SCRIPT.slice(SCRIPT.indexOf("'pagination.last_page'"), SCRIPT.indexOf("'pagination.current_page'"));
-        expect(lastPageWatcher).toMatch(/translatePickerElements\(\)/);
+        const footer = {$nextTick: (callback) => callback(), translatePickerElements: vi.fn()};
+        const {handler} = Pagination.watch['pagination.last_page'];
+
+        handler.call(footer, 4, 4);
+        expect(footer.translatePickerElements).not.toHaveBeenCalled();
+
+        handler.call(footer, 4, 2);
+        expect(footer.translatePickerElements).toHaveBeenCalledTimes(1);
+        expect(footer.paginationUpdating).toBe(false);
     });
 
     it('stamps only its own pager, not the first one on the page', () => {
-        expect(SCRIPT).toMatch(/this\.\$el\.querySelectorAll\('\.el-pager li\.number'\)/);
-        expect(SCRIPT).not.toMatch(/document\.querySelector\('\.el-pagination/);
+        // No document global here: a document.querySelector() lookup would throw.
+        const querySelectorAll = vi.fn(() => []);
+
+        Pagination.methods.translatePickerElements.call({$el: {querySelectorAll}});
+
+        expect(querySelectorAll).toHaveBeenCalledWith('.el-pager li.number');
     });
 });

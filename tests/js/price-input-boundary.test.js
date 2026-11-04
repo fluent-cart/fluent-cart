@@ -36,13 +36,6 @@ const MONEY_BINDING = new RegExp(`(?:^|[.\\['"])(${MONEY_FIELDS.join('|')})(?:['
 // the walker sees inside them.
 const ALLOWED_TAGS = new Set(['PriceInput']);
 
-// ProductPricingFormOld.vue is the pre-rewrite pricing form. It still binds
-// item_cost / compare_price to bare el-inputs, but nothing imports it anywhere
-// in resources/ or app/ — it renders in no screen, so it cannot mis-save a
-// price. Left in place rather than deleted as part of a bug fix; if it is ever
-// reinstated it has to convert first.
-const DEAD_FILES = new Set(['Modules/Products/parts/ProductPricingFormOld.vue']);
-
 /**
  * Surfaces that still bind a money field to a bare control, asserted here as
  * still-broken so the count cannot grow silently. Delete an entry when it is
@@ -87,7 +80,6 @@ const MUST_IMPORT_PRICE_INPUT = [
     'Modules/Products/parts/VariantPrice.vue',
     'Modules/Products/BulkShared/BulkPriceInput.vue',
     'Modules/Products/BulkShared/BulkComparePriceInput.vue',
-    'Modules/Products/BulkInsert/SingleVariation.vue',
     'Modules/Products/BulkInsert/BulkSubscriptionPopover.vue',
 ];
 
@@ -203,8 +195,7 @@ const findViolations = (source, filename) => {
 };
 
 describe('admin money inputs go through PriceInput', () => {
-    const files = collectVueFiles(ADMIN_DIR)
-        .filter((file) => !DEAD_FILES.has(path.relative(ADMIN_DIR, file).split(path.sep).join('/')));
+    const files = collectVueFiles(ADMIN_DIR);
 
     it('finds admin single-file components to check', () => {
         expect(files.length).toBeGreaterThan(100);

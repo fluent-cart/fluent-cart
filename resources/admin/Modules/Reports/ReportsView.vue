@@ -8,44 +8,42 @@
 
       <div class="fct-report-body" id="fct-report-body">
         <!-- setting header -->
-        <SettingsHeader :heading="translate(routeTitle)" :show-save-button="false"/>
+        <SettingsHeader :heading="translate(routeTitle)" :show-save-button="false">
+          <template v-if="!hideAllFilters" #action>
+            <ReportFilterBar
+                :filter-state="filter"
+                :compare-ranges="reportFilter.data.compareRanges"
+                :show-compare="showCompare"
+                :show-filters="shouldRenderFilter"
+                :show-date="!['subscriptions-cohorts', 'future_renewals'].includes(route.name)"
+                :active-filter-count="extraFilterKeys.length"
+            >
+              <SubscriptionProductSelect v-if="subscriptionProductPage"/>
+            </ReportFilterBar>
+          </template>
+          <!-- Installments keeps its own filters (plan start range, products); the page renders them here -->
+          <template v-else-if="route.name === 'reports_installments'" #action>
+            <div id="fct-report-header-actions" class="fct-report-filter-bar"></div>
+          </template>
+        </SettingsHeader>
 
         <div v-if="showFutureRenewalsCurrency" class="fct-report-filter-wrap">
           <AppliedFilters :filter-state="filter" :only="['currency']" />
         </div>
 
-        <div v-if="!hideAllFilters || shouldRenderFilter" class="fct-report-filter-wrap">
-          <AppliedFilters v-if="!hideAllFilters" :filter-state="filter" :compare-range="reportFilter.data.compareRange" :compare-ranges="reportFilter.data.compareRanges" />
-
-          <div v-if="!hideAllFilters && shouldRenderFilter" class="fct-report-filter-button">
-            <FilterDropdown :filter-state="filter" />
-          </div>
+        <!-- Extra filters show only while set -->
+        <div v-if="!hideAllFilters && extraFilterKeys.length" class="fct-report-filter-wrap fct-report-filter-chips">
+          <AppliedFilters :filter-state="filter" :only="extraFilterKeys" />
+          <el-button size="small" text type="primary" @click="clearExtraFilters">{{ translate('Clear all') }}</el-button>
         </div>
 
         <div class="fct-report-body-inner">
 
           <AdminNotice/>
 
-          <Alert
-              class="mb-5 alert-yellow"
-              v-if="
-              filters.storeMode !== filters.filterMode &&
-              filters.filterMode &&
-              filters.filterMode !== ''
-            "
-              icon="InformationFill"
-              :content="
-              $t(
-                'Your store is in %1$s mode but you are watching data in %2$s mode.',
-                filters.storeMode,
-                filters.filterMode
-              )
-            "
-          />
-
           <!-- Replace the dynamic component with router-view -->
           <!-- Reports mount once the currency is resolved, so none requests a stale one -->
-          <router-view v-if="metaReady" v-slot="{ Component }">
+          <router-view v-if="metaReady && !reportFilter.data.currencyScopeLoading" v-slot="{ Component }">
             <component :is="Component" :reportFilter="reportFilter" />
           </router-view>
         </div>
@@ -58,12 +56,13 @@
 <script setup>
 import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import reportFilter from "@/Models/Reports/ReportFilterModel";
-import Alert from "@/Bits/Components/Alert.vue";
+import reportFilter, { SUBSCRIPTION_PRODUCT_ROUTES } from "@/Models/Reports/ReportFilterModel";
+import { presetRange } from "@/Modules/Reports/Utils/datePresets";
 import useFilterState from "@/Bits/Components/FilterDropdown/FilterState";
 import Storage from "@/utils/Storage";
 import AppliedFilters from "@/Bits/Components/FilterDropdown/parts/AppliedFilters.vue";
-import FilterDropdown from "@/Bits/Components/FilterDropdown/FilterDropdown.vue";
+import ReportFilterBar from "@/Modules/Reports/Components/ReportFilterBar.vue";
+import SubscriptionProductSelect from "@/Modules/Reports/Components/SubscriptionProductSelect.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 import ReportNavLinks from "@/Modules/Reports/Components/ReportNavLinks.vue";
 import translate from "@/utils/translator/Translator";
@@ -78,8 +77,9 @@ const menuState = ref({
 const filter = useFilterState();
 const route = useRoute();
 const routeTitle = ref(route.meta?.title);
+// Snapshot reports ignore the date and the order filters; they offer currency only, and only on a multi-currency store
 const showFutureRenewalsCurrency = computed(() =>
-  route.name === 'future_renewals' && filter.currencies.filter(currency => currency.value !== '__all__').length > 1
+  route.name === 'reports_installments' && filter.currencies.filter(currency => currency.value !== '__all__').length > 1
 );
 
 const filters = computed(() => {
@@ -90,13 +90,55 @@ filter.onFilterChanged((filter) => {
   handleFilterChange(filter);
 });
 
+const subscriptionProductPage = computed(() => SUBSCRIPTION_PRODUCT_ROUTES.includes(route.name));
+
 const shouldRenderFilter = computed(() => {
-  return !["reports_overview", "reports_customer", "future_renewals", "reports_export"].includes(route.name);
+  // Compare picks its products on the page
+  return !subscriptionProductPage.value && !["reports_overview", "reports_customer", "reports_installments", "reports_export", "reports_products_compare"].includes(route.name);
 });
 
 const hideAllFilters = computed(() => {
-  return ['reports_overview', 'reports', "future_renewals", "reports_export"].includes(route.name);
+  return ['reports', "reports_installments", "reports_export"].includes(route.name);
 });
+
+const showCompare = computed(() => [
+  "reports_revenue", "reports_subscriptions", "reports_products", "reports_products_compare", "reports_customer",
+  "reports_orders", "reports_refunds", "reports_sources", "reports_coupons", "reports_payment_methods", "reports_locations", "reports_overview",
+].includes(route.name));
+
+// Filters beyond date, compare and currency that are set and apply on this page (the per-page rules of the chip row)
+const extraFilterKeys = computed(() => {
+  if (!shouldRenderFilter.value) {
+    return [];
+  }
+
+  return Object.keys(filter.data.selectedFilters).filter((key) => {
+    const item = filter.data.selectedFilters[key];
+    if (["dateRange", "compareType", "compareDate", "currency"].includes(key)) {
+      return false;
+    }
+    if (key === "orderTypes" && route.name === "reports_subscriptions") {
+      return false;
+    }
+    if (key === "subscriptionType" && ["reports_sources", "reports_coupons", "reports_payment_methods", "reports_locations"].includes(route.name)) {
+      return false;
+    }
+
+    return Array.isArray(item?.value) ? item.value.length > 0 : !!item?.value;
+  });
+});
+
+const clearExtraFilters = () => {
+  extraFilterKeys.value.forEach((key) => {
+    delete filter.data.selectedFilters[key];
+    if (key === "variation_ids") {
+      filter.data.variation_ids = [];
+    }
+    reportFilter.resetFilterToDefault(key);
+  });
+  // One refresh for all of them
+  filter.triggerFilterChanged();
+};
 
 let pluginAppWrap = null
 
@@ -111,8 +153,6 @@ const handleFilterChange = (filtersObj) => {
     }
 
     switch (key) {
-      case "orderStatus":
-      case "paymentStatus":
       case "currency":
       case "compareType":
       case "compareDate":
@@ -141,7 +181,13 @@ const retrieveFilters = () => {
   if (savedFilters) {
     filter.data.selectedFilters = { ...savedFilters };
 
-    if (savedFilters.dateRange?.value?.length === 2) {
+    // A saved preset shows today's days, not the days it covered when it was picked
+    const preset = presetRange(reportFilter.data.rangeKey);
+    if (preset && savedFilters.dateRange) {
+      filter.data.selectedFilters.dateRange = {...savedFilters.dateRange, value: preset, rangeKey: reportFilter.data.rangeKey};
+      filter.data.rangeKey = reportFilter.data.rangeKey;
+      filter.data.dateRange = [preset[0].toDate(), preset[1].toDate()];
+    } else if (savedFilters.dateRange?.value?.length === 2) {
       filter.data.dateRange = [
         savedFilters.dateRange.value[0],
         savedFilters.dateRange.value[1],

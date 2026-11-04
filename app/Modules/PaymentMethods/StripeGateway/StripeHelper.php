@@ -5,11 +5,9 @@ namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
-use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
-use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Money;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
@@ -288,63 +286,11 @@ class StripeHelper
             return $refunded;
         }
 
-        $status = Arr::get($refunded, 'status');
-        $acceptedStatus = ['succeeded', 'pending'];
-        if (!in_array($status, $acceptedStatus)) {
+        if (in_array(Arr::get($refunded, 'status'), ['failed', 'canceled'], true)) {
             return new \WP_Error('refund_failed', __('Refund could not be processed in stripe. Please check on your stripe account', 'fluent-cart'));
         }
 
         return Arr::get($refunded, 'id');
-    }
-
-    public static function createOrUpdateIpnRefund($refundData, $parentTransaction)
-    {
-        $allRefunds = OrderTransaction::query()
-            ->where('order_id', $refundData['order_id'])
-            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
-            ->orderBy('id', 'DESC')
-            ->get();
-
-        if ($allRefunds->isEmpty()) {
-            // this is the first refund for this order
-            return OrderTransaction::query()->create($refundData);
-        }
-
-        $currentRefundTransactionId = Arr::get($refundData, 'meta.parent_id', '');
-
-        $existingLocalRefund = null;
-        foreach ($allRefunds as $refund) {
-            if ($refund->vendor_charge_id == $refundData['vendor_charge_id']) {
-                if ($refund->total != $refundData['total']) {
-                    $refund->fill($refundData);
-                    $refund->save();
-                }
-                // this refund already exists
-                return $refund;
-            }
-
-            if (!$refund->vendor_charge_id) { // this is a local redfund without vendor charge id
-                $refundTransactionId = Arr::get($refund->meta, 'parent_id', '');
-                $isTransactionMatched = $refundTransactionId == $currentRefundTransactionId;
-
-                // this is a local refund without vendor charge id, we will update it
-                if ($refund->total == $refundData['total'] && $isTransactionMatched) {
-                    // this refund already exists
-                    $existingLocalRefund = $refund;
-                }
-            }
-        }
-
-        if ($existingLocalRefund) {
-            $existingLocalRefund->fill($refundData);
-            $existingLocalRefund->save();
-            return $existingLocalRefund;
-        }
-
-        $createdRefund = OrderTransaction::query()->create($refundData);
-
-        PaymentHelper::updateTransactionRefundedTotal($parentTransaction, $createdRefund->total);
-        return $createdRefund;
     }
 
         /*

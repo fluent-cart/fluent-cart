@@ -16,28 +16,6 @@ class ShippingZoneRequest extends RequestGuard
         $data['region'] = Arr::get($data, 'region', '');
         $data['order'] = Arr::get($data, 'order', '');
 
-        // Only include shipping_class_id if explicitly submitted — prevents wiping on edit
-        if (array_key_exists('shipping_class_id', $data)) {
-            $classId = $data['shipping_class_id'];
-            $data['shipping_class_id'] = $classId ? intval($classId) : null;
-        } else {
-            // Omitted on update means "preserve the stored class". Resolve the
-            // effective class HERE (this return is merged into the request) so
-            // the whole-world uniqueness rule below validates the same class
-            // bucket the row will actually keep — and the controller writes
-            // that same value back. Without this, a class-scoped zone going
-            // region=all was checked against general zones: falsely rejected by
-            // an unrelated general whole-world zone, while a real conflict in
-            // its own class went unchecked.
-            $currentId = Arr::get($data, 'id') ?: App::getInstance()->request->get('id');
-            if ($currentId) {
-                $storedClassId = \FluentCart\App\Models\ShippingZone::query()
-                    ->where('id', intval($currentId))
-                    ->value('shipping_class_id');
-                $data['shipping_class_id'] = $storedClassId ? intval($storedClassId) : null;
-            }
-        }
-
         return $data;
     }
 
@@ -51,16 +29,11 @@ class ShippingZoneRequest extends RequestGuard
             'name'   => 'required|string|maxLength:192',
             'region' => function ($attr, $value) {
                 if ($value === 'all') {
-                    $shippingClassId = Arr::get($this->all(), 'shipping_class_id', null);
-                    $query = \FluentCart\App\Models\ShippingZone::query()->where('region', 'all');
-                    if ($shippingClassId) {
-                        $query->where('shipping_class_id', $shippingClassId);
-                    } else {
-                        $query->where(function ($q) {
+                    $query = \FluentCart\App\Models\ShippingZone::query()->where('region', 'all')
+                        ->where(function ($q) {
                             $q->whereNull('shipping_class_id')
                               ->orWhere('shipping_class_id', 0);
                         });
-                    }
                     // Exclude current zone on update
                     $currentId = Arr::get($this->all(), 'id') ?: App::getInstance()->request->get('id');
                     if ($currentId) {
@@ -73,7 +46,6 @@ class ShippingZoneRequest extends RequestGuard
                 return null;
             },
             'order'             => 'nullable|integer',
-            'shipping_class_id' => 'nullable|integer',
             'meta'              => 'nullable|array',
             'meta.countries'    => 'nullable|array',
             'meta.selection_type' => 'nullable|string|in:included,excluded',
@@ -101,9 +73,6 @@ class ShippingZoneRequest extends RequestGuard
             'name'              => 'sanitize_text_field',
             'region'            => 'sanitize_text_field',
             'order'             => 'intval',
-            'shipping_class_id' => function ($value) {
-                return $value ? intval($value) : null;
-            },
             'meta'              => function ($value) {
                 if (!is_array($value)) return [];
                 $sanitized = [];

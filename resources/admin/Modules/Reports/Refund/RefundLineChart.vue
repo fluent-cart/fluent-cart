@@ -19,6 +19,7 @@ import ChartTypeFilter from "@/Models/Reports/ChartTypeFilterModel";
 import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
+import { formatNumber } from "../Utils/formatNumber";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import {
   makeXAxisLabels,
@@ -26,6 +27,7 @@ import {
   prepareLabel,
   getEmphasisColor,
   getXAxisConfig,
+  axisDayLabel,
 } from '../Utils/decorator';
 import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
@@ -129,14 +131,14 @@ const seriesData = computed(() => {
       data: props.chartData.map((item) => item.refunded_amount),
       animation: false,
     },
+    // Orders refunded per order placed in the period, so a busy month does not read as a bad one
     {
-      name: translate("Total Refunds"),
-      key: "refund_count",
-      // type: chartType.value,
-      type: 'bar',
-      color: isDarkTheme.value ? colors.dark_cyan_blue_36 : colors.light_gray_cyan_blue,
+      name: translate("Refunds per order placed"),
+      key: "refund_rate",
+      type: 'line',
+      color: colors.coral,
       yAxisIndex: 1,
-      data: props.chartData.map((item) => item.refund_count),
+      data: props.chartData.map((item) => item.refund_rate),
       animation: false,
     }
   ];
@@ -156,14 +158,14 @@ const seriesData = computed(() => {
       },
 
       {
-        name: translate("Previous Total Refunds"),
-        key: "refund_count_compare",
-        // type: chartType.value,
-        type: 'bar',
-        color: isDarkTheme.value ? colors.dark_cyan_blue_16 : colors.light_gray,
+        name: translate("Previous refunds per order placed"),
+        key: "refund_rate_compare",
+        type: 'line',
+        color: colors.coral,
+        lineType: 'dotted',
         yAxisIndex: 1,
-        data: props.compareData.map((item) => item.refund_count),
-        animation: true,
+        data: props.compareData.map((item) => item.refund_rate),
+        animation: false,
       }
     );
   }
@@ -181,15 +183,16 @@ const seriesData = computed(() => {
 
 let chartInstance = null;
 
-const hasBarChart = ref(true);
+const hasBarChart = ref(false);
 // Initialize the chart
 const initChart = () => {
-  if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
-  }
-
   nextTick(() => {
+    // Dispose here: two calls in one tick would both init the same element
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
+
     if (chartRef.value) {
       chartInstance = echarts.init(chartRef.value);
       updateChart();
@@ -205,7 +208,7 @@ const initChart = () => {
 const tooltip = computed(() => {
   const tooltipAppendix = tooltipSuffix(props.reportFilter.data.dateRange);
 
-  return translate('This report looks at refunds made for successful orders created ') + tooltipAppendix;
+  return translate('This report looks at refunds by the day they were made, ') + tooltipAppendix;
 });
 
 const xAxisConfig = computed(() => {
@@ -246,8 +249,11 @@ const updateChart = () => {
         let result = params[0].name;
 
         params.forEach((param) => {
-          // Series 0 and 2 are amounts, the rest are counts.
-          const value = [0, 2].includes(param.seriesIndex) ? chartTooltipAmount(param.value * 100) : param.value;
+          // Amounts on the left axis, refund rates on the right; a period without orders has no rate
+          const isRate = (seriesData.value[param.seriesIndex] || {}).yAxisIndex === 1;
+          const value = isRate
+            ? (param.value === null || param.value === undefined ? 'n/a' : formatNumber(param.value) + '%')
+            : chartTooltipAmount(param.value * 100);
           const color = isDarkTheme.value ? "#ffffff" : "#565865";
 
           result += `<div>
@@ -258,6 +264,12 @@ const updateChart = () => {
             </span>
           </div>`;
         });
+        // The count left the chart for the rate; it stays in the tooltip
+        const row = props.chartData[params[0].dataIndex];
+        if (row) {
+          /* translators: %1$s - refunds in the period, %2$s - orders placed in the period */
+          result += `<div style="margin-top: 6px">${translate("%1$s refunds · %2$s orders", formatNumber(row.refund_count || 0), formatNumber(row.orders || 0))}</div>`;
+        }
         return result;
       },
     },
@@ -265,6 +277,7 @@ const updateChart = () => {
       type: "category",
       data: labels,
       axisLabel: {
+        formatter: axisDayLabel,
         color: isDarkTheme.value ? "#ffffff" : "#000000",
         fontSize: 12,
         interval: xAxisConfig.value.interval,
@@ -296,8 +309,9 @@ const updateChart = () => {
         type: "value",
         position: "right",
         axisLabel: {
-          color: isDarkTheme.value ? "#253241" : "#D6DAE1",
+          color: isDarkTheme.value ? "#ffffff" : "#000000",
           fontSize: 12,
+          formatter: (value) => `${value}%`,
         },
         splitLine: {
           show: false,
@@ -445,11 +459,9 @@ onMounted(() => {
               popper-class="fct-tooltip"
               :content="tooltip"
               placement="top"
-            >
-              <DynamicIcon
-                class="text-gray-500 w-4 h-4 cursor-pointer"
-                name="InformationFill"
-              />
+            
+              :trigger="['hover', 'focus']">
+              <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')"><DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/></button>
             </el-tooltip>
           </div>
         </template>
@@ -463,7 +475,7 @@ onMounted(() => {
               <el-option
                   v-for="groupKey in groupKeys"
                   :key="groupKey.value"
-                  :label="$t(groupKey.label)"
+                  :label="groupKey.label"
                   :value="groupKey.value"
               />
             </el-select>

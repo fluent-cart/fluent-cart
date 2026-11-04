@@ -47,7 +47,7 @@ class ShippingZoneFilter extends BaseFilter
     {
         return [
             'name'  => ['label' => __('Zone Name', 'fluent-cart'), 'column' => 'name'],
-            'order' => ['label' => __('Order', 'fluent-cart'), 'column' => 'order'],
+            'order' => ['label' => _x('Order', 'Sort position', 'fluent-cart'), 'column' => 'order'],
         ];
     }
 

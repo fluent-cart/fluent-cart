@@ -65,7 +65,7 @@
                                     </div>
 
                                     <template #reference>
-                                        <span :aria-label="$t('Cancel')">{{ $t('Cancel') }}</span>
+                                        <span :aria-label="_x('Cancel', 'Subscription action')">{{ _x('Cancel', 'Subscription action') }}</span>
                                     </template>
                                 </el-popover>
                             </el-dropdown-item>
@@ -98,7 +98,7 @@
 
                 <span class="text !flex gap-1 items-center" v-if="subscription.status === 'active'" role="status" aria-live="polite">
                     <span>{{ translate('Subscription is active') }}</span>
-                    {{ translate('on') }}
+                    {{ _x('on', 'Before a payment method') }}
                     <span>{{ subscription.billingInfo.payment_type }}</span>
 
                     <span 
@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import translate from "../../translator/Translator";
+import translate, {_x} from "../../translator/Translator";
 import Badge from "../parts/Badge.vue";
 import UpgradePlan from "./UpdatePaymentInfos/UpgradePlan.vue";
 import {computed, getCurrentInstance, ref} from "vue";

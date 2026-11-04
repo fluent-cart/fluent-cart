@@ -2,7 +2,6 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway\Webhook;
 
-use FluentCart\App\Events\Order\OrderRefund;
 use FluentCart\App\Events\Subscription\SubscriptionRenewalFailed;
 use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Helpers\Status;
@@ -13,6 +12,7 @@ use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Confirmations;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\StripeHelper;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
+use FluentCart\App\Services\Payments\Refund;
 use FluentCart\Framework\Support\Arr;
 
 class IPN
@@ -88,7 +88,6 @@ class IPN
             $paymentMethodType = $parentTransaction->payment_method_type;
         }
 
-        $currentCreatedRefund = null;
         foreach ($refunds as $refund) {
             $refundMethodType = Arr::get($refund, 'destination_details.type', '');
             if (!$refundMethodType) {
@@ -112,7 +111,7 @@ class IPN
                 'total'               => $normalizedRefundAmount,
                 'meta'                => [
                     'reason'         => $reason,
-                    'transaction_id' => $parentTransaction ? $parentTransaction->id : null,
+                    'parent_id'      => $parentTransaction->id,
                 ],
                 'uuid'                => md5(time() . wp_generate_uuid4()),
                 'created_at'          => gmdate('Y-m-d H:i:s', Arr::get($refund, 'created', time())),
@@ -120,14 +119,11 @@ class IPN
             ];
             $refundData = wp_parse_args($refundData, $generalData);
 
-            $syncedRefund = StripeHelper::createOrUpdateIpnRefund($refundData, $parentTransaction);
-
-            if ($syncedRefund->wasRecentlyCreated) {
-                $currentCreatedRefund = $syncedRefund;
+            $recorded = Refund::createOrRecordRefund($refundData, $parentTransaction);
+            if (is_wp_error($recorded) && $recorded->get_error_code() === 'refund_lock_timeout') {
+                $this->sendResponse(503, $recorded->get_error_message());
             }
         }
-
-        (new OrderRefund($order, $currentCreatedRefund))->dispatch();
     }
 
     public function handleChargeSucceeded($data)
@@ -290,7 +286,7 @@ class IPN
             ]);
             $transactionModel->save();
 
-            fluent_cart_add_log('Dispute lost', 'Dispute lost for this payment . ' . $transactionModel->vendor_charge_id, 'info', [
+            fluent_cart_add_log('Dispute lost', 'Dispute lost for this payment . ' . $transactionModel->vendor_charge_id, 'error', [
                 'module_name' => 'order',
                 'module_id'   => $order->id,
                 'log_type'    => 'api'
@@ -298,7 +294,7 @@ class IPN
             if ($transactionModel->subscription_id) {
                 $subscription = Subscription::query()->find($transactionModel->subscription_id);
                 if ($subscription) {
-                    $subscription->addLog('Dispute lost', 'Dispute lost for this payment . ' . $transactionModel->vendor_charge_id);
+                    $subscription->addLog('Dispute lost', 'Dispute lost for this payment . ' . $transactionModel->vendor_charge_id, 'error');
                 }
             }
 
@@ -460,8 +456,18 @@ class IPN
             $error = __('Stripe reported a failed invoice payment attempt.', 'fluent-cart');
         }
 
+        $renewalPayment = [];
+        $amountDue = Arr::get($invoice, 'amount_due');
+        $currency = Arr::get($invoice, 'currency');
+        if (is_numeric($amountDue) && $currency) {
+            $renewalPayment = [
+                'amount'   => StripeHelper::toInternalAmount($amountDue, $currency),
+                'currency' => strtoupper($currency),
+            ];
+        }
+
         try {
-            (new SubscriptionRenewalFailed($subscription, $order, $order->customer, $error))->dispatch();
+            (new SubscriptionRenewalFailed($subscription, $order, $order->customer, $error, $renewalPayment))->dispatch();
         } catch (\Throwable $e) {
             // The claim is permanent, so a half-finished dispatch would suppress this
             // renewal forever. Release it so the redelivery reruns the dispatch.

@@ -1,7 +1,13 @@
 .fct-badge{
     @apply inline-flex items-center gap-1 capitalize text-center text-xs leading-[1.1] font-medium py-1 px-2 whitespace-nowrap relative;
     border-radius: var(--fct-badge-radius, theme('borderRadius.sm'));
-    &.fct-success{
+    /* Shipping statuses fall through Badge.vue's default branch, which emits
+       `fct-{status}` verbatim — so each one needs its own modifier here.
+       Colours mirror the admin Badge map: shipped/delivered = success,
+       partially_shipped = blue (in progress), unshipped = grey (pending),
+       unshippable = dark neutral (terminal). */
+    &.fct-success,
+    &.fct-delivered {
         @apply bg-success-100 text-success-800;
     }
     &.fct-warning{
@@ -10,10 +16,12 @@
     &.fct-danger{
         @apply bg-red-100 text-red-800;
     }
-    &.fct-primary{
+    &.fct-primary,
+    &.fct-unshippable {
         @apply bg-dark-100 text-dark-800;
     }
-    &.fct-blue{
+    &.fct-blue,
+    &.fct-partially_shipped {
         @apply bg-blue-100 text-blue-800;
     }
     &.fct-info,

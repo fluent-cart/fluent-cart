@@ -11,7 +11,7 @@
           </el-breadcrumb-item>
         </el-breadcrumb>
 
-        <div class="setting-switcher flex items-center gap-3">
+        <div v-if="!fetching" class="setting-switcher flex items-center gap-3">
           <el-switch
               v-model="settings.is_active"
               active-value="yes"
@@ -81,7 +81,7 @@ export default {
       fields: {},
       settings: {},
       saving: false,
-      fetching: false,
+      fetching: true,
       is_key_defined: false,
       labelPosition: 'top',
       webhook_url: '',

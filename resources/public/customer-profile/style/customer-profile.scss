@@ -1,3 +1,4 @@
+@use "sass:meta";
 @use "./element-plus/base.scss";
 @use "./element-plus/pagination.scss" as pagination1;
 @use "./element-plus/inputs.scss";
@@ -29,7 +30,7 @@
 @use "./scss/responsive";
 
 .fluent-cart-customer-profile-app {
-  @import "./element-plus/button.scss";
+  @include meta.load-css("./element-plus/button.scss");
 }
 
 

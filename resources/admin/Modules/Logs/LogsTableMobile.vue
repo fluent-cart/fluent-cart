@@ -51,7 +51,7 @@
         <div class="fct-table-mobile-footer-row">
           <div class="fct-table-status-col">
             <div class="title">{{translate('Status')}}</div>
-            <Badge :status="row.status" size="small" :key="row.id"/>
+            <Badge :status="row.status" kind="log" size="small" :key="row.id"/>
           </div>
 
           <div class="fct-table-module-col">

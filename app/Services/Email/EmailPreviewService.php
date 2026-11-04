@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Email;
 
+use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductReview;
@@ -275,6 +276,30 @@ class EmailPreviewService
             {
                 return new Collection([]);
             }
+
+            // A preview has no placement snapshot, so it shows the current store settings.
+            public function getStoreBusinessInfo()
+            {
+                $storeSettings = new StoreSettings();
+
+                return [
+                    'company_name'          => (string) $storeSettings->get('company_name', ''),
+                    'legal_registration_id' => (string) $storeSettings->get('legal_registration_id', ''),
+                    'seller_vat_id'         => (string) $storeSettings->get('seller_vat_id', ''),
+                    'seller_tax_id'         => (string) $storeSettings->get('seller_tax_id', ''),
+                    'store_country'         => (string) $storeSettings->get('store_country', ''),
+                ];
+            }
+
+            public function loadMissing($relations)
+            {
+                return $this;
+            }
+
+            public function getPrimaryOrderTaxRate()
+            {
+                return $this->orderTaxRates->first();
+            }
         };
 
         // Templates reach the order through the transaction too (e.g. the
@@ -328,9 +353,19 @@ class EmailPreviewService
                 return '#';
             }
 
+            public function getCurrentRenewalAmount(): int
+            {
+                return $this->recurring_total;
+            }
+
             public function getPaymentMethodText()
             {
                 return 'Visa ***4242';
+            }
+
+            public function canUpdatePaymentMethod()
+            {
+                return true;
             }
         };
     }

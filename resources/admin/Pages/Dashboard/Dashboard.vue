@@ -42,9 +42,12 @@
 
             <el-row :gutter="24">
             <UserCan permission="reports/view">
-                <el-col :lg="12">
-                <RecentOrders/>
-                </el-col>
+                <!-- It names customers: only for users with customer access -->
+                <UserCan permission="customers/view">
+                    <el-col :lg="12">
+                    <RecentOrders/>
+                    </el-col>
+                </UserCan>
             </UserCan>
 
             <UserCan permission="reports/view">
@@ -106,10 +109,12 @@ import OrderStatBar from "@/Bits/Components/Stats/OrderStat/OrderStatBar.vue";
 import dashBoardReport from "@/Models/Reports/DashBoardReportModel";
 import SalesGrowthChart from "./Components/SalesGrowthChart.vue";
 import HeatMap from "./Components/HeatMap.vue";
+import Permission from "@/utils/permission/Permission";
 import RecentOrders from "./Components/RecentOrders.vue";
 import SideBar from "./Components/SideBar.vue";
 import CurrentUserInfo from "@/Pages/Dashboard/Components/CurrentUserInfo.vue";
-import dayjs from "dayjs";
+// The server reads these ranges as store days, so "today" is the site's date
+import { siteToday } from "@/Modules/Reports/Utils/datePresets";
 import StatsWidget from "@/Pages/Dashboard/Components/StatsWidget.vue";
 import Storage from "@/utils/Storage";
 import Url from "@/utils/support/Url";
@@ -145,8 +150,8 @@ provide("dashboardTogglePageNotification", togglePageNotification)
 
 const getSalesGrowth = () => {
   const [startDate, endDate] = [
-    dayjs().subtract(1, 'month').format("YYYY-MM-DD 00:00:00"),
-    dayjs().format("YYYY-MM-DD 23:59:59"),
+    siteToday().subtract(1, 'month').format("YYYY-MM-DD 00:00:00"),
+    siteToday().format("YYYY-MM-DD 23:59:59"),
   ];
 
   const params = {
@@ -164,6 +169,10 @@ const getSalesGrowth = () => {
 };
 
 const getRecentOrders = () => {
+  // The widget is hidden without customer access
+  if (!Permission.has('customers/view')) {
+    return;
+  }
   dashBoardReport.getRecentOrders({
     params: null,
   });
@@ -183,8 +192,8 @@ const getCountryHeatMap = () => {
 
 const getTopSoldProducts = () => {
   const [startDate, endDate] = [
-    dayjs().subtract(1, 'month').format("YYYY-MM-DD 00:00:00"),
-    dayjs().format("YYYY-MM-DD 23:59:59"),
+    siteToday().subtract(1, 'month').format("YYYY-MM-DD 00:00:00"),
+    siteToday().format("YYYY-MM-DD 23:59:59"),
   ];
 
   const params = {

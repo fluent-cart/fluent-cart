@@ -18,7 +18,7 @@ use FluentCart\App\Modules\MCP\Support\PermissionGate;
  *
  * Design rules (shared with ReportTools):
  *  - Date window resolution is delegated to ReportTools::resolveRange, so the
- *    range vocabulary (today … since_launch, date_from/date_to, since) and UTC
+ *    range vocabulary (today … since_launch, date_from/date_to, since) and store-day
  *    semantics are identical to every report.
  *  - Money is NEVER summed across currencies: summary.amount_by_currency reports
  *    one total per currency, and each row carries its own currency.
@@ -52,10 +52,10 @@ class TransactionTools
                         'payment_method'  => ['type' => 'string', 'description' => 'Gateway slug, e.g. stripe, paypal, mollie.'],
                         'currency'        => ['type' => 'string', 'description' => 'ISO currency filter. Omit to include all currencies; totals stay split per currency.'],
                         'mode'            => ['type' => 'string', 'enum' => ['live', 'test', 'all'], 'default' => 'all', 'description' => 'Payment mode. all (default) includes both; pass live to exclude test transactions. Echoed as meta.mode.'],
-                        'range'           => ['type' => 'string', 'enum' => ReportTools::RANGES, 'description' => 'Relative date window on created_at, resolved in UTC using the same range vocabulary as the reports. Defaults to last_30_days. Or pass date_from/date_to, or since.'],
-                        'date_from'       => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, UTC. Window start; overrides range.'],
-                        'date_to'         => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, UTC. Window end; overrides range.'],
-                        'since'           => ['type' => 'string', 'description' => 'ISO 8601 datetime, UTC. Only transactions after this instant — "what settled since my last check".'],
+                        'range'           => ['type' => 'string', 'enum' => ReportTools::RANGES, 'description' => 'Relative date window on created_at, in store days, using the same range vocabulary as the reports. Defaults to last_30_days. Or pass date_from/date_to, or since.'],
+                        'date_from'       => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Window start; overrides range.'],
+                        'date_to'         => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Window end; overrides range.'],
+                        'since'           => ['type' => 'string', 'description' => 'ISO 8601 datetime, store timezone unless an offset is given. Only transactions after this instant — "what settled since my last check".'],
                         'summary_only'    => ['type' => 'boolean', 'description' => 'Return ONLY the aggregate summary — matching_count, per-type and per-status counts, amount_by_currency — with no per-transaction rows. Answers "how much did we refund" cheaply.'],
                         'page'            => ['type' => 'integer', 'default' => 1],
                         'per_page'        => ['type' => 'integer', 'default' => 25, 'description' => 'Max 100.'],
@@ -122,7 +122,7 @@ class TransactionTools
 
     public static function listTransactions($params = [])
     {
-        // Same UTC window + range vocabulary as every report.
+        // Same store-day window + range vocabulary as every report.
         $range = ReportTools::resolveRange($params);
         $mode  = self::mode($params);
 

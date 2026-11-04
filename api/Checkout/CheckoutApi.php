@@ -13,6 +13,7 @@ use FluentCart\App\Events\StockChanged;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CartCheckoutHelper;
 use FluentCart\App\Helpers\CartHelper;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\CheckoutProcessor;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\UtmHelper;
@@ -81,6 +82,9 @@ class CheckoutApi
         // (or per-order) lets two concurrent first submissions both see prevOrder = null
         // and create two orders -> two idempotency keys -> double charge.
         static::acquireCartLock($cart->cart_hash);
+
+        // Price shipping from the quote the customer saw, not a fresh carrier call.
+        AddressHelper::reuseCarrierQuotes();
 
         // Re-read under the lock (fresh(), not getCart() — that one is request-cached):
         // a submission we waited on may have completed this cart meanwhile.
@@ -162,6 +166,7 @@ class CheckoutApi
         if (is_wp_error($validation)) {
             wp_send_json([
                 'status'  => 'failed',
+                'code'    => $validation->get_error_code(),
                 'message' => $validation->get_error_message(),
             ], 403);
         }
@@ -210,17 +215,15 @@ class CheckoutApi
 
         // The form posts the method twice: the checked radio (fc_shipping_method) and its
         // hidden mirror (fc_selected_shipping_method). validateData() checks only the mirror
-        // against the address's zones, so pricing from the radio let a request pass with one
+        // against the address's rates, so pricing from the radio let a request pass with one
         // method and be charged by another, from a zone the address is not in. Read from
-        // $validatedData, not the sanitized copy in others: that is the exact integer checked.
-        $shippingMethodId = (int) Arr::get($validatedData, 'fc_selected_shipping_method', 0);
-
+        // $validatedData, not the sanitized copy in others: that is the exact id checked.
         $shippingMethod = null;
         $shippingCharge = 0;
         if (!$cartCheckoutService->isAllDigital()) {
-            $shippingMethod = ShippingMethod::query()->find($shippingMethodId);
-            if (!empty($shippingMethod)) {
-                $shippingCharge = CartHelper::calculateShippingMethodCharge($shippingMethod, $cartData);
+            $shippingMethod = static::resolveShippingRate($validatedData, $cartData, Arr::get($validatedData, 'fc_selected_shipping_method', ''));
+            if ($shippingMethod) {
+                $shippingCharge = Helper::roundCent(Arr::get($shippingMethod, 'cost', 0));
             }
         }
 
@@ -279,6 +282,7 @@ class CheckoutApi
 
         if ($shippingDiscount > 0) {
             static::setCartShippingCharge($cart, (int)$shippingCharge);
+            $cart->shippingRulesApplied = true;
         }
 
         // Recompute cart tax data so fee_tax/fee_tax_lines reflect fees for the current
@@ -310,6 +314,7 @@ class CheckoutApi
         // because nothing after this writes the cart.
         if ($shippingDiscount > 0) {
             static::setCartShippingCharge($cart, $preDiscountShippingCharge);
+            $cart->shippingRulesApplied = false;
             $cart->save();
         }
 
@@ -352,8 +357,10 @@ class CheckoutApi
             'user_tz'                   => $userTz,
             'create_account_after_paid' => $shouldCreateUser ? 'yes' : 'no',
             'shipping_charge'           => $shippingCharge,
-            'shipping_method_id'        => $shippingMethod ? (int)$shippingMethod->id : 0,
-            'shipping_method_title'     => $shippingMethod ? $shippingMethod->title : '',
+            'shipping_method_id'        => $shippingMethod ? static::normalizeShippingMethodId(Arr::get($shippingMethod, 'id')) : 0,
+            'shipping_method_title'     => $shippingMethod ? (string) Arr::get($shippingMethod, 'title', '') : '',
+            'shipping_carrier'          => $shippingMethod ? (string) Arr::get($shippingMethod, 'carrier', '') : '',
+            'shipping_quote'            => static::shippingQuoteSnapshot($shippingMethod),
             'shipping_discount'         => $shippingDiscount,
             'tax_total'                 => $taxTotal,
             'tax_behavior'              => $taxBehavior,
@@ -1183,42 +1190,42 @@ class CheckoutApi
             }
         }
 
+        // Password managers that cannot reach the card iframe sometimes type the
+        // card number into the focused name field. Stripe rejects that name, and
+        // we must not store the number.
+        foreach (['billing_full_name', 'billing_first_name', 'billing_last_name'] as $nameKey) {
+            if (empty($errors[$nameKey]) && static::containsCardNumber(Arr::get($data, $nameKey, ''))) {
+                $errors[$nameKey]['card_number'] = __('Please remove the card number from the name field. Enter your card details in the payment section.', 'fluent-cart');
+            }
+        }
+
 
         if ($cart->requireShipping()) {
             if (!empty($data['fc_selected_shipping_method'])) {
-                // One integer, decided here, is both what is checked and what placeOrder() prices.
+                // One id, decided here, is both what is checked and what placeOrder() prices.
                 // A loose compare let PHP 7.4 match "1<b>2" to method 1, and sanitize_text_field()
                 // then turned the same string into "12", so the order was priced by method 12.
+                // A zone method id must be a plain integer; a carrier token must equal a listed
+                // rate id exactly.
                 $rawMethod = $data['fc_selected_shipping_method'];
                 $isPlainId = (is_string($rawMethod) || is_int($rawMethod)) && (string) absint($rawMethod) === (string) $rawMethod;
-                $selectedMethod = $isPlainId ? absint($rawMethod) : 0;
-                $data['fc_selected_shipping_method'] = $selectedMethod;
+                $selectedMethod = $isPlainId ? absint($rawMethod) : (is_string($rawMethod) ? $rawMethod : 0);
+                $data['fc_selected_shipping_method'] = $isPlainId ? $selectedMethod : 0;
 
-                $shippingCountry = Arr::get($data, 'billing_country', '');
-                $shippingState = Arr::get($data, 'billing_state', '');
-                $shipToDifferent = Arr::get($data, 'ship_to_different', 'no') === 'yes';
+                [$shippingCountry, $shippingState, $destination] = static::shippingDestination($data);
 
-                if ($shipToDifferent) {
-                    $shippingCountry = Arr::get($data, 'shipping_country', '');
-                    $shippingState = Arr::get($data, 'shipping_state', '');
-                }
-
-                $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState);
+                $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState, null, (array) $cart->cart_data, $destination);
 
 
                 if (empty($availableShippingMethods) || is_wp_error($availableShippingMethods)) {
                     $errors['shipping_method']['unavailable'] = __('We don\'t ship to this address. Please select a different address.', 'fluent-cart');
                 } else {
-                    $found = false;
-                    foreach ($availableShippingMethods as $shippingMethod) {
-                        if ((int) $shippingMethod->id === $selectedMethod) {
-                            $found = true;
-                            break;
-                        }
-                    }
+                    $resolved = AddressHelper::findRate($availableShippingMethods, $selectedMethod);
 
-                    if (!$found) {
+                    if (!$resolved) {
                         $errors['shipping_method']['invalid'] = __('The selected shipping method is not available.', 'fluent-cart');
+                    } else if (!$isPlainId) {
+                        $data['fc_selected_shipping_method'] = (string) Arr::get($resolved, 'id');
                     }
                 }
 
@@ -1241,6 +1248,74 @@ class CheckoutApi
     }
 
     /**
+     * The address the order ships to: billing, or the shipping fields when the
+     * shopper ships elsewhere.
+     *
+     * @return array [country, state, ['postcode' => , 'city' => ]]
+     */
+    protected static function shippingDestination(array $data): array
+    {
+        $prefix = Arr::get($data, 'ship_to_different', 'no') === 'yes' ? 'shipping_' : 'billing_';
+
+        return [
+            Arr::get($data, $prefix . 'country', ''),
+            Arr::get($data, $prefix . 'state', ''),
+            [
+                'postcode' => (string) Arr::get($data, $prefix . 'postcode', ''),
+                'city'     => (string) Arr::get($data, $prefix . 'city', ''),
+            ] + AddressHelper::quoteContact($data),
+        ];
+    }
+
+    /**
+     * The selected rate from the address's rate list, priced against the real cart.
+     * Validation and the charge both resolve here, so they cannot disagree.
+     *
+     * @param array      $data       Checkout data.
+     * @param array      $cartItems  Cart line items.
+     * @param int|string $selectedId Validated zone method id or carrier token.
+     * @return array|null Rate array (see CarrierContract::getRates).
+     */
+    protected static function resolveShippingRate(array $data, array $cartItems, $selectedId): ?array
+    {
+        if (!$selectedId) {
+            return null;
+        }
+
+        [$country, $state, $destination] = static::shippingDestination($data);
+
+        return AddressHelper::resolveSelectedRate($country, $state, $cartItems, $selectedId, $destination);
+    }
+
+    /**
+     * Zone method ids stay integers (stored config expects that); carrier tokens stay strings.
+     *
+     * @param mixed $id
+     * @return int|string
+     */
+    protected static function normalizeShippingMethodId($id)
+    {
+        return is_numeric($id) ? (int) $id : (string) $id;
+    }
+
+    /**
+     * What a live carrier quoted, kept on the order beside the converted charge.
+     */
+    protected static function shippingQuoteSnapshot(?array $rate): array
+    {
+        if (!$rate || Arr::get($rate, 'carrier', 'manual') === 'manual') {
+            return [];
+        }
+
+        return [
+            'carrier'         => (string) Arr::get($rate, 'carrier', ''),
+            'rate_id'         => (string) (Arr::get($rate, 'provider_rate_id') ?: Arr::get($rate, 'id', '')),
+            'source_cost'     => Helper::roundCent(Arr::get($rate, 'source_cost', 0)),
+            'source_currency' => (string) Arr::get($rate, 'source_currency', ''),
+        ];
+    }
+
+    /**
      * Checkout inputs are customer-typed: a {{...}} smartcode pasted into one is
      * removed before validation, so it never reaches stored order data. Only the
      * brace form is stripped — # and ## appear legitimately in street addresses.
@@ -1254,6 +1329,44 @@ class CheckoutApi
         }
 
         return $data;
+    }
+
+    /**
+     * True when the text holds a 13–19 digit run that passes the Luhn check.
+     * Spaces and dashes inside the run are allowed ("4242 4242 4242 4242").
+     * The Luhn check keeps most tax IDs that buyers type into name fields.
+     */
+    public static function containsCardNumber($text): bool
+    {
+        if (!is_string($text) || !preg_match_all('/\d(?:[ -]?\d){12,}/', $text, $matches)) {
+            return false;
+        }
+
+        foreach ($matches[0] as $run) {
+            $digits = preg_replace('/\D/', '', $run);
+            $length = strlen($digits);
+            if ($length < 13 || $length > 19) {
+                continue;
+            }
+
+            $sum = 0;
+            for ($i = 0; $i < $length; $i++) {
+                $digit = (int) $digits[$length - 1 - $i];
+                if ($i % 2 === 1) {
+                    $digit *= 2;
+                    if ($digit > 9) {
+                        $digit -= 9;
+                    }
+                }
+                $sum += $digit;
+            }
+
+            if ($sum % 10 === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function validateShippingMethod(array $data, CheckoutService $cartCheckoutService): bool

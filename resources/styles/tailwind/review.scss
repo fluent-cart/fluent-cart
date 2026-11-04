@@ -946,51 +946,81 @@
   }
 }
 
-/* The product/variation list.
-
-   Element Plus prints a group's title at 12px and 30% opacity — fine when a
-   group is a sorting aid over items that stand on their own, wrong here: the
-   product is the context that tells you WHICH "Version 1" you are choosing,
-   and it was reading as the least important line on screen while the
-   variations under it read as top-level. The product is the heading, the
-   variations are its children, and the type should say so.
-
-   The heading also sticks while its own group scrolls, so a long variation
-   list never leaves you looking at names with no idea whose they are. */
+/* The product/variation list. Each product is a two-line header (title, meta);
+   its variations hang off it as a tree, lighter and indented under the title. */
 .fct-add-review-product-options {
-  .el-select-group__title {
-    @apply text-[13px] font-semibold text-system-dark dark:text-gray-100
-           px-4 pt-3 pb-1.5 sticky top-0 z-10 bg-white dark:bg-dark-700;
-    /* Element Plus sets .3 inline on the class; nothing else lifts it. */
-    opacity: 1;
+  /* Matched as a direct child of the list, not of this class: the popper
+     wraps the list in a scrollbar, so a child selector rooted here matches
+     nothing. */
+  .el-select-dropdown__list > .el-select-dropdown__item {
+    @apply flex items-center gap-3 font-normal;
   }
 
-  /* Indented and lighter than the heading above them: children of a product,
-     not a flat list that happens to have captions in it. */
-  .el-select-group .el-select-dropdown__item {
-    @apply ps-7 font-normal text-system-mid dark:text-gray-300;
+  /* Two lines, so the fixed option height has to go. */
+  .el-select-dropdown__list > .fct-add-review-product-option {
+    @apply h-auto py-2 leading-normal;
+  }
 
-    &.is-selected {
-      @apply font-medium;
+  /* The divider sits in the gap above the header, outside its hover box. */
+  .el-select-dropdown__list > .fct-add-review-product-option:not(:first-child) {
+    @apply relative mt-3 overflow-visible;
+
+    &::before {
+      content: '';
+      height: 1px;
+      @apply absolute inset-x-0 -top-1.5 bg-gray-divider dark:bg-dark-400;
     }
   }
 
-  /* One rule between products, so the eye can find where a group ends. The
-     first group has no rule above it and the last none below. */
-  .el-select-group__wrap:not(:last-of-type) {
-    @apply pb-1;
+  .fct-add-review-option-body {
+    @apply flex flex-col flex-1 min-w-0;
+  }
+
+  .fct-add-review-option-title {
+    @apply flex-1 min-w-0 truncate;
+  }
+
+  .fct-add-review-product-option .fct-add-review-option-title {
+    @apply font-semibold text-system-dark dark:text-gray-100;
+  }
+
+  .fct-add-review-option-meta {
+    @apply truncate text-xs text-system-light dark:text-gray-400;
+  }
+
+  .fct-add-review-option-check {
+    @apply shrink-0 w-4 h-4 text-primary-500;
+  }
+
+  /* Tree connectors: a vertical guide under the title (item padding 20px + 8px)
+     and a tick into each row.
+     The last row stops the guide at its tick, closing the branch. */
+  .el-select-dropdown__list > .fct-add-review-variation-option {
+    @apply relative ps-[48px] text-system-mid dark:text-gray-300;
+
+    &::before,
+    &::after {
+      content: '';
+      @apply absolute start-[28px] bg-gray-divider dark:bg-dark-400;
+    }
+
+    &::before {
+      width: 1px;
+      @apply inset-y-0;
+    }
 
     &::after {
-      @apply bg-gray-divider dark:bg-dark-400;
+      height: 1px;
+      @apply top-1/2 w-3;
     }
-  }
 
-  /* A simple product sits at the top level with no heading of its own, so it
-     keeps the heading's weight — it IS the thing being chosen. Matched as a
-     direct child of the list, not of this class: the popper wraps the list in
-     a scrollbar, so a child selector rooted here matches nothing. */
-  .el-select-dropdown__list > .el-select-dropdown__item {
-    @apply font-medium text-system-dark dark:text-gray-100;
+    &.is-last::before {
+      @apply bottom-1/2;
+    }
+
+    &.is-selected {
+      @apply font-medium text-system-dark dark:text-gray-100;
+    }
   }
 }
 

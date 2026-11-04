@@ -5,12 +5,12 @@
   Without this file Loco guesses the bundle layout, and its scan picks up any
   .po/.mo it finds anywhere under the plugin. That pulls in translation files
   belonging to composer dev-dependencies (notably
-  dev/wp-browser/vendor/lucatume/wp-browser/.../airplane-mode/languages/), which
+  tests/codeception/vendor/lucatume/wp-browser/.../airplane-mode/languages/), which
   makes Loco report the bundle as "not fully configured" and offer unrelated
   files for editing.
 
   Declaring the layout explicitly also keeps test and tooling strings out of the
-  POT: dev/ContainerScript and the wp-browser integration tests were
+  POT: dev/ContainerScript and the tests/ tree were
   contributing msgids that translators had no business seeing.
 -->
 <bundle name="FluentCart" min-version="2.0.14">

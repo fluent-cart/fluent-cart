@@ -3,7 +3,6 @@
 namespace FluentCart\App\Modules\Shipping\Http\Requests;
 
 use FluentCart\Framework\Foundation\RequestGuard;
-use FluentCart\Framework\Support\Arr;
 
 class ShippingClassRequest extends RequestGuard
 {
@@ -12,7 +11,10 @@ class ShippingClassRequest extends RequestGuard
     {
         $data = $this->all();
 
-        $data['per_item'] = (string)(Arr::get($data, 'per_item', 0)) === '1' ? 1 : 0;
+        // Absent on an edit means "keep the stored value", not "turn it off".
+        if (array_key_exists('per_item', $data)) {
+            $data['per_item'] = (string) $data['per_item'] === '1' ? 1 : 0;
+        }
         return $data;
     }
 

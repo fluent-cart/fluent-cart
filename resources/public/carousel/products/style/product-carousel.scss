@@ -252,6 +252,20 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fct-btn-bg-color, #111827) 20%, transparent);
 }
 
+/* Block themes outline every :focus, and Safari draws that outline square
+   around these round controls. Keyboard focus gets a round ring instead. */
+.fct-product-carousel .swiper-pagination-bullet:focus,
+.fct-product-carousel .swiper-button-prev:focus,
+.fct-product-carousel .swiper-button-next:focus {
+  outline: none;
+}
+
+.fct-product-carousel .swiper-pagination-bullet:focus-visible,
+.fct-product-carousel .swiper-button-prev:focus-visible,
+.fct-product-carousel .swiper-button-next:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--fct-btn-bg-color, #111827);
+}
+
 /* ----------------------------------
    Responsive
 ----------------------------------- */

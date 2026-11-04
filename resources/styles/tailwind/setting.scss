@@ -889,7 +889,8 @@
   }
 }
 
-/* Coverage selector — shipping zone coverage radio cards */
+/* Radio cards: shipping zone coverage, carrier connection mode. fct-coverage-selector is the old name, still used by S3 and Pro R2. */
+.fct-radio-cards,
 .fct-coverage-selector {
   @apply m-0 p-0 list-none flex flex-col w-full gap-2.5;
 
@@ -899,19 +900,6 @@
     &:hover {
       @apply border-gray-300 dark:border-dark-300;
     }
-
-    &.active {
-      @apply border-primary-500 dark:border-gray-800;
-
-      .fct-coverage-selector-dot {
-        @apply border-primary-500 dark:border-gray-800;
-
-        &:before {
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 1;
-        }
-      }
-    }
   }
 
   &-content {
@@ -920,6 +908,23 @@
 
   &-title {
     @apply text-sm font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &-title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  /* The saved mode; the dot is the one picked in the form. */
+  &-active {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-success-700 dark:text-success-400;
+  }
+
+  &-active-icon {
+    @apply w-3.5 h-3.5 flex-shrink-0;
+
+    svg {
+      @apply block w-full h-full;
+    }
   }
 
   &-desc {
@@ -938,6 +943,130 @@
 
     &-wrap {
       @apply flex items-center justify-center;
+    }
+  }
+}
+
+.fct-carrier-secret-saved {
+  @apply w-full flex items-center gap-1 mt-1 text-xs text-success-700 dark:text-success-400;
+
+  &-icon {
+    @apply w-3.5 h-3.5 flex-shrink-0;
+
+    svg {
+      @apply block w-full h-full;
+    }
+  }
+}
+
+/* Carrier settings form: two columns, so two 'half' fields share a row; sections and other fields span both. */
+.fct-carrier-fields {
+  @apply grid grid-cols-2 gap-x-4;
+}
+
+.fct-carrier-field {
+  @apply col-span-2 min-w-0;
+
+  &--half {
+    @media (min-width: 768px) {
+      @apply col-span-1;
+    }
+  }
+}
+
+.fct-carrier-section {
+  @apply col-span-2 mt-2 mb-4 pt-5 border-t border-solid border-0 border-gray-divider dark:border-dark-500;
+
+  &:first-child {
+    @apply mt-0 pt-0 border-t-0;
+  }
+
+  /* A size above the 14px field labels, so a heading does not read as one more field. */
+  &__title {
+    @apply m-0 text-base font-semibold text-system-dark dark:text-gray-50;
+  }
+
+  &__hint {
+    @apply mt-1 mb-0 text-xs text-system-mid dark:text-gray-300;
+  }
+}
+
+/* A carrier toggle: the switch, then its label on the same row, and the hint lined up under the label. */
+.fct-carrier-toggle {
+  @apply flex items-center gap-3;
+
+  &__label {
+    @apply text-sm font-medium leading-5 text-system-dark dark:text-gray-50 cursor-pointer;
+  }
+
+  /* The 36px switch plus the 12px gap. */
+  &__hint {
+    @apply pl-12;
+  }
+}
+
+/* Inside the form the webhook URL spans both columns and keeps a form item's bottom gap. */
+.fct-carrier-fields .fct-carrier-webhook {
+  @apply col-span-2 mb-[18px];
+}
+
+.fct-carrier-attention {
+  @apply inline-flex rounded-[6px];
+
+  &:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+  }
+}
+
+.fct-radio-cards {
+  li {
+    &:focus-visible {
+      @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+    }
+
+    &.active {
+      @apply border-primary-500 dark:border-gray-200;
+
+      .fct-radio-cards-dot {
+        @apply border-primary-500 dark:border-gray-200;
+
+        &:before {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  /* Cards that hold their own inputs: only the header is the clickable radio. */
+  &.has-content {
+    > li {
+      @apply flex-col items-stretch p-0 cursor-default;
+    }
+
+    .fct-radio-cards-header {
+      @apply flex justify-between items-start gap-3 py-3 px-4 cursor-pointer rounded-[12px];
+
+      &:focus-visible {
+        @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+      }
+    }
+
+    .fct-radio-cards-body {
+      @apply mx-4 pt-4 pb-1 border-0 border-t border-solid border-gray-divider dark:border-dark-400;
+    }
+  }
+}
+
+.fct-coverage-selector li.active {
+  @apply border-primary-500 dark:border-gray-800;
+
+  .fct-coverage-selector-dot {
+    @apply border-primary-500 dark:border-gray-800;
+
+    &:before {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
     }
   }
 }
@@ -1575,5 +1704,374 @@
   }
   .fct-settings-nav-link-icon svg {
     transform: scaleX(-1);
+  }
+}
+
+/* Carrier settings page: one card per section, status strips, read-only rows, grouped select (Shippo settings design, 30 Oct 2026). */
+.fct-carrier-page {
+  @apply flex flex-col gap-6;
+
+  > .fct-card {
+    @apply mb-0;
+  }
+}
+
+.fct-carrier-card {
+  @apply transition-opacity;
+
+  &.is-off {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .fct-card-header-actions {
+    @apply flex items-center;
+  }
+
+  .fct-carrier-section__hint {
+    @apply mt-0 mb-4;
+  }
+}
+
+.fct-carrier-form {
+  @apply flex flex-col gap-6;
+}
+
+.fct-carrier-label {
+  @apply flex items-center gap-2 text-sm font-medium leading-[22px] text-system-dark mb-2 dark:text-gray-50;
+}
+
+.fct-carrier-label-note {
+  @apply text-xs font-normal text-warning-700 dark:text-warning-400;
+}
+
+.fct-carrier-hint {
+  @apply text-xs leading-5 text-system-mid mt-1 mb-0 dark:text-gray-400;
+
+  // Flush variant, for hints that sit beside a label or under a strip.
+  &.is-flush {
+    margin: 0;
+  }
+}
+
+.fct-carrier-hint-warn {
+  @apply text-warning-700 dark:text-warning-400;
+}
+
+.fct-carrier-hint-err {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.fct-carrier-input-warn .el-input__wrapper {
+  box-shadow: 0 0 0 1px theme('colors.warning.400') inset;
+}
+
+.fct-carrier-tag {
+  @apply inline-flex items-center gap-1.5 text-xs font-medium leading-5 px-2 rounded border border-solid whitespace-nowrap;
+
+  &.is-ok {
+    @apply bg-success-50 text-success-700 border-success-100 dark:bg-success-alpha-16 dark:text-success-400 dark:border-transparent;
+  }
+
+  &.is-warn {
+    @apply bg-warning-50 text-warning-700 border-warning-100 dark:bg-warning-alpha-16 dark:text-warning-400 dark:border-transparent;
+  }
+
+  &.is-err {
+    @apply bg-red-50 text-red-600 border-red-100 dark:bg-red-alpha-16 dark:text-red-400 dark:border-transparent;
+  }
+
+  &.is-mute {
+    @apply bg-gray-50 text-system-mid border-gray-divider dark:bg-dark-600 dark:text-gray-300 dark:border-dark-400;
+  }
+}
+
+/* Inside a mode card the tag sits on its own line, under the description. */
+.fct-radio-cards-content .fct-carrier-tag {
+  @apply self-start mt-2;
+}
+
+.fct-carrier-dot {
+  @apply inline-block w-2 h-2 rounded-full bg-current;
+}
+
+.fct-carrier-tag.is-ok .fct-carrier-dot {
+  @apply bg-success-500;
+}
+
+.fct-carrier-spin {
+  @apply inline-block w-3 h-3 rounded-full border-2 border-solid border-current mr-1.5 align-[-2px];
+  border-right-color: transparent;
+  animation: fct-carrier-spin 0.8s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 2.4s;
+  }
+}
+
+@keyframes fct-carrier-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fct-carrier-strip {
+  @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded border border-solid border-gray-divider bg-gray-25 px-4 py-3 mb-[18px] dark:bg-dark-600 dark:border-dark-400;
+
+  &__title {
+    @apply text-sm font-medium text-system-dark dark:text-gray-50;
+  }
+
+  &__note {
+    @apply -mt-2.5 mb-[18px];
+  }
+
+  &__actions {
+    @apply relative flex flex-wrap items-center gap-2;
+
+    .el-button + .el-button {
+      @apply ml-0;
+    }
+  }
+
+  &.is-err {
+    @apply bg-red-50 border-red-100 dark:bg-red-alpha-16 dark:border-transparent;
+
+    .fct-carrier-strip__title,
+    .fct-carrier-kv {
+      @apply text-red-600 dark:text-red-400;
+    }
+  }
+}
+
+.fct-carrier-kv {
+  @apply flex flex-wrap gap-x-[18px] gap-y-0.5 text-xs text-system-mid dark:text-gray-300;
+
+  b {
+    @apply font-medium text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-carrier-btn-danger.el-button {
+  @apply text-red-600 border-red-100 dark:text-red-400 dark:border-red-alpha-16;
+}
+
+.fct-carrier-pop {
+  @apply absolute right-0 top-[calc(100%+8px)] z-20 flex w-[300px] max-w-[calc(100vw-32px)] flex-col gap-3 rounded border border-solid border-gray-divider bg-white p-3.5 shadow-lg dark:bg-dark-700 dark:border-dark-400;
+
+  &__title {
+    @apply text-sm font-medium text-system-dark dark:text-gray-50;
+  }
+
+  &__text {
+    @apply text-xs leading-[18px] text-system-mid dark:text-gray-300;
+  }
+
+  &__actions {
+    @apply flex justify-end gap-2;
+
+    .el-button + .el-button {
+      @apply ml-0;
+    }
+  }
+}
+
+.fct-carrier-alert {
+  @apply flex gap-2.5 items-start rounded border border-solid px-3 py-2.5 text-[13px] leading-5 mb-[18px];
+
+  &.is-warn {
+    @apply bg-warning-50 border-warning-100 text-warning-700 dark:bg-warning-alpha-16 dark:border-transparent dark:text-warning-400;
+  }
+
+  &.is-err {
+    @apply bg-red-50 border-red-100 text-red-600 dark:bg-red-alpha-16 dark:border-transparent dark:text-red-400;
+  }
+
+  &.is-mute,
+  &.is-info {
+    @apply bg-gray-25 border-gray-divider text-system-mid dark:bg-dark-600 dark:border-dark-400 dark:text-gray-300;
+  }
+}
+
+.fct-carrier-ro {
+  @apply flex items-start justify-between gap-4 rounded border border-solid border-gray-divider bg-gray-25 px-3.5 py-3 mb-[18px] dark:bg-dark-600 dark:border-dark-400;
+
+  &__value {
+    @apply text-sm leading-[22px] text-system-dark dark:text-gray-50;
+  }
+}
+
+.fct-carrier-link {
+  @apply bg-transparent border-0 p-0 text-xs font-medium leading-5 text-primary-500 underline cursor-pointer whitespace-nowrap dark:text-gray-50;
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+.fct-carrier-foot {
+  @apply flex justify-end gap-2;
+
+  .el-button + .el-button {
+    @apply ml-0;
+  }
+}
+
+.fct-carrier-man {
+  @apply border-0 border-t border-solid border-gray-divider pt-3.5 dark:border-dark-500;
+
+  &__toggle {
+    @apply inline-flex items-center gap-1.5 p-0 border-0 bg-transparent cursor-pointer text-[13px] font-medium text-system-dark dark:text-gray-50;
+
+    &:focus-visible {
+      @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+    }
+
+    &.is-open .fct-carrier-man__chevron {
+      transform: rotate(90deg);
+    }
+  }
+
+  &__chevron {
+    @apply w-3 h-3 transition-transform;
+
+    // The icon's svg has no size of its own and grows to its viewBox ratio.
+    svg {
+      @apply block w-full h-full;
+    }
+  }
+
+  ol {
+    @apply mt-2.5 mb-0 pl-[18px] text-[13px] leading-[22px] text-system-dark dark:text-gray-50;
+  }
+
+  &__body {
+    @apply mt-3 flex flex-col gap-2.5;
+  }
+}
+
+.fct-carrier-urlrow {
+  @apply flex;
+
+  .el-input__wrapper {
+    @apply rounded-r-none;
+  }
+
+  .el-button {
+    @apply ml-0 rounded-none border-l-0;
+
+    &:last-child {
+      @apply rounded-r;
+    }
+  }
+}
+
+/* Mode cards side by side, each with its own token line. */
+.fct-radio-cards.is-row {
+  // Each card keeps its own height: opening one token must not stretch the other.
+  @apply flex-row flex-wrap items-start gap-3;
+
+  > li {
+    flex: 1 1 240px;
+  }
+
+  .fct-radio-cards-header {
+    @apply flex-row-reverse justify-end;
+  }
+
+  .fct-radio-cards-content {
+    @apply flex-1;
+  }
+}
+
+/* Lines up with the card title: header padding, dot and gap. */
+.fct-carrier-mode-token {
+  @apply pl-[44px] pr-4 pb-3;
+}
+
+.fct-carrier-dd {
+  @apply relative;
+
+  &__btn {
+    @apply flex w-full h-9 items-center justify-between gap-2 rounded border border-solid border-gray-outline bg-white px-3 text-left text-sm text-system-dark cursor-pointer dark:bg-dark-700 dark:border-dark-400 dark:text-gray-50;
+
+    &:hover {
+      @apply border-gray-300 dark:border-dark-300;
+    }
+
+    &[aria-expanded="true"] {
+      @apply border-primary-500 dark:border-gray-200;
+
+      .fct-carrier-dd__chev {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  &__val {
+    @apply flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-ellipsis;
+  }
+
+  &__chev {
+    @apply flex-none transition-transform;
+  }
+
+  &__pop {
+    @apply absolute inset-x-0 top-[calc(100%+6px)] z-20 overflow-hidden rounded border border-solid border-gray-divider bg-white shadow-lg dark:bg-dark-700 dark:border-dark-400;
+  }
+
+  &__search {
+    @apply p-2 border-0 border-b border-solid border-gray-divider dark:border-dark-400;
+  }
+
+  &__list {
+    @apply m-0 p-1.5 list-none max-h-[300px] overflow-auto;
+  }
+
+  &__group {
+    @apply px-2.5 pt-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-system-light dark:text-gray-400;
+  }
+
+  &__empty {
+    @apply px-2.5 pt-1.5 pb-2.5 text-xs leading-[18px] text-system-mid dark:text-gray-400;
+  }
+
+  &__opt {
+    @apply flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-sm text-system-dark cursor-pointer dark:text-gray-50;
+
+    small {
+      @apply text-xs text-system-mid whitespace-nowrap dark:text-gray-400;
+    }
+
+    &.is-active {
+      @apply bg-gray-50 dark:bg-dark-600;
+    }
+
+    &[aria-selected="true"] .fct-carrier-dd__name {
+      @apply font-semibold;
+    }
+
+    &[aria-selected="true"] .fct-carrier-dd__check {
+      @apply visible;
+    }
+  }
+
+  &__name {
+    @apply flex-1 min-w-0;
+  }
+
+  &__check {
+    @apply w-3.5 flex-none invisible;
+  }
+
+  &__foot {
+    @apply flex flex-wrap items-center justify-between gap-2.5 border-0 border-t border-solid border-gray-divider px-3 py-2 text-xs text-system-mid dark:border-dark-400 dark:text-gray-400;
+  }
+}
+
+.fct-carrier-mono {
+  @apply inline-flex w-6 h-6 flex-none items-center justify-center rounded-md border border-solid border-gray-divider bg-gray-50 text-[10px] font-bold tracking-wide text-system-dark dark:bg-dark-600 dark:border-dark-400 dark:text-gray-50;
+
+  &.is-all {
+    @apply bg-primary-500 border-primary-500 text-white dark:bg-gray-50 dark:border-gray-50 dark:text-dark-700;
   }
 }

@@ -2,12 +2,15 @@
 
 namespace FluentCart\App\Modules\MCP\Tools;
 
+use FluentCart\App\App;
+use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\MCP\Support\MCPHelper;
 use FluentCart\App\Modules\MCP\Support\PermissionGate;
 use FluentCart\App\Modules\MCP\Support\ProductFinancialsCalculator as Calc;
+use FluentCart\App\Services\Report\ProductReportService;
 
 /**
  * get-product-financials — the one honest financial picture for a single
@@ -27,8 +30,8 @@ use FluentCart\App\Modules\MCP\Support\ProductFinancialsCalculator as Calc;
  */
 class ProductFinancialsTools
 {
-    /** Payment statuses that count as realized revenue (matches ReportTools/ContextTools). */
-    const PAID = ['paid', 'partially_paid', 'partially_refunded'];
+    /** Orders that captured payment, fully refunded ones included (same set as ReportTools::PAID). */
+    const CAPTURED = ['paid', 'partially_paid', 'partially_refunded', 'refunded'];
 
     /** Safety ceiling on subscriptions loaded for one product. */
     const MAX_SUBS = 50000;
@@ -38,18 +41,18 @@ class ProductFinancialsTools
         return [
             'fluent-cart/get-product-financials' => [
                 'label'       => __('Get Product Financials', 'fluent-cart'),
-                'description' => __('One product\'s complete financials in a call: one-time revenue, finite split-pay commitments (bill_times > 0), and perpetual run-rate (MRR/ARR) with a forward payment_schedule. Never sums across currencies. KEY: the time window (range/date_from/date_to + date_basis) applies ONLY to the one_time block — subscriptions.*, payment_schedule and totals are point-in-time as of as_of (lifetime-to-date or forward), so "revenue in the last 30 days" must read one_time.* only and never folds in contract value or MRR. For a windowed time series use get-sales-trend; for renewal cash in a period use query-products with order_type=renewal. totals.total_contracted is null while any perpetual subscription is active — read recurring.mrr/arr and payment_schedule instead, and meta.notes says why. Single currency: store default, other currencies for the product listed in meta.other_currencies. Money is {amount, amount_cents, currency, display}.', 'fluent-cart'),
+                'description' => __('One product\'s complete financials in a call: one-time revenue (cash collected, tax included, minus refunds), finite split-pay commitments (bill_times > 0), and perpetual run-rate (MRR/ARR) with a forward payment_schedule. Never sums across currencies. KEY: the time window (range/date_from/date_to + date_basis) applies ONLY to the one_time block — subscriptions.*, payment_schedule and totals are point-in-time as of as_of (lifetime-to-date or forward), so "revenue in the last 30 days" must read one_time.* only and never folds in contract value or MRR. For a windowed time series use get-sales-report with interval; for renewal cash in a period use query-products with order_type=renewal. totals.total_contracted is null while any perpetual subscription is active — read recurring.mrr/arr and payment_schedule instead, and meta.notes says why. Single currency: store default, other currencies for the product listed in meta.other_currencies. Money is {amount, amount_cents, currency, display}.', 'fluent-cart'),
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'product_id'   => ['type' => 'integer', 'description' => 'Product to report on.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Restrict to one variation.'],
                         'currency'     => ['type' => 'string', 'description' => 'ISO currency for the (single-currency) report. Defaults to store currency.'],
-                        'range'        => ['type' => 'string', 'enum' => ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'mtd', 'qtd', 'ytd', 'last_quarter', 'last_year', 'all_time', 'since_launch'], 'default' => 'all_time', 'description' => 'Window for the one_time block only. Resolved in UTC. all_time (alias: since_launch) spans all data.'],
-                        'date_from'    => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Overrides range.'],
-                        'date_to'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Overrides range.'],
+                        'range'        => ['type' => 'string', 'enum' => ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'mtd', 'qtd', 'ytd', 'last_quarter', 'last_year', 'all_time', 'since_launch'], 'default' => 'all_time', 'description' => 'Window for the one_time block only, in store days. all_time (alias: since_launch) spans all data.'],
+                        'date_from'    => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, store timezone unless an offset is given. Overrides range.'],
+                        'date_to'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, store timezone unless an offset is given. Overrides range.'],
                         'date_basis'   => ['type' => 'string', 'enum' => ['created_at', 'paid_at'], 'default' => 'paid_at', 'description' => 'One-time window basis: paid_at = order completed_at (cash received); created_at = order placed. Does not affect forward fields.'],
-                        'as_of'        => ['type' => 'string', 'description' => 'ISO 8601, UTC. Point-in-time for forward metrics. Default now.'],
+                        'as_of'        => ['type' => 'string', 'description' => 'ISO 8601, store timezone unless an offset is given. Point-in-time for forward metrics. Default now.'],
                         'horizon'      => ['type' => 'string', 'enum' => ['3m', '6m', '12m'], 'default' => '12m', 'description' => 'How far to project payment_schedule.'],
                         'schedule_bucket' => ['type' => 'string', 'enum' => ['month', 'week'], 'default' => 'month', 'description' => 'Calendar granularity of payment_schedule.'],
                         'subscription_status' => [
@@ -87,7 +90,10 @@ class ProductFinancialsTools
         }
 
         $variationId = !empty($params['variation_id']) ? (int) $params['variation_id'] : null;
-        $currency    = !empty($params['currency']) ? strtoupper(sanitize_text_field($params['currency'])) : MCPHelper::currencyCode();
+        $currency    = ReportTools::currency($params);
+        if (is_wp_error($currency)) {
+            return $currency;
+        }
 
         $window  = self::resolveWindow($params);
         if (is_wp_error($window)) {
@@ -143,8 +149,8 @@ class ProductFinancialsTools
     // -----------------------------------------------------------------
 
     /**
-     * One-time revenue: non-subscription line items on realized-revenue orders,
-     * scoped to the report currency and the window (by date_basis column on the
+     * One-time revenue: non-subscription line items on orders that captured payment,
+     * fully refunded ones included, scoped to the report currency and the window (by date_basis column on the
      * parent order). Returns integer cents/counts for the calculator.
      */
     private static function loadOneTime($productId, $variationId, $currency, $window)
@@ -153,25 +159,41 @@ class ProductFinancialsTools
         $from    = $window['from'];
         $to      = $window['to'];
 
-        $query = OrderItem::query()
-            ->where('post_id', $productId)
-            ->where('payment_type', '!=', 'subscription')
-            ->whereHas('order', function ($q) use ($currency, $dateCol, $from, $to) {
-                $q->whereIn('payment_status', self::PAID)
-                    ->where('currency', $currency)
-                    ->where($dateCol, '>=', $from)
-                    ->where($dateCol, '<=', $to);
+        $items = App::db()->getTableName('fct_order_items');
+        $line = ProductReportService::lineTotalSql($items, 'fctod');
+        $split = ProductReportService::itemRefundSplitSql($line, 0, $items, 'fctord', 'fctod');
+        $charged = Arr::get($split, 'charged');
+        $refund = Arr::get($split, 'refund');
+
+        $orders = App::db()->table('fct_orders as o')
+            ->whereIn('o.payment_status', self::CAPTURED)
+            ->where('o.currency', $currency)
+            ->where('o.' . $dateCol, '>=', $from)
+            ->where('o.' . $dateCol, '<=', $to)
+            ->whereIn('o.id', function ($q) use ($productId) {
+                $q->select('order_id')->from('fct_order_items')->where('post_id', $productId);
             });
 
+        $query = OrderItem::query()
+            ->join('fct_orders as fctord', 'fct_order_items.order_id', '=', 'fctord.id')
+            ->leftJoinSub(ProductReportService::orderDiscountSplitQuery($orders), 'fctod', 'fctod.order_id', '=', 'fct_order_items.order_id')
+            ->where('fct_order_items.post_id', $productId)
+            ->where('fct_order_items.payment_type', '!=', 'subscription')
+            ->whereIn('fctord.payment_status', self::CAPTURED)
+            ->where('fctord.currency', $currency)
+            ->where('fctord.' . $dateCol, '>=', $from)
+            ->where('fctord.' . $dateCol, '<=', $to);
+
         if ($variationId !== null) {
-            $query->where('object_id', $variationId);
+            $query->where('fct_order_items.object_id', $variationId);
         }
 
+        // Cash basis: what the buyer paid for the line after order credits, tax included, and what came back
         $row = $query->selectRaw(
-            'COALESCE(SUM(quantity), 0) as units, '
-            . 'COALESCE(SUM(line_total), 0) as gross, '
-            . 'COALESCE(SUM(refund_total), 0) as refunds, '
-            . 'COUNT(DISTINCT order_id) as orders'
+            "COALESCE(SUM({$items}.quantity), 0) as units, "
+            . "COALESCE(SUM({$charged}), 0) as gross, "
+            . "COALESCE(SUM({$refund}), 0) as refunds, "
+            . "COUNT(DISTINCT {$items}.order_id) as orders"
         )->first();
 
         return [
@@ -378,7 +400,7 @@ class ProductFinancialsTools
     {
         if (!empty($params['as_of'])) {
             try {
-                return (new \DateTime((string) $params['as_of'], new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+                return (new \DateTime((string) $params['as_of'], wp_timezone()))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
             } catch (\Exception $e) {
                 // fall through to now
             }
@@ -414,15 +436,14 @@ class ProductFinancialsTools
     }
 
     /**
-     * Resolve range / date_from / date_to into a UTC window for the one_time
-     * block. Mirrors the report tools: relative ranges resolve in UTC, custom
-     * dates override. all_time spans epoch..now.
+     * Window for the one_time block, in store days like the report tools; custom dates override.
+     * all_time spans epoch..now.
      *
      * @return array{from:string,to:string,range:string,basis:string}|\WP_Error
      */
     private static function resolveWindow($params)
     {
-        $tz    = new \DateTimeZone('UTC');
+        $tz    = wp_timezone();
         $basis = (isset($params['date_basis']) && $params['date_basis'] === 'created_at') ? 'created_at' : 'paid_at';
 
         // Explicit custom dates take precedence.
@@ -435,8 +456,7 @@ class ProductFinancialsTools
             return ['from' => $from, 'to' => $to, 'range' => 'custom', 'basis' => $basis];
         }
 
-        $ranges = ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'mtd', 'qtd', 'ytd', 'last_quarter', 'last_year', 'all_time', 'since_launch'];
-        $range  = (isset($params['range']) && in_array($params['range'], $ranges, true)) ? $params['range'] : 'all_time';
+        $range = (isset($params['range']) && in_array($params['range'], ReportTools::RANGES, true)) ? $params['range'] : 'all_time';
 
         // since_launch is an alias of all_time (epoch..now) so the range vocabulary
         // matches the report tools, which use since_launch. Echo whichever was asked.
@@ -444,53 +464,12 @@ class ProductFinancialsTools
             return ['from' => '1970-01-01 00:00:00', 'to' => gmdate('Y-m-d H:i:s'), 'range' => $range, 'basis' => $basis];
         }
 
-        $now     = new \DateTime('now', $tz);
-        $startDt = clone $now;
-        $endDt   = clone $now;
+        $resolved = ReportTools::resolveRange(['range' => $range]);
 
-        if ($range === 'yesterday') {
-            $startDt->modify('-1 day');
-            $endDt->modify('-1 day');
-        } elseif ($range === 'last_7_days') {
-            $startDt->modify('-6 days');
-        } elseif ($range === 'last_30_days') {
-            $startDt->modify('-29 days');
-        } elseif ($range === 'this_month' || $range === 'mtd') {
-            $startDt = new \DateTime($now->format('Y-m-01'), $tz);
-        } elseif ($range === 'last_month') {
-            $startDt = new \DateTime($now->format('Y-m-01'), $tz);
-            $startDt->modify('-1 month');
-            $endDt = (clone $startDt)->modify('last day of this month');
-        } elseif ($range === 'qtd') {
-            $startDt = self::quarterStart($now, $tz);
-        } elseif ($range === 'last_quarter') {
-            $qs      = self::quarterStart($now, $tz);
-            $startDt = (clone $qs)->modify('-3 months');
-            $endDt   = (clone $qs)->modify('-1 day');
-        } elseif ($range === 'ytd') {
-            $startDt = new \DateTime($now->format('Y-01-01'), $tz);
-        } elseif ($range === 'last_year') {
-            $year    = (int) $now->format('Y') - 1;
-            $startDt = new \DateTime($year . '-01-01', $tz);
-            $endDt   = new \DateTime($year . '-12-31', $tz);
-        }
-
-        return [
-            'from'  => (clone $startDt)->setTime(0, 0, 0)->format('Y-m-d H:i:s'),
-            'to'    => (clone $endDt)->setTime(23, 59, 59)->format('Y-m-d H:i:s'),
-            'range' => $range,
-            'basis' => $basis,
-        ];
+        return ['from' => $resolved['start'], 'to' => $resolved['end'], 'range' => $range, 'basis' => $basis];
     }
 
-    private static function quarterStart($now, $tz)
-    {
-        $month       = (int) $now->format('n');
-        $qStartMonth = (int) (floor(($month - 1) / 3) * 3 + 1);
-        return new \DateTime($now->format('Y') . '-' . str_pad($qStartMonth, 2, '0', STR_PAD_LEFT) . '-01', $tz);
-    }
-
-    /** Parse a date bound to a UTC 'Y-m-d H:i:s' at day start/end; null on failure. */
+    /** Parse a date bound (store timezone unless it has an offset) to a UTC 'Y-m-d H:i:s'; null on failure. */
     private static function dayBound($value, $tz, $endOfDay)
     {
         try {

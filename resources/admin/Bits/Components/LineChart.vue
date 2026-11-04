@@ -9,6 +9,7 @@ import {
   prepareLabel,
   getEmphasisColor,
   getXAxisConfig,
+  axisDayLabel,
 } from '@/Modules/Reports/Utils/decorator';
 
 const props = defineProps({
@@ -121,12 +122,13 @@ let chartInstance = null;
 
 // Initialize chart
 const initChart = () => {
-  if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
-  }
-
   nextTick(() => {
+    // Dispose here: two calls in one tick would both init the same element
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
+
     if (chartRef.value) {
       chartInstance = echarts.init(chartRef.value);
       updateChart();
@@ -183,6 +185,7 @@ const updateChart = () => {
       type: 'category',
       data: labels.value,
       axisLabel: {
+        formatter: axisDayLabel,
         color: themeColors.value.textColor,
         fontSize: 12,
         interval: xAxisConfig.value.interval,

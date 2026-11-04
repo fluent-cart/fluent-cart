@@ -193,7 +193,7 @@ class ProductsCollection extends Custom_Render_Element
 
         $this->controls['order'] = [
             'tab'         => 'content',
-            'label'       => esc_html__('Order', 'fluent-cart'),
+            'label'       => esc_html_x('Order', 'Sort direction', 'fluent-cart'),
             'type'        => 'select',
             'options'     => [
                 'ASC'  => esc_html__('Ascending', 'fluent-cart'),

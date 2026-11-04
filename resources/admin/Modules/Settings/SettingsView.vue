@@ -259,9 +259,17 @@ if (router.hasRoute('shipping')) {
     name: translate('Shipping'),
     icon: 'Truck',
     permission: ["store/sensitive"],
-    url: '/settings/shipping',
+    url: '/settings/shipping/carriers',
     child: [
       {
+        name: translate('Carriers'),
+        permission: ["store/sensitive"],
+        url: '/settings/shipping/carriers',
+        // Zones are edited from the Manual carrier page.
+        activeFor: ['/settings/shipping/carriers/', '/settings/shipping/zone/']
+      },
+      {
+        // Kept so users find the "zones have moved" notice; drop with the route later.
         name: translate('Shipping Zones'),
         permission: ["store/sensitive"],
         url: '/settings/shipping'
@@ -431,7 +439,8 @@ const isRouteActive = (tabRoute) => {
 
   // First check if any child route matches exactly
   if (tabRoute.child && tabRoute.child.length) {
-    const childMatches = tabRoute.child.some(child => currentPath === child.url || currentPath.includes(child.url));
+    const childMatches = tabRoute.child.some(child => currentPath === child.url || currentPath.includes(child.url)
+        || (child.activeFor || []).some(prefix => currentPath.startsWith(prefix)));
     if (childMatches) {
       return true;
     }

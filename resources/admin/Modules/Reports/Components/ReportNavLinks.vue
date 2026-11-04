@@ -96,12 +96,6 @@ const navLinks = [
     icon: 'Overview'
   },
   {
-    route: 'reports_sales',
-    label: translate('Sales'),
-    url: '/reports/sales',
-    icon: 'LineChart'
-  },
-  {
     route: 'reports_orders',
     label: translate('Orders'),
     url: '/reports/orders',
@@ -141,6 +135,11 @@ const navLinks = [
         label: translate('Future Renewals'),
         url: '/reports/subscriptions/future-renewals'
       },
+      {
+        route: 'reports_installments',
+        label: translate('Installments'),
+        url: '/reports/subscriptions/installments'
+      },
     ]
   },
   {
@@ -168,6 +167,24 @@ const navLinks = [
     label: translate('Sources'),
     url: '/reports/sources',
     icon: 'Source'
+  },
+  {
+    route: 'reports_coupons',
+    label: translate('Coupons'),
+    url: '/reports/coupons',
+    icon: 'Coupon'
+  },
+  {
+    route: 'reports_payment_methods',
+    label: translate('Payment Methods'),
+    url: '/reports/payment-methods',
+    icon: 'CreditCard'
+  },
+  {
+    route: 'reports_locations',
+    label: translate('Locations'),
+    url: '/reports/locations',
+    icon: 'LocationPin'
   },
 ];
 

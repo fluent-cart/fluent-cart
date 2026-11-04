@@ -15,6 +15,10 @@ class TurnstileBoot
 
         add_action('wp_enqueue_scripts', [$this, 'enqueueTurnstileScript'], 20);
 
+        add_filter('wp_script_attributes', [$this, 'addScriptAttributes'], 10, 1);
+
+        add_action('template_redirect', [$this, 'preventCaching'], 1);
+
         add_filter('fluent_cart/checkout/localize_data', [$this, 'localizeTurnstileData'], 10, 1);
 
         (new TurnstileValidator())->register();
@@ -23,10 +27,16 @@ class TurnstileBoot
     public function renderTurnstileWidget($data = [])
     {
         $settings = ModuleSettings::getSettings('turnstile');
-        $enableTurnstile = Arr::get($settings, 'active', 'no');
         $siteKey = Arr::get($settings, 'site_key', '');
 
-        $isActive = ($enableTurnstile === 'yes' && !empty($siteKey));
+        $isActive = TurnstileValidator::isConfigured($settings);
+
+        // Checkout blocks, builder widgets and Pro inline checkout render on pages
+        // isCheckoutContext() can't recognise, so load from the render itself.
+        if ($isActive) {
+            $this->loadScript();
+            $this->markUncacheable();
+        }
         ?>
         <div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget data-turnstile-active="<?php echo $isActive ? 'yes' : 'no'; ?>">
             <?php if ($isActive): ?>
@@ -47,16 +57,63 @@ class TurnstileBoot
     public function enqueueTurnstileScript()
     {
         $settings = ModuleSettings::getSettings('turnstile');
-        if (Arr::get($settings, 'active', 'no') === 'yes' && !empty(Arr::get($settings, 'site_key', ''))) {
-            if ($this->isCheckoutContext()) {
-                wp_enqueue_script(
-                    'cloudflare-turnstile',
-                    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', // phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent -- Cloudflare requires Turnstile api.js from its own host
-                    [],
-                    null,
-                    true
-                );
-            }
+        if (TurnstileValidator::isConfigured($settings) && $this->isCheckoutContext()) {
+            $this->loadScript();
+        }
+    }
+
+    private function loadScript()
+    {
+        wp_enqueue_script(
+            'cloudflare-turnstile',
+            'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', // phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent -- Cloudflare requires Turnstile api.js from its own host
+            [],
+            null,
+            true
+        );
+    }
+
+    /**
+     * Opt api.js out of JS delay/defer optimisers; a delayed script leaves checkout without a token.
+     * Rocket Loader reads data-cfasync only before src.
+     */
+    public function addScriptAttributes($attributes)
+    {
+        if (Arr::get($attributes, 'id') === 'cloudflare-turnstile-js') {
+            $attributes = array_merge([
+                'data-cfasync'     => 'false',
+                'nowprocket'       => true,
+                'data-no-optimize' => '1',
+                'data-noptimize'   => '1',
+                'nitro-exclude'    => true,
+            ], $attributes);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Caching plugins only auto-exclude checkouts they know (WooCommerce, EDD), and a
+     * cached checkout serves a stale site key and nonces.
+     */
+    public function preventCaching()
+    {
+        $settings = ModuleSettings::getSettings('turnstile');
+        if (!TurnstileValidator::isConfigured($settings) || !$this->isCheckoutContext()) {
+            return;
+        }
+
+        $this->markUncacheable();
+    }
+
+    private function markUncacheable()
+    {
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        // Mid-render the headers are gone; page caches still read DONOTCACHEPAGE at the end.
+        if (!headers_sent()) {
+            nocache_headers();
         }
     }
 
@@ -65,7 +122,7 @@ class TurnstileBoot
         $settings = ModuleSettings::getSettings('turnstile');
         if (isset($data['fluentcart_checkout_vars'])) {
             $data['fluentcart_checkout_vars']['turnstile'] = [
-                'enabled'  => Arr::get($settings, 'active', 'no') === 'yes',
+                'enabled'  => TurnstileValidator::isConfigured($settings),
                 'site_key' => Arr::get($settings, 'site_key', '')
             ];
         }
@@ -185,9 +242,8 @@ class TurnstileBoot
     private function getWidgetHtml()
     {
         $settings = ModuleSettings::getSettings('turnstile');
-        $enableTurnstile = Arr::get($settings, 'active', 'no');
         $siteKey = Arr::get($settings, 'site_key', '');
-        $isActive = ($enableTurnstile === 'yes' && !empty($siteKey));
+        $isActive = TurnstileValidator::isConfigured($settings);
 
         $html = '<div class="fct-turnstile-wrapper" data-fluent-cart-turnstile-widget data-turnstile-active="' . ($isActive ? 'yes' : 'no') . '">';
 

@@ -26,6 +26,7 @@ class OrderReportController extends Controller
         $fluctuations = [];
         $previousMetrics = ['summary' => []];
         if ($params['comparePeriod']) {
+            $params = ReportHelper::resolveGroupKey($params);
             $params['startDate'] = $params['comparePeriod'][0];
             $params['endDate'] = $params['comparePeriod'][1];
 
@@ -43,8 +44,16 @@ class OrderReportController extends Controller
             'fluctuations'    => $fluctuations,
             'compare_range'   => ReportHelper::formatCompareRange($params['comparePeriod']),
             'compare_ranges'  => $compareRanges,
-            // 'previousMetrics' => $previousMetrics['chartData'],
+            // The chart's compare line, point by point; empty without a comparison
+            'previousChartData' => $params['comparePeriod'] ? $previousMetrics['chartData'] : [],
         ];
+    }
+
+    public function getOrderMix(Request $request): array
+    {
+        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
+
+        return OrderReportService::make()->getOrderMix($params);
     }
 
     public function getNewVsReturningCustomer(Request $request)
@@ -58,57 +67,10 @@ class OrderReportController extends Controller
         ];
     }
 
-    public function getOrderByGroup(Request $request)
+    public function getFailedOrders(Request $request): array
     {
         $params = ReportHelper::processParams($request->get('params'), $this->params, true);
 
-        $data = OrderReportService::make([])->groupBy($params);
-
-        return [
-            'data' => $data
-        ];
-    }
-
-    public function getOrderValueDistribution(Request $request)
-    {
-
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-
-        $service = OrderReportService::make();
-
-        return [
-            'data' => $service->getOrderValueDistribution($params)
-        ];
-    }
-
-    public function getReportByDayAndHour(Request $request)
-    {
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-
-        $service = OrderReportService::make();
-
-        return $service->getReportByDayAndHour($params);
-    }
-
-    public function getItemCountDistribution(Request $request)
-    {
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-
-        $service = OrderReportService::make();
-
-        return [
-            'data' => $service->getItemCountDistribution($params)
-        ];
-    }
-
-    public function getOrderCompletionTime(Request $request)
-    {
-        $params = ReportHelper::processParams($request->get('params'), $this->params, true);
-
-        $service = OrderReportService::make();
-
-        return [
-            'data' => $service->getOrderCompletionTime($params)
-        ];
+        return OrderReportService::make()->getFailedOrders($params + ['showCustomers' => ReportHelper::canSeeCustomers()]);
     }
 }

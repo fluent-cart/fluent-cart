@@ -15,4 +15,5 @@ const component = getExtensionComponent(props.name);
 
 <template>
   <component v-if="component" :is="component" v-bind="$attrs"/>
+  <slot v-else-if="$slots.default"/>
 </template>

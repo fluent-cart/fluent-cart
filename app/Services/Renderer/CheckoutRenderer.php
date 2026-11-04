@@ -816,6 +816,46 @@ class CheckoutRenderer
             return;
         }
 
+        [$countryCode, $stateCode] = $this->shippingRateLocation();
+
+        $availableShippingMethods = AddressHelper::getShippingMethods($countryCode, $stateCode, null, (array) $this->cart->cart_data);
+        $rateSources = AddressHelper::rateSourceState();
+
+        $selectedId = Arr::get($this->cart->checkout_data, 'shipping_data.shipping_method_id', '');
+
+        $selectedId = CartHelper::resolveAutoSelectShippingMethod($this->cart, $availableShippingMethods ?: [], $selectedId);
+
+        // Rates carry their cost, priced against this cart in the checkout currency.
+        (new ShippingMethodsRender($availableShippingMethods, $selectedId, $rateSources))->render();
+    }
+
+    /**
+     * One pending carrier rate source, quoted for the same address as the shown
+     * list: its rows to append, and the key of the list they belong to.
+     *
+     * @return array ['rates_key' => string, 'view' => string, 'rate_ids' => string[]]
+     */
+    public function getRateSourceFragment(string $carrier, string $source): array
+    {
+        [$countryCode, $stateCode] = $this->shippingRateLocation();
+
+        $rates = AddressHelper::fetchRateSource($carrier, $source, $countryCode, $stateCode, (array) $this->cart->cart_data);
+
+        ob_start();
+        (new ShippingMethodsRender($rates, Arr::get($this->cart->checkout_data, 'shipping_data.shipping_method_id', '')))->renderItems();
+
+        return [
+            'rates_key' => AddressHelper::rateSourceState()['key'],
+            'view'      => ob_get_clean(),
+            'rate_ids'  => array_map('strval', array_column($rates, 'id')),
+        ];
+    }
+
+    /**
+     * @return array [country, state] the shipping options are listed for.
+     */
+    protected function shippingRateLocation(): array
+    {
         $countryCode = $this->shippingAddress['country'] ?: $this->billingAddress['country'];
         $stateCode = $this->shippingAddress['state'] ?: $this->billingAddress['state'];
         $billingValidations = array_filter(CheckoutFieldsSchema::getCheckoutFieldsRequirements('billing', 'physical'));
@@ -824,22 +864,7 @@ class CheckoutRenderer
             $countryCode = (new StoreSettings())->get('store_country');
         }
 
-        $availableShippingMethods = AddressHelper::getShippingMethods($countryCode, $stateCode);
-
-
-        $selectedId = Arr::get($this->cart->checkout_data, 'shipping_data.shipping_method_id', '');
-
-        $selectedId = CartHelper::resolveAutoSelectShippingMethod($this->cart, $availableShippingMethods ?: [], $selectedId);
-
-        if (!$availableShippingMethods || is_wp_error($availableShippingMethods)) {
-            (new ShippingMethodsRender($availableShippingMethods, $selectedId))->render();
-        } else {
-            foreach ($availableShippingMethods as $method) {
-                $method->charge_amount = CartHelper::calculateShippingMethodCharge($method, $this->cart->cart_data);
-            }
-
-            (new ShippingMethodsRender($availableShippingMethods, $selectedId))->render();
-        }
+        return [$countryCode, $stateCode];
     }
 
     /**
@@ -898,7 +923,7 @@ class CheckoutRenderer
         $checkoutMethodStyle = $this->storeSettings->get('checkout_method_style', 'logo');
 
         ?>
-            <div id="fluent_payment_methods" class="fluent_payment_methods">
+            <div id="fluent_payment_methods" class="fluent_payment_methods fct-collapse__inner">
                 <div class="fct_checkout_form_section" aria-labelledby="payment_methods_label" role="radiogroup">
                     <div class="fct_form_section_header">
                         <h4 id="payment_methods_label" class="fct_form_section_header_label">

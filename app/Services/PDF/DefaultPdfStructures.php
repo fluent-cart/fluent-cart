@@ -58,7 +58,9 @@ class DefaultPdfStructures
         $blocks[] = self::header(__('RECEIPT', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Order Number', 'fluent-cart')   => '{{order.uuid}}',
+            // The empty fallback keeps it blank until paid; the PDF then drops the row
+            __('Receipt Number', 'fluent-cart') => '{{order.invoice_no|}}',
             __('Order Date', 'fluent-cart')     => '{{order.created_at}}',
             __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
             __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',
@@ -98,7 +100,8 @@ class DefaultPdfStructures
         $blocks[] = self::header(__('RENEWAL RECEIPT', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Order Number', 'fluent-cart')   => '{{order.uuid}}',
+            __('Receipt Number', 'fluent-cart') => '{{order.invoice_no|}}',
             __('Renewal Date', 'fluent-cart')   => '{{order.created_at}}',
             __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
             __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',
@@ -139,7 +142,8 @@ class DefaultPdfStructures
         $blocks[] = self::header(__('REFUND NOTICE', 'fluent-cart'));
         $blocks[] = self::addressColumns(__('REFUND TO', 'fluent-cart'));
         $blocks[] = self::metaTable([
-            __('Order Number', 'fluent-cart')   => '{{order.invoice_no}}',
+            __('Order Number', 'fluent-cart')   => '{{order.uuid}}',
+            __('Receipt Number', 'fluent-cart') => '{{order.invoice_no|}}',
             __('Order Date', 'fluent-cart')     => '{{order.created_at}}',
             __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
         ]);
@@ -177,7 +181,8 @@ class DefaultPdfStructures
         $blocks[] = self::header(__('INVOICE', 'fluent-cart'));
         $blocks[] = self::addressColumns();
         $blocks[] = self::metaTable([
-            __('Invoice Number', 'fluent-cart') => '{{order.invoice_no}}',
+            __('Order Number', 'fluent-cart')   => '{{order.uuid}}',
+            __('Invoice Number', 'fluent-cart') => '{{order.invoice_no|}}',
             __('Invoice Date', 'fluent-cart')   => '{{order.created_at}}',
             __('Payment Method', 'fluent-cart') => '{{order.payment_method_title}}',
             __('Payment Status', 'fluent-cart') => '{{order.payment_status}}',

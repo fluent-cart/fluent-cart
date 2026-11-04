@@ -196,7 +196,7 @@ class PayPalHelper
             return $vendorRefund;
         }
 
-        if (Arr::get($vendorRefund, 'status') !== 'COMPLETED') {
+        if (in_array(Arr::get($vendorRefund, 'status'), ['FAILED', 'CANCELLED'], true)) {
             return new \WP_Error('refund_not_completed', __('Refund not completed in paypal. Please refund from PayPal Manually.', 'fluent-cart'));
         }
 

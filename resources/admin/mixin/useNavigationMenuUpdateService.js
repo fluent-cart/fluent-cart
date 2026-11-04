@@ -41,7 +41,7 @@ export function useNavigationMenuUpdateService(router) {
     };
 
     // The off-canvas menu is one flat list (children inlined), so only the row
-    // itself lights up. Routes without their own link (e.g. /reports/sales)
+    // itself lights up. Routes without their own link (e.g. /reports/products/compare)
     // fall back to the active_menu slug.
     const highlightOffcanvasMenu = (routePath, activeMenu) => {
         const items = jQuery('.fct-offcanvas-menu-item');
@@ -55,7 +55,7 @@ export function useNavigationMenuUpdateService(router) {
         }
     };
 
-    // WordPress sidebar: one row is current. Path first, so "↳ Attributes"
+    // WordPress sidebar: one row is current. Path first, so "Attributes"
     // wins over "Products"; otherwise the row named after active_menu.
     const highlightWpSubmenu = (routePath, activeMenu) => {
         const items = jQuery('#toplevel_page_fluent-cart .wp-submenu li');

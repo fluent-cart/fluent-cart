@@ -79,6 +79,34 @@ describe('extension components', () => {
     });
 });
 
+describe('extension component fallback', () => {
+    it('renders the default slot when no add-on registered the name', async () => {
+        window.fluent_cart_admin = {hooks: createHooks()};
+
+        const html = await renderToString(createSSRApp({
+            render: () => h(ExtensionComponent, {name: 'reports.customers.value'}, {default: () => h('p', 'preview')})
+        }));
+
+        expect(html).toContain('<p>preview</p>');
+    });
+
+    it('renders the registered component instead of the slot', async () => {
+        const hooks = createHooks();
+        hooks.addFilter('fluent_cart_admin_components', 'pro', (components) => ({
+            ...components,
+            'reports.customers.value': {render: () => h('table')}
+        }));
+        window.fluent_cart_admin = {hooks};
+
+        const html = await renderToString(createSSRApp({
+            render: () => h(ExtensionComponent, {name: 'reports.customers.value'}, {default: () => h('p', 'preview')})
+        }));
+
+        expect(html).toContain('<table>');
+        expect(html).not.toContain('preview');
+    });
+});
+
 describe('core screens take the license table from the seam, or explain why it is missing', () => {
     it.each([
         'resources/admin/Modules/Orders/SingleOrder.vue',
@@ -110,7 +138,7 @@ describe('shared module entries', () => {
     it.each(SHARED)('module-%s.js is a Vite input and an import-map specifier', (name) => {
         expect(read('vite.config.mjs')).toContain(`"resources/admin/shared/module-${name}.js"`);
         expect(read('app/Hooks/Handlers/ModuleImportMap.php')).toMatch(
-            new RegExp(`'@fluent-cart/${name}'\\s*=> static::sharedUrl\\('module-${name}\\.js'\\)`)
+            new RegExp(`'@fluent-cart/${name}'\\s*=> self::sharedUrl\\('module-${name}\\.js'\\)`)
         );
     });
 
@@ -155,14 +183,18 @@ describe('shared module entries', () => {
 
         // Removing one of these breaks shipped Pro; that needs FLUENTCART_MODULE_API bumped.
         const helpersUsedByPro = [
-            'AppConfig', 'Arr', 'Asset', 'Clipboard', 'Model', 'Permission', 'Rest', 'Storage', 'Str', 'Table', 'Theme',
-            'dateShortcuts', 'fluentDayjsLocale', 'formatDate', 'handleError', 'isValidURL', 'monthNames',
-            'paymentMethodAdminTitle', 'resolveDateFormat', 'translate', 'translateNumber', 'useExport',
+            '$confirm', 'AppConfig', 'Arr', 'Asset', 'averageRate', 'axisDayLabel', 'completeRows', 'expectedLifetimeMonths', 'headlineRow', 'periodLabel', 'chartAxisPointer', 'chartTooltipAmount', 'chartTooltipPosition', 'ChartTypeFilter',
+            'Clipboard', 'csvSafe', 'dateTimeI18', 'exportCSVWithColumns', 'getEmphasisColor', 'handleResponse', 'handleSuccess', 'getXAxisConfig', 'makeXAxisLabels', 'Model', 'Notify', 'storeTimeNote', 'tooltipSuffix', 'Permission', 'Rest', 'Storage', 'Str', 'Table', 'Theme',
+            'dateShortcuts', 'fluentDayjsLocale', 'formatDate', 'formatNumber', 'handleError', 'isValidURL', 'monthNames',
+            'paymentMethodAdminTitle', 'pluralizeTranslate', 'prepareLabel', 'resolveDateFormat', 'translate', 'translateNumber',
+            'useExport',
         ];
         const componentsUsedByPro = [
-            'Badge', 'Card', 'ChartTab', 'CopyToClipboard', 'DynamicIcon', 'Empty', 'ExportDialog', 'Heading',
+            'Badge', 'Card', 'ChartTab', 'CopyToClipboard', 'DynamicIcon', 'Empty', 'ExportDialog', 'ExportReport', 'Fluctuation', 'Heading',
             'IconButton', 'Label', 'LabelHint', 'NotFound', 'OrderCustomerInformation', 'OrderUpDownIndicator',
-            'PageHeading', 'Pagination', 'ProductInfo', 'RouteCell', 'TableWrapper', 'UpgradePlan', 'UserCan', 'WpEditor',
+            'PageHeading', 'Pagination', 'ProductInfo', 'ProductSalesChart', 'ReportSummary', 'RouteCell', 'Screenshot', 'SummaryLoader',
+            'TableWrapper', 'UpgradePlan', 'UserCan',
+            'WpEditor',
         ];
         exported.add('Card'); // export const Card = {Container, Header, Body, Footer}
 

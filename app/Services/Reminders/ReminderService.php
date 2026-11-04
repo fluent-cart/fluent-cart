@@ -201,7 +201,7 @@ class ReminderService
         $dueDays = (int)$this->storeSettings->get('renewal_reminder_due_days', 0);
         $dueAt = $base + (max($dueDays, 0) * DAY_IN_SECONDS);
 
-        $orderRef = !empty($order->invoice_no) ? (string)$order->invoice_no : '#' . (string)$order->id;
+        $orderRef = !empty($order->invoice_no) ? (string)$order->invoice_no : (string)$order->uuid;
 
         $data = [
             'order'    => $order,

@@ -6,7 +6,7 @@
 ?>
 
 <div class="space_bottom_30">
-    <p><?php
+    <p class="fct-email-greeting"><?php
 printf(
         /* translators: %s is the customer's full name */
         esc_html__('Hello %s,', 'fluent-cart'),

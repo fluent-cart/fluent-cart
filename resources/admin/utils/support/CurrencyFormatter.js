@@ -50,20 +50,42 @@ export default class CurrencyFormatter {
         } else if (orderOrCurrency && orderOrCurrency.currency) {
             currency = orderOrCurrency.currency;
         }
-        return CurrencyFormatter.formatNumber(amount, withCurrency, hideEmpty, currency);
+        return CurrencyFormatter.#format(amount, withCurrency, hideEmpty, currency, 'whole');
     }
 
     // Core method to format a single amount (similar to your formatNumber)
     static formatNumber(amount, withCurrency = true, hideEmpty = false, currencyName = null) {
+        return CurrencyFormatter.#format(amount, withCurrency, hideEmpty, currencyName, 'trim');
+    }
+
+    // Always the currency's own decimals ("$7.00", "$6.60"), for amounts quoted
+    // side by side such as carrier rates.
+    static formatFixed(amount, withCurrency = true, hideEmpty = false, currencyName = null) {
+        return CurrencyFormatter.#format(amount, withCurrency, hideEmpty, currencyName, 'fixed');
+    }
+
+    // 'trim' drops trailing zeros; 'whole' drops only an all-zero fraction.
+    static #minFractionDigits(amount, decimals, mode) {
+        if (mode === 'fixed') {
+            return decimals;
+        }
+        if (mode === 'whole') {
+            return Number(amount || 0) % 100 === 0 ? 0 : decimals;
+        }
+        return 0;
+    }
+
+    static #format(amount, withCurrency, hideEmpty, currencyName, mode) {
         if (!amount && hideEmpty) {
             return '';
         }
         const { signs: currencySigns, sign: currencySign, position } = CurrencyFormatter.#currencyConfig();
         const currency = Arr.get(currencySigns, (currencyName || '').toUpperCase(), currencySign);
+        const decimals = CurrencyFormatter.#decimalsFor(currencyName);
 
         let formatted = new Intl.NumberFormat(CurrencyFormatter.#locale, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: CurrencyFormatter.#decimalsFor(currencyName)
+            minimumFractionDigits: CurrencyFormatter.#minFractionDigits(amount, decimals, mode),
+            maximumFractionDigits: decimals
         }).format(amount ? amount / 100 : 0);
 
         formatted = translateNumber(formatted);
@@ -230,7 +252,7 @@ export default class CurrencyFormatter {
             const formattedCurrentVolume = CurrencyFormatter.formatScaled(currentData.current);
 
             /* translators: %1$s - previous month name, %2$s - previous month volume, %3$s - YoY change, %4$s - current month name, %5$s - current month volume */
-            return translate('%1$s gross volume was %2$s, %3$s. Gross volume for the month of %4$s so far is %5$s. Here\'s the trend over the previous 12 months.',
+            return translate('Gross_Gross_Volume_Gross',
                 `<span class="font-bold">${previousMonthName}</span>`,
                 `<span class="font-bold fct-custom-tooltip">${formattedPreviousVolume}<span class="fct-custom-tooltip-content">${CurrencyFormatter.formatNumber(previousData.current)}</span></span>`,
                 CurrencyFormatter.#yoyChange(previousData.yoy_growth),
@@ -295,7 +317,7 @@ export default class CurrencyFormatter {
             }
 
             /* translators: %1$s - previous quarter name, %2$s - previous quarter volume, %3$s - previous quarter YoY change, %4$s - days left in quarter, %5$s - current quarter name, %6$s - current quarter volume, %7$s - quarter change, %8$s - YoY change */
-            return translate('%1$s gross volume was %2$s, %3$s. With %4$s days left in %5$s, Gross volume is %6$s for the quarter, %7$s and %8$s',
+            return translate('Gross_Gross_Volume',
                 `<span class="font-bold">${previousKey}</span>`,
                 `<span class="font-bold fct-custom-tooltip">${CurrencyFormatter.formatScaled(previousValue)}<span class="fct-custom-tooltip-content">${CurrencyFormatter.formatNumber(previousValue)}</span></span>`,
                 CurrencyFormatter.#yoyChange(previousData.yy_growth),

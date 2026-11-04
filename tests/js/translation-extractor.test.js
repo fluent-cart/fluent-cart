@@ -13,16 +13,15 @@ const DELIMITER = '\u0004';
 // Mirrors the patterns resources/dev/translator.js builds for the admin bundle.
 // Factories, not constants: /g regexes carry lastIndex between uses.
 const makeTranslationRegex = () => /translate\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,)]|translate\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,)]|translate\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,)]/g;
-const makeContextRegex = () => /(?<![\w$.])_x\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1\s*,\s*(['"`])((?:\\.|(?!\3)[^\\])*)\3/g;
 
 /**
  * Run the real pipeline over a source snippet and return the generated PHP.
  */
-function generate(sourceDir, source) {
+function generate(sourceDir, source, contextRegex = Helper.makeContextRegex()) {
     fs.writeFileSync(path.join(sourceDir, 'Fixture.vue'), source);
 
     const {translations, comments, contexts} = Helper.extractTranslations(
-        sourceDir, makeTranslationRegex(), [], [], makeContextRegex(), Helper.makePluralRegex()
+        sourceDir, makeTranslationRegex(), [], [], contextRegex, Helper.makePluralRegex()
     );
 
     const outFile = path.join(sourceDir, 'out.php');
@@ -129,10 +128,26 @@ describe('generated PHP round-trips the string the JS runtime asks for', () => {
         expect(php).toContain(`"Pagination\\x04%1\\$s of %2\\$s" => _x('%1$s of %2$s', 'Pagination', 'fluent-cart'),`);
     });
 
+    it('extracts a frontend window.fluentcart._x() call but not foo_x()', () => {
+        const frontendRegex = Helper.makeContextRegex('(?:window\\.)?fluentcart\\.');
+        const php = generate(dir, `window.fluentcart._x('Draft', 'Order status'); foo_x('Skip', 'Nope'); other._x('Skip', 'Nope');`, frontendRegex);
+
+        expect(php).toContain(`"Order status\\x04Draft" => _x('Draft', 'Order status', 'fluent-cart'),`);
+        expect(php).not.toContain('Skip');
+    });
+
     it('extracts both halves of a pluralizeTranslate call with quotes intact', () => {
         const php = generate(dir, `<template><p>{{ pluralizeTranslate('%s item\\'s', '%s items"', count) }}</p></template>`);
 
         expect(php).toContain("'%s item\\'s' => __('%s item\\'s', 'fluent-cart'),");
         expect(php).toContain(`'%s items"' => __('%s items"', 'fluent-cart'),`);
+    });
+
+    it('extracts all three msgids of a $n call, including the empty form', () => {
+        const php = generate(dir, `<template><p>{{ $n(\n  "Order",\n  "Orders",\n  customer.purchase_count ?? 0,\n  "No Order"\n) }}</p></template>`);
+
+        expect(php).toContain("'Order' => __('Order', 'fluent-cart'),");
+        expect(php).toContain("'Orders' => __('Orders', 'fluent-cart'),");
+        expect(php).toContain("'No Order' => __('No Order', 'fluent-cart'),");
     });
 });

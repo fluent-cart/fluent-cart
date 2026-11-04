@@ -54,7 +54,7 @@
       <Alert
           icon="InformationFill"
           type="info"
-          :content="$t('Note: For plain text searches, simply type your query without operators. The system will search across all text fields.')"
+          :content="$t('Search_Note_Plain')"
       />
 
       <el-tabs v-model="activeName" class="demo-tabs">

@@ -2,7 +2,7 @@ const {InspectorControls} = wp.blockEditor;
 const {TextControl, ToggleControl, Tooltip, Button, SelectControl} = wp.components;
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import blocktranslate, {_x} from "@/BlockEditor/BlockEditorTranslator";
 import {ColorPickerField} from "@/BlockEditor/Components/ColorPickerField";
 import colorConfig from "@/BlockEditor/Checkout/colorConfig";
 
@@ -517,7 +517,7 @@ const InspectorSettings = ({attributes, setAttributes}) => {
                             ))}
                         </EditorPanel>
 
-                        <EditorPanel title={blocktranslate('Card')}>
+                        <EditorPanel title={_x('Card', 'layout element')}>
                             {cardColors.map(([key, {value, label}], index) => (
                                 <EditorPanelRow className="flex-col" key={index}>
                                     <ColorPickerField

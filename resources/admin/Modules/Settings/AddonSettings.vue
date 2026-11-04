@@ -1,6 +1,12 @@
 <template>
   <div class="setting-wrap">
-    <SettingsHeader :heading="translate('Addon Settings')" :show-save-button="false"/>
+    <SettingsHeader
+        :heading="translate('Addon Settings')"
+        :show-save-button="!formLoading && hasSettings"
+        :loading="saving"
+        :show-cmnd-icon="true"
+        @on-save="saveSettings"
+    />
 
     <div class="setting-wrap-inner">
       <AdminNotice/>
@@ -113,8 +119,9 @@
                       </el-button>
 
                       <router-link
-                          v-if="addon.is_active && addonKey === 'fluent-pdf'"
-                          :to="{ path: '/settings/pdf-template' }"
+                          v-if="addon.is_active && addon.settings_route"
+                          :to="{ path: addon.settings_route }"
+                          :aria-label="translate('Settings')"
                       >
                         <el-icon class="text-gray-500 hover:text-primary cursor-pointer" :size="18">
                           <Setting />

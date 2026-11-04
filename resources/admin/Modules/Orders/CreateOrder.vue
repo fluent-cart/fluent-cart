@@ -24,30 +24,44 @@
     <div class="single-page-body">
       <div class="fct-create-order">
         <div class="fct-create-order-main">
-          <Card.Container v-if="orderCurrencies.length">
-            <Card.Body>
-              <div class="flex flex-wrap items-center gap-3 text-sm">
-                <span>{{ translate('Order currency') }}</span>
-                <el-select v-model="orderCurrency" size="small" class="max-w-[200px]">
-                  <el-option
-                      v-for="currency in orderCurrencies"
-                      :key="currency.code"
-                      :label="currency.code + ' ' + currency.sign"
-                      :value="currency.code"
-                  />
-                </el-select>
-                <span v-if="selectedOrderCurrency && !selectedOrderCurrency.is_base">
-                  {{ translate('Enter prices in %1$s. Rate: 1 %2$s = %3$s %1$s.', selectedOrderCurrency.code, baseOrderCurrency, trimRate(selectedOrderCurrency.rate)) }}
-                </span>
-              </div>
-            </Card.Body>
-          </Card.Container>
           <Card.Container class="overflow-hidden">
             <Card.Header
                 :title="$t('Products')"
                 title_size="small"
                 border_bottom
             >
+              <template v-if="orderCurrencies.length" #action>
+                <div class="fct-order-currency-picker">
+                  <span class="fct-order-currency-picker-label">{{ translate('Currency') }}</span>
+                  <el-select
+                      :model-value="pickedCurrency"
+                      @update:model-value="requestCurrency"
+                      :aria-label="translate('Order currency')"
+                      size="small"
+                      filterable
+                      :filter-method="(query) => currencyQuery = query"
+                      @visible-change="(open) => open || (currencyQuery = '')"
+                      class="fct-order-currency-select"
+                      popper-class="fct-order-currency-dropdown"
+                  >
+                    <el-option
+                        v-for="currency in filteredOrderCurrencies"
+                        :key="currency.code"
+                        :label="currency.sign + ' ' + currency.code"
+                        :value="currency.code"
+                    >
+                      <span class="fct-order-currency-option">
+                        <span class="fct-order-currency-option-sign">{{ currency.sign }}</span>
+                        <span class="fct-order-currency-option-code">{{ currency.code }}</span>
+                        <span class="fct-order-currency-option-name">{{ currency.name }}</span>
+                        <span class="fct-order-currency-option-rate">
+                          {{ currency.is_base ? translate('Store currency') : translate('1 %1$s = %2$s %3$s', baseOrderCurrency, trimRate(currency.rate), currency.code) }}
+                        </span>
+                      </span>
+                    </el-option>
+                  </el-select>
+                </div>
+              </template>
               <!--                  <template v-slot:action>-->
               <!--                    <order-bulk-actions-->
               <!--                        @reload="reloadOrder()"-->
@@ -234,7 +248,7 @@
 
                   <el-table-column
                       v-if="hasSubscriptionItem"
-                      width="140"
+                      width="160"
                       :label="$t('Custom Price')"
                   >
                     <template #default="scope">
@@ -249,7 +263,12 @@
                             size="small"
                             @change="updateCustomPrice(scope.row)"
                             style="width: 100%"
-                        />
+                            class="fct-custom-price-input"
+                        >
+                          <template v-if="activeOrderCurrency" #prefix>
+                            <span class="fct-custom-price-sign">{{ activeOrderCurrency.sign }}</span>
+                          </template>
+                        </el-input-number>
                       </div>
                     </template>
                   </el-table-column>
@@ -353,6 +372,11 @@
 
         <div class="fct-create-order-aside">
           <div class="fct-admin-sidebar">
+            <OrderCurrencySummary
+                v-if="activeOrderCurrency"
+                :currency="activeOrderCurrency"
+                :base-code="baseOrderCurrency"
+            />
             <notes
                 :note="order.note"
                 @whenNoteEditIsDone="(note)=>{
@@ -469,7 +493,9 @@ import Notes from '../Parts/Notes/Note.vue';
 import Coupon from "./Coupon.vue";
 import CustomDiscount from "./CustomDiscount.vue";
 import OrderCustomerInformation from "./OrderCustomerInformation.vue";
+import OrderCurrencySummary from "./OrderCurrencySummary.vue";
 import Shipping from "./Shipping.vue";
+import Confirmation from "@/utils/Confirmation";
 import Arr from "@/utils/support/Arr";
 import Asset from "@/utils/support/Asset";
 import Rest from "@/utils/http/Rest";
@@ -488,11 +514,13 @@ export default {
     Coupon,
     CustomDiscount,
     OrderCustomerInformation,
+    OrderCurrencySummary,
     Shipping
   },
   data() {
     return {
       orderCurrency: '',
+      currencyQuery: '',
       loading: false,
       calculating: false,
       repriceTimer: null,
@@ -579,6 +607,22 @@ export default {
     },
     selectedOrderCurrency() {
       return this.orderCurrencies.find(currency => currency.code === this.orderCurrency) || null;
+    },
+    // No pick yet means the server prices in the base currency, so show that.
+    pickedCurrency() {
+      return this.orderCurrency || this.baseOrderCurrency;
+    },
+    activeOrderCurrency() {
+      return this.orderCurrencies.find(currency => currency.code === this.pickedCurrency) || null;
+    },
+    filteredOrderCurrencies() {
+      const query = this.currencyQuery.trim().toLowerCase();
+      if (!query) {
+        return this.orderCurrencies;
+      }
+      return this.orderCurrencies.filter(currency => {
+        return (currency.code + ' ' + (currency.name || '')).toLowerCase().includes(query);
+      });
     },
     beforeRouteLeave(to, from, next) {
       this.redirectRouteName = to.name;
@@ -813,6 +857,35 @@ export default {
     },
     trimRate(rate) {
       return String(rate).replace(/\.?0+$/, '');
+    },
+    requestCurrency(code) {
+      this.currencyQuery = '';
+      if (code === this.pickedCurrency) {
+        return;
+      }
+      if (!this.order.order_items.length) {
+        this.orderCurrency = code;
+        return;
+      }
+
+      const currency = this.orderCurrencies.find(item => item.code === code);
+      const name = (currency && currency.name) || code;
+      const hasCustomPrice = this.order.order_items.some(item => item.has_custom_price);
+      const message = hasCustomPrice
+          ? translate('Order_Every_Item', name)
+          : translate('Every item, coupon and the total will be re-priced in %1$s.', name);
+
+      Confirmation.confirm(message, translate('Switch order to %1$s?', code), {
+        confirmButtonText: translate('Switch to %1$s', code),
+        cancelButtonText: translate('Cancel'),
+        confirmButtonClass: 'el-button--primary',
+      })
+          .then(() => {
+            this.orderCurrency = code;
+          })
+          .catch(() => {
+            // Cancelled: the picker is bound to pickedCurrency, so it snaps back.
+          });
     },
     addProduct() {
       this.createProductModal = !this.createProductModal;

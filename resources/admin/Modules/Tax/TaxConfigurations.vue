@@ -40,7 +40,7 @@
                       <el-radio value="excluded">{{ translate('Excluded') }}</el-radio>
                     </el-radio-group>
                     <p class="fct-inline-tip mt-2">
-                      {{ translate('Shipping tax always follows the store-level tax mode (Included or Excluded). Product-specific tax settings do not apply to shipping.') }}
+                      {{ translate('Tax_Shipping_Tax') }}
                     </p>
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
@@ -64,7 +64,7 @@
                             <div class="flex flex-col">
                                 <span class="price-mode-label">{{ translate('Fixed') }}</span>
                                 <span class="price-mode-text">
-                                    {{ translate('Listed price stays unchanged on reverse charge. Only the tax line is zeroed on the invoice.') }}
+                                    {{ translate('Tax_Listed_Price') }}
                                 </span>
                             </div>
                         </el-radio>
@@ -72,7 +72,7 @@
                             <div class="flex flex-col">
                                 <span class="price-mode-label">{{ translate('Dynamic') }}</span>
                                 <span class="price-mode-text">
-                                    {{ translate('VAT is stripped from the price on reverse charge. Customer pays the net (ex-VAT) amount.') }}
+                                    {{ translate('Tax_Vat_Stripped') }}
                                 </span>
                             </div>
                         </el-radio>
@@ -115,7 +115,7 @@
                   <div class="fct-setting-form-content">
                     <LabelHint :title="translate('Price Suffix (Tax Included)')"/>
                     <p class="fct-inline-tip">
-                      {{ translate('Shown on prices where tax is included. Applies when product or store pricing is tax-inclusive.') }}
+                      {{ translate('Tax_Shown_Prices_Where') }}
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
@@ -127,7 +127,7 @@
                   <div class="fct-setting-form-content">
                     <LabelHint :title="translate('Price Suffix (Tax Excluded)')"/>
                     <p class="fct-inline-tip">
-                      {{ translate('Shown on prices where tax is excluded. Applies when product or store pricing is tax-exclusive.') }}
+                      {{ translate('Tax_Shown_Prices') }}
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
@@ -185,7 +185,7 @@
 
                             <p class="fct-inline-tip">
                               {{
-                                translate('If enabled, apply reverse charge when applicable even when customers are in your home country.')
+                                translate('Tax_Enabled_Apply')
                               }}
                             </p>
                         </div>

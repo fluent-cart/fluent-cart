@@ -2,8 +2,9 @@
 
 namespace FluentCart\App\Modules\Shipping\Http\Controllers\Frontend;
 
+use FluentCart\App\Helpers\AddressHelper;
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Http\Controllers\Controller;
-use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Services\Localization\LocalizationManager;
 use FluentCart\Framework\Http\Request\Request;
 use FluentCart\Framework\Support\Arr;
@@ -30,70 +31,16 @@ class ShippingFrontendController extends Controller
             ];
         }
 
-        // Single query: get all applicable methods from both general and class-specific zones
-        $availableShippingMethods = ShippingMethod::query()
-            ->whereHas('zone', function ($query) use ($countryCode) {
-                $query->where(function ($q) use ($countryCode) {
-                    $q->whereIn('region', [$countryCode, 'all'])
-                      ->orWhere('region', 'selection');
-                });
-            })
-            ->where('is_enabled', 1)
-            ->where(function ($q) use ($state) {
-                // State filter (same logic as scopeApplicableToCountry)
-                $isSqlite = defined('DB_ENGINE') && DB_ENGINE === 'sqlite';
-                if ($isSqlite) {
-                    $q->where('states', '[]')
-                      ->orWhereNull('states');
-                    if ($state) {
-                        $escapedState = str_replace(['%', '_'], ['\\%', '\\_'], $state);
-                        $q->orWhere('states', 'LIKE', '%"' . $escapedState . '"%');
-                    }
-                } else {
-                    $q->whereJsonLength('states', 0);
-                    if ($state) {
-                        $q->orWhereJsonContains('states', $state);
-                    }
-                }
-            })
-            ->orderBy('amount', 'DESC')
-            ->with('zone')
-            ->get();
+        // The same merged, currency-converted list checkout prices against, quoted for
+        // the visitor's cart when there is one.
+        $cart = CartHelper::getCart();
 
-        // Post-filter selection zones that don't match this country
-        $availableShippingMethods = $availableShippingMethods->filter(function ($method) use ($countryCode) {
-            if (!$method->zone || $method->zone->region !== 'selection') {
-                return true;
-            }
-            return $method->zone->appliesToCountry($countryCode);
-        })->values();
-
-        if (!$availableShippingMethods || $availableShippingMethods->isEmpty()) {
-            $settingView = '<div class="fct-empty-state">'
-                . esc_html__('No shipping methods available for this address.', 'fluent-cart');
-
-            if (current_user_can('manage_options')) {
-                $settingsPageUrl = admin_url('admin.php?page=fluent-cart#/settings/shipping');
-
-                $settingsLink = '<a href="' . esc_url($settingsPageUrl ?? '') . '" target="_blank">' . esc_html__('Activate from settings.', 'fluent-cart') . '</a>';
-
-                $settingView .= ' ' . $settingsLink;
-            }
-
-            $settingView .= '</div>';
-
-
-            return [
-                'status'       => false,
-                'country_code' => $countryCode,
-                'view'         => $settingView
-            ];
-        }
-
-        return [
-            'available_shipping_methods' => $availableShippingMethods,
-            'country_code'               => $countryCode
-        ];
+        return AddressHelper::getAvailableShippingMethodLists([
+            'country_code' => $countryCode,
+            'state'        => $state,
+            // Public route: live carriers quote only a session cart that ships.
+            'zones_only'   => !$cart || !$cart->requireShipping(),
+        ]);
     }
 
     public function getShippingMethodsListView(Request $request)

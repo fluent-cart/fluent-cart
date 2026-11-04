@@ -5,6 +5,7 @@ namespace FluentCart\App\Modules\Templating;
 use FluentCart\Api\CurrencySettings;
 use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
+use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\UtmHelper;
@@ -595,6 +596,10 @@ class AssetLoader
                 'rest'    => Helper::getRestInfo(),
                 'ajaxurl' => admin_url('admin-ajax.php'),
             ],
+            // Frontend block strings are extracted into the checkout map; ship it on every page.
+            'fluentcart_frontend_vars' => [
+                'trans' => TransStrings::checkoutPageString(),
+            ],
             'fluentcart_drawer_vars' => [
                 'placeholder_image'    => Helper::getProductPlaceholderUrl(),
                 'cart_item_layout'     => $cartItemLayout,
@@ -750,6 +755,11 @@ class AssetLoader
                 'quote_revision'                               => CartCurrency::quoteRevision($cart),
                 'is_instant_checkout'                          =>  $isInstantCheckout,
                 'is_modal_checkout'                            =>  $hasModalCheckout ? 'yes' : 'no',
+                // Contact fields a live carrier quotes with; saving them re-quotes once all are filled.
+                'shipping_quote_fields'                        => $cart->requireShipping() ? [
+                    'billing'  => array_merge([], ...array_values(AddressHelper::quoteContactFields(false))),
+                    'shipping' => array_merge([], ...array_values(AddressHelper::quoteContactFields(true))),
+                ] : [],
 
             ],
             'fluentcart_checkout_info' => [

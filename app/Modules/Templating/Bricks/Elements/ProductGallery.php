@@ -190,7 +190,7 @@ class ProductGallery extends Element
 
         $this->controls['thumbnailActiveOpacity'] = [
             'tab'   => 'content',
-            'label' => esc_html__('Opacity', 'fluent-cart') . ' (' . esc_html__('Active', 'fluent-cart') . ')',
+            'label' => esc_html__('Opacity', 'fluent-cart') . ' (' . esc_html_x('Active', 'Element state', 'fluent-cart') . ')',
             'type'  => 'number',
             'step'  => 0.1,
             'css'   => [
@@ -215,7 +215,7 @@ class ProductGallery extends Element
 
         $this->controls['thumbnailActiveBorder'] = [
             'tab'   => 'content',
-            'label' => esc_html__('Border', 'fluent-cart') . ' (' . esc_html__('Active', 'fluent-cart') . ')',
+            'label' => esc_html__('Border', 'fluent-cart') . ' (' . esc_html_x('Active', 'Element state', 'fluent-cart') . ')',
             'type'  => 'border',
             'css'   => [
                 [

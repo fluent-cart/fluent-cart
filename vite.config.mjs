@@ -11,7 +11,12 @@ import {minifyStaticLibPlugin} from "./build/vite/plugins/minifyStaticLibPlugin.
 import {sharedModuleGuardPlugin} from "./build/vite/plugins/sharedModuleGuardPlugin.mjs";
 import fs from "fs"; // Add this dependency for file operations
 
-const serverConfig = require('./config/vite.json');
+// Keep `port` out of vite.local.json: resources/dev/portfinder.js writes the free port into vite.json, and a local value would shadow it.
+const localServerConfigPath = path.resolve(__dirname, 'config/vite.local.json');
+const serverConfig = {
+    ...require('./config/vite.json'),
+    ...(fs.existsSync(localServerConfigPath) ? JSON.parse(fs.readFileSync(localServerConfigPath, 'utf8')) : {}),
+};
 
 // Read plugin version from fluent-cart.php
 function getPluginVersion() {
@@ -32,11 +37,19 @@ const chunkCacheBustPlugin = {
             right: ' + "?ver=' + PLUGIN_VERSION + '")'
         };
     },
-    renderChunk(code) {
+    // generateBundle, not renderChunk: Vite strips `import"./x.js"` of the CSS-only
+    // chunks it deletes in its own generateBundle, and a `?ver=` added earlier hides
+    // the import from it, leaving a dangling import of a file that is never emitted.
+    generateBundle(options, bundle) {
         // Add version to static imports between chunks (from "./file.js" and import "./file.js")
         const ver = '?ver=' + PLUGIN_VERSION;
-        return code.replace(/(from\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`)
-                   .replace(/(import\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`);
+        for (const file of Object.values(bundle)) {
+            if (file.type !== 'chunk') {
+                continue;
+            }
+            file.code = file.code.replace(/(from\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`)
+                                 .replace(/(import\s*["'])(\.\/[^"']+\.js)(["'])/g, `$1$2${ver}$3`);
+        }
     }
 };
 
@@ -351,6 +364,14 @@ export default defineConfig({
             // Keep shared module-* entries as thin facades: never merge other
             // code into an entry that exports (see sharedModuleGuardPlugin).
             preserveEntrySignatures: 'strict',
+            // Form and Icons are loaded both ways on purpose; hide only their
+            // "dynamic import will not move module" notes.
+            onwarn(warning, warn) {
+                if (/\(!\) \S*[\\/]resources[\\/]admin[\\/]Bits[\\/]Components[\\/](Form|Icons)[\\/]\S* is dynamically imported/.test(warning.message)) {
+                    return;
+                }
+                warn(warning);
+            },
             output: {
                 // Libraries behind the add-on import map get their own chunks, so
                 // core never imports a module-* entry (sharedModuleGuardPlugin).
@@ -373,10 +394,13 @@ export default defineConfig({
     server: {
         port: serverConfig.port,
         strictPort: serverConfig.strict_port,
+        host: serverConfig.listen_host,
         hmr: {
             port: serverConfig.port,
             host: serverConfig.host,
             protocol: serverConfig.vite_protocol,
+            clientPort: serverConfig.public_port,
+            path: serverConfig.hmr_path,
         },
         cors: {
             origin: "*",

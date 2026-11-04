@@ -21,6 +21,8 @@ const filterState = vi.hoisted(() => ({
         this.onFilterChanged.mock.lastCall[0](this.data.selectedFilters);
     },
 }));
+// Theme reads window as it loads; the report filter bar reaches it through the report decorators
+vi.mock('@/utils/Theme', () => ({default: {colors: {report: {}}, isDark: () => false}}));
 vi.mock('vue-router', () => ({useRoute: () => route}));
 vi.mock('@/utils/Storage', () => ({default: {
     get: (key, fallback = '') => stored[key] ?? fallback,
@@ -34,7 +36,9 @@ vi.mock('@/Bits/Components/FilterDropdown/FilterState', () => ({default: () => f
 vi.mock('@/Bits/Components/Alert.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/AdminNotice.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Modules/Reports/Components/ReportNavLinks.vue', () => ({default: {render: () => null}}));
-vi.mock('@/Modules/Settings/Parts/SettingsHeader.vue', () => ({default: {render: () => null}}));
+vi.mock('@/Modules/Reports/Components/SubscriptionProductSelect.vue', () => ({default: {render: () => null}}));
+// The title bar holds the report filter bar in its action slot
+vi.mock('@/Modules/Settings/Parts/SettingsHeader.vue', () => ({default: {setup: (props, {slots}) => () => h('div', slots.action ? slots.action() : [])}}));
 vi.mock('@/Bits/Components/FilterDropdown/parts/DateRangeFilter.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/FilterDropdown/parts/CompareToFilter.vue', () => ({default: {render: () => null}}));
 vi.mock('@/Bits/Components/FilterDropdown/parts/StatusFilter.vue', () => ({default: {render: () => null}}));
@@ -62,6 +66,9 @@ const renderReports = () => {
             return () => h('select', {'aria-label': attrs['aria-label'], value: props.modelValue}, slots.default());
         },
     });
+    // The date control is a button inside a popover; the stub renders the button
+    app.component('el-popover', {setup: (props, {slots}) => () => h('div', slots.reference ? slots.reference() : [])});
+    app.component('el-button', {setup: (props, {attrs, slots}) => () => h('button', {'aria-label': attrs['aria-label']}, slots.default ? slots.default() : [])});
     app.component('el-option', {
         props: ['label', 'value'],
         setup: props => () => h('option', {value: props.value}, props.label),
@@ -108,6 +115,7 @@ describe('Future Renewals currency picker', () => {
         expect(html).toContain('aria-label="Currency"');
         expect(html).toContain('JPY');
         expect(html).toContain('All currencies (in USD)');
+        expect(html).not.toContain('Date range:');
         expect(html).not.toContain('fct-applied-filter-date');
         expect(html).not.toContain('Advanced filters');
     });
@@ -130,7 +138,7 @@ describe('Future Renewals currency picker', () => {
         route.name = 'reports_orders';
         const html = await renderReports();
 
-        expect(html).toContain('fct-applied-filter-date');
+        expect(html).toContain('Date range:');
         expect(html).toContain('Advanced filters');
     });
 
@@ -138,6 +146,7 @@ describe('Future Renewals currency picker', () => {
         route.name = 'reports_export';
         const html = await renderReports();
 
+        expect(html).not.toContain('Date range:');
         expect(html).not.toContain('fct-applied-filter-date');
         expect(html).not.toContain('Advanced filters');
         expect(selectCurrency).toBeNull();

@@ -4,11 +4,15 @@ const TranslationHelper = require("./TranslationHelper");
 
 
 // Define paths
-let resourcesDir = path.join('resources/public/checkout');
+// Checkout and every frontend block share one map, which ships on every page.
+// Excluded: vendor code, bundles with their own map (customer profile, payments)
+// and scripts that read a hand-written PHP map (gateways, pricing table, receipt print).
+const blockExcludeDirs = ['lib', 'customer-profile', 'payments', 'payment-methods', 'pricing-table', 'print'];
+let resourcesDir = path.join('resources/public');
 let phpFile = path.join('app/Services/Translations/checkout-translation.php');
 
 // Exclude specific directories and files
-let excludeDirs = [];
+let excludeDirs = blockExcludeDirs;
 const excludeFiles = [];
 let translationRegex = /(?:\$t|window\.fluentcart\.\$t)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|(?:\$t|window\.fluentcart\.\$t)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|(?:\$t|window\.fluentcart\.\$t)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|(?:translate|this\.translate)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]|(?:translate|this\.translate)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]|(?:translate|this\.translate)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*(?:\$t|window\.fluentcart\.\$t)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*`([^`\\]*(?:\\.[^`\\]*)*)`\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*[,\)]\s*\}\}|\{\{\s*(?:translate|this\.translate)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,\)]\s*\}\}/g;
 
@@ -28,9 +32,9 @@ if (isCustomer && false) {
 }
 
 if (isCheckout) {
-    resourcesDir = path.join('resources/public/checkout');
+    resourcesDir = path.join('resources/public');
     phpFile = path.join('app/Services/Translations/checkout-translation.php');
-    excludeDirs = [];
+    excludeDirs = blockExcludeDirs;
 }
 
 if (isPayment) {
@@ -47,8 +51,8 @@ let commentsArray = {};
 
 
 // Run the script
-// No contextRegex: _x() is exposed only by the admin translator. The plural
-// pattern still applies — pluralizeTranslate is shared by every translator.
-const {translations, comments} = TranslationHelper.extractTranslations(resourcesDir, translationRegex, excludeDirs, excludeFiles, null, TranslationHelper.makePluralRegex());
+// _x() is reached as window.fluentcart._x(), fluentcart._x() or a bare _x().
+const contextRegex = TranslationHelper.makeContextRegex('(?:window\\.)?fluentcart\\.');
+const {translations, comments, contexts} = TranslationHelper.extractTranslations(resourcesDir, translationRegex, excludeDirs, excludeFiles, contextRegex, TranslationHelper.makePluralRegex());
 commentsArray = comments;
-TranslationHelper.updatePhpTranslations(translations, {}, phpFile, includeSource, comments);
+TranslationHelper.updatePhpTranslations(translations, {}, phpFile, includeSource, comments, contexts);

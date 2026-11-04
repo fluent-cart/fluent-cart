@@ -4,6 +4,7 @@ namespace FluentCart\App\Modules\Integrations\FluentPlugins;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Services\DateTime\DateFormatter;
 use FluentCart\App\Services\URL;
 
 class FluentSupportWidget
@@ -11,6 +12,15 @@ class FluentSupportWidget
     public function register()
     {
         add_filter('fluent_support/customer_extra_widgets', array($this, 'getPurchaseWidgets'), 10, 2);
+    }
+
+    /**
+     * Store date format in the site timezone. There is no order context here,
+     * so the 'fluent_cart' timezone source would otherwise fall back to UTC.
+     */
+    public function formatDate($datetime): string
+    {
+        return DateFormatter::format($datetime, false, wp_timezone());
     }
 
     public function getPurchaseWidgets($widgets, $customer)
@@ -22,7 +32,7 @@ class FluentSupportWidget
             return $widgets;
         }
 
-        $html = (new FluentCRMDeepIntegration())->getStatsHtml($customer);
+        $html = (new FluentCRMDeepIntegration())->getStatsHtml($customer, [$this, 'formatDate']);
 
         if($html) {
             $css = 'ul.fc_full_listed {

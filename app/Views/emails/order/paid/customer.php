@@ -6,7 +6,7 @@
 ?>
 
     <div class="space_bottom_30">
-        <p><?php
+        <p class="fct-email-greeting"><?php
             printf(
                 /* translators: %s is the customer's full name */
                 esc_html__('Hello %s,', 'fluent-cart'),
@@ -26,7 +26,7 @@
 
 
 if ($order->subscriptions && $order->subscriptions->count() > 0) {
-    \FluentCart\App\App::make('view')->render('invoice.parts.subscription_items', [
+    \FluentCart\App\App::make('view')->render('emails.parts.subscription_summary', [
         'subscriptions' => $order->subscriptions,
         'order'         => $order
     ]);

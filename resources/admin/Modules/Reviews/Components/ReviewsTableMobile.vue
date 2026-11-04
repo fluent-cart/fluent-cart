@@ -38,7 +38,7 @@
 
           <div v-if="table.isColumnVisible('status')" class="fct-table-status-col">
             <div class="title">{{ translate('Status') }}</div>
-            <Badge :status="row.status" size="small" :key="row.id"/>
+            <Badge :status="row.status" kind="review" size="small" :key="row.id"/>
           </div>
 
           <div class="fct-table-actions-col" v-if="table.isColumnVisible('actions')">

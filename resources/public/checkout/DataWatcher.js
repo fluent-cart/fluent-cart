@@ -1,6 +1,13 @@
 import CheckoutHelper from "./CheckoutHelper";
 import Url from "@/utils/support/Url";
 import CartCheckoutHelper from "./CheckoutHelper";
+import {
+    destinationSignature,
+    destinationTracker,
+    saveResponseSequence,
+    startCheckoutSave,
+} from "./shippingDestination";
+import {savedByPick} from "./selectPickSave";
 
 export default class DataWatcher {
 
@@ -21,7 +28,13 @@ export default class DataWatcher {
         this.checkoutHandler = checkoutHandler;
         this.form = checkoutHandler.form;
         this.#nonce = window.fluentcart_checkout_info.checkout_nonce;
+        // The page renders the stored destination, so start from what the form shows.
+        destinationTracker.reset(destinationSignature(this.checkoutHandler.prepareFormData(), '', '', this.isShippingToDifferent()));
         this.bindEvents();
+    }
+
+    isShippingToDifferent() {
+        return !!this.form.querySelector('input[name="ship_to_different"]')?.checked;
     }
 
     bindEvents() {
@@ -33,6 +46,9 @@ export default class DataWatcher {
             const element = document.getElementById(select);
             if (element) {
                 element.addEventListener('change', this.debounce((event) => {
+                    if (savedByPick(event.target, event.target.value)) {
+                        return;
+                    }
                     this.saveCustomerData(select, event.target.value);
                 }, 400));
             }
@@ -47,6 +63,9 @@ export default class DataWatcher {
             if (element) {
                 element.addEventListener('change', this.debounce((event) => {
                     if (event.target.value === 'Select State' || event.target.value === '') {
+                        return;
+                    }
+                    if (savedByPick(event.target, event.target.value)) {
                         return;
                     }
                     this.saveCustomerData(select, event.target.value);
@@ -203,6 +222,9 @@ export default class DataWatcher {
                 data_value: value
             });
 
+        const save = startCheckoutSave(params, column, value, this.isShippingToDifferent(), window.fluent_cart_checkout_ui_service);
+        let stored = false;
+
         fetch(url, {
             method: "POST",
             headers: {
@@ -212,15 +234,25 @@ export default class DataWatcher {
             credentials: 'include',
             body: params
         }).then((response) => {
+            stored = response.ok;
             return response.json();
         }).then(data => {
+            save.settled(stored);
+            if (!saveResponseSequence.shouldApply(save.sequence, data)) {
+                return;
+            }
             if (data?.fragments) {
                 CheckoutHelper.handleFragments(data.fragments);
             }
             if (data?.shipping_charge_changes || data?.tax_total_Changes) {
                 this.checkoutHandler.handleCheckoutAmountChanges();
             }
-        })
+        }).catch((error) => {
+            save.settled(false);
+            throw error;
+        }).finally(() => {
+            save.release();
+        });
 
     }
 

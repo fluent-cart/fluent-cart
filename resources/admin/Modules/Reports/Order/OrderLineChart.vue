@@ -21,12 +21,15 @@ import Empty from "@/Bits/Components/Table/Empty.vue";
 import translate from "@/utils/translator/Translator";
 import {chartAxisPointer, chartTooltipAmount, chartTooltipPosition} from "@/utils/Utils";
 import orderReport from "@/Models/Reports/OrderReportModel";
+import Notify from "@/utils/Notify";
+import {exportCSVWithColumns} from "@/utils/Export";
 import {
   makeXAxisLabels,
   tooltipSuffix,
   prepareLabel,
   getEmphasisColor,
   getXAxisConfig,
+  axisDayLabel,
 } from '../Utils/decorator';
 import useGroupKeyOptions from '../Utils/useGroupKeyOptions';
 
@@ -35,6 +38,10 @@ const props = defineProps({
   chartData: {
     type: Array,
     required: true,
+  },
+  previousChartData: {
+    type: Array,
+    default: () => [],
   },
   reportFilter: {
     type: Object,
@@ -59,6 +66,14 @@ const { groupKeys } = useGroupKeyOptions(props.reportFilter, selectedGroupKey);
 
 const emit = defineEmits(["fetch-chart-data"]);
 
+// Each period's figures; gross (what customers paid, tax and shipping in) is here, not on the chart
+const exportCsv = () => {
+  const columns = [{header: 'period', accessor: 'group'},
+    ...['order_count', 'net_sales', 'gross_sale', 'total_refund', 'refunded_orders', 'average_net', 'total_item_count']
+      .map(key => ({header: key, accessor: key}))];
+  exportCSVWithColumns(props.chartData, columns, 'orders-by-period.csv').catch(error => Notify.error(error.message));
+};
+
 const filterChartData = () => {
   emit("fetch-chart-data", selectedGroupKey.value);
 };
@@ -76,19 +91,14 @@ const seriesData = computed(() =>
       yAxisIndex: 1,
       type: 'bar',
     },
+    // Net sales as the Revenue report counts them; gross is in the export
     {
-      title: translate("Gross Sales"),
-      key: "gross_sale",
+      title: translate("Net sales"),
+      key: "net_sales",
       color: isDarkTheme.value ? colors.blue_dark_mode : colors.royal_blue,
       yAxisIndex: 0,
       type: 'line',
-    },
-    {
-      title: translate("Revenue"),
-      key: "net_revenue",
-      color: isDarkTheme.value ? colors.purple_dark_mode : colors.purple,
-      yAxisIndex: 0,
-      type: 'line',
+      always: true,
     },
     // {
     //   title: translate("Units Sold"),
@@ -116,7 +126,7 @@ const seriesData = computed(() =>
     //   yAxisIndex: 1,
     // },
   ]
-    .filter(({ key }) => checkBoxFilter.data.order.includes(key))
+    .filter(({ key, always }) => always || checkBoxFilter.data.order.includes(key))
     .map(({ title, key, color, yAxisIndex, type }) =>
       createSeries(
         title,
@@ -126,6 +136,13 @@ const seriesData = computed(() =>
         color
       )
     )
+    // The compared period's net sales, point by point, as a dashed line
+    .concat(props.previousChartData.length ? [{
+      ...createSeries(translate("Compared net sales"), 'line', 0,
+        props.chartData.map((item, index) => (props.previousChartData[index] || {}).net_sales ?? null), colors.light_gray_cyan_blue),
+      lineStyle: {width: 2, type: 'dashed'},
+      symbol: 'none',
+    }] : [])
 );
 
 // Computed property for labels based on selected group key
@@ -140,12 +157,13 @@ const hasBarChart = ref(true);
 
 // Initialize the chart
 const initChart = () => {
-  if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
-  }
-
   nextTick(() => {
+    // Dispose here: two calls in one tick would both init the same element
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
+    }
+
     if (chartRef.value) {
       chartInstance = echarts.init(chartRef.value);
       updateChart();
@@ -222,6 +240,7 @@ const updateChart = () => {
       type: "category",
       data: labels.value,
       axisLabel: {
+        formatter: axisDayLabel,
         color: isDarkTheme.value ? "#ffffff" : "#696778",
         fontSize: 12,
         interval: xAxisConfig.value.interval,
@@ -368,7 +387,7 @@ const toggleChartType = (type) => {
 
 // Watch for changes in chartData, chartType, or selectedGroupKey to re-initialize the chart
 watch(
-  [() => props.chartData, chartType],
+  [() => props.chartData, () => props.previousChartData, chartType],
   () => {
     nextTick(updateChart);
   },
@@ -452,11 +471,9 @@ onMounted(() => {
               popper-class="fct-tooltip"
               :content="tooltip"
               placement="top"
-            >
-              <DynamicIcon
-                class="text-gray-500 w-4 h-4 cursor-pointer"
-                name="InformationFill"
-              />
+            
+              :trigger="['hover', 'focus']">
+              <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')"><DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/></button>
             </el-tooltip>
           </div>
         </template>
@@ -478,6 +495,10 @@ onMounted(() => {
           </div>
 
           <div class="fct-btn-group sm">
+            <IconButton tag="button" size="small" :title="translate('Export CSV')" :aria-label="translate('Export CSV')"
+                        :disabled="!chartData.length" @click="exportCsv">
+              <DynamicIcon name="Download"/>
+            </IconButton>
             <!-- <ChartTab
               :activeType="chartType"
               :types="{

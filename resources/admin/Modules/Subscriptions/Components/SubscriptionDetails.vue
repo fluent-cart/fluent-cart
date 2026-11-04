@@ -336,7 +336,7 @@
           show-icon
           class="mb-4"
       >
-          {{ $t('Renewals, cancellations and incoming gateway webhooks all follow these IDs. Changing them does not change anything at the payment gateway — use this only to correct IDs that are already wrong.') }}
+          {{ $t('Sub_Renewals_Cancellations') }}
       </el-alert>
 
       <el-form :model="vendorIdsForm" label-position="top">
@@ -368,7 +368,7 @@
           <template v-if="vendorIdsVerification.ok">
               <div>{{ $t('Found at gateway') }} &mdash; {{ vendorIdsVerification.summary }}</div>
               <div class="text-xs mt-1">
-                {{ $t('This only proves the ID exists in the connected gateway account. Confirm it is the right customer before saving.') }}
+                {{ $t('Sub_Proves_Exists') }}
               </div>
           </template>
           <template v-else>
@@ -538,7 +538,7 @@ export default {
         return {
           type: 'info',
           title: translate('Automatic charge processing'),
-          description: translate('The renewal charge was submitted and is awaiting confirmation from the payment provider.'),
+          description: translate('Sub_Renewal_Charge'),
         };
       }
 
@@ -555,7 +555,7 @@ export default {
         description = translate('Attempt %1$s of %2$s failed: %3$s — next automatic retry: %4$s (GMT).', attempts, maxAttempts, state.last_error, state.next_retry_at);
       } else if (state.exhausted === 'yes') {
         /* translators: %1$s: failed attempt number, %2$s: total attempts, %3$s: gateway failure reason */
-        description = translate('Attempt %1$s of %2$s failed: %3$s — no further automatic retries, the customer must pay manually.', attempts, maxAttempts, state.last_error);
+        description = translate('Sub_Attempt_Failed', attempts, maxAttempts, state.last_error);
       } else {
         /* translators: %1$s: failed attempt number, %2$s: total attempts, %3$s: gateway failure reason */
         description = translate('Attempt %1$s of %2$s failed: %3$s', attempts, maxAttempts, state.last_error);
@@ -668,7 +668,7 @@ export default {
                   this.$notify({
                     type: "error",
                     title: translate("Error"),
-                    message: translate(e.response?.data?.message || "Failed to fetch subscription")
+                    message: e.response?.data?.message || translate("Failed to fetch subscription")
                   });
                 } finally {
                   instance.confirmButtonLoading = false;
@@ -704,7 +704,7 @@ export default {
           this.$notify({
             type: "error",
             title: translate("Error"),
-            message: translate(e.response?.data?.message || "Failed to pause subscription")
+            message: e.response?.data?.message || translate("Failed to pause subscription")
           });
         } finally {
           this.loadingState.pause = false;
@@ -750,7 +750,7 @@ export default {
                   this.$notify({
                     type: "error",
                     title: translate("Error"),
-                    message: translate(e.response?.data?.message || "Failed to pause subscription")
+                    message: e.response?.data?.message || translate("Failed to pause subscription")
                   });
                 } finally {
                   instance.confirmButtonLoading = false;
@@ -786,7 +786,7 @@ export default {
           this.$notify({
             type: "error",
             title: translate("Error"),
-            message: translate(e.response?.data?.message || "Failed to resume subscription")
+            message: e.response?.data?.message || translate("Failed to resume subscription")
           });
         } finally {
           this.loadingState.resume = false;
@@ -832,7 +832,7 @@ export default {
                   this.$notify({
                     type: "error",
                     title: translate("Error"),
-                    message: translate(e.response?.data?.message || "Failed to resume subscription")
+                    message: e.response?.data?.message || translate("Failed to resume subscription")
                   });
                 } finally {
                   instance.confirmButtonLoading = false;
@@ -861,7 +861,7 @@ export default {
       // Show confirmation before saving
       try {
         await ElMessageBox.confirm(
-            translate('Are you sure you want to update this subscription? This will affect all future renewals.'),
+            translate('Sub_Sure_Want_Update'),
             translate('Confirm Update'),
             {
                 type: 'warning',
@@ -903,7 +903,7 @@ export default {
         this.$notify({
           type: "error",
           title: translate("Error"),
-          message: translate(e.response?.data?.message || "Failed to update subscription")
+          message: e.response?.data?.message || translate("Failed to update subscription")
         });
       } finally {
         this.loadingState.save = false;
@@ -967,7 +967,7 @@ export default {
 
       try {
         await ElMessageBox.confirm(
-            translate('Are you sure you want to change the vendor IDs? Future renewals and gateway webhooks will use the new IDs.'),
+            translate('Sub_Sure_Want'),
             translate('Confirm Update'),
             {
               type: 'warning',
@@ -1053,7 +1053,7 @@ export default {
       try {
         await ElMessageBox.confirm(
             isSystem
-                ? translate('Create the next renewal and charge it now? One attempt runs immediately; a decline falls back to automatic retries.')
+                ? translate('Sub_Create_Next')
                 : translate('Create a renewal now for the upcoming billing period?'),
             isSystem ? translate('Charge Next Renewal Now') : translate('Create Renewal Now'),
             {
@@ -1070,14 +1070,14 @@ export default {
                     this.$notify({
                       type: status === 'failed' ? 'warning' : 'success',
                       title: status === 'failed' ? translate('Charge Failed') : translate('Success'),
-                      message: translate(response?.message || (isSystem ? 'Charge attempt completed' : 'Renewal created successfully'))
+                      message: response?.message || (isSystem ? translate('Charge attempt completed') : translate('Renewal created successfully'))
                     });
                     this.$emit('reload');
                   } catch (e) {
                     this.$notify({
                       type: 'error',
                       title: translate('Error'),
-                      message: translate(e.response?.data?.message || (isSystem ? 'Failed to charge the renewal' : 'Failed to create renewal'))
+                      message: e.response?.data?.message || (isSystem ? translate('Failed to charge the renewal') : translate('Failed to create renewal'))
                     });
                   } finally {
                     instance.confirmButtonLoading = false;
@@ -1120,7 +1120,7 @@ export default {
                     this.$notify({
                       type: status === 'failed' ? 'warning' : 'success',
                       title: status === 'failed' ? translate('Charge Failed') : translate('Success'),
-                      message: translate(response?.message || 'Charge attempt completed')
+                      message: response?.message || translate('Charge attempt completed')
                     });
 
                     // Reload on every outcome — even a failure updates the
@@ -1130,7 +1130,7 @@ export default {
                     this.$notify({
                       type: 'error',
                       title: translate('Error'),
-                      message: translate(e.response?.data?.message || 'Failed to run the charge attempt')
+                      message: e.response?.data?.message || translate('Failed to run the charge attempt')
                     });
                   } finally {
                     instance.confirmButtonLoading = false;
@@ -1175,8 +1175,8 @@ export default {
         await ElMessageBox.prompt(
             newDate
                 /* translators: %1$s: the date the following renewal order will be created around */
-                ? translate('Skip the next billing period? The following renewal order will be created around %1$s.', newDate)
-                : translate('Skip the next billing period? The next_billing_date will advance one interval into the future.'),
+                ? translate('Sub_Skip_Next', newDate)
+                : translate('Sub_Skip_Next_Billing'),
             translate('Skip Next Period'),
             {
               type: 'warning',
@@ -1203,7 +1203,7 @@ export default {
                     this.$notify({
                       type: 'error',
                       title: translate('Error'),
-                      message: translate(e.response?.data?.message || 'Failed to skip period')
+                      message: e.response?.data?.message || translate('Failed to skip period')
                     });
                   } finally {
                     instance.confirmButtonLoading = false;
@@ -1252,7 +1252,7 @@ export default {
                   this.$notify({
                     type: "error",
                     title: translate("Error"),
-                    message: translate(e.response?.data?.message || "Failed to reactivate subscription")
+                    message: e.response?.data?.message || translate("Failed to reactivate subscription")
                   });
                 } finally {
                   instance.confirmButtonLoading = false;

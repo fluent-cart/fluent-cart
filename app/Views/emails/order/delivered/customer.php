@@ -6,7 +6,7 @@
 ?>
 
 <div class="space_bottom_30">
-    <p>
+    <p class="fct-email-greeting">
         <?php
             printf(
                     /* translators: %s is the customer name */

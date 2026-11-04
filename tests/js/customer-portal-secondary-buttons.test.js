@@ -11,7 +11,7 @@ import {fileURLToPath} from 'node:url';
  * on a dark palette they were light chips; Download, an <a>, also took the
  * theme's link underline (Astra: `.ast-single-post .entry-content a`).
  *
- * Source guard, not a render. Spec: dev/wp-browser/tests/Cases/storefront-colours.md [271]
+ * Source guard, not a render. Spec: tests/codeception/Cases/storefront-colours.md [271]
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../resources/public/customer-profile');

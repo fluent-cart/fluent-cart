@@ -13,15 +13,15 @@
                 >
                   <Badge
                       v-if="row?.meta?.disputed === 'yes' && row?.meta?.dispute_resolved === 'no'"
-                      :status="(row.status)">
+                      :status="(row.status)" kind="transaction">
                     {{ row.status === 'paid' ? 'Completed' : row.status }}
                   </Badge>
-                  <Badge v-else :status="(row.status)">
+                  <Badge v-else :status="(row.status)" kind="transaction">
                     {{ row.status === 'paid' ? 'Completed' : row.status }}
                   </Badge>
                 </el-tooltip>
 
-                <Badge v-else :status="(row.status)">
+                <Badge v-else :status="(row.status)" kind="transaction">
                   {{ row.status === 'paid' ? 'Completed' : row.status }}
                 </Badge>
               </div><!-- fct-table-status-col -->
@@ -99,6 +99,16 @@
 
             </ul>
 
+            <div v-if="isResyncPending(row)" class="mt-2">
+              <el-button
+                  size="small"
+                  :loading="resyncingId === row.id"
+                  @click="resyncRefund(row)"
+              >
+                {{ translate('Re-sync refund') }}
+              </el-button>
+            </div>
+
           </div><!-- fct-table-mobile-body -->
 
 
@@ -142,6 +152,7 @@ export default {
   emits: ['reload'],
   data() {
     return {
+      resyncingId: null,
       syncing_transaction: null
     }
   },
@@ -154,6 +165,11 @@ export default {
     paymentMethodAdminTitle,
     translate,
     getCardBrand,
+    isResyncPending(transaction) {
+      return transaction.transaction_type == 'refund'
+          && transaction.status == 'refunded'
+          && transaction?.meta?.local_sync == 'pending';
+    },
     syncTransaction(transaction) {
       if (this.syncing_transaction) {
         return;
@@ -169,6 +185,20 @@ export default {
           })
           .finally(() => {
             this.syncing_transaction = null;
+          });
+    },
+    resyncRefund(transaction) {
+      this.resyncingId = transaction.id;
+      this.$post('orders/' + this.order_id + '/refund/' + transaction.id + '/resync')
+          .then(response => {
+            this.$notify.success(response.message);
+            this.$emit('reload');
+          })
+          .catch(errors => {
+            this.$notify.error(errors?.data?.message || translate('Something went wrong!'));
+          })
+          .finally(() => {
+            this.resyncingId = null;
           });
     }
   }

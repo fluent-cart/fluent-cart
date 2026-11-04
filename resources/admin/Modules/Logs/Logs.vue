@@ -58,7 +58,7 @@
 
           <el-table-column :label="translate('Status')" :width="100">
             <template #default="scope">
-              <Badge :status="scope.row.status" size="small" :key="scope.row.id"/>
+              <Badge :status="scope.row.status" kind="log" size="small" :key="scope.row.id"/>
             </template>
           </el-table-column>
 

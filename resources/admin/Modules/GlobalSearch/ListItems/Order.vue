@@ -1,7 +1,7 @@
 <script setup>
 import {paymentMethodAdminTitle} from "@/utils/paymentMethodAdminTitle";
 import ProductInfo from "@/Bits/Components/Card/ProductInfo.vue";
-import {formatNumber} from "@/Bits/productService";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import Badge from "@/Bits/Components/Badge.vue";
 import translate from "@/utils/translator/Translator";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
@@ -31,13 +31,13 @@ const getPaymentProviderLogo = (payment_method) => {
       <div class="fct-global-search-order-header-meta">
         <span class="date"><ConvertedTime :date-time="order.created_at"/></span>
         <span class="circle"></span>
-        <span class="total-price" v-html="formatNumber(order.total_amount, true, false, order.currency)"></span>
+        <span class="total-price" v-html="CurrencyFormatter.formatFixed(order.total_amount, true, false, order.currency)"></span>
         <span class="circle"></span>
         <span class="customer-name">{{ order.customer?.full_name || translate('No Name') }}</span>
       </div>
     </div>
     <div class="fct-global-search-order-status-wrapper">
-      <Badge :status="order.payment_status" :hide-icon="true"/>
+      <Badge :status="order.payment_status" kind="payment" :hide-icon="true"/>
 
       <img
            v-if="getPaymentProviderLogo(order.payment_method)"

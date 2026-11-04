@@ -5,7 +5,7 @@
 				<el-col :md="24" :sm="24" :xs="24">
 					<el-form-item :label="$t('')" required>
 						<el-radio-group v-model="shippingType">
-							<el-radio v-for="(item, itemIndex) in availableOptions" :label="item.value" :key="itemIndex">
+							<el-radio v-for="(item, itemIndex) in availableOptions" :value="item.value" :key="itemIndex">
 								{{ item.label }}
 							</el-radio>
 						</el-radio-group>

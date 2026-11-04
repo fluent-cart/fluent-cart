@@ -18,7 +18,7 @@ vi.mock('@/utils/Config/AppConfig', () => ({
         'wp_admin_url': config.wpAdminUrl,
     })[key]},
 }));
-vi.mock('@/utils/translator/Translator', () => ({default: (value) => value}));
+vi.mock('@/utils/translator/Translator', async () => ({default: (await import('./support/reserved-words.js')).withReserved((value) => value)}));
 vi.mock('@/utils/permission/Permission', () => ({default: {isSuperAdmin: () => config.superAdmin}}));
 vi.mock('@/Bits/Components/ProFeatureNotice.vue', () => ({
     default: {

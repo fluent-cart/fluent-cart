@@ -50,6 +50,7 @@ use FluentCartPro\App\Modules\Licensing\Models\LicenseSite;
 use FluentCart\Database\Migrations\ShippingZonesMigrator;
 use FluentCart\Database\Migrations\ShippingMethodsMigrator;
 use FluentCart\Database\Migrations\RetentionSnapshotsMigrator;
+use FluentCart\Database\Migrations\ShipmentsMigrator;
 use FluentCart\Database\Migrations\AttributeGroupsMigrator;
 use FluentCart\Database\Migrations\AttributeObjectRelationsMigrator;
 use FluentCart\Database\Migrations\AttributeTermsMigrator;
@@ -91,6 +92,7 @@ class DBMigrator
         ShippingClassesMigrator::class,
         ScheduledActionsMigrator::class,
         RetentionSnapshotsMigrator::class,
+        ShipmentsMigrator::class,
         // Order matters: AttributeTermsMigrator::migrated() INNER JOINs
         // fct_atts_relations to repoint orphaned term references, so the
         // relations table must exist before terms runs its post-migration hook.
@@ -144,7 +146,7 @@ class DBMigrator
      * Bump when a branch adds a step to maybeMigrateCurrencySchema(), so
      * stores that completed the earlier steps run the new one.
      */
-    const CURRENCY_SCHEMA_VERSION = '4';
+    const CURRENCY_SCHEMA_VERSION = '6';
 
     public static function maybeMigrateDBChanges()
     {
@@ -207,7 +209,7 @@ class DBMigrator
             OrdersMigrator::addCurrencyCreatedIndex();
             // migrate(), not just the ALTERs: the table was never created on stores updated since 1.3.20
             \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::migrate();
-            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::queueRebuildIfPopulated();
+            \FluentCart\Database\Migrations\RetentionSnapshotsMigrator::markRebuildNeededIfPopulated();
 
             // let's check the orders table sequence number
             global $wpdb;
@@ -632,6 +634,20 @@ class DBMigrator
             AttributeTermsMigrator::migrate();
             AttributeSeeder::seed();
 
+            // 2026-06-30
+            // Split Shipments - create the fct_shipments table on in-place
+            // plugin updates too. migrate() only runs on activation, but
+            // existing installs reach this version-gated path without
+            // reactivating. createTableIfNotExist makes re-runs a no-op.
+            ShipmentsMigrator::migrate();
+
+            // 2026-07-13
+            // Carrier settings read fct_meta by object_type + meta_key prefix, but
+            // only object_type was indexed. Same reasoning as above: the DDL lives
+            // in MetaMigrator::migrated(), which activation runs — existing installs
+            // reach it only through here. addIndexIfNotExists makes re-runs a no-op.
+            MetaMigrator::migrate();
+
             self::releaseMigrationLock();
         }
     }
@@ -698,10 +714,13 @@ class DBMigrator
             CartMigrator::addUserCartIndex();
 
             if (!OrdersMigrator::hasWideRateColumn() || !OrderTransactionsMigrator::hasWideRateColumn() || !SubscriptionsMigrator::hasCurrencyColumn()
-                || !RetentionSnapshotsMigrator::hasCurrencyDimension() || !CartMigrator::hasUserCartIndex()) {
+                || !RetentionSnapshotsMigrator::hasCurrencyDimension() || !RetentionSnapshotsMigrator::hasCohortDimensions() || !RetentionSnapshotsMigrator::hasWideRateColumns()
+                || !CartMigrator::hasUserCartIndex()) {
                 return; // Keep the upgrade pending if an ALTER failed.
             }
             update_option($option, self::CURRENCY_SCHEMA_VERSION, false);
+            // Snapshot rows from before the cohort columns hold neither split; rebuild them once
+            RetentionSnapshotsMigrator::markRebuildNeededIfPopulated();
         } finally {
             self::releaseMigrationLock();
         }

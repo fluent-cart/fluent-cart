@@ -234,7 +234,7 @@ const handleCloseModal = () => {
       <div class="fct-bulk-delete-action-dialog-content space-y-4">
         <div v-if="isDeleting">
           <p class="m-0 mb-2">
-            {{ translate('Please do not close or refresh this window. Please wait while we delete the selected orders...') }}
+            {{ translate('Order_Close_Refresh') }}
           </p>
           <p class="text-sm text-gray-600 mb-3" v-if="currentDeletingOrder">
             {{

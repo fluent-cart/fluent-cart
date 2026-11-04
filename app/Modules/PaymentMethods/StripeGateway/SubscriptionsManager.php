@@ -89,18 +89,33 @@ class SubscriptionsManager
      */
     protected static function checkRateLimit($customerId)
     {
-        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 5, $customerId);
+        global $wpdb;
 
-        $customerDailyKey = 'fct_stripe_setup_intent_rate_daily_' . md5($customerId);
-        $customerDailyAttempts = get_transient($customerDailyKey) ?: 0;
-        
-        if ($customerDailyAttempts >= $customerDailyLimit) {
-            return new \WP_Error('rate_limit_exceeded', __('Daily verification limit reached. You can try again tomorrow.', 'fluent-cart'));
+        $customerDailyLimit = apply_filters('fluent_cart/stripe/setup_intent_rate_limit_customer_daily', 5, $customerId);
+        $limitError = new \WP_Error('rate_limit_exceeded', __('Daily verification limit reached. You can try again tomorrow.', 'fluent-cart'));
+
+        // Pro's AddCardService takes the same lock: both count into this bucket.
+        $lockName = 'fct_seti_' . md5($customerId);
+        if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lockName, 2)) !== '1') {
+            return $limitError;
         }
 
-        set_transient($customerDailyKey, $customerDailyAttempts + 1, DAY_IN_SECONDS);
+        try {
+            $customerDailyKey = 'fct_stripe_setup_intent_rate_daily_' . md5($customerId);
+            $customerDailyAttempts = get_transient($customerDailyKey) ?: 0;
 
-        return true;
+            if ($customerDailyAttempts >= $customerDailyLimit) {
+                return $limitError;
+            }
+
+            if (!set_transient($customerDailyKey, $customerDailyAttempts + 1, DAY_IN_SECONDS)) {
+                return $limitError;
+            }
+
+            return true;
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lockName));
+        }
     }
 
     public function getRemainingRateLimit($customerId)

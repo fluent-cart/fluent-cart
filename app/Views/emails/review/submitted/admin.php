@@ -43,7 +43,7 @@ $adminUrl = admin_url('admin.php?page=fluent-cart#/reviews/' . (int) $review->id
 ?>
 
 <div class="space_bottom_30">
-    <p><?php esc_html_e('Hello,', 'fluent-cart'); ?></p>
+    <p class="fct-email-greeting"><?php esc_html_e('Hello,', 'fluent-cart'); ?></p>
     <p>
         <?php
         printf(

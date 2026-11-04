@@ -12,6 +12,14 @@
       <span v-else>{{ getShippingButtonLabel() }}</span>
       <div v-if="shippingTitle" class="text-xs text-system-mid dark:text-gray-300 mt-0.5">
         {{ shippingTitle }}
+        <Badge v-if="shippingCarrierName" size="small" class="ms-1" :text="shippingCarrierName"/>
+      </div>
+      <div v-if="quoteNote" class="fct-shipping-quote-note text-xs text-system-mid dark:text-gray-300 mt-0.5">
+        <span>{{ quoteNote.carrierRate }}</span>
+        <template v-if="quoteNote.exchangeRate">
+          <span aria-hidden="true" class="mx-1">&middot;</span>
+          <span>{{ quoteNote.exchangeRate }}</span>
+        </template>
       </div>
     </td>
     <td></td>
@@ -47,7 +55,7 @@
         <div v-if="shippingMethods.length" class="fct-shipping-methods-list-wrap">
           <h3>{{ translate('Shipping Methods') }}</h3>
           <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
-            <el-radio v-for="(method, index) in shippingMethods" :label="method.id" :key="index">
+            <el-radio v-for="(method, index) in shippingMethods" :value="method.id" :key="index">
               {{ method.title }}
               <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
             </el-radio>
@@ -57,7 +65,7 @@
         <div v-if="otherShippingMethods.length" class="fct-other-shipping-methods-list-wrap">
           <h3>{{ translate('Other Shipping Methods') }}</h3>
           <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
-            <el-radio v-for="(method, index) in otherShippingMethods" :label="method.id" :key="index">
+            <el-radio v-for="(method, index) in otherShippingMethods" :value="method.id" :key="index">
               {{ method.title }}
               <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
             </el-radio>
@@ -78,17 +86,21 @@
 <script type="text/babel">
 import {adjustShippingTotal} from "@/Bits/cartService";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
+import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import ShippingModal from "./Modals/ShippingModal.vue";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
 import Notify from "@/utils/Notify";
 import AppConfig from "@/utils/Config/AppConfig";
+import {CARRIER_MANUAL} from "@/utils/orderConstants";
+import {shippingQuoteNote} from "./shippingQuoteNote";
 
 export default {
   name: "Shipping",
   components: {
     IconButton,
+    Badge,
     DynamicIcon,
     ShippingModal,
   },
@@ -133,6 +145,17 @@ export default {
     },
     shippingTitle() {
       return this.getShippingTitle();
+    },
+    quoteNote() {
+      return this.shippingCarrierName ? shippingQuoteNote(this.order) : null;
+    },
+    shippingCarrierName() {
+      const checkoutShipping = this.order && this.order.checkout_shipping ? this.order.checkout_shipping : null;
+      // Manual is the default; only a live carrier gets a badge
+      if (!checkoutShipping || !checkoutShipping.carrier || checkoutShipping.carrier === 'manual') {
+        return '';
+      }
+      return checkoutShipping.carrier_name || checkoutShipping.carrier;
     },
   },
   watch: {
@@ -234,7 +257,7 @@ export default {
           });
     },
     getShippingMethodsNotFoundMessage() {
-      const link = this.$router.resolve({ name: 'shipping' }).href;
+      const link = this.$router.resolve({ name: 'carrier_settings', params: { slug: CARRIER_MANUAL } }).href;
       /* translators: %1$s is the opening tag, %2$s is the closing tag */
       return translate(
           'No shipping methods found. You can add shipping methods from %1$s here %2$s',

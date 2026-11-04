@@ -43,10 +43,11 @@ const props = defineProps({
 const ready = ref(false);
 const selfRef = getCurrentInstance().ctx;
 const getLabel = (field) => {
-  if (typeof field.label === "function") {
-    return field.label(props.value, props.statePath, props.form);
-  }
-  return field.label;
+  const label = typeof field.label === "function"
+      ? field.label(props.value, props.statePath, props.form)
+      : field.label;
+  // Schemas send false for "no label"; the inputs expect a string
+  return label || '';
 };
 
 const callback = (callback, data) => {
@@ -100,6 +101,7 @@ const commonProps = computed(() => ({
   statePath: props.statePath,
   field: props.field,
   fieldKey: props.fieldKey,
+  name: props.fieldKey,
   value: props.value[props.fieldKey],
   nesting: false,
   label: getLabel(props.field),

@@ -6,6 +6,7 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\ProductMeta;
 use FluentCart\App\Models\ScheduledAction;
 use FluentCart\App\Models\Subscription;
@@ -22,6 +23,7 @@ class IntegrationEventListener
             'order_paid_done',
             'order_status_changed_to_canceled',
             'order_fully_refunded',
+            'order_partially_refunded',
             'subscription_activated',
             'subscription_reactivated',
             'subscription_canceled',
@@ -76,6 +78,19 @@ class IntegrationEventListener
             }
         }
 
+        $isPartialRefund = $hook === 'order_partially_refunded';
+        $ownedItems = null;
+        if ($isPartialRefund) {
+            $orderItems = OrderItem::query()->where('order_id', $order->id)->get();
+            $itemSource = $this->fullyRefundedItems($orderItems, $data);
+            if ($itemSource->isEmpty()) {
+                return;
+            }
+            $ownedItems = $orderItems->filter(function ($item) {
+                return $item->unitsLeft() > 0;
+            });
+        }
+
         foreach ($itemSource as $item) {
             $productIds[] = $item->post_id;
             $variantIds[] = $item->object_id;
@@ -99,6 +114,10 @@ class IntegrationEventListener
                         continue;
                     }
 
+                    if ($ownedItems && $this->stillOwnsFeedProduct($ownedItems, $feed->object_id, $targetVariationIds)) {
+                        continue;
+                    }
+
                     $validFeeds[] = $formatted;
                 }
             }
@@ -112,7 +131,8 @@ class IntegrationEventListener
         }
 
         // get global feeds
-        $globalIntegrations = Meta::query()->whereIn('object_type', ['order_integration'])
+        // Global feeds cover the whole order, so only a full refund revokes them.
+        $globalIntegrations = $isPartialRefund ? [] : Meta::query()->whereIn('object_type', ['order_integration'])
             ->get();
 
         $globalValidFeeds = [];
@@ -234,8 +254,18 @@ class IntegrationEventListener
             return;
         }
 
+        // The receipt page and the background job can both get here; only the one
+        // that flips pending to running may run the integrations.
+        $claimed = ScheduledAction::query()
+            ->where('id', $action->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'running']);
+
+        if (!$claimed) {
+            return;
+        }
+
         $action->status = 'running';
-        $action->save();
 
         $srcHook = Arr::get($action->data, 'hook', '');
         $integrationActions = Arr::get($action->data, 'actions', []);
@@ -400,6 +430,35 @@ class IntegrationEventListener
         ]);
     }
 
+    // Lines from this refund with no units left; a line still partly owned keeps its access.
+    private function fullyRefundedItems($orderItems, $data)
+    {
+        // A money-only row (refund_qty 0) leaves units already revoked by an earlier refund.
+        $unitRows = array_filter((array)Arr::get($data, 'new_refunded_items', []), function ($row) {
+            return (int)Arr::get($row, 'refund_qty', 0) > 0;
+        });
+        $refundedIds = array_filter(array_map('intval', array_column($unitRows, 'id')));
+
+        return $orderItems->filter(function ($item) use ($refundedIds) {
+            return in_array((int)$item->id, $refundedIds, true) && $item->unitsLeft() === 0;
+        });
+    }
+
+    // Another line of the same product (or a targeted variation) still grants this feed.
+    private function stillOwnsFeedProduct($ownedItems, $productId, $targetVariationIds)
+    {
+        foreach ($ownedItems as $item) {
+            if ((int)$item->post_id !== (int)$productId) {
+                continue;
+            }
+            if (!$targetVariationIds || in_array($item->object_id, $targetVariationIds)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function formatIntegrationFeed($feed, $hook, $addOns = null, $scope = 'product', $orderId = null, $orderNeverPaid = false)
     {
         if (!$addOns) {
@@ -409,6 +468,7 @@ class IntegrationEventListener
         $revokedHooks = [
             'subscription_expired_validity',
             'order_fully_refunded',
+            'order_partially_refunded',
             'order_status_changed_to_canceled'
         ];
 

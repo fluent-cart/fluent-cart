@@ -209,6 +209,19 @@
   }
 }
 
+/* Contents capacity, under the box weight */
+.fct-package-max-weight-field {
+  @apply mt-3;
+
+  .fct-package-label {
+    @apply block;
+  }
+
+  .fct-package-max-weight-hint {
+    @apply mt-1 text-xs text-system-mid dark:text-gray-300;
+  }
+}
+
 /* Default package checkbox */
 .fct-package-default-check {
   @apply pt-5;

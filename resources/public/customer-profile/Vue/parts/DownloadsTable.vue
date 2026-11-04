@@ -23,7 +23,7 @@
           >
             <DynamicIcon name="Download" aria-hidden="true"
               role="presentation"/>
-            {{ $t('Download') }}
+            {{ _x('Download', 'Button action') }}
           </a>
         </template>
       </el-table-column>
@@ -34,7 +34,7 @@
 <script type="text/babel">
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
 import Storage from "@/utils/Storage";
-import translate from "../../translator/Translator";
+import translate, {_x} from "../../translator/Translator";
 
 export default {
     components: {
@@ -52,6 +52,7 @@ export default {
     },
     methods: {
       translate,
+      _x,
         readableFileSize(size) {
           return Storage.readableFileSizeFromBytes(size);
         }

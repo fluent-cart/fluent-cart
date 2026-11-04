@@ -183,7 +183,7 @@ onMounted(() => {
                                 {{ translate('Fluent PDF Required') }}
                             </h3>
                             <p class="text-sm text-system-mid dark:text-gray-400 mb-6 max-w-md">
-                                {{ translate('To use PDF receipt templates, you need to install and activate the Fluent PDF plugin.') }}
+                                {{ translate('Settings_Pdf_Receipt') }}
                             </p>
                             <el-button
                                 v-if="!addonInfo.is_installed"
@@ -211,7 +211,7 @@ onMounted(() => {
                 <Card>
                     <CardBody>
                         <p class="fct-pdf-template-desc">
-                            {{ translate('Customize PDF templates for email attachments. Select which template to attach in each email notification\'s settings.') }}
+                            {{ translate('Settings_Customize_Pdf') }}
                         </p>
                         <div class="fct-pdf-template-grid">
                             <div

@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Modules\MCP\Tools;
 
+use FluentCart\App\App;
+use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductVariation;
@@ -9,6 +11,7 @@ use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Modules\MCP\Support\AdvancedSearch;
 use FluentCart\App\Modules\MCP\Support\MCPHelper;
 use FluentCart\App\Modules\MCP\Support\PermissionGate;
+use FluentCart\App\Services\Report\ProductReportService;
 
 /**
  * Product & inventory tools.
@@ -60,7 +63,7 @@ class ProductTools
 
             'fluent-cart/get-product' => [
                 'label'       => __('Get Product', 'fluent-cart'),
-                'description' => __('Full detail for one product: description, variations with SKU/price/stock/subscription terms, categories and tags. Add include[] for sales (lifetime units + revenue) and downloads. Identify by product_id.', 'fluent-cart'),
+                'description' => __('Full detail for one product: description, variations with SKU/price/stock/subscription terms, categories and tags. Add include[] for sales (lifetime units + revenue, tax excluded, net of discounts and refunds) and downloads. Identify by product_id.', 'fluent-cart'),
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -331,23 +334,35 @@ class ProductTools
 
     /**
      * Lifetime sales for this product, from order items on realized-revenue
-     * orders only. Revenue is net of item-level refunds (line_total - refund_total).
+     * orders only. Revenue matches the product report: tax excluded, net of
+     * order-level credits and of each refund's line share.
      * Scoped to paid / partially_refunded orders — unpaid/canceled items don't
      * count, and partially_paid is excluded (partial payments are not implemented).
      */
     private static function salesRollup($productId)
     {
-        $paidScope = function ($q) {
-            $q->whereIn('payment_status', ['paid', 'partially_refunded']);
-        };
+        $statuses = ['paid', 'partially_refunded'];
+        $items = App::db()->getTableName('fct_order_items');
+        $line = ProductReportService::lineTotalSql($items, 'fctod');
+        $split = ProductReportService::itemRefundSplitSql($line, 0, $items, 'fctord', 'fctod');
+        $share = Arr::get($split, 'share');
+        $keptTax = Arr::get($split, 'kept_tax');
+
+        $orders = App::db()->table('fct_orders as o')
+            ->whereIn('o.payment_status', $statuses)
+            ->whereIn('o.id', function ($q) use ($productId) {
+                $q->select('order_id')->from('fct_order_items')->where('post_id', $productId);
+            });
 
         $row = OrderItem::query()
-            ->where('post_id', $productId)
-            ->whereHas('order', $paidScope)
+            ->join('fct_orders as fctord', 'fct_order_items.order_id', '=', 'fctord.id')
+            ->leftJoinSub(ProductReportService::orderDiscountSplitQuery($orders), 'fctod', 'fctod.order_id', '=', 'fct_order_items.order_id')
+            ->where('fct_order_items.post_id', $productId)
+            ->whereIn('fctord.payment_status', $statuses)
             ->selectRaw(
-                'COALESCE(SUM(quantity), 0) as units, '
-                . 'COALESCE(SUM(line_total - refund_total), 0) as revenue, '
-                . 'COUNT(DISTINCT order_id) as orders'
+                "COALESCE(SUM({$items}.quantity), 0) as units, "
+                . "COALESCE(SUM({$line} - {$share} - {$keptTax}), 0) as revenue, "
+                . "COUNT(DISTINCT {$items}.order_id) as orders"
             )
             ->first();
 

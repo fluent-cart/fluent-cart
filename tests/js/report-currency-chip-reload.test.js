@@ -14,7 +14,7 @@ vi.mock('@/utils/Storage', () => ({
     },
 }));
 vi.mock('@/utils/http/Rest', () => ({default: {get: vi.fn(() => new Promise(() => {}))}}));
-vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD'}}));
+vi.mock('@/utils/Config/AppConfig', () => ({default: {get: () => 'USD', onShopUpdate: () => {}}}));
 vi.mock('@/utils/translator/Translator', () => ({default: (text) => text}));
 vi.mock('vue-router', () => ({useRoute: () => ({name: 'reports_sales'})}));
 

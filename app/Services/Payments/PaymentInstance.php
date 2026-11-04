@@ -120,10 +120,11 @@ class PaymentInstance
             if ($shippingCharge) {
                 $extraAmount += $shippingCharge;
 
-                if ($taxBehavior === 1) {
+                if ($taxBehavior === 1 && (int) $this->order->getMeta('store_tax_behavior', 1) !== 2) {
                     $extraAmount += (int) $this->order->shipping_tax;
-                } elseif ($taxBehavior === 3) {
-                    $storeTaxBehavior = (int) $this->order->getMeta('store_tax_behavior', 1);
+                } elseif (in_array($taxBehavior, [2, 3], true)) {
+                    // Without the meta (old orders), an inclusive order keeps shipping tax inside.
+                    $storeTaxBehavior = (int) $this->order->getMeta('store_tax_behavior', $taxBehavior === 2 ? 2 : 1);
                     if ($storeTaxBehavior === 1) {
                         $extraAmount += (int) $this->order->shipping_tax;
                     }

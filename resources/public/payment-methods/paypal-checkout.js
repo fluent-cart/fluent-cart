@@ -162,7 +162,6 @@ class PaypalCheckout {
         extraText.style.textAlign = 'center';
         extraText.style.marginTop = '10px';
         extraText.style.fontSize = '14px';
-        extraText.style.color = '#666';
         extraText.textContent = this.$t('Choose any option to continue');
         paypalButtonContainer.appendChild(extraText);
     }

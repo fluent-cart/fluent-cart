@@ -8,6 +8,9 @@ const whitelistFile = path.join(__dirname, 'whitelist.sh');
 // Nested folder names to skip
 const excludeFolders = ['partials', 'node_modules'];
 
+// Top-level folders that get index.php in their root only, not in subfolders
+const rootOnlyFolders = ['vendor'];
+
 const indexContent = "<?php // Silence is golden.\n";
 
 // Read the folders from the build whitelist so only shipped code gets index.php.
@@ -30,12 +33,16 @@ function getBuildFolders() {
 
 let created = 0;
 
-function processDirectory(dir) {
+function processDirectory(dir, recursive = true) {
     const indexPath = path.join(dir, 'index.php');
     if (!fs.existsSync(indexPath)) {
         fs.writeFileSync(indexPath, indexContent, 'utf8');
         created++;
         console.log('Added ' + path.relative(rootDir, indexPath));
+    }
+
+    if (!recursive) {
+        return;
     }
 
     fs.readdirSync(dir, {withFileTypes: true}).forEach(entry => {
@@ -45,6 +52,6 @@ function processDirectory(dir) {
     });
 }
 
-getBuildFolders().forEach(folder => processDirectory(path.join(rootDir, folder)));
+getBuildFolders().forEach(folder => processDirectory(path.join(rootDir, folder), !rootOnlyFolders.includes(folder)));
 
 console.log(created + ' index.php file(s) added.');

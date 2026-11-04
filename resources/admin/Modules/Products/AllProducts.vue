@@ -299,9 +299,6 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  //background-color: #f5f7fa;
-  //border: 1px solid #e4e7ed;
-  //border-radius: 4px;
 }
 
 .selected-count {
